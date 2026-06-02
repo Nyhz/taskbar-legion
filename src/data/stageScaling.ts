@@ -200,9 +200,6 @@ export function totalExpToReach(L: number): number {
   const Lc = Math.min(L, MAX_LEVEL);
   return Math.round(0.5 * Math.pow(Lc, 3.5) + Math.pow(4.4, Lc - 39));
 }
-export function expToNext(L: number): number {
-  return totalExpToReach(L + 1) - totalExpToReach(L);
-}
 
 // ── World/stage helpers ──
 /** Stage index within its world: 1..9 normal, 10 = zone boss (W-10). */
