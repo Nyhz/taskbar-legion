@@ -1,0 +1,2 @@
+- [Rebalance task state](rebalance-task-state.md) — live state of combat rebalance + survival pass; next: optimal-play greedy agent
+- [Greedy agent must play optimally](greedy-agent-must-play-optimally.md) — farm-retreat when stuck; balance around experience not reach
