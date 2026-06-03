@@ -26,11 +26,43 @@ of provably-unreferenced files.
 
 ## Changes made
 
-(updated as work proceeds)
+### 1. Dead code removal (commit `eea5772`)
+- **Deleted `src/game/render/Backdrop.ts`** — `createBackdrop` was its only export and nothing imported it
+  (superseded by `StageBackground.ts` / `backgroundLayers.ts`). Proven unused across src/test/scripts.
+- **Deleted `src/game/camera.ts`** — self-described "Phase 0 stub"; `GameStrip.ts` implements its own
+  spring-camera inline, so this `createCamera`/`Camera` stub was never wired up. Proven unused.
+- **Removed `expToNext` from `data/stageScaling.ts`** — dead derived helper (`totalExpToReach(L+1) -
+  totalExpToReach(L)`) with zero callers; leveling uses `totalExpToReach` directly.
+
+### 2. Stale-comment fixes (commit `84ca8b3`) — comment-only, behavior-preserving
+Comments still described the PRE-overhaul model. Verified each against the live constant before fixing:
+- **Ultimate unlock L60 → L30** (actual `ULTIMATE_UNLOCK_LEVEL = 30`): fixed in `data/ultimates.ts:2`,
+  `sim/loadout.ts:132` & `:199`, `sim/world.ts:34-35`, `data/talents.ts:12`.
+- **Zone boss "450× / NEEDS RE-TUNE" → 220×** (actual `ZONE_BOSS_HP_MULT = 220 / DMG 5.5`): rewrote the
+  stale `data/stageScaling.ts:23-27` block. The retune is *done* (per project memory + PROGRESSION §0);
+  the deep wall is now carried by per-world `ZONE_WALL_GROWTH`, not the flat multiplier.
+- **Removed the phantom "equip-gate" framing** in `data/stageScaling.ts:155-164` — it claimed ilvl is "the
+  equip requirement (a hero must be `level >= ilvl`)". Verified NO such gate exists anywhere in code;
+  PROGRESSION §0 says ilvl is pure power with no equip-gate. Rewrote to describe `expectedLevel(S)` as the
+  intended level curve + generated-item ilvl anchor, preserving the bounded-lag rationale.
 
 ## Risky items intentionally left for human review
 
-(updated as work proceeds)
+- **`sim/bonuses.ts` `combatMods` channel** — currently always-empty (tech is non-combat), but threaded
+  through `engine.ts`/`loadout.ts`/`harness.ts` and **asserted length-0 by `test/sim/bonuses.test.ts`**.
+  It's a deliberate reserved channel + tested API. KEPT.
+- **`isRooted` (sim/effects.ts)** — the `root` effect kind is *produced* (abilities.ts) but `isRooted`, its
+  only intended consumer, is never called, so root effects are applied but **not enforced** (no movement
+  block). Possible latent bug. Left as-is (removing the consumer would hide the gap); flagged for design.
+- **Numeric seam `cmp` (sim/num.ts)** — lone untested member of the §10 big-number seam (`add/mul/pow` are
+  tested). KEPT as part of the documented forward-compat seam.
+- **`listSurfaces`/`clearSurfaces` (platform/surfaces.ts)** — unused v1.5 hit-test seam (ARCHITECTURE.md
+  documents "no consumer in v1"). KEPT.
+- **`deriveSeed` (sim/rng.ts)** — unused determinism sub-stream primitive. KEPT (touching the RNG core
+  unsupervised isn't worth the marginal LOC; no runtime/order impact either way).
+- Other verified-unused but low-value / data-sensitive orphans left in place: `hasTag`+`tag` effect-kind
+  (data-driven effect extensibility), `hasId` (slots.ts), `hasHot` (fx.ts), `transfigCost`/`TransfigCost`
+  (cube.ts), `MAX_SUBSTATS`/`ENEMY_SPREAD` (data constants), `isPercentStat` (stats.ts), `PaletteKey`.
 
 ## Final status
 

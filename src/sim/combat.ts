@@ -45,31 +45,11 @@ export function resolveCombatTick(world: WorldState, deltaMs: number, rng: Rng):
   const { heroes, enemies } = world;
   const S = world.globalStageIndex;
 
-  // 1. Upkeep: effects, cooldowns, dot/hot, regen, boss enrage clock, deaths.
-  for (const c of [...heroes, ...enemies]) {
-    if (!c.alive) continue;
-    tickEffectDurations(c.effects, deltaMs);
-    tickCooldowns(c, deltaMs);
-    // Marked targets (Ranger ult) take amplified DoT ticks; an invulnerable hero
-    // (Warrior ult) takes none.
-    const dot = dotDps(c.effects) * dtSec * vulnerabilityMult(c.effects);
-    if (dot > 0 && !isInvulnerable(c.effects)) c.hp -= absorbDamage(c.effects, dot); // shields soak DoTs too
-    const hot = hotHps(c.effects) * dtSec;
-    if (hot > 0) c.hp = Math.min(c.maxHp, c.hp + hot);
-    // Surface DoT/HoT ticks as floating numbers ~once a second (the per-second rate),
-    // so the player sees the effect working without spamming a number every 100ms.
-    if (world.tick % 10 === 0) {
-      const dps = dotDps(c.effects);
-      if (dps > 0) events.push({ type: 'damage', targetId: c.id, amount: dps, tick: true });
-      const hps = hotHps(c.effects);
-      if (hps > 0) events.push({ type: 'heal', targetId: c.id, amount: hps, tick: true });
-    }
-    if (c.side === 'hero') {
-      const regen = (heroStats(c).hpRegen ?? 0) * dtSec;
-      if (regen > 0) c.hp = Math.min(c.maxHp, c.hp + regen);
-    }
-    if (c.hp <= 0) kill(c, events);
-  }
+  // 1. Upkeep: effects, cooldowns, dot/hot, regen, boss enrage clock, deaths. Heroes
+  //    then enemies — same order as the old [...heroes, ...enemies], minus the per-tick
+  //    array allocation. The upkeep step consumes no RNG, so this is byte-identical.
+  for (const c of heroes) tickCombatantUpkeep(c, world.tick, deltaMs, dtSec, events);
+  for (const c of enemies) tickCombatantUpkeep(c, world.tick, deltaMs, dtSec, events);
 
   // 2. Formation march: a lead anchor (partyX) advances to the engage line; each
   //    hero eases to its COLUMN slot (front = slot 0, the rest trail behind). The
@@ -184,6 +164,31 @@ export function resolveCombatTick(world: WorldState, deltaMs: number, rng: Rng):
   }
 
   return events;
+}
+
+// Per-combatant upkeep: effect durations, cooldowns, DoT/HoT, hero regen, death. No RNG
+// (so hero/enemy ordering is irrelevant to determinism). Surfaces DoT/HoT as floating
+// numbers ~once a second (the per-second rate) rather than every 100ms tick.
+function tickCombatantUpkeep(c: Combatant, worldTick: number, deltaMs: number, dtSec: number, events: CombatEvent[]): void {
+  if (!c.alive) return;
+  tickEffectDurations(c.effects, deltaMs);
+  tickCooldowns(c, deltaMs);
+  // Marked targets (Ranger ult) take amplified DoT ticks; an invulnerable hero takes none.
+  const dot = dotDps(c.effects) * dtSec * vulnerabilityMult(c.effects);
+  if (dot > 0 && !isInvulnerable(c.effects)) c.hp -= absorbDamage(c.effects, dot); // shields soak DoTs too
+  const hot = hotHps(c.effects) * dtSec;
+  if (hot > 0) c.hp = Math.min(c.maxHp, c.hp + hot);
+  if (worldTick % 10 === 0) {
+    const dps = dotDps(c.effects);
+    if (dps > 0) events.push({ type: 'damage', targetId: c.id, amount: dps, tick: true });
+    const hps = hotHps(c.effects);
+    if (hps > 0) events.push({ type: 'heal', targetId: c.id, amount: hps, tick: true });
+  }
+  if (c.side === 'hero') {
+    const regen = (heroStats(c).hpRegen ?? 0) * dtSec;
+    if (regen > 0) c.hp = Math.min(c.maxHp, c.hp + regen);
+  }
+  if (c.hp <= 0) kill(c, events);
 }
 
 // The frontmost living hero (greatest x). Ties keep party order (lowest index),
