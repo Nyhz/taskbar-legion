@@ -24,10 +24,6 @@ export function findEntry(slots: Slots, id: string): InvEntry | undefined {
   return undefined;
 }
 
-export function hasId(slots: Slots, id: string): boolean {
-  return findEntry(slots, id) !== undefined;
-}
-
 /** Drop `entry` into the first empty slot (or append if none and capacity allows).
  *  Returns a NEW array, or `null` if the container is full. */
 export function place(slots: Slots, entry: InvEntry, cap: number): Slots | null {

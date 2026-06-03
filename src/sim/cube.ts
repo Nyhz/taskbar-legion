@@ -65,18 +65,6 @@ export function alchemyTotal(items: readonly ItemInstance[]): number {
 
 // ───────────────────────────── Transfiguration ─────────────────────────────
 
-export interface TransfigCost {
-  tier: ItemTier;
-  offensive: number; // # offensive-family gems required (at `tier`)
-  defensive: number; // # defensive-family gems required (at `tier`)
-}
-
-/** The gem bill to transfigure `item`: one offensive- + one defensive-family gem,
- *  both at the item's own tier (slot-independent, so flex armor/jewelry is fine). */
-export function transfigCost(item: ItemInstance): TransfigCost {
-  return { tier: item.tier, offensive: 1, defensive: 1 };
-}
-
 function gemFamily(g: GemInstance): 'offensive' | 'defensive' | null {
   if (TRANSFIG_OFFENSIVE_GEMS.includes(g.key)) return 'offensive';
   if (TRANSFIG_DEFENSIVE_GEMS.includes(g.key)) return 'defensive';
