@@ -156,8 +156,8 @@ function rollArmorBase(rng: Rng, mult: number, itemLevel: number): AffixRoll[] {
 }
 
 /** Roll an item's level from the drop stage: ~80% at the stage's expected level,
- *  ~15% a touch higher (+1..3), ~5% an aspirational drop (+4..8) you must grow into.
- *  ilvl is both the power anchor and the equip requirement (hero level ≥ ilvl). */
+ *  ~15% a touch higher (+1..3), ~5% an aspirational drop (+4..8) you grow into.
+ *  ilvl is the pure power anchor — there is no equip requirement (PROGRESSION §0). */
 export function rollItemLevel(S: number, rng: Rng): number {
   const base = expectedLevel(S);
   const r = rng.next();

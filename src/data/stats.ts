@@ -79,7 +79,3 @@ export const ALL_STAT_KEYS: StatKey[] = [...OFFENSIVE_STATS, ...DEFENSIVE_STATS,
 // The full FLEX pool — every stat that can roll on a flexible slot (armor substats,
 // jewelry base + substats). Offensive ∪ Defensive ∪ rollable-utility (15 stats).
 export const FLEX_STATS: StatKey[] = [...OFFENSIVE_STATS, ...DEFENSIVE_STATS, ...ROLLABLE_UTILITY_STATS];
-
-export function isPercentStat(key: StatKey): boolean {
-  return STATS[key].kind === 'percent';
-}
