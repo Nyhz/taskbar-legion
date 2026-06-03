@@ -31,8 +31,8 @@ export interface Combatant {
   abilities: ResolvedAbility[];
   movedThisTick?: boolean; // closed distance this tick → can't attack on it (must be standing still to fire)
   fightMs?: number; // time this combatant has been fighting (drives boss enrage)
-  // ── ultimate (hero-only; resolved at L60 in loadout) ──
-  ult?: UltimateDef; // the class ult IF unlocked (level ≥ 60); undefined otherwise
+  // ── ultimate (hero-only; resolved at L30 in loadout) ──
+  ult?: UltimateDef; // the class ult IF unlocked (level ≥ 30); undefined otherwise
   ultCharge?: number; // remaining death-block charges this stage (deathBlock ults only)
   // enemy-only precomputed combat values (stage-scaled at spawn):
   enemyDamage?: number;

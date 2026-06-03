@@ -20,11 +20,11 @@ export const ENEMY_BASE_ATTACK_SPEED = 0.8; // attacks/sec baseline
 // farm time and burn into the 30s enrage window.
 export const BOSS_HP_MULT = 150; // stage boss (W-1..W-9) = 150× a grunt
 export const BOSS_DMG_MULT = 5.0;
-// Act/zone boss (W-10) = 450× a grunt — 3× a stage boss, the big act-ending wall.
-// ⚠ NEEDS RE-TUNE after the item/skill/stat pass: scripts/sim-zoneboss.ts measured this
-// as a ~3.7× DPS cliff vs the (ramped) 1-9 stage boss — a realistically-geared on-level
-// party does <10% before the frontline falls; only a near-BiS party clears it. Re-derive
-// these against the new player-power curve once items/skills/stats are tuned.
+// Act/zone boss (W-10) = 220× a grunt — ~1.5× a stage boss, the big act-ending wall.
+// Down from the old 450/7.5 (which was propped against the now-removed combat tech).
+// Post-overhaul, the deep wall is carried by per-world HP scaling (ZONE_WALL_GROWTH
+// below), not a flat multiplier. Tuned via scripts/sim-zoneboss.ts / sim-calib.ts
+// against the items-are-power curve (PROGRESSION §0, W100 ≈ ~1yr).
 export const ZONE_BOSS_HP_MULT = 220;
 export const ZONE_BOSS_DMG_MULT = 5.5;
 // Zone-boss WALL scaling (§14, the W100≈1yr timeline). The W-10 boss HP grows PER WORLD on
@@ -152,16 +152,16 @@ export function mitigation(armorEff: number, S: number): number {
   return armorEff / denom;
 }
 
-// ── Item level / equip-gate spine (the rebalance) ──
-// ilvl is now the POWER source (item flat stats scale Φ^EG_FLAT of their ilvl) AND
-// the equip requirement (a hero must be `level >= ilvl`). `expectedLevel(S)` is the
-// level a player is meant to be at stage S: it tracks stage 1:1 through world 1 so the
-// intro stays brisk, then grows SUB-LINEARLY so level (and thus equippable gear power)
-// LAGS the raw stage by a GROWING-BUT-CAPPED amount: the lag is the difficulty (you
-// farm/level to close it, and it widens through the early worlds = ramped walls), but
-// the CAP keeps the power gap Φ(S)/Φ(expectedLevel) BOUNDED so on-level stays winnable
-// at any stage (an unbounded lag makes late stages mathematically impossible — the bug
-// the survival probe caught).
+// ── Item level / level-curve spine (the rebalance) ──
+// ilvl is a PURE POWER source (item flat stats scale Φ^EG_FLAT of their ilvl). There is
+// NO equip-gate (PROGRESSION §0: any hero equips any item; only the weapon/off-hand class
+// lock remains). `expectedLevel(S)` is the level a player is meant to be at stage S and the
+// anchor for generated-item ilvl: it tracks stage 1:1 through world 1 so the intro stays
+// brisk, then grows SUB-LINEARLY so level (and thus geared power) LAGS the raw stage by a
+// GROWING-BUT-CAPPED amount: the lag is the difficulty (you farm/level to close it, and it
+// widens through the early worlds = ramped walls), but the CAP keeps the power gap
+// Φ(S)/Φ(expectedLevel) BOUNDED so on-level stays winnable at any stage (an unbounded lag
+// makes late stages mathematically impossible — the bug the survival probe caught).
 export const LEVEL_LAG_RATE = 0.3; // levels of lag added per stage past world 1
 export const LEVEL_LAG_CAP = 12; // max levels the intended level trails the raw stage
 

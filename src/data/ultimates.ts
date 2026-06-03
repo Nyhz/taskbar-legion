@@ -1,5 +1,5 @@
 // Class ultimates (rework, supersedes the old row-10 "ultimate" abilities). An ult is
-// NOT a talent node: it auto-unlocks at hero level 60, is always active, costs no
+// NOT a talent node: it auto-unlocks at hero level 30, is always active, costs no
 // points, and occupies NEITHER of the 2 active-ability loadout slots. Each is
 // auto-fired by the sim on its trigger (never manually cast, no normal cooldown).
 //

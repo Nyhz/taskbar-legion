@@ -129,7 +129,7 @@ export function activeHeroAbilities(
     .slice(0, MAX_ACTIVE_ABILITIES);
 }
 
-/** The hero's class ultimate if unlocked at this level (≥60), plus its starting
+/** The hero's class ultimate if unlocked at this level (≥30), plus its starting
  *  per-stage charge (death-block ults arm with `chargesPerStage`; others use none). */
 export function resolveUltimate(classKey: string, level: number): { ult: UltimateDef | undefined; ultCharge: number } {
   const ult = ultimateForClass(classKey, level);
@@ -196,7 +196,7 @@ export function refreshHeroLoadout(
   hero.maxHp = aggregate(hero.baseStats, hero.staticMods).health;
   hero.hp = Math.min(hero.maxHp, Math.max(1, hero.maxHp * frac));
   hero.abilities = activeHeroAbilities(config.classKey, config.talents, config.activeAbilities);
-  // Re-resolve the ult (it may have just unlocked at L60). Preserve the current charge
+  // Re-resolve the ult (it may have just unlocked at L30). Preserve the current charge
   // on a mid-fight refresh (equip/talent change) — only a stage advance refills it.
   const { ult, ultCharge } = resolveUltimate(config.classKey, config.level);
   const hadUlt = hero.ult !== undefined;

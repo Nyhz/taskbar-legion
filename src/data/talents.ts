@@ -9,7 +9,7 @@ import { abilityDef } from './abilities';
 //   Row 1: 2 abilities + 2 stats. Rows 2-4: 1 ability + 2 stats. Rows 5-10: 3 stats.
 // Every passive node is a PERCENT bonus (flat-origin stats convert via FLAT_TO_PERCENT;
 // already-percent stats add percentage points). The class ULTIMATE is NOT on the tree —
-// it auto-unlocks at level 60 (data/ultimates.ts) and uses no points or loadout slot.
+// it auto-unlocks at level 30 (data/ultimates.ts) and uses no points or loadout slot.
 
 export interface TalentNode {
   key: string;
