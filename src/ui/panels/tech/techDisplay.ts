@@ -18,7 +18,6 @@ export function cumulativeLabel(node: TechNode, rank: number): string {
   switch (e.kind) {
     case 'goldDropMult':
     case 'xpDropMult':
-    case 'chestDropMult':
     case 'chestTypeDropMult':
     case 'gemDropMult':
     case 'zoneKeyMult':
@@ -44,7 +43,6 @@ export function effectUnit(node: TechNode): string {
       return 'gold/kill';
     case 'xpDropMult':
       return 'XP/kill';
-    case 'chestDropMult':
     case 'chestTypeDropMult':
       return 'drop rate';
     case 'gemDropMult':

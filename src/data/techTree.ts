@@ -15,7 +15,8 @@ import type { ChestType } from './chests';
 export type TechEffect =
   | { kind: 'goldDropMult'; value: number }
   | { kind: 'xpDropMult'; value: number }
-  | { kind: 'chestDropMult'; value: number }
+  // (no global chestDropMult node — chest drops are tuned per-type via chestTypeDropMult;
+  //  the global multiplier comes only from pets, see data/pets.ts + sim/bonuses.ts.)
   | { kind: 'chestTypeDropMult'; type: ChestType; value: number }
   | { kind: 'chestStorage'; type: ChestType; value: number }
   | { kind: 'unlockAutoOpen' }

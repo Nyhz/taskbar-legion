@@ -10,7 +10,7 @@ import type { StatMod } from './stats';
 export interface Bonuses {
   goldMult: number;
   xpMult: number;
-  chestDropMult: number; // global, all chest types
+  chestDropMult: number; // global, all chest types (pet-only source; no tech node grants it)
   chestTypeDropMult: Record<ChestType, number>; // per-type, stacks on top of the global mult
   gemDropMult: number;
   zoneKeyMult: number;
@@ -48,7 +48,6 @@ export function getBonuses(
       switch (e.kind) {
         case 'goldDropMult': b.goldMult += e.value * rank; break;
         case 'xpDropMult': b.xpMult += e.value * rank; break;
-        case 'chestDropMult': b.chestDropMult += e.value * rank; break;
         case 'chestTypeDropMult': b.chestTypeDropMult[e.type] += e.value * rank; break;
         case 'gemDropMult': b.gemDropMult += e.value * rank; break;
         case 'zoneKeyMult': b.zoneKeyMult += e.value * rank; break;
