@@ -30,6 +30,8 @@ export interface Combatant {
   respawnMs?: number; // when a hero is dead: ms left until it revives (heroes only); undefined = not respawning
   abilities: ResolvedAbility[];
   movedThisTick?: boolean; // closed distance this tick → can't attack on it (must be standing still to fire)
+  moveDelayMs?: number; // ranged/caster heroes: a brief, varied hold before resuming a forward chase
+  //   (set when they stop, counts down) — desyncs the back line so it shuffles, not marches as one.
   fightMs?: number; // time this combatant has been fighting (drives boss enrage)
   // ── ultimate (hero-only; resolved at L30 in loadout) ──
   ult?: UltimateDef; // the class ult IF unlocked (level ≥ 30); undefined otherwise
@@ -39,6 +41,7 @@ export interface Combatant {
   enemyAttackSpeed?: number;
   enemyMagic?: boolean;
   isBoss?: boolean;
+  isElite?: boolean; // a beefed-up "champion" trash mob (2× hp/dmg, 2× chest) — render bigger
   enrageMs?: number; // enrage window for this boss (Infinity = never; zone boss = 30s)
   bossUltTriggered?: boolean; // boss-only: the party's onBossEngage ults have fired for this boss
 }
@@ -58,15 +61,6 @@ export interface CombatEvent {
 }
 
 export type StagePhase = 'advancing' | 'fighting' | 'boss' | 'zoneBoss' | 'walled';
-
-/** Per-zone key inventory: world index → key count (stacks indefinitely). Keys are
- *  farmed in, and spent on, their own zone's W-10 world boss. */
-export type ZoneKeys = Record<number, number>;
-
-/** Keys held for a given world (0 if none). */
-export function keysForZone(keys: ZoneKeys, world: number): number {
-  return keys[world] ?? 0;
-}
 
 export interface PendingAccrual {
   gold: number;
@@ -90,17 +84,18 @@ export interface WorldState {
   enemies: Combatant[];
   /** Enemies of the current wave not yet on the field — released over ~5s so the
    *  wave trickles in from the edge instead of appearing all at once. */
-  waveQueue: { combatant: Combatant; releaseTick: number }[];
+  waveQueue: { combatant: Combatant; releaseTick: number; spawnOffset: number }[];
   partyX: number; // lead-hero world position; monotonically increases (walk forward)
   advanceTimerMs: number; // brief walk before the next wave spawns
-  zoneKeys: ZoneKeys; // authoritative per-zone key counts (sim consumes one at the W-10 gate)
   chests: ChestStack[]; // authoritative unopened-chest counts (caps enforced here)
   pending: PendingAccrual; // gold/xp/pet drains the state layer applies to the store
-  /** Set when a zone-boss attempt has consumed a key this entry (for retreat logic). */
-  zoneAttemptActive: boolean;
   /** Diagnostic: total full-party wipes this run (monotonic). Not persisted; used by
    *  the balance probes to gauge early-game survivability. */
   wipes: number;
+  /** Set when the party has fully wiped and the death cinematic is playing: ELAPSED ms
+   *  into the sequence (0 → WIPE_TOTAL_MS). The render reads it to drive the fade-to-black,
+   *  phrase, and respawn beats. undefined = not wiping. */
+  wipeMs?: number;
 }
 
 export function emptyPending(): PendingAccrual {

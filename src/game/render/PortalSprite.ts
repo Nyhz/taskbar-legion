@@ -2,9 +2,9 @@ import { Container, Graphics, Rectangle, Text } from 'pixi.js';
 import { hexToNum } from '@/styles/palette';
 
 // A red, swirling world-boss portal pinned to the right edge of the strip while the
-// party farms a beaten W-9. Tapping it spends a zone key to enter the W-10 boss; it
-// greys out at 0 keys. Cosmetic + an interactive affordance — it reads no sim state
-// itself; GameStrip drives its count/enabled state and tap handler.
+// party farms a beaten W-9. Tapping it enters the W-10 world boss (keys are gone — the
+// boss is the wall). Cosmetic + an interactive affordance — it reads no sim state
+// itself; GameStrip drives its enabled state and tap handler.
 
 const RING = hexToNum('#c0473a');
 const RING_HI = hexToNum('#ff7a7a');
@@ -17,31 +17,30 @@ const RY = 27;
 export class PortalSprite extends Container {
   private readonly frame = new Graphics();
   private readonly swirl = new Graphics();
-  private readonly keyText: Text;
+  private readonly bossText: Text;
   private elapsed = 0;
   private enabled = false;
 
   constructor() {
     super();
-    this.keyText = new Text({
-      text: '0/1',
-      style: { fontFamily: 'monospace', fontSize: 11, fontWeight: '700', fill: hexToNum('#ffd35d') },
+    this.bossText = new Text({
+      text: 'BOSS',
+      style: { fontFamily: 'monospace', fontSize: 10, fontWeight: '700', fill: hexToNum('#ff7a7a') },
     });
-    this.keyText.anchor.set(0.5);
-    this.keyText.y = -RY - 9;
-    this.addChild(this.frame, this.swirl, this.keyText);
+    this.bossText.anchor.set(0.5);
+    this.bossText.y = -RY - 9;
+    this.addChild(this.frame, this.swirl, this.bossText);
     // A generous, fixed hit area so the whole portal (and its label) is reliably tappable.
     this.eventMode = 'static';
     this.cursor = 'pointer';
     this.hitArea = new Rectangle(-RX - 6, -RY - 16, (RX + 6) * 2, (RY + 6) * 2 + 16);
   }
 
-  /** `keys` = keys held for this zone; `enabled` when ≥1 (otherwise greyed/inert). */
-  update(dtMs: number, keys: number, enabled: boolean): void {
+  /** `enabled` when the W-10 boss can be entered (W-9 beaten); otherwise greyed/inert. */
+  update(dtMs: number, enabled: boolean): void {
     this.elapsed += dtMs;
     this.enabled = enabled;
     this.cursor = enabled ? 'pointer' : 'default';
-    this.keyText.text = `${keys}/1`;
     this.alpha = enabled ? 1 : 0.5;
     this.draw();
   }

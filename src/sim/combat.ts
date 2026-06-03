@@ -15,7 +15,7 @@ import {
 import { tickCooldowns, castReadyAbilities } from './abilities';
 import { effectDef } from '@/data/effects';
 import { mitigation, enrageMultiplier, MAX_DAMAGE_REDUCTION } from '@/data/stageScaling';
-import { WALK_SPEED, PARTY_ENGAGE_SPEED, HERO_SPACING, MOVE_EPS, RANGE, RESPAWN_MS } from '@/data/field';
+import { WALK_SPEED, HERO_SPACING, MOVE_EPS, RANGE, RESPAWN_MS } from '@/data/field';
 
 // Deterministic lane-pusher combat. The party holds a formation around `partyX`
 // (which only ever increases — they walk forward); enemies advance left from the
@@ -60,12 +60,12 @@ export function resolveCombatTick(world: WorldState, deltaMs: number, rng: Rng):
   const living = enemies.filter((e) => e.alive);
   const nearestEnemy = living.length > 0 ? living.reduce((lo, e) => (e.x < lo.x ? e : lo)) : undefined;
   const leadTarget = nearestEnemy !== undefined ? nearestEnemy.x - RANGE.melee : world.partyX + WALK_SPEED * dtSec;
-  if (leadTarget > world.partyX) world.partyX = Math.min(leadTarget, world.partyX + PARTY_ENGAGE_SPEED * dtSec);
+  if (leadTarget > world.partyX) world.partyX = Math.min(leadTarget, world.partyX + WALK_SPEED * dtSec);
   // ENGAGING once the wave reaches the front line: heroes close in to fight (their
   // reach then covers the wave). Otherwise they hold a COLUMN (front = slot 0, the
   // rest trailing) — so the party reorganizes into formation between waves and
   // spawns in it. Heroes fire only on ticks they held still (no firing on the move).
-  const step = PARTY_ENGAGE_SPEED * dtSec;
+  const step = WALK_SPEED * dtSec;
   // Engage: each hero advances ONLY until the nearest foe is within its own reach,
   // then holds and shoots — so a ranged hero stops the instant a foe enters range
   // (never walks into melee) while melee closes to adjacent. Between waves: reform
@@ -99,8 +99,22 @@ export function resolveCombatTick(world: WorldState, deltaMs: number, rng: Rng):
     const target = targets[i];
     if (target === undefined) return;
     const before = h.x;
-    if (target - h.x > 0) h.x = Math.min(target, h.x + step);
-    else if (foe === undefined) h.x = Math.max(target, h.x - step); // fall back to re-form between waves
+    const d = target - h.x;
+    if (d > MOVE_EPS) {
+      // Wants to chase FORWARD. Ranged/caster heroes first sit out a brief, varied delay
+      // (rolled on the stop→go transition) before resuming, so the back line desyncs and
+      // shuffles instead of marching in lockstep behind the knight. Melee leads immediately.
+      if (h.range >= RANGE.ranged) {
+        if (h.moveDelayMs === undefined) h.moveDelayMs = resumeDelayMs(h.id, world.tick);
+        h.moveDelayMs -= deltaMs;
+        if (h.moveDelayMs <= 0) h.x = Math.min(target, h.x + step);
+      } else {
+        h.x = Math.min(target, h.x + step);
+      }
+    } else {
+      if (d < -MOVE_EPS && foe === undefined) h.x = Math.max(target, h.x - step); // reform between waves
+      h.moveDelayMs = undefined; // at the target → clear so the next stop→go rolls a fresh delay
+    }
     // Moved this tick → can't attack on it (must be standing still to fire). Holding
     // position (sub-px drift) doesn't count, so it doesn't stutter-stop on every kill.
     h.movedThisTick = Math.abs(h.x - before) > MOVE_EPS;
@@ -157,7 +171,7 @@ export function resolveCombatTick(world: WorldState, deltaMs: number, rng: Rng):
     if (!e.alive) continue;
     advanceAttack(e, (e.enemyAttackSpeed ?? 0.8) * enemySpeedFactor(e), deltaMs, () => {
       if (frontHero === undefined || !frontHero.alive) return false;
-      if (e.x - frontHero.x > e.range) return false; // not in range yet (still approaching)
+      if (e.x - frontHero.x > e.range + MOVE_EPS) return false; // not in range yet (MOVE_EPS: same anti-deadband as nearestEnemyInRange)
       enemyAttack(e, frontHero, S, rng, events);
       return true;
     });
@@ -191,6 +205,26 @@ function tickCombatantUpkeep(c: Combatant, worldTick: number, deltaMs: number, d
   if (c.hp <= 0) kill(c, events);
 }
 
+// A brief, varied hold (ms) before a ranged/caster hero resumes a forward chase. Derived
+// DETERMINISTICALLY from the hero id + tick via an FNV-1a hash — it consumes NO combat rng,
+// so the loot/crit stream is byte-identical; only the back line's pacing changes. Window
+// ≈ 100–500ms, so the rear heroes desync and shuffle rather than marching as one unit.
+const RESUME_DELAY_MIN_MS = 100;
+const RESUME_DELAY_SPAN_MS = 400;
+function resumeDelayMs(id: string, tick: number): number {
+  let h = 2166136261;
+  for (let i = 0; i < id.length; i++) h = Math.imul(h ^ id.charCodeAt(i), 16777619);
+  h = (Math.imul(h ^ tick, 16777619) >>> 0) % 1000;
+  return RESUME_DELAY_MIN_MS + (h / 1000) * RESUME_DELAY_SPAN_MS;
+}
+
+/** World x of the party's frontline (the frontmost living hero — the tank holding the
+ *  line), falling back to the lead anchor when everyone is down. Wave spawns are placed a
+ *  fixed distance ahead of THIS, so a wave always lands in front of the party. */
+export function frontlineX(world: WorldState): number {
+  return frontmostHero(world.heroes)?.x ?? world.partyX;
+}
+
 // The frontmost living hero (greatest x). Ties keep party order (lowest index),
 // so a designated tank stacked with others still holds the line.
 function frontmostHero(heroes: Combatant[]): Combatant | undefined {
@@ -206,7 +240,13 @@ function nearestEnemyInRange(hero: Combatant, enemies: Combatant[]): Combatant |
   let best: Combatant | undefined;
   for (const e of enemies) {
     if (!e.alive) continue;
-    if (Math.abs(e.x - hero.x) > hero.range) continue;
+    // Tolerate MOVE_EPS: the engage step parks a hero within MOVE_EPS of `foe.x - range`
+    // (it stops chasing once `d <= MOVE_EPS`), so a strict `> range` check left a dead band
+    // [range, range+MOVE_EPS] where the hero had "arrived" yet couldn't hit — the last,
+    // longer-reach straggler of a wave would sit just outside melee forever and DEADLOCK
+    // the run (no kill, no progress). Matching the attack tolerance to the move tolerance
+    // closes it.
+    if (Math.abs(e.x - hero.x) > hero.range + MOVE_EPS) continue;
     if (best === undefined || e.x < best.x) best = e;
   }
   return best;
@@ -224,15 +264,25 @@ function advanceAttack(c: Combatant, attacksPerSec: number, deltaMs: number, doA
 }
 
 function heroAttack(h: Combatant, stats: EffectiveStats, target: Combatant, rng: Rng, events: CombatEvent[]): void {
-  let dmg = stats.attackDamage * (1 + stats.damageIncrease / 100);
-  const crit = rng.chance(Math.min(1, stats.critChance / 100));
-  if (crit) dmg *= 1 + stats.critDamage / 100;
-  dmg = Math.max(1, dmg);
-  dmg *= vulnerabilityMult(target.effects); // Ranger's Mark amplifies all damage to the boss
-  target.hp -= dmg;
-  events.push({ type: 'damage', targetId: target.id, sourceId: h.id, amount: dmg, crit });
-  const heal = (dmg * stats.lifesteal) / 100 + stats.hpPerHit;
-  if (heal > 0) h.hp = Math.min(h.maxHp, h.hp + heal);
+  // One resolved hit (own crit roll). Auto-attacks land one of these, plus a capped
+  // multistrike chance for a second — each hit heals lifesteal + can crit independently.
+  const strike = (): void => {
+    let dmg = stats.attackDamage * (1 + stats.damageIncrease / 100);
+    const crit = rng.chance(Math.min(1, stats.critChance / 100));
+    if (crit) dmg *= 1 + stats.critDamage / 100;
+    dmg = Math.max(1, dmg);
+    dmg *= vulnerabilityMult(target.effects); // Ranger's Mark amplifies all damage to the boss
+    target.hp -= dmg;
+    events.push({ type: 'damage', targetId: target.id, sourceId: h.id, amount: dmg, crit });
+    const heal = (dmg * stats.lifesteal) / 100;
+    if (heal > 0) h.hp = Math.min(h.maxHp, h.hp + heal);
+  };
+  strike();
+  // Multistrike: a chance for a second hit this swing (already soft-capped in aggregate).
+  // Gated on `> 0` first so a hero without the stat draws no RNG (keeps the combat stream
+  // stable), and skipped if the first hit already downed the target.
+  const ms = Math.max(0, stats.multistrike);
+  if (ms > 0 && target.hp > 0 && rng.chance(ms / 100)) strike();
   // Bank a charge per auto-attack for any charge-gated ability the hero has equipped
   // (e.g. Aimed Shot) — so faster attacks fire it more often.
   for (const { def } of h.abilities) {
@@ -244,25 +294,21 @@ function heroAttack(h: Combatant, stats: EffectiveStats, target: Combatant, rng:
 }
 
 function enemyAttack(e: Combatant, target: Combatant, S: number, rng: Rng, events: CombatEvent[]): void {
-  // Last Stand invulnerability negates the hit entirely (before dodge/mitigation) — but
-  // the enemy still SWINGS (the attack fires, deals 0): keep them visibly attacking.
+  // Last Stand invulnerability negates the hit entirely (before mitigation) — but the
+  // enemy still SWINGS (the attack fires, deals 0): keep them visibly attacking.
   if (isInvulnerable(target.effects)) {
     events.push({ type: 'damage', targetId: target.id, sourceId: e.id, amount: 0, invuln: true });
     return;
   }
   const stats = heroStats(target);
-  if (rng.chance(Math.min(0.9, stats.dodgeChance / 100))) {
-    events.push({ type: 'damage', targetId: target.id, sourceId: e.id, amount: 0 });
-    return;
-  }
   const defense = e.enemyMagic ? stats.magicResist : stats.armor;
   const mit = mitigation(Math.max(0, defense), S);
   const enrage = e.isBoss === true ? enrageMultiplier(e.fightMs ?? 0, e.enrageMs ?? Number.POSITIVE_INFINITY) : 1;
-  // weakenMult: a Debilitated enemy (Warrior's Debilitating Strike) deals less damage.
+  // weakenMult: a Debilitated enemy (Knight's Debilitating Strike) deals less damage.
   let dmg = (e.enemyDamage ?? 1) * enrage * weakenMult(e.effects) * (1 - mit);
   const blocked = rng.chance(Math.min(1, stats.block / 100));
   if (blocked) dmg *= 0.5;
-  dmg *= 1 - Math.min(MAX_DAMAGE_REDUCTION, Math.max(0, stats.damageReduction)) / 100; // flat % off (e.g. Iron Guard)
+  dmg *= 1 - Math.min(MAX_DAMAGE_REDUCTION, Math.max(0, stats.damageReduction)) / 100; // flat % off (e.g. Stone Skin)
   dmg = Math.max(0, absorbDamage(target.effects, dmg)); // shields soak the hit first
   target.hp -= dmg;
   events.push({ type: 'damage', targetId: target.id, sourceId: e.id, amount: dmg, blocked });
@@ -271,7 +317,7 @@ function enemyAttack(e: Combatant, target: Combatant, S: number, rng: Rng, event
 
 function kill(c: Combatant, events: CombatEvent[]): void {
   if (!c.alive) return;
-  // Warrior Last Stand: a would-be-lethal blow is cancelled (once per stage).
+  // Knight Last Stand: a would-be-lethal blow is cancelled (once per stage).
   if (c.side === 'hero' && tryDeathBlock(c)) return;
   c.alive = false;
   c.hp = 0;
@@ -281,7 +327,7 @@ function kill(c: Combatant, events: CombatEvent[]): void {
   events.push({ type: 'death', targetId: c.id });
 }
 
-/** Warrior ult: intercept a lethal blow — consume a charge, leave the hero at a sliver
+/** Knight ult: intercept a lethal blow — consume a charge, leave the hero at a sliver
  *  of HP (healed) and grant brief total invulnerability. Returns true if it saved them. */
 function tryDeathBlock(c: Combatant): boolean {
   const ult = c.ult;

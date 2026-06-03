@@ -22,29 +22,26 @@ describe('zone-key gate (W-10)', () => {
     expect(sawZoneBoss).toBe(false);
   });
 
-  it('enterZoneBoss spends a key, enters W-10; win advances to (W+1)-1; keys stockpile', () => {
+  it('enterZoneBoss enters W-10 once W-9 is beaten (no key); win advances to (W+1)-1', () => {
     const world = createWorld(2, [godHero()]);
     world.globalStageIndex = 9; // stage 9 is in world 1
-    world.zoneKeys = { 1: 3 }; // three keys stockpiled for world 1
     const sim = new Simulation(world);
     // Beat W-9 first so the gate opens (maxClearedStage reaches 9).
     for (let i = 0; i < 4000 && world.maxClearedStage < 9; i++) sim.tick(ctx);
     expect(world.maxClearedStage).toBe(9);
-    // Can't enter another zone's boss (no key there), and entry needs a held key.
+    // Can't enter a world whose W-9 isn't beaten yet.
     expect(sim.enterZoneBoss(5)).toBe(false);
-    // Spend a key to enter world 1's W-10 boss.
+    // Enter world 1's W-10 boss — keys are gone, the boss itself is the wall.
     expect(sim.enterZoneBoss()).toBe(true);
     expect(world.globalStageIndex).toBe(10);
     expect(world.phase).toBe('zoneBoss');
-    expect(world.zoneKeys[1]).toBe(2); // one of three spent on entry
-    // Win the world boss → advance to (W+1)-1 = 11; the remaining keys stockpile.
+    // Win the world boss → advance to (W+1)-1 = 11.
     let reached11 = false;
     for (let i = 0; i < 4000; i++) {
       sim.tick(ctx);
       if (world.globalStageIndex >= 11) { reached11 = true; break; }
     }
     expect(reached11).toBe(true);
-    expect(world.zoneKeys[1]).toBe(2);
   });
 });
 

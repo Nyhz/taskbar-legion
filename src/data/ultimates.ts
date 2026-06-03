@@ -7,11 +7,11 @@
 // effect markers (fx_invuln / fx_mark / buff_enrage_*) are in data/effects.ts.
 
 export type UltimateTrigger =
-  | 'onLethalDamage' // checked in the kill path (Warrior)
+  | 'onLethalDamage' // checked in the kill path (Knight)
   | 'onBossEngage'; // fired once when a boss first enters the fight (Priest, Ranger)
 
 export type UltimateEffect =
-  // Warrior — Last Stand: a would-be-lethal blow is cancelled; the hero heals and is
+  // Knight — Last Stand: a would-be-lethal blow is cancelled; the hero heals and is
   // briefly invulnerable. `chargesPerStage` refills on every stage advance.
   | { type: 'deathBlock'; chargesPerStage: number; healFrac: number; invulnMs: number }
   // Priest — Battle Enrage: on boss engage, the whole party gains CDR + attack speed.
@@ -37,9 +37,9 @@ export interface UltimateDef {
 export const ULTIMATE_UNLOCK_LEVEL = 30;
 
 export const ULTIMATES: Record<string, UltimateDef> = {
-  warrior: {
-    key: 'warrior_laststand', classKey: 'warrior', name: 'Last Stand', icon: 'guard',
-    desc: 'A would-be-lethal blow leaves the warrior at a sliver of HP, healing him and granting 6s of total invulnerability. Recharges each stage.',
+  knight: {
+    key: 'knight_laststand', classKey: 'knight', name: 'Last Stand', icon: 'guard',
+    desc: 'A would-be-lethal blow leaves the knight at a sliver of HP, healing him and granting 6s of total invulnerability. Recharges each stage.',
     unlockLevel: ULTIMATE_UNLOCK_LEVEL, trigger: 'onLethalDamage',
     effect: { type: 'deathBlock', chargesPerStage: 1, healFrac: 0.4, invulnMs: 6000 },
   },

@@ -20,7 +20,6 @@ export function cumulativeLabel(node: TechNode, rank: number): string {
     case 'xpDropMult':
     case 'chestTypeDropMult':
     case 'gemDropMult':
-    case 'zoneKeyMult':
     case 'offlineMult':
       return `+${pct(e.value * rank)}`;
     case 'chestStorage':
@@ -47,8 +46,6 @@ export function effectUnit(node: TechNode): string {
       return 'drop rate';
     case 'gemDropMult':
       return 'gem rate';
-    case 'zoneKeyMult':
-      return 'key rate';
     case 'offlineMult':
       return 'offline';
     case 'chestStorage':

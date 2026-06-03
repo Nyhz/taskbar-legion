@@ -25,10 +25,15 @@ const PARTY_W = 380; // logical party width (kept fixed — "the dominant frame"
 const PARTY_SCALE = 1.35; // party is enlarged so it dominates
 const TECH_W = 520;
 const TECH_SCALE = 1.3;
+// The panel band is DECOUPLED from the (narrow) game strip: it targets BAND_TARGET px
+// centered on the viewport so the party + its two flanking side panels can grow into the
+// empty page margins (≈ party 513 + 2×340 ≈ 1200). Capped to the viewport on small screens.
+const BAND_TARGET = 1200;
+const BAND_MARGIN = 16; // keep the band off the screen edges
 // Clamp the computed side-panel width so it can't collapse on a tiny band nor balloon
 // on an ultra-wide one. Side panels are unscaled (scale 1.0) so their width fills px.
 const SIDE_MIN = 120;
-const SIDE_MAX = 320;
+const SIDE_MAX = 360;
 
 const PANEL_TITLES: Record<PanelKey, string> = {
   party: 'Party',
@@ -78,17 +83,14 @@ export function PanelLayer(): React.JSX.Element {
     setEntries((prev) => prev.filter((e) => e.key !== key));
   };
 
-  // Measure the band (= strip width) so the side panels can fill the leftover space.
-  const rootRef = useRef<HTMLDivElement>(null);
-  const [bandW, setBandW] = useState(800);
+  // The band targets BAND_TARGET px (centered on the viewport), capped to the viewport on
+  // small screens — so the side panels fill the leftover space beside the fixed party menu.
+  const [bandW, setBandW] = useState(BAND_TARGET);
   useEffect(() => {
-    const el = rootRef.current;
-    if (el === null) return;
-    const update = (): void => setBandW(el.clientWidth);
+    const update = (): void => setBandW(Math.min(BAND_TARGET, window.innerWidth - BAND_MARGIN));
     update();
-    const ro = new ResizeObserver(update);
-    ro.observe(el);
-    return () => ro.disconnect();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
   }, []);
 
   // Party is fixed and centered; each side panel fills its half of the leftover space.
@@ -105,7 +107,12 @@ export function PanelLayer(): React.JSX.Element {
   };
 
   return (
-    <div ref={rootRef} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+    <div
+      style={{
+        position: 'absolute', left: '50%', transform: 'translateX(-50%)', top: 0, bottom: 0,
+        width: bandW, pointerEvents: 'none',
+      }}
+    >
       {entries.map(({ key, phase }) => {
         const group = sideGroup(key);
         const z = group === 'tech' ? 50 : key === 'party' ? 10 : 20;

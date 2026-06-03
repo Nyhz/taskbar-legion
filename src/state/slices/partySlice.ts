@@ -24,6 +24,7 @@ export interface PartySlice {
   unequip: (heroId: string, slot: SlotKey) => void;
   socketGem: (heroId: string, slot: SlotKey, socketIdx: number, gemId: string) => void;
   spendTalent: (heroId: string, nodeKey: string) => boolean;
+  refundTalent: (heroId: string, nodeKey: string) => boolean;
   respec: (heroId: string) => void;
   addHero: (classKey: string) => void;
   switchClass: (heroId: string, classKey: string) => void;
@@ -33,9 +34,9 @@ function freshHero(id: string, classKey: string, talents: Record<string, number>
   // Seed the active set from any abilities the hero starts ranked in (≤2), so what's
   // shown in the party screen matches what actually fires from frame one.
   const activeAbilities = heroAbilities(classKey, talents).slice(0, 2).map((a) => a.def.key);
-  // Every hero starts L1 with ONE talent point. The default warrior pre-spends its
+  // Every hero starts L1 with ONE talent point. The default knight pre-spends its
   // point on its signature, so subtract anything already assigned → new heroes get a
-  // free unassigned point; the warrior's is just pre-allocated.
+  // free unassigned point; the knight's is just pre-allocated.
   const spent = Object.values(talents).reduce((a, b) => a + b, 0);
   const talentPoints = Math.max(0, 1 - spent);
   return { id, classKey, level: 1, exp: 0, equipment: {}, talentPoints, talents, activeAbilities };
@@ -60,7 +61,7 @@ function resolveEquipSlot(
 }
 
 export const createPartySlice: StateCreator<GameStore, [], [], PartySlice> = (set, get) => ({
-  roster: [freshHero('h0', 'warrior')], // starts L1 with 1 unassigned talent point, like every hero
+  roster: [freshHero('h0', 'knight')], // starts L1 with 1 unassigned talent point, like every hero
   selectedHeroId: 'h0',
 
   selectHero: (id) => set({ selectedHeroId: id }),
@@ -189,6 +190,40 @@ export const createPartySlice: StateCreator<GameStore, [], [], PartySlice> = (se
           activeAbilities: nextActive,
         };
       }),
+      configEpoch: st.configEpoch + 1,
+    }));
+    return true;
+  },
+
+  // Refund ONE rank of a node (right-click) → +1 point. Rejected if removing the point
+  // would drop `spent` below a still-ranked HIGHER row's unlock threshold (you'd have
+  // points stranded in a now-locked row) — refund those rows first.
+  refundTalent: (heroId, nodeKey) => {
+    const s = get();
+    const hero = s.roster.find((h) => h.id === heroId);
+    if (hero === undefined) return false;
+    const cur = hero.talents[nodeKey] ?? 0;
+    if (cur <= 0) return false;
+    const node = talentNodes(hero.classKey).find((n) => n.key === nodeKey);
+    if (node === undefined) return false;
+    const nextTalents: Record<string, number> = { ...hero.talents };
+    if (cur - 1 <= 0) delete nextTalents[nodeKey];
+    else nextTalents[nodeKey] = cur - 1;
+    const newSpent = Object.values(nextTalents).reduce((a, b) => a + b, 0);
+    for (const n of talentNodes(hero.classKey)) {
+      if ((nextTalents[n.key] ?? 0) > 0 && newSpent < rowUnlockThreshold(n.rowIndex)) return false;
+    }
+    // An ability node dropped to rank 0 is no longer learned → drop it from the active set.
+    const deactivate = node.kind === 'ability' && node.abilityKey !== undefined && cur - 1 === 0;
+    set((st) => ({
+      roster: mapHero(st.roster, heroId, (h) => ({
+        ...h,
+        talentPoints: h.talentPoints + 1,
+        talents: nextTalents,
+        activeAbilities: deactivate && node.abilityKey !== undefined
+          ? (h.activeAbilities ?? []).filter((k) => k !== node.abilityKey)
+          : h.activeAbilities,
+      })),
       configEpoch: st.configEpoch + 1,
     }));
     return true;

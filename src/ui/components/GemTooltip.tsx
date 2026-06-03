@@ -5,18 +5,9 @@ import { tierStyle } from '@/ui/tierStyle';
 import { STAT_ICON } from '@/ui/icons';
 import { StatRow } from './StatRow';
 import { PALETTE } from '@/styles/palette';
-import type { SlotCategory } from '@/data/itemSlots';
 
-// Hover card for a loose gem. Socketed grants are category-routed (AFFIXES.md):
-// offensive into weapons/jewelry, defensive into armor — so we show all three
-// contexts, each computed from this gem's own origin/tier, so the player can see
-// exactly what it would add before committing a (binding) socket.
-
-const CONTEXTS: { category: SlotCategory; label: string; glyph: string }[] = [
-  { category: 'weapon', label: 'In a Weapon', glyph: '🗡️' },
-  { category: 'armor', label: 'In Armor', glyph: '🛡️' },
-  { category: 'jewelry', label: 'In Jewelry', glyph: '💍' },
-];
+// Hover card for a loose gem. Gems are scaler-only and grant the SAME stat(s) in ANY
+// socket, so one grant block shows exactly what it adds before committing a (binding) socket.
 
 export function GemTooltip({ gem }: { gem: GemInstance }): React.JSX.Element {
   const def = GEMS[gem.key];
@@ -70,29 +61,22 @@ export function GemTooltip({ gem }: { gem: GemInstance }): React.JSX.Element {
           </div>
         </div>
 
-        {CONTEXTS.map(({ category, label, glyph }) => {
-          const grants = gemGrants(gem, category);
-          return (
-            <div key={category}>
-              <div
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 5, color: PALETTE.gold, fontWeight: 700,
-                  margin: '5px 0 1px', borderTop: `1px solid ${PALETTE.goldDim}`, paddingTop: 3,
-                }}
-              >
-                <span style={{ fontSize: 10 }}>{glyph}</span>{label}
-              </div>
-              {grants.map((g) => (
-                <div key={g.key} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                  <span style={{ width: 14, textAlign: 'center', fontSize: 10 }}>{STAT_ICON[g.key]}</span>
-                  <div style={{ flex: 1 }}>
-                    <StatRow statKey={g.key} value={g.value} />
-                  </div>
-                </div>
-              ))}
+        <div
+          style={{
+            color: PALETTE.gold, fontWeight: 700,
+            margin: '5px 0 1px', borderTop: `1px solid ${PALETTE.goldDim}`, paddingTop: 3,
+          }}
+        >
+          Grants (any socket)
+        </div>
+        {gemGrants(gem).map((g) => (
+          <div key={g.key} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            <span style={{ width: 14, textAlign: 'center', fontSize: 10 }}>{STAT_ICON[g.key]}</span>
+            <div style={{ flex: 1 }}>
+              <StatRow statKey={g.key} value={g.value} />
             </div>
-          );
-        })}
+          </div>
+        ))}
       </div>
     </div>
   );

@@ -1,24 +1,24 @@
 import type { Rng } from './rng';
 import type { Combatant, WorldState } from './world';
 import type { ResolvedAbility } from './loadout';
-import { abilityDef } from '@/data/abilities';
+import { abilityDef, worldBossAbilityKeys } from '@/data/abilities';
+import { difficultyIndexOf } from '@/data/difficulties';
 import { pickEnemyKind, type EnemyKind } from '@/data/enemies';
-import { RANGE, MOVE_SPEED, SPAWN_AHEAD, WAVE_SPAWN_TICKS } from '@/data/field';
+import { RANGE, MOVE_SPEED, SPAWN_AHEAD, WAVE_BATCHES, WAVE_BATCH_TICKS, WAVE_SPAWN_BAND } from '@/data/field';
 import {
   enemyHp,
   enemyDamage,
   ENEMY_BASE_ATTACK_SPEED,
-  BOSS_HP_MULT,
-  bossHpRamp,
+  stageBossHp,
   BOSS_DMG_MULT,
-  ZONE_BOSS_HP_MULT,
+  zoneBossHp,
   ZONE_BOSS_DMG_MULT,
-  zoneWallHpFactor,
-  worldOf,
   TRASH_HP_FRACTION,
   TRASH_DMG_FRACTION,
-  WAVE_MIN,
-  waveMax,
+  waveSizeForStage,
+  ELITE_CHANCE,
+  ELITE_HP_MULT,
+  ELITE_DMG_MULT,
   ZONE_ENRAGE_MS,
   STAGE_ENRAGE_MS,
 } from '@/data/stageScaling';
@@ -27,18 +27,20 @@ import {
 // Trash are weaker (TRASH_HP_FRACTION); bosses use full reference HP × their mult.
 
 interface EnemySpec {
-  hpMult: number; // multiplies the reference enemyHp(S)
+  hpMult: number; // multiplies the reference enemyHp(S) — IGNORED when hpAbsolute is set (bosses)
+  hpAbsolute?: number; // decoupled boss HP (stageBossHp/zoneBossHp); overrides hpMult when present
   dmgMult: number;
   magic: boolean;
   range: number;
   moveSpeed: number;
   abilities: ResolvedAbility[];
   isBoss: boolean;
+  isElite: boolean;
   enrageMs: number;
 }
 
 function makeEnemy(world: WorldState, S: number, index: number, x: number, spec: EnemySpec): Combatant {
-  const maxHp = enemyHp(S) * spec.hpMult;
+  const maxHp = spec.hpAbsolute ?? enemyHp(S) * spec.hpMult;
   const aspd = spec.isBoss ? ENEMY_BASE_ATTACK_SPEED : ENEMY_BASE_ATTACK_SPEED + ((index % 5) - 2) * 0.05;
   return {
     id: `e${S}_${world.tick}_${index}`,
@@ -60,6 +62,7 @@ function makeEnemy(world: WorldState, S: number, index: number, x: number, spec:
     enemyAttackSpeed: Math.max(0.4, aspd),
     enemyMagic: spec.magic,
     isBoss: spec.isBoss,
+    isElite: spec.isElite,
     enrageMs: spec.enrageMs,
   };
 }
@@ -73,26 +76,50 @@ function trashSpec(kind: EnemyKind): EnemySpec {
     moveSpeed: kind.moveSpeed,
     abilities: kind.abilities.map((a) => ({ def: abilityDef(a), rank: 1 })),
     isBoss: false,
+    isElite: false,
     enrageMs: STAGE_ENRAGE_MS,
   };
 }
 
-/** Queue a wave of mixed enemies (2-5 through world 1, 2-8 from stage 11); they're
- *  released from the edge over ~5s (staggered), so the wave trickles in rather than
- *  appearing all at once. The Simulation sets each enemy's spawn x at release time. */
+// An ELITE is a normal trash mob of its kind, beefed: 2× HP + 2× damage (still on top of
+// the trash fractions, so an elite ≈ 2× a soldier — punchy, below boss level). The 2× chest
+// chance is applied on kill (Simulation.awardKill). Render reads `isElite` to draw it bigger.
+function eliteSpec(kind: EnemyKind): EnemySpec {
+  const base = trashSpec(kind);
+  return { ...base, hpMult: base.hpMult * ELITE_HP_MULT, dmgMult: base.dmgMult * ELITE_DMG_MULT, isElite: true };
+}
+
+/** Split a wave of `total` mobs into WAVE_BATCHES batches, each ≥1, with random sizes
+ *  (e.g. 5 → 2+2+1; 10 → 3+5+2 or 1+1+8) — the random "summoned in groups" cadence. */
+function partitionWave(total: number, rng: Rng): number[] {
+  const batches = Array.from({ length: WAVE_BATCHES }, () => 1);
+  for (let extra = total - WAVE_BATCHES; extra > 0; extra--) batches[rng.int(WAVE_BATCHES)]! += 1;
+  return batches;
+}
+
+/** Queue a wave of mixed enemies that TELEPORT IN as WAVE_BATCHES groups, one every 2s.
+ *  Each batch is a random slice of the wave (partitionWave); its mobs land a fixed distance
+ *  ahead of the party's frontline at release (Simulation.releaseWave), spread across a band
+ *  so they arrive as a loose summoned group. The wave SIZE ramps by the stage's position in
+ *  its world (X-1 = 5 … X-9 = 15), so a world gets harder the deeper its stage. Composition
+ *  also ramps with stage (ranged gating). Each mob has an ELITE_CHANCE to be a champion. */
 export function spawnWave(world: WorldState, rng: Rng): void {
   const S = world.globalStageIndex;
-  const count = WAVE_MIN + rng.int(waveMax(S) - WAVE_MIN + 1);
+  const count = waveSizeForStage(S); // ramps X-1 (5) … X-9 (15)
+  const batches = partitionWave(count, rng);
   world.enemies = [];
   world.waveQueue = [];
-  for (let i = 0; i < count; i++) {
-    // Composition ramps with stage (ranged gated in over the early worlds); SIZE does not.
-    const kind = pickEnemyKind(rng.next(), S);
-    const combatant = makeEnemy(world, S, i, world.partyX + SPAWN_AHEAD, trashSpec(kind));
-    // Irregular arrivals: each enemy spawns at a RANDOM tick within the ~3s window,
-    // so the wave bunches and trails unevenly rather than marching in lockstep.
-    const releaseTick = world.tick + rng.int(WAVE_SPAWN_TICKS + 1);
-    world.waveQueue.push({ combatant, releaseTick });
+  let index = 0;
+  for (let b = 0; b < batches.length; b++) {
+    const releaseTick = world.tick + b * WAVE_BATCH_TICKS; // batch b teleports in at b seconds
+    for (let j = 0; j < batches[b]!; j++) {
+      const kind = pickEnemyKind(rng.next(), S);
+      const spec = rng.chance(ELITE_CHANCE) ? eliteSpec(kind) : trashSpec(kind);
+      const combatant = makeEnemy(world, S, index, world.partyX + SPAWN_AHEAD, spec);
+      const spawnOffset = rng.int(WAVE_SPAWN_BAND); // spread within the batch's band (anti-stack)
+      world.waveQueue.push({ combatant, releaseTick, spawnOffset });
+      index++;
+    }
   }
   world.phase = 'fighting';
 }
@@ -113,15 +140,16 @@ export function spawnStageBoss(world: WorldState, rng: Rng): void {
   const S = world.globalStageIndex;
   world.enemies = [
     makeEnemy(world, S, 0, world.partyX + SPAWN_AHEAD, {
-      // Early stage bosses (world 1) are scaled down so a fresh party can bootstrap;
-      // full ×150 from stage 11 (see bossHpRamp). Zone boss (below) is NOT ramped.
-      hpMult: BOSS_HP_MULT * bossHpRamp(S),
+      // Decoupled stage-boss HP (own Φ-power scale; early-world bossHpRamp lives inside it).
+      hpMult: 0,
+      hpAbsolute: stageBossHp(S),
       dmgMult: BOSS_DMG_MULT,
       magic: rng.chance(0.4),
-      range: RANGE.melee + 8,
+      range: RANGE.melee,
       moveSpeed: MOVE_SPEED.melee,
       abilities: [],
       isBoss: true,
+      isElite: false,
       enrageMs: STAGE_ENRAGE_MS,
     }),
   ];
@@ -133,13 +161,17 @@ export function spawnZoneBoss(world: WorldState, rng: Rng): void {
   const S = world.globalStageIndex;
   world.enemies = [
     makeEnemy(world, S, 0, world.partyX + SPAWN_AHEAD, {
-      hpMult: ZONE_BOSS_HP_MULT * zoneWallHpFactor(worldOf(S)),
+      // Decoupled zone-boss HP (own Φ-power scale — THE wall; grows steeper than party power).
+      hpMult: 0,
+      hpAbsolute: zoneBossHp(S),
       dmgMult: ZONE_BOSS_DMG_MULT,
       magic: rng.chance(0.4),
-      range: RANGE.melee + 10,
+      range: RANGE.melee,
       moveSpeed: MOVE_SPEED.melee,
-      abilities: [],
+      // +1 ability per difficulty (DIFFICULTY.md §5): Normal cleaves; Torment wields all five.
+      abilities: worldBossAbilityKeys(difficultyIndexOf(S)).map((k) => ({ def: abilityDef(k), rank: 1 })),
       isBoss: true,
+      isElite: false,
       enrageMs: ZONE_ENRAGE_MS, // the 30s DPS+survival gate
     }),
   ];

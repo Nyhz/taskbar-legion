@@ -6,7 +6,7 @@ import { AUTO_OPEN_BASE_INTERVAL_MS, AUTO_OPEN_FLOOR_MS } from '@/data/chests';
 import type { ItemInstance } from '@/sim/items';
 import type { GemInstance } from '@/data/gems';
 import { STATS, type StatKey } from '@/data/stats';
-import { totalExpToReach, stageInWorld, MAX_LEVEL } from '@/data/stageScaling';
+import { totalExpToReach, stageInWorld, MAX_LEVEL, resumeStageFor } from '@/data/stageScaling';
 import { talentNodes } from '@/data/talents';
 import { classDef } from '@/data/classes';
 import { TECH_NODES, nodeCost, type TechNode } from '@/data/techTree';
@@ -21,6 +21,13 @@ export interface RunnerOptions {
   freezeGearAtStage?: number; // stop equipping new gear at/after this stage (invariant #3)
   openChests: boolean;
   maxEquipTier?: number; // cap the tier the agent will equip (models a "decent gear" player who never lucks into top-tier drops)
+  // REALISTIC PLAYER (pacing calibration): models an ACTIVE player who opens ~all chests as
+  // they're earned (NOT the idle auto-open throttle — players open manually until the auto-open
+  // tech makes it moot), but at ~75% of PERFECT (a quarter lost to overflow/missed opens during
+  // heavy farming). Used ONLY to calibrate pacing (sim-time ≈ calendar time, game running). The
+  // default (false) keeps the old ~100% "open as earned" fast-forward so existing tests are
+  // unchanged.
+  realisticOpen?: boolean;
 }
 
 export interface StageClear {
@@ -38,10 +45,10 @@ const TECH_GROUP_PRIORITY: Record<string, number> = {
 };
 
 // The agent builds the canonical composition the game is balanced around:
-// frontline (warrior) → dps (ranger) → healer (priest), then extra dps. So it saves
+// frontline (knight) → dps (ranger) → healer (priest), then extra dps. So it saves
 // for the priest as its 3rd hero rather than stacking a 2nd/3rd dps. (More frontline
 // and healer classes later enable other comps; not all comps need to be viable.)
-const PARTY_PRIORITY: string[] = ['warrior', 'ranger', 'priest'];
+const PARTY_PRIORITY: string[] = ['knight', 'ranger', 'priest'];
 
 export class GreedyRunner {
   readonly sim: Simulation;
@@ -54,11 +61,12 @@ export class GreedyRunner {
   private xpEarned = 0; // cumulative xp income summed over heroes — pacing instrumentation
   private partyGrewAt: number[] = []; // global stage index at each party-size increase
   private ownedPets: string[] = [];
-  private unlockedClasses: string[] = ['warrior'];
+  private unlockedClasses: string[] = ['knight'];
   private bonuses: Bonuses;
   private freezeStage: number;
   private readonly maxEquipTier: number;
   private readonly openChests: boolean;
+  private readonly realisticOpen: boolean;
   private stageStartTick = 0;
   private waveStartTick = 0;
   private lastWaves = 0;
@@ -69,9 +77,11 @@ export class GreedyRunner {
     this.freezeStage = opts.freezeGearAtStage ?? Number.POSITIVE_INFINITY;
     this.maxEquipTier = opts.maxEquipTier ?? Number.POSITIVE_INFINITY;
     this.openChests = opts.openChests;
-    // activeAbilities: [] makes the loadout apply the live 2-ability cap (first two
-    // ranked), so the harness measures the SAME kit the player fields.
-    this.configs.push({ id: 'h0', classKey: 'warrior', level: 1, equipment: {}, talents: {}, activeAbilities: [] });
+    this.realisticOpen = opts.realisticOpen ?? false;
+    // autoDefaultAbilities makes an empty selection resolve to the first two ranked
+    // abilities, so the harness measures a realistic 2-ability loadout without managing a
+    // selection as abilities unlock over a run (the live game fires only what's selected).
+    this.configs.push({ id: 'h0', classKey: 'knight', level: 1, equipment: {}, talents: {}, activeAbilities: [], autoDefaultAbilities: true });
     this.heroExp.push(0);
     this.talentPoints.push(0);
     this.bonuses = getBonuses(this.techRanks, this.ownedPets);
@@ -89,6 +99,7 @@ export class GreedyRunner {
   /** Run up to `maxTicks`, stopping early if `untilStage` is reached. */
   run(maxTicks: number, untilStage = Number.POSITIVE_INFINITY): void {
     const ctx: TickContext = { bonuses: this.bonuses, ownedPetKeys: this.ownedPets };
+    let prevPhase = this.sim.world.phase;
     for (let i = 0; i < maxTicks; i++) {
       const before = this.stage;
       ctx.bonuses = this.bonuses;
@@ -96,9 +107,22 @@ export class GreedyRunner {
       this.drain();
       // Open chests periodically (not every tick) — emulates auto-open and keeps the
       // harness fast over the now-longer wave-based stages.
-      if (this.openChests && this.sim.world.tick % 30 === 0) this.handleChests();
+      // Open chests "as earned" (active player). realisticOpen → skip 1 of every 4 open-cycles
+      // = ~75% of perfect throughput (overflow/missed opens), the pacing-calibration model.
+      if (this.openChests && this.sim.world.tick % 30 === 0 && (!this.realisticOpen || (this.sim.world.tick / 30) % 4 !== 0)) this.handleChests();
       this.maybeEnterZoneBoss();
       this.afterTick(before);
+      // Greedy climb (finite model): a re-cleared BEATEN stage LOOPS in the game (the human
+      // parks to farm), so the active agent must travel UP to retry the wall. When a boss just
+      // ended without advancing (a loop) and we're below the frontier, push one stage up — each
+      // loop farmed its chests/xp this pass, so this replicates "farm a bit, climb, retry".
+      const w = this.sim.world;
+      const frontier = resumeStageFor(w.maxClearedStage);
+      const bossJustEnded = (prevPhase === 'boss' || prevPhase === 'zoneBoss') && w.phase === 'advancing';
+      if (bossJustEnded && w.globalStageIndex === before && w.globalStageIndex < frontier) {
+        this.sim.travelTo(Math.min(frontier, w.globalStageIndex + 1));
+      }
+      prevPhase = w.phase;
       if (this.stage >= untilStage) return;
     }
   }
@@ -148,10 +172,6 @@ export class GreedyRunner {
     const w = this.sim.world;
     if (w.chests.length === 0) return;
     const loot = openAll(w, this.simRng(), this.bonuses);
-    for (const [zone, n] of Object.entries(loot.keysByZone)) {
-      const z = Number(zone);
-      w.zoneKeys[z] = (w.zoneKeys[z] ?? 0) + n;
-    }
     if (this.stage < this.freezeStage) {
       for (const item of loot.items) this.tryEquip(item);
       this.socketGems(loot.gems);
@@ -339,7 +359,7 @@ export class GreedyRunner {
       const next = this.unlockedClasses.find((k) => !this.configs.some((c) => c.classKey === k));
       if (next === undefined) break;
       const id = `h${this.configs.length}`;
-      this.configs.push({ id, classKey: next, level: 1, equipment: {}, talents: {}, activeAbilities: [] });
+      this.configs.push({ id, classKey: next, level: 1, equipment: {}, talents: {}, activeAbilities: [], autoDefaultAbilities: true });
       this.heroExp.push(0);
       this.talentPoints.push(0);
       this.partyGrewAt.push(this.sim.world.globalStageIndex);
@@ -408,7 +428,6 @@ export interface DropRateResult {
   itemTiers: number[];
   gemTiers: number[];
   combined: number[];
-  keys: number;
 }
 
 export function dropRateProbe(S: number, hours: number, bonuses: Bonuses, seed = 0xd00d): DropRateResult {
@@ -417,7 +436,6 @@ export function dropRateProbe(S: number, hours: number, bonuses: Bonuses, seed =
   const cycles = Math.floor((hours * 3600 * 1000) / interval);
   const itemTiers = new Array(9).fill(0) as number[];
   const gemTiers = new Array(9).fill(0) as number[];
-  let keys = 0;
   const capN = chestCapacity('normal', bonuses);
   const capS = chestCapacity('stageBoss', bonuses);
   const tally = (type: 'normal' | 'stageBoss', count: number): void => {
@@ -425,7 +443,6 @@ export function dropRateProbe(S: number, hours: number, bonuses: Bonuses, seed =
       const r = openChest(type, S, rng, bonuses);
       for (const it of r.items) itemTiers[it.tier] = (itemTiers[it.tier] ?? 0) + 1;
       for (const g of r.gems) gemTiers[g.tier] = (gemTiers[g.tier] ?? 0) + 1;
-      keys += r.keys;
     }
   };
   for (let c = 0; c < cycles; c++) {
@@ -433,7 +450,7 @@ export function dropRateProbe(S: number, hours: number, bonuses: Bonuses, seed =
     tally('stageBoss', capS);
   }
   const combined = itemTiers.map((v, i) => v + (gemTiers[i] ?? 0));
-  return { itemTiers, gemTiers, combined, keys };
+  return { itemTiers, gemTiers, combined };
 }
 
 function itemScore(item: ItemInstance): number {

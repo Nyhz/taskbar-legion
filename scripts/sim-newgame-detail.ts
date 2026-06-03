@@ -1,6 +1,6 @@
 /**
  * Detailed fresh-start report (run: `npx vite-node scripts/sim-newgame-detail.ts`).
- * Plays a brand-new game (solo L1 Warrior, nothing unlocked) and reports, per seed:
+ * Plays a brand-new game (solo L1 Knight, nothing unlocked) and reports, per seed:
  *   - when each STAGE BOSS (1-1, 1-2, …) is first killed (sim-time + wipes so far)
  *   - when party slot 2 / 3 fill (stage, time, wipes)
  *   - total wipes + hours to reach the full-difficulty point (stage 11 = 2-1)
@@ -60,7 +60,7 @@ function label(stage: number): string {
 
 function main(): void {
   console.log('=== Taskbar Legion — DETAILED fresh new-game report ===');
-  console.log('(solo L1 Warrior, nothing unlocked; active-play upper bound)\n');
+  console.log('(solo L1 Knight, nothing unlocked; active-play upper bound)\n');
 
   for (const seed of [1, 2024, 7, 99]) {
     const res = run(seed, 24);

@@ -33,7 +33,7 @@ they win. The standing overrides are:
   UI only. `researchPoints` is reserved/unused in v1 (BALANCE.md / DATA_MODEL.md).
 - **Gems are tiered T1–T8 (overrides SPEC §4.5's single-stat gem).** Higher tier = more affixes; gems are
   instances with their own origin; tier drop-rate scales with stage like items (DATA_MODEL + BALANCE).
-- **Only 3 classes ship — Warrior · Ranger · Priest (overrides SPEC §4.7's 5-class roster).** Mage and Rogue
+- **Only 3 classes ship — Knight · Ranger · Priest (overrides SPEC §4.7's 5-class roster).** Mage and Rogue
   were removed so ALL tuning happens against the canonical tank·dps·healer trio (one fixed party comp = easier
   to balance). New classes get added later with comparable stat curves + skill damage. `CLASS_KEYS` in
   `data/classes.ts` is the canonical list; the harness/probes field exactly this trio.

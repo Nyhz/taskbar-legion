@@ -38,11 +38,10 @@ export class GameEngine {
     const combatMods = [...this.bonuses.combatMods, ...partyAuraMods(st.roster.map(toConfig))];
     const heroes = st.roster.map((h) => buildHeroCombatant(toConfig(h), combatMods));
     const world = createWorld(st.seed, heroes);
-    // Resume from a loaded save: restore stage + chest stacks + keys.
+    // Resume from a loaded save: restore stage + chest stacks.
     world.globalStageIndex = Math.max(1, st.resumeStage);
     world.maxClearedStage = st.maxClearedStage;
     world.chests = st.chests.map((c) => ({ ...c }));
-    world.zoneKeys = { ...st.zoneKeys };
     this.sim = new Simulation(world);
     this.appliedEpoch = st.configEpoch;
     this.mirror();
@@ -110,22 +109,19 @@ export class GameEngine {
     return summary;
   }
 
-  /** Open every stored chest now → route loot to inventory + keys to the sim. */
-  openChests(): { items: number; gems: number; keys: number } {
+  /** Open every stored chest now → route loot to inventory. */
+  openChests(): { items: number; gems: number } {
     const loot = openAll(this.sim.world, this.openRng, this.bonuses);
-    creditKeys(this.sim.world, loot.keysByZone);
     const store = useStore.getState();
     store.addLoot(loot.items, loot.gems);
     this.mirror();
-    return { items: loot.items.length, gems: loot.gems.length, keys: loot.keys };
+    return { items: loot.items.length, gems: loot.gems.length };
   }
 
-  /** Open only the chests of `type` (the per-popup open). Keys go to the world (credited
-   *  to each chest's drop zone); the rolled ITEMS and GEMS are returned so the UI can
-   *  reveal each into the bag one-by-one with floating loot text. */
+  /** Open only the chests of `type` (the per-popup open). The rolled ITEMS and GEMS are
+   *  returned so the UI can reveal each into the bag one-by-one with floating loot text. */
   openChestType(type: ChestType): { items: ItemInstance[]; gems: GemInstance[] } {
     const loot = openType(this.sim.world, type, this.openRng, this.bonuses);
-    creditKeys(this.sim.world, loot.keysByZone);
     this.mirror();
     return { items: loot.items, gems: loot.gems };
   }
@@ -147,7 +143,9 @@ export class GameEngine {
 
   private ctx(): TickContext {
     const st = useStore.getState();
-    return { bonuses: this.bonuses, ownedPetKeys: st.ownedPets, retryStage: st.retryStage };
+    // The live game plays the full death cinematic on a wipe (fade to black, phrase, respawn).
+    // Headless balance probes omit it (instant retreat) so the beat doesn't distort throughput.
+    return { bonuses: this.bonuses, ownedPetKeys: st.ownedPets, retryStage: st.retryStage, animateWipe: true };
   }
 
   // Consume a pending Map "travel" intent: jump the sim to the chosen stage once,
@@ -162,8 +160,8 @@ export class GameEngine {
     this.pushHud();
   }
 
-  // Consume a pending "enter world boss" intent (portal tap / Map). Spends a zone key
-  // and drops the party straight into the W-10 fight; fires at most once.
+  // Consume a pending "enter world boss" intent (portal tap / Map). Drops the party
+  // straight into the W-10 fight; fires at most once.
   private applyEnterZoneBoss(): void {
     const store = useStore.getState();
     const world = store.pendingEnterZoneWorld;
@@ -171,7 +169,7 @@ export class GameEngine {
     store.clearPendingEnterZoneBoss();
     if (this.sim.enterZoneBoss(world)) {
       this.accMs = 0;
-      this.mirror(); // reflect the spent key immediately
+      this.mirror();
       this.pushHud();
     }
   }
@@ -206,7 +204,6 @@ export class GameEngine {
   private mirror(): void {
     const store = useStore.getState();
     store.setChests(this.sim.world.chests.map((c) => ({ ...c })));
-    store.setZoneKeys({ ...this.sim.world.zoneKeys });
     if (this.bonuses.autoOpenUnlocked && !store.autoOpen.unlocked) {
       store.setAutoOpen({ unlocked: true, lastRunAt: store.autoOpen.lastRunAt });
     }
@@ -225,17 +222,8 @@ export class GameEngine {
       phase: w.phase,
       gold: useStore.getState().gold,
       chests,
-      zoneKeys: { ...w.zoneKeys },
       party: useStore.getState().roster.map((h) => ({ classKey: h.classKey, level: h.level })),
     });
-  }
-}
-
-/** Add freshly-rolled keys to the world's per-zone buckets (keyed by drop zone). */
-function creditKeys(world: WorldState, keysByZone: Record<number, number>): void {
-  for (const [zone, n] of Object.entries(keysByZone)) {
-    const w = Number(zone);
-    world.zoneKeys[w] = (world.zoneKeys[w] ?? 0) + n;
   }
 }
 

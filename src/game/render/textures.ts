@@ -9,7 +9,7 @@ const INK = hexToNum('#0d0b12');
 const SKIN = hexToNum('#f0d9b5');
 
 export const CLASS_ACCENT: Record<string, string> = {
-  warrior: '#c9a24b',
+  knight: '#c9a24b',
   ranger: '#5fae57',
   priest: '#e2dccd',
 };

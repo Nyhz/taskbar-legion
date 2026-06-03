@@ -36,16 +36,16 @@ const isStat = (s: Spec): s is StatSpec => Array.isArray(s);
 
 // Per-class row layout. Each inner array is one row, top (row 1) to bottom (row 10).
 const CLASS_TALENTS: Record<string, Spec[][]> = {
-  warrior: [
+  knight: [
     // Rows 1-4: the 5 abilities (row 1 = 2) + role stats. Rows 5-10: pure % stats.
-    ['warrior_guard', 'warrior_debilitate', ['health', 20], ['armor', 2.5]],
-    ['warrior_bulwark', ['health', 20], ['block', 2]],
-    ['warrior_battlecry', ['armor', 2.5], ['magicResist', 2.5]],
-    ['warrior_bloodlust', ['health', 20], ['dodgeChance', 1.5]],
+    ['knight_guard', 'knight_debilitate', ['health', 20], ['armor', 2.5]],
+    ['knight_bulwark', ['health', 20], ['block', 2]],
+    ['knight_battlecry', ['armor', 2.5], ['magicResist', 2.5]],
+    ['knight_bloodlust', ['health', 20], ['block', 2]],
     [['health', 20], ['armor', 2.5], ['magicResist', 2.5]],
     [['block', 2], ['health', 20], ['attackDamage', 2.0]],
-    [['armor', 2.5], ['magicResist', 2.5], ['dodgeChance', 1.5]],
-    [['health', 20], ['block', 2], ['lifesteal', 0.6]],
+    [['armor', 2.5], ['magicResist', 2.5], ['block', 2]],
+    [['health', 20], ['block', 2], ['armor', 2.5]],
     [['armor', 2.5], ['magicResist', 2.5], ['health', 20]],
     [['health', 20], ['armor', 2.5], ['attackDamage', 2.0]],
   ],
@@ -55,21 +55,21 @@ const CLASS_TALENTS: Record<string, Spec[][]> = {
     ['priest_nova', ['healPower', 3], ['health', 20]],
     ['priest_retribution', ['cooldownReduction', 1.5], ['magicResist', 2.5]],
     [['healPower', 3], ['health', 20], ['magicResist', 2.5]],
-    [['cooldownReduction', 1.5], ['healPower', 3], ['damageIncrease', 2]],
+    [['cooldownReduction', 1.5], ['healPower', 3], ['attackDamage', 2.0]],
     [['healPower', 4], ['health', 20], ['magicResist', 2.5]],
     [['cooldownReduction', 1.5], ['healPower', 4], ['health', 20]],
-    [['healPower', 4], ['health', 20], ['damageIncrease', 2]],
+    [['healPower', 4], ['health', 20], ['attackDamage', 2.0]],
     [['healPower', 4], ['cooldownReduction', 1.5], ['magicResist', 2.5]],
   ],
   ranger: [
     ['ranger_fast_fire', 'ranger_aimedshot', ['attackDamage', 2.0], ['attackSpeed', 1.5]],
     ['ranger_multishot', ['critChance', 2], ['health', 20]],
     ['ranger_focus', ['attackDamage', 2.0], ['critDamage', 4]],
-    ['ranger_frozentrap', ['attackSpeed', 1.5], ['dodgeChance', 1.5]],
+    ['ranger_frozentrap', ['attackSpeed', 1.5], ['critChance', 2]],
     [['attackDamage', 2.0], ['critChance', 2], ['health', 20]],
     [['attackSpeed', 1.5], ['critChance', 2], ['attackDamage', 2.0]],
-    [['attackDamage', 2.0], ['critDamage', 4], ['lifesteal', 0.6]],
-    [['critChance', 2], ['attackSpeed', 1.5], ['dodgeChance', 1.5]],
+    [['attackDamage', 2.0], ['critDamage', 4], ['critChance', 2]],
+    [['critChance', 2], ['attackSpeed', 1.5], ['critDamage', 4]],
     [['attackDamage', 2.0], ['attackSpeed', 1.5], ['critChance', 2]],
     [['critDamage', 4], ['attackDamage', 2.0], ['critChance', 2]],
   ],
@@ -79,8 +79,8 @@ const CLASS_TALENTS: Record<string, Spec[][]> = {
 // flat talent stats are swingy early and useless late; a percent bonus scales with
 // total power, so "points spent" stays meaningful at every stage). The row layout's
 // per-rank number is multiplied by this factor and applied as a percent bonus.
-// Stats not listed keep their native mode (already-percent stats, plus the minor
-// flat ones like hpRegen/hpPerHit that don't convert cleanly to a percentage).
+// Stats not listed keep their native mode (already-percent stats; flat ones that don't
+// convert cleanly are not talent-rollable anyway).
 const FLAT_TO_PERCENT: Partial<Record<StatKey, number>> = {
   attackDamage: 1.5,
   health: 0.1,

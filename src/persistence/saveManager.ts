@@ -50,7 +50,6 @@ export function buildSave(): SaveV1 {
     stashSlotUpgrades: s.stashSlotUpgrades,
     techTree: s.techRanks,
     chests: world ? world.chests.map((c) => ({ ...c })) : s.chests,
-    zoneKeys: world?.zoneKeys ?? s.zoneKeys,
     autoOpen: s.autoOpen,
     pets: { ownedKeys: s.ownedPets, selectedKey: s.selectedPet },
     settings: { uiScale: s.uiScale, dockOrientation: s.dockOrientation, autoSalvage: s.autoSalvage },
@@ -112,6 +111,55 @@ export async function resetGame(): Promise<void> {
   if (typeof location !== 'undefined') location.reload();
 }
 
+/** Ask the browser for DURABLE storage so the save isn't evicted under disk
+ *  pressure or Safari's ~7-day script-storage cap (the classic "idle game lost my
+ *  progress" failure). Best-effort and safe to call on every boot: an already-persisted
+ *  origin short-circuits, and a denied request just leaves storage in its default
+ *  best-effort mode. Never throws. */
+export async function requestPersistentStorage(): Promise<boolean> {
+  try {
+    if (typeof navigator === 'undefined' || navigator.storage?.persist === undefined) return false;
+    if (await navigator.storage.persisted()) return true;
+    return await navigator.storage.persist();
+  } catch {
+    return false;
+  }
+}
+
+/** Serialize the current game to a pretty JSON string for download/backup. */
+export function exportSave(): string {
+  return JSON.stringify(buildSave(), null, 2);
+}
+
+/** Replace stored progress with an imported save, then reload so the normal boot
+ *  path hydrates it. Validates via `migrate`; on a bad/incompatible file it returns an
+ *  error message and leaves existing storage untouched. On success it suppresses further
+ *  saves (so the live autosave can't clobber the import before the reload) and resolves
+ *  after triggering reload. */
+export async function importSave(json: string): Promise<string | null> {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(json);
+  } catch {
+    return 'Not a valid save file (could not parse JSON).';
+  }
+  const save = migrate(parsed);
+  if (save === null) return 'Not a compatible Taskbar Legion save.';
+  savesSuppressed = true; // stop autosave / unload from overwriting the import before reload
+  try {
+    const d = await db();
+    await d.put(STORE, save, KEY);
+  } catch {
+    savesSuppressed = false;
+    return 'Could not write the imported save to storage.';
+  }
+  // Make the imported frontier authoritative (drop any stale guard from the old game).
+  clearFrontier();
+  writeFrontier(save.seed, save.maxClearedStage);
+  if (typeof location !== 'undefined') location.reload();
+  return null;
+}
+
 export async function loadGame(): Promise<SaveV1 | null> {
   try {
     const d = await db();
@@ -142,21 +190,43 @@ export function reconcileFrontier(save: SaveV1 | null): SaveV1 | null {
 
 /** Migration hook (ready for v2). v1 saves pass through; unknown shapes are dropped.
  *  In-place field migrations keep older v1 saves loadable:
- *   - zoneKeys: legacy single global `number` → per-zone record (bucketed into the world
- *     the save left off in, so banked keys aren't lost).
  *   - chests: legacy entries lacked `dropStage` → assume they dropped where the save
- *     left off (so their loot tier + key zone stay sensible on open). */
+ *     left off (so their loot tier stays sensible on open). */
 export function migrate(raw: unknown): SaveV1 | null {
   if (raw === null || typeof raw !== 'object') return null;
-  const save = raw as Partial<SaveV1> & { zoneKeys?: unknown; chests?: unknown };
+  const save = raw as Partial<SaveV1> & { chests?: unknown };
   if (save.version !== 1) {
     console.warn(`Unknown save version ${String(save.version)}; ignoring.`);
     return null;
   }
+  // Legacy class rename: the Warrior class was renamed to Knight (class key
+  // `warrior` → `knight`; ability/talent keys `warrior_*` → `knight_*`). Remap any
+  // pre-rename save in place so its roster, unlocks, talents, chosen abilities AND
+  // class-locked items (warrior weapons/off-hands) survive instead of being dropped /
+  // crashing the UI (weaponTypeFor throws on an unknown class) on hydrate.
+  const rekey = (k: string): string => (k === 'warrior' ? 'knight' : k.startsWith('warrior_') ? `knight_${k.slice('warrior_'.length)}` : k);
+  // Remap an item's class lock in place (gems / classless items pass through untouched).
+  const rekeyItem = (it: unknown): void => {
+    if (it !== null && typeof it === 'object' && 'classKey' in it) {
+      const o = it as { classKey?: unknown };
+      if (typeof o.classKey === 'string') o.classKey = rekey(o.classKey);
+    }
+  };
+  if (Array.isArray(save.unlockedClasses)) save.unlockedClasses = save.unlockedClasses.map(rekey);
+  if (Array.isArray(save.roster)) {
+    save.roster = save.roster.map((h) => {
+      if (h.equipment !== undefined) for (const it of Object.values(h.equipment)) rekeyItem(it);
+      return {
+        ...h,
+        classKey: rekey(h.classKey),
+        activeAbilities: Array.isArray(h.activeAbilities) ? h.activeAbilities.map(rekey) : h.activeAbilities,
+        talents: h.talents !== undefined ? Object.fromEntries(Object.entries(h.talents).map(([k, v]) => [rekey(k), v])) : h.talents,
+      };
+    });
+  }
+  for (const bag of [save.inventory, save.stash]) if (Array.isArray(bag)) for (const e of bag) rekeyItem(e);
+
   const leftOff = save.progress?.globalStageIndex ?? 1;
-  const zk = save.zoneKeys;
-  if (typeof zk === 'number') save.zoneKeys = zk > 0 ? { [worldOf(leftOff)]: zk } : {};
-  else if (zk === null || typeof zk !== 'object') save.zoneKeys = {};
   if (Array.isArray(save.chests)) {
     save.chests = save.chests.map((c: { type: ChestType; count: number; dropStage?: number }) => ({
       type: c.type,

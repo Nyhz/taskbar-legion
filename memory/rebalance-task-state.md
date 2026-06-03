@@ -22,7 +22,7 @@ Ongoing task (as of 2026-06-01): rebalancing the combat/difficulty curve in this
 
 ## Survival pass — IN PROGRESS, key tension found
 - New tool `scripts/sim-survival.ts`: per stage 1→200 × {UNDER gear@S-10 / ON gear@S / OVER gear@S+15} → wave clear time, min party-HP%, CLEAR/WIPE.
-- Test agent now fields **tank/dps/healer** (warrior/ranger/priest): `PARTY_PRIORITY` in `test/sim/harness.ts`; probe `PARTY` matches.
+- Test agent now fields **tank/dps/healer** (knight/ranger/priest): `PARTY_PRIORITY` in `test/sim/harness.ts`; probe `PARTY` matches.
 - Measured: **25% HP cut → mediocre gear genuinely wipes (good!) but greedy agent reaches only ~97** (fails pre-existing `reach≥120` invariant). **15% cut → reach 224 but mediocre gear too soft (80-100%).**
 - Root cause: early game is HEALERLESS (priest = 3rd party slot; stages ~1-15 are solo/duo), so deep cuts wipe-loop the opening; the `reach≥120`-in-fixed-time invariant counts that as failure.
 - Late-game survival is STRUCTURAL: enemy dmg Φ^0.82 vs HP Φ^1.0 → damage falls behind; not safely tunable at Φ≈4e14. Late = DPS/enrage race by design.

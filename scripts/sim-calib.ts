@@ -56,7 +56,7 @@ function main(): void {
       }
     }
     if (r.sim.world.tick - lastAdvance > STALL_TICKS) {
-      console.log(`\n  STALLED at world ${worldOf(maxStage)} (global ${maxStage} = ${worldOf(maxStage)}-${stageInWorld(maxStage)}) after ${fmtT(r.simSeconds)} — keys(W${worldOf(maxStage)}): ${r.sim.world.zoneKeys[worldOf(maxStage)] ?? 0}`);
+      console.log(`\n  STALLED at world ${worldOf(maxStage)} (global ${maxStage} = ${worldOf(maxStage)}-${stageInWorld(maxStage)}) after ${fmtT(r.simSeconds)}`);
       break;
     }
   }

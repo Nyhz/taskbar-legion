@@ -2,6 +2,7 @@ import { useStore } from '@/state/store';
 import { format } from '@/sim/num';
 import { CLASS_ACCENT } from '@/game/render/textures';
 import { classDef } from '@/data/classes';
+import { stageLabelOf } from '@/data/difficulties';
 import { PALETTE } from '@/styles/palette';
 
 // The always-visible HUD row above the strip: stage label W-S, stage progress
@@ -13,7 +14,7 @@ export function StripHud(): React.JSX.Element {
   const hud = useStore((s) => s.hud);
   const toggleMenu = useStore((s) => s.toggleMenu);
   const menuOpen = useStore((s) => s.openPanels.includes('party'));
-  const stageLabel = hud.phase === 'zoneBoss' ? `${hud.world}-10 ⚠` : `${hud.world}-${hud.stageInWorld}`;
+  const stageLabel = `${stageLabelOf(hud.globalStage)}${hud.phase === 'zoneBoss' ? ' ⚠' : ''}`;
 
   return (
     <div
@@ -55,7 +56,7 @@ export function StripHud(): React.JSX.Element {
 
       <PartyLevels party={hud.party} />
       <Counter label="Gold" value={format(hud.gold)} color={PALETTE.gold} />
-      <ChestTray chests={hud.chests} keys={hud.zoneKeys[hud.world] ?? 0} />
+      <ChestTray chests={hud.chests} />
 
       <div style={{ flex: 1 }} />
     </div>
@@ -80,7 +81,7 @@ function ProgressBar({ value, boss }: { value: number; boss: boolean }): React.J
 // One Lv readout per fielded hero, each tagged with its class color (heroes can
 // sit at different levels — a late recruit starts at level 1 even though XP is shared).
 function PartyLevels({ party }: { party: { classKey: string; level: number }[] }): React.JSX.Element {
-  const list = party.length > 0 ? party : [{ classKey: 'warrior', level: 1 }];
+  const list = party.length > 0 ? party : [{ classKey: 'knight', level: 1 }];
   return (
     <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
       <span style={{ color: PALETTE.textMute }}>Lv</span>
@@ -102,12 +103,11 @@ function Counter({ label, value, color }: { label: string; value: string; color:
   );
 }
 
-function ChestTray({ chests, keys }: { chests: Record<string, number>; keys: number }): React.JSX.Element {
+function ChestTray({ chests }: { chests: Record<string, number> }): React.JSX.Element {
   const items: { glyph: string; n: number; color: string }[] = [
     { glyph: '📦', n: chests.normal ?? 0, color: PALETTE.parchment },
     { glyph: '🎁', n: chests.stageBoss ?? 0, color: PALETTE.gold },
     { glyph: '💎', n: chests.zoneBoss ?? 0, color: PALETTE.research },
-    { glyph: '🗝', n: keys, color: PALETTE.titleRedHi },
   ];
   return (
     <span style={{ display: 'flex', gap: 6 }}>

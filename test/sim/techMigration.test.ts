@@ -11,7 +11,7 @@ describe('migrateTechRanks', () => {
     expect(Object.keys(out)).toHaveLength(0); // every cmb_* key is dropped
   });
 
-  it('routes economy, per-type chest, storage, gem and key keys', () => {
+  it('routes economy, per-type chest, storage and gem keys', () => {
     const out = migrateTechRanks({
       eco_gold_3: 2, eco_xp_1: 1, off_yield_2: 3,
       chest_drop_1: 2, chest_drop_normal_1: 1, chest_store_normal: 4, chest_gem_2: 1, chest_key_1: 2,
@@ -23,7 +23,7 @@ describe('migrateTechRanks', () => {
     expect(out.chest_drop_normal).toBe(1);
     expect(out.store_normal).toBe(4);
     expect(out.chest_gem).toBe(1);
-    expect(out.chest_key).toBe(2);
+    expect(out.chest_key).toBeUndefined(); // Keyfinder node removed (keys are gone) → dropped
   });
 
   it('folds both party-slot unlocks into the capped Recruitment node', () => {

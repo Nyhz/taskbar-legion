@@ -1,6 +1,6 @@
 import type { ActiveEffect } from '@/data/effects';
 import { effectDef } from '@/data/effects';
-import { abilityDef } from '@/data/abilities';
+import { abilityDef, tryAbilityDef } from '@/data/abilities';
 import { abilityIcon } from '@/ui/icons';
 import { hexToNum } from '@/styles/palette';
 
@@ -31,6 +31,14 @@ export function castFx(abilityKey: string): CastFx {
   return { glyph: abilityIcon(def), color: offensive ? FX.offense : FX.support };
 }
 
+/** True when a cast targets allies/self (a heal/buff/shield) rather than enemies — used
+ *  to play the healer's heal-cast pose. Safe on unknown/renamed keys (treated as false). */
+export function isSupportCast(abilityKey: string): boolean {
+  const def = tryAbilityDef(abilityKey);
+  if (def === undefined) return false;
+  return def.target !== 'frontEnemy' && def.target !== 'allEnemies';
+}
+
 /** The aura color for an ongoing effect on a combatant — the most salient timed
  *  effect wins (HoT > shield > buff > DoT > debuff/CC). null ⇒ no aura. */
 export function auraColor(effects: readonly ActiveEffect[]): number | null {
@@ -53,7 +61,7 @@ export function hasHot(effects: readonly ActiveEffect[]): boolean {
   return effects.some((e) => effectDef(e.defKey).kind.type === 'hot');
 }
 
-/** True while a total-immunity effect is up (Warrior Last Stand) — drives the yellow
+/** True while a total-immunity effect is up (Knight Last Stand) — drives the yellow
  *  shield bubble around the hero. */
 export function isInvulnerable(effects: readonly ActiveEffect[]): boolean {
   return effects.some((e) => effectDef(e.defKey).kind.type === 'invulnerable');

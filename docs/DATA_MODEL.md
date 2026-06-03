@@ -14,17 +14,22 @@ the *values*.
 ## Stats — `data/stats.ts`
 
 ```ts
-export type StatGroup = 'offensive' | 'defensive';
+export type StatGroup = 'offensive' | 'defensive' | 'utility';
 
+// Stat-system rework: dodge/hpPerHit/penetration removed; damageIncrease + lifesteal are
+// buff-only ({0,0} band); hpRegen is class-base-only; multistrike added. critChance, block,
+// cooldownReduction, multistrike are soft-capped ENABLERS (ENABLER_SOFT_CAPS) and slot-
+// restricted (AFFIXES.md). The rest are unbounded SCALERS.
 export type OffensiveStat =
-  | 'attackSpeed' | 'critChance' | 'critDamage' | 'damageIncrease'
-  | 'attackDamage' | 'penetration' | 'lifesteal';
+  | 'attackSpeed' | 'critChance' | 'critDamage'
+  | 'damageIncrease' | 'attackDamage' | 'multistrike' | 'lifesteal';
 
 export type DefensiveStat =
-  | 'armor' | 'magicResist' | 'health' | 'dodgeChance'
-  | 'hpRegen' | 'hpPerHit' | 'block';
+  | 'armor' | 'magicResist' | 'health' | 'hpRegen' | 'block';
 
-export type StatKey = OffensiveStat | DefensiveStat;
+export type UtilityStat = 'cooldownReduction' | 'healPower' | 'damageReduction';
+
+export type StatKey = OffensiveStat | DefensiveStat | UtilityStat;
 
 export interface StatDef {
   key: StatKey;
@@ -179,7 +184,7 @@ chests every 10 min (interval reducible).
 
 ```ts
 export interface ClassDef {
-  key: string;             // 'warrior' | 'ranger' | 'priest' (Mage/Rogue removed — CLAUDE.md override)
+  key: string;             // 'knight' | 'ranger' | 'priest' (Mage/Rogue removed — CLAUDE.md override)
   name: string;
   role: 'tank' | 'dps' | 'healer' | 'support';
   baseStats: Partial<Record<StatKey, number>>;
@@ -188,7 +193,7 @@ export interface ClassDef {
 }
 ```
 
-**Only 3 classes ship: Warrior · Ranger · Priest** (the canonical tank·dps·healer trio — all tuning is done
+**Only 3 classes ship: Knight · Ranger · Priest** (the canonical tank·dps·healer trio — all tuning is done
 against this one comp; more classes added later). Field max 3. Party **slots** unlock via tech tree, not gold.
 
 ## Pets — `data/pets.ts`

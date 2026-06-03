@@ -23,7 +23,7 @@ describe('combat', () => {
   it('is deterministic: same seed + same initial state ⇒ identical stream', () => {
     const makeSim = (): Simulation => {
       const hero = buildHeroCombatant(
-        { id: 'h1', classKey: 'warrior', level: 5, equipment: {}, talents: { warrior_guard: 1 } },
+        { id: 'h1', classKey: 'knight', level: 5, equipment: {}, talents: { knight_guard: 1 } },
         [],
       );
       return new Simulation(createWorld(20240531, [hero]));

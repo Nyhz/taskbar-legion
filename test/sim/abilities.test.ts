@@ -12,7 +12,7 @@ import type { StatKey } from '@/data/stats';
 
 function unit(over: Partial<Combatant> & { id: string; side: 'hero' | 'enemy' }): Combatant {
   return {
-    classKey: 'warrior', hp: 1000, maxHp: 1000, baseStats: {}, staticMods: [], effects: [],
+    classKey: 'knight', hp: 1000, maxHp: 1000, baseStats: {}, staticMods: [], effects: [],
     cooldowns: {}, attackTimerMs: 0, x: 0, range: 30, moveSpeed: 0, abilities: [], alive: true,
     ...over,
   };
@@ -85,7 +85,7 @@ describe('ability mechanics', () => {
     expect(foe.gcdMs).toBeUndefined();
   });
 
-  it('cooldown reduction shortens the cast cooldown (bounded)', () => {
+  it('cooldown reduction shortens the cast cooldown (soft-capped)', () => {
     const caster = unit({
       id: 'm', side: 'hero',
       baseStats: base({ attackDamage: 50, cooldownReduction: 50 }),
@@ -93,7 +93,8 @@ describe('ability mechanics', () => {
     });
     const enemy = unit({ id: 'e', side: 'enemy' });
     castReadyAbilities(caster, [caster], [enemy], 1, makeRng(1), []);
-    expect(caster.cooldowns['priest_nova']).toBeCloseTo(10000, 1); // 20000 × (1−0.5)
+    // raw 50 CDR → diminishing-returns effective = 50·50/(50+40) = 27.8% (cap 50%) → 20000×(1−0.278).
+    expect(caster.cooldowns['priest_nova']).toBeCloseTo(14444, 0);
   });
 });
 
@@ -105,12 +106,12 @@ describe('per-ability cooldowns', () => {
     }
   });
 
-  it('Warrior cooldown spot-checks', () => {
-    expect(ABILITIES.warrior_guard?.cooldownMs).toBe(20_000);
-    expect(ABILITIES.warrior_debilitate?.cooldownMs).toBe(12_000);
-    expect(ABILITIES.warrior_bulwark?.cooldownMs).toBe(18_000);
-    expect(ABILITIES.warrior_battlecry?.cooldownMs).toBe(20_000);
-    expect(ABILITIES.warrior_bloodlust?.cooldownMs).toBe(20_000);
+  it('Knight cooldown spot-checks', () => {
+    expect(ABILITIES.knight_guard?.cooldownMs).toBe(20_000);
+    expect(ABILITIES.knight_debilitate?.cooldownMs).toBe(12_000);
+    expect(ABILITIES.knight_bulwark?.cooldownMs).toBe(18_000);
+    expect(ABILITIES.knight_battlecry?.cooldownMs).toBe(20_000);
+    expect(ABILITIES.knight_bloodlust?.cooldownMs).toBe(20_000);
   });
 
   it('Priest & Ranger cooldown spot-checks', () => {

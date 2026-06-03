@@ -58,46 +58,55 @@ export interface WeaponType {
 }
 
 export const WEAPON_TYPES: Record<string, WeaponType> = {
-  // ── Warrior: threat lives in the Sword, mitigation in the Shield ──
+  // ── Knight: threat lives in the Sword, mitigation in the Shield ──
+  // Knight weapons are the FLEX bruiser slots: their block identity + crit/multistrike +
+  // bruiser scalers (hp/armor). CDR is jewelry-only, so it's NOT here.
   sword: {
-    key: 'sword', name: 'Sword', icon: '🗡', classKey: 'warrior', slot: 'weapon',
+    key: 'sword', name: 'Sword', icon: '🗡', classKey: 'knight', slot: 'weapon',
     base: 'attackDamage',
-    pool: ['attackDamage', 'critChance', 'critDamage', 'damageIncrease', 'lifesteal', 'hpPerHit'],
+    pool: ['attackDamage', 'critDamage', 'attackSpeed', 'block', 'critChance', 'multistrike', 'health', 'armor'],
   },
   shield: {
-    key: 'shield', name: 'Shield', icon: '🛡', classKey: 'warrior', slot: 'offhand',
+    key: 'shield', name: 'Shield', icon: '🛡', classKey: 'knight', slot: 'offhand',
     base: 'block',
-    pool: ['armor', 'magicResist', 'health', 'block', 'dodgeChance', 'hpRegen'],
+    pool: ['block', 'armor', 'magicResist', 'health', 'critChance', 'multistrike'],
   },
-  // ── Ranger: raw damage in the Bow, amp + uptime in the Quiver ──
+  // ── Ranger: raw damage in the Bow, crit + multistrike (its identity) in both ──
   bow: {
     key: 'bow', name: 'Bow', icon: '🏹', classKey: 'ranger', slot: 'weapon',
     base: 'attackDamage',
-    pool: ['attackDamage', 'attackSpeed', 'critChance', 'critDamage', 'damageIncrease', 'lifesteal'],
+    pool: ['attackDamage', 'attackSpeed', 'critDamage', 'critChance', 'multistrike'],
   },
   quiver: {
     key: 'quiver', name: 'Quiver', icon: '🎯', classKey: 'ranger', slot: 'offhand',
     base: 'attackSpeed',
-    pool: ['attackSpeed', 'critChance', 'critDamage', 'damageIncrease', 'lifesteal', 'cooldownReduction'],
+    pool: ['attackSpeed', 'critDamage', 'attackDamage', 'critChance', 'multistrike'],
   },
-  // ── Priest: heals + smite in the Wand, uptime + survival in the Tome ──
+  // ── Priest: heals + smite + crit (→ crit heals) in both. CDR is jewelry-only now. ──
   wand: {
     key: 'wand', name: 'Wand', icon: '🔮', classKey: 'priest', slot: 'weapon',
     base: 'healPower',
-    pool: ['healPower', 'attackDamage', 'critChance', 'cooldownReduction', 'magicResist', 'damageIncrease'],
+    pool: ['healPower', 'attackDamage', 'critDamage', 'critChance', 'magicResist'],
   },
   tome: {
     key: 'tome', name: 'Tome', icon: '📖', classKey: 'priest', slot: 'offhand',
-    base: 'cooldownReduction',
-    pool: ['healPower', 'cooldownReduction', 'health', 'magicResist', 'hpRegen', 'armor'],
+    base: 'healPower',
+    pool: ['healPower', 'critChance', 'critDamage', 'health', 'magicResist'],
   },
 };
 
 const WEAPON_TYPE_LIST = Object.values(WEAPON_TYPES);
 
-/** The weapon/off-hand TYPE for a class + slot (e.g. warrior+weapon → Sword). */
+/** The weapon/off-hand TYPE for a class + slot (e.g. knight+weapon → Sword), or undefined
+ *  if none exists (e.g. a stale class key from a pre-rename save). */
+export function tryWeaponTypeFor(classKey: string, slot: 'weapon' | 'offhand'): WeaponType | undefined {
+  return WEAPON_TYPE_LIST.find((w) => w.classKey === classKey && w.slot === slot);
+}
+
+/** The weapon/off-hand TYPE for a class + slot (e.g. knight+weapon → Sword). Throws on an
+ *  unknown class/slot — use tryWeaponTypeFor where a stale key must not crash the UI. */
 export function weaponTypeFor(classKey: string, slot: 'weapon' | 'offhand'): WeaponType {
-  const t = WEAPON_TYPE_LIST.find((w) => w.classKey === classKey && w.slot === slot);
+  const t = tryWeaponTypeFor(classKey, slot);
   if (t === undefined) throw new Error(`No weapon type for ${classKey}/${slot}`);
   return t;
 }

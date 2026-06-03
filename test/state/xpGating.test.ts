@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { useStore } from '@/state/store';
 import type { HeroState } from '@/persistence/saveSchema';
 
-const hero = (id: string): HeroState => ({ id, classKey: 'warrior', level: 1, exp: 0, equipment: {}, talentPoints: 0, talents: {}, activeAbilities: [] });
+const hero = (id: string): HeroState => ({ id, classKey: 'knight', level: 1, exp: 0, equipment: {}, talentPoints: 0, talents: {}, activeAbilities: [] });
 
 describe('XP gating by alive set', () => {
   it('only heroes in the alive set gain XP', () => {

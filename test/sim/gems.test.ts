@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { generateGem, gemGrants } from '@/sim/gems';
-import { gemAffixCount, type GemInstance, type GemTier } from '@/data/gems';
+import { GEM_KEYS, type GemInstance, type GemTier } from '@/data/gems';
 import { itemMods } from '@/sim/loadout';
 import { composeItem } from '@/sim/loot';
 import { makeRng } from '@/sim/rng';
@@ -12,30 +12,35 @@ const gem = (tier: GemTier, key: GemInstance['key'] = 'ruby', stageIndex = 50): 
   origin: { rollSeed: 1, stageIndex, generatorVersion: 1 },
 });
 
+const ENABLERS = new Set(['critChance', 'cooldownReduction', 'block', 'multistrike']);
+
 describe('gems', () => {
-  it("signature grant is category-dependent (Ruby: armor→health, weapon→attackDamage)", () => {
-    expect(gemGrants(gem(1), 'armor')[0]?.key).toBe('health');
-    expect(gemGrants(gem(1), 'weapon')[0]?.key).toBe('attackDamage');
+  it('grants one scaler stat, the same in any socket (Ruby → attackDamage)', () => {
+    expect(gemGrants(gem(1)).length).toBe(1);
+    expect(gemGrants(gem(1))[0]?.key).toBe('attackDamage');
   });
 
-  it('higher tier grants more affixes (1 at T1, 4 at T7/T8)', () => {
-    expect(gemGrants(gem(1), 'armor').length).toBe(gemAffixCount(1)); // 1
-    expect(gemGrants(gem(7), 'armor').length).toBe(4);
-    expect(gemGrants(gem(8), 'armor').length).toBe(4);
+  it('Diamond grants two mitigation scalers (armor + magicResist)', () => {
+    expect(gemGrants(gem(1, 'diamond')).map((g) => g.key).sort()).toEqual(['armor', 'magicResist']);
   });
 
-  it('higher tier grants bigger values (gemTierMult)', () => {
-    const t1 = gemGrants(gem(1), 'armor')[0]?.value ?? 0;
-    const t8 = gemGrants(gem(8), 'armor')[0]?.value ?? 0;
+  it('NO gem grants a soft-capped enabler (scaler-only — keeps the slot restriction airtight)', () => {
+    for (const key of GEM_KEYS) {
+      for (const g of gemGrants(gem(8, key))) expect(ENABLERS.has(g.key)).toBe(false);
+    }
+  });
+
+  it('higher tier grants bigger values (gemTierMult), not more stats', () => {
+    const t1 = gemGrants(gem(1))[0]?.value ?? 0;
+    const t8 = gemGrants(gem(8))[0]?.value ?? 0;
     expect(t8).toBeGreaterThan(t1);
+    expect(gemGrants(gem(8)).length).toBe(gemGrants(gem(1)).length); // tier = magnitude, not count
   });
 
   it('flat grants scale with Φ(stageIndex); percent grants do not', () => {
-    // Ruby armor entry 0 = health (flat) → scales; entry 3 = block (percent) → bounded.
-    const low = gemGrants(gem(8, 'ruby', 10), 'armor');
-    const high = gemGrants(gem(8, 'ruby', 100), 'armor');
-    expect(high[0]?.value ?? 0).toBeGreaterThan(low[0]?.value ?? 0); // health (flat)
-    expect(high[3]?.value).toBe(low[3]?.value); // block (percent) — unchanged
+    // Ruby = attackDamage (flat) → scales; Sapphire = critDamage (percent) → bounded.
+    expect(gemGrants(gem(8, 'ruby', 100))[0]?.value ?? 0).toBeGreaterThan(gemGrants(gem(8, 'ruby', 10))[0]?.value ?? 0);
+    expect(gemGrants(gem(8, 'sapphire', 100))[0]?.value).toBe(gemGrants(gem(8, 'sapphire', 10))[0]?.value);
   });
 
   it('generateGem is deterministic from (rollSeed, tier)', () => {
@@ -43,11 +48,10 @@ describe('gems', () => {
     expect(generateGem(o, 5)).toEqual(generateGem(o, 5));
   });
 
-  it('socketed gem grants stack on top of item affixes (can exceed 4)', () => {
+  it('socketed gem grants stack on top of item affixes', () => {
     const item = composeItem('helmet', 8, { rollSeed: 9, stageIndex: 50, chestType: 'normal', generatorVersion: 1 }, makeRng(9));
     const before = itemMods(item).length;
     item.sockets[0]!.gem = gem(8);
-    const after = itemMods(item).length;
-    expect(after).toBeGreaterThan(before); // gem grants added on top
+    expect(itemMods(item).length).toBeGreaterThan(before);
   });
 });

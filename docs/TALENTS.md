@@ -1,5 +1,10 @@
 # TALENTS.md — Per-class talent trees + ultimates (10-row framework)
 
+> **⚠️ Stat tables stale (mid-rework).** Stat-node rows referencing `dodge`/`damageIncrease`/`lifesteal` were
+> retargeted (knight dodge→block, ranger dodge→crit, priest damageIncrease→attackDamage, etc.). Source of
+> truth is `data/talents.ts`. Note: `critChance`/`block` granted by talents now feed the diminishing-returns
+> soft caps (AFFIXES.md). The framework/ultimates below are still accurate.
+
 > **This supersedes SPEC §4.9's line-based talent design.** The talent tree is a fixed **10-row**
 > framework shared by every class; each class fills the rows with role-appropriate stats + abilities.
 > **REWORK (current):** 5 abilities per class (all in rows 1–4), every passive node is a **percent**
@@ -49,7 +54,7 @@ trigger (never manually cast, no normal cooldown). Defined in `data/ultimates.ts
 
 | Class | Ultimate | Trigger | Effect |
 |---|---|---|---|
-| ⚔️ Warrior | **Last Stand** | a would-be-lethal blow (`onLethalDamage`) | Cancel the death: heal to 40% maxHP + **total invulnerability 6s**. **1 charge per stage** (refills on stage advance). |
+| ⚔️ Knight | **Last Stand** | a would-be-lethal blow (`onLethalDamage`) | Cancel the death: heal to 40% maxHP + **total invulnerability 6s**. **1 charge per stage** (refills on stage advance). |
 | ✨ Priest | **Battle Enrage** | engaging a stage/world boss (`onBossEngage`) | Whole party **+25% cooldown reduction & +25% attack speed for 10s**. |
 | 🏹 Ranger | **Mark of the Hunter** | engaging a stage/world boss (`onBossEngage`) | Mark the boss — it takes **+25% damage from all sources** for the fight. |
 
@@ -64,17 +69,17 @@ generic statMod buffs (`buff_enrage_cdr` / `buff_enrage_as`).
 | `heal` effect (instant) | direct heals (scales healPower) |
 | `shield` effect (absorb pool + timed) | shields / aoe shields — absorbs incoming damage first |
 | `dot` / `hot` effects | damage / heal over time (coeff = total over the duration) |
-| `invulnerable` effect | Warrior ult: all incoming damage → 0 while active |
+| `invulnerable` effect | Knight ult: all incoming damage → 0 while active |
 | `vulnerable` effect | Ranger ult: holder takes `value%` MORE damage from all sources |
 | `cooldownReduction` / `healPower` stats (%) | ability uptime / heal scaling (bounded; CDR clamped ≤75%) |
 
 ---
 
-## ⚔️ Warrior — Tank (mitigate · protect · party buffs)
+## ⚔️ Knight — Tank (mitigate · protect · party buffs)
 
 | Row | Stat nodes (per-rank %) | Ability node(s) |
 |----|-----------|------|
-| 1 | Health +2%, Armor +2.5% | **Iron Guard**, **Cleave** |
+| 1 | Health +2%, Armor +2.5% | **Stone Skin**, **Cleave** |
 | 2 | Health +2%, Block +2% | **Shield Wall** |
 | 3 | Armor +2.5%, Magic Resist +2.5% | **Battle Cry** |
 | 4 | Health +2%, Dodge +1.5% | **Rallying Banner** |
@@ -87,7 +92,7 @@ generic statMod buffs (`buff_enrage_cdr` / `buff_enrage_as`).
 
 | Ability | Target | CD | Effect (r1→r5) |
 |---|---|---|---|
-| **Iron Guard** | Self | 12s | Damage-reduction +20→30% & block +15→25%, 6s |
+| **Stone Skin** | Self | 20s | Flat damage reduction 20→40%, 6s |
 | **Cleave** | All enemies | 20s | 0.8→1.4× AD, can crit |
 | **Shield Wall** | All allies | 20s | Party absorb shield 0.15→0.27× maxHP, 8s |
 | **Battle Cry** | All allies | 20s | Party +AD 15→27% & +crit 8→20%, 10s |

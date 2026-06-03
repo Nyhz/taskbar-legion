@@ -7,7 +7,7 @@ import { CHEST_CONFIG } from '@/data/chests';
 
 function makeSim(): Simulation {
   const hero = buildHeroCombatant(
-    { id: 'h1', classKey: 'warrior', level: 10, equipment: {}, talents: { warrior_guard: 1 } },
+    { id: 'h1', classKey: 'knight', level: 10, equipment: {}, talents: { knight_guard: 1 } },
     [],
   );
   const world = createWorld(777, [hero]);

@@ -12,6 +12,7 @@ import { inventorySlotCost, INVENTORY_MAX_SLOTS } from '@/data/inventory';
 import { ItemSlot } from '@/ui/components/ItemSlot';
 import { countFilled, findEntry } from '@/sim/slots';
 import { AbilityBar } from '@/ui/panels/party/AbilityBar';
+import { HeroIdleSprite } from '@/ui/components/HeroIdleSprite';
 import { SocketConfirmModal, type PendingSocket } from '@/ui/components/SocketConfirmModal';
 import { useContextMenu } from '@/ui/components/ContextMenu';
 import { isGem } from '@/sim/items';
@@ -61,7 +62,6 @@ function PaperDoll({ heroId, requestSocket }: { heroId: string; requestSocket: S
   if (hero === undefined) return <div />;
 
   const def = classDef(hero.classKey);
-  const accent = CLASS_ACCENT[hero.classKey] ?? '#888';
   const expInto = hero.exp - totalExpToReach(hero.level);
   const expNeed = totalExpToReach(hero.level + 1) - totalExpToReach(hero.level);
 
@@ -110,7 +110,7 @@ function PaperDoll({ heroId, requestSocket }: { heroId: string; requestSocket: S
 
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, flex: 1, padding: '0 4px', minWidth: 0 }}>
         <div style={{ color: PALETTE.gold, fontWeight: 700 }}>{def.name}</div>
-        <div style={{ width: 56, height: 60, background: accent, border: `2px solid ${PALETTE.ink}`, boxShadow: `0 0 0 1px ${PALETTE.goldDim}` }} />
+        <HeroIdleSprite classKey={hero.classKey} width={112} height={116} />
         <div style={{ color: PALETTE.parchment, fontSize: 11 }}>Lv.{hero.level} · {def.role}</div>
         <div style={{ width: '100%', height: 5, background: PALETTE.bgInset, border: `1px solid ${PALETTE.ink}` }}>
           <div style={{ width: `${Math.min(100, (expInto / Math.max(1, expNeed)) * 100)}%`, height: '100%', background: PALETTE.xpBlue }} />
@@ -139,7 +139,6 @@ function PartyRow(): React.JSX.Element {
           const h = roster[i];
           if (h !== undefined) {
             const def = classDef(h.classKey);
-            const accent = CLASS_ACCENT[h.classKey] ?? '#888';
             const sel = h.id === selectedId;
             const hasTalentPoint = h.talentPoints > 0;
             return (
@@ -150,7 +149,7 @@ function PartyRow(): React.JSX.Element {
                     style={{ position: 'absolute', top: 3, right: 3, width: 8, height: 8, borderRadius: '50%', background: PALETTE.enemyAccent, border: `1px solid ${PALETTE.ink}`, boxShadow: `0 0 4px ${PALETTE.enemyAccent}` }}
                   />
                 )}
-                <div style={{ width: 26, height: 30, background: accent, border: `1px solid ${PALETTE.ink}` }} />
+                <HeroIdleSprite classKey={h.classKey} width={44} height={46} />
                 <span style={{ fontSize: 10, color: PALETTE.gold, fontWeight: 700 }}>{def.name}</span>
                 <span style={{ fontSize: 9, color: PALETTE.textMute }}>Lv.{h.level}</span>
               </button>
@@ -425,5 +424,5 @@ function MenuNav(): React.JSX.Element {
 
 const memberBtn: React.CSSProperties = {
   display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1,
-  height: 58, background: PALETTE.bgInset, color: PALETTE.textLight, cursor: 'pointer',
+  height: 76, background: PALETTE.bgInset, color: PALETTE.textLight, cursor: 'pointer',
 };

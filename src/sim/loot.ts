@@ -3,15 +3,15 @@ import type { Rng } from './rng';
 import { makeRng } from './rng';
 import { round2 } from './num';
 import type { ItemTier } from '@/data/tiers';
-import { TIERS, tierDef } from '@/data/tiers';
+import { tierDef } from '@/data/tiers';
 import type { SlotCategory, SlotKey } from '@/data/itemSlots';
 import { SLOTS, SLOT_KEYS, weaponTypeFor } from '@/data/itemSlots';
 import type { StatKey } from '@/data/stats';
-import { STATS, FLEX_STATS } from '@/data/stats';
+import { STATS, FLEX_STATS, JEWELRY_STATS } from '@/data/stats';
 import { CLASS_KEYS } from '@/data/classes';
 import type { ChestType } from '@/data/chests';
-import { phi, EG_FLAT, GEAR_POWER, expectedLevel, worldOf } from '@/data/stageScaling';
-import { RARITY_DEPTH_P, TIER_CHEST_FACTOR } from '@/data/lootTables';
+import { phi, EG_FLAT, GEAR_POWER, expectedLevel } from '@/data/stageScaling';
+import { difficultyOf } from '@/data/difficulties';
 
 // The deterministic loot generator (the SPEC §4.6 contract): generateItem(origin)
 // reproduces an item byte-for-byte from its birth certificate. Tier is stage-gated
@@ -24,32 +24,25 @@ export interface ItemOrigin {
   generatorVersion: number;
 }
 
-/** Stage-gated, WORLD-DEPTH-scaled tier roll (scripts/sim-rarity.ts). Each tier's
- *  world-100 target weight (def.dropWeight) is scaled by R(world)^tier, where
- *  R = (world/100)^p × chestFactor — so deeper worlds (and richer chests) tilt toward
- *  higher tiers, with no plateau. `minTier` excludes low tiers (jewelry has no T0). */
-export function rollTier(
-  S: number,
-  chestFactor: number,
-  rng: Rng,
-  minTier: ItemTier = 0,
-): ItemTier {
-  const world = worldOf(S);
-  const r = Math.pow(Math.max(1, world) / 100, RARITY_DEPTH_P) * chestFactor;
-  const weights: number[] = [];
+/** Per-DIFFICULTY tier roll (DIFFICULTY.md §4): the LOCKED drop table for the stage's
+ *  difficulty, flat — NO depth-gate and NO chest tilt (chest type only changes gem CHANCE,
+ *  never item tier). `minTier` excludes low tiers (jewelry has no T0; the gem path passes 1).
+ *  The new top tier of each difficulty is the ~2% chase; tiers above the cap have weight 0. */
+export function rollTier(S: number, rng: Rng, minTier: ItemTier = 0): ItemTier {
+  const def = difficultyOf(S);
+  const weights = def.tierWeights;
+  const w: number[] = [];
   let total = 0;
-  for (const def of TIERS) {
-    let w = 0;
-    if (def.tier >= minTier && S >= def.unlockStage) {
-      w = def.dropWeight * Math.pow(r, def.tier);
-    }
-    weights[def.tier] = w;
-    total += w;
-  }
-  if (total <= 0) return minTier;
-  let roll = rng.next() * total;
   for (let t = 0; t < weights.length; t++) {
-    roll -= weights[t] ?? 0;
+    const ww = t >= minTier ? (weights[t] ?? 0) : 0;
+    w[t] = ww;
+    total += ww;
+  }
+  // minTier above everything in pool (shouldn't happen for v1 slots) → clamp to the cap.
+  if (total <= 0) return Math.min(minTier, def.tierCap) as ItemTier;
+  let roll = rng.next() * total;
+  for (let t = 0; t < w.length; t++) {
+    roll -= w[t] ?? 0;
     if (roll < 0) return t as ItemTier;
   }
   return minTier;
@@ -62,10 +55,9 @@ export function generateItem(origin: ItemOrigin, allowedClasses?: string[]): Ite
   const rng = makeRng(origin.rollSeed);
   const slot: SlotKey = rng.pick(SLOT_KEYS);
   const category = SLOTS[slot].category;
-  const chestFactor = TIER_CHEST_FACTOR[origin.chestType];
   // Jewelry doesn't exist at T0 (no T0 base affix) — reject-and-reroll via minTier.
   const minTier: ItemTier = category === 'jewelry' ? 1 : 0;
-  const tier = rollTier(origin.stageIndex, chestFactor, rng, minTier);
+  const tier = rollTier(origin.stageIndex, rng, minTier);
   return composeItem(slot, tier, origin, rng, undefined, undefined, allowedClasses);
 }
 
@@ -101,7 +93,7 @@ export function composeItem(
   let classKey: string | undefined;
   if (category === 'weapon') {
     // Pool of classes this weapon/off-hand may be born for: the party's classes when
-    // given (so a warrior-only party never drops bows/wands), else any launch class.
+    // given (so a knight-only party never drops bows/wands), else any launch class.
     const classes = classPool !== undefined && classPool.length > 0 ? classPool : WEAPON_CLASS_KEYS;
     classKey = forcedClass ?? rng.pick(classes);
     const wtype = weaponTypeFor(classKey, slot as 'weapon' | 'offhand');
@@ -111,9 +103,9 @@ export function composeItem(
     baseAffix = rollArmorBase(rng, mult, itemLevel);
     pool = FLEX_STATS;
   } else {
-    const baseKey = rng.pick(FLEX_STATS); // jewelry: freestyle base
+    const baseKey = rng.pick(JEWELRY_STATS); // jewelry: freestyle base (scalers + crit + CDR)
     baseAffix = [{ key: baseKey, value: rollStatValue(baseKey, mult, itemLevel, rng) }];
-    pool = FLEX_STATS;
+    pool = JEWELRY_STATS;
   }
 
   const baseKeys = new Set(baseAffix.map((a) => a.key));
@@ -166,13 +158,13 @@ export function rollItemLevel(S: number, rng: Rng): number {
 }
 
 /** The substat pool an item draws from (gear overhaul, AFFIXES.md): weapon/off-hand →
- *  their class TYPE's tailored pool; armor + jewelry → the full flex pool. Used by loot
- *  and by the Cube's transfigure (which then filters out already-taken keys). */
+ *  their class TYPE's tailored pool; armor → scaler flex pool; jewelry → flex + crit/CDR.
+ *  Used by loot and by the Cube's transfigure (which then filters out already-taken keys). */
 export function itemSubstatPool(item: { category: SlotCategory; slot: SlotKey; classKey?: string }): StatKey[] {
   if (item.category === 'weapon' && item.classKey !== undefined) {
     return [...weaponTypeFor(item.classKey, item.slot as 'weapon' | 'offhand').pool];
   }
-  return [...FLEX_STATS]; // armor + jewelry: fully flexible
+  return item.category === 'jewelry' ? [...JEWELRY_STATS] : [...FLEX_STATS];
 }
 
 // FLAT stats scale Φ^EG_FLAT of the item's LEVEL (so an ilvl-N item is always "an

@@ -4,51 +4,109 @@ import type { AttackStyle } from '@/data/field';
 import { RANGE } from '@/data/field';
 import { hexToNum } from '@/styles/palette';
 import { drawEnemy } from './textures';
-import { drawSwing, SWING_MS } from './swing';
 import { auraColor } from './fx';
+import { SpriteBody } from './SpriteBody';
+import type { CharFrames } from './characterFrames';
+import type { EnemySizeClass } from './enemyFrames';
 
-// An enemy display object. Tinted by archetype; bosses are bigger + crowned. Melee
-// enemies get a (left-facing) sword swing; ranged/casters fire projectiles (spawned
-// by the driver). Shows a cast burst + a debuff/DoT aura. Reads sim state only.
+// An enemy display object. Sprite-sheet bodied (orc/skeleton/slime/archer/… + the big
+// boss mounts) via the shared SpriteBody state machine (idle/walk/attack/death); falls
+// back to the procedural body only if the sheet isn't loaded. Bosses render BIGGER, with
+// the HP bar lifted clear of the taller sprite. Reads sim state only. Each enemy
+// MATERIALISES (teleport-in) on first appearance, and on death plays its death animation
+// and HOLDS for ~1s before the driver removes it.
 
 const CAST_MS = 340;
+const SPAWN_FX_MS = 360; // teleport-in materialise duration
+const DEATH_HOLD_MS = 1000; // keep the corpse (death anim) on screen this long after dying
+// Keep the walk loop playing this long after the last detected move, so the bursty
+// display-position easing (it catches up to the sim in steps between 100ms ticks) — and a
+// frozen camera once the party stops — don't flicker walk↔idle and reset the animation.
+const MOVE_GRACE_MS = 180;
+const TP_RING = hexToNum('#ffe27a');
+const TP_BEAM = hexToNum('#fff2a8');
+
+// Container-local y where an enemy's feet sit — ~5px above the hero ground line
+// (HeroSprite SPRITE_FEET_Y = 26) per art tuning, so enemies seat naturally on the grass.
+const FEET_OFFSET = 21;
+
+// Per-role render size: the figure SCALE (on the 100px frame), the figure height above the
+// feet (px in-frame, to place the HP bar just over the head), and the HP-bar width. World
+// bosses are very big; stage bosses bigger than trash but smaller than world bosses.
+const SIZE: Record<EnemySizeClass, { scale: number; figH: number; barW: number }> = {
+  normal: { scale: 2.7, figH: 28, barW: 20 },
+  stageBoss: { scale: 3.4, figH: 30, barW: 40 },
+  worldBoss: { scale: 2.9, figH: 56, barW: 60 },
+};
 
 export class EnemySprite extends Container {
   readonly style: AttackStyle;
-  private readonly body = new Graphics();
+  private readonly spriteBody: SpriteBody | null;
+  private readonly body = new Graphics(); // procedural fallback (no sheet)
   private readonly aura = new Graphics();
-  private readonly enrageAura = new Graphics(); // red "super-saiyan" glow
-  private readonly swingG = new Graphics();
+  private readonly enrageAura = new Graphics();
   private readonly hpBg = new Graphics();
   private readonly hpBar = new Graphics();
+  private readonly tpRing = new Graphics();
+  private readonly barW: number;
+  private readonly barY: number; // HP-bar y (above the figure), container-local
+  private readonly cy: number; // body-centre y for auras/cast (container-local, negative = up)
+  private readonly auraScale: number;
   private flash = 0;
-  private lunge = 0;
-  private swingMs = 0;
   private castMs = 0;
   private castColor = 0xffffff;
   private elapsed = 0;
-  private readonly barW: number;
+  private materializeMs = 0;
+  private lastX = 0;
+  private moveGraceMs = 0; // >0 while recently moving → keep the walk loop (anti-flicker)
+  private deathMs = 0; // >0 once dying — counts the corpse hold down to removal
+  private dying = false;
+  private prevAlive = true;
 
-  constructor(c: Combatant, stageTint: number) {
+  constructor(c: Combatant, stageTint: number, spec: { frames: CharFrames | null; sizeClass: EnemySizeClass }) {
     super();
     this.style = c.enemyMagic === true ? 'caster' : c.range >= RANGE.ranged ? 'ranged' : 'melee';
-    drawEnemy(this.body, { isBoss: c.isBoss === true, magic: c.enemyMagic === true, tint: stageTint });
-    this.barW = c.isBoss === true ? 26 : 16;
-    this.hpBg.rect(-2, -8, this.barW, 3).fill({ color: hexToNum('#3a2030') });
-    // enrageAura sits BEHIND the body so the red glow haloes it.
-    this.addChild(this.hpBg, this.hpBar, this.enrageAura, this.body, this.aura, this.swingG);
+    const sz = SIZE[spec.sizeClass];
+    this.barW = sz.barW;
+    // Feet at FEET_OFFSET (on the party's ground line); figure rises figH·scale above that.
+    this.barY = FEET_OFFSET - sz.figH * sz.scale - 6;
+    this.cy = FEET_OFFSET - (sz.figH * sz.scale) / 2;
+    this.auraScale = Math.max(1, sz.scale / 1.5);
+
+    this.spriteBody = spec.frames !== null ? new SpriteBody(spec.frames) : null;
+    if (this.spriteBody !== null) {
+      // Sprites carry their own colours — only the procedural fallback uses the stage tint.
+      // Negative x-scale flips the sprite to face LEFT (the art faces right; enemies advance
+      // left toward the party, attacking leftward).
+      this.spriteBody.scale.set(-sz.scale, sz.scale);
+      this.spriteBody.position.set(0, FEET_OFFSET);
+    } else {
+      drawEnemy(this.body, { isBoss: c.isBoss === true, magic: c.enemyMagic === true, tint: stageTint });
+      this.body.position.set(0, FEET_OFFSET);
+    }
+    // enrageAura behind the body; HP bar on top.
+    this.addChild(this.enrageAura);
+    if (this.spriteBody !== null) this.addChild(this.spriteBody); else this.addChild(this.body);
+    this.addChild(this.aura, this.hpBg, this.hpBar, this.tpRing);
+  }
+
+  /** Begin the teleport-in materialise (grow + fade-in + ring). */
+  spawnIn(): void {
+    this.materializeMs = SPAWN_FX_MS;
+    this.alpha = 0;
   }
 
   flashHit(): void {
     this.flash = 1;
   }
 
-  lungeAttack(): void {
-    this.lunge = 1;
-  }
+  // Sprite bodies carry their own attack motion; the procedural fallback had a lunge but
+  // we drop it (no-op) so the API matches HeroSprite.
+  lungeAttack(): void { /* sprite frames carry the motion */ }
 
+  /** Play the enemy's attack animation. */
   swing(): void {
-    this.swingMs = SWING_MS;
+    this.spriteBody?.attack();
   }
 
   castBurst(color: number): void {
@@ -56,70 +114,153 @@ export class EnemySprite extends Container {
     this.castColor = color;
   }
 
+  /** True once the death hold has elapsed → the driver may remove this sprite. */
+  isExpired(): boolean {
+    return this.dying && this.deathMs <= 0;
+  }
+
+  /** Drive the sprite from the live combatant. */
   update(c: Combatant, x: number, groundY: number, dtMs: number): void {
     this.elapsed += dtMs;
     this.visible = true;
-    this.lunge = Math.max(0, this.lunge - dtMs / 180);
-    this.x = x - Math.round(this.lunge * 6); // enemies lunge LEFT toward the party
+    this.x = x;
     this.y = groundY;
+
+    if (this.prevAlive && !c.alive) this.startDeath();
+    this.prevAlive = c.alive;
+
+    // Held move-grace: any recent motion keeps the walk loop alive through the bursty
+    // easing / frozen-camera gaps, so it never resets to idle-then-walk mid-stride.
+    if (c.alive && Math.abs(x - this.lastX) > 0.15) this.moveGraceMs = MOVE_GRACE_MS;
+    else this.moveGraceMs = Math.max(0, this.moveGraceMs - dtMs);
+    this.lastX = x;
+    const moving = c.alive && this.moveGraceMs > 0;
+
     this.flash = Math.max(0, this.flash - dtMs / 220);
     const enraged = c.isBoss === true && c.alive && (c.fightMs ?? 0) > (c.enrageMs ?? Number.POSITIVE_INFINITY);
-    // hit-flash wins; otherwise enraged bosses run hot (reddened body).
-    this.body.tint = this.flash > 0 ? 0xffd0d0 : enraged ? 0xff9a86 : 0xffffff;
-    this.alpha = c.alive ? 1 : Math.max(0, this.alpha - dtMs / 200);
+    const tint = this.flash > 0 ? 0xffd0d0 : enraged ? 0xff9a86 : 0xffffff;
+    this.spriteBody?.setTint(tint);
+    if (this.spriteBody === null) this.body.tint = tint;
 
-    this.swingMs = Math.max(0, this.swingMs - dtMs);
-    drawSwing(this.swingG, this.swingMs, hexToNum('#ffd0d0'), -1);
-
-    const frac = c.maxHp > 0 ? Math.max(0, Math.min(1, c.hp / c.maxHp)) : 0;
-    this.hpBar.clear();
-    this.hpBar.rect(-2, -8, Math.round(this.barW * frac), 3).fill({ color: hexToNum('#c0473a') });
-
+    this.advanceBody(dtMs, moving);
+    this.drawHpBar(c, groundY);
     this.castMs = Math.max(0, this.castMs - dtMs);
     this.drawAura(c);
     this.drawEnrage(enraged);
+    this.applyMaterialize(dtMs);
+    this.tickDeath(dtMs);
   }
 
-  // Red "super-saiyan" aura — pulsing rings + upward flame licks — while a boss is
-  // enraged. (The stack count is shown on the enrage timer bar, not on the sprite.)
+  /** Drive the sprite after its combatant has been pruned from the sim — keep playing the
+   *  death hold (or, if it never actually died, fade it out quickly). Holds its last world
+   *  position (x tracks the camera so the corpse doesn't drift). */
+  updateOrphan(x: number, groundY: number, dtMs: number): void {
+    this.elapsed += dtMs;
+    this.x = x;
+    this.y = groundY;
+    if (!this.dying) {
+      // Pruned while still "alive" (a stage/wave reset, not a kill) → no death anim, fade fast.
+      this.dying = true;
+      this.deathMs = 200;
+    }
+    this.advanceBody(dtMs, false);
+    this.tickDeath(dtMs);
+  }
+
+  private advanceBody(dtMs: number, moving: boolean): void {
+    if (this.spriteBody !== null) this.spriteBody.update(dtMs, moving);
+  }
+
+  private startDeath(): void {
+    if (this.dying) return;
+    this.dying = true;
+    this.deathMs = DEATH_HOLD_MS;
+    this.spriteBody?.die();
+    this.hpBg.visible = false;
+    this.hpBar.visible = false;
+  }
+
+  // Count the corpse hold down; fade out over the final 250ms so it dissolves rather than
+  // popping. The driver removes the sprite once isExpired().
+  private tickDeath(dtMs: number): void {
+    if (!this.dying) return;
+    this.deathMs = Math.max(0, this.deathMs - dtMs);
+    this.alpha = Math.min(this.alpha, this.deathMs > 250 ? 1 : Math.max(0, this.deathMs / 250));
+  }
+
+  private drawHpBar(c: Combatant, groundY: number): void {
+    if (this.dying) { this.hpBg.visible = false; this.hpBar.visible = false; return; }
+    this.hpBg.visible = true;
+    this.hpBar.visible = true;
+    // Clamp inside the strip: the container sits at groundY, so the strip's top edge is at
+    // container-local -groundY — a very tall boss's bar pins there instead of slipping off.
+    const y = Math.max(this.barY, -groundY + 6);
+    const frac = c.maxHp > 0 ? Math.max(0, Math.min(1, c.hp / c.maxHp)) : 0;
+    this.hpBg.clear();
+    this.hpBg.rect(-this.barW / 2, y, this.barW, 3).fill({ color: hexToNum('#3a2030') });
+    this.hpBar.clear();
+    this.hpBar.rect(-this.barW / 2, y, Math.round(this.barW * frac), 3).fill({ color: hexToNum('#c0473a') });
+  }
+
+  private applyMaterialize(dtMs: number): void {
+    if (this.materializeMs <= 0) {
+      if (this.tpRing.visible) this.tpRing.visible = false;
+      if (!this.dying) this.alpha = 1;
+      return;
+    }
+    this.materializeMs = Math.max(0, this.materializeMs - dtMs);
+    const k = 1 - this.materializeMs / SPAWN_FX_MS; // 0→1
+    this.alpha = k;
+    const g = this.tpRing;
+    g.visible = true;
+    g.clear();
+    const r = (4 + k * 14) * this.auraScale;
+    g.ellipse(0, this.cy, r, r * 1.1).stroke({ color: TP_RING, width: 2, alpha: (1 - k) * 0.9 });
+    for (let i = 0; i < 5; i++) {
+      const a = (i * Math.PI * 2) / 5 + this.elapsed / 60;
+      g.circle(Math.cos(a) * r * 0.8, this.cy + Math.sin(a) * r * 0.8, 1.4).fill({ color: TP_BEAM, alpha: (1 - k) * 0.9 });
+    }
+    if (this.materializeMs <= 0) { this.alpha = 1; g.visible = false; }
+  }
+
   private drawEnrage(enraged: boolean): void {
     this.enrageAura.clear();
     if (!enraged) return;
-    const cx = 4;
-    const cy = 2;
+    const cy = this.cy;
+    const s = this.auraScale;
     const pulse = 0.5 + 0.5 * Math.sin(this.elapsed / 110);
     for (let r = 0; r < 3; r++) {
-      this.enrageAura.circle(cx, cy, 13 + r * 5 + pulse * 3).stroke({ color: 0xff3322, width: 2, alpha: (0.45 - r * 0.12) * (0.5 + 0.5 * pulse) });
+      this.enrageAura.circle(0, cy, (13 + r * 5 + pulse * 3) * s).stroke({ color: 0xff3322, width: 2, alpha: (0.45 - r * 0.12) * (0.5 + 0.5 * pulse) });
     }
     for (let i = 0; i < 7; i++) {
       const ang = -Math.PI / 2 + (i - 3) * 0.3;
-      const base = 9;
-      const len = base + 7 + 5 * Math.abs(Math.sin(this.elapsed / 90 + i * 1.3));
+      const base = 9 * s;
+      const len = base + (7 + 5 * Math.abs(Math.sin(this.elapsed / 90 + i * 1.3))) * s;
       this.enrageAura
-        .moveTo(cx + Math.cos(ang) * base, cy + Math.sin(ang) * base)
-        .lineTo(cx + Math.cos(ang) * len, cy + Math.sin(ang) * len)
+        .moveTo(Math.cos(ang) * base, cy + Math.sin(ang) * base)
+        .lineTo(Math.cos(ang) * len, cy + Math.sin(ang) * len)
         .stroke({ color: 0xff5a2a, width: 2, alpha: 0.4 + 0.4 * pulse });
     }
   }
 
   private drawAura(c: Combatant): void {
     this.aura.clear();
-    const cx = 4;
-    const cy = 2;
+    const cy = this.cy;
+    const s = this.auraScale;
     if (this.castMs > 0) {
       const t = this.castMs / CAST_MS;
-      this.aura.circle(cx, cy, (1 - t) * 15 + 5).stroke({ color: this.castColor, width: 2, alpha: t });
+      this.aura.circle(0, cy, ((1 - t) * 15 + 5) * s).stroke({ color: this.castColor, width: 2, alpha: t });
     }
     if (!c.alive) return;
     const col = auraColor(c.effects);
     if (col === null) return;
     for (let i = 0; i < 4; i++) {
       const ang = this.elapsed / 600 + (i * Math.PI) / 2;
-      const px = cx + Math.cos(ang) * 12;
-      const py = cy + Math.sin(ang) * 8;
+      const px = Math.cos(ang) * 12 * s;
+      const py = cy + Math.sin(ang) * 8 * s;
       const tw = 0.3 + 0.5 * Math.abs(Math.sin(this.elapsed / 170 + i * 1.7));
-      const s = 2.2;
-      this.aura.poly([px, py - s, px + s, py, px, py + s, px - s, py]).fill({ color: col, alpha: tw });
+      const sz = 2.2 * s;
+      this.aura.poly([px, py - sz, px + sz, py, px, py + sz, px - sz, py]).fill({ color: col, alpha: tw });
     }
   }
 }

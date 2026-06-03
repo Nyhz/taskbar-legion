@@ -1,5 +1,5 @@
 import type { StatKey } from '@/data/stats';
-import { ALL_STAT_KEYS, STATS } from '@/data/stats';
+import { ALL_STAT_KEYS, STATS, ENABLER_SOFT_CAPS, softCapValue } from '@/data/stats';
 
 // Effective-stat aggregation. PURE: output depends only on inputs. Combat reads
 // only EffectiveStats. The flat/percent semantics (PROGRESSION §6):
@@ -36,7 +36,9 @@ export function aggregate(
     if (key === 'attackSpeed') {
       result[key] = Math.max(0.05, b * (1 + (flat + pct) / 100));
     } else if (STATS[key].kind === 'percent') {
-      result[key] = b + flat + pct; // percent points
+      const raw = b + flat + pct; // percent points (the RAW enabler sum, pre-soft-cap)
+      const sc = ENABLER_SOFT_CAPS[key];
+      result[key] = sc !== undefined ? softCapValue(raw, sc) : raw; // enablers diminish toward their cap
     } else {
       result[key] = Math.max(0, (b + flat) * (1 + pct / 100));
     }

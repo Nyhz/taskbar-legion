@@ -14,7 +14,6 @@ export interface OfflineSummary {
   ticks: number;
   gold: number;
   xp: number;
-  keys: number;
   chests: { type: ChestType; count: number }[]; // gained, aggregated by type (display)
   petDrops: string[];
   fromStage: number;
@@ -31,7 +30,6 @@ export function simulateOffline(
   const ticks = Math.floor(cappedMs / TICK_MS);
   const w = sim.world;
   const fromStage = w.globalStageIndex;
-  const keysBefore = totalKeys(w.zoneKeys);
   const chestsBefore = sumByType(w.chests);
 
   for (let i = 0; i < ticks; i++) sim.tick(ctx);
@@ -49,16 +47,11 @@ export function simulateOffline(
     ticks,
     gold: Math.round(w.pending.gold * ctx.bonuses.offlineMult),
     xp: Math.round(w.pending.xp * ctx.bonuses.offlineMult),
-    keys: totalKeys(w.zoneKeys) - keysBefore,
     chests: chestGain,
     petDrops: [...w.pending.petDrops],
     fromStage,
     toStage: w.globalStageIndex,
   };
-}
-
-function totalKeys(keys: Record<number, number>): number {
-  return Object.values(keys).reduce((a, b) => a + b, 0);
 }
 
 function sumByType(chests: ChestStack[]): Map<ChestType, number> {

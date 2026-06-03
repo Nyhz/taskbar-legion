@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { composeItem, generateItem, rollTier, itemSubstatPool, type ItemOrigin } from '@/sim/loot';
 import { makeRng } from '@/sim/rng';
 import { weaponTypeFor } from '@/data/itemSlots';
-import { STATS, FLEX_STATS } from '@/data/stats';
+import { STATS, FLEX_STATS, JEWELRY_STATS } from '@/data/stats';
 import { tierDef } from '@/data/tiers';
 import { GENERATOR_VERSION } from '@/data/lootTables';
 
@@ -14,27 +14,27 @@ const origin = (rollSeed: number, S = 60, chestType: ItemOrigin['chestType'] = '
 });
 
 describe('loot generation (gear overhaul)', () => {
-  it('a warrior sword: AD base, class-locked, substats from the sword pool', () => {
-    const item = composeItem('weapon', 3, origin(1, 20), makeRng(1), undefined, 'warrior');
-    expect(item.classKey).toBe('warrior');
+  it('a knight sword: AD base, class-locked, substats from the sword pool', () => {
+    const item = composeItem('weapon', 3, origin(1, 20), makeRng(1), undefined, 'knight');
+    expect(item.classKey).toBe('knight');
     expect(item.baseAffix.map((b) => b.key)).toEqual(['attackDamage']); // sword base
     expect(item.stats.length).toBe(tierDef(3).extraStats); // 2
     expect(item.sockets.length).toBe(tierDef(3).sockets); // 1
-    const pool = new Set(weaponTypeFor('warrior', 'weapon').pool);
+    const pool = new Set(weaponTypeFor('knight', 'weapon').pool);
     for (const s of item.stats) expect(pool.has(s.key)).toBe(true);
   });
 
-  it('priest Wand carries a Heal Power base; Tome carries a Cooldown Reduction base', () => {
+  it('priest Wand + Tome both carry a Heal Power base (CDR is jewelry-only now)', () => {
     const wand = composeItem('weapon', 5, origin(3, 30), makeRng(3), undefined, 'priest');
     expect(wand.baseAffix[0]?.key).toBe('healPower');
     const tome = composeItem('offhand', 5, origin(4, 30), makeRng(4), undefined, 'priest');
-    expect(tome.baseAffix[0]?.key).toBe('cooldownReduction');
+    expect(tome.baseAffix[0]?.key).toBe('healPower');
   });
 
   it('every generated weapon/off-hand is class-locked; armor/jewelry are class-agnostic', () => {
     for (let seed = 0; seed < 2500; seed++) {
       const it = generateItem(origin(seed, 60));
-      if (it.category === 'weapon') expect(['warrior', 'ranger', 'priest']).toContain(it.classKey);
+      if (it.category === 'weapon') expect(['knight', 'ranger', 'priest']).toContain(it.classKey);
       else expect(it.classKey).toBeUndefined();
     }
   });
@@ -67,7 +67,7 @@ describe('loot generation (gear overhaul)', () => {
     }
     expect(off).toBe(true);
     expect(def).toBe(true);
-    expect(util).toBe(true); // CDR / healPower can roll on armor (the hunting ground)
+    expect(util).toBe(true); // healPower (utility scaler) can roll on armor (CDR is jewelry-only now)
   });
 
   it('jewelry base is freestyle — any stat, including utility, over many rolls', () => {
@@ -82,10 +82,10 @@ describe('loot generation (gear overhaul)', () => {
     expect(sawUtil && sawOff && sawDef).toBe(true);
   });
 
-  it('itemSubstatPool: weapon → its type pool; armor + jewelry → the full flex pool', () => {
+  it('itemSubstatPool: weapon → its type pool; armor → scaler flex; jewelry → flex + crit/CDR', () => {
     expect(itemSubstatPool({ category: 'weapon', slot: 'weapon', classKey: 'ranger' })).toEqual(weaponTypeFor('ranger', 'weapon').pool);
-    expect(itemSubstatPool({ category: 'armor', slot: 'chest' }).length).toBe(FLEX_STATS.length); // 15
-    expect(itemSubstatPool({ category: 'jewelry', slot: 'ring' }).length).toBe(FLEX_STATS.length);
+    expect(itemSubstatPool({ category: 'armor', slot: 'chest' }).length).toBe(FLEX_STATS.length); // scalers only
+    expect(itemSubstatPool({ category: 'jewelry', slot: 'ring' }).length).toBe(JEWELRY_STATS.length); // flex + crit + CDR
   });
 
   it('never rolls jewelry at T0', () => {
@@ -119,14 +119,21 @@ describe('loot generation (gear overhaul)', () => {
     expect(item.id.length).toBeGreaterThan(0);
   });
 
-  it('rollTier respects unlock stages (no T4<10, no T8<50) for items and gems', () => {
+  it('rollTier respects the per-difficulty tier cap for items and gems', () => {
     const rng = makeRng(42);
+    // Normal (G 1-100, cap T4): nothing above T4 ever rolls (items or the gem path).
     for (let i = 0; i < 8000; i++) {
-      expect(rollTier(9, 2.6, rng)).toBeLessThan(4);
+      expect(rollTier(50, rng)).toBeLessThanOrEqual(4);
+      expect(rollTier(50, rng, 1)).toBeLessThanOrEqual(4); // gem path (minTier 1)
     }
+    // Hell (G 101-200, cap T5) and Inferno (G 201-300, cap T6).
     for (let i = 0; i < 8000; i++) {
-      expect(rollTier(49, 2.6, rng)).toBeLessThan(8);
-      expect(rollTier(49, 2.6, rng, 1)).toBeLessThan(8); // gem path (minTier 1)
+      expect(rollTier(150, rng)).toBeLessThanOrEqual(5);
+      expect(rollTier(250, rng)).toBeLessThanOrEqual(6);
     }
+    // Torment (G 401-500, cap T8): T8 is reachable (the ~2% chase).
+    let sawT8 = false;
+    for (let i = 0; i < 20000 && !sawT8; i++) if (rollTier(491, rng) === 8) sawT8 = true;
+    expect(sawT8).toBe(true);
   });
 });

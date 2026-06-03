@@ -59,17 +59,17 @@ export const TARGET_LABEL: Record<AbilityDef['target'], string> = {
 };
 
 export const ABILITIES: Record<string, AbilityDef> = {
-  // ───────────────────────── Warrior ─────────────────────────
-  warrior_guard: {
-    key: 'warrior_guard', name: 'Iron Guard', icon: 'guard',
-    desc: 'Raise his guard — high block chance to soak incoming hits.',
+  // ───────────────────────── Knight ─────────────────────────
+  knight_guard: {
+    key: 'knight_guard', name: 'Stone Skin', icon: 'guard',
+    desc: 'Harden his skin to stone — flat damage reduction to soak incoming hits.',
     cooldownMs: 20000, target: 'self',
-    // buff_guard_block: 40% block at rank 1, +2.5%/rank → 50% at rank 5. 8s uptime.
+    // buff_guard_block: 20% damage reduction at rank 1, +5%/rank → 40% at rank 5. 6s uptime.
     applies: [{ effectKey: 'buff_guard_block' }],
-    castCondition: 'enemyPresent', rankScaling: { perRank: { value: 2.5 } },
+    castCondition: 'enemyPresent', rankScaling: { perRank: { value: 5 } },
   },
-  warrior_debilitate: {
-    key: 'warrior_debilitate', name: 'Debilitating Strike', icon: 'expose',
+  knight_debilitate: {
+    key: 'knight_debilitate', name: 'Debilitating Strike', icon: 'expose',
     desc: 'A crippling blow — heavy damage that saps the target, cutting the damage it deals.',
     cooldownMs: 12000, target: 'frontEnemy',
     // Bonus damage (1.2×→2.0× AD) + debuff_weaken: target deals 15%→25% less damage for 6s.
@@ -77,24 +77,24 @@ export const ABILITIES: Record<string, AbilityDef> = {
     castCondition: 'enemyPresent', power: { coeff: 1.2, coeffPerRank: 0.2, canCrit: true },
     rankScaling: { perRank: { value: 2.5 } },
   },
-  warrior_bulwark: {
-    key: 'warrior_bulwark', name: 'Bulwark', icon: 'shield',
+  knight_bulwark: {
+    key: 'knight_bulwark', name: 'Bulwark', icon: 'shield',
     desc: 'Brace behind a bulwark — a heavy absorb shield on himself.',
     cooldownMs: 18000, target: 'self',
     applies: [{ effectKey: 'fx_shield', durationMsOverride: 8000 }],
     // Self-shield: 30%→50% of his max HP absorbed (+5%/rank).
     castCondition: 'enemyPresent', power: { coeff: 0.3, coeffPerRank: 0.05 },
   },
-  warrior_battlecry: {
-    key: 'warrior_battlecry', name: 'Battle Cry', icon: 'cry',
+  knight_battlecry: {
+    key: 'knight_battlecry', name: 'Battle Cry', icon: 'cry',
     desc: 'A war cry that sharpens the whole party’s offense.',
     cooldownMs: 20000, target: 'allAllies',
     // buff_battlecry_ad 15%→25% AD + buff_battlecry_crit 5%→15% crit (both +2.5/rank).
     applies: [{ effectKey: 'buff_battlecry_ad' }, { effectKey: 'buff_battlecry_crit' }],
     castCondition: 'enemyPresent', rankScaling: { perRank: { value: 2.5 } },
   },
-  warrior_bloodlust: {
-    key: 'warrior_bloodlust', name: 'Bloodlust', icon: 'flurry',
+  knight_bloodlust: {
+    key: 'knight_bloodlust', name: 'Bloodlust', icon: 'flurry',
     desc: 'Fly into a bloodlust — faster swings that leech life from every hit.',
     cooldownMs: 20000, target: 'self',
     // buff_bloodlust_as 24%→40% attack speed (+4/rank) + buff_bloodlust_ls 8%→12%
@@ -213,7 +213,60 @@ export const ABILITIES: Record<string, AbilityDef> = {
     castCondition: 'enemyPresent', power: { coeff: 1.6 },
   },
 
+  // ───────────────────── World-boss kit (DIFFICULTY.md §5) ─────────────────────
+  // The escalating pool a W-10 world boss draws from — one MORE ability unlocks per
+  // difficulty (Normal wields just the cleave; Torment wields all five). Coeffs are × the
+  // boss's already-multiplied enemyDamage and route through hero armor/MR, so they add burst
+  // pressure on top of autos (the survival half of the wall) without one-shotting.
+  boss_cleave: {
+    key: 'boss_cleave', name: 'Cleave', icon: 'explosion',
+    desc: 'The world boss cleaves the front hero for heavy damage.',
+    cooldownMs: 8000, target: 'frontEnemy', applies: [{ effectKey: 'fx_damage' }],
+    castCondition: 'enemyPresent', power: { coeff: 1.8 },
+  },
+  boss_quake: {
+    key: 'boss_quake', name: 'Quake', icon: 'explosion',
+    desc: 'A shockwave rocks the whole party — pressures the healer.',
+    cooldownMs: 10000, target: 'allEnemies', applies: [{ effectKey: 'fx_damage' }],
+    castCondition: 'enemyPresent', power: { coeff: 1.0 },
+  },
+  boss_smite: {
+    key: 'boss_smite', name: 'Smite', icon: 'aim',
+    desc: 'A heavy bolt hammers the front hero.',
+    cooldownMs: 9000, target: 'frontEnemy', applies: [{ effectKey: 'fx_damage' }],
+    castCondition: 'enemyPresent', power: { coeff: 2.4 },
+  },
+  boss_maelstrom: {
+    key: 'boss_maelstrom', name: 'Maelstrom', icon: 'frost',
+    desc: 'A swirling storm batters the entire party.',
+    cooldownMs: 9000, target: 'allEnemies', applies: [{ effectKey: 'fx_damage' }],
+    castCondition: 'enemyPresent', power: { coeff: 1.5 },
+  },
+  boss_cataclysm: {
+    key: 'boss_cataclysm', name: 'Cataclysm', icon: 'explosion',
+    desc: 'A devastating eruption engulfs every hero.',
+    cooldownMs: 8000, target: 'allEnemies', applies: [{ effectKey: 'fx_damage' }],
+    castCondition: 'enemyPresent', power: { coeff: 2.0 },
+  },
 };
+
+// The escalating world-boss ability pool — the boss at difficulty index d (0=Normal …
+// 4=Torment) wields the first (d+1) of these. So +1 new ability per difficulty on top of
+// the stat jump (DIFFICULTY.md §5). Shared across the 10 world bosses for v1; per-world
+// flavor can layer on later.
+export const WORLD_BOSS_ABILITY_POOL: readonly string[] = [
+  'boss_cleave', // Normal+
+  'boss_quake', // Hell+
+  'boss_smite', // Inferno+
+  'boss_maelstrom', // Eternal+
+  'boss_cataclysm', // Torment+
+];
+
+/** Ability keys a world boss wields at difficulty index `d` (0..4): the first d+1 of the pool. */
+export function worldBossAbilityKeys(d: number): string[] {
+  const n = Math.max(1, Math.min(WORLD_BOSS_ABILITY_POOL.length, Math.floor(d) + 1));
+  return WORLD_BOSS_ABILITY_POOL.slice(0, n);
+}
 
 export function abilityDef(key: string): AbilityDef {
   const def = ABILITIES[key];

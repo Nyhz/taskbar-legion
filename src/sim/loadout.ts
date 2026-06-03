@@ -45,7 +45,7 @@ export function itemMods(item: ItemInstance): StatMod[] {
   for (const s of item.stats) mods.push({ key: s.key, mode: modeFor(s.key), value: s.value });
   for (const socket of item.sockets) {
     if (socket.gem === null) continue;
-    for (const grant of gemGrants(socket.gem, item.category)) {
+    for (const grant of gemGrants(socket.gem)) {
       mods.push({ key: grant.key, mode: modeFor(grant.key), value: grant.value });
     }
   }
@@ -111,19 +111,24 @@ export function heroAbilities(classKey: string, talents: Record<string, number>)
 }
 
 /** The abilities a hero actually casts in combat. `active` is the player's selection:
- *   - `undefined` → no selection layer (the headless balance harness): ALL unlocked
- *     abilities fire, so balance probes see the full kit.
- *   - `[]` (live game, nothing chosen yet) → the first up-to-2 unlocked abilities.
- *   - non-empty → exactly those keys (still capped at 2, only ones actually ranked),
- *     in the player's chosen order. */
+ *   - `undefined` → no selection layer (some probes): ALL unlocked abilities fire.
+ *   - `[]` → the player chose NOTHING → casts NO abilities (only the ult, which is
+ *     separate, still fires). Pass `autoDefault` to instead seed the first up-to-2
+ *     unlocked abilities — the balance harness uses this to field a realistic loadout
+ *     without managing a selection as abilities unlock over a run.
+ *   - non-empty → exactly those keys (capped at 2, only ones actually ranked), in order.
+ *
+ * IMPORTANT: the live game (engine.toConfig) passes the player's selection verbatim with
+ * `autoDefault` OFF, so unselecting every ability genuinely stops them from firing. */
 export function activeHeroAbilities(
   classKey: string,
   talents: Record<string, number>,
   active: readonly string[] | undefined,
+  autoDefault = false,
 ): ResolvedAbility[] {
   const pool = heroAbilities(classKey, talents);
   if (active === undefined) return pool;
-  if (active.length === 0) return pool.slice(0, MAX_ACTIVE_ABILITIES);
+  if (active.length === 0) return autoDefault ? pool.slice(0, MAX_ACTIVE_ABILITIES) : [];
   return active
     .flatMap((key) => { const r = pool.find((a) => a.def.key === key); return r ? [r] : []; })
     .slice(0, MAX_ACTIVE_ABILITIES);
@@ -143,8 +148,13 @@ export interface HeroConfig {
   level: number;
   equipment: Partial<Record<SlotKey, ItemInstance>>;
   talents: Record<string, number>;
-  /** player-selected active ability keys (≤2); omit for the headless harness. */
+  /** player-selected active ability keys (≤2). An empty array means NO abilities fire.
+   *  Omit entirely (undefined) for the "full kit" probe behavior. */
   activeAbilities?: string[];
+  /** Probe-only: when true, an EMPTY `activeAbilities` is auto-filled with the first ≤2
+   *  unlocked abilities (a default loadout). The live game leaves this off so an empty
+   *  selection casts nothing. */
+  autoDefaultAbilities?: boolean;
 }
 
 /** Full static StatMod set for a hero: gear + talents + party-wide tech combat mods. */
@@ -176,7 +186,7 @@ export function buildHeroCombatant(config: HeroConfig, combatMods: readonly Stat
     x: 0,
     range: classDef(config.classKey).range,
     moveSpeed: 0, // heroes hold formation; only partyX advances them
-    abilities: activeHeroAbilities(config.classKey, config.talents, config.activeAbilities),
+    abilities: activeHeroAbilities(config.classKey, config.talents, config.activeAbilities, config.autoDefaultAbilities),
     alive: true,
     ult,
     ultCharge,
@@ -195,7 +205,7 @@ export function refreshHeroLoadout(
   hero.staticMods = heroStaticMods(config, combatMods);
   hero.maxHp = aggregate(hero.baseStats, hero.staticMods).health;
   hero.hp = Math.min(hero.maxHp, Math.max(1, hero.maxHp * frac));
-  hero.abilities = activeHeroAbilities(config.classKey, config.talents, config.activeAbilities);
+  hero.abilities = activeHeroAbilities(config.classKey, config.talents, config.activeAbilities, config.autoDefaultAbilities);
   // Re-resolve the ult (it may have just unlocked at L30). Preserve the current charge
   // on a mid-fight refresh (equip/talent change) — only a stage advance refills it.
   const { ult, ultCharge } = resolveUltimate(config.classKey, config.level);

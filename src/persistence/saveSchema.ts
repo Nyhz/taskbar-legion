@@ -41,7 +41,6 @@ export interface SaveV1 {
   stashSlotUpgrades: number; // 0..20 (per page)
   techTree: Record<string, number>; // nodeKey -> purchased ranks (gold)
   chests: { type: ChestType; dropStage: number; count: number }[];
-  zoneKeys: Record<number, number>; // per-zone key counts (world index → count)
   autoOpen: { unlocked: boolean; lastRunAt: number | null };
   pets: { ownedKeys: string[]; selectedKey: string | null };
   settings: {

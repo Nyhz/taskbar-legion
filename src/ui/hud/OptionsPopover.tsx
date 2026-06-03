@@ -1,11 +1,37 @@
-import { useState } from 'react';
-import { resetGame } from '@/persistence/saveManager';
+import { useRef, useState } from 'react';
+import { resetGame, exportSave, importSave } from '@/persistence/saveManager';
 import { PALETTE } from '@/styles/palette';
+
+// Trigger a browser download of the current save as a JSON file. (Date is fine here —
+// this is a UI edge, not the deterministic sim.)
+function downloadSave(): void {
+  const json = exportSave();
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `taskbar-legion-save-${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 // Options popover (New Game, …). Opened from the cogwheel in the Party panel header.
 // (UI zoom is fixed at 1.5× now — no longer adjustable.)
 
 export function OptionsPopover({ onClose }: { onClose: () => void }): React.JSX.Element {
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const onImportFile = (e: React.ChangeEvent<HTMLInputElement>): void => {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // allow re-importing the same file later
+    if (file === undefined) return;
+    if (!window.confirm('Import this save? It REPLACES your current progress and reloads.')) return;
+    void file.text().then(async (text) => {
+      const err = await importSave(text); // null on success → triggers a reload
+      if (err !== null) window.alert(`Import failed: ${err}`);
+    });
+  };
+
   return (
     <div
       data-interactive="true"
@@ -36,6 +62,22 @@ export function OptionsPopover({ onClose }: { onClose: () => void }): React.JSX.
           ×
         </button>
       </div>
+
+      <Section label="Backup">
+        <button onClick={downloadSave} style={backupBtn}>
+          ⭳ Export
+        </button>
+        <button onClick={() => fileRef.current?.click()} style={backupBtn}>
+          ⭱ Import
+        </button>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="application/json,.json"
+          onChange={onImportFile}
+          style={{ display: 'none' }}
+        />
+      </Section>
 
       <Section label="Save">
         <button
@@ -91,6 +133,15 @@ export function SettingsHeaderButton(): React.JSX.Element {
     </div>
   );
 }
+
+const backupBtn: React.CSSProperties = {
+  flex: 1,
+  padding: '5px 0',
+  background: PALETTE.bgInset,
+  border: `1px solid ${PALETTE.goldDim}`,
+  color: PALETTE.gold,
+  fontWeight: 700,
+};
 
 function Section({
   label,

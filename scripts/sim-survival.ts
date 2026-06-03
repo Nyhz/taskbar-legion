@@ -13,15 +13,16 @@ import { aggregate } from '../src/sim/stats';
 import { heroBaseStats, heroStaticMods } from '../src/sim/loadout';
 import { getBonuses } from '../src/sim/bonuses';
 import { generateItem } from '../src/sim/loot';
-import { GreedyRunner } from '../test/sim/harness';
 import type { ItemInstance } from '../src/sim/items';
 import { type SlotKey } from '../src/data/itemSlots';
 import { STATS } from '../src/data/stats';
 import { talentNodes } from '../src/data/talents';
-import { expectedLevel } from '../src/data/stageScaling';
+import { expectedLevel, mitigation, MAX_LEVEL } from '../src/data/stageScaling';
 
-const STAGES = [1, 5, 10, 20, 30, 50, 80, 120, 200];
-const PARTY: string[] = ['warrior', 'ranger', 'priest']; // frontline · dps · healer
+// Sampled at non-boss stages (X-3 of milestone worlds 1,5,10,20,30,50,80,120,200) so this
+// measures TRASH-WAVE survival — the ×10 zone-boss stages have no waves (use sim-zoneboss).
+const STAGES = [1, 43, 93, 193, 293, 493, 793, 1193, 1993];
+const PARTY: string[] = ['knight', 'ranger', 'priest']; // frontline · dps · healer
 const ctx: TickContext = { bonuses: getBonuses({}, []), ownedPetKeys: [] };
 
 // ── realistic gear: keep the best drop per slot from a farmed pool at stage G ──
@@ -37,14 +38,13 @@ function itemScore(it: ItemInstance): number {
   return s;
 }
 
-// Best EQUIPPABLE drop per slot from farming stage G at a given hero level. The
-// equip gate (level ≥ ilvl) means you can't wear gear above your level, so gear is
-// capped by level — the new binding constraint.
-function gearAtStage(G: number, level: number, seedBase: number): Partial<Record<SlotKey, ItemInstance>> {
+// Best drop per slot from farming stage G. NO equip gate now (PROGRESSION §0: gear is
+// pure ilvl power, any hero equips any item) — so the binding axis is the GEAR's farm
+// stage (its ilvl ≈ expectedLevel(G)), i.e. the gear-acquisition treadmill, not level.
+function gearAtStage(G: number, seedBase: number): Partial<Record<SlotKey, ItemInstance>> {
   const best: Partial<Record<SlotKey, ItemInstance>> = {};
   for (let i = 0; i < 400; i++) {
     const it = generateItem({ rollSeed: seedBase * 1_000_003 + i, stageIndex: G, chestType: 'stageBoss', generatorVersion: 1 });
-    if (it.ilvl > level) continue; // can't equip above level
     const cur = best[it.slot];
     if (cur === undefined || itemScore(it) > itemScore(cur)) best[it.slot] = it;
   }
@@ -69,33 +69,28 @@ function specTalents(classKey: string, points: number): Record<string, number> {
   return talents;
 }
 
-// Warrior level at each milestone, as the greedy agent actually reaches it.
-function levelCurve(): Record<number, number> {
-  const r = new GreedyRunner({ seed: 2024, openChests: true });
-  const out: Record<number, number> = {};
-  for (const S of STAGES) { r.run(1_500_000, S); out[S] = r.heroLevels[0] ?? 1; }
-  return out;
-}
-
-interface FightResult { wavePz: number; minHpPct: number; result: 'CLEAR' | 'WIPE' | 'TIMEOUT'; heroAd: number; }
+interface FightResult { wavePz: number; minHpPct: number; result: 'CLEAR' | 'WIPE' | 'TIMEOUT'; heroAd: number; tankDr: number; }
 
 function runFight(S: number, gearStage: number, level: number, seed: number): FightResult {
   const party: HeroConfig[] = PARTY.map((classKey, i) => ({
     id: `h${i}`,
     classKey,
     level,
-    equipment: gearAtStage(gearStage, level, seed + i * 17),
+    equipment: gearAtStage(gearStage, seed + i * 17),
     talents: specTalents(classKey, Math.max(0, level - 1)),
-    activeAbilities: [], // live 2-ability cap
+    activeAbilities: [], // empty + autoDefault → the default 2-ability loadout (probe)
+    autoDefaultAbilities: true,
   }));
   const heroes = party.map((c) => buildHeroCombatant(c, ctx.bonuses.combatMods));
   const world = createWorld(seed, heroes);
   world.globalStageIndex = S;
   const sim = new Simulation(world);
 
-  // hero[0] (warrior tank) attack damage, for context
+  // hero[0] (knight tank) aggregated stats incl. gear → AD (context) + on-level armor DR
   const w0 = party[0]!;
-  const heroAd = aggregate(heroBaseStats(w0.classKey, w0.level), heroStaticMods(w0, ctx.bonuses.combatMods)).attackDamage;
+  const tankStats = aggregate(heroBaseStats(w0.classKey, w0.level), heroStaticMods(w0, ctx.bonuses.combatMods));
+  const heroAd = tankStats.attackDamage;
+  const tankDr = mitigation(tankStats.armor, S);
 
   let minHpPct = 1;
   const waveTimes: number[] = [];
@@ -118,25 +113,27 @@ function runFight(S: number, gearStage: number, level: number, seed: number): Fi
   }
   const sorted = waveTimes.slice().sort((a, b) => a - b);
   const wavePz = sorted.length ? (sorted[Math.floor(0.5 * sorted.length)] ?? 0) : 0;
-  return { wavePz, minHpPct, result, heroAd };
+  return { wavePz, minHpPct, result, heroAd, tankDr };
 }
 
 function main(): void {
-  console.log('=== Survival probe — party warrior/ranger/priest, 2 skills, no tech ===\n');
-  const lvl = levelCurve();
-  console.log('Stage levels (greedy):', STAGES.map((S) => `${S}:L${lvl[S]}`).join('  '), '\n');
-  console.log('LEVEL is now the binding axis (gear is capped at hero level by the equip gate).');
-  console.log('Per cell: waveP50s / minHP% / result.  UNDER = expectedLevel-5, ON = expectedLevel, OVER = +5.');
-  console.log('Gear = best equippable drop from farming this stage at that level.\n');
+  console.log('=== Survival probe — party knight/ranger/priest, 2 skills, no tech ===\n');
+  console.log('GEAR (its farm-stage ilvl) is the binding axis now — NO equip gate (PROGRESSION §0).');
+  console.log('Hero level = min(expectedLevel(stage), MAX_LEVEL); gear varied by FARM stage:');
+  console.log('  UNDER = farmed ~2 worlds back, ON = farmed at this stage, OVER = ~2 worlds ahead.');
+  console.log('Per cell: waveP50s / minHP% / result.  "DR" = tank on-level armor damage-reduction.\n');
   const pad = (s: string, n: number): string => s.padEnd(n);
-  console.log(pad('Stage', 7) + pad('exp.Lv', 8) + pad('UNDER (-5 lv)', 26) + pad('ON (exp lv)', 26) + 'OVER (+5 lv)');
+  console.log(pad('Stage', 7) + pad('Lv', 6) + pad('on-DR', 7) + pad('UNDER gear', 26) + pad('ON gear', 26) + 'OVER gear');
   for (const S of STAGES) {
-    const eL = expectedLevel(S);
-    const cells = [Math.max(1, eL - 5), eL, eL + 5].map((L) => {
-      const f = runFight(S, S, L, 7000 + S);
+    const L = Math.min(expectedLevel(S), MAX_LEVEL);
+    const farms = [Math.max(1, S - 20), S, S + 20];
+    let onDr = 0;
+    const cells = farms.map((G, gi) => {
+      const f = runFight(S, G, L, 7000 + S);
+      if (gi === 1) onDr = f.tankDr;
       return pad(`${f.wavePz.toFixed(1)}s / ${Math.round(f.minHpPct * 100)}% / ${f.result}`, 26);
     });
-    console.log(pad(`${S}`, 7) + pad(`L${eL}`, 8) + cells.join(''));
+    console.log(pad(`${S}`, 7) + pad(`L${L}`, 6) + pad(`${Math.round(onDr * 100)}%`, 7) + cells.join(''));
   }
   console.log('\n=== done ===');
 }

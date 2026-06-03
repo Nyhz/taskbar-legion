@@ -21,7 +21,6 @@ export type TechEffect =
   | { kind: 'chestStorage'; type: ChestType; value: number }
   | { kind: 'unlockAutoOpen' }
   | { kind: 'autoOpenReduce'; value: number }
-  | { kind: 'zoneKeyMult'; value: number }
   | { kind: 'offlineMult'; value: number }
   | { kind: 'partySlot' }
   | { kind: 'gemDropMult'; value: number };
@@ -74,7 +73,6 @@ export const TECH_NODES: TechNode[] = [
   node('chest_drop_stage', 'Chests', '🎁', 'Boss Spoils', '+5% stage-boss chest drop', [{ kind: 'chestTypeDropMult', type: 'stageBoss', value: 0.05 }], 110, 1.35),
   node('chest_drop_zone', 'Chests', '🏆', 'Vault Cracker', '+5% zone-boss chest drop', [{ kind: 'chestTypeDropMult', type: 'zoneBoss', value: 0.05 }], 140, 1.4),
   node('chest_gem', 'Chests', '💎', 'Gem Sense', '+5% gem drop chance', [{ kind: 'gemDropMult', value: 0.05 }], 150, 1.5),
-  node('chest_key', 'Chests', '🗝', 'Keyfinder', '+5% zone key chance', [{ kind: 'zoneKeyMult', value: 0.05 }], 150, 1.5),
   node('store_normal', 'Chests', '🗄', 'Stockpile', '+1 normal chest storage', [{ kind: 'chestStorage', type: 'normal', value: 1 }], 250, 1.7),
   node('store_stage', 'Chests', '🗃', 'Vault', '+1 stage-boss chest storage', [{ kind: 'chestStorage', type: 'stageBoss', value: 1 }], 300, 1.7),
   node('store_zone', 'Chests', '⛩', 'Reliquary', '+1 zone-boss chest storage', [{ kind: 'chestStorage', type: 'zoneBoss', value: 1 }], 350, 1.7),
@@ -123,7 +121,6 @@ const OLD_TECH_PREFIX: Record<string, string> = {
   chest_store_stage: 'store_stage',
   chest_store_zone: 'store_zone',
   chest_gem: 'chest_gem',
-  chest_key: 'chest_key',
   chest_autoopen: 'auto_open',
   slot_party_2: 'party_size',
   slot_party_3: 'party_size',

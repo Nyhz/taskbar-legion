@@ -12,7 +12,6 @@ function bonusText(key: string): string {
     case 'goldMult': return `+${b.value * 100}% gold`;
     case 'xpMult': return `+${b.value * 100}% XP`;
     case 'chestDropMult': return `+${b.value * 100}% chest drop`;
-    case 'zoneKeyMult': return `+${b.value * 100}% zone keys`;
     case 'chestStorage': return `+${b.value} ${b.type} storage`;
     case 'autoOpenReduce': return `-${b.value / 1000}s auto-open`;
     default: return '';

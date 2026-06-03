@@ -1,89 +1,83 @@
-# AFFIXES.md — Which stats each item type can roll (GEAR OVERHAUL)
+# AFFIXES.md — Which stats each item type can roll (STAT-SYSTEM REWORK)
 
-This defines the **affix routing**: which stats appear on which item category (**armor / weapon / jewelry**),
-as base affix(es) and as substats. It is the authoritative routing for `sim/loot.ts`, `data/itemSlots.ts`
-and `data/stats.ts`.
+This defines the **affix routing**: which stats appear on which item category (**armor / weapon / jewelry**)
+and which gear **slots** each soft-capped enabler is restricted to. Authoritative for `sim/loot.ts`,
+`data/itemSlots.ts` and `data/stats.ts`.
 
-> **⚠️ Overrides SPEC §4.2 and all earlier AFFIXES drafts.** The gear overhaul (per design directive)
-> reshaped gearing into three clear identities. Where SPEC and this file disagree, **this file wins**.
+> **⚠️ Overrides SPEC §4.2 and all earlier AFFIXES drafts.** Reflects the stat-system rework (dodge/hpPerHit
+> removed; damageIncrease/lifesteal made buff-only; hpRegen made base-only; multistrike added; soft-capped
+> enablers + per-slot restrictions). The numeric *scaling* (flat magnitudes) is being reworked separately in
+> the Phase 2 polynomial pass — see PROGRESSION.md.
 
 ---
 
-## The three identities (the whole model)
+## Two stat classes (the core of the model)
 
-| Category | Slots | Base affix (intrinsic) | Substat pool | Equip |
-|---|---|---|---|---|
-| **armor** | helmet, chest, gloves, legs, boots | **MITIGATION**: pure `armor`, pure `magicResist`, or a 50-50 **split** (½ each — a real DUAL base) | **fully flexible** — Offensive ∪ Defensive ∪ rollable-utility (`FLEX_STATS`, 15) | any hero |
-| **weapon** | weapon, **offhand** | **per class TYPE** (below) | **per class TYPE** | **CLASS-LOCKED** |
-| **jewelry** | **ring**, **trinket**, amulet | **freestyle** — ANY stat from `FLEX_STATS` (off/def/util) | **fully flexible** (`FLEX_STATS`) | any hero |
+**SCALERS — unbounded, where endless upgrade-power lives.** Roll freely on their category pools.
+- Offensive: `attackDamage`, `attackSpeed`, `critDamage`
+- Defensive: `armor`, `magicResist`, `health`
+- Utility: `healPower`
 
-- **Armor** gives everyone a guaranteed **defensive baseline** (armor/MR) and is the *hunting ground*: its
-  substats are fully flexible, so a priest hunts heal-power/CDR, a tank hunts defense, a ranger hunts offense.
-- **Weapon + off-hand** are **class-locked TYPES** — only the matching class can equip them. Each carries a
-  tailored intrinsic base + substat pool (the class's identity). An item born to a type stamps `classKey`.
-- **Jewelry** is the **wildcard**: base rolls from the full flex pool (any offensive/defensive/utility stat),
-  substats flexible, class-agnostic.
+**ENABLERS — bounded "chance/reduction" stats, DIMINISHING-RETURNS soft-capped** (`ENABLER_SOFT_CAPS`):
+`effective = cap · raw/(raw+k)` — applied once on the summed raw in `aggregate`, so it covers gear + gems +
+talents + buffs together. They are RESTRICTED to specific slots so their raw can't pile up and slam the cap early.
+
+| Enabler | cap | k | Gear slots it can roll on |
+|---|---|---|---|
+| `critChance` | 100% | 60 | knight sword/shield, ranger bow/quiver, priest wand/tome, **+ jewelry** |
+| `block` | 75% | 50 | knight sword + shield |
+| `multistrike` | 25% | 20 | knight sword/shield + ranger bow/quiver |
+| `cooldownReduction` | 50% | 40 | **jewelry only** |
+
+**NOT rollable on gear:** `damageIncrease` + `lifesteal` (buff-only — Battle Cry / Bloodlust),
+`damageReduction` (buff-only), `hpRegen` (class-base-only early cushion). **Removed entirely:** `dodge`,
+`hpPerHit`, `penetration`.
+
+## The three category identities
+
+| Category | Slots | Base affix | Substat pool |
+|---|---|---|---|
+| **armor** | helmet, chest, gloves, legs, boots | MITIGATION: pure `armor`, pure `magicResist`, or a 50-50 split | **`FLEX_STATS`** (scalers only — NO enablers) |
+| **weapon** | weapon, offhand | per class TYPE (below) | per class TYPE (CLASS-LOCKED) |
+| **jewelry** | ring, trinket, amulet | freestyle from `JEWELRY_STATS` | **`JEWELRY_STATS`** = FLEX + `critChance` + `cooldownReduction` |
+
+- **`FLEX_STATS` (7 scalers):** attackDamage, attackSpeed, critDamage, armor, magicResist, health, healPower.
+- **`JEWELRY_STATS` (9):** FLEX + critChance + cooldownReduction (jewelry is the home of crit + CDR).
+- Armor is scalers-only → it's your **raw-power/mitigation** gear; enablers live on weapons + jewelry.
 
 ### The six weapon types (`data/itemSlots.ts → WEAPON_TYPES`)
 
-| Class | Type | Slot | Intrinsic base | Substat pool |
+| Class | Type | Slot | Base | Substat pool |
 |---|---|---|---|---|
-| Warrior | **Sword** | weapon | `attackDamage` | attackDamage, critChance, critDamage, damageIncrease, lifesteal, hpPerHit |
-| Warrior | **Shield** | offhand | `block` | armor, magicResist, health, block, dodgeChance, hpRegen |
-| Ranger | **Bow** | weapon | `attackDamage` | attackDamage, attackSpeed, critChance, critDamage, damageIncrease, lifesteal |
-| Ranger | **Quiver** | offhand | `attackSpeed` | attackSpeed, critChance, critDamage, damageIncrease, lifesteal, cooldownReduction |
-| Priest | **Wand** | weapon | `healPower` | healPower, attackDamage, critChance, cooldownReduction, magicResist, damageIncrease |
-| Priest | **Tome** | offhand | `cooldownReduction` | healPower, cooldownReduction, health, magicResist, hpRegen, armor |
+| Knight | **Sword** | weapon | `attackDamage` | attackDamage, critDamage, attackSpeed, block, critChance, multistrike, health, armor |
+| Knight | **Shield** | offhand | `block` | block, armor, magicResist, health, critChance, multistrike |
+| Ranger | **Bow** | weapon | `attackDamage` | attackDamage, attackSpeed, critDamage, critChance, multistrike |
+| Ranger | **Quiver** | offhand | `attackSpeed` | attackSpeed, critDamage, attackDamage, critChance, multistrike |
+| Priest | **Wand** | weapon | `healPower` | healPower, attackDamage, critDamage, critChance, magicResist |
+| Priest | **Tome** | offhand | `healPower` | healPower, critChance, critDamage, health, magicResist |
 
-The warrior's **offense lives in the Sword**, its **defense in the Shield** — so the warrior's damage is
-tuned by the Sword (+ its innate `attackDamage`), not by hoping for offensive armor.
-
-## The stat pools (`data/stats.ts`)
-
-- **Offensive (6):** attackDamage, attackSpeed, critChance, critDamage, damageIncrease, lifesteal.
-- **Defensive (7):** armor, magicResist, health, dodgeChance, hpRegen, hpPerHit, block.
-- **Rollable utility (2):** `cooldownReduction`, `healPower` — these NOW ROLL on gear (overhaul). CDR is the
-  universal ability-uptime stat (clamped ≤75% in combat); healPower amplifies priest heals.
-- **`damageReduction` is buff-ONLY** (`{0,0}` band) — flat %DR on gear would stack toward immunity.
-- **`FLEX_STATS` (15)** = Offensive ∪ Defensive ∪ rollable-utility — the pool for armor substats and all of
-  jewelry (base + substats).
+Knight weapons are the **flex bruiser** slots (block identity + crit/multistrike + hp/armor). Priest crit
+(wand/tome/jewelry) matters because **crit now applies to heals**. CDR left the weapons → jewelry-only.
 
 ## Substat rules (`sim/loot.ts`)
 
-For tier `T`, roll exactly `tierDef.extraStats` substats (0,1,1,2,2,3,3,4,4 for T0–T8; **hard cap 4**):
+For tier `T`, roll exactly `tierDef.extraStats` substats (0,1,1,2,2,3,3,4,4 for T0–T8; max 4):
+1. **Pool by category:** weapon/off-hand → that TYPE's `pool`; armor → `FLEX_STATS`; jewelry → `JEWELRY_STATS`.
+2. **Distinct keys:** no substat repeats, and none duplicates any base-affix key.
+3. **Value** by `kind`: **flat** scales with item level; **percent** is bounded by tier. *(The exact flat
+   curve is the Φ-vs-polynomial Phase 2 rework — see PROGRESSION.md.)* Enabler percents are summed raw and
+   soft-capped in `aggregate`, never per-roll.
+4. **Class lock:** weapon/off-hand roll a launch class → their TYPE, set `classKey`; only that class equips.
 
-1. **Pool by category:** weapon/off-hand → that class TYPE's `pool`; armor + jewelry → `FLEX_STATS`.
-2. **Distinct keys:** no substat repeats, and **no substat may duplicate ANY base-affix key** (armor's split
-   has two base keys — both are excluded).
-3. **Value** by `kind` (PROGRESSION §6): **flat** = `round2(rand(min,max) × tierMult × GEAR_POWER × Φ(ilvl))`
-   (scales with item level); **percent** = `round2(rand(min,max) × tierMult)` (bounded, level-flat).
-4. **Class lock:** weapon/off-hand items roll a random launch class (`CLASS_KEYS`) → their TYPE, and set
-   `classKey`. Only that class can equip (enforced in `partySlice.equip` + the harness).
+## Gems (`data/gems.ts`) — SCALER-ONLY
 
-## Base affix rules
+Gems never grant enablers (that would sneak an enabler into a restricted slot). Each grants **one scaler
+stat, the same in ANY socket** (Diamond grants two); tier scales magnitude, not count. Socketing sets `bound=true`.
 
-- **armor:** `rollArmorBase` — ~40% pure armor, ~40% pure MR, ~20% a 50-50 split (`baseAffix` has TWO entries,
-  half value each). Mitigation only — never offensive.
-- **weapon/off-hand:** the TYPE's `base` (single entry), value via `rollStatValue`.
-- **jewelry:** a single base picked from `FLEX_STATS` (freestyle). Jewelry still doesn't exist at T0
-  (reject-and-reroll on drop via `minTier=1`).
+| Gem | Grants | | Gem | Grants |
+|---|---|---|---|---|
+| Ruby | attackDamage | | Topaz | healPower |
+| Sapphire | critDamage | | Amethyst | attackSpeed |
+| Emerald | health | | Diamond | armor + magicResist |
 
-## Item model note (`sim/items.ts`)
-
-`baseAffix` is an **array** of `{key, value}` (1 entry normally; 2 for an armor armor/MR split). `classKey?`
-is set only on weapon/off-hand items. The Cube's transfigure (`sim/cube.ts`) draws from `itemSubstatPool(item)`
-(the item's real pool) minus already-taken keys.
-
-## Gems vs affixes (unchanged routing)
-
-Gems are tiered instances socketed later; their grants are **category-routed** (`gem.grants[item.category]`):
-armor→defensive, weapon→offensive, jewelry→either. Off-hand is now **weapon-category**, so off-hand gems
-grant offensive stats. Socketing sets `bound=true`. Gem grants stack on top of the item's affixes.
-
-## Test implications (`test/sim/loot.test.ts`, `itemSlots.test.ts`)
-
-- Weapon/off-hand: class-locked; base = its TYPE's intrinsic; substats ⊆ TYPE pool.
-- Armor: base is mitigation only (armor/MR/split, all three appear); substats fully flexible (offensive,
-  defensive AND utility all appear over many rolls).
-- Jewelry: base is freestyle (offensive, defensive AND utility all appear); never at T0.
-- No item exceeds 4 substats; substats distinct; no substat duplicates a base-affix key.
+Sapphire's crit **damage** pairs with the crit **chance** you collect from gear/talents.

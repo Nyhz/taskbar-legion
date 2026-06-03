@@ -1,13 +1,16 @@
-import { Container, Graphics, Sprite } from 'pixi.js';
+import { AnimatedSprite, Container, Graphics, Sprite } from 'pixi.js';
+import type { Texture, Ticker } from 'pixi.js';
 import { hexToNum } from '@/styles/palette';
 import { getArrowTexture } from './characterFrames';
 
-// Pooled projectile layer: arrows (ranged) and fireballs (casters) fly from the
-// attacker to its target. Arrows use the shared arrow sprite, rotated to their flight
-// direction; fireballs are drawn procedurally. Cosmetic only — fired off combat
-// 'damage' events (basic attacks AND projectile abilities); reads nothing from the sim.
+// Pooled projectile layer: arrows (ranged), a procedural fireball (generic casters), and
+// an animated "magic bolt" built from a class's own effect frames (the Priest's spell).
+// Arrows use the shared arrow sprite flying flat; fireballs/magic arc slightly and spin/
+// animate. Cosmetic only — fired off combat 'damage' events; reads nothing from the sim.
 
-export type ProjectileType = 'arrow' | 'fireball';
+export type ProjectileType = 'arrow' | 'fireball' | 'magic';
+
+const MS_PER_FRAME = 1000 / 60; // AnimatedSprite.update expects ticker-frame units
 
 interface Vec {
   x: number;
@@ -26,6 +29,7 @@ interface Projectile {
 
 const SPEED = 760; // px/s
 const ARROW_SCALE = 1.3; // chunky arrow that reads clearly against the ~42px bodies
+const MAGIC_SCALE = 0.55; // the spell-effect frames are full 100px — shrink to a compact bolt
 
 /** Travel time (ms) for a projectile between two points — exported so callers can land
  *  the damage number at the exact moment the projectile arrives. */
@@ -37,13 +41,15 @@ export function projectileFlightMs(fromX: number, fromY: number, toX: number, to
 export class ProjectileLayer extends Container {
   private readonly arrowPool: Sprite[] = [];
   private readonly fireballPool: Graphics[] = [];
+  private readonly magicPool: AnimatedSprite[] = [];
   private readonly active: Projectile[] = [];
+  private readonly tickerShim = { deltaTime: 0 } as unknown as Ticker;
 
   /** Fire a projectile at a LIVE target (read each frame so it homes on a moving enemy);
-   *  returns the initial travel-time estimate (ms). */
-  spawn(fromX: number, fromY: number, target: () => Vec, type: ProjectileType): number {
+   *  returns the initial travel-time estimate (ms). `frames` is required for type 'magic'. */
+  spawn(fromX: number, fromY: number, target: () => Vec, type: ProjectileType, frames?: Texture[]): number {
     const dest = target();
-    const disp = type === 'arrow' ? this.takeArrow() : this.takeFireball();
+    const disp = type === 'arrow' ? this.takeArrow() : type === 'magic' ? this.takeMagic(frames ?? []) : this.takeFireball();
     disp.visible = true;
     disp.alpha = 1;
     disp.rotation = 0; // arrows fly flat (point right toward the enemies); fireballs spin
@@ -67,17 +73,24 @@ export class ProjectileLayer extends Container {
         p.disp.y = p.fromY; // travel dead-flat (horizontal), no arc — rotation stays 0
       } else {
         p.disp.y = p.fromY + (dest.y - p.fromY) * k - Math.sin(k * Math.PI) * 6; // slight arc
-        p.disp.rotation += dtMs / 40; // fireball spin/flicker
+        if (p.type === 'fireball') p.disp.rotation += dtMs / 40; // fireball spin/flicker
+        else (p.disp as AnimatedSprite).update(this.shim(dtMs)); // magic: advance its frames
       }
       if (k >= 1) {
         p.disp.visible = false;
         this.removeChild(p.disp);
         // disp matches p.type by construction, so these narrowings are safe.
         if (p.type === 'arrow') this.arrowPool.push(p.disp as Sprite);
+        else if (p.type === 'magic') this.magicPool.push(p.disp as AnimatedSprite);
         else this.fireballPool.push(p.disp as Graphics);
         this.active.splice(i, 1);
       }
     }
+  }
+
+  private shim(dtMs: number): Ticker {
+    this.tickerShim.deltaTime = dtMs / MS_PER_FRAME;
+    return this.tickerShim;
   }
 
   private takeArrow(): Sprite {
@@ -86,6 +99,17 @@ export class ProjectileLayer extends Container {
     if (tex !== null) s.texture = tex; // preloaded before the first frame; null only if load failed
     s.anchor.set(0.5);
     s.scale.set(ARROW_SCALE);
+    return s;
+  }
+
+  private takeMagic(frames: Texture[]): AnimatedSprite {
+    const s = this.magicPool.pop() ?? new AnimatedSprite(frames.length > 0 ? frames : [getArrowTexture() ?? new Sprite().texture]);
+    s.autoUpdate = false;
+    if (frames.length > 0) s.textures = frames;
+    s.anchor.set(0.52, 0.44); // effect content is centred on ~x52, y44 within the 100px frame
+    s.scale.set(MAGIC_SCALE);
+    s.loop = true;
+    s.gotoAndStop(0);
     return s;
   }
 

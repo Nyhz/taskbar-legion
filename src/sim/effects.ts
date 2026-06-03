@@ -89,7 +89,7 @@ export function vulnerabilityMult(effects: readonly ActiveEffect[]): number {
   return 1 + bonus / 100;
 }
 
-/** Outgoing-damage multiplier from weaken effects (Warrior Debilitating Strike): the
+/** Outgoing-damage multiplier from weaken effects (Knight Debilitating Strike): the
  *  mirror of vulnerabilityMult — the holder DEALS less damage. 1 when unweakened.
  *  Clamped so it can never zero out a hit (floored at 10% damage dealt). */
 export function weakenMult(effects: readonly ActiveEffect[]): number {

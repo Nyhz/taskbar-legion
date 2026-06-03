@@ -1,14 +1,17 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useStore } from '@/state/store';
 import {
   worldFirstStage,
   resumeStageFor,
   expectedLevel,
   enemyHp,
-  worldOf,
-  stageInWorld,
   isZoneBossStage,
 } from '@/data/stageScaling';
+import {
+  stageLabelOf, difficultyIndexOf,
+  DIFFICULTIES, DIFFICULTY_KEYS, STAGES_PER_DIFFICULTY,
+} from '@/data/difficulties';
 import { format } from '@/sim/num';
 import { PALETTE } from '@/styles/palette';
 
@@ -19,20 +22,26 @@ import { PALETTE } from '@/styles/palette';
 // Travelling never lowers progress — a refresh still drops you at the frontier.
 
 function stageLabel(globalStage: number): string {
-  return `${worldOf(globalStage)}-${stageInWorld(globalStage)}`;
+  return stageLabelOf(globalStage);
 }
 
 export function MapPanel(): React.JSX.Element {
   const hud = useStore((s) => s.hud);
   const requestTravel = useStore((s) => s.requestTravel);
   const requestEnterZoneBoss = useStore((s) => s.requestEnterZoneBoss);
-  const zoneKeys = hud.zoneKeys;
 
   const frontier = resumeStageFor(hud.maxClearedStage);
-  const topWorld = worldOf(frontier);
-  const worlds = Array.from({ length: topWorld }, (_, i) => i + 1);
+  const maxDiff = difficultyIndexOf(frontier); // highest unlocked difficulty (0..4)
+  const [selDiff, setSelDiff] = useState<number>(() => difficultyIndexOf(hud.globalStage));
+  const diff = Math.min(selDiff, maxDiff);
   const [hoverStage, setHoverStage] = useState<number | null>(null);
   const detailStage = hoverStage ?? hud.globalStage;
+
+  // The selected difficulty's reached worlds. Global world index = diff·10 + localWorld;
+  // its first global stage = diff·100 + (localWorld-1)·10 + 1. Show only worlds ≤ frontier.
+  const baseWorld = diff * 10;
+  const localWorlds = Array.from({ length: 10 }, (_, i) => i + 1)
+    .filter((lw) => diff * STAGES_PER_DIFFICULTY + (lw - 1) * 10 + 1 <= frontier);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 11 }}>
@@ -49,17 +58,21 @@ export function MapPanel(): React.JSX.Element {
         <TravelButton onClick={() => requestTravel(frontier)} label="Resume" />
       </div>
 
-      <div style={{ color: PALETTE.research, fontWeight: 700 }}>Zones</div>
+      {/* Difficulty selector — pick any UNLOCKED difficulty, then travel to any cleared stage. */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <span style={{ color: PALETTE.research, fontWeight: 700 }}>Difficulty</span>
+        <DifficultyDropdown current={diff} maxUnlocked={maxDiff} onSelect={setSelDiff} />
+      </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 230, overflowY: 'auto' }}>
-        {worlds.map((w) => (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 215, overflowY: 'auto' }}>
+        {localWorlds.map((lw) => (
           <ZoneRow
-            key={w}
-            world={w}
+            key={lw}
+            world={baseWorld + lw}
+            localWorld={lw}
             frontier={frontier}
             maxCleared={hud.maxClearedStage}
             current={hud.globalStage}
-            keys={zoneKeys[w] ?? 0}
             onHover={setHoverStage}
             onTravel={requestTravel}
             onEnterBoss={requestEnterZoneBoss}
@@ -67,19 +80,98 @@ export function MapPanel(): React.JSX.Element {
         ))}
       </div>
 
-      <StageDetail globalStage={detailStage} maxClearedStage={hud.maxClearedStage} zoneKeys={zoneKeys} />
+      <StageDetail globalStage={detailStage} maxClearedStage={hud.maxClearedStage} />
+    </div>
+  );
+}
+
+// Custom pixel dropdown (replaces the native <select>): shows ALL difficulties, with the
+// still-locked ones greyed + 🔒 and unselectable. Menu renders to a portal so the panel
+// can't clip it.
+function DifficultyDropdown({
+  current, maxUnlocked, onSelect,
+}: {
+  current: number;
+  maxUnlocked: number; // highest unlocked difficulty index
+  onSelect: (d: number) => void;
+}): React.JSX.Element {
+  const [open, setOpen] = useState(false);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const [pos, setPos] = useState<{ left: number; top: number; width: number } | null>(null);
+
+  const toggle = (): void => {
+    const r = btnRef.current?.getBoundingClientRect();
+    if (r !== undefined) setPos({ left: r.left, top: r.bottom + 2, width: r.width });
+    setOpen((o) => !o);
+  };
+
+  const sel = DIFFICULTIES[DIFFICULTY_KEYS[current]!];
+  return (
+    <div style={{ flex: 1, position: 'relative' }}>
+      <button
+        ref={btnRef}
+        onClick={toggle}
+        style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%',
+          fontSize: 11, fontWeight: 700, padding: '3px 6px',
+          background: PALETTE.bgInset, color: PALETTE.parchment,
+          border: `1px solid ${open ? PALETTE.gold : PALETTE.goldDim}`, cursor: 'pointer',
+        }}
+      >
+        <span>{sel?.name}</span>
+        <span style={{ color: PALETTE.gold }}>{open ? '▴' : '▾'}</span>
+      </button>
+      {open && pos !== null &&
+        createPortal(
+          <>
+            <div onClick={() => setOpen(false)} onContextMenu={(e) => { e.preventDefault(); setOpen(false); }} style={{ position: 'fixed', inset: 0, zIndex: 10000 }} />
+            <div
+              style={{
+                position: 'fixed', left: pos.left, top: pos.top, width: pos.width, zIndex: 10001,
+                background: PALETTE.bgPanel, border: `2px solid ${PALETTE.ink}`,
+                boxShadow: `0 0 0 1px ${PALETTE.goldDim}, 3px 3px 0 rgba(0,0,0,0.5)`, padding: 3, fontSize: 11,
+              }}
+            >
+              {DIFFICULTY_KEYS.map((k, d) => {
+                const def = DIFFICULTIES[k];
+                const locked = d > maxUnlocked;
+                const isSel = d === current;
+                return (
+                  <button
+                    key={k}
+                    disabled={locked}
+                    onClick={() => { if (!locked) { onSelect(d); setOpen(false); } }}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 6, width: '100%', textAlign: 'left',
+                      padding: '4px 6px', border: 'none', fontWeight: isSel ? 700 : 400,
+                      background: isSel ? PALETTE.bgInset : 'transparent',
+                      color: locked ? PALETTE.textMute : isSel ? PALETTE.gold : PALETTE.textLight,
+                      cursor: locked ? 'default' : 'pointer',
+                    }}
+                    onMouseEnter={(e) => { if (!locked && !isSel) e.currentTarget.style.background = PALETTE.bgInset; }}
+                    onMouseLeave={(e) => { if (!isSel) e.currentTarget.style.background = 'transparent'; }}
+                  >
+                    <span style={{ flex: 1 }}>{def.name}</span>
+                    <span>{locked ? '🔒' : isSel ? '✓' : ''}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </>,
+          document.body,
+        )}
     </div>
   );
 }
 
 function ZoneRow({
-  world, frontier, maxCleared, current, keys, onHover, onTravel, onEnterBoss,
+  world, localWorld, frontier, maxCleared, current, onHover, onTravel, onEnterBoss,
 }: {
-  world: number;
+  world: number; // GLOBAL world index (drives stage math)
+  localWorld: number; // 1..10 within its difficulty (display)
   frontier: number;
   maxCleared: number;
   current: number;
-  keys: number;
   onHover: (g: number | null) => void;
   onTravel: (g: number) => void;
   onEnterBoss: (world: number) => void;
@@ -89,8 +181,7 @@ function ZoneRow({
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
-        <span style={{ color: PALETTE.parchment, fontWeight: 700, fontSize: 10 }}>Zone {world}</span>
-        <span style={{ color: keys > 0 ? PALETTE.titleRedHi : PALETTE.textMute, fontWeight: 700, fontSize: 10 }}>🗝 {keys}</span>
+        <span style={{ color: PALETTE.parchment, fontWeight: 700, fontSize: 10 }}>World {localWorld}</span>
       </div>
       <div style={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
         {stages.map((s) => {
@@ -99,9 +190,9 @@ function ZoneRow({
           const beaten = g <= maxCleared;
           const isBoss = isZoneBossStage(g);
           const isCurrent = g === current;
-          // W-1..W-9: travel as before. W-10: not a travel target — entered with a key,
-          // available once W-9 is beaten and a key is held (re-farmable thereafter).
-          const canEnterBoss = isBoss && nineBeaten && keys >= 1;
+          // W-1..W-9: travel as before. W-10: not a travel target — entered as the
+          // world-boss fight once W-9 is beaten (re-fightable thereafter; no key).
+          const canEnterBoss = isBoss && nineBeaten;
           const travelable = reached && !isBoss;
           const clickable = travelable || canEnterBoss;
 
@@ -110,9 +201,9 @@ function ZoneRow({
           const fg = isBoss ? (beaten ? PALETTE.gold : PALETTE.titleRedHi) : !reached ? PALETTE.textMute : PALETTE.textLight;
           const title = isBoss
             ? nineBeaten
-              ? `${world}-10 world boss — costs 1 key (you have ${keys})`
-              : `${world}-10 world boss — beat ${world}-9 first`
-            : reached ? `Travel to ${world}-${s}` : `${world}-${s} (locked)`;
+              ? `${localWorld}-10 world boss — enter (a wall; gear up)`
+              : `${localWorld}-10 world boss — beat ${localWorld}-9 first`
+            : reached ? `Travel to ${localWorld}-${s}` : `${localWorld}-${s} (locked)`;
 
           return (
             <button
@@ -133,7 +224,7 @@ function ZoneRow({
                 opacity: isBoss ? (canEnterBoss || beaten ? 1 : 0.55) : reached ? 1 : 0.5,
               }}
             >
-              {isBoss ? (beaten ? '✓' : '🗝') : s}
+              {isBoss ? (beaten ? '✓' : '⚔') : s}
             </button>
           );
         })}
@@ -142,11 +233,9 @@ function ZoneRow({
   );
 }
 
-function StageDetail({ globalStage, maxClearedStage, zoneKeys }: { globalStage: number; maxClearedStage: number; zoneKeys: Record<number, number> }): React.JSX.Element {
+function StageDetail({ globalStage, maxClearedStage }: { globalStage: number; maxClearedStage: number }): React.JSX.Element {
   const isBoss = isZoneBossStage(globalStage);
   const beaten = globalStage <= maxClearedStage;
-  const world = worldOf(globalStage);
-  const keys = zoneKeys[world] ?? 0;
   return (
     <div style={{ borderTop: `1px solid ${PALETTE.goldDim}`, paddingTop: 4, display: 'flex', flexDirection: 'column', gap: 2 }}>
       <div style={{ color: PALETTE.parchment, fontWeight: 700 }}>
@@ -154,11 +243,10 @@ function StageDetail({ globalStage, maxClearedStage, zoneKeys }: { globalStage: 
       </div>
       <Row label="Enemy level" value={`~${expectedLevel(globalStage)}`} />
       <Row label="Enemy HP" value={`~${format(Math.round(enemyHp(globalStage)))}`} />
-      <Row label="Boss" value={beaten ? '✓ beaten' : isBoss ? 'needs a zone key' : 'not yet cleared'} />
-      {isBoss && <Row label="Cost" value={`1 🗝 (you have ${keys})`} />}
+      <Row label="Boss" value={beaten ? '✓ beaten' : isBoss ? 'a wall — gear up' : 'not yet cleared'} />
       <div style={{ color: PALETTE.textMute, fontSize: 9, marginTop: 2 }}>
         {isBoss
-          ? 'World bosses cost 1 zone key — entered from the portal at W-9 or here. The key is spent even on a loss.'
+          ? 'World bosses are hard walls — entered from the portal at W-9 or here once W-9 is beaten.'
           : 'Travelling here never changes your refresh point (still the frontier).'}
       </div>
     </div>

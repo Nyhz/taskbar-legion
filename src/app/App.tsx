@@ -2,20 +2,22 @@ import { useEffect, useRef, useState } from 'react';
 import { GameStrip } from '@/game/GameStrip';
 import { getEngine } from '@/game/engineRef';
 import { useStore } from '@/state/store';
-import { loadGame, saveGame, resetGame } from '@/persistence/saveManager';
+import { loadGame, saveGame, resetGame, requestPersistentStorage } from '@/persistence/saveManager';
 import type { OfflineSummary } from '@/sim/offline';
 import { PanelLayer } from './PanelLayer';
 import { StripHud } from '@/ui/hud/StripHud';
 import { StripOverlay } from '@/ui/overlay/StripOverlay';
+import { LootToasts } from '@/ui/overlay/LootToasts';
 import { OfflineSummaryModal } from '@/ui/components/OfflineSummaryModal';
 import { ContextMenuProvider } from '@/ui/components/ContextMenu';
 import { PALETTE } from '@/styles/palette';
 
-const STRIP_LOGICAL_HEIGHT = 130; // must match GameStrip.STRIP_HEIGHT
-// The game is a fixed-width strip anchored to the bottom-center of the page — sized
-// for the eventual taskbar dock, NOT the full screen width. uiScale zooms the whole
-// thing proportionally (logical width stays 800, so layout is aspect-stable).
-const STRIP_LOGICAL_WIDTH = 800;
+const STRIP_LOGICAL_HEIGHT = 160; // must match GameStrip.STRIP_HEIGHT
+// The game is a fixed-size strip anchored to the bottom-center of the page — sized for the
+// eventual taskbar dock, NOT the full screen width. uiScale zooms the whole thing
+// proportionally; at the default 1.5× this renders ~900×240 actual px. A narrower logical
+// width (600) shows the same world span in fewer px → a more zoomed-in view (bigger sprites).
+const STRIP_LOGICAL_WIDTH = 600;
 const MIN_OFFLINE_MS = 60_000; // only show the summary after a meaningful break
 const AUTOSAVE_MS = 30_000;
 
@@ -35,6 +37,10 @@ export function App(): React.JSX.Element {
     // Dev/console escape hatch for a clean restart: `resetGame()` in the console wipes
     // ALL persistence and reloads to a fresh 1-1 (also available as Options → New Game).
     (window as unknown as { resetGame: () => void }).resetGame = () => void resetGame();
+
+    // Ask for durable storage up front so the save survives eviction / Safari's
+    // 7-day script-storage cap. Best-effort — fire and forget.
+    void requestPersistentStorage();
 
     void (async () => {
       const save = await loadGame();
@@ -116,6 +122,9 @@ export function App(): React.JSX.Element {
               over them from below (panel-zone is pointer-transparent — see PanelLayer). */}
           <div style={{ flex: 1, minHeight: 0, position: 'relative', zIndex: 5 }}>
             <PanelLayer />
+            {/* Loot toasts live here (above the panels via their own zIndex) so an open
+                menu can't hide them; anchored to the bottom of this zone, over the strip. */}
+            <LootToasts />
           </div>
           <StripHud />
           <div style={{ position: 'relative', height: STRIP_LOGICAL_HEIGHT * uiScale, width: '100%' }}>

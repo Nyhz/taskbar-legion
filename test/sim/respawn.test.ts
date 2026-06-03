@@ -2,10 +2,12 @@ import { describe, it, expect } from 'vitest';
 import { Simulation, createWorld, type TickContext } from '@/sim/Simulation';
 import { getBonuses } from '@/sim/bonuses';
 import { activeHeroAbilities } from '@/sim/loadout';
-import { RESPAWN_MS } from '@/data/field';
+import { RESPAWN_MS, WIPE_TOTAL_MS } from '@/data/field';
 import { godHero } from './_helpers';
 
 const ctx: TickContext = { bonuses: getBonuses({}, []), ownedPetKeys: [] };
+const animCtx: TickContext = { ...ctx, animateWipe: true }; // live-game wipe cinematic
+const WIPE_TICKS = WIPE_TOTAL_MS / 100; // ticks the cinematic runs before the party respawns
 const RESPAWN_TICKS = RESPAWN_MS / 100;
 
 describe('death → respawn', () => {
@@ -36,7 +38,7 @@ describe('death → respawn', () => {
     expect(dead.respawnMs).toBeUndefined();
   });
 
-  it('does NOT respawn mid-timer if the whole party is down (wipe handles it)', () => {
+  it('plays the wipe cinematic — the party stays dead through it, then revives at the end', () => {
     const a = godHero('h0');
     const b = godHero('h1');
     const world = createWorld(1, [a, b]);
@@ -44,7 +46,12 @@ describe('death → respawn', () => {
     world.phase = 'fighting';
     for (const h of [a, b]) { h.alive = false; h.hp = 0; h.respawnMs = RESPAWN_MS; }
 
-    sim.tick(ctx); // all dead → handleWipe revives everyone immediately, not via the 60s timer
+    sim.tick(animCtx); // all dead → starts the cinematic (party held dead so death anims play)
+    expect(a.alive).toBe(false);
+    expect(world.wipeMs).toBeDefined();
+
+    for (let i = 0; i < WIPE_TICKS + 1; i++) sim.tick(animCtx); // run out the cinematic → revive together
+    expect(world.wipeMs).toBeUndefined();
     expect(a.alive).toBe(true);
     expect(b.alive).toBe(true);
     expect(a.respawnMs).toBeUndefined();
@@ -59,6 +66,7 @@ describe('wipe retreat ↔ RETRY toggle', () => {
     world.globalStageIndex = stage;
     world.phase = 'fighting';
     for (const h of [a, b]) { h.alive = false; h.hp = 0; }
+    // No death-hold here (probe-style ctx) → the wipe retreats instantly the same tick.
     new Simulation(world).tick({ ...ctx, retryStage });
     return world.globalStageIndex;
   }
@@ -73,23 +81,27 @@ describe('wipe retreat ↔ RETRY toggle', () => {
 });
 
 describe('active abilities (≤2)', () => {
-  const talents = { warrior_guard: 1, warrior_debilitate: 1, warrior_bulwark: 1 }; // 3 abilities unlocked
+  const talents = { knight_guard: 1, knight_debilitate: 1, knight_bulwark: 1 }; // 3 abilities unlocked
 
-  it('undefined selection (harness) fires the whole kit', () => {
-    expect(activeHeroAbilities('warrior', talents, undefined)).toHaveLength(3);
+  it('undefined selection (full-kit probe) fires the whole kit', () => {
+    expect(activeHeroAbilities('knight', talents, undefined)).toHaveLength(3);
   });
 
-  it('empty selection (live default) fires the first two unlocked', () => {
-    expect(activeHeroAbilities('warrior', talents, [])).toHaveLength(2);
+  it('empty selection (live) fires NOTHING — unselecting an ability stops it', () => {
+    expect(activeHeroAbilities('knight', talents, [])).toHaveLength(0);
+  });
+
+  it('empty selection WITH autoDefault (balance harness) fires the first two unlocked', () => {
+    expect(activeHeroAbilities('knight', talents, [], true)).toHaveLength(2);
   });
 
   it('an explicit selection fires exactly those (capped at 2, in order)', () => {
-    const chosen = activeHeroAbilities('warrior', talents, ['warrior_bulwark', 'warrior_guard', 'warrior_debilitate']);
-    expect(chosen.map((a) => a.def.key)).toEqual(['warrior_bulwark', 'warrior_guard']);
+    const chosen = activeHeroAbilities('knight', talents, ['knight_bulwark', 'knight_guard', 'knight_debilitate']);
+    expect(chosen.map((a) => a.def.key)).toEqual(['knight_bulwark', 'knight_guard']);
   });
 
   it('ignores selected keys the hero has not ranked', () => {
-    const chosen = activeHeroAbilities('warrior', { warrior_guard: 1 }, ['warrior_debilitate', 'warrior_guard']);
-    expect(chosen.map((a) => a.def.key)).toEqual(['warrior_guard']);
+    const chosen = activeHeroAbilities('knight', { knight_guard: 1 }, ['knight_debilitate', 'knight_guard']);
+    expect(chosen.map((a) => a.def.key)).toEqual(['knight_guard']);
   });
 });

@@ -84,13 +84,10 @@ function probe(seed: number): void {
   const w = worldOf(gs);
   const lvl = Math.max(...r.heroLevels);
   const siw = stageInWorld(maxStage);
-  const keysHere = r.sim.world.zoneKeys[w] ?? 0;
-  // Distinguish a ZONE-KEY gate stall (stuck on a W-9, no key to open W-10) from a real
-  // combat wall (can't beat the stage/boss even on-level).
-  const gateStall = walled && siw === 9 && keysHere === 0;
-  const verdict = worldOf(maxStage) >= TARGET_WORLD ? 'REACHED WORLD 50' : gateStall ? 'STUCK AT ZONE-KEY GATE (no key, not a power wall)' : walled ? 'HARD COMBAT WALL' : 'ran out of tick budget';
+  // Keys are gone — a W-9 stall is now always a real power wall (the W-10 boss is the gate).
+  const verdict = worldOf(maxStage) >= TARGET_WORLD ? 'REACHED WORLD 50' : walled ? 'HARD COMBAT WALL' : 'ran out of tick budget';
   console.log(`\n  ${verdict} at world ${w} (global ${maxStage} = ${worldOf(maxStage)}-${siw}) after ${fmtTime(r.simSeconds)} active play.`);
-  console.log(`  party level ${r.heroLevels.join('/')} · curve wants ~L${expectedLevel(maxStage)} here · ult unlock = L30 · zone keys held (W${w}): ${keysHere}`);
+  console.log(`  party level ${r.heroLevels.join('/')} · curve wants ~L${expectedLevel(maxStage)} here · ult unlock = L30`);
   console.log(`  total wipes: ${r.sim.world.wipes}`);
 
   // ── Economy diagnosis at the wall ──

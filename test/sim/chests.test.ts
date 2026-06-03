@@ -22,12 +22,15 @@ function meanTier(type: 'normal' | 'stageBoss' | 'zoneBoss', S: number, n: numbe
 }
 
 describe('chests', () => {
-  it('boss/zone chests have a higher mean tier than normal at the same stage', () => {
+  it('item tier is independent of chest type (only gem CHANCE differs)', () => {
+    // DIFFICULTY.md §4: every chest type rolls items from the SAME per-difficulty table;
+    // chest type only changes the gem chance (×1/×2/×4), never the item tier. So mean item
+    // tier is ~equal across types (the differing gem roll only perturbs the rng stream).
     const normal = meanTier('normal', 60, 1500);
     const stage = meanTier('stageBoss', 60, 1500);
     const zone = meanTier('zoneBoss', 60, 1500);
-    expect(stage).toBeGreaterThan(normal);
-    expect(zone).toBeGreaterThan(stage);
+    expect(Math.abs(stage - normal)).toBeLessThan(0.05);
+    expect(Math.abs(zone - normal)).toBeLessThan(0.05);
   });
 
   it('per-type storage caps stop accrual (no overflow)', () => {
@@ -74,21 +77,6 @@ describe('chests', () => {
     };
     expect(gemRate('stageBoss')).toBeGreaterThan(gemRate('normal'));
     expect(gemRate('zoneBoss')).toBeGreaterThan(gemRate('stageBoss'));
-  });
-
-  it('keys credit each chest’s DROP zone (not where/when opened)', () => {
-    const world = createWorld(1, [godHero()]); // "current" stage 1 — irrelevant to the open
-    // Two big stacks dropped in different zones: zone 1 (stage 3) and zone 3 (stage 25).
-    world.chests = [
-      { type: 'normal', dropStage: 3, count: 4000 },
-      { type: 'normal', dropStage: 25, count: 4000 },
-    ];
-    const res = openAll(world, makeRng(9), bonuses);
-    expect(res.keysByZone[2]).toBeUndefined(); // no zone-2 chests → never credited
-    expect(res.keysByZone[1] ?? 0).toBeGreaterThan(0);
-    expect(res.keysByZone[3] ?? 0).toBeGreaterThan(0);
-    const credited = Object.values(res.keysByZone).reduce((a, b) => a + b, 0);
-    expect(credited).toBe(res.keys); // every rolled key landed in exactly one zone bucket
   });
 
   it('openAll rolls each stack at its own DROP stage (loot tier follows the chest, not the player)', () => {

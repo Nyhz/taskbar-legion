@@ -25,7 +25,7 @@ export function SocketConfirmModal({ pending, onClose }: { pending: PendingSocke
   if (item === undefined) return null; // target vanished (unequipped mid-flow)
 
   const def = GEMS[pending.gem.key];
-  const grants = gemGrants(pending.gem, item.category);
+  const grants = gemGrants(pending.gem);
   const confirm = (): void => {
     socketGem(pending.heroId, pending.slot, pending.socketIdx, pending.gem.id);
     onClose();

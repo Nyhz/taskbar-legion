@@ -1,9 +1,9 @@
 /**
  * Fresh-start advance probe (run: `npx vite-node scripts/sim-newgame.ts`).
- * Answers: "can a brand-new game actually get going?" Starts a SOLO level-1 Warrior
+ * Answers: "can a brand-new game actually get going?" Starts a SOLO level-1 Knight
  * with no gear / talents / tech (exactly a new save) and plays it forward, reporting
  * full-party WIPES and stage/level progress over the opening. The opening is the
- * fragile window: a gearless warrior must survive 1-1 to earn the first gold/items
+ * fragile window: a gearless knight must survive 1-1 to earn the first gold/items
  * that bootstrap the whole loop. Test/dev tooling only (sim/ + data/).
  */
 import { GreedyRunner } from '../test/sim/harness';
@@ -42,7 +42,7 @@ function probe(seed: number): void {
   console.log(`  first 1-1 clear: ${firstClear < 0 ? 'NEVER (stuck!)' : fmtTime(firstClear)}`);
   console.log(`  wipes in first 10m: ${wipesAt10m}   first 30m: ${wipesAt30m}   total(2h): ${r.sim.world.wipes}`);
   for (const m of marks) console.log(`  ${m.label}`);
-  // A deliberately-gated fresh start: a naked L1 warrior is EXPECTED to farm a few
+  // A deliberately-gated fresh start: a naked L1 knight is EXPECTED to farm a few
   // waves for gear/levels before its first 1-1 clear. "Advances" = it bootstraps (clears
   // 1-1 within ~1h) and keeps progressing (≥ stage 3 in 2h) rather than being stuck.
   const verdict = firstClear >= 0 && firstClear < 3600 && r.stage >= 3;
@@ -51,7 +51,7 @@ function probe(seed: number): void {
 
 function main(): void {
   console.log('=== Taskbar Legion — FRESH NEW-GAME advance probe ===');
-  console.log('(solo L1 Warrior, no gear/talents/tech — exactly a new save)');
+  console.log('(solo L1 Knight, no gear/talents/tech — exactly a new save)');
   for (const seed of [1, 7, 2024, 99]) probe(seed);
   console.log('\n=== done ===');
 }

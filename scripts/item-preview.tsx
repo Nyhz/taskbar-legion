@@ -23,7 +23,7 @@ function splitArmor(): ItemInstance {
 }
 
 const items: { label: string; item: ItemInstance }[] = [
-  { label: 'Warrior Sword', item: composeItem('weapon', 6, origin(7), makeRng(7), 55, 'warrior') },
+  { label: 'Knight Sword', item: composeItem('weapon', 6, origin(7), makeRng(7), 55, 'knight') },
   { label: 'Priest Wand', item: composeItem('weapon', 6, origin(13), makeRng(13), 55, 'priest') },
   { label: 'Ranger Quiver (off-hand)', item: composeItem('offhand', 6, origin(21), makeRng(21), 55, 'ranger') },
   { label: 'Armor (armor/MR split)', item: splitArmor() },

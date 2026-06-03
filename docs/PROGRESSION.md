@@ -1,5 +1,24 @@
 # PROGRESSION.md — The scaling bible (infinite, gear-checked)
 
+> **⛔ SUPERSEDED BY `docs/DIFFICULTY.md` (2026-06-03).** The game pivoted from **infinite scaling** to a
+> **finite 5-difficulty** model (Normal/Hell/Inferno/Eternal/Torment × 10 worlds × 10 stages). `DIFFICULTY.md`
+> is now canonical for structure, difficulty, loot tiers, walls, XP bands, and pacing. The infinite model
+> below — §0's per-world zone-boss walls + `ZONE_WALL_GROWTH`, §1's "infinite scaling", §13's world-depth
+> rarity + `unlockStage` schedule, §14's zone-key gate, and the W100≈1yr tail — is **retired.** What is
+> **retained and re-parameterized** for the finite span: the polynomial Φ curve, `gearTrack` hit-count anchor,
+> decoupled boss scales, mitigation, `expectedLevel`, the FLAT-vs-PERCENT stat rule (§6), and the income shape.
+> Read `DIFFICULTY.md` first; treat the sections below as background on the surviving machinery only.
+>
+> **⚠️ MID-REWORK (read first).** The **exponential Φ scaling described below is being replaced** by a
+> polynomial "B-curve" so numbers stay readable (a bow's attackDamage hit ~1e42 by world 50 — rejected). The
+> stat-system changes are DONE (scaler/enabler split, soft caps, slot restrictions, dodge/hpPerHit removed,
+> damageIncrease/lifesteal buff-only, multistrike added, 90% armor-DR cap). The **scaling spine + enemy
+> rebalance is Phase 2** (target: T4 flat ~125@il50 → ~2k@W100 → ~10k@W200; percent scalers gain gentle ilvl
+> growth; enablers diminish via `ENABLER_SOFT_CAPS`; difficulty re-sourced onto the zone-boss walls + gear
+> treadmill since the on-level gap flattens under polynomial). On-level armor DR target ~50%, W100≈1yr kept.
+> Until Phase 2 lands, the magnitude sections below are STALE. **Phase 2 handoff: `docs/PHASE2_REBALANCE.md`**
+> (read that first); see also memory `number-system-rework`.
+
 This is the canonical model for difficulty, power, loot, and XP scaling. It **supersedes the example
 numbers in SPEC §4.6 / §5.3 and the first-pass curves in an earlier draft of BALANCE.md** — those were
 linear placeholders, and linear gear power cannot keep pace with exponential enemies (the game would become

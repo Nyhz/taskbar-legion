@@ -13,7 +13,6 @@ export interface Bonuses {
   chestDropMult: number; // global, all chest types (pet-only source; no tech node grants it)
   chestTypeDropMult: Record<ChestType, number>; // per-type, stacks on top of the global mult
   gemDropMult: number;
-  zoneKeyMult: number;
   chestStorageBonus: Record<ChestType, number>;
   autoOpenUnlocked: boolean;
   autoOpenReduceMs: number;
@@ -32,7 +31,6 @@ export function getBonuses(
     chestDropMult: 1,
     chestTypeDropMult: { normal: 1, stageBoss: 1, zoneBoss: 1 },
     gemDropMult: 1,
-    zoneKeyMult: 1,
     chestStorageBonus: { normal: 0, stageBoss: 0, zoneBoss: 0 },
     autoOpenUnlocked: false,
     autoOpenReduceMs: 0,
@@ -50,7 +48,6 @@ export function getBonuses(
         case 'xpDropMult': b.xpMult += e.value * rank; break;
         case 'chestTypeDropMult': b.chestTypeDropMult[e.type] += e.value * rank; break;
         case 'gemDropMult': b.gemDropMult += e.value * rank; break;
-        case 'zoneKeyMult': b.zoneKeyMult += e.value * rank; break;
         case 'chestStorage': b.chestStorageBonus[e.type] += e.value * rank; break;
         case 'unlockAutoOpen': b.autoOpenUnlocked = true; break;
         case 'autoOpenReduce': b.autoOpenReduceMs += e.value * rank; break;
@@ -67,7 +64,6 @@ export function getBonuses(
       case 'goldMult': b.goldMult += bonus.value; break;
       case 'xpMult': b.xpMult += bonus.value; break;
       case 'chestDropMult': b.chestDropMult += bonus.value; break;
-      case 'zoneKeyMult': b.zoneKeyMult += bonus.value; break;
       case 'chestStorage': b.chestStorageBonus[bonus.type] += bonus.value; break;
       case 'autoOpenReduce': b.autoOpenReduceMs += bonus.value; break;
       default: { const _exhaustive: never = bonus; void _exhaustive; }

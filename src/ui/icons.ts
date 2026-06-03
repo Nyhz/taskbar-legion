@@ -1,6 +1,6 @@
 import type { StatKey } from '@/data/stats';
 import type { SlotKey } from '@/data/itemSlots';
-import { weaponTypeFor } from '@/data/itemSlots';
+import { tryWeaponTypeFor } from '@/data/itemSlots';
 import type { AbilityDef } from '@/data/abilities';
 import type { ItemInstance } from '@/sim/items';
 
@@ -25,14 +25,13 @@ export const STAT_ICON: Record<StatKey, string> = {
   attackSpeed: '🌀',
   critChance: '🎯',
   critDamage: '💥',
+  multistrike: '⚡',
   damageIncrease: '🔥',
   lifesteal: '🩸',
   armor: '🛡️',
   magicResist: '🔮',
   health: '❤️',
-  dodgeChance: '💨',
   hpRegen: '✚',
-  hpPerHit: '🩹',
   block: '⛨',
   cooldownReduction: '⏱️',
   healPower: '✨',
@@ -55,7 +54,10 @@ export function abilityIcon(ability: AbilityDef): string {
  *  instead of collapsing to one slot icon; everything else uses the generic slot icon. */
 export function itemGlyph(item: ItemInstance): string {
   if (item.category === 'weapon' && item.classKey !== undefined) {
-    return weaponTypeFor(item.classKey, item.slot as 'weapon' | 'offhand').icon;
+    // tryWeaponTypeFor (not the throwing variant) so a stale/unknown class key falls back
+    // to the generic slot icon instead of crashing the panel render.
+    const wt = tryWeaponTypeFor(item.classKey, item.slot as 'weapon' | 'offhand');
+    if (wt !== undefined) return wt.icon;
   }
   return SLOT_ICON[item.slot];
 }

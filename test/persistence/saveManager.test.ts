@@ -16,10 +16,10 @@ function fixture(): SaveV1 {
     lootRngState: 0,
     gold: 9999,
     researchPoints: 0,
-    unlockedClasses: ['warrior', 'ranger'],
+    unlockedClasses: ['knight', 'ranger'],
     partySlots: ['h0', 'h1', null],
     roster: [
-      { id: 'h0', classKey: 'warrior', level: 12, exp: 5000, equipment: {}, talentPoints: 2, talents: { warrior_guard: 3 }, activeAbilities: ['warrior_guard'] },
+      { id: 'h0', classKey: 'knight', level: 12, exp: 5000, equipment: {}, talentPoints: 2, talents: { knight_guard: 3 }, activeAbilities: ['knight_guard'] },
       { id: 'h1', classKey: 'ranger', level: 9, exp: 3000, equipment: {}, talentPoints: 0, talents: {}, activeAbilities: [] },
     ],
     inventory: [],
@@ -30,7 +30,6 @@ function fixture(): SaveV1 {
     stashSlotUpgrades: 4,
     techTree: { eco_gold: 4, party_size: 1 },
     chests: [{ type: 'normal', dropStage: 5, count: 3 }],
-    zoneKeys: { 1: 2 },
     autoOpen: { unlocked: true, lastRunAt: 500 },
     pets: { ownedKeys: ['coin_sprite'], selectedKey: 'coin_sprite' },
     settings: { uiScale: 1.5, dockOrientation: 'bottom' },
@@ -47,17 +46,39 @@ describe('saveManager', () => {
     expect(migrate('garbage')).toBeNull();
   });
 
-  it('migrate upgrades legacy scalar zoneKeys + chests lacking dropStage', () => {
-    // A legacy v1 save: zoneKeys was a single number, chests had no dropStage. The save
-    // left off at 2-7 (globalStageIndex 17, world 2).
+  it('migrate remaps a legacy "warrior" save → "knight" (roster, unlocks, abilities, items)', () => {
+    const legacy = {
+      ...fixture(),
+      unlockedClasses: ['warrior', 'ranger'],
+      roster: [
+        {
+          id: 'h0', classKey: 'warrior', level: 12, exp: 5000, talentPoints: 2,
+          talents: { warrior_guard: 3, warrior_bulwark: 1 },
+          activeAbilities: ['warrior_guard'],
+          equipment: { weapon: { id: 'w1', category: 'weapon', slot: 'weapon', classKey: 'warrior' } },
+        },
+      ],
+      inventory: [{ id: 'w2', category: 'weapon', slot: 'offhand', classKey: 'warrior' }],
+      stash: [{ id: 'w3', category: 'weapon', slot: 'weapon', classKey: 'warrior' }],
+    } as unknown as Record<string, unknown>;
+    const out = migrate(legacy);
+    expect(out?.unlockedClasses).toEqual(['knight', 'ranger']);
+    const h0 = out?.roster[0];
+    expect(h0?.classKey).toBe('knight');
+    expect(h0?.talents).toEqual({ knight_guard: 3, knight_bulwark: 1 });
+    expect(h0?.activeAbilities).toEqual(['knight_guard']);
+    const classKeyOf = (e: unknown): unknown => (e as { classKey?: unknown }).classKey;
+    expect(h0?.equipment.weapon?.classKey).toBe('knight');
+    expect(classKeyOf(out?.inventory[0])).toBe('knight');
+    expect(classKeyOf(out?.stash[0])).toBe('knight');
+  });
+
+  it('migrate upgrades chests lacking dropStage', () => {
+    // A legacy v1 save: chests had no dropStage. The save left off at 2-7 (globalStageIndex 17).
     const legacy = { ...fixture(), progress: { globalStageIndex: 17, world: 2, stage: 7 } } as unknown as Record<string, unknown>;
-    legacy.zoneKeys = 5;
     legacy.chests = [{ type: 'normal', count: 3 }];
     const out = migrate(legacy);
-    expect(out?.zoneKeys).toEqual({ 2: 5 }); // banked into the world the save left off in
     expect(out?.chests).toEqual([{ type: 'normal', count: 3, dropStage: 17 }]);
-    // Empty / zero legacy keys → empty record (no phantom buckets).
-    expect(migrate({ ...legacy, zoneKeys: 0 })?.zoneKeys).toEqual({});
   });
 
   it('hydrate → buildSave round-trips the player state', () => {
@@ -71,7 +92,6 @@ describe('saveManager', () => {
     expect(out.inventorySlotUpgrades).toBe(5);
     expect(out.stashPages).toBe(3);
     expect(out.stashSlotUpgrades).toBe(4);
-    expect(out.zoneKeys).toEqual({ 1: 2 });
     expect(out.pets.ownedKeys).toEqual(['coin_sprite']);
     expect(out.progress.globalStageIndex).toBe(37); // resumeStage = resumeStageFor(36) (no live world in test)
     expect(out.maxClearedStage).toBe(36); // travel-unlock frontier round-trips

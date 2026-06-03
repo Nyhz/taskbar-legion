@@ -2,10 +2,11 @@ import { useStore } from '@/state/store';
 import { getEngine } from '@/game/engineRef';
 import { aggregate } from '@/sim/stats';
 import { heroBaseStats, equipmentMods, talentPassiveMods } from '@/sim/loadout';
+import { effectStatMods } from '@/sim/effects';
 import { getBonuses, type Bonuses } from '@/sim/bonuses';
 import { chestDropChance } from '@/sim/chests';
 import { CHEST_TYPES, type ChestType } from '@/data/chests';
-import { OFFENSIVE_STATS, DEFENSIVE_STATS, STATS, type StatKey } from '@/data/stats';
+import { OFFENSIVE_STATS, DEFENSIVE_STATS, STATS, ENABLER_SOFT_CAPS, type StatKey } from '@/data/stats';
 import { effectDef } from '@/data/effects';
 import { format } from '@/sim/num';
 import { PALETTE } from '@/styles/palette';
@@ -25,10 +26,18 @@ export function HeroStatsTab({ heroId }: { heroId: string }): React.JSX.Element 
   const ownedPets = useStore((s) => s.ownedPets);
   if (hero === undefined) return <div>No hero.</div>;
 
-  const bonuses = getBonuses(techRanks, ownedPets);
-  const mods = [...equipmentMods(hero.equipment), ...talentPassiveMods(hero.classKey, hero.talents), ...bonuses.combatMods];
-  const stats = aggregate(heroBaseStats(hero.classKey, hero.level), mods);
   const combatant = getEngine()?.world.heroes.find((h) => h.id === hero.id);
+  const bonuses = getBonuses(techRanks, ownedPets);
+  // Mirror the sim's combat aggregate: passive sources (gear + talents + tech)
+  // PLUS the live active-effect mods on the combatant, so transient buffs like
+  // Stone Skin's damage reduction show up in the sheet while they're up.
+  const mods = [
+    ...equipmentMods(hero.equipment),
+    ...talentPassiveMods(hero.classKey, hero.talents),
+    ...bonuses.combatMods,
+    ...effectStatMods(combatant?.effects ?? []),
+  ];
+  const stats = aggregate(heroBaseStats(hero.classKey, hero.level), mods);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -71,12 +80,16 @@ function StatCol({ title, keys, stats }: { title: string; keys: StatKey[]; stats
       <div style={{ color: title === 'Offensive' ? '#e8a0a0' : '#a0c8e8', fontWeight: 700 }}>{title}</div>
       {keys.map((k) => {
         const pct = STATS[k].kind === 'percent';
-        const v = stats[k];
+        const v = stats[k]; // already the EFFECTIVE (soft-capped) value from aggregate
         if (v === 0) return null;
+        const cap = ENABLER_SOFT_CAPS[k]?.cap; // enablers show their diminishing-returns ceiling
         return (
           <div key={k} style={{ display: 'flex', justifyContent: 'space-between', gap: 6, fontSize: 10, whiteSpace: 'nowrap' }}>
             <span style={{ color: PALETTE.textMute }}>{STATS[k].label}</span>
-            <span style={{ color: PALETTE.textLight }}>{pct ? `${v.toFixed(1)}%` : format(Math.round(v))}</span>
+            <span style={{ color: PALETTE.textLight }}>
+              {pct ? `${v.toFixed(1)}%` : format(Math.round(v))}
+              {cap !== undefined && <span style={{ color: PALETTE.textMute }}> / {cap}%</span>}
+            </span>
           </div>
         );
       })}
@@ -96,8 +109,10 @@ function UtilitySection({ stats, bonuses }: { stats: Record<StatKey, number>; bo
 
       {/* Per-hero utility stats (from gear / talents / tech). */}
       <div style={{ display: 'flex', flexDirection: 'column', fontSize: 10 }}>
-        <KV label="Cooldown Reduction" value={`${stats.cooldownReduction.toFixed(1)}%`} />
+        <KV label="Cooldown Reduction" value={`${stats.cooldownReduction.toFixed(1)}% / ${ENABLER_SOFT_CAPS.cooldownReduction?.cap ?? 100}%`} />
         <KV label="Heal Power" value={`${stats.healPower.toFixed(1)}%`} />
+        {/* Buff-only (no gear roll) — show only when an active effect grants it (e.g. Stone Skin). */}
+        {stats.damageReduction > 0 && <KV label="Damage Reduction" value={`${stats.damageReduction.toFixed(1)}%`} />}
       </div>
 
       {/* Account-wide figures (identical for the whole party — from tech + pets). */}
@@ -108,7 +123,6 @@ function UtilitySection({ stats, bonuses }: { stats: Record<StatKey, number>; bo
           <KV label="XP Gain" value={bonusPct(bonuses.xpMult)} />
           <KV label="Offline Yield" value={bonusPct(bonuses.offlineMult)} />
           <KV label="Gem Drop" value={bonusPct(bonuses.gemDropMult)} />
-          <KV label="Zone Key" value={bonusPct(bonuses.zoneKeyMult)} />
         </div>
         <div style={{ flex: 1 }}>
           <div style={{ color: PALETTE.parchment, fontWeight: 700, fontSize: 10 }}>Chests (account)</div>

@@ -197,6 +197,15 @@ function applyToTarget(
   // (what dotDps/hotHps sum each tick).
   if (kind === 'dot' || kind === 'hot') value /= Math.max(0.001, duration / 1000);
 
+  // Heals + HoTs can CRIT off the caster's crit chance, exactly like attacks — rolled once
+  // at cast (a crit HoT boosts every tick), scaled by the caster's crit damage. So a priest
+  // who stacks crit chance gets bigger heals.
+  let healCrit = false;
+  if ((kind === 'heal' || kind === 'hot') && rng.chance(Math.min(1, cs.critChance / 100))) {
+    healCrit = true;
+    value *= 1 + cs.critDamage / 100;
+  }
+
   if (kind === 'damage') {
     let dmg = value;
     let crit = false;
@@ -224,13 +233,15 @@ function applyToTarget(
     }
     dmg = Math.max(0, absorbDamage(target.effects, dmg));
     target.hp -= dmg;
-    events.push({ type: 'damage', targetId: target.id, sourceId: caster.id, amount: dmg, crit });
+    // Tag the source ability so the render layer can pick the caster's ability-cast swing
+    // (e.g. the knight's heavy 3rd attack) instead of a basic auto.
+    events.push({ type: 'damage', targetId: target.id, sourceId: caster.id, amount: dmg, crit, abilityKey: ability.key });
     return;
   }
   if (kind === 'heal') {
     const heal = Math.max(0, value);
     target.hp = Math.min(target.maxHp, target.hp + heal);
-    events.push({ type: 'heal', targetId: target.id, sourceId: caster.id, amount: heal });
+    events.push({ type: 'heal', targetId: target.id, sourceId: caster.id, amount: heal, crit: healCrit });
     return;
   }
   // dot / hot / shield / statMod / silence / root / tag → ongoing effect.
@@ -312,13 +323,27 @@ export function abilityEffectLines(ability: AbilityDef, rank: number, cs: Effect
   const r = Math.max(1, rank);
   const refTarget = { maxHp: refMaxHp } as Combatant;
   const refCaster = { side: 'hero' } as Combatant;
+  // Heal/HoT/Shield scale with the TARGET's max HP (× heal power), so a flat number is
+  // meaningless in a tooltip — the target varies and isn't the caster. Show the % of max
+  // HP it actually grants (heal-power-amplified, matching the combat formula), labelled by
+  // whose HP it's a fraction of.
+  const healPctOfMaxHp = (): number => {
+    const p = ability.power;
+    if (p === undefined) return 0;
+    const coeff = p.coeff + (p.coeffPerRank ?? 0) * Math.max(0, r - 1);
+    return coeff * (1 + cs.healPower / 100) * 100;
+  };
+  const pf = (x: number): string => `${+x.toFixed(1)}%`;
+  const hpBasis =
+    ability.target === 'self' ? 'your max HP' : ability.target === 'tank' ? "the tank's max HP" : "the target's max HP";
   const lines: string[] = [];
   for (const applied of ability.applies) {
     const def = effectDef(applied.effectKey);
     const k = def.kind;
     const dur = effectDuration(ability, def, r, applied.durationMsOverride);
     const durS = (dur / 1000).toFixed(dur % 1000 === 0 ? 0 : 1);
-    // DoT/HoT magnitudes are TOTALS over the duration (see effectMagnitude).
+    // DoT magnitudes are TOTALS over the duration (see effectMagnitude); damage/dot scale
+    // with the caster's own attack, so the displayed hero's stats give the real number.
     const v = effectMagnitude(ability, def, r, cs, refTarget, refCaster, applied.valuePerRank);
     const n = (x: number): string => format(Math.round(x));
     const pre = applied.chance !== undefined ? `${Math.round(applied.chance * 100)}% chance: ` : '';
@@ -330,13 +355,13 @@ export function abilityEffectLines(ability: AbilityDef, rank: number, cs: Effect
         lines.push(`${pre}~${n(v)} damage over ${durS}s`);
         break;
       case 'heal':
-        lines.push(`${pre}Heal ~${n(v)}`);
+        lines.push(`${pre}Heal ${pf(healPctOfMaxHp())} of ${hpBasis}`);
         break;
       case 'hot':
-        lines.push(`${pre}Heal ~${n(v)} over ${durS}s`);
+        lines.push(`${pre}Heal ${pf(healPctOfMaxHp())} of ${hpBasis} over ${durS}s`);
         break;
       case 'shield':
-        lines.push(`${pre}Shield ~${n(v)} for ${durS}s`);
+        lines.push(`${pre}Shield ${pf(healPctOfMaxHp())} of ${hpBasis} for ${durS}s`);
         break;
       case 'statMod': {
         const pct = k.mode === 'percent';

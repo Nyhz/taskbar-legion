@@ -15,7 +15,6 @@ export interface HudSnapshot {
   phase: StagePhase;
   gold: number;
   chests: Record<ChestType, number>;
-  zoneKeys: Record<number, number>; // per-zone key counts (world index → count)
   party: { classKey: string; level: number }[]; // one entry per fielded hero
 }
 
@@ -28,7 +27,6 @@ export const EMPTY_HUD: HudSnapshot = {
   phase: 'advancing',
   gold: 0,
   chests: { normal: 0, stageBoss: 0, zoneBoss: 0 },
-  zoneKeys: {},
   party: [],
 };
 
@@ -40,9 +38,9 @@ export interface GameSlice {
   pendingTravelStage: number | null;
   requestTravel: (globalStageIndex: number) => void;
   clearPendingTravel: () => void;
-  /** "Enter world W's W-10 world boss" intent (spends one of that zone's keys). Carries
-   *  the target world; set by the strip portal tap and the Map's X-10 button; the engine
-   *  consumes it once next frame. null = no pending entry. */
+  /** "Enter world W's W-10 world boss" intent. Carries the target world; set by the strip
+   *  portal tap and the Map's X-10 button; the engine consumes it once next frame.
+   *  null = no pending entry. */
   pendingEnterZoneWorld: number | null;
   requestEnterZoneBoss: (world: number) => void;
   clearPendingEnterZoneBoss: () => void;

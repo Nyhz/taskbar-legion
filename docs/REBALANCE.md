@@ -10,7 +10,7 @@
 
 A brand-new hero out-damages the early game by ~5×:
 
-| Stage | Trash HP | Boss HP | Enemy dmg/hit | | Fresh L1 warrior hit | Fresh L1 ranger hit |
+| Stage | Trash HP | Boss HP | Enemy dmg/hit | | Fresh L1 knight hit | Fresh L1 ranger hit |
 |------:|---------:|--------:|--------------:|---|---------------------:|--------------------:|
 | 1 | **~14** | ~180 | ~6.6 | | **~75** | ~78 (crit ~133) |
 | 2 | ~16 | ~200 | ~7.2 | | ~77 | ~81 |
@@ -144,7 +144,7 @@ until `Reached stage` and `Frozen-gear B` are both healthy. Expect 3–6 iterati
 
 ## 9. Acceptance criteria (definition of done)
 
-1. **No early faceroll:** a fresh **L1, gearless, talent-less** warrior takes **≥ 2 auto-hits** to kill a
+1. **No early faceroll:** a fresh **L1, gearless, talent-less** knight takes **≥ 2 auto-hits** to kill a
    stage‑1 trash mob (per target; ≥3 for target a). Add a tiny test/probe (below).
 2. **All 6 PROGRESSION invariants green** (`npm test`) — do NOT relax their thresholds to force a pass; if they
    fail, the tuning isn't done.
@@ -159,7 +159,7 @@ import { aggregate } from '@/sim/stats';
 import { heroBaseStats } from '@/sim/loadout';
 import { enemyHp, TRASH_HP_FRACTION } from '@/data/stageScaling';
 
-const hit = aggregate(heroBaseStats('warrior', 1), {} as any).attackDamage; // L1, no mods
+const hit = aggregate(heroBaseStats('knight', 1), {} as any).attackDamage; // L1, no mods
 const trashHp = enemyHp(1) * TRASH_HP_FRACTION;
 // target (b): ~2 hits → hit should be ≤ trashHp (and > trashHp/4 so it's not a slog)
 expect(hit).toBeLessThanOrEqual(trashHp);
@@ -181,7 +181,7 @@ Cut base `attackDamage` so L1 hits ≈ 7–8 (DPS classes slightly higher); **ke
 
 | Class | base AD (old → new) | growth (old → new) | L1 hit (new) |
 |---|---|---|---|
-| Warrior | 75 → **8** | 2.4 → **2.2** | ~8 |
+| Knight | 75 → **8** | 2.4 → **2.2** | ~8 |
 | Ranger | 78 → **9** | 2.8 → **2.6** | ~9 |
 | Mage | 95 → **11** | 3.6 → **3.4** | ~11 |
 | Rogue | 70 → **8** | 2.6 → **2.4** | ~8 |
@@ -228,7 +228,7 @@ only; bosses stay enrage-gated). **Open:** boss signature abilities; the two mix
 
 **Design call (user):** *balance around an optimal party of tank, dps, healer; good gear of their level
 makes it easy-not-trivial, mediocre gear is extremely challenging or forces a farm-retreat. Not all
-compositions need to be viable.* The smoke/probe agent now builds **warrior (frontline) → ranger (dps) →
+compositions need to be viable.* The smoke/probe agent now builds **knight (frontline) → ranger (dps) →
 priest (healer)** as its core 3 (`PARTY_PRIORITY` in `test/sim/harness.ts`; probe `PARTY` matches) — it
 saves for the healer as its 3rd hero rather than a 2nd dps. The healer sustains the squishier frontline; a
 healerless party is intentionally NOT balanced for.

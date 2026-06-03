@@ -17,12 +17,12 @@ export type EffectKind =
   // Absorb pool: ActiveEffect.value is the remaining shield; incoming damage drains
   // it before HP (sim/effects.absorbDamage). Timed.
   | { type: 'shield' }
-  // Total damage immunity while active (Warrior ult). All incoming damage → 0.
+  // Total damage immunity while active (Knight ult). All incoming damage → 0.
   | { type: 'invulnerable' }
   // Vulnerability mark (Ranger ult): the holder takes ActiveEffect.value% MORE damage
   // from all sources. Read by sim/effects.vulnerabilityMult in the damage paths.
   | { type: 'vulnerable' }
-  // Weaken (Warrior Debilitating Strike): the holder DEALS `value`% LESS damage with its
+  // Weaken (Knight Debilitating Strike): the holder DEALS `value`% LESS damage with its
   // attacks/abilities. The mirror of `vulnerable`. `value` is the base %; ability
   // rankScaling adds to it. Read by sim/effects.weakenMult in the outgoing-damage paths.
   | { type: 'weaken'; value: number }
@@ -113,11 +113,11 @@ export const EFFECTS: Record<string, EffectDef> = {
     durationMs: 4000, maxStacks: 1, stackRule: 'refresh', beneficial: false,
   },
   buff_guard_block: {
-    key: 'buff_guard_block', name: 'Iron Guard', icon: 'block',
-    // Iron Guard is now a pure block-chance cooldown: 40% block at rank 1, +2.5%/rank →
-    // 50% at rank 5. Each blocked hit is halved (sim/combat.enemyAttack). 8s uptime.
-    kind: { type: 'statMod', stat: 'block', mode: 'percent', value: 40 },
-    durationMs: 8000, maxStacks: 1, stackRule: 'refresh', beneficial: true,
+    key: 'buff_guard_block', name: 'Stone Skin', icon: 'guard',
+    // Stone Skin is a flat damage-reduction cooldown: 20% DR at rank 1, +5%/rank → 40% at
+    // rank 5. Applied as flat %-off incoming damage (sim/combat.enemyAttack). 6s uptime.
+    kind: { type: 'statMod', stat: 'damageReduction', mode: 'percent', value: 20 },
+    durationMs: 6000, maxStacks: 1, stackRule: 'refresh', beneficial: true,
   },
   buff_battlecry_ad: {
     key: 'buff_battlecry_ad', name: 'Battle Cry', icon: 'cry',
@@ -142,7 +142,7 @@ export const EFFECTS: Record<string, EffectDef> = {
     kind: { type: 'statMod', stat: 'lifesteal', mode: 'percent', value: 8 },
     durationMs: 8000, maxStacks: 1, stackRule: 'refresh', beneficial: true,
   },
-  // Debilitating Strike (Warrior): the struck enemy deals 15%→25% less damage for 6s.
+  // Debilitating Strike (Knight): the struck enemy deals 15%→25% less damage for 6s.
   debuff_weaken: {
     key: 'debuff_weaken', name: 'Debilitated', icon: 'expose',
     kind: { type: 'weaken', value: 15 },
@@ -169,7 +169,7 @@ export const EFFECTS: Record<string, EffectDef> = {
     durationMs: 6000, maxStacks: 1, stackRule: 'refresh', beneficial: true,
   },
   // ── Ultimates (off-tree, auto-granted at L60; values resolved from data/ultimates) ──
-  // Warrior Last Stand: brief total invulnerability after a would-be-lethal blow. The
+  // Knight Last Stand: brief total invulnerability after a would-be-lethal blow. The
   // duration is overridden by the ult def's invulnMs at apply time.
   fx_invuln: {
     key: 'fx_invuln', name: 'Last Stand', icon: 'guard',

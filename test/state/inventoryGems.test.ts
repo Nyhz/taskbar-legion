@@ -15,7 +15,7 @@ const itemOrigin = (seed: number, stage: number): ItemOrigin => ({
   rollSeed: seed, stageIndex: stage, chestType: 'normal', generatorVersion: 1,
 });
 // Level 99 — arbitrary; these tests exercise gem inventory/socketing, not leveling.
-const hero = (): HeroState => ({ id: 'h0', classKey: 'warrior', level: 99, exp: 0, equipment: {}, talentPoints: 0, talents: {}, activeAbilities: [] });
+const hero = (): HeroState => ({ id: 'h0', classKey: 'knight', level: 99, exp: 0, equipment: {}, talentPoints: 0, talents: {}, activeAbilities: [] });
 
 describe('unified gem inventory', () => {
   it('addLoot puts items and gems into the same inventory array', () => {

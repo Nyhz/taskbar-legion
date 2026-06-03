@@ -26,7 +26,6 @@ export function OfflineSummaryModal({ summary, onClose }: { summary: OfflineSumm
         <Row label="Gold" value={format(summary.gold)} color={PALETTE.gold} />
         <Row label="XP" value={format(summary.xp)} color={PALETTE.xpBlue} />
         <Row label="Chests" value={String(chestTotal)} color={PALETTE.research} />
-        <Row label="Zone keys" value={String(summary.keys)} color={PALETTE.titleRedHi} />
         <Row label="Stage" value={`${summary.fromStage} → ${summary.toStage}`} color={PALETTE.parchment} />
         <button onClick={onClose} style={{ width: '100%', marginTop: 10, padding: 6, background: PALETTE.titleRed, border: `1px solid ${PALETTE.ink}`, color: PALETTE.textLight, fontWeight: 700 }}>
           Collect

@@ -34,7 +34,6 @@ function sanitizeEquipment(eq: Partial<Record<SlotKey, ItemInstance>>): Partial<
 
 export interface ProgressSlice {
   gold: number;
-  zoneKeys: Record<number, number>; // per-zone key counts, mirrored from the sim
   researchPoints: number; // reserved/unused in v1
   techRanks: Record<string, number>;
   unlockedClasses: string[];
@@ -45,7 +44,6 @@ export interface ProgressSlice {
   lootRngState: number; // serialized chest-open RNG state (0 = unseeded → derive from seed)
 
   addGold: (n: number) => void;
-  setZoneKeys: (keys: Record<number, number>) => void;
   bumpConfig: () => void;
   canBuyTech: (key: string) => boolean;
   buyTech: (key: string) => boolean;
@@ -55,10 +53,9 @@ export interface ProgressSlice {
 
 export const createProgressSlice: StateCreator<GameStore, [], [], ProgressSlice> = (set, get) => ({
   gold: 0,
-  zoneKeys: {},
   researchPoints: 0,
   techRanks: {},
-  unlockedClasses: ['warrior'],
+  unlockedClasses: ['knight'],
   seed: 0xc0ffee,
   configEpoch: 0,
   resumeStage: 1,
@@ -66,7 +63,6 @@ export const createProgressSlice: StateCreator<GameStore, [], [], ProgressSlice>
   lootRngState: 0,
 
   addGold: (n) => set((s) => ({ gold: s.gold + n })),
-  setZoneKeys: (keys) => set({ zoneKeys: keys }),
   bumpConfig: () => set((s) => ({ configEpoch: s.configEpoch + 1 })),
 
   canBuyTech: (key) => {
@@ -106,7 +102,7 @@ export const createProgressSlice: StateCreator<GameStore, [], [], ProgressSlice>
       researchPoints: save.researchPoints,
       techRanks: migrateTechRanks(save.techTree), // pre-rework key names → new flat nodes
       // Drop classes that no longer exist (e.g. a save made before Mage/Rogue were
-      // removed) so the engine never builds a combatant for an unknown class. Warrior
+      // removed) so the engine never builds a combatant for an unknown class. Knight
       // is always kept so the party can never end up empty.
       unlockedClasses: save.unlockedClasses.filter((k) => CLASSES[k] !== undefined),
       seed: save.seed,
@@ -117,10 +113,9 @@ export const createProgressSlice: StateCreator<GameStore, [], [], ProgressSlice>
         const mc = save.maxClearedStage ?? Math.max(0, save.progress.globalStageIndex - 1);
         return { maxClearedStage: mc, resumeStage: resumeStageFor(mc) };
       })(),
-      zoneKeys: { ...save.zoneKeys },
       // Drop heroes of a removed class (Mage/Rogue) so the engine can't build a combatant
       // for an unknown class; back-compat: pre-ability saves get their active set seeded
-      // from ranked abilities (≤2). Always keep at least a fresh L1 warrior.
+      // from ranked abilities (≤2). Always keep at least a fresh L1 knight.
       ...((): { roster: typeof save.roster; selectedHeroId: string } => {
         const kept = save.roster
           .filter((h) => CLASSES[h.classKey] !== undefined)
@@ -135,7 +130,7 @@ export const createProgressSlice: StateCreator<GameStore, [], [], ProgressSlice>
                 : h.activeAbilities.filter((k) => poolKeys.includes(k));
             return { ...h, equipment: sanitizeEquipment(h.equipment), activeAbilities };
           });
-        const roster = kept.length > 0 ? kept : save.roster.slice(0, 1).map((h) => ({ ...h, classKey: 'warrior', talents: {}, equipment: {}, activeAbilities: [] }));
+        const roster = kept.length > 0 ? kept : save.roster.slice(0, 1).map((h) => ({ ...h, classKey: 'knight', talents: {}, equipment: {}, activeAbilities: [] }));
         const selected = roster.find((h) => h.id === save.roster[0]?.id) ?? roster[0];
         return { roster, selectedHeroId: selected?.id ?? 'h0' };
       })(),

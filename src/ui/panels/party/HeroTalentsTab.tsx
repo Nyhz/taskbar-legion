@@ -21,6 +21,7 @@ export function HeroTalentsTab({ heroId }: { heroId: string }): React.JSX.Elemen
   const techRanks = useStore((s) => s.techRanks);
   const ownedPets = useStore((s) => s.ownedPets);
   const spendTalent = useStore((s) => s.spendTalent);
+  const refundTalent = useStore((s) => s.refundTalent);
   const respec = useStore((s) => s.respec);
   if (hero === undefined) return <div>No hero.</div>;
 
@@ -54,6 +55,7 @@ export function HeroTalentsTab({ heroId }: { heroId: string }): React.JSX.Elemen
                   stats={stats}
                   canBuy={!locked && hero.talentPoints > 0 && (hero.talents[node.key] ?? 0) < node.maxRank}
                   onBuy={() => spendTalent(hero.id, node.key)}
+                  onRefund={() => refundTalent(hero.id, node.key)}
                 />
               ))}
             </div>
@@ -74,12 +76,14 @@ function NodeIcon({
   stats,
   canBuy,
   onBuy,
+  onRefund,
 }: {
   node: TalentNode;
   rank: number;
   stats: EffectiveStats;
   canBuy: boolean;
   onBuy: () => void;
+  onRefund: () => void;
 }): React.JSX.Element {
   const ref = useRef<HTMLButtonElement>(null);
   const [tip, setTip] = useState<{ left: number; top: number } | null>(null);
@@ -105,6 +109,8 @@ function NodeIcon({
         onMouseEnter={onEnter}
         onMouseLeave={() => setTip(null)}
         onClick={() => canBuy && onBuy()}
+        onContextMenu={(e) => { e.preventDefault(); onRefund(); }}
+        title="Left-click: rank up · Right-click: refund 1"
         style={{
           position: 'relative',
           width: 38,
@@ -115,7 +121,7 @@ function NodeIcon({
           background: 'radial-gradient(circle at 38% 32%, #2c2536 0%, #15121c 80%)',
           color: PALETTE.textLight,
           fontSize: 17,
-          cursor: canBuy ? 'pointer' : 'default',
+          cursor: canBuy ? 'pointer' : started ? 'pointer' : 'default',
           padding: 0,
         }}
       >

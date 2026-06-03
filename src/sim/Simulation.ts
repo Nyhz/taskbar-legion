@@ -1,8 +1,8 @@
 import type { Rng } from './rng';
 import { makeRng } from './rng';
 import type { Combatant, WorldState } from './world';
-import { emptyPending, keysForZone } from './world';
-import { resolveCombatTick, type CombatEvent } from './combat';
+import { emptyPending } from './world';
+import { resolveCombatTick, frontlineX, type CombatEvent } from './combat';
 import { spawnWave, spawnStageBoss, spawnZoneBoss } from './stages';
 import { tryAccrueChest } from './chests';
 import { rollPetDrop } from './pets';
@@ -12,18 +12,20 @@ import {
   xpPerKill,
   BOSS_INCOME_MULT,
   ZONE_BOSS_INCOME_MULT,
+  ELITE_CHEST_MULT,
   WAVES_PER_STAGE,
   isPreZoneGate,
   isZoneBossStage,
   worldOf,
   worldFirstStage,
 } from '@/data/stageScaling';
-import { WALK_SPEED, SPAWN_AHEAD, HERO_SPACING, TELEPORT_HOLD_MS } from '@/data/field';
+import { isFinalStage } from '@/data/difficulties';
+import { WALK_SPEED, SPAWN_AHEAD, HERO_SPACING, TELEPORT_HOLD_MS, WIPE_RETREAT_AT_MS, WIPE_TOTAL_MS } from '@/data/field';
 import type { ChestType } from '@/data/chests';
 
 // The fixed-timestep simulation loop. Owns WorldState; tick() advances combat,
-// accrues income/chests/pets, and drives stage flow incl. the zone-key gate and
-// the wipe→retreat rule. Deterministic: all randomness via the seeded rng.
+// accrues income/chests/pets, and drives stage flow incl. the W-10 world-boss gate
+// and the wipe→retreat rule. Deterministic: all randomness via the seeded rng.
 
 export const TICK_MS = 100;
 const ADVANCE_MS = 100; // brief walk between waves/boss
@@ -32,6 +34,10 @@ export interface TickContext {
   bonuses: Bonuses;
   ownedPetKeys: readonly string[];
   retryStage?: boolean; // RETRY toggle: when true, a wipe keeps the party on its stage (no retreat)
+  // When true (live game), a full wipe plays the death cinematic (heroes hold dead, fade to
+  // black + phrase, respawn) over WIPE_TOTAL_MS. Omitted (headless balance probes) ⇒ retreat
+  // + revive instantly the same tick, so the animation beat doesn't skew throughput.
+  animateWipe?: boolean;
 }
 
 export function createWorld(seed: number, heroes: Combatant[]): WorldState {
@@ -52,10 +58,8 @@ export function createWorld(seed: number, heroes: Combatant[]): WorldState {
     waveQueue: [],
     partyX: 0,
     advanceTimerMs: ADVANCE_MS,
-    zoneKeys: {},
     chests: [],
     pending: emptyPending(),
-    zoneAttemptActive: false,
     wipes: 0,
   };
 }
@@ -77,7 +81,18 @@ export class Simulation {
 
     this.tickRespawns(); // count down fallen heroes; revive if the party still stands
 
-    if (w.phase === 'advancing') {
+    if (w.wipeMs !== undefined) {
+      // A full-party-wipe cinematic is playing — no combat / no rng. Advance the sequence:
+      // RETREAT (stage drop + clear the field) the moment it goes fully black so the swap is
+      // hidden, then REVIVE + resume at the end. Heroes stay dead throughout.
+      const prev = w.wipeMs;
+      w.wipeMs += TICK_MS;
+      if (prev < WIPE_RETREAT_AT_MS && w.wipeMs >= WIPE_RETREAT_AT_MS) this.retreatAfterWipe(ctx.retryStage === true);
+      if (w.wipeMs >= WIPE_TOTAL_MS) {
+        w.wipeMs = undefined;
+        this.resumeAfterWipe();
+      }
+    } else if (w.phase === 'advancing') {
       w.partyX += (WALK_SPEED * TICK_MS) / 1000; // walk forward (camera scrolls)
       w.advanceTimerMs -= TICK_MS;
       if (w.advanceTimerMs <= 0) {
@@ -93,7 +108,7 @@ export class Simulation {
       this.releaseWave();
       events = resolveCombatTick(w, TICK_MS, this.rng);
       this.processDeaths(events, ctx);
-      if (w.heroes.every((h) => !h.alive)) this.handleWipe(ctx.retryStage === true);
+      if (w.heroes.every((h) => !h.alive)) this.beginWipe(ctx);
       else if (w.waveQueue.length === 0 && w.enemies.length > 0 && w.enemies.every((e) => !e.alive)) this.handleClear();
     }
 
@@ -127,14 +142,18 @@ export class Simulation {
     }
   }
 
-  // Release staggered wave members whose time has come, spawning them at the edge.
+  // Release staggered wave members whose time has come. Each batch is placed a FIXED
+  // distance (SPAWN_AHEAD) ahead of the party's CURRENT frontline — recomputed here every
+  // tick — so a later batch lands in front of the party even after it has advanced into the
+  // earlier batch, instead of at a stale spawn point that drifts off-screen.
   private releaseWave(): void {
     const w = this.world;
     if (w.waveQueue.length === 0) return;
+    const front = frontlineX(w);
     const stillQueued: typeof w.waveQueue = [];
     for (const q of w.waveQueue) {
       if (q.releaseTick <= w.tick) {
-        q.combatant.x = w.partyX + SPAWN_AHEAD;
+        q.combatant.x = front + SPAWN_AHEAD + q.spawnOffset; // spread across the batch's band
         w.enemies.push(q.combatant);
       } else {
         stillQueued.push(q);
@@ -162,7 +181,7 @@ export class Simulation {
     w.pending.xp += Math.round(xpPerKill(S) * incomeMult * ctx.bonuses.xpMult);
 
     const chestType: ChestType = enemy.isBoss ? (isZone ? 'zoneBoss' : 'stageBoss') : 'normal';
-    tryAccrueChest(w, chestType, this.rng, ctx.bonuses);
+    tryAccrueChest(w, chestType, this.rng, ctx.bonuses, enemy.isElite === true ? ELITE_CHEST_MULT : 1);
 
     const pet = rollPetDrop(enemy.isBoss ? 'boss' : 'enemy', ctx.ownedPetKeys, this.rng);
     if (pet !== null) w.pending.petDrops.push(pet);
@@ -180,48 +199,48 @@ export class Simulation {
     // Past here a stage boss or zone boss just fell. Beating a boss is a checkpoint:
     // fully heal + revive the whole party before they move on (or re-farm / enter W-10).
     this.reviveParty();
+    // FIRST clear of a stage extends the frontier → auto-advance. RE-clearing an already-
+    // beaten stage (the party dropped back to farm it) LOOPS it instead (DIFFICULTY.md §2).
+    const firstClear = w.globalStageIndex > w.maxClearedStage;
+    w.maxClearedStage = Math.max(w.maxClearedStage, w.globalStageIndex);
+
     if (w.phase === 'boss') {
-      // A stage boss (W-1..W-9) just fell → this stage's boss is beaten.
-      w.maxClearedStage = Math.max(w.maxClearedStage, w.globalStageIndex);
-      if (isPreZoneGate(w.globalStageIndex)) {
-        // W-9 cleared: never auto-advance into the world boss. Keep farming W-9 for gear
-        // + keys; the red portal at the strip's end (and the Map) drive the keyed entry
-        // into W-10 via enterZoneBoss (a deliberate, key-gated wall — §14).
-        w.wavesThisStage = 0;
-        w.phase = 'advancing';
-        w.advanceTimerMs = ADVANCE_MS;
-      } else {
-        w.globalStageIndex += 1;
-        w.wavesThisStage = 0;
-        w.phase = 'advancing';
-        w.advanceTimerMs = ADVANCE_MS;
-      }
+      // Stage boss (W-1..W-9). First clear of a new stage advances; a re-clear loops (stay
+      // and re-farm). W-9 NEVER auto-advances — it parks for the world-boss portal (the
+      // wall is W-10, entered via enterZoneBoss).
+      if (firstClear && !isPreZoneGate(w.globalStageIndex)) w.globalStageIndex += 1;
+      w.wavesThisStage = 0;
+      w.phase = 'advancing';
+      w.advanceTimerMs = ADVANCE_MS;
       return;
     }
-    // zoneBoss defeated → this zone boss is beaten, advance to (W+1)-1. Crossing into a
-    // new zone holds briefly for the teleport sequence (render plays it over this beat).
-    w.maxClearedStage = Math.max(w.maxClearedStage, w.globalStageIndex);
-    w.globalStageIndex += 1;
+    // World boss (X-10) defeated. FIRST clear advances to the next world's W-1 (crossing a
+    // zone holds for the teleport sequence); the game ENDS at Torment 10-10 (stays put). A
+    // RE-clear (farming the boss chest) drops back to this world's W-9 to keep farming.
+    if (firstClear && !isFinalStage(w.globalStageIndex)) {
+      w.globalStageIndex += 1;
+      w.advanceTimerMs = TELEPORT_HOLD_MS;
+    } else if (isFinalStage(w.globalStageIndex)) {
+      w.advanceTimerMs = TELEPORT_HOLD_MS; // game complete — idle on Torment 10-10
+    } else {
+      w.globalStageIndex -= 1; // re-clear → back to W-9 (re-enter the boss via the portal)
+      w.advanceTimerMs = ADVANCE_MS;
+    }
     w.wavesThisStage = 0;
-    w.zoneAttemptActive = false;
     w.phase = 'advancing';
-    w.advanceTimerMs = TELEPORT_HOLD_MS;
   }
 
-  /** Enter a world's W-10 boss by spending one of that zone's keys (defaults to the
-   *  world the party is currently in — the strip portal; the Map passes a specific
-   *  world). No-op unless that world's W-9 boss is already beaten AND a key is held. The
-   *  key stays spent even on a wipe (§14). Returns true if entry happened. */
+  /** Enter a world's W-10 world boss (defaults to the world the party is currently in —
+   *  the strip portal; the Map passes a specific world). No-op unless that world's W-9
+   *  boss is already beaten. Keys are gone — the boss itself is the gate (DIFFICULTY.md).
+   *  Returns true if entry happened. */
   enterZoneBoss(world: number = worldOf(this.world.globalStageIndex)): boolean {
     const w = this.world;
     const nineStage = worldFirstStage(world) + 8; // this world's W-9 global index
     if (w.maxClearedStage < nineStage) return false; // W-9 not beaten yet
-    if (keysForZone(w.zoneKeys, world) < 1) return false; // no key for this zone
-    w.zoneKeys[world] = keysForZone(w.zoneKeys, world) - 1; // consume on entry (kept on a wipe)
     w.globalStageIndex = nineStage + 1; // W-10
     w.wavesThisStage = 0;
     w.stageProgress = 0;
-    w.zoneAttemptActive = true;
     w.enemies = [];
     w.waveQueue = [];
     this.reviveParty();
@@ -242,7 +261,6 @@ export class Simulation {
     w.globalStageIndex = target;
     w.wavesThisStage = 0;
     w.stageProgress = 0;
-    w.zoneAttemptActive = false;
     w.enemies = [];
     w.waveQueue = [];
     w.phase = 'advancing';
@@ -251,25 +269,43 @@ export class Simulation {
     this.reviveParty();
   }
 
-  private handleWipe(retryStage: boolean): void {
+  // The party just fell. The live game plays the death cinematic (heroes stay dead while the
+  // render fades to black, shows a phrase, and respawns) — driven by wipeMs in tick(). Headless
+  // probes skip the animation (animateWipe off) and retreat + revive instantly, the old behavior.
+  private beginWipe(ctx: TickContext): void {
+    if (ctx.animateWipe !== true) {
+      this.retreatAfterWipe(ctx.retryStage === true);
+      this.resumeAfterWipe();
+      return;
+    }
+    this.world.wipeMs = 0; // start the cinematic; tick() advances it from here
+  }
+
+  // Mid-cinematic (fired once it's fully black so the swap is hidden): bump the wipe count,
+  // retreat one stage (unless RETRY holds the party here), and clear the field. Heroes STAY
+  // dead — resumeAfterWipe revives them at the end.
+  private retreatAfterWipe(retryStage: boolean): void {
     const w = this.world;
     w.wipes += 1; // diagnostic (balance probes)
-    // Retreat one stage — UNLESS the RETRY toggle is on, which keeps the party on the
-    // current stage to re-attempt it. The key (if a zone attempt) is spent either way (§14).
     if (!retryStage) w.globalStageIndex = Math.max(1, w.globalStageIndex - 1);
-    w.zoneAttemptActive = false;
     w.wavesThisStage = 0;
     w.enemies = [];
     w.waveQueue = [];
+  }
+
+  // End of the cinematic: revive the party at the (retreated) stage and march on.
+  private resumeAfterWipe(): void {
+    const w = this.world;
     w.phase = 'advancing';
-    w.advanceTimerMs = TELEPORT_HOLD_MS; // hold for the teleport-back-in sequence on a wipe
+    w.advanceTimerMs = ADVANCE_MS;
     this.reviveParty();
+    for (const h of w.heroes) h.x = w.partyX; // drop back in at the anchor; the march reforms it
   }
 
   // Full-heal + revive every hero and clear in-flight combat state (used by a wipe
   // retreat and a Map travel — both restart the party fresh at the target stage). This
   // also fires at every stage advance/boss-clear, so it's where per-stage ult charges
-  // (Warrior Last Stand) refill — "once per stage".
+  // (Knight Last Stand) refill — "once per stage".
   private reviveParty(): void {
     for (const h of this.world.heroes) {
       h.hp = h.maxHp;

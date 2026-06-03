@@ -44,7 +44,8 @@ export function openChestPopup(type: ChestType): void {
       store.addItem(entry); // auto-salvages marked-tier items to gold instead of bagging them
       if (isGem(entry)) {
         const gem = GEMS[entry.key];
-        store.pushLootToast({ text: `${gem.name} T${entry.tier} (gem)`, color: gem.color });
+        // Colour by TIER (like gear), not the gem's own stat colour — so a T1 gem reads green.
+        store.pushLootToast({ text: `${gem.name} T${entry.tier} (gem)`, color: tierStyle(entry.tier).color });
       } else if (as.enabled && as.tiers[entry.tier] === true) {
         store.pushLootToast({ text: `Salvaged ${tierName(entry.tier)} → +${format(itemGoldValue(entry))}g`, color: PALETTE.gold });
       } else {

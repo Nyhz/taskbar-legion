@@ -1,5 +1,12 @@
 # BALANCE.md — Resolved `tune` values (starting numbers)
 
+> **⚠️ STALE stat tables (mid-rework).** The stat list, gem grants, and talent tables below predate the
+> stat-system rework. Source of truth is now `data/stats.ts` / `data/gems.ts` / `data/talents.ts` + AFFIXES.md.
+> Removed: dodge, hpPerHit, penetration. Buff-only now: damageIncrease, lifesteal. Base-only: hpRegen. Added:
+> multistrike. Soft-capped enablers (`ENABLER_SOFT_CAPS`): critChance 100/k60, block 75/k50, cooldownReduction
+> 50/k40, multistrike 25/k20. Gems are scaler-only, one stat each. Armor DR capped at 90%. The flat-stat
+> MAGNITUDES are re-tuned in the Phase 2 polynomial pass (see PROGRESSION.md + memory `number-system-rework`).
+
 The SPEC marks open values `tune`. They are resolved here into concrete starting numbers so the build never
 blocks. **These are reasonable first-pass defaults, not sacred** — they live in `data/*.ts` and exist to be
 tuned. Put each number in its matching `data/` file; reference it, never re-type a literal in logic.
@@ -165,22 +172,22 @@ zoneBoss: 2.6 }`, × global `RARITY`. Boss/zone kills pay ×8 / ×40 the per-kil
 
 ## Classes — `data/classes.ts`
 
-**3 classes — the canonical Warrior·Ranger·Priest trio** (Mage/Rogue removed so all tuning targets one comp;
-CLAUDE.md override). **Warrior is free; others cost small gold** (never a progression blocker — SPEC §4.7).
+**3 classes — the canonical Knight·Ranger·Priest trio** (Mage/Rogue removed so all tuning targets one comp;
+CLAUDE.md override). **Knight is free; others cost small gold** (never a progression blocker — SPEC §4.7).
 
 | key | name | role | unlock | flavor base stats (fill the rest sensibly) |
 |---|---|---|---|---|
-| warrior | Warrior | tank | free | high health/armor, low attackSpeed; hpRegen 5 (early cushion) |
+| knight | Knight | tank | free | high health/armor, low attackSpeed; hpRegen 5 (early cushion) |
 | ranger | Ranger | dps | gold 500 | high attackSpeed/critChance (owns Rapid Fire) |
 | priest | Priest | healer | gold 500 | moderate stats; heals lowest-HP ally each cadence |
 
-> Class unlocks are all a flat **500 gold** (warrior free) — deliberately cheap so they're never a
+> Class unlocks are all a flat **500 gold** (knight free) — deliberately cheap so they're never a
 > progression blocker. Owning a class ≠ fielding it: party SLOTS gate the active 3, and the slot-2/3 tech is
 > the (cheap) real gate on party size.
 
-Suggested warrior base: `{ health: 120, armor: 14, attackDamage: 9, attackSpeed: 0.8, critChance: 5 }`,
+Suggested knight base: `{ health: 120, armor: 14, attackDamage: 9, attackSpeed: 0.8, critChance: 5 }`,
 growth/level `{ health: 14, armor: 1.2, attackDamage: 1.1 }`. Give each class a distinct profile; keep the
-free warrior survivable solo through the first world. Party: max 3; slot 1 free, slots 2 & 3 via tech.
+free knight survivable solo through the first world. Party: max 3; slot 1 free, slots 2 & 3 via tech.
 
 ## Effects & abilities — `data/effects.ts`, `data/abilities.ts`
 
@@ -192,7 +199,7 @@ AbilityDef ranger_fast_fire: { cooldownMs:15000, target:'self', applies:[{effect
                               castCondition:'enemyPresent', rankScaling:{ perRank:{ value:8 } } }
 ```
 Author at least one ability per class + the effects they apply, e.g.:
-- `warrior_taunt_guard` → self `+block`/`+armor` buff (also a `tag:'taunt'`).
+- `knight_taunt_guard` → self `+block`/`+armor` buff (also a `tag:'taunt'`).
 - `mage_fireball` → `frontEnemy` applies a `dot` (burning) + `tag:'burning'`.
 - `rogue_expose` → `frontEnemy` debuff `-armor` (percent) — demonstrates a debuff with `stackRule`.
 - `priest_mend` → `lowestAllyHp` applies a `hot`.
@@ -279,7 +286,7 @@ baseDropChance: enemy 0.00002 (1 in 50k), boss 0.0001 (1 in 10k); zone boss uses
 ## UI / settings defaults
 
 `uiScale: 1`, `dockOrientation: 'bottom'`. Starting save: `seed` random at first run; gold 0; research 0;
-warrior unlocked & in slot 1; empty inventory; base chest capacities; auto-open locked.
+knight unlocked & in slot 1; empty inventory; base chest capacities; auto-open locked.
 
 ---
 

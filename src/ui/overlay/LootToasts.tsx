@@ -18,10 +18,12 @@ export function LootToasts(): React.JSX.Element {
       style={{
         position: 'absolute',
         left: '50%',
-        // Anchor just above the strip (100% = strip top; +30px clears the HUD row),
-        // so the stack rises into the dark area over the strip, never over the HUD.
-        bottom: 'calc(100% + 30px)',
+        // Anchored to the bottom of the panel zone (just above the strip/HUD) so the stack
+        // rises into the dark area over the strip. zIndex lifts it ABOVE the open panels
+        // (PanelLayer panels max out ~50) so an open menu can't hide the loot text.
+        bottom: 8,
         transform: 'translateX(-50%)',
+        zIndex: 100,
         display: 'flex',
         flexDirection: 'column', // oldest (first) on top, newest (last) at bottom
         alignItems: 'center',

@@ -1,4 +1,5 @@
-import { Container, Graphics, Text } from 'pixi.js';
+import { AnimatedSprite, Container, Graphics, Text } from 'pixi.js';
+import type { Ticker } from 'pixi.js';
 import type { Combatant } from '@/sim/world';
 import { effectDef } from '@/data/effects';
 import { classDef } from '@/data/classes';
@@ -8,7 +9,12 @@ import { drawHero } from './textures';
 import { drawSwing, SWING_MS } from './swing';
 import { auraColor, isInvulnerable, INVULN_YELLOW } from './fx';
 import { SpriteBody } from './SpriteBody';
-import { getCharacterFrames } from './characterFrames';
+import type { Texture } from 'pixi.js';
+import type { CharFrames } from './characterFrames';
+import { getCharacterFrames, getHealEffectFrames } from './characterFrames';
+
+const MS_PER_FRAME = 1000 / 60; // Pixi AnimatedSprite.update expects ticker-frame units
+const HEAL_FX_FPS = 14;
 
 // A hero display object: procedural body + HP bar + effect aura (twinkling stars for
 // HoTs/buffs) + buff/debuff pips + two ability cooldown pips (top-left) + a cast burst
@@ -28,7 +34,7 @@ const TP_BEAM = hexToNum('#fff2a8'); // teleport upward beam / sparks
 const TP_RING = hexToNum('#ffe27a'); // teleport charge ring
 
 // Overhead HUD geometry (HP bar, buff/debuff pips, ability-cooldown pips). The bigger
-// sprite warrior needs a larger HUD lifted clear of its head; the small procedural
+// sprite knight needs a larger HUD lifted clear of its head; the small procedural
 // bodies keep the original tight layout. All coords are container-local (origin at the
 // ground line; negative y = up). bodyCx ≈ horizontal centre of the body.
 // `bodyCx` is the horizontal centre of the body; the HP bar and the buff-pip row are
@@ -51,19 +57,21 @@ const PROC_HUD: HudLayout = {
   labelY: -18, labelSize: 9,
 };
 
-// Sprite heroes (warrior, ranger) render to ~42px tall with feet at local y22, so the
-// head tops align and one raised HUD fits both. `bodyCx` is the single horizontal centre
-// for the whole cluster: the sprite body is positioned on it, and the HP bar, pips and
-// effect aura all centre on it — so they can never drift apart. The warrior's idle art is
-// anchored on its own torso centre, so a small value keeps the body, bar and shield stacked.
-const WARRIOR_HUD: HudLayout = {
-  bodyCx: 5, barY: -40, barW: 30, barH: 5,
-  pipY: -50, pipSize: 6, pipStep: 8,
-  cdY: -50, cdStep: 8, cdW: 4, cdH: 6,
-  labelY: -42, labelSize: 13,
+// Sprite heroes (knight, ranger, priest) all render to ~55px tall with feet at SPRITE_FEET_Y,
+// so their head tops align and one raised HUD fits every class. `bodyCx` is the single
+// horizontal centre for the whole cluster: the sprite body is positioned on it, and the
+// HP bar, pips and effect aura all centre on it — so they can never drift apart. Lifted +
+// enlarged to clear the bigger, more zoomed-in bodies.
+const SPRITE_HUD: HudLayout = {
+  bodyCx: 5, barY: -54, barW: 36, barH: 6,
+  pipY: -66, pipSize: 7, pipStep: 9,
+  cdY: -66, cdStep: 9, cdW: 5, cdH: 7,
+  labelY: -56, labelSize: 15,
 };
 
-const RANGER_HUD: HudLayout = { ...WARRIOR_HUD, bodyCx: 6 };
+// Container-local y where a sprite hero's feet sit (below the ground-line origin). Bumped
+// for the taller strip + bigger bodies so they seat naturally on the grass.
+const SPRITE_FEET_Y = 26;
 
 /** Left x of the HP bar — centred on the body. */
 function barLeft(h: HudLayout): number {
@@ -72,9 +80,10 @@ function barLeft(h: HudLayout): number {
 
 export class HeroSprite extends Container {
   readonly style: AttackStyle;
-  // Sprite-sheet classes (warrior, ranger) render from a SpriteBody; everything else
-  // stays procedural. Null when no sheet exists for the class / it isn't loaded yet.
+  // Sprite-sheet classes (knight, ranger, priest) render from a SpriteBody; everything
+  // else stays procedural. Null when no sheet exists for the class / it isn't loaded yet.
   private readonly spriteBody: SpriteBody | null;
+  private readonly frames: CharFrames | null; // the class's loaded sheets (for its projectile)
   private readonly hud: HudLayout;
   private readonly body = new Graphics();
   private readonly feet = new Graphics();
@@ -86,11 +95,16 @@ export class HeroSprite extends Container {
   private readonly cdPips = new Graphics(); // up to 2 ability cooldown indicators
   private readonly tpRing = new Graphics(); // teleport charge ring + beam (counter-scaled)
   private readonly respawnLabel = new Text({ text: '', style: { fontFamily: 'monospace', fontSize: 9, fill: hexToNum('#bcd2ff'), fontWeight: 'bold' } });
-  // Warrior-only ultimate indicator: a "U" badge that reads gold when the Last Stand
+  // Knight-only ultimate indicator: a "U" badge that reads gold when the Last Stand
   // charge is up and grey + crossed-out once it's been spent this stage.
   private readonly ultLabel = new Text({ text: 'U', style: { fontFamily: 'monospace', fontSize: 12, fill: hexToNum('#e8c34c'), fontWeight: 'bold' } });
   private readonly ultCross = new Graphics();
-  private readonly isWarrior: boolean;
+  private readonly isKnight: boolean;
+  // Heal sparkle shown ON this hero whenever a Priest heals it (shared effect frames,
+  // authored on the same 100px grid as the bodies, so it overlays the sprite squarely).
+  private readonly healFx: AnimatedSprite | null;
+  private readonly fxShim = { deltaTime: 0 } as unknown as Ticker;
+  private prevAlive = true; // tracks the alive→dead / dead→alive edge to drive death/revive
   private flash = 0;
   private lunge = 0;
   private swingMs = 0;
@@ -104,10 +118,11 @@ export class HeroSprite extends Container {
   constructor(classKey: string) {
     super();
     this.style = classDef(classKey).style;
-    this.isWarrior = classKey === 'warrior';
+    this.isKnight = classKey === 'knight';
     const frames = getCharacterFrames(classKey);
+    this.frames = frames;
     this.spriteBody = frames !== null ? new SpriteBody(frames) : null;
-    this.hud = this.spriteBody === null ? PROC_HUD : classKey === 'warrior' ? WARRIOR_HUD : RANGER_HUD;
+    this.hud = this.spriteBody === null ? PROC_HUD : SPRITE_HUD;
     const h = this.hud;
     this.hpBg.rect(barLeft(h), h.barY, h.barW, h.barH).fill({ color: hexToNum('#3a2030') });
     this.respawnLabel.anchor.set(0.5, 1);
@@ -120,15 +135,17 @@ export class HeroSprite extends Container {
     this.ultCross.position.set(this.ultLabel.x, this.ultLabel.y);
     this.ultLabel.visible = false;
     this.ultCross.visible = false;
+    this.healFx = this.makeHealFx(h.bodyCx);
     if (this.spriteBody !== null) {
       // Anchored at its feet/body-centre so the torso centre lands exactly on the HUD's
       // bodyCx (HP bar + aura share it) and the feet sit ~y22 below the container origin.
-      this.spriteBody.position.set(h.bodyCx, 22);
+      this.spriteBody.position.set(h.bodyCx, SPRITE_FEET_Y);
       this.addChild(this.hpBg, this.hpBar, this.spriteBody, this.aura, this.pips, this.cdPips, this.respawnLabel, this.ultLabel, this.ultCross, this.tpRing);
     } else {
       drawHero(this.body, classKey);
       this.addChild(this.hpBg, this.hpBar, this.feet, this.body, this.aura, this.swingG, this.pips, this.cdPips, this.respawnLabel, this.ultLabel, this.ultCross, this.tpRing);
     }
+    if (this.healFx !== null) this.addChild(this.healFx); // sparkle on top of everything
     this.tpRing.visible = false;
   }
 
@@ -154,9 +171,15 @@ export class HeroSprite extends Container {
     this.flash = 1;
   }
 
-  /** True when this hero draws from a sprite sheet (warrior, ranger). */
+  /** True when this hero draws from a sprite sheet (knight, ranger, priest). */
   get usesSpriteBody(): boolean {
     return this.spriteBody !== null;
+  }
+
+  /** The class's animated projectile frames (Priest's magic bolt), or null — lets the
+   *  driver throw the class's own bolt instead of the generic procedural fireball. */
+  get projectileFrames(): Texture[] | null {
+    return this.frames?.projectile ?? null;
   }
 
   /** Play the shield-block reaction (sprite heroes with a block sheet) — fired only when
@@ -174,13 +197,52 @@ export class HeroSprite extends Container {
   }
 
   /** Play the attack animation. Sprite heroes play their own attack frames (sword swing
-   *  / bow draw); procedural heroes draw the swing arc. */
-  swing(): void {
-    if (this.spriteBody !== null) this.spriteBody.attack();
+   *  / bow draw); procedural heroes draw the swing arc. `special` selects the reserved
+   *  melee-ability swing (the knight's heavy attack) over an alternating basic auto. */
+  swing(special = false): void {
+    if (this.spriteBody !== null) this.spriteBody.attack(special);
     else this.swingMs = SWING_MS;
   }
 
-  update(c: Combatant, x: number, groundY: number, dtMs: number): void {
+  /** Play a take-a-hit flinch (sprite heroes with a hurt sheet). Won't interrupt a swing. */
+  hurtReact(): void {
+    this.spriteBody?.hurt();
+  }
+
+  /** Play the healer's heal-cast pose (no-op unless the class has a heal sheet — Priest). */
+  supportCast(): void {
+    this.spriteBody?.heal();
+  }
+
+  /** Show the heal sparkle ON this hero (it's the one being healed by a Priest). */
+  showHealEffect(): void {
+    const fx = this.healFx;
+    if (fx === null) return;
+    fx.visible = true;
+    fx.alpha = 1;
+    fx.gotoAndPlay(0);
+  }
+
+  /** Build the heal-sparkle overlay from the shared effect frames, anchored on the same
+   *  100px grid as the bodies so it sits squarely over the sprite. Null if not loaded. */
+  private makeHealFx(bodyCx: number): AnimatedSprite | null {
+    const frames = getHealEffectFrames();
+    if (frames === null || frames.length === 0) return null;
+    const fx = new AnimatedSprite(frames);
+    fx.autoUpdate = false;
+    fx.anchor.set(0.51, 0.6); // effect content centred on x51, baseline y60 within the frame
+    fx.scale.set(2.9); // matches the (enlarged) hero body scale
+    fx.position.set(bodyCx, SPRITE_FEET_Y);
+    fx.loop = false;
+    fx.animationSpeed = HEAL_FX_FPS / 60;
+    fx.visible = false;
+    fx.onComplete = (): void => {
+      fx.visible = false;
+    };
+    return fx;
+  }
+
+  update(c: Combatant, x: number, groundY: number, dtMs: number, wipeHold = false): void {
     this.elapsed += dtMs;
     this.visible = true;
     // Moving = closed distance on a recent sim tick (movedThisTick), held briefly past the
@@ -196,18 +258,24 @@ export class HeroSprite extends Container {
     this.x = x + Math.round(this.lunge * 6); // dart toward the enemy on attack
     this.y = groundY + (c.alive ? bob : 6);
     // Faded when dead — but a reviving hero stays a touch brighter so its respawn
-    // bar + countdown read clearly through the fade.
-    const reviving = !c.alive && c.respawnMs !== undefined;
-    this.alpha = c.alive ? 1 : reviving ? 0.55 : 0.25;
+    // bar + countdown read clearly through the fade. During a full-party wipe hold the
+    // fallen hero is NOT reviving (the teleport whisks it away in ~2s, not 60s): keep it
+    // prominent so the death animation reads, and suppress the misleading respawn bar.
+    const reviving = !c.alive && c.respawnMs !== undefined && !wipeHold;
+    this.alpha = c.alive ? 1 : wipeHold ? 0.9 : reviving ? 0.55 : 0.25;
 
     // hit flash → brief darkening tint pulse (tint multiplies, so it dims)
     this.flash = Math.max(0, this.flash - dtMs / 220);
     const tint = this.flash > 0 ? 0xff7777 : 0xffffff;
 
     if (this.spriteBody !== null) {
+      // Drive the death → revive edges so the body plays its death one-shot (then holds
+      // its last frame) and resets to idle on respawn, instead of just freezing.
+      if (this.prevAlive && !c.alive) this.spriteBody.die();
+      else if (!this.prevAlive && c.alive) this.spriteBody.revive();
       this.spriteBody.setTint(tint);
-      this.spriteBody.setBodyAlpha(c.alive ? 1 : 0.5);
-      this.spriteBody.update(c.alive ? dtMs : 0, moving); // freeze on death; hold idle pose when standing
+      this.spriteBody.setBodyAlpha(c.alive || wipeHold ? 1 : 0.5); // keep the corpse solid through a wipe hold
+      this.spriteBody.update(dtMs, moving); // death anim advances + holds; idle/walk when alive
     } else {
       this.drawFeet(c.alive, moving);
       // sword swing arc (in front of the body, facing the enemies on the right)
@@ -240,12 +308,22 @@ export class HeroSprite extends Container {
     this.drawCooldowns(c, reviving);
     this.applyTeleport();
     this.drawUlt(c, reviving); // after teleport so it owns the badge's visibility
+    this.advanceHealFx(dtMs);
+    this.prevAlive = c.alive;
   }
 
-  // Warrior-only ultimate badge: "U" in gold while Last Stand is charged, grey + crossed
+  // Advance the heal-sparkle one-shot while it's playing (manual update — autoUpdate off).
+  private advanceHealFx(dtMs: number): void {
+    const fx = this.healFx;
+    if (fx === null || !fx.visible || dtMs <= 0) return;
+    this.fxShim.deltaTime = dtMs / MS_PER_FRAME;
+    fx.update(this.fxShim);
+  }
+
+  // Knight-only ultimate badge: "U" in gold while Last Stand is charged, grey + crossed
   // out once spent this stage. Hidden mid-teleport, while dead/reviving, or pre-unlock.
   private drawUlt(c: Combatant, reviving: boolean): void {
-    const has = this.isWarrior && c.ult?.effect.type === 'deathBlock';
+    const has = this.isKnight && c.ult?.effect.type === 'deathBlock';
     if (this.teleporting || reviving || !c.alive || !has) {
       this.ultLabel.visible = false;
       this.ultCross.visible = false;

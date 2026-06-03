@@ -10,7 +10,7 @@ import { CLASS_KEYS } from '@/data/classes';
 import type { Combatant } from '@/sim/world';
 
 // Class ultimates: off-tree, auto-unlocked at L60, auto-fired by the sim on their
-// trigger (Warrior death-block, Priest party enrage, Ranger boss mark).
+// trigger (Knight death-block, Priest party enrage, Ranger boss mark).
 
 function enemy(over: Partial<Combatant>): Combatant {
   return {
@@ -26,23 +26,23 @@ function hero(classKey: string, level: number): Combatant {
 
 describe('ultimate unlock', () => {
   it('unlocks only at level 60', () => {
-    expect(ultimateForClass('warrior', ULTIMATE_UNLOCK_LEVEL - 1)).toBeUndefined();
-    expect(ultimateForClass('warrior', ULTIMATE_UNLOCK_LEVEL)?.effect.type).toBe('deathBlock');
+    expect(ultimateForClass('knight', ULTIMATE_UNLOCK_LEVEL - 1)).toBeUndefined();
+    expect(ultimateForClass('knight', ULTIMATE_UNLOCK_LEVEL)?.effect.type).toBe('deathBlock');
     expect(ultimateForClass('priest', 60)?.effect.type).toBe('partyEnrage');
     expect(ultimateForClass('ranger', 60)?.effect.type).toBe('markVulnerable');
   });
 
   it('only the death-block ult arms with a per-stage charge', () => {
-    expect(resolveUltimate('warrior', 60).ultCharge).toBe(1);
+    expect(resolveUltimate('knight', 60).ultCharge).toBe(1);
     expect(resolveUltimate('priest', 60).ultCharge).toBe(0);
     expect(resolveUltimate('ranger', 60).ultCharge).toBe(0);
-    expect(resolveUltimate('warrior', ULTIMATE_UNLOCK_LEVEL - 1).ult).toBeUndefined();
+    expect(resolveUltimate('knight', ULTIMATE_UNLOCK_LEVEL - 1).ult).toBeUndefined();
   });
 });
 
-describe('Warrior Last Stand (death-block)', () => {
+describe('Knight Last Stand (death-block)', () => {
   it('cancels a lethal blow once per stage: survives, heals, goes invulnerable', () => {
-    const w = hero('warrior', 60);
+    const w = hero('knight', 60);
     w.hp = 10; // a sliver — the next hit is lethal
     const world = createWorld(1, [w]);
     world.enemies = [enemy({ x: 0 })];
@@ -54,7 +54,7 @@ describe('Warrior Last Stand (death-block)', () => {
   });
 
   it('dies normally when the charge is spent', () => {
-    const w = hero('warrior', 60);
+    const w = hero('knight', 60);
     w.hp = 10;
     w.ultCharge = 0; // already used this stage
     const world = createWorld(1, [w]);
@@ -64,7 +64,7 @@ describe('Warrior Last Stand (death-block)', () => {
   });
 
   it('an invulnerable hero takes no damage from an enemy hit', () => {
-    const w = hero('warrior', 60);
+    const w = hero('knight', 60);
     w.hp = 10;
     const world = createWorld(1, [w]);
     world.enemies = [enemy({ x: 0 })];

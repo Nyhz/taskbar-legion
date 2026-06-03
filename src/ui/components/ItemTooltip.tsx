@@ -1,5 +1,5 @@
 import type { ItemInstance } from '@/sim/items';
-import { SLOTS, weaponTypeFor } from '@/data/itemSlots';
+import { SLOTS, tryWeaponTypeFor } from '@/data/itemSlots';
 import { classDef } from '@/data/classes';
 import { GEMS } from '@/data/gems';
 import { gemGrants } from '@/sim/gems';
@@ -26,7 +26,7 @@ function totalByKey(item: ItemInstance): Map<StatKey, number> {
   for (const b of item.baseAffix) add(b.key, b.value);
   for (const s of item.stats) add(s.key, s.value);
   for (const so of item.sockets) {
-    if (so.gem !== null) for (const gr of gemGrants(so.gem, item.category)) add(gr.key, gr.value);
+    if (so.gem !== null) for (const gr of gemGrants(so.gem)) add(gr.key, gr.value);
   }
   return m;
 }
@@ -35,7 +35,8 @@ function totalByKey(item: ItemInstance): Map<StatKey, number> {
 // the generic slot label/icon.
 function itemTitle(item: ItemInstance): string {
   if (item.category === 'weapon' && item.classKey !== undefined) {
-    return weaponTypeFor(item.classKey, item.slot as 'weapon' | 'offhand').name;
+    const wt = tryWeaponTypeFor(item.classKey, item.slot as 'weapon' | 'offhand');
+    if (wt !== undefined) return wt.name; // stale/unknown class → fall through to slot label
   }
   return SLOTS[item.slot].label;
 }
