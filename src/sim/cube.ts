@@ -5,9 +5,9 @@ import { SLOT_KEYS } from '@/data/itemSlots';
 import type { StatKey } from '@/data/stats';
 import type { ItemTier } from '@/data/tiers';
 import { tierDef } from '@/data/tiers';
-import type { GemInstance } from '@/data/gems';
+import type { GemInstance, GemTier } from '@/data/gems';
 import { GENERATOR_VERSION } from '@/data/lootTables';
-import { ALCHEMY_BASE, ALCHEMY_TIER_MULT, TRANSFIG_OFFENSIVE_GEMS, TRANSFIG_DEFENSIVE_GEMS } from '@/data/cube';
+import { ALCHEMY_BASE, ALCHEMY_TIER_MULT, SYNTH_DOUBLE_TIER_CHANCE, TRANSFIG_OFFENSIVE_GEMS, TRANSFIG_DEFENSIVE_GEMS } from '@/data/cube';
 
 // The Cube's three recipes (all PURE + deterministic — no Math.random / Date):
 //  • Synthesize: 9 same-tier items → 1 of the next tier, ilvl = MEDIAN of the inputs.
@@ -31,10 +31,9 @@ function medianIlvl(items: readonly ItemInstance[]): number {
   return sorted[Math.floor((sorted.length - 1) / 2)] ?? 1;
 }
 
-export function synthesize(items: readonly ItemInstance[]): ItemInstance | null {
+export function synthesize(items: readonly ItemInstance[], doubleTierChance: number = SYNTH_DOUBLE_TIER_CHANCE): ItemInstance | null {
   if (!canSynthesize(items)) return null;
   const inputTier = items[0]?.tier ?? 0;
-  const outTier = (inputTier + 1) as ItemTier;
 
   // Deterministic seed from the input ids (FNV-style mix).
   let h = 0x811c9dc5;
@@ -43,12 +42,39 @@ export function synthesize(items: readonly ItemInstance[]): ItemInstance | null 
   }
   const stageIndex = Math.max(...items.map((i) => i.origin.stageIndex));
   const rng = makeRng(h);
+  // "Lucky" synthesis (base 5%, raised by the Transmuter's Fortune tech): jump TWO tiers
+  // instead of one (clamped to the T8 cap). The Cube UI derives the gold glow from the
+  // output landing +2 above the inputs.
+  const outTier = Math.min(8, inputTier + (rng.chance(doubleTierChance) ? 2 : 1)) as ItemTier;
   const slot = rng.pick(SLOT_KEYS);
   const origin: ItemOrigin = { rollSeed: h, stageIndex, chestType: 'normal', generatorVersion: GENERATOR_VERSION };
   // Output ilvl is the MEDIAN of the inputs (not a fresh stage roll), so feeding the
   // cube higher-ilvl gear yields a higher-ilvl result.
   const out = composeItem(slot, outTier, origin, rng, medianIlvl(items));
   return out; // no binding — this game has no trading/bound gear (out.bound stays false)
+}
+
+// ── Gem synthesis: 9 same-tier gems → 1 of the next tier ──
+export function canSynthesizeGems(gems: readonly GemInstance[]): boolean {
+  if (gems.length !== CUBE_INPUT_COUNT) return false;
+  const tier = gems[0]?.tier;
+  return tier !== undefined && tier < 8 && gems.every((g) => g.tier === tier);
+}
+
+/** 9 same-tier gems → 1 gem of the next tier (5% lucky +2, same as items). The output
+ *  COLOUR is a deterministic pick from the inputs. The minted id is assigned by the caller. */
+export function synthesizeGems(gems: readonly GemInstance[], doubleTierChance: number = SYNTH_DOUBLE_TIER_CHANCE): GemInstance | null {
+  if (!canSynthesizeGems(gems)) return null;
+  const inputTier = gems[0]?.tier ?? 1;
+  let h = 0x811c9dc5;
+  for (const g of gems) {
+    for (let k = 0; k < g.id.length; k++) h = Math.imul(h ^ g.id.charCodeAt(k), 0x01000193) >>> 0;
+  }
+  const rng = makeRng(h);
+  const outTier = Math.min(8, inputTier + (rng.chance(doubleTierChance) ? 2 : 1)) as GemTier;
+  const key = rng.pick(gems.map((g) => g.key)); // a colour drawn from the inputs
+  const stageIndex = Math.max(...gems.map((g) => g.origin.stageIndex));
+  return { id: '', key, tier: outTier, origin: { rollSeed: h, stageIndex, generatorVersion: GENERATOR_VERSION } };
 }
 
 // ───────────────────────────── Alchemy ─────────────────────────────

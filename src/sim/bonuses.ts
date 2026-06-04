@@ -19,6 +19,7 @@ export interface Bonuses {
   offlineMult: number;
   combatMods: StatMod[]; // party-wide combat mods (reserved channel; tech is non-combat now, so always empty — combat power is items/talents/auras)
   partySlots: number; // 1..3
+  synthDoubleChance: number; // EXTRA chance (0..0.05) added to the Cube's base 5% +2-tier roll
 }
 
 export function getBonuses(
@@ -39,6 +40,7 @@ export function getBonuses(
     offlineMult: 0.5,
     combatMods: [],
     partySlots: 1,
+    synthDoubleChance: 0,
   };
 
   for (const node of TECH_NODES) {
@@ -55,10 +57,12 @@ export function getBonuses(
         case 'autoOpenReduce': b.autoOpenReduceMs += e.value * rank; break;
         case 'offlineMult': b.offlineMult += e.value * rank; break;
         case 'partySlot': b.partySlots = 1 + rank; break; // single endless node: rank ⇒ extra active slots
+        case 'synthDoubleChance': b.synthDoubleChance += e.value * rank; break;
         default: { const _exhaustive: never = e; void _exhaustive; }
       }
     }
   }
+  b.synthDoubleChance = Math.min(0.05, b.synthDoubleChance); // hard +5% ceiling (defensive; maxRanks already caps it)
 
   for (const key of ownedPetKeys) {
     const bonus = petDef(key).bonus;

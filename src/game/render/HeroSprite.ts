@@ -114,6 +114,7 @@ export class HeroSprite extends Container {
   private moveGraceMs = 0; // >0 while recently moving → play walk; 0 → hold idle pose
   private teleporting = false;
   private teleportK = 1; // 1 = fully present, 0 = fully dematerialised (mid-teleport)
+  private hudLift = 0; // px the overhead HUD is raised to dodge a crowded neighbour
 
   constructor(classKey: string) {
     super();
@@ -159,6 +160,23 @@ export class HeroSprite extends Container {
     }
     this.teleporting = true;
     this.teleportK = Math.abs(1 - 2 * phase); // 1 at the ends, 0 at the dematerialised midpoint
+  }
+
+  /** Raise the whole overhead HUD by `px` (0 = default). GameStrip lifts a rear hero's
+   *  HUD when it would overlap the party member just ahead, so crowded HP bars / pips stay
+   *  legible. Shifts only the HUD layer — the body, aura and teleport FX are untouched. */
+  setHudLift(px: number): void {
+    if (px === this.hudLift) return;
+    this.hudLift = px;
+    const h = this.hud;
+    this.hpBg.y = -px;
+    this.hpBar.y = -px;
+    this.pips.y = -px;
+    this.cdPips.y = -px;
+    this.respawnLabel.y = h.labelY - px;
+    const ultY = h.cdY + h.cdH / 2 - px;
+    this.ultLabel.y = ultY;
+    this.ultCross.y = ultY;
   }
 
   /** Play a colored cast burst (ability flourish on the caster). */

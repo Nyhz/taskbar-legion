@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest';
 import {
   synthesize,
   canSynthesize,
+  synthesizeGems,
+  canSynthesizeGems,
   CUBE_INPUT_COUNT,
   itemGoldValue,
   alchemyTotal,
@@ -24,6 +26,11 @@ function gem(key: GemKey, tier: GemTier): GemInstance {
   return { id: `g_${key}_${tier}`, key, tier, origin: { rollSeed: 1, stageIndex: 1, generatorVersion: 1 } };
 }
 
+function gems(tier: GemTier, n = CUBE_INPUT_COUNT): GemInstance[] {
+  const keys: GemKey[] = ['ruby', 'sapphire', 'emerald', 'topaz', 'amethyst', 'diamond'];
+  return Array.from({ length: n }, (_, i) => ({ id: `gem_${tier}_${i}`, key: keys[i % keys.length]!, tier, origin: { rollSeed: 1, stageIndex: 5, generatorVersion: 1 } }));
+}
+
 describe('cube synthesis', () => {
   it('needs exactly 9 same-tier items (not T8)', () => {
     expect(canSynthesize(items(3))).toBe(true);
@@ -33,15 +40,25 @@ describe('cube synthesis', () => {
     expect(canSynthesize(mixed)).toBe(false);
   });
 
-  it('produces one item of the next tier, unbound', () => {
-    const out = synthesize(items(3));
+  it('produces a higher-tier item (+1, or +2 on a lucky craft), unbound', () => {
+    const out = synthesize(items(3)); // inputs are T3
     expect(out).not.toBeNull();
-    expect(out?.tier).toBe(4);
+    expect([4, 5]).toContain(out?.tier); // next tier, or +2 on the 5% lucky roll
     expect(out?.bound).toBe(false); // no trading/bound gear in this game
   });
 
   it('is deterministic from the inputs', () => {
     expect(synthesize(items(2))).toEqual(synthesize(items(2)));
+  });
+
+  it('synthesizes gems: 9 same-tier gems → one higher tier (+1, or +2 lucky), deterministic', () => {
+    expect(canSynthesizeGems(gems(3))).toBe(true);
+    expect(canSynthesizeGems(gems(3, 8))).toBe(false); // wrong count
+    expect(canSynthesizeGems(gems(8))).toBe(false); // T8 is the cap
+    const out = synthesizeGems(gems(3));
+    expect(out).not.toBeNull();
+    expect([4, 5]).toContain(out?.tier); // next tier, or +2 on the 5% lucky roll
+    expect(synthesizeGems(gems(2))).toEqual(synthesizeGems(gems(2))); // deterministic
   });
 
   it('output ilvl is the median of the inputs', () => {

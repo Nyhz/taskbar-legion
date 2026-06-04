@@ -97,7 +97,7 @@ export function getEnemyFrames(key: string): CharFrames | null {
 // ── sprite assignment ──────────────────────────────────────────────────────────
 // Melee trash + stage bosses draw from this pool (random per enemy, deterministic by id).
 // Reserved for the WORLD bosses (cycled by world): orc-rider, werebear, werewolf.
-const MELEE_POOL = ['orc', 'skeleton', 'armored-axeman', 'armored-orc', 'armored-skeleton', 'elite-orc', 'greatsword-skeleton'] as const;
+const MELEE_POOL = ['orc', 'skeleton', 'armored-axeman', 'armored-orc', 'armored-skeleton', 'elite-orc', 'greatsword-skeleton', 'knight-templar', 'lancer'] as const;
 const WORLD_BOSSES = ['orc-rider', 'werebear', 'werewolf'] as const;
 
 export type EnemySizeClass = 'normal' | 'stageBoss' | 'worldBoss';

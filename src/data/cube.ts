@@ -8,6 +8,11 @@ import type { GemKey } from './gems';
 export const ALCHEMY_BASE = 8;
 export const ALCHEMY_TIER_MULT = 2.2;
 
+// ── Synthesize: 9 same-tier items → 1 higher ──
+// Base result is one tier up; this is the chance to "crit" and jump TWO tiers instead
+// (clamped to the T8 cap). A lucky craft gets a yellow glow in the Cube UI.
+export const SYNTH_DOUBLE_TIER_CHANCE = 0.05;
+
 // ── Transfiguration: re-roll ONE affix on a gear piece ──
 // Cost is SLOT-INDEPENDENT (armor/jewelry are flex, so a slot→color rule breaks):
 // one gem from each family, BOTH at the item's tier. This consumes all six colors

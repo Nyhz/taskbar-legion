@@ -35,8 +35,8 @@ const FEET_OFFSET = 21;
 // bosses are very big; stage bosses bigger than trash but smaller than world bosses.
 const SIZE: Record<EnemySizeClass, { scale: number; figH: number; barW: number }> = {
   normal: { scale: 2.7, figH: 28, barW: 20 },
-  stageBoss: { scale: 3.4, figH: 30, barW: 40 },
-  worldBoss: { scale: 2.9, figH: 56, barW: 60 },
+  stageBoss: { scale: 4.4, figH: 30, barW: 48 },
+  worldBoss: { scale: 5.8, figH: 56, barW: 72 }, // ~2× the prior world-boss scale — a towering wall
 };
 
 export class EnemySprite extends Container {
@@ -45,6 +45,8 @@ export class EnemySprite extends Container {
   private readonly body = new Graphics(); // procedural fallback (no sheet)
   private readonly aura = new Graphics();
   private readonly enrageAura = new Graphics();
+  private readonly eliteAura = new Graphics(); // ground pulse marking a champion (elite) mob
+  private readonly isElite: boolean;
   private readonly hpBg = new Graphics();
   private readonly hpBar = new Graphics();
   private readonly tpRing = new Graphics();
@@ -67,6 +69,7 @@ export class EnemySprite extends Container {
   constructor(c: Combatant, stageTint: number, spec: { frames: CharFrames | null; sizeClass: EnemySizeClass }) {
     super();
     this.style = c.enemyMagic === true ? 'caster' : c.range >= RANGE.ranged ? 'ranged' : 'melee';
+    this.isElite = c.isElite === true;
     const sz = SIZE[spec.sizeClass];
     this.barW = sz.barW;
     // Feet at FEET_OFFSET (on the party's ground line); figure rises figH·scale above that.
@@ -85,8 +88,8 @@ export class EnemySprite extends Container {
       drawEnemy(this.body, { isBoss: c.isBoss === true, magic: c.enemyMagic === true, tint: stageTint });
       this.body.position.set(0, FEET_OFFSET);
     }
-    // enrageAura behind the body; HP bar on top.
-    this.addChild(this.enrageAura);
+    // eliteAura sits on the ground UNDER the feet, then enrageAura behind the body; HP bar on top.
+    this.addChild(this.eliteAura, this.enrageAura);
     if (this.spriteBody !== null) this.addChild(this.spriteBody); else this.addChild(this.body);
     this.addChild(this.aura, this.hpBg, this.hpBar, this.tpRing);
   }
@@ -148,6 +151,7 @@ export class EnemySprite extends Container {
     this.castMs = Math.max(0, this.castMs - dtMs);
     this.drawAura(c);
     this.drawEnrage(enraged);
+    this.drawEliteAura(c.alive);
     this.applyMaterialize(dtMs);
     this.tickDeath(dtMs);
   }
@@ -226,6 +230,29 @@ export class EnemySprite extends Container {
       g.circle(Math.cos(a) * r * 0.8, this.cy + Math.sin(a) * r * 0.8, 1.4).fill({ color: TP_BEAM, alpha: (1 - k) * 0.9 });
     }
     if (this.materializeMs <= 0) { this.alpha = 1; g.visible = false; }
+  }
+
+  // Elite ("champion") marker: concentric white rings on the ground beneath the feet that
+  // expand outward and fade, staggered so a new one is always growing — a non-stop pulse.
+  // Flattened ellipses (y ≈ 0.4·x) so they read as lying on the floor in perspective.
+  private drawEliteAura(alive: boolean): void {
+    this.eliteAura.clear();
+    if (!this.isElite || !alive) return;
+    const cy = FEET_OFFSET; // ground line at the feet
+    const maxR = 30 * this.auraScale; // wide, conspicuous footprint — elites hit ~3× hp / 4× dmg
+    const FLAT = 0.4; // ground-plane flatten (y radius ÷ x radius)
+    // Soft pulsing base glow so the marker always reads even between ring crests.
+    const pulse = 0.6 + 0.4 * Math.sin(this.elapsed / 360);
+    this.eliteAura.ellipse(0, cy, maxR * 0.55, maxR * 0.55 * FLAT).fill({ color: 0xffffff, alpha: 0.08 * pulse });
+    const PERIOD = 1250; // ms for one ring to travel centre → edge
+    const RINGS = 4;
+    for (let i = 0; i < RINGS; i++) {
+      const t = (this.elapsed / PERIOD + i / RINGS) % 1; // staggered 0→1 progress
+      const r = t * maxR;
+      const alpha = (1 - t) * 0.75; // brightest newborn at the centre, fades as it grows
+      if (alpha <= 0.01 || r < 0.5) continue;
+      this.eliteAura.ellipse(0, cy, r, r * FLAT).stroke({ color: 0xffffff, width: 2.5, alpha });
+    }
   }
 
   private drawEnrage(enraged: boolean): void {

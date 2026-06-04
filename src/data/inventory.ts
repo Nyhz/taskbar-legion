@@ -1,10 +1,10 @@
 // Two storages, each its OWN gold sink:
-//  • Inventory (the equip bag): 20 base, buy +1 slot up to 40.
+//  • Inventory (the equip bag): 20 base, buy +1 slot up to 80 total.
 //  • Stash (overflow storage): 30 slots/page, buy +1 slot/page (up to +20) and
 //    unlock pages (up to 8) — capacity = pages × (30 + slotUpgrades).
 
 export const INVENTORY_BASE = 20;
-export const INVENTORY_MAX_SLOTS = 20; // → cap 40
+export const INVENTORY_MAX_SLOTS = 60; // → cap 80
 
 export const STASH_PER_PAGE = 30;
 export const STASH_MAX_PAGES = 8;

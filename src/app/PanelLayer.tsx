@@ -6,7 +6,7 @@ import { PartyPanel } from '@/ui/panels/PartyPanel';
 import { StashPanel } from '@/ui/panels/StashPanel';
 import { TechTreePanel } from '@/ui/panels/TechTreePanel';
 import { PetsPanel } from '@/ui/panels/PetsPanel';
-import { CubePanel } from '@/ui/panels/CubePanel';
+import { CubePanel, CubeHelpButton } from '@/ui/panels/CubePanel';
 import { MapPanel } from '@/ui/panels/MapPanel';
 import { HeroTabsPanel } from '@/ui/panels/party/HeroTabsPanel';
 import { SettingsHeaderButton } from '@/ui/hud/OptionsPopover';
@@ -45,7 +45,7 @@ const PANEL_TITLES: Record<PanelKey, string> = {
   tech: 'Tech Tree',
 };
 
-const PANEL_HEIGHT: Partial<Record<PanelKey, number>> = { tech: 540 };
+const PANEL_HEIGHT: Partial<Record<PanelKey, number>> = { tech: 540, cube: 470 };
 
 type Side = 'up' | 'left' | 'right' | 'tech';
 function sideGroup(key: PanelKey): Side {
@@ -102,8 +102,8 @@ export function PanelLayer(): React.JSX.Element {
   const layoutOf = (key: PanelKey, group: Side): { left: number; width: number; scale: number; height?: number } => {
     if (key === 'party') return { left: partyLeft, width: PARTY_W, scale: PARTY_SCALE };
     if (key === 'tech') return { left: (bandW - techRendered) / 2, width: TECH_W, scale: TECH_SCALE, height: PANEL_HEIGHT.tech };
-    if (group === 'left') return { left: EDGE, width: sideW, scale: 1 };
-    return { left: bandW - EDGE - sideW, width: sideW, scale: 1 }; // right
+    if (group === 'left') return { left: EDGE, width: sideW, scale: 1, height: PANEL_HEIGHT[key] };
+    return { left: bandW - EDGE - sideW, width: sideW, scale: 1, height: PANEL_HEIGHT[key] }; // right
   };
 
   return (
@@ -131,7 +131,7 @@ export function PanelLayer(): React.JSX.Element {
               width={width}
               height={height}
               scale={scale}
-              headerActions={key === 'party' ? <SettingsHeaderButton /> : undefined}
+              headerActions={key === 'party' ? <SettingsHeaderButton /> : key === 'cube' ? <CubeHelpButton /> : undefined}
               onClose={() => closePanel(key)}
             >
               {renderPanel(key)}

@@ -13,7 +13,7 @@ import { loadEnemyTextures, resolveEnemySprite, getEnemyFrames } from './render/
 import { loadBackgroundTextures } from './render/backgroundLayers';
 import type { Combatant, CombatEvent, WorldState } from '@/sim/world';
 import { worldOf, stageInWorld, isZoneBossStage } from '@/data/stageScaling';
-import { SPAWN_AHEAD, RANGE, TELEPORT_HOLD_MS, WIPE_DEAD_MS, WIPE_FADE_MS, WIPE_BLACK_MS, WIPE_RETREAT_AT_MS } from '@/data/field';
+import { SPAWN_AHEAD, RANGE, WALK_SPEED, TELEPORT_HOLD_MS, WIPE_DEAD_MS, WIPE_FADE_MS, WIPE_BLACK_MS, WIPE_RETREAT_AT_MS } from '@/data/field';
 import { hexToNum } from '@/styles/palette';
 import { useStore } from '@/state/store';
 
@@ -61,6 +61,26 @@ function wipeBlackAlpha(ms: number): number {
   if (o < WIPE_FADE_MS) return 1 - o / WIPE_FADE_MS; // fade out
   return 0; // bg-only beat
 }
+
+// Display-position tracking (sim steps at 10fps → interpolate to 60fps). Easing toward the
+// sim value is smooth, but a plain exponential ACCELERATES to close a large gap — a hero
+// reads as lurching/zooming toward the enemy. So we ease, then CLAMP the per-frame step to
+// the unit's OWN sim speed (+ a little slack) → constant on-screen velocity, no surge —
+// while small everyday gaps still ride the smooth exponential tail.
+const DISPLAY_TAU_MS = 70;
+const DISPLAY_SPEED_SLACK = 1.1; // headroom over sim speed so a lag can still recover
+function trackDisplay(prev: number, target: number, dtMs: number, speedPxps: number): number {
+  const eased = prev + (target - prev) * (1 - Math.exp(-dtMs / DISPLAY_TAU_MS));
+  const maxStep = (speedPxps * DISPLAY_SPEED_SLACK * dtMs) / 1000;
+  const step = eased - prev;
+  if (Math.abs(step) <= maxStep) return eased;
+  return prev + Math.sign(step) * maxStep;
+}
+
+// Crowded-HUD declutter: when party members bunch up their overhead HUDs overlap, so a
+// rear hero's HUD is lifted above the one just ahead of it (tiered upward).
+const HUD_OVERLAP_PX = 38; // horizontal gap (screen px) under which two hero HUDs collide
+const HUD_LIFT_STEP = 16; // px each successive crowded HUD is raised
 
 export class GameStrip {
   private app: Application | null = null;
@@ -169,10 +189,9 @@ export class GameStrip {
     const events = engine.update(dtMs);
     const w = engine.world;
     const groundY = Math.round(STRIP_HEIGHT * GROUND_FRAC);
-    // Ease all world positions toward the latest sim values (interpolate the 100ms
-    // sim steps into smooth 60fps motion). TAU ≈ 70ms → tracks closely but smoothly.
-    const smooth = 1 - Math.exp(-dtMs / 70);
-    this.displayPartyX = this.displayPartyX < 0 ? w.partyX : this.displayPartyX + (w.partyX - this.displayPartyX) * smooth;
+    // Interpolate the 100ms sim steps into smooth 60fps motion, velocity-matched to each
+    // unit's sim speed so it tracks at constant on-screen speed rather than surging.
+    this.displayPartyX = this.displayPartyX < 0 ? w.partyX : trackDisplay(this.displayPartyX, w.partyX, dtMs, WALK_SPEED);
 
     // World→screen zoom: fit the spawn distance to SPAWN_VIEW_FRAC of the party→right-edge
     // span, so a wave materialises ON-SCREEN (teleport-in) with field visible past it, not
@@ -198,8 +217,8 @@ export class GameStrip {
       this.respawnTpMs = TELEPORT_HOLD_MS;
     }
     this.driveRespawnTeleport(dtMs);
-    this.reconcileHeroes(w.heroes, groundY, dtMs, toScreen, smooth, wipeDead, wipeHidden);
-    this.reconcileEnemies(w, groundY, dtMs, toScreen, smooth);
+    this.reconcileHeroes(w.heroes, groundY, dtMs, toScreen, wipeDead, wipeHidden);
+    this.reconcileEnemies(w, groundY, dtMs, toScreen);
     this.applyEvents(events);
     this.projectiles.update(dtMs);
     this.floating.update(dtMs);
@@ -320,11 +339,12 @@ export class GameStrip {
     return this.cameraX;
   }
 
-  private reconcileHeroes(heroes: Combatant[], groundY: number, dtMs: number, toScreen: (wx: number) => number, smooth: number, wipeDead: boolean, wipeHidden: boolean): void {
+  private reconcileHeroes(heroes: Combatant[], groundY: number, dtMs: number, toScreen: (wx: number) => number, wipeDead: boolean, wipeHidden: boolean): void {
     // Heroes are placed by their OWN world position (they move freely / stack); each
-    // display x eases toward its sim x for smooth 60fps motion.
+    // display x velocity-matches its sim x for smooth, surge-free 60fps motion.
     const live = new Set(heroes.map((h) => h.id));
     for (const id of [...this.heroDisplayX.keys()]) if (!live.has(id)) this.heroDisplayX.delete(id);
+    const placed: { sprite: HeroSprite; x: number }[] = [];
     for (const c of heroes) {
       let sprite = this.heroSprites.get(c.id);
       if (sprite === undefined) {
@@ -340,13 +360,30 @@ export class GameStrip {
         continue;
       }
       const prev = this.heroDisplayX.get(c.id);
-      const disp = prev === undefined ? c.x : prev + (c.x - prev) * smooth;
+      const disp = prev === undefined ? c.x : trackDisplay(prev, c.x, dtMs, WALK_SPEED);
       this.heroDisplayX.set(c.id, disp);
-      sprite.update(c, toScreen(disp), groundY, dtMs, wipeDead);
+      const sx = toScreen(disp);
+      sprite.update(c, sx, groundY, dtMs, wipeDead);
+      placed.push({ sprite, x: sx });
+    }
+    this.layoutHeroHuds(placed);
+  }
+
+  // Lift a rear hero's HUD above the party member just ahead of it whenever they crowd
+  // close enough for the overhead bars to overlap — tiered, so 3 stacked heroes step up.
+  private layoutHeroHuds(placed: { sprite: HeroSprite; x: number }[]): void {
+    const order = placed.slice().sort((a, b) => b.x - a.x); // frontmost (largest x) first
+    let prevX = Number.POSITIVE_INFINITY;
+    let prevLift = 0;
+    for (const p of order) {
+      const lift = prevX - p.x < HUD_OVERLAP_PX ? prevLift + HUD_LIFT_STEP : 0;
+      p.sprite.setHudLift(lift);
+      prevX = p.x;
+      prevLift = lift;
     }
   }
 
-  private reconcileEnemies(w: WorldState, groundY: number, dtMs: number, toScreen: (wx: number) => number, smooth: number): void {
+  private reconcileEnemies(w: WorldState, groundY: number, dtMs: number, toScreen: (wx: number) => number): void {
     const enemies = w.enemies;
     const live = new Set(enemies.map((e) => e.id));
     // Context for choosing a boss's sprite: which world (cycles the world bosses) and whether
@@ -363,9 +400,10 @@ export class GameStrip {
         this.enemySprites.set(c.id, sprite);
         this.combatants.addChild(sprite);
       }
-      // Ease the enemy's display position toward its sim x (smooth 60fps motion).
+      // Velocity-match the enemy's display position to its sim x (smooth, no surge), capped
+      // at its own advance speed so it tracks at constant on-screen velocity.
       const prev = this.enemyDisplayX.get(c.id);
-      const disp = prev === undefined ? c.x : prev + (c.x - prev) * smooth;
+      const disp = prev === undefined ? c.x : trackDisplay(prev, c.x, dtMs, c.moveSpeed > 0 ? c.moveSpeed : WALK_SPEED);
       this.enemyDisplayX.set(c.id, disp);
       sprite.update(c, toScreen(disp), groundY, dtMs);
     }

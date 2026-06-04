@@ -68,9 +68,14 @@ export function ItemSlot({
   const onEnter = (): void => {
     const rect = rootRef.current?.getBoundingClientRect();
     if (rect === undefined) return;
-    const left = rect.right + TIP_W + 8 > window.innerWidth ? rect.left - TIP_W - 6 : rect.right + 6;
+    // A comparison shows the equipped card(s) side-by-side, so reserve their combined width.
+    const cards = item !== null && compare !== undefined && compare.length > 0 ? 1 + compare.length : 1;
+    const totalW = cards * TIP_W + (cards - 1) * 8;
+    // Always open to the RIGHT of the cell (never flip to the left, even in the last
+    // column) — only nudge left as far as needed to keep it on-screen.
+    const left = Math.max(4, Math.min(rect.right + 6, window.innerWidth - totalW - 4));
     const top = Math.max(4, Math.min(window.innerHeight - TIP_H, rect.top - 2));
-    setTip({ left: Math.max(4, left), top });
+    setTip({ left, top });
   };
 
   // Safety net so the portal tooltip can NEVER get stuck (a dropped React mouseleave —
@@ -183,10 +188,41 @@ export function ItemSlot({
       {tip !== null && (item || gem) &&
         createPortal(
           <div style={{ position: 'fixed', left: tip.left, top: tip.top, zIndex: 9999, pointerEvents: 'none' }}>
-            {item ? <ItemTooltip item={item} compare={compare} locked={locked} wrongClass={wrongClass} /> : gem ? <GemTooltip gem={gem} /> : null}
+            {item ? (
+              compare !== undefined && compare.length > 0 ? (
+                // Side-by-side: the hovered ("New") card with green/red deltas, then the
+                // equipped card(s) so the two can be read directly against each other.
+                <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                  <TipColumn caption="New">
+                    <ItemTooltip item={item} compareTo={compare[0]} locked={locked} wrongClass={wrongClass} />
+                  </TipColumn>
+                  {compare.map((eq, i) => (
+                    <TipColumn key={eq.id} caption={compare.length > 1 ? `Equipped ${i + 1}` : 'Equipped'}>
+                      <ItemTooltip item={eq} />
+                    </TipColumn>
+                  ))}
+                </div>
+              ) : (
+                <ItemTooltip item={item} locked={locked} wrongClass={wrongClass} />
+              )
+            ) : gem ? (
+              <GemTooltip gem={gem} />
+            ) : null}
           </div>,
           document.body,
         )}
+    </div>
+  );
+}
+
+// A small caption above a tooltip card in a side-by-side comparison ("New" / "Equipped").
+function TipColumn({ caption, children }: { caption: string; children: ReactNode }): React.JSX.Element {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1, textAlign: 'center', textTransform: 'uppercase', color: caption === 'New' ? PALETTE.gold : PALETTE.textMute }}>
+        {caption}
+      </div>
+      {children}
     </div>
   );
 }

@@ -11,13 +11,14 @@ import { STATS, type StatKey } from '@/data/stats';
 
 // Hover tooltip styled as a pixel-art item card: a rarity-framed title bar, an icon +
 // grade header with the base stat, an "Inherent Stats" block (rolled substats + any
-// socketed gem grants, folded so the display reflects the real total), and a "Gem
-// Slots" block. Comparison: a "vs …" block for EACH equipped item in the slot (one for
-// most gear, both for rings); none (a slot is free) ⇒ pure gain, no block. The compare
-// is GEM-FREE — base affix + rolled affixes + ilvl only — so an un-socketed new item
-// isn't unfairly docked for the equipped item's gems.
+// socketed gem grants, folded so the display reflects the real total), and a "Gem Slots"
+// block. Comparison is now SIDE-BY-SIDE (ItemSlot renders the equipped card next to this
+// one); when `compareTo` is set, each stat on THIS card carries a green/red ▲▼ delta vs the
+// equipped piece, and any stat only the equipped item has shows as a red loss. Totals are
+// gem-INCLUSIVE on both sides — the equipped card sits right beside it, so what you'd have
+// vs what you have now reads honestly (gems and all).
 
-// Full stat total INCLUDING socketed gems — used for the item's own stat DISPLAY.
+// Full stat total INCLUDING socketed gems — the basis for both display and comparison.
 function totalByKey(item: ItemInstance): Map<StatKey, number> {
   const m = new Map<StatKey, number>();
   const add = (k: StatKey, v: number): void => {
@@ -40,25 +41,19 @@ function itemTitle(item: ItemInstance): string {
   }
   return SLOTS[item.slot].label;
 }
-// Base affix + rolled affixes ONLY (no gems) — the basis for swap comparisons, so gems
-// on the equipped item don't count against an un-socketed candidate.
-function affixTotal(item: ItemInstance): Map<StatKey, number> {
-  const m = new Map<StatKey, number>();
-  const add = (k: StatKey, v: number): void => {
-    m.set(k, (m.get(k) ?? 0) + v);
-  };
-  for (const b of item.baseAffix) add(b.key, b.value);
-  for (const s of item.stats) add(s.key, s.value);
-  return m;
-}
 
-export function ItemTooltip({ item, compare, locked, wrongClass }: { item: ItemInstance; compare?: ItemInstance[]; locked?: boolean; wrongClass?: boolean }): React.JSX.Element {
+export function ItemTooltip({ item, compareTo, locked, wrongClass }: { item: ItemInstance; compareTo?: ItemInstance; locked?: boolean; wrongClass?: boolean }): React.JSX.Element {
   const ts = tierStyle(item.tier);
   const rarity = ts.iridescent ? '#e0b0ff' : ts.color;
-  const mine = totalByKey(item); // gem-inclusive — for the stat DISPLAY
-  const mineAffix = affixTotal(item); // gem-free — for the comparison blocks
-  const blocks = compare ?? []; // a "vs …" block per equipped item in the slot
+  const mine = totalByKey(item);
+  const theirs = compareTo !== undefined ? totalByKey(compareTo) : undefined;
+  const delta = (k: StatKey): number => (theirs === undefined ? 0 : (mine.get(k) ?? 0) - (theirs.get(k) ?? 0));
   const irid = ts.iridescent ? 'tl-iridescent' : undefined;
+  const baseKeys = new Set(item.baseAffix.map((b) => b.key));
+  // Inherent rows: every non-base stat THIS item has, plus (when comparing) any non-base
+  // stat only the EQUIPPED item has — so a swap's losses show as red rows here too.
+  const inherentKeys = [...new Set<StatKey>([...mine.keys(), ...(theirs?.keys() ?? [])])].filter((k) => !baseKeys.has(k));
+  const ilvlDelta = compareTo !== undefined ? item.ilvl - compareTo.ilvl : 0;
 
   return (
     <div
@@ -118,6 +113,7 @@ export function ItemTooltip({ item, compare, locked, wrongClass }: { item: ItemI
                 <span style={{ color: PALETTE.textLight, fontWeight: 700, fontSize: 14 }}>
                   {statText(b.key, b.value)}
                 </span>
+                <DeltaTag k={b.key} d={delta(b.key)} />
               </div>
             ))}
           </div>
@@ -125,19 +121,22 @@ export function ItemTooltip({ item, compare, locked, wrongClass }: { item: ItemI
 
         {/* inherent stats (base affix(es) live in the header above) */}
         <SectionHeader glyph="✦" label="Inherent Stats" />
-        {(() => {
-          const baseKeys = new Set(item.baseAffix.map((b) => b.key));
-          const rows = [...mine.entries()].filter(([k]) => !baseKeys.has(k));
-          if (rows.length === 0) return <div style={{ color: PALETTE.textMute, paddingLeft: 2 }}>— none —</div>;
-          return rows.map(([k, v]) => (
-            <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-              <span style={{ width: 14, textAlign: 'center', fontSize: 10 }}>{STAT_ICON[k]}</span>
-              <div style={{ flex: 1 }}>
-                <StatRow statKey={k} value={v} />
+        {inherentKeys.length === 0 ? (
+          <div style={{ color: PALETTE.textMute, paddingLeft: 2 }}>— none —</div>
+        ) : (
+          inherentKeys.map((k) => {
+            const v = mine.get(k) ?? 0;
+            return (
+              <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                <span style={{ width: 14, textAlign: 'center', fontSize: 10 }}>{STAT_ICON[k]}</span>
+                <div style={{ flex: 1 }}>
+                  {v > 0 ? <StatRow statKey={k} value={v} /> : <span style={{ color: PALETTE.textMute }}>{STATS[k].label}</span>}
+                </div>
+                <DeltaTag k={k} d={delta(k)} />
               </div>
-            </div>
-          ));
-        })()}
+            );
+          })
+        )}
 
         {/* gem slots (the card's "Decoration Slot") */}
         {item.sockets.length > 0 && (
@@ -148,8 +147,6 @@ export function ItemTooltip({ item, compare, locked, wrongClass }: { item: ItemI
             ))}
           </>
         )}
-
-        {blocks.map((eq) => <CompareBlock key={eq.id} mineAffix={mineAffix} myIlvl={item.ilvl} other={eq} />)}
 
         {/* footer */}
         <div
@@ -166,11 +163,25 @@ export function ItemTooltip({ item, compare, locked, wrongClass }: { item: ItemI
             {item.classKey !== undefined ? `${wrongClass === true ? '🚫 ' : ''}${classDef(item.classKey).name} only` : ''}
           </span>
           <span style={{ color: locked === true ? PALETTE.enemyAccent : PALETTE.textMute, fontWeight: locked === true ? 700 : undefined }}>
-            {locked === true ? '🔒 ' : ''}Item Lv.{item.ilvl} · {item.category}
+            {locked === true ? '🔒 ' : ''}Item Lv.{item.ilvl}
+            {ilvlDelta !== 0 && (
+              <span style={{ color: ilvlDelta > 0 ? PALETTE.hpGreen : PALETTE.enemyAccent, fontWeight: 700 }}> ({ilvlDelta > 0 ? '+' : ''}{ilvlDelta})</span>
+            )}
+            {' '}· {item.category}
           </span>
         </div>
       </div>
     </div>
+  );
+}
+
+// A green ▲ / red ▼ stat delta vs the equipped item (nothing when unchanged or not comparing).
+function DeltaTag({ k, d }: { k: StatKey; d: number }): React.JSX.Element | null {
+  if (d === 0) return null;
+  return (
+    <span style={{ color: d > 0 ? PALETTE.hpGreen : PALETTE.enemyAccent, fontWeight: 700, fontSize: 10, whiteSpace: 'nowrap' }}>
+      {d > 0 ? '▲' : '▼'}{statText(k, Math.abs(d)).replace('+', '')}
+    </span>
   );
 }
 
@@ -213,45 +224,6 @@ function SocketRow({ gemKey, tier }: { gemKey?: string; tier?: number }): React.
         <span style={{ color: PALETTE.textLight }}>{gem.name} <span style={{ color: PALETTE.textMute }}>T{tier}</span></span>
       ) : (
         <span style={{ color: PALETTE.textMute }}>Empty Slot</span>
-      )}
-    </div>
-  );
-}
-
-// What swapping THIS item in for `other` (the equipped piece in this slot) would change
-// — item level + base affix + rolled affixes, GEMS IGNORED on both sides (so a fresh
-// un-socketed item isn't penalized for the equipped item's gems).
-function CompareBlock({ mineAffix, myIlvl, other }: { mineAffix: Map<StatKey, number>; myIlvl: number; other: ItemInstance }): React.JSX.Element {
-  const theirs = affixTotal(other);
-  const keys = [...new Set<StatKey>([...mineAffix.keys(), ...theirs.keys()])];
-  const deltas = keys
-    .map((k) => [k, (mineAffix.get(k) ?? 0) - (theirs.get(k) ?? 0)] as const)
-    .filter(([, d]) => d !== 0);
-  const ilvlDelta = myIlvl - other.ilvl;
-  return (
-    <div style={{ marginTop: 4, borderTop: `1px solid ${PALETTE.ink}`, paddingTop: 2 }}>
-      <div style={{ color: PALETTE.textMute }}>vs {itemTitle(other)}</div>
-      {ilvlDelta === 0 && deltas.length === 0 ? (
-        <div style={{ color: PALETTE.textMute }}>— no change —</div>
-      ) : (
-        <>
-          {ilvlDelta !== 0 && (
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
-              <span style={{ color: PALETTE.textMute }}>Item Level</span>
-              <span style={{ color: ilvlDelta > 0 ? PALETTE.hpGreen : PALETTE.enemyAccent }}>
-                {ilvlDelta > 0 ? '▲' : '▼'}{Math.abs(ilvlDelta)}
-              </span>
-            </div>
-          )}
-          {deltas.map(([k, d]) => (
-            <div key={k} style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
-              <span style={{ color: STATS[k].group === 'offensive' ? '#e8a0a0' : '#a0c8e8' }}>{STATS[k].label}</span>
-              <span style={{ color: d > 0 ? PALETTE.hpGreen : PALETTE.enemyAccent }}>
-                {d > 0 ? '▲' : '▼'}{statText(k, Math.abs(d)).replace('+', '')}
-              </span>
-            </div>
-          ))}
-        </>
       )}
     </div>
   );

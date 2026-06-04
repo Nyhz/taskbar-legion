@@ -96,16 +96,16 @@ export function waveSizeForStage(globalStageIndex: number): number {
 }
 
 // Elite ("champion") trash: a per-mob chance to roll a beefed-up enemy — bigger, hits and
-// soaks 2× a normal mob of its kind, and DOUBLES its chest-drop chance (the loot carrot).
+// soaks 5× a normal mob of its kind, and DOUBLES its chest-drop chance (the loot carrot).
 // Elites are the on-level THREAT (the doc's §2d "trash is clearable on-level" leaves a built
 // party near-untouched by normal mobs — the healer-trio out-heals base chip — so the texture
 // comes from these champion spikes, NOT from inflating base HP0/DMG0, which would break the
-// fresh-start bootstrap). DMG (4×) leads HP (3×) so an elite is a burst of DANGER (the tank/
-// healer must react) rather than a tanky slog. Rides on enemyDamage, so it stays bootstrap-safe
-// at the 8% roll. Tuned to sim-survival's minHP% dips. (Was 2×/2×.)
-export const ELITE_CHANCE = 0.08; // ~0–1 elite per 5-10 wave
-export const ELITE_HP_MULT = 3;
-export const ELITE_DMG_MULT = 4;
+// fresh-start bootstrap). At 5×/5× an elite is a serious burst of DANGER (the tank/healer must
+// react) AND a chunkier kill. Rarer now (5%) so the spikes stay occasional rather than constant.
+// Rides on enemyDamage, so it stays bootstrap-safe. Tuned to sim-survival's minHP% dips.
+export const ELITE_CHANCE = 0.05; // ~0–1 elite per 10-20 wave
+export const ELITE_HP_MULT = 5;
+export const ELITE_DMG_MULT = 5;
 export const ELITE_CHEST_MULT = 2;
 // Trash are tuned to be "soldiers", not glass cannons: enough HP that a single auto
 // doesn't delete them (no faceroll), but their hits are softened so a geared frontline

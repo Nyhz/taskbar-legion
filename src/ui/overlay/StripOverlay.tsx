@@ -2,6 +2,7 @@ import { ChestPopups } from './ChestPopups';
 import { BossEnrageBar } from './BossEnrageBar';
 import { RetryToggle } from './RetryToggle';
 import { DangerBanner } from './DangerBanner';
+import { StageBanner } from './StageBanner';
 
 // React overlay pinned over the Pixi strip (fills the strip wrapper, which excludes
 // the launcher dock). Hosts the chest popups + boss/danger banners. (The floating loot
@@ -21,6 +22,7 @@ export function StripOverlay(): React.JSX.Element {
       <BossEnrageBar />
       <RetryToggle />
       <DangerBanner />
+      <StageBanner />
     </div>
   );
 }

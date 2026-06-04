@@ -108,6 +108,25 @@ button {
   animation: tl-danger 1.9s ease-in-out forwards;
 }
 
+/* STAGE banner: a quick gray "ENTERING …" stripe — fade in, hold, fade out. Runs once. */
+@keyframes tl-stage-banner {
+  0% {
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  78% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.tl-stage-banner {
+  animation: tl-stage-banner 1.8s ease-in-out forwards;
+}
+
 /* ── Floating panel open/close animations ──────────────────────────────────
    Applied to the panel WRAPPER (not the scaled PixelWindow), so transforms here
    never fight the inner scale. Each direction has an `-in` (mount) and `-out`
@@ -168,4 +187,33 @@ button {
 }
 .tl-spin {
   animation: tl-spin 3s linear infinite;
+}
+
+/* Lucky (+2 tier) synthesis result — a pulsing gold glow on the crafted item. */
+@keyframes tl-lucky-glow {
+  0%, 100% { box-shadow: 0 0 10px 3px rgba(232, 195, 76, 0.6); }
+  50%      { box-shadow: 0 0 24px 9px rgba(232, 195, 76, 0.95); }
+}
+.tl-lucky-glow {
+  animation: tl-lucky-glow 1.1s ease-in-out infinite;
+}
+
+/* Equip confirmation: a gold ring pops + fades over a gear slot when a new item lands. */
+@keyframes tl-equip-flash {
+  0% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  25% {
+    opacity: 1;
+    transform: scale(1.12);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1);
+  }
+}
+.tl-equip-flash {
+  animation: tl-equip-flash 450ms ease-out forwards;
+  box-shadow: 0 0 10px 2px rgba(232, 195, 76, 0.85);
 }

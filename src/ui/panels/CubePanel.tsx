@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useStore } from '@/state/store';
 import { ItemSlot } from '@/ui/components/ItemSlot';
 import { StatRow } from '@/ui/components/StatRow';
-import { isItem, isGem, type ItemInstance } from '@/sim/items';
+import { isItem, isGem, type ItemInstance, type InvEntry } from '@/sim/items';
 import { entries } from '@/sim/slots';
 import {
   CUBE_INPUT_COUNT,
@@ -14,9 +14,9 @@ import {
 } from '@/sim/cube';
 import { tierName } from '@/ui/tierStyle';
 import { format } from '@/sim/num';
-import { TIERS, type ItemTier } from '@/data/tiers';
+import { TIERS } from '@/data/tiers';
 import type { StatKey } from '@/data/stats';
-import type { GemInstance } from '@/data/gems';
+import { GEMS, type GemInstance } from '@/data/gems';
 import { TRANSFIG_OFFENSIVE_GEMS, TRANSFIG_DEFENSIVE_GEMS } from '@/data/cube';
 import { PALETTE } from '@/styles/palette';
 
@@ -44,37 +44,87 @@ export function CubePanel(): React.JSX.Element {
   );
 }
 
+// A "?" help button for the panel title bar (left of the close ×, matching its style) —
+// hovering it explains all three Cube recipes. Wired in via PixelWindow.headerActions.
+export function CubeHelpButton(): React.JSX.Element {
+  const [open, setOpen] = useState(false);
+  return (
+    <span style={{ position: 'relative', display: 'inline-flex' }} onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
+      <button
+        aria-label="How the Cube works"
+        style={{ background: PALETTE.titleRedHi, color: PALETTE.textLight, border: `1px solid ${PALETTE.ink}`, width: 18, height: 18, lineHeight: '14px', fontWeight: 700, padding: 0, cursor: 'help' }}
+      >
+        ?
+      </button>
+      {open && (
+        <div
+          style={{
+            position: 'absolute', top: '125%', right: 0, zIndex: 100, width: 250,
+            background: PALETTE.bgPanel, border: `2px solid ${PALETTE.ink}`,
+            boxShadow: `0 0 0 1px ${PALETTE.goldDim}, 3px 3px 0 rgba(0,0,0,0.5)`,
+            padding: 8, color: PALETTE.textLight, fontSize: 10, lineHeight: 1.45,
+            fontWeight: 400, letterSpacing: 0, textTransform: 'none', cursor: 'default',
+            display: 'flex', flexDirection: 'column', gap: 6,
+          }}
+        >
+          <div style={{ color: PALETTE.gold, fontWeight: 700, fontSize: 11 }}>How the Cube works</div>
+          <div><b style={{ color: PALETTE.parchment }}>Synthesize</b> — combine 9 items OR 9 gems of the same tier into one of the next tier (5% chance to jump TWO tiers, marked with a gold glow — raise it with the <i>Transmuter&apos;s Fortune</i> tech). Tick <i>Include stash items</i> to also pull from your stash. An item&apos;s level is the median of the inputs.</div>
+          <div><b style={{ color: PALETTE.parchment }}>Alchemy</b> — melt any items into gold; higher tier and item level are worth more. Optional auto-salvage melts chosen rarities the moment they drop.</div>
+          <div><b style={{ color: PALETTE.parchment }}>Transfigure</b> — re-roll ONE affix on a gear piece into a different stat, paid with 1 offensive + 1 defensive gem at the item&apos;s tier. One-time per item; keep either the new roll or the original.</div>
+        </div>
+      )}
+    </span>
+  );
+}
+
 // ───────────────────────────── Synthesize ─────────────────────────────
 
+interface SynthResult { entry: InvEntry; lucky: boolean }
+
+// Both items (T0-8) and gems (T1-8) cap synthesis at tier 8.
+const isSynthable = (e: InvEntry): boolean => e.tier < 8;
+const kindOf = (e: InvEntry): 'gem' | 'item' => (isGem(e) ? 'gem' : 'item');
+
 function SynthesizeMode(): React.JSX.Element {
-  const inventory = entries(useStore((s) => s.inventory)).filter(isItem).filter((i) => i.tier < 8);
+  const invEntries = entries(useStore((s) => s.inventory));
+  const stashEntries = entries(useStore((s) => s.stash));
   const cubeCombine = useStore((s) => s.cubeCombine);
+  const [includeStash, setIncludeStash] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
-  const [result, setResult] = useState<string | null>(null);
+  const [result, setResult] = useState<SynthResult | null>(null);
 
-  const items = selected.map((id) => inventory.find((i) => i.id === id)).filter((i): i is ItemInstance => i !== undefined);
-  const selTier = items[0]?.tier;
+  // Candidate pool: the bag's synthesizable entries first, then the stash's (when included),
+  // so Auto Fill drains the bag before topping up from the stash.
+  const pool: InvEntry[] = [
+    ...invEntries.filter(isSynthable),
+    ...(includeStash ? stashEntries.filter(isSynthable) : []),
+  ];
 
-  const toggle = (item: ItemInstance): void => {
-    setResult(null);
+  const chosen = selected.map((id) => pool.find((e) => e.id === id)).filter((e): e is InvEntry => e !== undefined);
+  const first = chosen[0];
+  const selTier = first?.tier;
+  const selKind = first === undefined ? undefined : kindOf(first);
+  const sameBatch = (e: InvEntry): boolean => selTier === undefined || (e.tier === selTier && kindOf(e) === selKind);
+
+  const toggle = (e: InvEntry): void => {
     setSelected((cur) => {
-      if (cur.includes(item.id)) return cur.filter((x) => x !== item.id);
-      if (selTier !== undefined && item.tier !== selTier) return cur; // same tier only
+      if (cur.includes(e.id)) return cur.filter((x) => x !== e.id);
+      if (!sameBatch(e)) return cur; // one batch = same KIND (item|gem) + same tier
       if (cur.length >= CUBE_INPUT_COUNT) return cur;
-      return [...cur, item.id];
+      return [...cur, e.id];
     });
   };
 
   const autoFill = (): void => {
-    setResult(null);
-    const byTier = new Map<number, string[]>();
-    for (const i of inventory) {
-      const list = byTier.get(i.tier) ?? [];
-      list.push(i.id);
-      byTier.set(i.tier, list);
+    const groups = new Map<string, string[]>(); // key = "i3" / "g3" → ids, bag-first
+    for (const e of pool) {
+      const k = `${kindOf(e)[0]}${e.tier}`;
+      const list = groups.get(k) ?? [];
+      list.push(e.id);
+      groups.set(k, list);
     }
     let best: string[] | null = null;
-    for (const list of byTier.values()) {
+    for (const list of groups.values()) {
       if (list.length >= CUBE_INPUT_COUNT && (best === null || list.length > best.length)) best = list;
     }
     if (best !== null) setSelected(best.slice(0, CUBE_INPUT_COUNT));
@@ -83,31 +133,66 @@ function SynthesizeMode(): React.JSX.Element {
   const ready = selected.length === CUBE_INPUT_COUNT && selTier !== undefined;
   const synth = (): void => {
     if (!ready || selTier === undefined) return;
-    if (cubeCombine(selected)) {
-      setResult(`Synthesized a ${tierName((selTier + 1) as ItemTier)} item (ilvl = input median, bound).`);
+    const made = cubeCombine(selected);
+    if (made !== null) {
+      setResult({ entry: made, lucky: made.tier > selTier + 1 }); // +2 over inputs ⇒ lucky craft
       setSelected([]);
     }
   };
 
+  // While a result is on screen the 9-grid makes way for the created item + Accept, so the
+  // player sees exactly what they crafted; Accept restores the grid for the next batch.
+  if (result !== null) return <SynthResultCard result={result} onAccept={() => setResult(null)} />;
+
   return (
     <>
-      <Hint>Combine {CUBE_INPUT_COUNT} items of the SAME tier into one of the next tier. Its item level is the median of the inputs, and it's bound.</Hint>
-      <CubeGrid items={items} onRemove={toggle} />
+      <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 11, color: PALETTE.textLight, fontWeight: 700 }}>
+        <input
+          type="checkbox"
+          checked={includeStash}
+          onChange={(e) => { setIncludeStash(e.target.checked); setSelected([]); }}
+        />
+        Include stash items
+      </label>
+      <CubeGrid items={chosen} onRemove={toggle} />
       <div style={{ display: 'flex', gap: 4 }}>
         <button onClick={autoFill} style={btn(true)}>Auto Fill</button>
         <button onClick={synth} disabled={!ready} style={btn(ready)}>
           Synthesize{selTier !== undefined ? ` T${selTier}→T${selTier + 1}` : ''}
         </button>
       </div>
-      {result && <Result>{result}</Result>}
       <Browser
-        items={inventory}
+        items={pool}
         selected={selected}
         onPick={toggle}
-        disabled={(i) => selTier !== undefined && i.tier !== selTier}
-        label="Items (same tier only)"
+        disabled={(e) => !sameBatch(e)}
+        label="Items & gems (same kind + tier)"
       />
     </>
+  );
+}
+
+// The crafted entry, shown big in place of the 9-grid. A lucky (+2 tier) craft gets a
+// pulsing yellow glow so the player instantly clocks the rare result. Works for gems too.
+function SynthResultCard({ result, onAccept }: { result: SynthResult; onAccept: () => void }): React.JSX.Element {
+  const { entry, lucky } = result;
+  const subtitle = isGem(entry)
+    ? `${GEMS[entry.key].name} gem · T${entry.tier}`
+    : `${tierName(entry.tier)} ${entry.category} · ilvl ${entry.ilvl}`;
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, padding: '24px 8px', minHeight: 360 }}>
+      <div style={{ fontWeight: 700, fontSize: 12, textAlign: 'center', color: lucky ? PALETTE.gold : PALETTE.textLight }}>
+        {lucky ? '✦ LUCKY SYNTHESIS — jumped +2 tiers! ✦' : 'Synthesized!'}
+      </div>
+      <div
+        className={lucky ? 'tl-lucky-glow' : undefined}
+        style={{ borderRadius: 3, boxShadow: lucky ? `0 0 18px 6px ${PALETTE.gold}` : 'none' }}
+      >
+        <ItemSlot item={isItem(entry) ? entry : null} gem={isGem(entry) ? entry : undefined} size={72} />
+      </div>
+      <div style={{ color: PALETTE.textMute, fontSize: 11, textAlign: 'center' }}>{subtitle}</div>
+      <button onClick={onAccept} style={{ ...btn(true), flex: 'none', minWidth: 130, padding: '8px 20px' }}>Accept</button>
+    </div>
   );
 }
 
@@ -346,27 +431,28 @@ function TransfigureMode(): React.JSX.Element {
 
 // ───────────────────────────── shared bits ─────────────────────────────
 
-function CubeGrid({
+function CubeGrid<T extends InvEntry>({
   items,
   onRemove,
   goldOf,
 }: {
-  items: ItemInstance[];
-  onRemove: (i: ItemInstance) => void;
+  items: T[];
+  onRemove: (e: T) => void;
   goldOf?: (i: ItemInstance) => number;
 }): React.JSX.Element {
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 4, justifyItems: 'center', padding: 6, background: PALETTE.bgInset, border: `2px solid ${PALETTE.goldDim}` }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, justifyItems: 'center', padding: 10, background: PALETTE.bgInset, border: `2px solid ${PALETTE.goldDim}` }}>
       {Array.from({ length: CUBE_INPUT_COUNT }, (_, i) => {
-        const it = items[i];
+        const it = items[i] ?? null;
         return (
           <ItemSlot
             key={i}
-            item={it ?? null}
-            size={32}
+            item={it !== null && isItem(it) ? it : null}
+            gem={it !== null && isGem(it) ? it : undefined}
+            size={48}
             label="·"
-            onClick={() => it && onRemove(it)}
-            badge={it && goldOf ? <span style={{ position: 'absolute', bottom: -2, left: 1, fontSize: 8, color: PALETTE.gold, fontWeight: 700 }}>{format(goldOf(it))}</span> : undefined}
+            onClick={() => { if (it !== null) onRemove(it); }}
+            badge={it !== null && isItem(it) && goldOf ? <span style={{ position: 'absolute', bottom: -2, left: 1, fontSize: 8, color: PALETTE.gold, fontWeight: 700 }}>{format(goldOf(it))}</span> : undefined}
           />
         );
       })}
@@ -374,7 +460,7 @@ function CubeGrid({
   );
 }
 
-function Browser({
+function Browser<T extends InvEntry>({
   items,
   selected,
   onPick,
@@ -383,31 +469,32 @@ function Browser({
   badgeOf,
   label,
 }: {
-  items: ItemInstance[];
+  items: T[];
   selected: string[];
-  onPick: (i: ItemInstance) => void;
-  disabled?: (i: ItemInstance) => boolean;
+  onPick: (e: T) => void;
+  disabled?: (e: T) => boolean;
   goldOf?: (i: ItemInstance) => number;
-  badgeOf?: (i: ItemInstance) => string | null;
+  badgeOf?: (e: T) => string | null;
   label: string;
 }): React.JSX.Element {
   return (
     <>
       <div style={{ borderTop: `1px solid ${PALETTE.goldDim}`, paddingTop: 4, color: PALETTE.textMute, fontSize: 11 }}>{label}</div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(32px, 1fr))', gap: 3, justifyItems: 'center', maxHeight: 150, overflow: 'auto' }} className="tl-scroll">
-        {items.map((item, i) => {
-          const off = disabled?.(item) === true && !selected.includes(item.id);
-          const badge = badgeOf?.(item) ?? (selected.includes(item.id) ? '✓' : null);
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(32px, 1fr))', gap: 3, justifyItems: 'center', maxHeight: 200, overflow: 'auto' }} className="tl-scroll">
+        {items.map((entry, i) => {
+          const off = disabled?.(entry) === true && !selected.includes(entry.id);
+          const badge = badgeOf?.(entry) ?? (selected.includes(entry.id) ? '✓' : null);
           return (
-            <div key={`${item.id}-${i}`} style={{ opacity: off ? 0.35 : 1 }}>
+            <div key={`${entry.id}-${i}`} style={{ opacity: off ? 0.35 : 1 }}>
               <ItemSlot
-                item={item}
+                item={isItem(entry) ? entry : null}
+                gem={isGem(entry) ? entry : undefined}
                 size={28}
-                onClick={() => { if (!off) onPick(item); }}
+                onClick={() => { if (!off) onPick(entry); }}
                 badge={
                   <>
                     {badge && <span style={{ position: 'absolute', top: -1, left: 1, color: PALETTE.gold, fontSize: 9 }}>{badge}</span>}
-                    {goldOf && <span style={{ position: 'absolute', bottom: -2, left: 1, fontSize: 7, color: PALETTE.parchment }}>{format(goldOf(item))}</span>}
+                    {goldOf && isItem(entry) && <span style={{ position: 'absolute', bottom: -2, left: 1, fontSize: 7, color: PALETTE.parchment }}>{format(goldOf(entry))}</span>}
                   </>
                 }
               />

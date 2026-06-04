@@ -150,7 +150,9 @@ export const createPartySlice: StateCreator<GameStore, [], [], PartySlice> = (se
 
   socketGem: (heroId, slot, socketIdx, gemId) => {
     const s = get();
-    const found = findEntry(s.inventory, gemId);
+    // The gem may live in the bag OR the stash (stash gems can be dragged straight onto
+    // equipped gear) — find it wherever it is.
+    const found = findEntry(s.inventory, gemId) ?? findEntry(s.stash, gemId);
     const gem = found !== undefined && isGem(found) ? found : undefined;
     const hero = s.roster.find((h) => h.id === heroId);
     const item = hero?.equipment[slot];
@@ -159,7 +161,9 @@ export const createPartySlice: StateCreator<GameStore, [], [], PartySlice> = (se
     const sockets = item.sockets.map((so, i) => (i === socketIdx ? { gem } : so));
     const updated = { ...item, sockets }; // no binding — this game has no trading/bound gear
     set((st) => ({
-      inventory: removeId(st.inventory, gemId), // gem consumed from the bag (leaves a hole)
+      // Consume the gem from whichever container held it (removeId is a no-op on the other).
+      inventory: removeId(st.inventory, gemId),
+      stash: removeId(st.stash, gemId),
       roster: mapHero(st.roster, heroId, (h) => ({ ...h, equipment: { ...h.equipment, [slot]: updated } })),
       configEpoch: st.configEpoch + 1,
     }));

@@ -23,7 +23,8 @@ export type TechEffect =
   | { kind: 'autoOpenReduce'; value: number }
   | { kind: 'offlineMult'; value: number }
   | { kind: 'partySlot' }
-  | { kind: 'gemDropMult'; value: number };
+  | { kind: 'gemDropMult'; value: number }
+  | { kind: 'synthDoubleChance'; value: number }; // +chance the Cube's Synthesize jumps TWO tiers
 
 export type TechCategory = 'Economy' | 'Chests' | 'Utility';
 
@@ -90,6 +91,10 @@ export const TECH_NODES: TechNode[] = [
   // tank·dps·healer trio forms in early world 1 (BALANCE) — NOT behind the deep sink.
   // costGrowth 2.5 ⇒ slot 2 = 1000g, slot 3 = 2500g.
   node('party_size', 'Utility', '👥', 'Recruitment', 'Unlock the next party slot', [{ kind: 'partySlot' }], 1000, 2.5, 2),
+  // Transmuter's Fortune: each rank adds +0.25% to the Cube's "lucky" Synthesize roll (base
+  // 5%), capped at +5% over 20 ranks (so the chance tops out at 10%). EXTREMELY expensive —
+  // 50k base × 2.0^rank ⇒ the final ranks cost tens of billions, a true end-game gold sink.
+  node('synth_luck', 'Utility', '🎲', "Transmuter's Fortune", '+0.25% Synthesize +2-tier chance (5% base)', [{ kind: 'synthDoubleChance', value: 0.0025 }], 50_000, 2.0, 20),
 ];
 
 export const TECH_NODE_MAP: Record<string, TechNode> = Object.fromEntries(

@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useStore } from '@/state/store';
 import type { PanelKey } from '@/state/slices/uiSlice';
 import { classDef, CLASS_KEYS } from '@/data/classes';
@@ -60,6 +60,7 @@ export function PartyPanel(): React.JSX.Element {
 function PaperDoll({ heroId, requestSocket }: { heroId: string; requestSocket: SocketRequest }): React.JSX.Element {
   const hero = useStore((s) => s.roster.find((h) => h.id === heroId));
   const inventory = useStore((s) => s.inventory);
+  const stash = useStore((s) => s.stash);
   const equip = useStore((s) => s.equip);
   const unequip = useStore((s) => s.unequip);
   const togglePanel = useStore((s) => s.togglePanel);
@@ -72,36 +73,42 @@ function PaperDoll({ heroId, requestSocket }: { heroId: string; requestSocket: S
 
   const gearSlot = (slot: SlotKey): ReactNode => {
     const item = hero.equipment[slot] ?? null;
-    // A drop from the bag is either gear to equip or a gem to socket here. Look the
-    // dragged entry up: a gem with a free socket on this item raises the confirm modal.
-    const onDrop = (id: string): void => {
-      const entry = findEntry(inventory, id);
+    // A drop here is either gear to equip (bag only) or a gem to socket — and a gem may
+    // come from the bag OR the stash. Look the dragged entry up in its source container:
+    // a gem with a free socket on this item raises the confirm modal.
+    const onDrop = (d: DragPayload): void => {
+      if (d.id === undefined) return;
+      const entry = findEntry(d.from === 'stash' ? stash : inventory, d.id);
       if (entry !== undefined && isGem(entry)) {
         const idx = item?.sockets.findIndex((so) => so.gem === null) ?? -1;
         if (item !== null && idx >= 0) requestSocket(entry, slot, idx);
         return;
       }
-      equip(hero.id, id, slot);
+      if (d.from === 'inv') equip(hero.id, d.id, slot); // gear equips from the bag only
     };
     return (
       <DropTarget
         key={slot}
-        accept={(d) => d.from === 'inv'}
-        onDrop={(d) => { if (d.id !== undefined) onDrop(d.id); }}
+        accept={(d) => d.from === 'inv' || d.from === 'stash'}
+        onDrop={onDrop}
       >
-        <ItemSlot
-          item={item}
-          label={SLOTS[slot].label}
-          emptyIcon={SLOT_ICON[slot]}
-          size={46}
-          draggable
-          dragData={`equip|${slot}`}
-          onClick={() => item && unequip(hero.id, slot)}
-          onContextMenu={(e) => {
-            e.preventDefault();
-            if (item) openMenu(e.clientX, e.clientY, [{ label: 'Unequip', icon: '⬇️', onClick: () => unequip(hero.id, slot) }]);
-          }}
-        />
+        {/* keyed by hero+slot so swapping the SELECTED hero doesn't flash every slot —
+            only an actual equip into this slot replays the flash. */}
+        <EquipFlash key={`${hero.id}-${slot}`} itemId={item?.id ?? null}>
+          <ItemSlot
+            item={item}
+            label={SLOTS[slot].label}
+            emptyIcon={SLOT_ICON[slot]}
+            size={46}
+            draggable
+            dragData={`equip|${slot}`}
+            onClick={() => item && unequip(hero.id, slot)}
+            onContextMenu={(e) => {
+              e.preventDefault();
+              if (item) openMenu(e.clientX, e.clientY, [{ label: 'Unequip', icon: '⬇️', onClick: () => unequip(hero.id, slot) }]);
+            }}
+          />
+        </EquipFlash>
       </DropTarget>
     );
   };
@@ -224,12 +231,14 @@ function SharedInventory({ heroId, requestSocket }: { heroId: string; requestSoc
   const unequip = useStore((s) => s.unequip);
   const buySlot = useStore((s) => s.buyInventorySlot);
   const sortInventory = useStore((s) => s.sortInventory);
+  const stashAllGems = useStore((s) => s.stashAllGems);
   const equipped = useStore((s) => s.roster.find((h) => h.id === heroId)?.equipment ?? {});
   const heroClass = useStore((s) => s.roster.find((h) => h.id === heroId)?.classKey);
   const openMenu = useContextMenu();
 
   const slotCost = inventorySlotCost(slotUpgrades);
   const canExpand = slotUpgrades < INVENTORY_MAX_SLOTS && gold >= slotCost;
+  const hasGems = inventory.some((e) => e !== null && isGem(e));
 
   // What an inventory item's tooltip compares against: nothing if a slot in its
   // family is free (pure gain), otherwise every occupied family slot it could replace.
@@ -314,15 +323,25 @@ function SharedInventory({ heroId, requestSocket }: { heroId: string; requestSoc
         >
           ⇅ Sort
         </button>
-        <div style={{ flex: 1 }} />
         <button
-          disabled={!canExpand}
-          onClick={buySlot}
-          title="Expand inventory (+1 slot)"
-          style={{ fontSize: 10, padding: '2px 6px', background: canExpand ? PALETTE.bgInset : '#1a141f', border: `1px solid ${PALETTE.ink}`, color: canExpand ? PALETTE.gold : PALETTE.textMute }}
+          onClick={stashAllGems}
+          disabled={!hasGems}
+          title="Move all gems from your bag into the stash"
+          style={{ fontSize: 11, padding: '1px 7px', background: hasGems ? PALETTE.bgInset : '#1a141f', border: `1px solid ${PALETTE.ink}`, color: hasGems ? PALETTE.parchment : PALETTE.textMute, cursor: hasGems ? 'pointer' : 'default' }}
         >
-          {slotUpgrades >= INVENTORY_MAX_SLOTS ? 'MAX' : `+slot ${format(slotCost)}g`}
+          ◆ Stash gems
         </button>
+        <div style={{ flex: 1 }} />
+        {slotUpgrades < INVENTORY_MAX_SLOTS && (
+          <button
+            disabled={!canExpand}
+            onClick={buySlot}
+            title="Add an inventory slot"
+            style={{ fontSize: 10, padding: '2px 6px', background: canExpand ? PALETTE.bgInset : '#1a141f', border: `1px solid ${PALETTE.ink}`, color: canExpand ? PALETTE.gold : PALETTE.textMute }}
+          >
+            Add Slot {format(slotCost)}g
+          </button>
+        )}
       </div>
 
       <DropTarget
@@ -332,7 +351,9 @@ function SharedInventory({ heroId, requestSocket }: { heroId: string; requestSoc
           else if (d.from === 'equip' && d.slot !== undefined) unequip(heroId, d.slot);
         }}
       >
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: 3, minHeight: 76, alignContent: 'start' }}>
+        {/* Cap the bag at 3 rows (size-32 cells + 3px gaps ⇒ 32·3 + 3·2 = 102px) and scroll
+            inside beyond that, so buying more slots never grows the panel upward. */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: 3, maxHeight: 102, overflowY: 'auto', overflowX: 'hidden', alignContent: 'start' }}>
           {/* Fixed slots: render every cell up to capacity; holes stay empty in place. */}
           {Array.from({ length: cap }, (_, i) => {
             const entry = inventory[i] ?? null;
@@ -358,6 +379,32 @@ function parseDrag(s: string): DragPayload {
   const [from, rest] = s.split('|');
   if (from === 'equip') return { from: 'equip', slot: rest as SlotKey };
   return { from: from ?? '', id: rest };
+}
+
+// A gold ring that flashes over a gear slot the moment a NEW item lands in it (left-click
+// equip / drag-equip / swap), so an otherwise-instant equip is visibly confirmed. The flash
+// overlay is keyed by a tick so each equip replays it; the body stays mounted underneath.
+function EquipFlash({ itemId, children }: { itemId: string | null; children: ReactNode }): React.JSX.Element {
+  const [tick, setTick] = useState(0);
+  const prevId = useRef<string | null>(itemId);
+  const mounted = useRef(false);
+  useEffect(() => {
+    if (!mounted.current) { mounted.current = true; prevId.current = itemId; return; } // skip the initial mount
+    if (itemId !== null && itemId !== prevId.current) setTick((t) => t + 1); // a new/different item arrived
+    prevId.current = itemId;
+  }, [itemId]);
+  return (
+    <div style={{ position: 'relative' }}>
+      {children}
+      {tick > 0 && (
+        <span
+          key={tick}
+          className="tl-equip-flash"
+          style={{ position: 'absolute', inset: -2, pointerEvents: 'none', border: `2px solid ${PALETTE.gold}`, boxSizing: 'border-box' }}
+        />
+      )}
+    </div>
+  );
 }
 
 function DropTarget({ accept, onDrop, children }: { accept: (d: DragPayload) => boolean; onDrop: (d: DragPayload) => void; children: ReactNode }): React.JSX.Element {

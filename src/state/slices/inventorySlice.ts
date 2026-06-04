@@ -14,7 +14,9 @@ import {
   STASH_MAX_SLOTS,
   STASH_MAX_PAGES,
 } from '@/data/inventory';
-import { synthesize, canSynthesize, alchemyTotal, canTransfigure, transfigureRoll, itemGoldValue } from '@/sim/cube';
+import { synthesize, canSynthesize, synthesizeGems, canSynthesizeGems, alchemyTotal, canTransfigure, transfigureRoll, itemGoldValue } from '@/sim/cube';
+import { getBonuses } from '@/sim/bonuses';
+import { SYNTH_DOUBLE_TIER_CHANCE } from '@/data/cube';
 
 // Auto-salvage: when enabled, freshly-looted ITEMS whose tier is marked are melted to gold
 // on arrival instead of taking a bag slot — so junk rarities never clog the inventory.
@@ -88,6 +90,8 @@ export interface InventorySlice {
   removeItem: (id: string) => InvEntry | undefined;
   moveToStash: (id: string) => boolean;
   moveToInventory: (id: string) => boolean;
+  /** Move every gem in the inventory into the stash (until the stash fills); leaves gear. */
+  stashAllGems: () => void;
   buyInventorySlot: () => boolean;
   buyStashSlot: () => boolean;
   buyStashPage: () => boolean;
@@ -95,7 +99,10 @@ export interface InventorySlice {
    *  fixed slots so moving things around never shuffles the grid. */
   sortInventory: () => void;
   sortStash: () => void;
-  cubeCombine: (itemIds: string[]) => boolean;
+  /** Synthesize 9 same-kind, same-tier entries (items OR gems) → 1 of the next tier. Inputs
+   *  may live in the inventory AND/OR the stash; the result is placed in the bag (else stash).
+   *  Returns the created entry so the UI can preview it (its tier reveals a +2 "lucky"), or null. */
+  cubeCombine: (entryIds: string[]) => InvEntry | null;
   /** Melt items into gold; returns the gold gained (0 if none were valid). */
   cubeAlchemy: (itemIds: string[]) => number;
   /** Pay the gems + mark the item transfigured (one-time). Does NOT yet change the
@@ -181,6 +188,22 @@ export const createInventorySlice: StateCreator<GameStore, [], [], InventorySlic
     return true;
   },
 
+  // Sweep every gem from the bag into the stash, in slot order, stopping if the stash
+  // fills (the overflow stays in the bag). Gear is untouched.
+  stashAllGems: () =>
+    set((st) => {
+      const stCap = stashCapacity(st.stashPages, st.stashSlotUpgrades);
+      let inv = st.inventory;
+      let stash = st.stash;
+      for (const gem of entries(st.inventory).filter(isGem)) {
+        const placed = place(stash, gem, stCap);
+        if (placed === null) break; // stash full — leave the rest in the bag
+        stash = placed;
+        inv = removeId(inv, gem.id);
+      }
+      return { inventory: inv, stash };
+    }),
+
   buyInventorySlot: () => {
     const s = get();
     if (s.inventorySlotUpgrades >= INVENTORY_MAX_SLOTS) return false;
@@ -212,22 +235,47 @@ export const createInventorySlice: StateCreator<GameStore, [], [], InventorySlic
   sortStash: () => set((s) => ({ stash: sorted(s.stash) })),
 
   // Cube synthesis: consume 9 same-tier inventory items → 1 of the next tier (bound).
-  cubeCombine: (itemIds) => {
+  cubeCombine: (entryIds) => {
     const s = get();
-    const ids = new Set(itemIds);
-    const inputs = entries(s.inventory).filter(isItem).filter((i) => ids.has(i.id));
-    if (!canSynthesize(inputs)) return false;
-    const out = synthesize(inputs);
-    if (out === null) return false;
+    // Resolve each id from the inventory first, else the stash (stash inputs are allowed via
+    // the "include stash" toggle); bail if any id is missing.
+    const resolved = entryIds.map((id) => {
+      const inv = findEntry(s.inventory, id);
+      if (inv !== undefined) return { entry: inv, from: 'inv' as const };
+      const st = findEntry(s.stash, id);
+      return st !== undefined ? { entry: st, from: 'stash' as const } : null;
+    });
+    if (resolved.some((r) => r === null)) return null;
+    const found = resolved as { entry: InvEntry; from: 'inv' | 'stash' }[];
+    const inputs = found.map((r) => r.entry);
+
+    // Base 5% +2-tier chance + the Transmuter's Fortune tech bonus (capped at +5%).
+    const doubleChance = SYNTH_DOUBLE_TIER_CHANCE + getBonuses(s.techRanks, s.ownedPets).synthDoubleChance;
+
+    // All-items or all-gems; mixed batches are rejected.
+    let out: InvEntry | null = null;
+    if (inputs.every(isItem)) out = canSynthesize(inputs) ? synthesize(inputs, doubleChance) : null;
+    else if (inputs.every(isGem)) out = canSynthesizeGems(inputs) ? synthesizeGems(inputs, doubleChance) : null;
+    if (out === null) return null;
+
     const invCap = inventoryCapacity(s.inventorySlotUpgrades);
+    const stCap = stashCapacity(s.stashPages, s.stashSlotUpgrades);
+    let made: InvEntry | null = null;
     set((st) => {
       let inv = st.inventory;
-      for (const id of ids) inv = removeId(inv, id);
+      let stash = st.stash;
+      for (const r of found) {
+        if (r.from === 'inv') inv = removeId(inv, r.entry.id);
+        else stash = removeId(stash, r.entry.id);
+      }
       const minted = { ...out, id: mintedIdString(st.nextEntryId) }; // mint a fresh unique id
-      const placed = place(inv, minted, invCap);
-      return placed !== null ? { inventory: placed, nextEntryId: st.nextEntryId + 1 } : { inventory: inv };
+      const placedInv = place(inv, minted, invCap);
+      if (placedInv !== null) { made = minted; return { inventory: placedInv, stash, nextEntryId: st.nextEntryId + 1 }; }
+      const placedStash = place(stash, minted, stCap); // bag full → fall back to the stash
+      if (placedStash !== null) { made = minted; return { inventory: inv, stash: placedStash, nextEntryId: st.nextEntryId + 1 }; }
+      return { inventory: inv, stash }; // both full (shouldn't happen: freed 9)
     });
-    return true;
+    return made;
   },
 
   // Alchemy: melt the chosen items into gold (any tiers, any count).
