@@ -191,6 +191,15 @@ export const EG_FLAT = 1.0; // flat-stat gear exponent — MUST be ~1.0 (in [0.9
 // gear term to recover full power once geared. Tuned via the smoke harness.
 export const GEAR_POWER = 9.0;
 
+// Gem rework: a socketed gem grants this fraction of ONE same-tier, same-ilvl gear affix
+// of its stat (sim/gems.gemGrants), using the SAME normalization gear uses (roll-band ×
+// tierMult × GEAR_POWER × Φ(ilvl)). So every gem type is a consistent, predictable
+// fraction of an affix at any tier/ilvl — and scales with ilvl + tier exactly like gear.
+// Multi-stat gems (Diamond) split this fraction across their stats. BALANCE: raising this
+// lifts aggregate gear power (up to 4 sockets/item) — re-check the walls via sim-worlds /
+// sim-survival when changing it.
+export const GEM_AFFIX_FRACTION = 0.5;
+
 // The master scale Φ(S) = P(S) = (1 + S/P_K)^P_EXP. Closed-form (no memo needed); accepts
 // fractional S (used for ilvl/expectedLevel) and is monotonic, convex, and finite everywhere.
 export function phi(S: number): number {

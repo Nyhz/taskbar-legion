@@ -6,8 +6,9 @@ import { EnemySprite } from './render/EnemySprite';
 import { StageBackground } from './render/StageBackground';
 import { FloatingTextLayer } from './render/FloatingText';
 import { ProjectileLayer } from './render/Projectiles';
+import { WorldFxLayer } from './render/WorldFx';
 import { PortalSprite } from './render/PortalSprite';
-import { castFx, isSupportCast, FX } from './render/fx';
+import { castFx, isSupportCast, isWholeWaveCast, FX } from './render/fx';
 import { loadCharacterTextures } from './render/characterFrames';
 import { loadEnemyTextures, resolveEnemySprite, getEnemyFrames } from './render/enemyFrames';
 import { loadBackgroundTextures } from './render/backgroundLayers';
@@ -88,6 +89,9 @@ export class GameStrip {
   private readonly background = new StageBackground();
   private readonly combatants = new Container();
   private readonly projectiles = new ProjectileLayer();
+  // Big AoE ability spectacles (arrow rain, frost pool, holy nova, boss shockwaves) drawn
+  // over a target band — above the bodies, below the floating numbers.
+  private readonly worldFx = new WorldFxLayer();
   private readonly floating = new FloatingTextLayer();
   // The world-boss portal, pinned screen-right while farming a beaten W-9 (see frame()).
   private readonly portal = new PortalSprite();
@@ -139,10 +143,10 @@ export class GameStrip {
     setEngine(this.engine);
 
     this.combatants.sortableChildren = true; // honour zIndex (party above enemies)
-    this.world.addChild(this.background, this.combatants, this.projectiles, this.floating, this.portal, this.blackout, this.wipePhrase);
+    this.world.addChild(this.background, this.combatants, this.worldFx, this.projectiles, this.floating, this.portal, this.blackout, this.wipePhrase);
     // The portal is the ONLY interactive object — prune every other layer (and its whole
     // subtree of sprites/graphics) from pointer hit-testing so a tap walks just the portal.
-    for (const layer of [this.background, this.combatants, this.projectiles, this.floating, this.blackout, this.wipePhrase]) {
+    for (const layer of [this.background, this.combatants, this.worldFx, this.projectiles, this.floating, this.blackout, this.wipePhrase]) {
       layer.eventMode = 'none';
     }
     this.wipePhrase.anchor.set(0.5);
@@ -219,7 +223,8 @@ export class GameStrip {
     this.driveRespawnTeleport(dtMs);
     this.reconcileHeroes(w.heroes, groundY, dtMs, toScreen, wipeDead, wipeHidden);
     this.reconcileEnemies(w, groundY, dtMs, toScreen);
-    this.applyEvents(events);
+    this.applyEvents(events, groundY);
+    this.worldFx.update(dtMs);
     this.projectiles.update(dtMs);
     this.floating.update(dtMs);
     this.updatePortal(w, groundY, dtMs);
@@ -422,23 +427,32 @@ export class GameStrip {
     }
   }
 
-  private applyEvents(events: CombatEvent[]): void {
+  private applyEvents(events: CombatEvent[], groundY: number): void {
     for (const ev of events) {
       const heroSprite = this.heroSprites.get(ev.targetId);
       const enemySprite = this.enemySprites.get(ev.targetId);
       const sprite = heroSprite ?? enemySprite;
       const amt = ev.amount ?? 0;
       if (ev.type === 'cast' && ev.abilityKey !== undefined) {
-        // Each ability shows its OWN icon rising from the caster + a colored burst ring
-        // (its visual identity) — works for hero AND enemy casters.
+        // Each ability shows its OWN icon + a colored burst ring (its visual identity).
         const heroCaster = this.heroSprites.get(ev.targetId);
         const caster = heroCaster ?? this.enemySprites.get(ev.targetId);
         if (caster !== undefined) {
           const fx = castFx(ev.abilityKey);
-          caster.castBurst(fx.color);
-          this.floating.spawn(caster.x, caster.y - 26, fx.glyph, fx.color, 1.15);
+          // A whole-wave cast (Holy Nova, Raining Arrows, boss Quake…) puts its flourish
+          // over the TARGET band — the side it actually hits — so it never reads as landing
+          // on the caster's own party. Everything else rises from the caster.
+          const band = isWholeWaveCast(ev.abilityKey) ? this.targetBand(heroCaster !== undefined) : null;
+          if (band !== null) {
+            this.floating.spawn(band.cx, groundY - 40, fx.glyph, fx.color, 1.3);
+          } else {
+            caster.castBurst(fx.color);
+            this.floating.spawn(caster.x, caster.y - 26, fx.glyph, fx.color, 1.15);
+          }
           // A supportive cast by a sprite hero (Priest heal) plays its heal-cast pose.
           if (heroCaster !== undefined && isSupportCast(ev.abilityKey)) heroCaster.supportCast();
+          // Big AoE spectacles that play over the whole target band (the wave / the party).
+          this.spawnAoeFx(ev.abilityKey, heroCaster !== undefined, groundY);
         }
       } else if (ev.tick === true) {
         // DoT/HoT periodic tick → floating number, no attack animation. A HoT HEAL tick
@@ -477,6 +491,65 @@ export class GameStrip {
         this.floating.spawn(heroSprite.x, heroSprite.y - 20, `+${formatDmg(amt)}`, FX.heal, 1);
       }
     }
+  }
+
+  // Map an AoE ability's cast to its world spectacle, played over the target band:
+  // a hero's wave-wide ability rains on the enemies; an enemy/boss's AoE rocks the party;
+  // a party buff (Battle Cry) bursts over the heroes. Single-target abilities → no band FX.
+  private spawnAoeFx(abilityKey: string, heroCaster: boolean, groundY: number): void {
+    switch (abilityKey) {
+      case 'ranger_multishot': { // Raining Arrows → a volley onto the wave
+        const b = this.bandOf(this.enemySprites);
+        if (b !== null) this.worldFx.arrowRain(b.cx, groundY, b.halfW);
+        return;
+      }
+      case 'ranger_frozentrap': { // Frozen Trap → an icy pool under the wave (4s slow)
+        const b = this.bandOf(this.enemySprites);
+        if (b !== null) this.worldFx.frostPool(b.cx, groundY, b.halfW, 4000);
+        return;
+      }
+      case 'priest_nova': { // Holy Nova → a golden burst through the wave
+        const b = this.bandOf(this.enemySprites);
+        if (b !== null) this.worldFx.holyNova(b.cx, groundY - 20, b.halfW + 20);
+        return;
+      }
+      case 'knight_battlecry': { // Battle Cry → an amber war-cry shockwave over the party
+        const b = this.bandOf(this.heroSprites);
+        if (b !== null) this.worldFx.shockwave(b.cx, groundY, b.halfW + 16, FX.offense);
+        return;
+      }
+      case 'boss_quake': case 'boss_maelstrom': case 'boss_cataclysm': {
+        // A boss AoE rocks the whole party — a heavy red shockwave over the heroes.
+        if (!heroCaster) {
+          const b = this.bandOf(this.heroSprites);
+          if (b !== null) this.worldFx.shockwave(b.cx, groundY, b.halfW + 20, hexToNum('#ff5a3c'));
+        }
+        return;
+      }
+      default:
+        return;
+    }
+  }
+
+  // The band a whole-wave cast actually HITS: a hero casting allEnemies hits the enemy
+  // wave; an enemy/boss casting allEnemies hits the party. Used to place the AoE flourish
+  // on the side it lands on, not on the caster.
+  private targetBand(heroCaster: boolean): { cx: number; halfW: number } | null {
+    return this.bandOf(heroCaster ? this.enemySprites : this.heroSprites);
+  }
+
+  // The on-screen horizontal band (centre + half-width) spanning a group of sprites — used
+  // to centre an AoE spectacle over the wave or the party. null if the group is empty.
+  private bandOf(group: Map<string, HeroSprite> | Map<string, EnemySprite>): { cx: number; halfW: number } | null {
+    let min = Number.POSITIVE_INFINITY;
+    let max = Number.NEGATIVE_INFINITY;
+    for (const s of group.values()) {
+      if (!s.visible) continue;
+      if (s.x < min) min = s.x;
+      if (s.x > max) max = s.x;
+    }
+    if (!Number.isFinite(min)) return null;
+    return { cx: (min + max) / 2, halfW: Math.max(24, (max - min) / 2 + 18) };
   }
 
   // Play the attacker's animation by archetype: melee → sword swing + lunge;

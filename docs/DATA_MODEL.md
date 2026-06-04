@@ -147,17 +147,20 @@ export interface GemInstance {
   id: string;            // uuid
   key: GemKey;
   tier: GemTier;
-  origin: { rollSeed: number; stageIndex: number; generatorVersion: number }; // flat grants scale with Φ(stageIndex)
+  origin: { rollSeed: number; stageIndex: number; generatorVersion: number }; // → gemLevel = expectedLevel(stageIndex)
 }
 ```
 
-**Grant computation (in `sim/gems.ts`), when a gem is socketed into an item of category `C`:**
-`count = gemAffixCount(tier)` → the first `count` entries of `GemDef.grants[C]`; each entry's value =
-`flat: round2(base × gemTierMult(tier) × Φ(origin.stageIndex))` / `percent: round2(base × gemTierMult(tier))`
-(same flat/percent rule as items, PROGRESSION §6). `gemAffixCount`/`gemTierMult` + the grant lists are in
-BALANCE.md. **Socketing sets `item.bound = true`** with a confirmation (SPEC §4.5 / §12.4). Gem grants are
-**added on top** of the item's own affixes (they can push an item above the 4-affix item cap — that's fine,
-gems are bonus). A gem in armor must still yield defensive stats; in weapon offensive; in jewelry either.
+**Grant computation (in `sim/gems.ts`) — normalized-to-affix model.** A gem grants its `GemDef.grants`
+stat(s), the SAME in any socket. Each grant equals `GEM_AFFIX_FRACTION` (split across a multi-stat gem) of
+ONE same-tier, same-ilvl gear affix of that stat, using gear's normalization:
+`tierMult = tierDef(tier).statMultiplier`, `gemLevel = expectedLevel(origin.stageIndex)`,
+`mid = avg(STATS[stat].rollPerIlvl)`; `flat = round2(fractionPer × mid × tierMult × GEAR_POWER × Φ(gemLevel)^EG_FLAT)`,
+`percent = round2(fractionPer × mid × tierMult)` (same flat/percent rule as items, PROGRESSION §6). So a gem
+scales with ilvl + tier exactly like gear. The knob (`GEM_AFFIX_FRACTION`) + the grant identities are in
+BALANCE.md; `gemLevel(gem)` is surfaced as "Gem Lv." in the tooltip. **Socketing sets `item.bound = true`**
+with a confirmation (SPEC §4.5 / §12.4). Gem grants are **added on top** of the item's own affixes (they can
+push it above the 4-affix item cap — that's fine, gems are bonus).
 
 ## Chests — `data/chests.ts` + `sim/chests.ts`
 

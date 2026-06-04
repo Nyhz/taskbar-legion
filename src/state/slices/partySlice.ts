@@ -157,7 +157,9 @@ export const createPartySlice: StateCreator<GameStore, [], [], PartySlice> = (se
     const hero = s.roster.find((h) => h.id === heroId);
     const item = hero?.equipment[slot];
     const socket = item?.sockets[socketIdx];
-    if (gem === undefined || item === undefined || socket === undefined || socket.gem !== null) return;
+    // A filled socket is allowed: the new gem REPLACES it (a swap), and the old gem is
+    // discarded — the player confirmed it via the swap chooser. An empty socket just fills.
+    if (gem === undefined || item === undefined || socket === undefined) return;
     const sockets = item.sockets.map((so, i) => (i === socketIdx ? { gem } : so));
     const updated = { ...item, sockets }; // no binding — this game has no trading/bound gear
     set((st) => ({

@@ -4,7 +4,7 @@ import type { AttackStyle } from '@/data/field';
 import { RANGE } from '@/data/field';
 import { hexToNum } from '@/styles/palette';
 import { drawEnemy } from './textures';
-import { auraColor } from './fx';
+import { auraCategories, drawCategoryAuras, totalShield, drawShieldBar } from './effectAuras';
 import { SpriteBody } from './SpriteBody';
 import type { CharFrames } from './characterFrames';
 import type { EnemySizeClass } from './enemyFrames';
@@ -209,6 +209,8 @@ export class EnemySprite extends Container {
     }
     this.hpBar.clear();
     this.hpBar.rect(-this.barW / 2, y, Math.round(this.barW * frac), 3).fill({ color: hexToNum('#c0473a') });
+    // WoW-style absorb overlay (drawn over the HP fill), should an enemy ever be shielded.
+    drawShieldBar(this.hpBar, -this.barW / 2, y, this.barW, 3, totalShield(c.effects), c.maxHp, this.elapsed);
   }
 
   private applyMaterialize(dtMs: number): void {
@@ -284,15 +286,16 @@ export class EnemySprite extends Container {
       this.aura.circle(0, cy, ((1 - t) * 15 + 5) * s).stroke({ color: this.castColor, width: 2, alpha: t });
     }
     if (!c.alive) return;
-    const col = auraColor(c.effects);
-    if (col === null) return;
-    for (let i = 0; i < 4; i++) {
-      const ang = this.elapsed / 600 + (i * Math.PI) / 2;
-      const px = Math.cos(ang) * 12 * s;
-      const py = cy + Math.sin(ang) * 8 * s;
-      const tw = 0.3 + 0.5 * Math.abs(Math.sin(this.elapsed / 170 + i * 1.7));
-      const sz = 2.2 * s;
-      this.aura.poly([px, py - sz, px + sz, py, px, py + sz, px - sz, py]).fill({ color: col, alpha: tw });
-    }
+    // Bold category overlays — enemies most often wear DEBUFFS (red down-arrows from
+    // Debilitating Strike / Frozen Trap, etc.), drawn over the figure's vertical span.
+    const cats = auraCategories(c.effects);
+    drawCategoryAuras(this.aura, cats, {
+      cx: 0,
+      topY: this.barY + 8,
+      botY: FEET_OFFSET,
+      halfW: Math.max(this.barW * 0.45, 9 * s),
+      scale: s,
+      elapsed: this.elapsed,
+    });
   }
 }

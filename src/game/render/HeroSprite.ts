@@ -7,7 +7,8 @@ import { type AttackStyle, RESPAWN_MS } from '@/data/field';
 import { hexToNum } from '@/styles/palette';
 import { drawHero } from './textures';
 import { drawSwing, SWING_MS } from './swing';
-import { auraColor, isInvulnerable, INVULN_YELLOW } from './fx';
+import { isInvulnerable, INVULN_YELLOW } from './fx';
+import { auraCategories, drawCategoryAuras, totalShield, drawShieldBar } from './effectAuras';
 import { SpriteBody } from './SpriteBody';
 import type { Texture } from 'pixi.js';
 import type { CharFrames } from './characterFrames';
@@ -317,6 +318,9 @@ export class HeroSprite extends Container {
       this.hpBar
         .rect(bx, h.barY, Math.round(h.barW * frac), h.barH)
         .fill({ color: frac > 0.4 ? hexToNum('#4caf50') : hexToNum('#c0473a') });
+      // WoW-style absorb overlay: a yellow shell laid over the HP from the right edge,
+      // drawn AFTER the fill so it sits on top, shrinking as the shield soaks hits.
+      drawShieldBar(this.hpBar, bx, h.barY, h.barW, h.barH, totalShield(c.effects), c.maxHp, this.elapsed);
       this.respawnLabel.visible = false;
     }
 
@@ -432,16 +436,18 @@ export class HeroSprite extends Container {
       this.aura.circle(cx, cy, 16).fill({ color: INVULN_YELLOW, alpha: pulse });
       this.aura.circle(cx, cy, 16).stroke({ color: INVULN_YELLOW, width: 1.5, alpha: 0.75 });
     }
-    const col = auraColor(c.effects);
-    if (col === null) return;
-    for (let i = 0; i < 4; i++) {
-      const ang = this.elapsed / 600 + (i * Math.PI) / 2;
-      const px = cx + Math.cos(ang) * 13;
-      const py = cy + Math.sin(ang) * 9;
-      const tw = 0.3 + 0.5 * Math.abs(Math.sin(this.elapsed / 170 + i * 1.7));
-      const s = 2.3;
-      this.aura.poly([px, py - s, px + s, py, px, py + s, px - s, py]).fill({ color: col, alpha: tw });
-    }
+    // Bold category overlays: green up-arrows (offense buff), dancing shields (defense
+    // buff), red down-arrows (debuff) — drawn over the body's vertical span.
+    const cats = auraCategories(c.effects);
+    const sprite = this.spriteBody !== null;
+    drawCategoryAuras(this.aura, cats, {
+      cx,
+      topY: this.hud.barY * 0.78,
+      botY: 4,
+      halfW: this.hud.barW * 0.4,
+      scale: sprite ? 1.1 : 0.7,
+      elapsed: this.elapsed,
+    });
   }
 
   // Up to two ability cooldown pips at the TOP-LEFT of the hero (stacked vertically):

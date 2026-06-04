@@ -14,7 +14,7 @@ import { PALETTE } from '@/styles/palette';
 // The Stash: paged overflow storage. Items move to/from the inventory (drag, click,
 // or right-click). Expand with gold (per-page slots + new pages).
 
-type Filter = 'all' | SlotCategory;
+type Filter = 'all' | SlotCategory | 'gems';
 
 export function StashPanel(): React.JSX.Element {
   const stash = useStore((s) => s.stash);
@@ -35,11 +35,13 @@ export function StashPanel(): React.JSX.Element {
 
   const perPage = STASH_PER_PAGE + slotUpgrades;
   // "all" keeps the sparse layout (holes render as empty cells, so positions are
-  // fixed); a category filter is a lens that compacts to matching gear (gems have no
-  // category → only show under "all").
+  // fixed); a category filter is a lens that compacts to matching gear, and "gems"
+  // is a lens onto loose gems (which have no gear category).
   const filtered = filter === 'all'
     ? stash
-    : stash.filter((e) => e !== null && isItem(e) && SLOTS[e.slot].category === filter);
+    : filter === 'gems'
+      ? stash.filter((e) => e !== null && isGem(e))
+      : stash.filter((e) => e !== null && isItem(e) && SLOTS[e.slot].category === filter);
   const start = (page - 1) * perPage;
   const invFull = invLen >= invCap;
 
@@ -53,7 +55,7 @@ export function StashPanel(): React.JSX.Element {
         <span style={{ color: PALETTE.textMute, fontSize: 11 }}>{countFilled(stash)}/{cap}</span>
         <IconBtn active={false} title="Sort by tier" onClick={sortStash}>⇅</IconBtn>
         <div style={{ flex: 1 }} />
-        {(['all', 'armor', 'weapon', 'jewelry'] as Filter[]).map((f) => (
+        {(['all', 'armor', 'weapon', 'jewelry', 'gems'] as Filter[]).map((f) => (
           <IconBtn key={f} active={filter === f} title={f} onClick={() => setFilter(f)}>{FILTER_ICON[f]}</IconBtn>
         ))}
       </div>
@@ -115,7 +117,7 @@ export function StashPanel(): React.JSX.Element {
   );
 }
 
-const FILTER_ICON: Record<Filter, string> = { all: '▣', armor: '🛡️', weapon: '🗡️', jewelry: '💍' };
+const FILTER_ICON: Record<Filter, string> = { all: '▣', armor: '🛡️', weapon: '🗡️', jewelry: '💍', gems: '💎' };
 
 function IconBtn({ active, title, onClick, children }: { active: boolean; title: string; onClick: () => void; children: React.ReactNode }): React.JSX.Element {
   return (

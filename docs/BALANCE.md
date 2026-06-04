@@ -87,26 +87,34 @@ the base affix, ≤4 total.
 
 ## Gems — `data/gems.ts` (TIERED T1–T8; see DATA_MODEL `GemDef`/`GemInstance` + PROGRESSION §13/§14b)
 
-Each gem grants an **ordered list of stats per category**; a tier-T gem grants the first `gemAffixCount(T)`
-of them. `base` is the pre-scale magnitude (flat → ×`gemTierMult` ×`Φ(gem.origin.stageIndex)`; percent →
-×`gemTierMult` only). Entry 0 is the gem's signature stat (from SPEC §4.5); entries 1–3 are the extra
-affixes higher tiers unlock. Keep group rules: armor→defensive, weapon→offensive, jewelry→either.
+**Gem rework (normalized-to-affix model).** Each gem grants ONE scaler stat (Diamond grants two: armor +
+magicResist), the SAME in any socket — tier + ilvl scale the magnitude, never the count. Gems are
+SCALER-ONLY (never the soft-capped enablers critChance/cooldownReduction/block/multistrike). A gem's value
+is computed (`sim/gems.gemGrants`), NOT stored: it is a fixed fraction of ONE same-tier, same-ilvl gear
+affix of that stat, using gear's exact normalization — so a gem scales with ilvl + tier exactly like the
+gear it sockets into, and every gem type is a consistent, predictable fraction of an affix.
 
 ```
-gemAffixCount(tier) = [T1:1, T2:1, T3:2, T4:2, T5:3, T6:3, T7:4, T8:4]
-gemTierMult(tier)   = [T1:1.0, T2:1.3, T3:1.7, T4:2.2, T5:2.9, T6:3.8, T7:5.0, T8:6.6]
+gemLevel(gem)  = expectedLevel(gem.origin.stageIndex)        // the gem's effective ilvl (shown as "Gem Lv.")
+tierMult       = tierDef(gem.tier).statMultiplier            // SAME per-tier table as gear (T1 1.2 … T8 9.0)
+midRoll(stat)  = (STATS[stat].rollPerIlvl.min + .max) / 2    // the deterministic "average affix roll"
+fractionPer    = GEM_AFFIX_FRACTION / grants.length          // multi-stat gems (Diamond) split the fraction
+flat   grant   = fractionPer · midRoll · tierMult · GEAR_POWER · Φ(gemLevel)^EG_FLAT
+percent grant  = fractionPer · midRoll · tierMult            // level-flat (bounded, §6) — like item % affixes
+GEM_AFFIX_FRACTION = 0.5   // one socketed gem ≈ HALF a same-tier/ilvl gear affix (the balance knob)
 ```
 
-Ordered grant lists (`base` shown; extend sensibly — signature first, then on-theme extras):
+One scaler identity per gem (`data/gems.ts`):
 
-| Gem | armor (defensive) | weapon (offensive) | jewelry (either) |
+| Gem | grants | Gem | grants |
 |---|---|---|---|
-| Ruby | health 9, armor 3, hpPerHit 2, block 3% | attackDamage 1.0, damageIncrease 5%, critDamage 8%, attackSpeed 4% | critDamage 8%, health 9, attackDamage 1.0, critChance 3% |
-| Sapphire | armor 3, magicResist 3, health 7, hpRegen 2 | penetration 5%, attackDamage 0.8, attackSpeed 4%, critChance 3% | attackSpeed 4%, armor 3, penetration 5%, health 7 |
-| Emerald | dodgeChance 3%, health 7, armor 2, hpRegen 2 | lifesteal 3%, attackDamage 0.8, critChance 3%, damageIncrease 5% | critChance 3%, dodgeChance 3%, lifesteal 3%, attackDamage 0.8 |
-| Topaz | magicResist 3, health 7, block 3%, armor 2 | damageIncrease 5%, attackDamage 0.8, penetration 5%, critDamage 8% | damageIncrease 5%, magicResist 3, attackDamage 0.8, health 7 |
-| Amethyst | hpRegen 2, health 8, dodgeChance 3%, armor 2 | critChance 3%, attackDamage 0.8, critDamage 8%, attackSpeed 4% | penetration 5%, hpRegen 2, critChance 3%, health 7 |
-| Diamond | block 4%, armor 3, health 7, magicResist 3 | critDamage 8%, attackDamage 1.0, attackSpeed 4%, damageIncrease 5% | attackSpeed 4%, block 4%, critDamage 8%, attackDamage 1.0 |
+| Ruby | attackDamage | Topaz | healPower |
+| Sapphire | critDamage | Amethyst | attackSpeed |
+| Emerald | health | Diamond | armor + magicResist (½ each) |
+
+**Balance note:** `GEM_AFFIX_FRACTION` lifts AGGREGATE gear power (up to 4 sockets/item). Re-validate the
+zone-boss walls via `sim-worlds` / `sim-survival` when changing it; `gearTrack` (`stageScaling.ts`) is the
+compensating knob if enemies fall behind.
 
 Gems drop from chests (gated by `gemDropMult` tech); gem **tier** uses the shared `rollTier` (stage-scaled,
 T1–T8, T4+ unlock-gated, rare). Socketing sets `item.bound=true` and grants stack **on top** of item affixes

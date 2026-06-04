@@ -14,6 +14,7 @@ import { countFilled, findEntry } from '@/sim/slots';
 import { AbilityBar } from '@/ui/panels/party/AbilityBar';
 import { HeroIdleSprite } from '@/ui/components/HeroIdleSprite';
 import { SocketConfirmModal, type PendingSocket } from '@/ui/components/SocketConfirmModal';
+import { SocketChooserModal, type PendingChoice } from '@/ui/components/SocketChooserModal';
 import { useContextMenu } from '@/ui/components/ContextMenu';
 import { isGem } from '@/sim/items';
 import type { ItemInstance, InvEntry } from '@/sim/items';
@@ -35,6 +36,9 @@ export function PartyPanel(): React.JSX.Element {
   // A gem socketing awaiting confirmation (raised from the paper-doll drop or a gem's
   // right-click menu); the modal commits or cancels it.
   const [pending, setPending] = useState<PendingSocket | null>(null);
+  // A drop onto an item that ALREADY has a socketed gem raises the socket CHOOSER instead
+  // (pick which socket to fill, or swap out an existing gem).
+  const [choice, setChoice] = useState<PendingChoice | null>(null);
   const hideSocketWarning = useStore((s) => s.hideSocketWarning);
   const socketGem = useStore((s) => s.socketGem);
   if (hero === undefined) return <div>No hero.</div>;
@@ -44,20 +48,26 @@ export function PartyPanel(): React.JSX.Element {
     if (hideSocketWarning) socketGem(hero.id, slot, socketIdx, gem.id);
     else setPending({ gem, heroId: hero.id, slot, socketIdx });
   };
+  // Open the socket chooser (used when the target item has at least one filled socket, so
+  // the player can choose a free socket OR swap one out). Always confirmed — swaps destroy.
+  const requestSocketChoice = (gem: GemInstance, slot: SlotKey): void => {
+    setChoice({ gem, heroId: hero.id, slot });
+  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minWidth: 0 }}>
-      <PaperDoll heroId={hero.id} requestSocket={requestSocket} />
+      <PaperDoll heroId={hero.id} requestSocket={requestSocket} requestSocketChoice={requestSocketChoice} />
       <AbilityBar heroId={hero.id} />
       <PartyRow />
       <SharedInventory heroId={hero.id} requestSocket={requestSocket} />
       <MenuNav />
       {pending !== null && <SocketConfirmModal pending={pending} onClose={() => setPending(null)} />}
+      {choice !== null && <SocketChooserModal pending={choice} onClose={() => setChoice(null)} />}
     </div>
   );
 }
 
-function PaperDoll({ heroId, requestSocket }: { heroId: string; requestSocket: SocketRequest }): React.JSX.Element {
+function PaperDoll({ heroId, requestSocket, requestSocketChoice }: { heroId: string; requestSocket: SocketRequest; requestSocketChoice: ChoiceRequest }): React.JSX.Element {
   const hero = useStore((s) => s.roster.find((h) => h.id === heroId));
   const inventory = useStore((s) => s.inventory);
   const stash = useStore((s) => s.stash);
@@ -74,14 +84,20 @@ function PaperDoll({ heroId, requestSocket }: { heroId: string; requestSocket: S
   const gearSlot = (slot: SlotKey): ReactNode => {
     const item = hero.equipment[slot] ?? null;
     // A drop here is either gear to equip (bag only) or a gem to socket — and a gem may
-    // come from the bag OR the stash. Look the dragged entry up in its source container:
-    // a gem with a free socket on this item raises the confirm modal.
+    // come from the bag OR the stash. Look the dragged entry up in its source container.
+    // If the item ALREADY has a socketed gem, open the chooser (pick a free socket or swap
+    // one out); otherwise fall back to filling the first free socket via the confirm modal.
     const onDrop = (d: DragPayload): void => {
       if (d.id === undefined) return;
       const entry = findEntry(d.from === 'stash' ? stash : inventory, d.id);
       if (entry !== undefined && isGem(entry)) {
-        const idx = item?.sockets.findIndex((so) => so.gem === null) ?? -1;
-        if (item !== null && idx >= 0) requestSocket(entry, slot, idx);
+        if (item === null || item.sockets.length === 0) return; // no sockets to fill
+        if (item.sockets.some((so) => so.gem !== null)) {
+          requestSocketChoice(entry, slot); // has a gem already → choose / swap
+        } else {
+          const idx = item.sockets.findIndex((so) => so.gem === null);
+          if (idx >= 0) requestSocket(entry, slot, idx); // all empty → fill the first free socket
+        }
         return;
       }
       if (d.from === 'inv') equip(hero.id, d.id, slot); // gear equips from the bag only
@@ -361,10 +377,6 @@ function SharedInventory({ heroId, requestSocket }: { heroId: string; requestSoc
           })}
         </div>
       </DropTarget>
-
-      <div style={{ color: PALETTE.textMute, fontSize: 10 }}>
-        💎 Drag a gem onto a socketed item, or right-click it, to socket.
-      </div>
     </div>
   );
 }
@@ -373,6 +385,8 @@ function SharedInventory({ heroId, requestSocket }: { heroId: string; requestSoc
 
 /** Raise a gem-socketing for confirmation (paper-doll drop / gem right-click menu). */
 type SocketRequest = (gem: GemInstance, slot: SlotKey, socketIdx: number) => void;
+/** Open the socket chooser for an item that already has a socketed gem (pick / swap). */
+type ChoiceRequest = (gem: GemInstance, slot: SlotKey) => void;
 
 interface DragPayload { from: string; id?: string; slot?: SlotKey }
 function parseDrag(s: string): DragPayload {

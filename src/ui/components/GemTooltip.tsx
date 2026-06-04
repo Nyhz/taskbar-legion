@@ -1,6 +1,6 @@
 import type { GemInstance } from '@/data/gems';
 import { GEMS } from '@/data/gems';
-import { gemGrants } from '@/sim/gems';
+import { gemGrants, gemLevel } from '@/sim/gems';
 import { tierStyle } from '@/ui/tierStyle';
 import { STAT_ICON } from '@/ui/icons';
 import { StatRow } from './StatRow';
@@ -54,8 +54,11 @@ export function GemTooltip({ gem }: { gem: GemInstance }): React.JSX.Element {
             }}
           />
           <div>
-            <div style={{ color: rt.color, fontWeight: 700 }} className={rt.iridescent ? 'tl-iridescent' : undefined}>
-              Tier {gem.tier} Gem
+            <div style={{ display: 'flex', gap: 6, alignItems: 'baseline' }}>
+              <span style={{ color: rt.color, fontWeight: 700 }} className={rt.iridescent ? 'tl-iridescent' : undefined}>
+                Tier {gem.tier} Gem
+              </span>
+              <span style={{ color: PALETTE.textMute, fontWeight: 700 }}>Gem Lv.{Math.round(gemLevel(gem))}</span>
             </div>
             <div style={{ color: PALETTE.textMute }}>Socket into a free gem slot</div>
           </div>

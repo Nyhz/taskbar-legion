@@ -30,15 +30,15 @@ describe('gems', () => {
     }
   });
 
-  it('higher tier grants bigger values (gemTierMult), not more stats', () => {
+  it('higher tier grants bigger values (tier statMultiplier), not more stats', () => {
     const t1 = gemGrants(gem(1))[0]?.value ?? 0;
     const t8 = gemGrants(gem(8))[0]?.value ?? 0;
     expect(t8).toBeGreaterThan(t1);
     expect(gemGrants(gem(8)).length).toBe(gemGrants(gem(1)).length); // tier = magnitude, not count
   });
 
-  it('flat grants scale with Φ(stageIndex); percent grants do not', () => {
-    // Ruby = attackDamage (flat) → scales; Sapphire = critDamage (percent) → bounded.
+  it('flat grants scale with ilvl (Φ(gemLevel)); percent grants do not', () => {
+    // Ruby = attackDamage (flat) → scales with the gem's ilvl; Sapphire = critDamage (percent) → bounded.
     expect(gemGrants(gem(8, 'ruby', 100))[0]?.value ?? 0).toBeGreaterThan(gemGrants(gem(8, 'ruby', 10))[0]?.value ?? 0);
     expect(gemGrants(gem(8, 'sapphire', 100))[0]?.value).toBe(gemGrants(gem(8, 'sapphire', 10))[0]?.value);
   });

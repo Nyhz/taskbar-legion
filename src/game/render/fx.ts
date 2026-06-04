@@ -39,26 +39,11 @@ export function isSupportCast(abilityKey: string): boolean {
   return def.target !== 'frontEnemy' && def.target !== 'allEnemies';
 }
 
-/** The aura color for an ongoing effect on a combatant — the most salient timed
- *  effect wins (HoT > shield > buff > DoT > debuff/CC). null ⇒ no aura. */
-export function auraColor(effects: readonly ActiveEffect[]): number | null {
-  let dot: number | null = null;
-  let debuff: number | null = null;
-  for (const e of effects) {
-    const def = effectDef(e.defKey);
-    const t = def.kind.type;
-    if (t === 'hot') return FX.hot; // top priority — the gold "renew" aura
-    if (t === 'shield') return FX.shield;
-    if (t === 'statMod' && def.beneficial) return FX.buff;
-    if (t === 'dot') dot = FX.dot;
-    else if (!def.beneficial && (t === 'statMod' || t === 'root' || t === 'silence')) debuff = FX.debuff;
-  }
-  return dot ?? debuff;
-}
-
-/** True if a HoT is active (drives the twinkling-stars aura specifically). */
-export function hasHot(effects: readonly ActiveEffect[]): boolean {
-  return effects.some((e) => effectDef(e.defKey).kind.type === 'hot');
+/** True when a cast hits the WHOLE wave (target 'allEnemies' — Holy Nova, Raining Arrows,
+ *  boss Quake/Maelstrom/Cataclysm). Its flourish belongs over the TARGET band, not the
+ *  caster, so an AoE doesn't read as landing on the caster's own side. */
+export function isWholeWaveCast(abilityKey: string): boolean {
+  return tryAbilityDef(abilityKey)?.target === 'allEnemies';
 }
 
 /** True while a total-immunity effect is up (Knight Last Stand) — drives the yellow

@@ -233,7 +233,6 @@ function AlchemyMode(): React.JSX.Element {
 
   return (
     <>
-      <Hint>Melt items into gold. Higher tier and higher item level are worth more. Auto Fill grabs your lowest-tier junk first.</Hint>
       <AutoSalvageControl />
       <CubeGrid items={items} onRemove={toggle} goldOf={itemGoldValue} />
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -359,8 +358,6 @@ function TransfigureMode(): React.JSX.Element {
 
   return (
     <>
-      <Hint>Re-roll ONE affix of a gear piece into a different stat. Costs 1 offensive + 1 defensive gem at the item&apos;s tier. One-time per item — the gems are spent whichever affix you keep.</Hint>
-
       {/* item + the two paying gems */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'center' }}>
         <SlotBox label="Item"><ItemSlot item={item} size={44} label="·" /></SlotBox>
@@ -529,10 +526,6 @@ function SlotBox({ label, children }: { label: string; children: React.ReactNode
       <span style={{ fontSize: 9, color: PALETTE.textMute }}>{label}</span>
     </div>
   );
-}
-
-function Hint({ children }: { children: React.ReactNode }): React.JSX.Element {
-  return <div style={{ color: PALETTE.textMute, fontSize: 11 }}>{children}</div>;
 }
 
 function Result({ children }: { children: React.ReactNode }): React.JSX.Element {

@@ -151,7 +151,12 @@ function selectTargets(caster: Combatant, ability: AbilityDef, allies: Combatant
     case 'allAllies':
       return allies.filter((a) => a.alive);
     case 'allEnemies':
-      return enemies.filter((e) => e.alive && inRange(caster, e));
+      // A whole-wave AoE (Raining Arrows, Holy Nova, Frozen Trap, boss Quake/Maelstrom…)
+      // hits EVERY living enemy on the field — not just those in the caster's reach. Only
+      // the current wave is ever present (future batches sit in waveQueue), so this is the
+      // whole wave and never the next one. The engagement gate below keeps it from firing
+      // during the walk-up.
+      return enemies.filter((e) => e.alive);
     case 'frontEnemy': {
       const front = enemies.find((e) => e.alive && inRange(caster, e));
       return front ? [front] : [];
@@ -273,8 +278,10 @@ export function castReadyAbilities(
       continue;
     }
     if (!conditionMet(ability, allies, enemies)) continue;
-    // Don't blow a self/party buff during the walk-up — wait until in range of a foe.
-    if (isSelfOrPartyBuff(ability) && !engaged(caster, enemies)) continue;
+    // Don't blow a self/party buff — OR a whole-wave AoE — during the walk-up: hold it
+    // until the caster is actually engaged (a foe in range). The AoE then lands on the
+    // ENTIRE wave (selectTargets no longer range-gates allEnemies), not just what's in reach.
+    if ((isSelfOrPartyBuff(ability) || ability.target === 'allEnemies') && !engaged(caster, enemies)) continue;
     const targets = selectTargets(caster, ability, allies, enemies, rng);
     if (targets.length === 0) continue;
     for (const applied of ability.applies) {
