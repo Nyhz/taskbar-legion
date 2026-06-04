@@ -21,7 +21,6 @@ export interface Combatant {
   cooldowns: Record<string, number>; // abilityKey -> remainingMs
   cooldownTotals?: Record<string, number>; // abilityKey -> full cooldown of the last cast (for UI fill); display-only
   charges?: Record<string, number>; // abilityKey -> charges banked (charge-gated abilities, e.g. Aimed Shot)
-  gcdMs?: number; // global cooldown: ms until this combatant may cast ANY ability again (heroes)
   attackTimerMs: number;
   x: number; // world position (heroes derived from partyX; enemies advance left)
   range: number; // attack reach (world px) — melee short, ranged/caster long

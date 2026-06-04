@@ -1,5 +1,5 @@
 import { Simulation, createWorld, TICK_MS, type TickContext } from '@/sim/Simulation';
-import { buildHeroCombatant, refreshHeroLoadout, partyAuraMods, type HeroConfig } from '@/sim/loadout';
+import { buildHeroCombatant, refreshHeroLoadout, partyAuraMods, heroAbilities, MAX_ACTIVE_ABILITIES, type HeroConfig } from '@/sim/loadout';
 import { getBonuses, type Bonuses } from '@/sim/bonuses';
 import { openAll, openType, autoOpenIntervalMs } from '@/sim/chests';
 import { countFilled } from '@/sim/slots';
@@ -10,6 +10,7 @@ import type { ItemInstance } from '@/sim/items';
 import type { GemInstance } from '@/data/gems';
 import { CHEST_CONFIG, type ChestType } from '@/data/chests';
 import { worldOf, stageInWorld } from '@/data/stageScaling';
+import { HERO_SPACING } from '@/data/field';
 import { useStore } from '@/state/store';
 import type { HeroState } from '@/persistence/saveSchema';
 
@@ -185,7 +186,7 @@ export class GameEngine {
     const combatMods = [...this.bonuses.combatMods, ...partyAuraMods(st.roster.map(toConfig))];
     const world = this.sim.world;
     const byId = new Map(world.heroes.map((h) => [h.id, h]));
-    world.heroes = st.roster.map((h) => {
+    world.heroes = st.roster.map((h, i) => {
       const existing = byId.get(h.id);
       if (existing !== undefined) {
         refreshHeroLoadout(existing, toConfig(h), combatMods);
@@ -194,11 +195,12 @@ export class GameEngine {
         if (existing.alive && existing.x < world.partyX - 300) existing.x = world.partyX;
         return existing;
       }
-      // A newly-recruited hero must spawn WITH the party (at partyX), not at world
-      // origin (x=0) — otherwise it's alive (and earns XP) but stranded far off-screen,
-      // slowly walking the whole map to catch up. Drop it in at the formation anchor.
+      // A newly-recruited hero drops straight into its OWN formation slot behind the tank
+      // (partyX - i·HERO_SPACING), not onto the lead anchor — so it materialises in place
+      // (the render layer plays the respawn teleport-in) instead of stacking on the tank
+      // and walking back into line.
       const fresh = buildHeroCombatant(toConfig(h), combatMods);
-      fresh.x = world.partyX;
+      fresh.x = world.partyX - i * HERO_SPACING;
       return fresh;
     });
   }
@@ -231,7 +233,9 @@ export class GameEngine {
 }
 
 function toConfig(h: HeroState): HeroConfig {
-  // Pass an array (never undefined) so the live game applies the ≤2 active-ability cap
-  // — undefined is reserved for the headless harness, where the full kit fires.
-  return { id: h.id, classKey: h.classKey, level: h.level, equipment: h.equipment, talents: h.talents, activeAbilities: h.activeAbilities ?? [] };
+  // The hero's ranked ability nodes ARE its active loadout — there's no separate selection.
+  // Derive the active keys straight from the ranked pool (capped at MAX_ACTIVE_ABILITIES,
+  // which the talent-tree gate enforces; sliced here too so legacy saves can't exceed it).
+  const activeAbilities = heroAbilities(h.classKey, h.talents).slice(0, MAX_ACTIVE_ABILITIES).map((a) => a.def.key);
+  return { id: h.id, classKey: h.classKey, level: h.level, equipment: h.equipment, talents: h.talents, activeAbilities };
 }

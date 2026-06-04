@@ -3,7 +3,7 @@ import type { GameStore } from '../store';
 import type { HeroState } from '@/persistence/saveSchema';
 import { isGem, isItem } from '@/sim/items';
 import { findEntry, place, removeId } from '@/sim/slots';
-import { heroAbilities } from '@/sim/loadout';
+import { heroAbilities, canLearnNewAbility } from '@/sim/loadout';
 import { slotFamily, type SlotKey } from '@/data/itemSlots';
 import { totalExpToReach, MAX_LEVEL } from '@/data/stageScaling';
 import { talentNodes, rowUnlockThreshold } from '@/data/talents';
@@ -19,7 +19,6 @@ export interface PartySlice {
 
   selectHero: (id: string) => void;
   gainExp: (amount: number, aliveIds?: readonly string[]) => void;
-  toggleActiveAbility: (heroId: string, abilityKey: string) => void;
   equip: (heroId: string, itemId: string, targetSlot?: SlotKey) => void;
   unequip: (heroId: string, slot: SlotKey) => void;
   socketGem: (heroId: string, slot: SlotKey, socketIdx: number, gemId: string) => void;
@@ -65,22 +64,6 @@ export const createPartySlice: StateCreator<GameStore, [], [], PartySlice> = (se
   selectedHeroId: 'h0',
 
   selectHero: (id) => set({ selectedHeroId: id }),
-
-  // Toggle an ability in the hero's active set (max 2). Adding a 3rd drops the oldest
-  // (FIFO) so a click always succeeds. Bumps configEpoch → the engine rebuilds the
-  // combatant's cast list.
-  toggleActiveAbility: (heroId, abilityKey) =>
-    set((st) => ({
-      roster: mapHero(st.roster, heroId, (h) => {
-        const cur = h.activeAbilities ?? [];
-        let next: string[];
-        if (cur.includes(abilityKey)) next = cur.filter((k) => k !== abilityKey);
-        else if (cur.length < 2) next = [...cur, abilityKey];
-        else next = [...cur.slice(1), abilityKey];
-        return { ...h, activeAbilities: next };
-      }),
-      configEpoch: st.configEpoch + 1,
-    })),
 
   gainExp: (amount, aliveIds) =>
     set((s) => {
@@ -180,9 +163,13 @@ export const createPartySlice: StateCreator<GameStore, [], [], PartySlice> = (se
     const spent = Object.values(hero.talents).reduce((a, b) => a + b, 0);
     if (spent < rowUnlockThreshold(node.rowIndex)) return false; // row locked
     if ((hero.talents[nodeKey] ?? 0) >= node.maxRank) return false;
-    // Ranking a NOT-yet-active ability for the first time auto-fills a free active
-    // slot (≤2), so a freshly-learned ability starts working without a second click.
-    const autoActivate = node.kind === 'ability' && node.abilityKey !== undefined && (hero.talents[nodeKey] ?? 0) === 0;
+    // Learning a NEW ability (first point) is gated: at most MAX_ACTIVE_ABILITIES ability
+    // nodes may be ranked, since the ranked set IS the active loadout. Already-ranked
+    // abilities and passive nodes are never blocked.
+    const learningNew = node.kind === 'ability' && (hero.talents[nodeKey] ?? 0) === 0;
+    if (learningNew && !canLearnNewAbility(hero.classKey, hero.talents)) return false;
+    // A freshly-learned ability auto-fills a free active slot so it starts firing at once.
+    const autoActivate = learningNew && node.abilityKey !== undefined;
     set((st) => ({
       roster: mapHero(st.roster, heroId, (h) => {
         const active = h.activeAbilities ?? [];

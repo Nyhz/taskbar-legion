@@ -136,7 +136,6 @@ function readyAbilitiesForBoss(world: WorldState): void {
   for (const h of world.heroes) {
     h.cooldowns = {};
     h.cooldownTotals = {};
-    h.gcdMs = 0;
   }
 }
 

@@ -46,7 +46,12 @@ const ABILITY_ICON: Record<string, string> = {
 };
 
 export function abilityIcon(ability: AbilityDef): string {
-  return ABILITY_ICON[ability.icon] ?? '✦';
+  return glyphForIcon(ability.icon);
+}
+
+/** Emoji glyph for a raw icon key (shared by abilities and ultimates). */
+export function glyphForIcon(iconKey: string): string {
+  return ABILITY_ICON[iconKey] ?? '✦';
 }
 
 /** Display icon for an item: weapon/off-hand show their class-specific TYPE glyph

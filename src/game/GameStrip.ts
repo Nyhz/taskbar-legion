@@ -105,6 +105,7 @@ export class GameStrip {
   private respawnTpMs = 0; // counts down a teleport-IN as the revived party materialises post-wipe
   private prevWorld = -1; // last seen zone (worldOf) — a change triggers a teleport
   private heroSprites = new Map<string, HeroSprite>();
+  private heroesSeeded = false; // false until the initial party is placed; a hero sprite born AFTER is a fresh recruit → materialises in
   private enemySprites = new Map<string, EnemySprite>();
   private engine: GameEngine | null = null;
   private uiScale = 1;
@@ -355,6 +356,9 @@ export class GameStrip {
       if (sprite === undefined) {
         sprite = new HeroSprite(c.classKey ?? 'knight');
         sprite.zIndex = 2; // party draws ABOVE enemies
+        // A hero whose sprite is born after the initial party was placed is a fresh
+        // recruit — materialise it in (top-down respawn FX) rather than popping in.
+        if (this.heroesSeeded) sprite.spawnIn();
         this.heroSprites.set(c.id, sprite);
         this.combatants.addChild(sprite);
       }
@@ -371,6 +375,8 @@ export class GameStrip {
       sprite.update(c, sx, groundY, dtMs, wipeDead);
       placed.push({ sprite, x: sx });
     }
+    // The initial party is now on screen; any hero sprite created from here on is a recruit.
+    this.heroesSeeded = true;
     this.layoutHeroHuds(placed);
   }
 
@@ -433,6 +439,18 @@ export class GameStrip {
       const enemySprite = this.enemySprites.get(ev.targetId);
       const sprite = heroSprite ?? enemySprite;
       const amt = ev.amount ?? 0;
+      if (ev.type === 'cast' && ev.abilityKey === 'ranger_mark') {
+        // Ranger's ultimate: a crosshair springs off the ranger's head and locks onto the
+        // boss (sourceId), where the boss's persistent mark-reticle aura then takes over.
+        const ranger = this.heroSprites.get(ev.targetId);
+        const boss = ev.sourceId === undefined ? undefined : this.enemySprites.get(ev.sourceId);
+        if (ranger !== undefined && boss !== undefined) {
+          const from = ranger.headPoint();
+          const to = boss.markPoint();
+          this.worldFx.markCrosshair(from.x, from.y, to.x, to.y, to.radius);
+        }
+        continue;
+      }
       if (ev.type === 'cast' && ev.abilityKey !== undefined) {
         // Each ability shows its OWN icon + a colored burst ring (its visual identity).
         const heroCaster = this.heroSprites.get(ev.targetId);

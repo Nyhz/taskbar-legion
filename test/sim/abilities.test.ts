@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { castReadyAbilities, HERO_GCD_MS } from '@/sim/abilities';
+import { castReadyAbilities } from '@/sim/abilities';
 import { applyEffect, absorbDamage } from '@/sim/effects';
 import { effectDef } from '@/data/effects';
 import { abilityDef, ABILITIES } from '@/data/abilities';
@@ -58,23 +58,24 @@ describe('ability mechanics', () => {
     expect(c.effects[0]?.remainingMs).toBe(0); // depleted → expired
   });
 
-  it('a hero casts only ONE ability per global cooldown, then waits', () => {
+  it('a hero casts at most ONE ability per swing (no global cooldown — the swing paces them)', () => {
     const caster = unit({
       id: 'm', side: 'hero',
       baseStats: base({ attackDamage: 50 }),
-      // Both ready (different cooldowns), both have a valid target → without a GCD
-      // they'd fire together. The GCD must stagger them.
-      abilities: [{ def: abilityDef('ranger_aimedshot'), rank: 1 }, { def: abilityDef('ranger_multishot'), rank: 1 }],
+      // Both ready, both can hit the wave → they must NOT fire together: a hero takes one
+      // action per swing, so only the first fires this call.
+      abilities: [{ def: abilityDef('ranger_multishot'), rank: 1 }, { def: abilityDef('ranger_frozentrap'), rank: 1 }],
     });
     const enemy = unit({ id: 'e', side: 'enemy' });
     const first = castReadyAbilities(caster, [caster], [enemy], 1, makeRng(1), []);
     expect(first).toHaveLength(1); // only one despite both being ready
-    expect(caster.gcdMs).toBe(HERO_GCD_MS);
+    // No global cooldown: the OTHER ready ability fires on the very next swing (call).
     const second = castReadyAbilities(caster, [caster], [enemy], 1, makeRng(1), []);
-    expect(second).toHaveLength(0); // still on the global cooldown
+    expect(second).toHaveLength(1);
+    expect(second[0]).not.toBe(first[0]); // the second ability, not a repeat of the first
   });
 
-  it('enemies are NOT global-cooldown limited (cast all ready abilities)', () => {
+  it('enemies are NOT limited to one cast (they fire every ready ability)', () => {
     const foe = unit({
       id: 'e', side: 'enemy',
       abilities: [{ def: abilityDef('enemy_bolt'), rank: 1 }, { def: abilityDef('enemy_smash'), rank: 1 }],
@@ -82,7 +83,6 @@ describe('ability mechanics', () => {
     const hero = unit({ id: 'h', side: 'hero' });
     const cast = castReadyAbilities(foe, [foe], [hero], 1, makeRng(1), []);
     expect(cast).toHaveLength(2); // both fire — enemy cadence unchanged
-    expect(foe.gcdMs).toBeUndefined();
   });
 
   it('cooldown reduction shortens the cast cooldown (soft-capped)', () => {
@@ -134,7 +134,6 @@ describe('per-ability cooldowns', () => {
     const enemy = unit({ id: 'e', side: 'enemy' });
     caster.charges = { ranger_aimedshot: 9 };
     expect(castReadyAbilities(caster, [caster], [enemy], 1, makeRng(1), [])).toHaveLength(0); // 9 < 10
-    caster.gcdMs = 0;
     caster.charges = { ranger_aimedshot: 10 };
     const cast = castReadyAbilities(caster, [caster], [enemy], 1, makeRng(1), []);
     expect(cast).toEqual(['ranger_aimedshot']); // fired at 10
@@ -161,10 +160,10 @@ describe('Retribution Aura (passive party buff)', () => {
       .toEqual([{ key: 'damageIncrease', mode: 'percent', value: 15 }]); // rank 5 → +15%
   });
 
-  it('a passive aura is never cast (no GCD, no cooldown)', () => {
+  it('a passive aura is never cast (no cooldown consumed)', () => {
     const caster = unit({ id: 'p', side: 'hero', classKey: 'priest', abilities: [{ def: abilityDef('priest_retribution'), rank: 3 }] });
     const enemy = unit({ id: 'e', side: 'enemy' });
     expect(castReadyAbilities(caster, [caster], [enemy], 1, makeRng(1), [])).toHaveLength(0);
-    expect(caster.gcdMs ?? 0).toBe(0);
+    expect(caster.cooldowns.priest_retribution ?? 0).toBe(0);
   });
 });

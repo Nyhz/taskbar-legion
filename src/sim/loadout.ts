@@ -97,8 +97,17 @@ export function partyAuraMods(roster: readonly HeroConfig[]): StatMod[] {
 /** The maximum abilities a hero fires at once (the player picks which — DATA_MODEL). */
 export const MAX_ACTIVE_ABILITIES = 2;
 
+/** Whether the hero may put the FIRST point into a not-yet-ranked ability node. The ranked
+ *  ability set IS the active loadout (no separate selection), so learning a NEW ability is
+ *  blocked once MAX_ACTIVE_ABILITIES are already ranked — ranking an already-learned ability
+ *  further, and all passive nodes, are unaffected. */
+export function canLearnNewAbility(classKey: string, talents: Record<string, number>): boolean {
+  return heroAbilities(classKey, talents).length < MAX_ACTIVE_ABILITIES;
+}
+
 /** Every ability a hero has unlocked (talent ability nodes with rank > 0), with rank.
- *  This is the POOL the player chooses their active two from. */
+ *  Capped at MAX_ACTIVE_ABILITIES by the talent-tree gate, so this POOL is exactly the
+ *  hero's active loadout. */
 export function heroAbilities(classKey: string, talents: Record<string, number>): ResolvedAbility[] {
   const out: ResolvedAbility[] = [];
   for (const node of talentNodes(classKey)) {

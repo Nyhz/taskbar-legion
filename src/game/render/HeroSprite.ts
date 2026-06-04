@@ -33,6 +33,7 @@ const CD_CHARGE = hexToNum('#46c98b'); // charge-gated ability banking toward it
 const CAST_MS = 340; // cast-burst ring lifetime
 const TP_BEAM = hexToNum('#fff2a8'); // teleport upward beam / sparks
 const TP_RING = hexToNum('#ffe27a'); // teleport charge ring
+const RECRUIT_SPAWN_MS = 650; // first-recruit materialise-in (the teleport-IN half of a respawn)
 
 // Overhead HUD geometry (HP bar, buff/debuff pips, ability-cooldown pips). The bigger
 // sprite knight needs a larger HUD lifted clear of its head; the small procedural
@@ -115,6 +116,7 @@ export class HeroSprite extends Container {
   private moveGraceMs = 0; // >0 while recently moving → play walk; 0 → hold idle pose
   private teleporting = false;
   private teleportK = 1; // 1 = fully present, 0 = fully dematerialised (mid-teleport)
+  private spawnMs = 0; // >0 while a freshly-recruited hero is materialising in (drops top-down into formation)
   private hudLift = 0; // px the overhead HUD is raised to dodge a crowded neighbour
 
   constructor(classKey: string) {
@@ -161,6 +163,19 @@ export class HeroSprite extends Container {
     }
     this.teleporting = true;
     this.teleportK = Math.abs(1 - 2 * phase); // 1 at the ends, 0 at the dematerialised midpoint
+  }
+
+  /** Play the teleport-IN materialise on its own — a freshly-recruited hero drops top-down
+   *  into its formation slot (same yellow ring + beam + lift FX as a post-wipe respawn),
+   *  instead of just popping into place. Self-driven (counts down in `update`). */
+  spawnIn(): void {
+    this.spawnMs = RECRUIT_SPAWN_MS;
+  }
+
+  /** A point just above this hero's head (parent coords) — where the ranger's ultimate
+   *  crosshair spawns before it flies off to lock onto the boss. */
+  headPoint(): { x: number; y: number } {
+    return { x: this.x, y: this.y + this.hud.barY };
   }
 
   /** Raise the whole overhead HUD by `px` (0 = default). GameStrip lifts a rear hero's
@@ -328,6 +343,13 @@ export class HeroSprite extends Container {
     this.drawAura(c);
     this.drawPips(c);
     this.drawCooldowns(c, reviving);
+    // A freshly-recruited hero materialises in (the respawn teleport-IN) on its first
+    // frames: drive the teleport from 0 (gone, lifted up) → 1 (present, settled in slot).
+    if (this.spawnMs > 0) {
+      this.spawnMs = Math.max(0, this.spawnMs - dtMs);
+      this.teleporting = this.spawnMs > 0;
+      this.teleportK = 1 - this.spawnMs / RECRUIT_SPAWN_MS;
+    }
     this.applyTeleport();
     this.drawUlt(c, reviving); // after teleport so it owns the badge's visibility
     this.advanceHealFx(dtMs);

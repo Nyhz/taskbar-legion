@@ -17,17 +17,11 @@ import { format } from './num';
 const ALLY_HELP_THRESHOLD = 0.7; // 'allyBelowHpPct' triggers below 70% HP
 const MAX_CDR = 75; // cap cooldown reduction so abilities can't go free
 
-// Global cooldown: a hero may cast only ONE ability, then nothing for this long — so
-// two off-cooldown abilities (e.g. a ranger's aimed shot + multishot) stagger instead of firing
-// together. Heroes only; enemy cadence is unchanged. NOT reduced by cooldownReduction.
-export const HERO_GCD_MS = 2000;
-
 export function tickCooldowns(c: Combatant, deltaMs: number): void {
   for (const key of Object.keys(c.cooldowns)) {
     const v = c.cooldowns[key];
     if (v !== undefined && v > 0) c.cooldowns[key] = Math.max(0, v - deltaMs);
   }
-  if (c.gcdMs !== undefined && c.gcdMs > 0) c.gcdMs = Math.max(0, c.gcdMs - deltaMs);
 }
 
 /** Effective stats of any combatant (for scaling ability magnitudes/cooldowns). */
@@ -253,7 +247,12 @@ function applyToTarget(
   applyEffect(target.effects, def, caster.id, value, duration);
 }
 
-/** Try to cast each ready ability for a combatant. Returns the keys cast (render). */
+/** Try to cast ready abilities for a combatant. Returns the keys cast (render).
+ *
+ *  Heroes act once per SWING: their cast cadence IS the attack timer (combat.ts calls this
+ *  only when the hero is ready to swing, and a cast uses up that swing — an ability takes
+ *  precedence over the auto-attack). So a hero casts at most ONE ready ability per call.
+ *  Enemies have no such gate — they fire every ready ability (cadence unchanged). */
 export function castReadyAbilities(
   caster: Combatant,
   allies: Combatant[],
@@ -263,9 +262,7 @@ export function castReadyAbilities(
   events: CombatEvent[],
 ): string[] {
   if (!caster.alive || isSilenced(caster.effects)) return [];
-  // Heroes share a global cooldown: if still on GCD, cast nothing this tick.
-  const onGcd = caster.side === 'hero';
-  if (onGcd && (caster.gcdMs ?? 0) > 0) return [];
+  const single = caster.side === 'hero'; // one ability per swing for heroes
   const cs = casterStats(caster);
   const cast: string[] = [];
   for (const { def: ability, rank } of caster.abilities) {
@@ -297,8 +294,9 @@ export function castReadyAbilities(
       (caster.cooldownTotals ??= {})[ability.key] = cd; // display-only: lets the UI show a fill fraction
     }
     cast.push(ability.key);
-    // One cast per global cooldown for heroes — then the rest must wait HERO_GCD_MS.
-    if (onGcd) { caster.gcdMs = HERO_GCD_MS; break; }
+    // Heroes take just one action per swing — the cast consumed it; the rest wait for the
+    // next swing. Enemies keep firing every ready ability.
+    if (single) break;
   }
   return cast;
 }

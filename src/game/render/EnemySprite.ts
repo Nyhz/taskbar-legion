@@ -4,7 +4,7 @@ import type { AttackStyle } from '@/data/field';
 import { RANGE } from '@/data/field';
 import { hexToNum } from '@/styles/palette';
 import { drawEnemy } from './textures';
-import { auraCategories, drawCategoryAuras, totalShield, drawShieldBar } from './effectAuras';
+import { auraCategories, drawCategoryAuras, totalShield, drawShieldBar, crosshairRadius, type AuraRegion } from './effectAuras';
 import { SpriteBody } from './SpriteBody';
 import type { CharFrames } from './characterFrames';
 import type { EnemySizeClass } from './enemyFrames';
@@ -277,6 +277,27 @@ export class EnemySprite extends Container {
     }
   }
 
+  // The vertical band auras play over, in container-local coords. Shared by drawAura and
+  // markPoint so the ranger's ultimate fly-in lands exactly on the persistent reticle.
+  private auraRegion(): AuraRegion {
+    const s = this.auraScale;
+    return {
+      cx: 0,
+      topY: this.barY + 8,
+      botY: FEET_OFFSET,
+      halfW: Math.max(this.barW * 0.45, 9 * s),
+      scale: s,
+      elapsed: this.elapsed,
+    };
+  }
+
+  /** Where the Mark-of-the-Hunter reticle sits on this body (parent coords) and its radius —
+   *  the ranger's ult crosshair flies in and locks onto this exact spot. */
+  markPoint(): { x: number; y: number; radius: number } {
+    const r = this.auraRegion();
+    return { x: this.x, y: this.y + (r.topY + r.botY) / 2, radius: crosshairRadius(r) };
+  }
+
   private drawAura(c: Combatant): void {
     this.aura.clear();
     const cy = this.cy;
@@ -287,15 +308,9 @@ export class EnemySprite extends Container {
     }
     if (!c.alive) return;
     // Bold category overlays — enemies most often wear DEBUFFS (red down-arrows from
-    // Debilitating Strike / Frozen Trap, etc.), drawn over the figure's vertical span.
+    // Debilitating Strike / Frozen Trap, etc.) or the ranger's MARK reticle, drawn over the
+    // figure's vertical span.
     const cats = auraCategories(c.effects);
-    drawCategoryAuras(this.aura, cats, {
-      cx: 0,
-      topY: this.barY + 8,
-      botY: FEET_OFFSET,
-      halfW: Math.max(this.barW * 0.45, 9 * s),
-      scale: s,
-      elapsed: this.elapsed,
-    });
+    drawCategoryAuras(this.aura, cats, this.auraRegion());
   }
 }

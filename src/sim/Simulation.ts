@@ -138,7 +138,6 @@ export class Simulation {
       h.effects = [];
       h.cooldowns = {};
       h.cooldownTotals = {};
-      h.gcdMs = 0;
       h.attackTimerMs = 0;
       h.movedThisTick = false;
       h.respawnMs = undefined;
@@ -330,7 +329,6 @@ export class Simulation {
       h.effects = [];
       h.cooldowns = {};
       h.cooldownTotals = {};
-      h.gcdMs = 0;
       h.attackTimerMs = 0;
       h.respawnMs = undefined; // cancel any in-flight revive
       if (h.ult?.effect.type === 'deathBlock') h.ultCharge = h.ult.effect.chargesPerStage;

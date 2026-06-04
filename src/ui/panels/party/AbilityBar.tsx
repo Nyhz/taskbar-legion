@@ -1,94 +1,67 @@
 import { useStore } from '@/state/store';
 import { getEngine } from '@/game/engineRef';
-import { heroAbilities } from '@/sim/loadout';
+import { heroAbilities, MAX_ACTIVE_ABILITIES } from '@/sim/loadout';
 import { tryAbilityDef } from '@/data/abilities';
 import { abilityIcon } from '@/ui/icons';
 import { PALETTE } from '@/styles/palette';
+import { UltimateSlot } from './UltimateSlot';
 
-// The selected hero's active abilities (max 2) with LIVE cooldowns, plus a picker of
-// every unlocked ability to choose the two from. Subscribes to `hud` so the cooldown
-// rings tick ~each frame; reads the sim combatant for remaining/total cooldown.
+// The selected hero's combat loadout, centered below the paper doll: the class ULTIMATE
+// pinned on the left, then the hero's (≤2) ranked abilities as live-cooldown icons. The
+// ranked abilities ARE the active loadout — they're chosen by spending talent points (the
+// tree caps you at MAX_ACTIVE_ABILITIES), so there's no picker and no "active" toggle here.
+// Subscribes to `hud` so the cooldown rings tick ~each frame.
 
 export function AbilityBar({ heroId }: { heroId: string }): React.JSX.Element {
   useStore((s) => s.hud); // refresh ~per frame for live cooldowns
   const hero = useStore((s) => s.roster.find((h) => h.id === heroId));
-  const toggle = useStore((s) => s.toggleActiveAbility);
   if (hero === undefined) return <div />;
 
-  const pool = heroAbilities(hero.classKey, hero.talents);
-  const active = hero.activeAbilities ?? [];
+  const pool = heroAbilities(hero.classKey, hero.talents).slice(0, MAX_ACTIVE_ABILITIES);
   const combatant = getEngine()?.world.heroes.find((h) => h.id === heroId);
 
   return (
-    // One compact row: label · the two active slots · a divider · the picker. Wraps
-    // only if the ability pool is large.
-    <div style={{ width: '100%', marginTop: 2, borderTop: `1px solid ${PALETTE.goldDim}`, paddingTop: 5, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, flexWrap: 'wrap' }}>
-      <span style={{ whiteSpace: 'nowrap' }}>
-        <span style={{ color: PALETTE.gold, fontWeight: 700, fontSize: 11 }}>Abilities </span>
-        <span style={{ color: PALETTE.textMute, fontSize: 10 }}>{active.length}/2</span>
-      </span>
+    <div style={{ width: '100%', marginTop: 2, borderTop: `1px solid ${PALETTE.goldDim}`, paddingTop: 5, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+      {/* The class ultimate (with its level requirement), pinned to the left of the row. */}
+      <UltimateSlot classKey={hero.classKey} level={hero.level} />
+      <span style={{ width: 1, height: 22, background: PALETTE.goldDim }} />
 
+      {/* The two ability slots — filled by whatever the hero has ranked in Talents. */}
       {[0, 1].map((i) => {
-        const key = active[i];
+        const entry = pool[i];
         // A stale key (e.g. a renamed ability left in an old save) resolves to nothing —
         // show an empty slot instead of throwing and blacking out the whole UI.
-        const def = key === undefined ? undefined : tryAbilityDef(key);
-        if (key === undefined || def === undefined) return <EmptySlot key={i} />;
+        const def = entry === undefined ? undefined : tryAbilityDef(entry.def.key);
+        if (entry === undefined || def === undefined) return <EmptySlot key={i} />;
+        const key = entry.def.key;
         const chargeMax = def.charge?.toCast;
         const charge = chargeMax !== undefined ? { cur: combatant?.charges?.[key] ?? 0, max: chargeMax } : undefined;
         const remaining = combatant?.cooldowns[key] ?? 0;
         const total = combatant?.cooldownTotals?.[key] ?? 0;
-        return <ActiveSlot key={i} abilityKey={key} remaining={remaining} total={total} charge={charge} onClear={() => toggle(heroId, key)} />;
+        return <ActiveSlot key={i} abilityKey={key} remaining={remaining} total={total} charge={charge} />;
       })}
-
-      {pool.length === 0 ? (
-        <span style={{ color: PALETTE.textMute, fontSize: 10 }}>· Rank an ability in Talents</span>
-      ) : (
-        <>
-          <span style={{ width: 1, height: 22, background: PALETTE.goldDim }} />
-          {pool.map(({ def }) => {
-            const on = active.includes(def.key);
-            return (
-              <button
-                key={def.key}
-                title={`${def.name} — ${def.desc}`}
-                onClick={() => toggle(heroId, def.key)}
-                style={{
-                  width: 22, height: 22, fontSize: 12, padding: 0,
-                  background: 'radial-gradient(circle at 38% 32%, #2c2536 0%, #15121c 80%)',
-                  border: `2px solid ${on ? PALETTE.gold : PALETTE.ink}`,
-                  boxShadow: on ? `0 0 6px ${PALETTE.gold}` : 'none',
-                  borderRadius: '50%', color: PALETTE.textLight, cursor: 'pointer',
-                }}
-              >
-                {abilityIcon(def)}
-              </button>
-            );
-          })}
-        </>
-      )}
     </div>
   );
 }
 
-function ActiveSlot({ abilityKey, remaining, total, charge, onClear }: { abilityKey: string; remaining: number; total: number; charge?: { cur: number; max: number }; onClear: () => void }): React.JSX.Element {
+function ActiveSlot({ abilityKey, remaining, total, charge }: { abilityKey: string; remaining: number; total: number; charge?: { cur: number; max: number } }): React.JSX.Element {
   const def = tryAbilityDef(abilityKey);
   if (def === undefined) return <EmptySlot />; // unknown/renamed key — never crash the row
-  // Passive aura (e.g. Retribution Aura): always on while slotted — no cooldown/charge.
+  // Passive aura (e.g. Retribution Aura): always on while ranked — no cooldown/charge.
   if (def.aura !== undefined) {
     return (
-      <button
-        title={`${def.name} — passive (always active while slotted) · ${def.desc}`}
-        onClick={onClear}
+      <div
+        title={`${def.name} — passive (always active) · ${def.desc}`}
         style={{
-          position: 'relative', width: 30, height: 30, fontSize: 15, padding: 0, overflow: 'hidden',
+          position: 'relative', width: 30, height: 30, fontSize: 15, overflow: 'hidden',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
           background: 'radial-gradient(circle at 38% 32%, #34304a 0%, #1b1726 80%)',
           border: `2px solid ${PALETTE.gold}`, boxShadow: `0 0 6px ${PALETTE.gold}`,
-          borderRadius: '50%', color: PALETTE.textLight, cursor: 'pointer',
+          borderRadius: '50%', color: PALETTE.textLight,
         }}
       >
         <span>{abilityIcon(def)}</span>
-      </button>
+      </div>
     );
   }
   // Charge-gated ability (e.g. Aimed Shot): show a bottom-up charge fill + "cur/max".
@@ -96,15 +69,15 @@ function ActiveSlot({ abilityKey, remaining, total, charge, onClear }: { ability
     const ready = charge.cur >= charge.max;
     const frac = Math.max(0, Math.min(1, charge.cur / Math.max(1, charge.max)));
     return (
-      <button
-        title={`${def.name} — ${charge.cur}/${charge.max} charges (1 per auto-attack)`}
-        onClick={onClear}
+      <div
+        title={`${def.name} — ${charge.cur}/${charge.max} charges (1 per auto-attack) · ${def.desc}`}
         style={{
-          position: 'relative', width: 30, height: 30, fontSize: 15, padding: 0, overflow: 'hidden',
+          position: 'relative', width: 30, height: 30, fontSize: 15, overflow: 'hidden',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
           background: 'radial-gradient(circle at 38% 32%, #2c2536 0%, #15121c 80%)',
           border: `2px solid ${ready ? PALETTE.gold : PALETTE.goldDim}`,
           boxShadow: ready ? `0 0 6px ${PALETTE.gold}` : 'none',
-          borderRadius: '50%', color: PALETTE.textLight, cursor: 'pointer',
+          borderRadius: '50%', color: PALETTE.textLight,
         }}
       >
         {!ready && <span style={{ position: 'absolute', left: 0, bottom: 0, width: '100%', height: `${frac * 100}%`, background: 'rgba(90,150,210,0.35)' }} />}
@@ -112,21 +85,21 @@ function ActiveSlot({ abilityKey, remaining, total, charge, onClear }: { ability
         <span style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', fontSize: 9, fontWeight: 700, color: PALETTE.textLight }}>
           {charge.cur}/{charge.max}
         </span>
-      </button>
+      </div>
     );
   }
   const onCd = remaining > 0 && total > 0;
   const frac = onCd ? Math.max(0, Math.min(1, remaining / total)) : 0; // share still on cooldown
   return (
-    <button
-      title={`${def.name} — click to unassign`}
-      onClick={onClear}
+    <div
+      title={`${def.name} — ${def.desc}`}
       style={{
-        position: 'relative', width: 30, height: 30, fontSize: 15, padding: 0, overflow: 'hidden',
+        position: 'relative', width: 30, height: 30, fontSize: 15, overflow: 'hidden',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
         background: 'radial-gradient(circle at 38% 32%, #2c2536 0%, #15121c 80%)',
         border: `2px solid ${onCd ? PALETTE.goldDim : PALETTE.gold}`,
         boxShadow: onCd ? 'none' : `0 0 6px ${PALETTE.gold}`,
-        borderRadius: '50%', color: PALETTE.textLight, cursor: 'pointer',
+        borderRadius: '50%', color: PALETTE.textLight,
       }}
     >
       <span style={{ opacity: onCd ? 0.55 : 1 }}>{abilityIcon(def)}</span>
@@ -139,14 +112,14 @@ function ActiveSlot({ abilityKey, remaining, total, charge, onClear }: { ability
           </span>
         </>
       )}
-    </button>
+    </div>
   );
 }
 
 function EmptySlot(): React.JSX.Element {
   return (
     <div
-      title="Empty ability slot — choose one below"
+      title="No ability — rank one in the Talents tab"
       style={{ width: 30, height: 30, borderRadius: '50%', border: `2px dashed ${PALETTE.goldDim}`, color: PALETTE.goldDim, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}
     >
       ＋

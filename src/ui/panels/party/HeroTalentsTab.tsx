@@ -5,7 +5,7 @@ import { talentTree, rowUnlockThreshold, type TalentNode } from '@/data/talents'
 import { abilityDef } from '@/data/abilities';
 import { STAT_ICON, abilityIcon } from '@/ui/icons';
 import { aggregate, type EffectiveStats } from '@/sim/stats';
-import { heroBaseStats, equipmentMods, talentPassiveMods } from '@/sim/loadout';
+import { heroBaseStats, equipmentMods, talentPassiveMods, heroAbilities, canLearnNewAbility, MAX_ACTIVE_ABILITIES } from '@/sim/loadout';
 import { getBonuses } from '@/sim/bonuses';
 import { TalentTooltip } from './TalentTooltip';
 import { PALETTE } from '@/styles/palette';
@@ -27,14 +27,21 @@ export function HeroTalentsTab({ heroId }: { heroId: string }): React.JSX.Elemen
 
   const tree = talentTree(hero.classKey);
   const spent = Object.values(hero.talents).reduce((a, b) => a + b, 0);
+  // The ranked ability nodes ARE the active loadout — capped at MAX_ACTIVE_ABILITIES. Once
+  // the cap is hit, learning a NEW ability (a rank-0 ability node) is blocked.
+  const abilityCount = heroAbilities(hero.classKey, hero.talents).length;
+  const canLearnNew = canLearnNewAbility(hero.classKey, hero.talents);
   const bonuses = getBonuses(techRanks, ownedPets);
   const mods = [...equipmentMods(hero.equipment), ...talentPassiveMods(hero.classKey, hero.talents), ...bonuses.combatMods];
   const stats = aggregate(heroBaseStats(hero.classKey, hero.level), mods);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 5, minWidth: 0 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
         <span style={{ color: PALETTE.textMute, fontSize: 11 }}>Spent {spent}</span>
+        <span title="Ability nodes you've ranked. These are your active skills — capped, so choose your two." style={{ color: abilityCount >= MAX_ACTIVE_ABILITIES ? PALETTE.gold : PALETTE.textMute, fontSize: 11 }}>
+          Abilities {abilityCount}/{MAX_ACTIVE_ABILITIES}
+        </span>
         <span style={{ color: PALETTE.xpBlue, fontSize: 11 }}>Points {hero.talentPoints}</span>
       </div>
 
@@ -47,17 +54,23 @@ export function HeroTalentsTab({ heroId }: { heroId: string }): React.JSX.Elemen
               {locked ? `🔒${threshold}` : `R${ri + 1}`}
             </span>
             <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
-              {row.map((node) => (
-                <NodeIcon
-                  key={node.key}
-                  node={node}
-                  rank={hero.talents[node.key] ?? 0}
-                  stats={stats}
-                  canBuy={!locked && hero.talentPoints > 0 && (hero.talents[node.key] ?? 0) < node.maxRank}
-                  onBuy={() => spendTalent(hero.id, node.key)}
-                  onRefund={() => refundTalent(hero.id, node.key)}
-                />
-              ))}
+              {row.map((node) => {
+                const rank = hero.talents[node.key] ?? 0;
+                // An unranked ability is locked once the active-ability cap is reached.
+                const abilityCapped = node.kind === 'ability' && rank === 0 && !canLearnNew;
+                return (
+                  <NodeIcon
+                    key={node.key}
+                    node={node}
+                    rank={rank}
+                    stats={stats}
+                    canBuy={!locked && !abilityCapped && hero.talentPoints > 0 && rank < node.maxRank}
+                    abilityCapped={abilityCapped}
+                    onBuy={() => spendTalent(hero.id, node.key)}
+                    onRefund={() => refundTalent(hero.id, node.key)}
+                  />
+                );
+              })}
             </div>
           </div>
         );
@@ -75,6 +88,7 @@ function NodeIcon({
   rank,
   stats,
   canBuy,
+  abilityCapped = false,
   onBuy,
   onRefund,
 }: {
@@ -82,6 +96,7 @@ function NodeIcon({
   rank: number;
   stats: EffectiveStats;
   canBuy: boolean;
+  abilityCapped?: boolean;
   onBuy: () => void;
   onRefund: () => void;
 }): React.JSX.Element {
@@ -93,6 +108,9 @@ function NodeIcon({
   const maxed = rank >= node.maxRank;
   const started = rank > 0;
   const border = maxed ? PALETTE.hpGreen : started ? PALETTE.gold : canBuy ? PALETTE.goldDim : PALETTE.ink;
+  const title = abilityCapped
+    ? `Ability slots full (${MAX_ACTIVE_ABILITIES}/${MAX_ACTIVE_ABILITIES}) — refund another ability to learn this one`
+    : 'Left-click: rank up · Right-click: refund 1';
 
   const onEnter = (): void => {
     const r = ref.current?.getBoundingClientRect();
@@ -110,7 +128,7 @@ function NodeIcon({
         onMouseLeave={() => setTip(null)}
         onClick={() => canBuy && onBuy()}
         onContextMenu={(e) => { e.preventDefault(); onRefund(); }}
-        title="Left-click: rank up · Right-click: refund 1"
+        title={title}
         style={{
           position: 'relative',
           width: 38,
@@ -121,11 +139,13 @@ function NodeIcon({
           background: 'radial-gradient(circle at 38% 32%, #2c2536 0%, #15121c 80%)',
           color: PALETTE.textLight,
           fontSize: 17,
+          opacity: abilityCapped ? 0.4 : 1,
           cursor: canBuy ? 'pointer' : started ? 'pointer' : 'default',
           padding: 0,
         }}
       >
         <span>{icon}</span>
+        {abilityCapped && <span style={{ position: 'absolute', top: -3, left: -3, fontSize: 10 }}>🔒</span>}
         <span
           style={{
             position: 'absolute', bottom: -2, right: -2, fontSize: 9, fontWeight: 700,

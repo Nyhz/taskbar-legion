@@ -139,34 +139,43 @@ export function resolveCombatTick(world: WorldState, deltaMs: number, rng: Rng):
         // First moment a boss is engaged → fire the party's onBossEngage ults (once).
         if (e.isBoss === true && e.bossUltTriggered !== true) {
           e.bossUltTriggered = true;
-          triggerBossEngageUlts(heroes, e);
+          triggerBossEngageUlts(heroes, e, events);
         }
       }
     }
   }
 
-  // 4. Ability casts (heroes; enemies that have abilities). Casts push their own
-  //    damage/heal events into `events`; we add a 'cast' marker per ability fired.
-  for (const h of heroes) {
-    if (!h.alive) continue;
-    for (const key of castReadyAbilities(h, heroes, enemies, S, rng, events)) events.push({ type: 'cast', targetId: h.id, abilityKey: key });
-  }
-  for (const e of enemies) {
-    if (!e.alive || e.abilities.length === 0) continue;
-    for (const key of castReadyAbilities(e, enemies, heroes, S, rng, events)) events.push({ type: 'cast', targetId: e.id, abilityKey: key });
-  }
-
-  // 5. Attacks (range-gated).
+  // 4. Hero actions — bound to the SWING timer: when a hero is ready to swing (standing
+  //    still, attack timer elapsed), it takes ONE action. An ability takes precedence over
+  //    the auto-attack: if a ready ability's conditions are met it's cast INSTEAD of swinging
+  //    (using up the swing), otherwise the hero auto-attacks. Either way the swing timer
+  //    resets, so each swing is exactly one action. castReadyAbilities casts at most ONE
+  //    ability for a hero, so two ready abilities can't share a swing — the second waits for
+  //    the next one (each ability's OWN cooldown still governs how often it's ready). The
+  //    cast pushes its own damage/heal events; we add a 'cast' marker.
   for (const h of heroes) {
     if (!h.alive) continue;
     const stats = heroStats(h);
     advanceAttack(h, stats.attackSpeed, deltaMs, () => {
+      const cast = castReadyAbilities(h, heroes, enemies, S, rng, events);
+      if (cast.length > 0) {
+        for (const key of cast) events.push({ type: 'cast', targetId: h.id, abilityKey: key });
+        return true; // the ability used up this swing — no auto-attack this turn
+      }
       const target = nearestEnemyInRange(h, enemies);
       if (target === undefined) return false;
       heroAttack(h, stats, target, rng, events);
       return true;
     });
   }
+
+  // 5. Enemy ability casts (their cadence is independent of their swing — unchanged).
+  for (const e of enemies) {
+    if (!e.alive || e.abilities.length === 0) continue;
+    for (const key of castReadyAbilities(e, enemies, heroes, S, rng, events)) events.push({ type: 'cast', targetId: e.id, abilityKey: key });
+  }
+
+  // 6. Enemy attacks (range-gated).
   for (const e of enemies) {
     if (!e.alive) continue;
     advanceAttack(e, (e.enemyAttackSpeed ?? 0.8) * enemySpeedFactor(e), deltaMs, () => {
@@ -340,8 +349,9 @@ function tryDeathBlock(c: Combatant): boolean {
   return true;
 }
 
-/** Fire the party's onBossEngage ultimates against a freshly-engaged boss (once). */
-function triggerBossEngageUlts(heroes: Combatant[], boss: Combatant): void {
+/** Fire the party's onBossEngage ultimates against a freshly-engaged boss (once). Pushes a
+ *  render-only 'cast' marker for the ranger's mark so the strip can fly its crosshair in. */
+function triggerBossEngageUlts(heroes: Combatant[], boss: Combatant, events: CombatEvent[]): void {
   for (const h of heroes) {
     if (!h.alive) continue;
     const ult = h.ult;
@@ -354,6 +364,8 @@ function triggerBossEngageUlts(heroes: Combatant[], boss: Combatant): void {
       }
     } else if (ult.effect.type === 'markVulnerable') {
       applyEffect(boss.effects, effectDef('fx_mark'), h.id, ult.effect.bonusDamagePct, ult.effect.durationMs);
+      // targetId = the ranger (crosshair origin), sourceId = the boss it locks onto.
+      events.push({ type: 'cast', targetId: h.id, sourceId: boss.id, abilityKey: 'ranger_mark' });
     }
   }
 }

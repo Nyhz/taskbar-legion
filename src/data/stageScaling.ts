@@ -74,7 +74,7 @@ export function zoneBossHp(S: number): number {
   const o = ZONE_BOSS_HP_OVERRIDE[W];
   if (o !== undefined) return o;
   const ramp = Math.min(1, ZONE_BOSS_RAMP_START + (1 - ZONE_BOSS_RAMP_START) * Math.max(0, W - 1) / (ZONE_BOSS_RAMP_END_WORLD - 1));
-  return (ZONE_BOSS_C * phi(S) ** ZONE_BOSS_EXP * ramp * wallWorldMult(S)) / (1 + phi(S) / ZONE_BOSS_SAT);
+  return (ZONE_BOSS_C * phi(S) ** ZONE_BOSS_EXP * ramp * wallWorldMult(S) * wallDiffMult(S)) / (1 + phi(S) / ZONE_BOSS_SAT);
 }
 // A stage is a lane-pusher "area": 20 enemy WAVES (each fills the progress bar 5%)
 // then the stage boss. Each wave is 2–8 mixed enemies that advance from the edge.
@@ -266,11 +266,27 @@ export const ENEMY_DIFF_MULT = 1.3; // per-difficulty enemy HP & damage step. Ke
 export const WALL_CEIL = 50; // deep-game world-boss HP multiplier the S-curve approaches (must stay UNDER the full-gem T8 ceiling — raised after the percent-affix ilvl buff lifted the deep DPS ceiling)
 export const WALL_MID = 35; // world index of the curve's steepest point (the heart of the difficulty ramp — deep so Torment IS the grind)
 export const WALL_RATE = 0.15; // steepness of the ramp through the middle
+// Explicit per-DIFFICULTY wall step (d = 0 Normal … 4 Torment), multiplied INTO the world
+// boss HP on top of the world S-curve. The S-curve SATURATES toward WALL_CEIL at the top, so
+// without this Torment's walls grow SLOWER than Eternal's just as the T8 gear jump (×1.5 tier
+// power) lands → Torment ends up EASIER/faster than Eternal (probe: Torment bosses died in
+// ~40s vs Eternal ~60s, and Torment added only ~0.6d active). This step re-asserts the design
+// goal — each difficulty's wall is NOTICEABLY harder than the last, back-loaded so Torment is
+// the grind. Early difficulties stay at ×1 (Normal/Hell cruise, the good early ramp untouched);
+// it ramps up super-linearly through Inferno→Eternal→Torment. ONLY scales wall HP (TTK/gear-
+// gate), never boss DAMAGE — so deeper walls are a longer DPS race, not an instant-wipe cliff.
+// Tuned against the progression probe (npm run probe).
+export const WALL_DIFF_MULT = [1, 1, 1, 1.25, 1.7] as const;
 function difficultyStep(S: number): number {
   return Math.max(0, Math.min(4, Math.floor((Math.max(1, S) - 1) / 100)));
 }
 export function enemyDiffMult(S: number): number {
   return ENEMY_DIFF_MULT ** difficultyStep(S);
+}
+/** Per-difficulty multiplier applied to WORLD-BOSS HP (the wall) — counters the S-curve's
+ *  top-end saturation so each difficulty's wall grows noticeably over the previous. */
+export function wallDiffMult(S: number): number {
+  return WALL_DIFF_MULT[difficultyStep(S)] ?? 1;
 }
 export function wallWorldMult(S: number): number {
   const w = worldOf(S); // 1..50 across the whole game

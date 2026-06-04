@@ -1,6 +1,7 @@
 import { Container, Graphics, Sprite } from 'pixi.js';
 import { hexToNum } from '@/styles/palette';
 import { getArrowTexture } from './characterFrames';
+import { drawCrosshair, ARROW_RED } from './effectAuras';
 
 // A world-space layer for the big, transient ABILITY spectacles that play OVER a group of
 // targets rather than on one body: a volley of arrows raining onto the wave, a frost pool
@@ -159,6 +160,35 @@ export class WorldFxLayer extends Container {
           .lineTo(cx + Math.cos(ang) * r1, cy + Math.sin(ang) * r1)
           .stroke({ color: GOLD, width: 2, alpha: a * 0.9 });
         g.circle(cx + Math.cos(ang) * r1, cy + Math.sin(ang) * r1, 1.6).fill({ color: WHITE, alpha: a });
+      }
+    });
+  }
+
+  /** Mark of the Hunter (ranger ult): a targeting crosshair springs up over the ranger's
+   *  head, streaks across to the boss and locks on with a brief pulse. As it fades the
+   *  boss's persistent mark-reticle aura (drawn by EnemySprite) takes over — so the lock-on
+   *  reads as one continuous motion that then "stays there" for the fight. `radius` is the
+   *  boss reticle's size, so the fly-in opens up to exactly match the aura it hands off to. */
+  markCrosshair(fromX: number, fromY: number, toX: number, toY: number, radius: number): void {
+    const g = new Graphics();
+    const travel = 520; // streak from the ranger's head to the boss
+    const settle = 460; // lock-on pulse, fading out as the persistent aura reticle takes over
+    const dur = travel + settle;
+    this.push(g, dur, (t) => {
+      g.clear();
+      if (t < travel) {
+        const k = 1 - Math.pow(1 - t / travel, 3); // ease-out: fast off the head, eases onto the target
+        const x = fromX + (toX - fromX) * k;
+        const y = fromY + (toY - fromY) * k;
+        const rad = 7 + (radius - 7) * k; // tight at the head, opens to the boss reticle size
+        // a faint tracer trailing from the ranger's head to the in-flight reticle
+        g.moveTo(fromX, fromY).lineTo(x, y).stroke({ color: ARROW_RED, width: 1, alpha: 0.25 * (1 - k) });
+        drawCrosshair(g, x, y, rad, 1, t / 90); // spins fast in flight
+      } else {
+        const local = t - travel;
+        const k = local / settle;
+        const pop = 1 + 0.14 * Math.sin(local / 55) * (1 - k); // a couple of lock-on throbs
+        drawCrosshair(g, toX, toY, radius * pop, 1 - k, t / 320); // fade as the aura reticle takes over
       }
     });
   }
