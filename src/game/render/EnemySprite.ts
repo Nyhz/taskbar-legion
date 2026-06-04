@@ -62,6 +62,7 @@ export class EnemySprite extends Container {
   private deathMs = 0; // >0 once dying — counts the corpse hold down to removal
   private dying = false;
   private prevAlive = true;
+  private hpBgY = Number.NaN; // y the static HP-bar backdrop was last drawn at (rebuild only on change)
 
   constructor(c: Combatant, stageTint: number, spec: { frames: CharFrames | null; sizeClass: EnemySizeClass }) {
     super();
@@ -196,8 +197,12 @@ export class EnemySprite extends Container {
     // container-local -groundY — a very tall boss's bar pins there instead of slipping off.
     const y = Math.max(this.barY, -groundY + 6);
     const frac = c.maxHp > 0 ? Math.max(0, Math.min(1, c.hp / c.maxHp)) : 0;
-    this.hpBg.clear();
-    this.hpBg.rect(-this.barW / 2, y, this.barW, 3).fill({ color: hexToNum('#3a2030') });
+    // The backdrop is static geometry — only re-tessellate it when its y actually moves
+    // (a tall boss's bar pinned against the strip top as the camera shifts).
+    if (y !== this.hpBgY) {
+      this.hpBgY = y;
+      this.hpBg.clear().rect(-this.barW / 2, y, this.barW, 3).fill({ color: hexToNum('#3a2030') });
+    }
     this.hpBar.clear();
     this.hpBar.rect(-this.barW / 2, y, Math.round(this.barW * frac), 3).fill({ color: hexToNum('#c0473a') });
   }
