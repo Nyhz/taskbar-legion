@@ -27,13 +27,15 @@ feel) is verified by launching the `.app`; the Windows `.exe` is verified from C
 - Saves → filesystem: `src/platform/storage.ts` (`save.json` in the OS app-data dir under Tauri, IndexedDB
   on web/tests). `saveManager.ts` refactored onto it; frontier guard stays on localStorage; close-hook flush.
 - App icon: Knight idle frame over the strip backdrop — `scripts/gen-icon.mjs` (`npm run gen:icon`).
-- CI: `.github/workflows/desktop-build.yml` (Windows + macOS via `tauri-action`).
+- CI: `.github/workflows/desktop-build.yml` — **Linux + Windows + macOS** on native runners via
+  `tauri-action`; a `v*` tag publishes all three to one GitHub Release.
 
 **Build & run:**
 - Dev (live reload, transparent mac window): `npm run tauri:dev`
 - Local mac bundle: `npm run tauri:build` → `src-tauri/target/release/bundle/{macos,dmg}/`
-- Windows `.exe`: GitHub Actions → "Desktop build" (manual `workflow_dispatch`, or push a `v*` tag for a
-  drafted Release). Download the artifact / installer.
+- **Cross-platform Release** (Win `.exe`/`.msi`, macOS `.dmg`, Linux `.AppImage`/`.deb`): push a `v*` tag —
+  `git tag v0.1.0 && git push origin v0.1.0` — and CI drafts a Release with all three attached. Or run
+  "Desktop build" manually (`workflow_dispatch`) to get them as run Artifacts without a Release.
 - Regenerate icons after art changes: `npm run gen:icon`.
 
 **Still to verify at runtime (needs a human at the screen / a Windows box):** transparency edges, click-through
