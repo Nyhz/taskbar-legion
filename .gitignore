@@ -8,3 +8,7 @@ coverage
 .vscode/*
 !.vscode/extensions.json
 *.log
+
+# Local agent tooling / working memory — not part of the project source
+.agents/
+/memory/
