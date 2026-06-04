@@ -10,6 +10,8 @@ import { CubePanel, CubeHelpButton } from '@/ui/panels/CubePanel';
 import { MapPanel } from '@/ui/panels/MapPanel';
 import { HeroTabsPanel } from '@/ui/panels/party/HeroTabsPanel';
 import { SettingsHeaderButton } from '@/ui/hud/OptionsPopover';
+import { QuitGameButton } from '@/ui/components/QuitGameButton';
+import { isTauri } from '@/platform/tauri';
 
 // Renders the open panels as a fixed, ANCHORED constellation laid out across a band
 // the SAME WIDTH as the strip (measured at runtime). The party menu is centered and
@@ -131,7 +133,16 @@ export function PanelLayer(): React.JSX.Element {
               width={width}
               height={height}
               scale={scale}
-              headerActions={key === 'party' ? <SettingsHeaderButton /> : key === 'cube' ? <CubeHelpButton /> : undefined}
+              headerActions={
+                key === 'party' ? (
+                  <>
+                    <SettingsHeaderButton />
+                    {isTauri() && <QuitGameButton />}
+                  </>
+                ) : key === 'cube' ? (
+                  <CubeHelpButton />
+                ) : undefined
+              }
               onClose={() => closePanel(key)}
             >
               {renderPanel(key)}

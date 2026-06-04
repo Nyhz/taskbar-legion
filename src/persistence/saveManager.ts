@@ -1,28 +1,15 @@
-import { openDB, type IDBPDatabase } from 'idb';
 import type { SaveV1 } from './saveSchema';
 import { useStore } from '@/state/store';
 import { getEngine } from '@/game/engineRef';
 import { worldOf, stageInWorld, resumeStageFor } from '@/data/stageScaling';
 import type { ChestType } from '@/data/chests';
 import { writeFrontier, readFrontier, clearFrontier } from './frontierGuard';
+import { saveStore } from '@/platform/storage';
 
-// Serializes the store ⇄ SaveV1 via IndexedDB and rehydrates on load. Derived
-// values (chest capacity, party-slot count, auto-open interval) are NOT stored —
-// they're recomputed from techTree + pets via getBonuses (ARCHITECTURE).
-
-const DB_NAME = 'taskbar-legion';
-const STORE = 'save';
-const KEY = 'v1';
-
-let dbPromise: Promise<IDBPDatabase> | null = null;
-function db(): Promise<IDBPDatabase> {
-  dbPromise ??= openDB(DB_NAME, 1, {
-    upgrade(d) {
-      if (!d.objectStoreNames.contains(STORE)) d.createObjectStore(STORE);
-    },
-  });
-  return dbPromise;
-}
+// Serializes the store ⇄ SaveV1 via the platform save store (IndexedDB in the
+// browser, a `save.json` file under Tauri) and rehydrates on load. Derived values
+// (chest capacity, party-slot count, auto-open interval) are NOT stored — they're
+// recomputed from techTree + pets via getBonuses (ARCHITECTURE).
 
 /** Project the live store + sim world into a SaveV1. `lastSavedAt` stamps now
  *  (Date.now is fine here — persistence is an edge, not the sim). */
@@ -79,8 +66,7 @@ export async function saveGame(): Promise<void> {
   // dropped on an abrupt teardown, so a just-beaten stage can never be lost.
   writeFrontier(save.seed, save.maxClearedStage);
   try {
-    const d = await db();
-    await d.put(STORE, save, KEY);
+    await saveStore().write(save);
   } catch (err) {
     console.error('Save failed', err);
   }
@@ -101,15 +87,10 @@ export async function resetGame(): Promise<void> {
     // private mode / no localStorage — non-fatal
   }
   try {
-    (await db()).close(); // release our connection so deleteDatabase isn't blocked
+    await saveStore().clear();
   } catch {
-    // ignore
+    // ignore — we still reload into a fresh game below
   }
-  dbPromise = null;
-  await new Promise<void>((resolve) => {
-    const req = indexedDB.deleteDatabase(DB_NAME);
-    req.onsuccess = req.onerror = req.onblocked = (): void => resolve();
-  });
   if (typeof location !== 'undefined') location.reload();
 }
 
@@ -149,8 +130,7 @@ export async function importSave(json: string): Promise<string | null> {
   if (save === null) return 'Not a compatible Taskbar Legion save.';
   savesSuppressed = true; // stop autosave / unload from overwriting the import before reload
   try {
-    const d = await db();
-    await d.put(STORE, save, KEY);
+    await saveStore().write(save);
   } catch {
     savesSuppressed = false;
     return 'Could not write the imported save to storage.';
@@ -164,8 +144,7 @@ export async function importSave(json: string): Promise<string | null> {
 
 export async function loadGame(): Promise<SaveV1 | null> {
   try {
-    const d = await db();
-    const raw = (await d.get(STORE, KEY)) as unknown;
+    const raw = await saveStore().read();
     return reconcileFrontier(migrate(raw));
   } catch (err) {
     console.error('Load failed', err);

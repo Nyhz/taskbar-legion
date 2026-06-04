@@ -17,6 +17,7 @@ import { worldOf, stageInWorld, isZoneBossStage } from '@/data/stageScaling';
 import { SPAWN_AHEAD, RANGE, WALK_SPEED, TELEPORT_HOLD_MS, WIPE_DEAD_MS, WIPE_FADE_MS, WIPE_BLACK_MS, WIPE_RETREAT_AT_MS } from '@/data/field';
 import { hexToNum } from '@/styles/palette';
 import { useStore } from '@/state/store';
+import { isStripDragging } from '@/platform/dragState';
 
 // Owns the Pixi Application + the render driver. Each animation frame it advances
 // the GameEngine (fixed 100ms sim steps internally), then reconciles sprites from
@@ -123,11 +124,13 @@ export class GameStrip {
     return STRIP_HEIGHT;
   }
 
-  async init(container: HTMLElement, uiScale: number): Promise<void> {
+  async init(container: HTMLElement, uiScale: number, transparent = false): Promise<void> {
     this.uiScale = uiScale;
     const app = new Application();
     await app.init({
-      background: '#14121a',
+      // Desktop overlay: a fully transparent canvas so only the sprites + backdrop
+      // paint over the bare desktop. Browser build stays opaque (the page bg).
+      ...(transparent ? { backgroundAlpha: 0 } : { background: '#14121a' }),
       resizeTo: container,
       antialias: false,
       roundPixels: true,
@@ -317,6 +320,7 @@ export class GameStrip {
   }
 
   private onPortalTap(): void {
+    if (isStripDragging()) return; // a drag that ended over the portal isn't a tap
     const w = this.engine?.world;
     if (w === undefined) return;
     useStore.getState().requestEnterZoneBoss(worldOf(w.globalStageIndex));
