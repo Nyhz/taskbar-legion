@@ -3,18 +3,60 @@ import { isTauri } from './tauri';
 import { saveGame } from '@/persistence/saveManager';
 
 // Turns the Tauri webview into the ambient overlay: a transparent, borderless,
-// always-on-top window stretched over the current monitor, with the empty (non-UI)
-// regions clicking THROUGH to the desktop. No-op in a plain browser, so `npm run dev`
-// stays a normal opaque page.
+// always-on-top, NON-MAXIMIZED window that the user can drag freely across monitors.
+// No-op in a plain browser, so `npm run dev` stays a normal opaque page.
 //
-// Click-through is driven entirely from JS: we poll the OS cursor position and ask
-// `document.elementFromPoint` whether the cursor is over any pointer-interactive UI.
-// The App marks its structural transparent layers `pointer-events: none`, so
-// elementFromPoint returns null exactly over the empty void → we ignore cursor events
-// there and capture them everywhere a real surface (strip, HUD, panels, modals) lives.
+// The window is a FIXED logical footprint (not the whole monitor) — big enough to hold the
+// open panel band (~1200 wide, centred on the viewport) and the tallest panel (tech) above
+// the strip. Most of it is transparent; only the strip + open panels paint. The empty
+// regions click THROUGH to the desktop: we poll the OS cursor and ask
+// `document.elementFromPoint` whether it's over any pointer-interactive UI. The App marks
+// its structural transparent layers `pointer-events: none`, so elementFromPoint returns a
+// background node exactly over the void → we ignore cursor events there and capture them
+// everywhere a real surface (strip, HUD, panels, modals) lives.
+//
+// Dragging across screens is delegated to the OS via `startDragging()` (see startOverlayDrag,
+// driven from the App's strip pointer handler) — that's DPI-correct and multi-monitor-native,
+// so the window stays crisp on whichever monitor it lands on.
 
 const POLL_MS = 20;
+
+// Fixed, non-maximized footprint in LOGICAL px (constant across monitor DPI). Height holds
+// the tallest panel (tech ≈ 700 rendered) above the HUD + strip; width holds the ~1200 band
+// with a small margin. On cramped high-DPI laptops a tall panel may clip at the very top —
+// the strip itself always stays at the bottom and draggable.
+const OVERLAY_W = 1280;
+const OVERLAY_H = 1040;
+
+const WIN_POS_KEY = 'taskbar-legion.overlay.winpos.v1';
+
 let started = false;
+let winRef: Window | null = null; // cached so the drag handler can grab it synchronously
+
+interface WinPos {
+  x: number;
+  y: number;
+} // PHYSICAL outer-position (absolute on the virtual desktop, DPI-independent)
+
+function loadWinPos(): WinPos | null {
+  try {
+    const raw = localStorage.getItem(WIN_POS_KEY);
+    if (raw === null) return null;
+    const p = JSON.parse(raw) as Partial<WinPos>;
+    if (typeof p.x !== 'number' || typeof p.y !== 'number') return null;
+    return { x: p.x, y: p.y };
+  } catch {
+    return null;
+  }
+}
+
+function saveWinPos(p: WinPos): void {
+  try {
+    localStorage.setItem(WIN_POS_KEY, JSON.stringify(p));
+  } catch {
+    // private mode / quota — non-fatal, the window just won't remember its spot
+  }
+}
 
 export async function setupDesktopOverlay(): Promise<void> {
   if (!isTauri() || started) return;
@@ -25,15 +67,21 @@ export async function setupDesktopOverlay(): Promise<void> {
   document.documentElement.style.background = 'transparent';
   document.body.style.background = 'transparent';
 
-  const { getCurrentWindow, currentMonitor, PhysicalPosition, PhysicalSize } = await import('@tauri-apps/api/window');
+  const { getCurrentWindow, currentMonitor, availableMonitors, LogicalSize, PhysicalPosition } = await import(
+    '@tauri-apps/api/window'
+  );
   const win = getCurrentWindow();
+  winRef = win;
 
-  // Stretch over the active monitor so bottom-anchored panels have full headroom.
-  const mon = await currentMonitor();
-  if (mon !== null) {
-    await win.setSize(new PhysicalSize(mon.size.width, mon.size.height));
-    await win.setPosition(new PhysicalPosition(mon.position.x, mon.position.y));
-  }
+  // Non-maximized fixed footprint. LogicalSize keeps the footprint constant across DPI, so
+  // moving to a higher-DPI monitor re-renders crisply at the same logical size.
+  await win.setSize(new LogicalSize(OVERLAY_W, OVERLAY_H));
+
+  // Restore the last position only if it still lands on a connected monitor; otherwise dock
+  // bottom-centre of the current monitor. This is the guard against the off-screen brick.
+  const target = await resolveBootPosition(win, currentMonitor, availableMonitors);
+  if (target !== null) await win.setPosition(new PhysicalPosition(target.x, target.y));
+
   await win.setAlwaysOnTop(true);
 
   // Persist before the OS tears the window down (Cmd+Q, app quit, logout).
@@ -50,18 +98,78 @@ export async function setupDesktopOverlay(): Promise<void> {
   await startClickThrough(win);
 }
 
+// OS-level window drag — moves the actual window, so it travels freely across monitors and
+// stays DPI-correct. Called from the App once a press on the strip passes the drag threshold.
+export async function startOverlayDrag(): Promise<void> {
+  if (!isTauri()) return;
+  try {
+    const win = winRef ?? (await import('@tauri-apps/api/window')).getCurrentWindow();
+    await win.startDragging();
+  } catch {
+    // startDragging throws if the mouse button was already released — harmless
+  }
+}
+
+type MonitorList = () => Promise<Array<{ position: { x: number; y: number }; size: { width: number; height: number } }>>;
+type CurrentMonitor = () => Promise<{ position: { x: number; y: number }; size: { width: number; height: number } } | null>;
+
+async function resolveBootPosition(win: Window, currentMonitor: CurrentMonitor, availableMonitors: MonitorList): Promise<WinPos | null> {
+  const scale = await win.scaleFactor();
+  const physW = Math.round(OVERLAY_W * scale);
+  const physH = Math.round(OVERLAY_H * scale);
+
+  const saved = loadWinPos();
+  if (saved !== null && (await stripAnchorOnScreen(saved, physW, physH, availableMonitors))) return saved;
+
+  const mon = await currentMonitor();
+  if (mon === null) return saved; // best effort if the monitor query fails
+  return {
+    x: mon.position.x + Math.round((mon.size.width - physW) / 2),
+    y: mon.position.y + mon.size.height - physH,
+  };
+}
+
+// The visible, draggable strip sits at the bottom-centre of the window. A saved position is
+// only safe to restore if THAT anchor is on a real monitor — otherwise the strip would be
+// unreachable even though the window technically exists.
+async function stripAnchorOnScreen(pos: WinPos, physW: number, physH: number, availableMonitors: MonitorList): Promise<boolean> {
+  const monitors = await availableMonitors();
+  const anchorX = pos.x + physW / 2;
+  const anchorY = pos.y + physH - 1;
+  return monitors.some(
+    (m) =>
+      anchorX >= m.position.x &&
+      anchorX < m.position.x + m.size.width &&
+      anchorY >= m.position.y &&
+      anchorY < m.position.y + m.size.height,
+  );
+}
+
 async function startClickThrough(win: Window): Promise<void> {
   const { cursorPosition } = await import('@tauri-apps/api/window');
 
-  // The window never moves (drag repositions CONTENT, not the OS window), so its
-  // origin + scale are cached; refresh them if the monitor/DPI ever changes.
+  // The window moves whenever the user drags it; keep its origin + scale fresh so the
+  // cursor→viewport hit-test below stays accurate, and persist the resting position.
   let origin = await win.outerPosition();
   let scale = await win.scaleFactor();
+  let persistTimer: number | undefined;
   const refresh = async (): Promise<void> => {
     origin = await win.outerPosition();
     scale = await win.scaleFactor();
   };
-  await win.onMoved(() => void refresh());
+  const persistSoon = (): void => {
+    if (persistTimer !== undefined) window.clearTimeout(persistTimer);
+    persistTimer = window.setTimeout(() => {
+      void (async () => {
+        const p = await win.outerPosition();
+        saveWinPos({ x: p.x, y: p.y });
+      })();
+    }, 300);
+  };
+  await win.onMoved(() => {
+    void refresh();
+    persistSoon();
+  });
   await win.onResized(() => void refresh());
 
   // The cursor is over "nothing" (→ click straight through to whatever app is behind us)

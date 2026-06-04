@@ -18,11 +18,15 @@ feel) is verified by launching the `.app`; the Windows `.exe` is verified from C
 **Done:**
 - `src-tauri/` scaffolded (Tauri v2). Identifier `dev.nyhz.taskbar-legion`; fs plugin registered.
 - Window: transparent, `decorations:false`, `alwaysOnTop`, `skipTaskbar`, `shadow:false`, `macOSPrivateApi`.
-- Transparency + click-through + bottom-dock: `src/platform/desktopOverlay.ts` (full-monitor transparent
-  sheet; `setIgnoreCursorEvents` toggled by polling `cursorPosition()` + `document.elementFromPoint`; the
-  App marks structural layers `pointer-events:none` so only real UI captures the cursor).
-- Drag: whole strip, plain mouse, no modifier — moves the CONTENT inside the sheet (not the OS window), with
-  a movement threshold so in-game taps survive. Position persisted (`taskbar-legion.overlay.pos.v1`).
+- Transparency + click-through: `src/platform/desktopOverlay.ts` — a **fixed-footprint, non-maximized**
+  (`1280×1040` logical) window, NOT a full-monitor sheet. `setIgnoreCursorEvents` toggled by polling
+  `cursorPosition()` + `document.elementFromPoint`; the App marks structural layers `pointer-events:none`
+  so only the strip + open panels capture the cursor and the empty transparent region clicks through.
+- Drag: whole strip, plain mouse, no modifier — past a movement threshold hands the gesture to the OS via
+  `Window.startDragging()`, so the **actual window** moves and travels FREELY across monitors (DPI-correct).
+  In-game taps survive the threshold. Window position persisted (`taskbar-legion.overlay.winpos.v1`, physical
+  outer-position) and, on boot, restored ONLY if its strip anchor still lands on a connected monitor
+  (`availableMonitors()`) — otherwise it docks bottom-centre of the current monitor (anti-off-screen-brick).
 - Quit: power button (top-right of the Party header) → "Yes / Back" modal → save + close (`platform/quit.ts`).
 - Saves → filesystem: `src/platform/storage.ts` (`save.json` in the OS app-data dir under Tauri, IndexedDB
   on web/tests). `saveManager.ts` refactored onto it; frontier guard stays on localStorage; close-hook flush.
