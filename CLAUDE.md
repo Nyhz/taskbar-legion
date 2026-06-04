@@ -72,8 +72,13 @@ drive progression. Management lives in draggable **pixel-art panels** (React) fl
      The four invariants in PROGRESSION §11 are tested by the smoke harness — they define "balanced."
 4. **Render/logic split.** The sim owns world state; Pixi and React only *read* it and send intents. Panel
    logic is separate from panel chrome/placement (`PixelWindow`). This is what makes v1.5 a re-skin.
-5. **v1 is an opaque web page.** Do NOT build `backgroundAlpha: 0`, click-through, or `setIgnoreCursorEvents`.
-   Only *tag* interactive surfaces (cheap) so v1.5 can add a hit-test later. Build nothing else for v1.5/v2.
+5. ~~**v1 is an opaque web page.** Do NOT build `backgroundAlpha: 0`, click-through, or `setIgnoreCursorEvents`.~~
+   **SUPERSEDED (2026-06-05) by the Tauri desktop wrap — see `docs/TAURI.md`.** The game now ships as a
+   transparent, borderless, always-on-top desktop overlay (Tauri v2): `backgroundAlpha: 0`, click-through via
+   `setIgnoreCursorEvents` (driven by `src/platform/desktopOverlay.ts` polling the cursor + `elementFromPoint`),
+   and drag-to-move from the strip are all INTENTIONAL now. **All desktop integration is gated behind
+   `isTauri()` and dynamically imports `@tauri-apps/*`, so the plain-browser build + the vitest suite stay
+   opaque and Tauri-free.** Golden rule #1 (sim/data purity) is unchanged.
 6. **Save-compatible from day one.** Every `ItemInstance` populates `origin` + `bound: false`. The save
    schema carries future fields (`cube`, `online`, premium) even though nothing uses them. Don't strip them.
 7. **Tests are part of "done."** `sim/` has the mandatory unit tests from SPEC §4.6/§4.8/§4.10/§11. No test
