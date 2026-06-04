@@ -1,23 +1,30 @@
-import { Container, Text } from 'pixi.js';
+import { BitmapText, Container } from 'pixi.js';
 
 // Pooled floating combat text (damage numbers, crit pops). Objects are recycled
 // (never created per frame). Reads nothing from the sim — fed values by the driver.
+//
+// These are the most frequently mutated text in the game (a number on every hit). A
+// canvas `Text` re-rasterises to a texture and re-uploads to the GPU whenever its string
+// OR fill changes; `BitmapText` instead lays out quads from a shared, lazily-generated
+// glyph atlas — no per-change canvas work. The glyphs are baked WHITE and recoloured per
+// spawn with `tint` (which multiplies, so a white glyph takes the exact colour) rather
+// than `style.fill`, which would fork a new font variant.
 
 interface ActiveText {
-  text: Text;
+  text: BitmapText;
   vy: number;
   life: number;
   maxLife: number;
 }
 
 export class FloatingTextLayer extends Container {
-  private readonly pool: Text[] = [];
+  private readonly pool: BitmapText[] = [];
   private readonly active: ActiveText[] = [];
 
   spawn(x: number, y: number, value: string, color: number, scale = 1): void {
     const text = this.pool.pop() ?? this.makeText();
     text.text = value;
-    text.style.fill = color;
+    text.tint = color; // recolour the white glyphs (no canvas re-render, unlike style.fill)
     text.x = x;
     text.y = y;
     text.scale.set(scale);
@@ -43,8 +50,8 @@ export class FloatingTextLayer extends Container {
     }
   }
 
-  private makeText(): Text {
-    return new Text({
+  private makeText(): BitmapText {
+    return new BitmapText({
       text: '',
       style: { fontFamily: 'monospace', fontSize: 9, fill: 0xffffff, fontWeight: 'bold' },
     });

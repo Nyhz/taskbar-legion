@@ -78,6 +78,7 @@ export class GameStrip {
   private readonly wipePhrase = new Text({ text: '', style: { fontFamily: 'monospace', fontSize: 13, fontStyle: 'italic', fontWeight: 'bold', fill: hexToNum('#e8e2d6'), align: 'center' } });
   private wipeActive = false; // a wipe cinematic is on screen (drives one-time phrase pick)
   private teleportMs = 0;
+  private respawnTpMs = 0; // counts down a teleport-IN as the revived party materialises post-wipe
   private prevWorld = -1; // last seen zone (worldOf) — a change triggers a teleport
   private heroSprites = new Map<string, HeroSprite>();
   private enemySprites = new Map<string, EnemySprite>();
@@ -119,6 +120,11 @@ export class GameStrip {
 
     this.combatants.sortableChildren = true; // honour zIndex (party above enemies)
     this.world.addChild(this.background, this.combatants, this.projectiles, this.floating, this.portal, this.blackout, this.wipePhrase);
+    // The portal is the ONLY interactive object — prune every other layer (and its whole
+    // subtree of sprites/graphics) from pointer hit-testing so a tap walks just the portal.
+    for (const layer of [this.background, this.combatants, this.projectiles, this.floating, this.blackout, this.wipePhrase]) {
+      layer.eventMode = 'none';
+    }
     this.wipePhrase.anchor.set(0.5);
     this.wipePhrase.visible = false;
     this.portal.visible = false;
@@ -141,7 +147,9 @@ export class GameStrip {
 
   destroy(): void {
     setEngine(null);
-    this.app?.destroy(true, { children: true });
+    // releaseGlobalResources clears the renderer's pooled batches/textures so a remount
+    // (React StrictMode double-mounts in dev) doesn't inherit stale pools → flicker.
+    this.app?.destroy({ removeView: true, releaseGlobalResources: true }, { children: true });
     this.app = null;
   }
 
@@ -149,6 +157,10 @@ export class GameStrip {
     if (this.app === null) return;
     this.logicalWidth = this.app.screen.width / this.uiScale;
     this.background.build(this.logicalWidth, STRIP_HEIGHT);
+    // The full-strip blackout is static geometry — tessellate it once here (and on each
+    // resize) so the wipe/teleport cinematics only animate its alpha, never re-build the
+    // GPU geometry per frame (Graphics are meant to be stable, not redrawn every frame).
+    this.blackout.clear().rect(0, 0, this.logicalWidth, STRIP_HEIGHT).fill({ color: 0x000000 });
   }
 
   private frame(dtMs: number): void {
@@ -177,6 +189,15 @@ export class GameStrip {
     const wipeMs = w.wipeMs;
     const wipeHidden = wipeMs !== undefined && wipeMs >= WIPE_RETREAT_AT_MS;
     const wipeDead = wipeMs !== undefined && !wipeHidden;
+    // The wipe just ended this frame (wipeActive still set, but the sim cleared wipeMs): the
+    // sim has dropped the revived party back in formation. Snap displays to those new x's (no
+    // slide from the death spot) and arm a teleport-IN so they MATERIALISE in place. Done
+    // before reconcileHeroes so the very first visible frame is already dematerialised.
+    if (this.wipeActive && wipeMs === undefined) {
+      this.heroDisplayX.clear();
+      this.respawnTpMs = TELEPORT_HOLD_MS;
+    }
+    this.driveRespawnTeleport(dtMs);
     this.reconcileHeroes(w.heroes, groundY, dtMs, toScreen, smooth, wipeDead, wipeHidden);
     this.reconcileEnemies(w, groundY, dtMs, toScreen, smooth);
     this.applyEvents(events);
@@ -198,7 +219,7 @@ export class GameStrip {
         this.wipeActive = false;
         this.wipePhrase.visible = false;
         this.blackout.visible = false;
-        this.heroDisplayX.clear(); // revived party snaps to the anchor, not a slide from death spot
+        // (display snap + respawn teleport-in are armed in frame(), before reconcileHeroes)
       }
       return;
     }
@@ -208,12 +229,23 @@ export class GameStrip {
     }
     const black = wipeBlackAlpha(ms);
     this.blackout.visible = black > 0.001;
-    this.blackout.alpha = black;
-    this.blackout.clear().rect(0, 0, this.logicalWidth, STRIP_HEIGHT).fill({ color: 0x000000 });
+    this.blackout.alpha = black; // geometry built in relayout(); only the alpha animates
     // Phrase rides the blackness — appears as it darkens, holds, fades with the reveal.
     this.wipePhrase.alpha = Math.max(0, (black - 0.25) / 0.75);
     this.wipePhrase.visible = this.wipePhrase.alpha > 0.01;
     this.wipePhrase.position.set(this.logicalWidth / 2, STRIP_HEIGHT * 0.46);
+  }
+
+  // Materialise-in for the party revived after a wipe. The field is already lit (the wipe's
+  // own blackout has faded) and the heroes are dropped in formation by the sim, so this only
+  // drives each hero sprite's teleportK from "gone" → "solid" (the IN half of a teleport) —
+  // no extra blackout. setTeleport(-1) the frame it ends, restoring the sprites + HUD.
+  private driveRespawnTeleport(dtMs: number): void {
+    if (this.respawnTpMs <= 0) return;
+    this.respawnTpMs -= dtMs;
+    const done = this.respawnTpMs <= 0;
+    const p = done ? 1 : 1 - this.respawnTpMs / TELEPORT_HOLD_MS; // 0→1 over the materialise
+    for (const s of this.heroSprites.values()) s.setTeleport(done ? -1 : 0.5 + p * 0.5);
   }
 
   // Watch for a ZONE change (worldOf) from normal progression and play a party teleport:
@@ -241,8 +273,7 @@ export class GameStrip {
     else if (phase < 0.62) a = 1;
     else a = Math.max(0, 1 - (phase - 0.62) / 0.38);
     this.blackout.visible = true;
-    this.blackout.alpha = a * 0.9;
-    this.blackout.clear().rect(0, 0, this.logicalWidth, STRIP_HEIGHT).fill({ color: 0x000000 });
+    this.blackout.alpha = a * 0.9; // geometry built in relayout(); only the alpha animates
     if (this.teleportMs <= 0) {
       for (const s of this.heroSprites.values()) s.setTeleport(-1); // restore sprites
       this.blackout.visible = false;
