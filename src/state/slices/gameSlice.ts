@@ -15,6 +15,7 @@ export interface HudSnapshot {
   phase: StagePhase;
   gold: number;
   chests: Record<ChestType, number>;
+  clockMs: number; // current sim time (world.tick * TICK_MS) — drives the auto-open countdown
   party: { classKey: string; level: number }[]; // one entry per fielded hero
 }
 
@@ -27,6 +28,7 @@ export const EMPTY_HUD: HudSnapshot = {
   phase: 'advancing',
   gold: 0,
   chests: { normal: 0, stageBoss: 0, zoneBoss: 0 },
+  clockMs: 0,
   party: [],
 };
 

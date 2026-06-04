@@ -2,7 +2,7 @@ import type { StateCreator } from 'zustand';
 import type { GameStore } from '../store';
 import { techNode, nodeCost, migrateTechRanks } from '@/data/techTree';
 import { resumeStageFor } from '@/data/stageScaling';
-import { dedupeIds, DEFAULT_AUTO_SALVAGE } from './inventorySlice';
+import { dedupeIds, maxMintedId, DEFAULT_AUTO_SALVAGE } from './inventorySlice';
 import { classDef, CLASSES } from '@/data/classes';
 import { SLOTS, type SlotKey } from '@/data/itemSlots';
 import { GENERATOR_VERSION } from '@/data/lootTables';
@@ -41,7 +41,8 @@ export interface ProgressSlice {
   configEpoch: number;
   resumeStage: number; // globalStageIndex to resume the sim at (from a loaded save)
   maxClearedStage: number; // highest stage whose boss was beaten (fallback for save when no engine)
-  lootRngState: number; // serialized chest-open RNG state (0 = unseeded → derive from seed)
+  lootRngState: number; // DEPRECATED pre-counter loot cursor (kept for save back-compat, unused)
+  lootDrawCount: number; // fallback chest-open counter for the save when the engine isn't up
 
   addGold: (n: number) => void;
   bumpConfig: () => void;
@@ -61,6 +62,7 @@ export const createProgressSlice: StateCreator<GameStore, [], [], ProgressSlice>
   resumeStage: 1,
   maxClearedStage: 0,
   lootRngState: 0,
+  lootDrawCount: 0,
 
   addGold: (n) => set((s) => ({ gold: s.gold + n })),
   bumpConfig: () => set((s) => ({ configEpoch: s.configEpoch + 1 })),
@@ -106,7 +108,15 @@ export const createProgressSlice: StateCreator<GameStore, [], [], ProgressSlice>
       // is always kept so the party can never end up empty.
       unlockedClasses: save.unlockedClasses.filter((k) => CLASSES[k] !== undefined),
       seed: save.seed,
-      lootRngState: save.lootRngState ?? 0, // 0 ⇒ engine derives from seed (old saves)
+      lootRngState: save.lootRngState ?? 0, // DEPRECATED, retained for back-compat
+      lootDrawCount: save.lootDrawCount ?? 0, // resume the chest-open counter (old saves: 0)
+      // Resume the id minter ABOVE any id already in the save (guards a missing/stale counter;
+      // legacy `i*`/`g*` ids are ignored — they never collide with the minted `e*` namespace).
+      nextEntryId: Math.max(
+        save.nextEntryId ?? 0,
+        maxMintedId(save.inventory ?? [], save.stash ?? [], save.roster.flatMap((h) => Object.values(h.equipment ?? {}))) + 1,
+        1,
+      ),
       // Back-compat: pre-map saves have no maxClearedStage → infer "one below where
       // you left off" from the saved stage. New saves carry it directly.
       ...((): { maxClearedStage: number; resumeStage: number } => {

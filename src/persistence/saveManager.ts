@@ -36,7 +36,9 @@ export function buildSave(): SaveV1 {
     lastSavedAt: Date.now(),
     progress: { globalStageIndex: stage, world: worldOf(stage), stage: stageInWorld(stage) },
     maxClearedStage: world?.maxClearedStage ?? s.maxClearedStage,
-    lootRngState: getEngine()?.lootRngState() ?? s.lootRngState,
+    lootRngState: s.lootRngState, // DEPRECATED — carried through untouched for back-compat
+    lootDrawCount: getEngine()?.lootDrawCount() ?? s.lootDrawCount,
+    nextEntryId: s.nextEntryId,
     gold: s.gold,
     researchPoints: s.researchPoints,
     unlockedClasses: s.unlockedClasses,

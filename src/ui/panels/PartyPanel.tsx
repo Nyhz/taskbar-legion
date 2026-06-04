@@ -35,10 +35,15 @@ export function PartyPanel(): React.JSX.Element {
   // A gem socketing awaiting confirmation (raised from the paper-doll drop or a gem's
   // right-click menu); the modal commits or cancels it.
   const [pending, setPending] = useState<PendingSocket | null>(null);
+  const hideSocketWarning = useStore((s) => s.hideSocketWarning);
+  const socketGem = useStore((s) => s.socketGem);
   if (hero === undefined) return <div>No hero.</div>;
 
-  const requestSocket = (gem: GemInstance, slot: SlotKey, socketIdx: number): void =>
-    setPending({ gem, heroId: hero.id, slot, socketIdx });
+  // Skip straight to socketing once the player has dismissed the warning for good.
+  const requestSocket = (gem: GemInstance, slot: SlotKey, socketIdx: number): void => {
+    if (hideSocketWarning) socketGem(hero.id, slot, socketIdx, gem.id);
+    else setPending({ gem, heroId: hero.id, slot, socketIdx });
+  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minWidth: 0 }}>

@@ -70,6 +70,7 @@ export class GreedyRunner {
   private stageStartTick = 0;
   private waveStartTick = 0;
   private lastWaves = 0;
+  private lootDraws = 0; // counter-based loot cursor (mirrors the engine's lootDrawCount)
   readonly clears: StageClear[] = [];
   readonly waveTimes: number[] = []; // seconds to clear each individual wave
 
@@ -171,7 +172,9 @@ export class GreedyRunner {
   private handleChests(): void {
     const w = this.sim.world;
     if (w.chests.length === 0) return;
-    const loot = openAll(w, this.simRng(), this.bonuses);
+    const draw = { seed: w.seed, n: this.lootDraws };
+    const loot = openAll(w, draw, this.bonuses);
+    this.lootDraws = draw.n;
     if (this.stage < this.freezeStage) {
       for (const item of loot.items) this.tryEquip(item);
       this.socketGems(loot.gems);
@@ -187,16 +190,6 @@ export class GreedyRunner {
     if (stageInWorld(w.globalStageIndex) !== 9) return;
     this.sim.enterZoneBoss();
   }
-
-  // Use a dedicated rng for chest opening so it doesn't perturb combat determinism
-  // expectations elsewhere; seeded off the world for reproducibility.
-  private simRng = (() => {
-    let r: ReturnType<typeof makeOpenRng> | null = null;
-    return () => {
-      if (r === null) r = makeOpenRng(this.sim.world.seed ^ 0x5eed);
-      return r;
-    };
-  })();
 
   private tryEquip(item: ItemInstance): void {
     if (item.tier > this.maxEquipTier) return; // "decent gear" model: ignore top-tier jackpot drops
@@ -226,7 +219,6 @@ export class GreedyRunner {
           const socket = item.sockets.find((s) => s.gem === null);
           if (socket !== undefined) {
             socket.gem = gem;
-            item.bound = true;
             this.refresh(i);
             break;
           }

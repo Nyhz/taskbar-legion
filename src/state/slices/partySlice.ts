@@ -157,10 +157,10 @@ export const createPartySlice: StateCreator<GameStore, [], [], PartySlice> = (se
     const socket = item?.sockets[socketIdx];
     if (gem === undefined || item === undefined || socket === undefined || socket.gem !== null) return;
     const sockets = item.sockets.map((so, i) => (i === socketIdx ? { gem } : so));
-    const bound = { ...item, sockets, bound: true }; // socketing BINDS the item (SPEC §12.4)
+    const updated = { ...item, sockets }; // no binding — this game has no trading/bound gear
     set((st) => ({
       inventory: removeId(st.inventory, gemId), // gem consumed from the bag (leaves a hole)
-      roster: mapHero(st.roster, heroId, (h) => ({ ...h, equipment: { ...h.equipment, [slot]: bound } })),
+      roster: mapHero(st.roster, heroId, (h) => ({ ...h, equipment: { ...h.equipment, [slot]: updated } })),
       configEpoch: st.configEpoch + 1,
     }));
   },

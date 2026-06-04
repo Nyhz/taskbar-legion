@@ -10,7 +10,6 @@ import type { ItemInstance } from '@/sim/items';
 import type { GemInstance } from '@/data/gems';
 import { CHEST_CONFIG, type ChestType } from '@/data/chests';
 import { worldOf, stageInWorld } from '@/data/stageScaling';
-import { makeRng, type Rng } from '@/sim/rng';
 import { useStore } from '@/state/store';
 import type { HeroState } from '@/persistence/saveSchema';
 
@@ -27,13 +26,13 @@ export class GameEngine {
   private bonuses: Bonuses;
   private appliedEpoch = -1;
   private accMs = 0;
-  private readonly openRng: Rng; // dedicated stream for chest opening
+  private lootDraws: number; // monotonic count of chests opened — the counter-based loot cursor
 
   constructor() {
     const st = useStore.getState();
-    // Resume the loot stream where the last save left off (so slots/tiers keep rolling
-    // forward) — NOT a fixed reseed, which made every session replay the same drops.
-    this.openRng = makeRng((st.lootRngState !== 0 ? st.lootRngState : st.seed ^ 0x5eed) >>> 0);
+    // Resume the chest-open counter where the last save left off (so loot keeps rolling
+    // forward instead of replaying); each open derives its rng from (seed, drawIndex).
+    this.lootDraws = st.lootDrawCount;
     this.bonuses = getBonuses(st.techRanks, st.ownedPets);
     const combatMods = [...this.bonuses.combatMods, ...partyAuraMods(st.roster.map(toConfig))];
     const heroes = st.roster.map((h) => buildHeroCombatant(toConfig(h), combatMods));
@@ -51,9 +50,9 @@ export class GameEngine {
     return this.sim.world;
   }
 
-  /** Current chest-open RNG state, persisted so loot continues across reloads. */
-  lootRngState(): number {
-    return this.openRng.state();
+  /** Count of chests opened so far, persisted so loot continues across reloads. */
+  lootDrawCount(): number {
+    return this.lootDraws;
   }
 
   update(dtMs: number): CombatEvent[] {
@@ -111,7 +110,9 @@ export class GameEngine {
 
   /** Open every stored chest now → route loot to inventory. */
   openChests(): { items: number; gems: number } {
-    const loot = openAll(this.sim.world, this.openRng, this.bonuses);
+    const draw = { seed: this.sim.world.seed, n: this.lootDraws };
+    const loot = openAll(this.sim.world, draw, this.bonuses);
+    this.lootDraws = draw.n;
     const store = useStore.getState();
     store.addLoot(loot.items, loot.gems);
     this.mirror();
@@ -121,7 +122,9 @@ export class GameEngine {
   /** Open only the chests of `type` (the per-popup open). The rolled ITEMS and GEMS are
    *  returned so the UI can reveal each into the bag one-by-one with floating loot text. */
   openChestType(type: ChestType): { items: ItemInstance[]; gems: GemInstance[] } {
-    const loot = openType(this.sim.world, type, this.openRng, this.bonuses);
+    const draw = { seed: this.sim.world.seed, n: this.lootDraws };
+    const loot = openType(this.sim.world, type, draw, this.bonuses);
+    this.lootDraws = draw.n;
     this.mirror();
     return { items: loot.items, gems: loot.gems };
   }
@@ -222,6 +225,7 @@ export class GameEngine {
       phase: w.phase,
       gold: useStore.getState().gold,
       chests,
+      clockMs: w.tick * TICK_MS,
       party: useStore.getState().roster.map((h) => ({ classKey: h.classKey, level: h.level })),
     });
   }

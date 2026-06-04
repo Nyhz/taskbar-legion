@@ -146,15 +146,15 @@ export function ItemSlot({
         <span style={{ color: PALETTE.textMute, fontSize: 9 }}>{label}</span>
       )}
       {filled && (
-        // Tier number tucks to the bottom-LEFT when a red ✕ claims the bottom-right corner.
-        <span style={{ position: 'absolute', bottom: -2, ...(unequippable && item ? { left: 1 } : { right: 1 }), fontSize: 8, color: ts?.color, fontWeight: 700, textShadow: `0 1px 0 ${PALETTE.ink}` }}>
+        // Tier number stays in the bottom-RIGHT corner; the red ✕ tucks to the bottom-left instead.
+        <span style={{ position: 'absolute', bottom: -2, right: 1, fontSize: 8, color: ts?.color, fontWeight: 700, textShadow: `0 1px 0 ${PALETTE.ink}` }}>
           T{filled.tier}
         </span>
       )}
       {unequippable && item && (
         <span
           title="Can't equip: wrong class or level too low"
-          style={{ position: 'absolute', bottom: -3, right: -1, fontSize: 13, lineHeight: 1, color: '#ff5757', fontWeight: 900, textShadow: `0 0 2px ${PALETTE.ink}, 0 1px 0 ${PALETTE.ink}`, pointerEvents: 'none' }}
+          style={{ position: 'absolute', bottom: -3, left: -1, fontSize: 13, lineHeight: 1, color: '#ff5757', fontWeight: 900, textShadow: `0 0 2px ${PALETTE.ink}, 0 1px 0 ${PALETTE.ink}`, pointerEvents: 'none' }}
         >
           ✕
         </span>

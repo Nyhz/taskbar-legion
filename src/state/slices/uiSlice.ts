@@ -37,6 +37,7 @@ export interface UiSlice {
   uiScale: UiScale;
   dockOrientation: DockOrientation;
   retryStage: boolean; // when true, a wipe keeps the party on its stage (no retreat)
+  hideSocketWarning: boolean; // when true, socketing skips the confirm modal
   togglePanel: (key: PanelKey) => void;
   openPanel: (key: PanelKey) => void;
   closePanel: (key: PanelKey) => void;
@@ -45,16 +46,26 @@ export interface UiSlice {
   setWindowPos: (key: PanelKey, pos: WindowPos) => void;
   setDockOrientation: (orientation: DockOrientation) => void;
   setRetryStage: (on: boolean) => void;
+  setHideSocketWarning: (on: boolean) => void;
 }
 
 export const createUiSlice: StateCreator<UiSlice, [], [], UiSlice> = (set, get) => {
   const persisted = loadSettings();
+  // Persist every shim-backed UI setting from the current store snapshot.
+  const persist = (): void =>
+    saveSettings({
+      uiScale: get().uiScale,
+      dockOrientation: get().dockOrientation,
+      retryStage: get().retryStage,
+      hideSocketWarning: get().hideSocketWarning,
+    });
   return {
     openPanels: [],
     windowPos: {},
     uiScale: UI_SCALE, // fixed — zoom is no longer adjustable
     dockOrientation: persisted.dockOrientation ?? 'bottom',
     retryStage: persisted.retryStage ?? false,
+    hideSocketWarning: persisted.hideSocketWarning ?? false,
 
     togglePanel: (key) =>
       set((s) => {
@@ -89,12 +100,17 @@ export const createUiSlice: StateCreator<UiSlice, [], [], UiSlice> = (set, get) 
 
     setDockOrientation: (orientation) => {
       set({ dockOrientation: orientation });
-      saveSettings({ uiScale: get().uiScale, dockOrientation: orientation, retryStage: get().retryStage });
+      persist();
     },
 
     setRetryStage: (on) => {
       set({ retryStage: on });
-      saveSettings({ uiScale: get().uiScale, dockOrientation: get().dockOrientation, retryStage: on });
+      persist();
+    },
+
+    setHideSocketWarning: (on) => {
+      set({ hideSocketWarning: on });
+      persist();
     },
   };
 };

@@ -10,6 +10,7 @@ export interface UiSettings {
   uiScale: UiScale;
   dockOrientation: DockOrientation;
   retryStage: boolean; // keep the party on its stage after a wipe instead of retreating
+  hideSocketWarning: boolean; // skip the "gem can't be recovered" confirm when socketing
 }
 
 // Some non-browser runtimes (e.g. vitest under node's --localstorage-file flag)

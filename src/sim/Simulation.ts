@@ -125,10 +125,10 @@ export class Simulation {
     const w = this.world;
     const anyAlive = w.heroes.some((h) => h.alive);
     if (!anyAlive) return; // full wipe — handleWipe will revive everyone
-    for (const h of w.heroes) {
-      if (h.alive || h.respawnMs === undefined) continue;
+    w.heroes.forEach((h, i) => {
+      if (h.alive || h.respawnMs === undefined) return;
       h.respawnMs -= TICK_MS;
-      if (h.respawnMs > 0) continue;
+      if (h.respawnMs > 0) return;
       h.alive = true;
       h.hp = h.maxHp;
       h.effects = [];
@@ -138,8 +138,8 @@ export class Simulation {
       h.attackTimerMs = 0;
       h.movedThisTick = false;
       h.respawnMs = undefined;
-      h.x = w.partyX; // drop in at the party anchor; the formation march reforms it
-    }
+      h.x = w.partyX - i * HERO_SPACING; // drop in at this hero's formation slot, not the bare anchor
+    });
   }
 
   // Release staggered wave members whose time has come. Each batch is placed a FIXED
@@ -299,7 +299,9 @@ export class Simulation {
     w.phase = 'advancing';
     w.advanceTimerMs = ADVANCE_MS;
     this.reviveParty();
-    for (const h of w.heroes) h.x = w.partyX; // drop back in at the anchor; the march reforms it
+    // Drop the party back in ALREADY in formation (front = slot 0, the rest trailing), so the
+    // teleport-in lands them spread out — no stacked-at-anchor frame that the march has to undo.
+    w.heroes.forEach((h, i) => { h.x = w.partyX - i * HERO_SPACING; });
   }
 
   // Full-heal + revive every hero and clear in-flight combat state (used by a wipe

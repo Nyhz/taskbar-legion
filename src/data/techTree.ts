@@ -64,23 +64,28 @@ function node(
 
 export const TECH_NODES: TechNode[] = [
   // ───────────────────────────── Economy ─────────────────────────────
-  node('eco_gold', 'Economy', '💰', 'Profiteering', '+8% gold per kill', [{ kind: 'goldDropMult', value: 0.08 }], 60, 1.3),
-  node('eco_xp', 'Economy', '📖', 'Scholarship', '+8% XP per kill', [{ kind: 'xpDropMult', value: 0.08 }], 60, 1.3),
-  node('eco_offline', 'Economy', '🌙', 'Expedition', '+10% offline yield', [{ kind: 'offlineMult', value: 0.1 }], 250, 1.45),
+  node('eco_gold', 'Economy', '💰', 'Profiteering', '+2.5% gold per kill', [{ kind: 'goldDropMult', value: 0.025 }], 150, 1.3),
+  node('eco_xp', 'Economy', '📖', 'Scholarship', '+2.5% XP per kill', [{ kind: 'xpDropMult', value: 0.025 }], 150, 1.3),
+  // Offline baseline is 50% (bonuses.ts); each rank buys +2.5% back, capped at 20 ranks so it
+  // tops out at exactly 100% of online — never beats it. Brutal cost curve (1k base × 1.9^rank
+  // ⇒ the 20th rank costs ~200M gold), so reaching full offline parity is a true end-game sink.
+  node('eco_offline', 'Economy', '🌙', 'Expedition', '+2.5% offline yield (50% base)', [{ kind: 'offlineMult', value: 0.025 }], 1000, 1.9, 20),
 
   // ───────────────────────────── Chests ─────────────────────────────
-  node('chest_drop_normal', 'Chests', '📦', 'Common Hauls', '+10% normal chest drop', [{ kind: 'chestTypeDropMult', type: 'normal', value: 0.1 }], 90, 1.35),
-  node('chest_drop_stage', 'Chests', '🎁', 'Boss Spoils', '+5% stage-boss chest drop', [{ kind: 'chestTypeDropMult', type: 'stageBoss', value: 0.05 }], 110, 1.35),
-  node('chest_drop_zone', 'Chests', '🏆', 'Vault Cracker', '+5% zone-boss chest drop', [{ kind: 'chestTypeDropMult', type: 'zoneBoss', value: 0.05 }], 140, 1.4),
-  node('chest_gem', 'Chests', '💎', 'Gem Sense', '+5% gem drop chance', [{ kind: 'gemDropMult', value: 0.05 }], 150, 1.5),
-  node('store_normal', 'Chests', '🗄', 'Stockpile', '+1 normal chest storage', [{ kind: 'chestStorage', type: 'normal', value: 1 }], 250, 1.7),
-  node('store_stage', 'Chests', '🗃', 'Vault', '+1 stage-boss chest storage', [{ kind: 'chestStorage', type: 'stageBoss', value: 1 }], 300, 1.7),
-  node('store_zone', 'Chests', '⛩', 'Reliquary', '+1 zone-boss chest storage', [{ kind: 'chestStorage', type: 'zoneBoss', value: 1 }], 350, 1.7),
+  node('chest_drop_normal', 'Chests', '📦', 'Common Hauls', '+0.25% normal chest drop', [{ kind: 'chestTypeDropMult', type: 'normal', value: 0.0025 }], 250, 1.35),
+  node('chest_drop_stage', 'Chests', '🎁', 'Boss Spoils', '+0.5% stage-boss chest drop', [{ kind: 'chestTypeDropMult', type: 'stageBoss', value: 0.005 }], 300, 1.35),
+  // (no zone-boss chest node — zone bosses already drop a chest 100% of the time)
+  node('chest_gem', 'Chests', '💎', 'Gem Sense', '+1% gem drop chance', [{ kind: 'gemDropMult', value: 0.01 }], 400, 1.5),
+  // Storage nodes are now FINITE (base capacity + max ranks): normal 6+6=12, stage 4+4=8,
+  // zone 4+4=8. Costs ramp hard so filling the cap is a real long-game gold sink.
+  node('store_normal', 'Chests', '🗄', 'Stockpile', '+1 normal chest storage', [{ kind: 'chestStorage', type: 'normal', value: 1 }], 1200, 2.0, 6),
+  node('store_stage', 'Chests', '🗃', 'Vault', '+1 stage-boss chest storage', [{ kind: 'chestStorage', type: 'stageBoss', value: 1 }], 1500, 2.0, 4),
+  node('store_zone', 'Chests', '⛩', 'Reliquary', '+1 zone-boss chest storage', [{ kind: 'chestStorage', type: 'zoneBoss', value: 1 }], 2000, 2.0, 4),
 
   // ───────────────────────────── Utility ─────────────────────────────
   // Auto-open: rank 1 UNLOCKS it; each rank also shaves the interval (floored at 60s in
   // chests.ts, so ranks past the floor are wasted — hence a finite cap).
-  node('auto_open', 'Utility', '⚡', 'Auto-Open', 'Unlock auto-open · −45s interval / rank', [{ kind: 'unlockAutoOpen' }, { kind: 'autoOpenReduce', value: 45_000 }], 500, 1.6, 12),
+  node('auto_open', 'Utility', '⚡', 'Auto-Open', 'Unlock auto-open · −45s interval / rank', [{ kind: 'unlockAutoOpen' }, { kind: 'autoOpenReduce', value: 45_000 }], 500, 2.2, 12),
   // Party size: each rank unlocks the next active slot (2 then 3). Hand-priced LOW so the
   // tank·dps·healer trio forms in early world 1 (BALANCE) — NOT behind the deep sink.
   // costGrowth 2.5 ⇒ slot 2 = 1000g, slot 3 = 2500g.
@@ -116,7 +121,7 @@ const OLD_TECH_PREFIX: Record<string, string> = {
   off_yield: 'eco_offline',
   chest_drop_normal: 'chest_drop_normal',
   chest_drop_stage: 'chest_drop_stage',
-  chest_drop_zone: 'chest_drop_zone',
+  // chest_drop_zone removed (zone bosses are 100% chest drop) — legacy ranks dropped on load.
   chest_store_normal: 'store_normal',
   chest_store_stage: 'store_stage',
   chest_store_zone: 'store_zone',

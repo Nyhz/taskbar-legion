@@ -14,6 +14,8 @@ function fixture(): SaveV1 {
     progress: { globalStageIndex: 37, world: 4, stage: 7 },
     maxClearedStage: 36,
     lootRngState: 0,
+    lootDrawCount: 0,
+    nextEntryId: 1,
     gold: 9999,
     researchPoints: 0,
     unlockedClasses: ['knight', 'ranger'],

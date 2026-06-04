@@ -42,7 +42,9 @@ export const STATS: Record<StatKey, StatDef> = {
   attackDamage: { key: 'attackDamage', label: 'Attack Damage', group: 'offensive', kind: 'flat', rollPerIlvl: { min: 3.5, max: 6.0 } },
   attackSpeed: { key: 'attackSpeed', label: 'Attack Speed', group: 'offensive', kind: 'percent', rollPerIlvl: { min: 1.5, max: 3.0 } },
   critChance: { key: 'critChance', label: 'Crit Chance', group: 'offensive', kind: 'percent', rollPerIlvl: { min: 1.0, max: 2.0 } },
-  critDamage: { key: 'critDamage', label: 'Crit Damage', group: 'offensive', kind: 'percent', rollPerIlvl: { min: 4.0, max: 8.0 } },
+  // Internal key stays `critDamage` (persisted in saves); label is the user-facing "Crit Multiplier".
+  // Applies to auto-attacks, damaging abilities (canCrit), and heals/HoTs — see sim/combat.ts + sim/abilities.ts.
+  critDamage: { key: 'critDamage', label: 'Crit Multiplier', group: 'offensive', kind: 'percent', rollPerIlvl: { min: 4.0, max: 8.0 } },
   // multistrike: % chance an auto-attack lands a SECOND hit (its own crit roll). HARD-capped
   // in combat (MAX_MULTISTRIKE) so it can't compound into a runaway DPS multiplier. Rolls
   // lower than crit — a point of multistrike is worth more (a full extra hit). Tune the band.

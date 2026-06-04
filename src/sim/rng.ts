@@ -45,3 +45,52 @@ export function deriveSeed(base: number, salt: number): number {
   h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35) >>> 0;
   return (h ^ (h >>> 16)) >>> 0;
 }
+
+// ── 64-bit (BigInt) layer for LOOT derivation ─────────────────────────────────
+// Combat stays on the fast 32-bit mulberry32 above (hot path, called every tick). Loot
+// opening is a COLD path — a handful of draws per chest — so it can afford BigInt for a
+// wider, higher-quality stream: splitmix64 (64-bit state, period 2^64, strong avalanche).
+// Used by the counter-based loot derivation in sim/chests.ts.
+
+const SM64_GAMMA = 0x9e3779b97f4a7c15n;
+const SM64_MASK = 0xffffffffffffffffn;
+
+/** splitmix64 finaliser — strong 64-bit avalanche mix of one state word. */
+function smMix(z0: bigint): bigint {
+  let z = z0 & SM64_MASK;
+  z = ((z ^ (z >> 30n)) * 0xbf58476d1ce4e5b9n) & SM64_MASK;
+  z = ((z ^ (z >> 27n)) * 0x94d049bb133111ebn) & SM64_MASK;
+  return (z ^ (z >> 31n)) & SM64_MASK;
+}
+
+/** Derive a stable 64-bit loot seed from a base seed + a monotonic draw index. Hash the
+ *  base, fold in the index, mix again — so consecutive indices scatter (no linear
+ *  correlation) and the Nth-ever draw is directly reproducible without replaying a stream. */
+export function deriveSeed64(base: number, index: number): bigint {
+  const baseHash = smMix(BigInt(base >>> 0));
+  return smMix((baseHash + BigInt(index)) & SM64_MASK);
+}
+
+/** A 64-bit-state splitmix64 PRNG exposing the same Rng interface as mulberry32. Its state
+ *  is NOT serialized (loot derives a fresh one per chest from a persisted counter), so
+ *  state() returns a best-effort low word for interface parity only. */
+export function makeRng64(seed: bigint): Rng {
+  let s = seed & SM64_MASK;
+  const next = (): number => {
+    s = (s + SM64_GAMMA) & SM64_MASK;
+    const z = smMix(s);
+    return Number(z >> 11n) / 2 ** 53; // top 53 bits → [0,1)
+  };
+  const rng: Rng = {
+    next,
+    int: (maxExclusive) => Math.floor(next() * maxExclusive),
+    range: (min, max) => min + next() * (max - min),
+    chance: (p) => next() < p,
+    pick: (items) => {
+      if (items.length === 0) throw new Error('pick from empty list');
+      return items[Math.floor(next() * items.length)] as (typeof items)[number];
+    },
+    state: () => Number(s & 0xffffffffn) >>> 0,
+  };
+  return rng;
+}

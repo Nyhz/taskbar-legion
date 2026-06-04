@@ -28,6 +28,8 @@ function saveAt(seed: number, maxClearedStage: number): SaveV1 {
     progress: { globalStageIndex: maxClearedStage, world: 1, stage: maxClearedStage },
     maxClearedStage,
     lootRngState: 0,
+    lootDrawCount: 0,
+    nextEntryId: 1,
     gold: 0,
     researchPoints: 0,
     unlockedClasses: ['knight'],

@@ -34,7 +34,9 @@ export function getBonuses(
     chestStorageBonus: { normal: 0, stageBoss: 0, zoneBoss: 0 },
     autoOpenUnlocked: false,
     autoOpenReduceMs: 0,
-    offlineMult: 1,
+    // Offline yield is HALF of online by default; the Expedition tech (+2.5%/rank, capped at
+    // 20 ranks) buys it back up to a maximum of 1.0 — offline can equal, but never beat, online.
+    offlineMult: 0.5,
     combatMods: [],
     partySlots: 1,
   };

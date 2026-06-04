@@ -163,7 +163,7 @@ export function ItemTooltip({ item, compare, locked, wrongClass }: { item: ItemI
           }}
         >
           <span style={{ color: wrongClass === true ? PALETTE.enemyAccent : PALETTE.textMute, fontWeight: wrongClass === true ? 700 : undefined }}>
-            {item.classKey !== undefined ? `${wrongClass === true ? '🚫 ' : ''}${classDef(item.classKey).name} only` : item.bound ? '🔒 Bound' : 'Tradable'}
+            {item.classKey !== undefined ? `${wrongClass === true ? '🚫 ' : ''}${classDef(item.classKey).name} only` : ''}
           </span>
           <span style={{ color: locked === true ? PALETTE.enemyAccent : PALETTE.textMute, fontWeight: locked === true ? 700 : undefined }}>
             {locked === true ? '🔒 ' : ''}Item Lv.{item.ilvl} · {item.category}

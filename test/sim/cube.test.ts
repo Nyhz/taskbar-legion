@@ -33,11 +33,11 @@ describe('cube synthesis', () => {
     expect(canSynthesize(mixed)).toBe(false);
   });
 
-  it('produces one item of the next tier, bound', () => {
+  it('produces one item of the next tier, unbound', () => {
     const out = synthesize(items(3));
     expect(out).not.toBeNull();
     expect(out?.tier).toBe(4);
-    expect(out?.bound).toBe(true);
+    expect(out?.bound).toBe(false); // no trading/bound gear in this game
   });
 
   it('is deterministic from the inputs', () => {

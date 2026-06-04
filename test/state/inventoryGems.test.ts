@@ -30,7 +30,23 @@ describe('unified gem inventory', () => {
     expect(inv.filter(isGem)).toHaveLength(1);
   });
 
-  it('socketing consumes the gem from the inventory and binds the item', () => {
+  it('mints unique ids on insert even when two items share a roll-seed id', () => {
+    // Same origin ⇒ composeItem produces the SAME rollSeed-derived id for both — the exact
+    // collision the old design hit. The minter must hand each a distinct id on insert.
+    const a = composeItem('helmet', 4, itemOrigin(5, 20), makeRng(5));
+    const b = composeItem('helmet', 4, itemOrigin(5, 20), makeRng(5));
+    expect(a.id).toBe(b.id); // identical content → identical roll-seed id (pre-minter hazard)
+    useStore.setState({ inventory: [], stash: [], roster: [hero()], selectedHeroId: 'h0', nextEntryId: 1 });
+
+    useStore.getState().addLoot([a, b], []);
+    const inv = entries(useStore.getState().inventory);
+    expect(inv).toHaveLength(2);
+    expect(inv[0]!.id).not.toBe(inv[1]!.id); // distinct ids despite the shared origin
+    expect(inv.every((e) => /^e\d+$/.test(e.id))).toBe(true); // minted `e<n>` namespace
+    expect(useStore.getState().nextEntryId).toBe(3); // counter advanced past both
+  });
+
+  it('socketing consumes the gem from the inventory without binding the item', () => {
     const item = composeItem('helmet', 4, itemOrigin(2, 20), makeRng(2));
     const gem = generateGem({ rollSeed: 9, stageIndex: 20, generatorVersion: 1 }, 3);
     useStore.setState({ inventory: [item, gem], stash: [], roster: [hero()], selectedHeroId: 'h0' });
@@ -42,7 +58,7 @@ describe('unified gem inventory', () => {
     expect(entries(st.inventory)).toHaveLength(0); // gem gone from the bag (a hole remains)
     const equipped = st.roster[0]?.equipment.helmet;
     expect(equipped?.sockets[0]?.gem?.id).toBe(gem.id);
-    expect(equipped?.bound).toBe(true);
+    expect(equipped?.bound).toBe(false); // no trading/bound gear in this game
   });
 
   it('a gem cannot be equipped as gear', () => {

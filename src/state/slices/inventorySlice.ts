@@ -31,11 +31,30 @@ export const DEFAULT_AUTO_SALVAGE: AutoSalvage = { enabled: false, tiers: Array(
 // sink; entries move freely between the two.
 
 // Container ids MUST be unique (they're React keys — duplicates break reconciliation:
-// ghost cells, items that won't move out). Item ids derive from a roll seed and the
-// chest-open RNG repeats its seed sequence across reloads, so freshly-opened loot can
-// collide with already-stored items. We force uniqueness at every insertion point and
-// when a save is loaded, suffixing a collided id (`#2`, `#3`, …). Cosmetic only — an
-// item's stats come from its `origin`, not its id.
+// ghost cells, items that won't move out). Identity is now MINTED from a monotonic
+// per-save counter (`nextEntryId`, ids like `e0`, `e1`, …) at every creation point —
+// fully decoupled from the roll seed, so two items that roll identical content still get
+// distinct ids. Stats come from the item itself; the id carries no meaning beyond identity.
+const MINTED_ID_RE = /^e(\d+)$/;
+export const mintedIdString = (n: number): string => `e${n}`;
+
+/** Highest minted id (`e<n>`) across loaded containers, so the counter resumes ABOVE any
+ *  id already in the save even if the saved counter is missing/stale (legacy `i*`/`g*` ids
+ *  are ignored — they never collide with the `e*` namespace). */
+export function maxMintedId(...slotsList: Slots[]): number {
+  let max = 0;
+  for (const slots of slotsList) {
+    for (const e of entries(slots)) {
+      const m = MINTED_ID_RE.exec(e.id);
+      if (m !== null) max = Math.max(max, Number(m[1]));
+    }
+  }
+  return max;
+}
+
+// Legacy collision guard, used ONLY on load: pre-minter saves derived ids from the roll
+// seed, so stored entries can collide. Suffix a collided id (`#2`, `#3`, …). Newly-minted
+// `e<n>` ids are unique by construction and pass through untouched.
 function uniquify(entry: InvEntry, taken: Set<string>): InvEntry {
   if (!taken.has(entry.id)) { taken.add(entry.id); return entry; }
   let n = 2;
@@ -51,17 +70,13 @@ export function dedupeIds(slots: Slots, taken: Set<string> = new Set()): Slots {
   return slots.map((e) => (e === null ? null : uniquify(e, taken)));
 }
 
-/** All ids currently held across both containers (for collision checks). */
-function takenIds(inventory: Slots, stash: Slots): Set<string> {
-  return new Set([...entries(inventory), ...entries(stash)].map((e) => e.id));
-}
-
 export interface InventorySlice {
   inventory: Slots;
   inventorySlotUpgrades: number; // 0..20 → cap 20..40
   stash: Slots;
   stashPages: number; // 1..8
   stashSlotUpgrades: number; // 0..20 (per page)
+  nextEntryId: number; // monotonic id minter for every gear/gem entry (decoupled from rollSeed)
   autoSalvage: AutoSalvage;
 
   setAutoSalvage: (enabled: boolean) => void;
@@ -96,6 +111,7 @@ export const createInventorySlice: StateCreator<GameStore, [], [], InventorySlic
   stash: [],
   stashPages: 1,
   stashSlotUpgrades: 0,
+  nextEntryId: 1,
   autoSalvage: DEFAULT_AUTO_SALVAGE,
 
   setAutoSalvage: (enabled) => set((s) => ({ autoSalvage: { ...s.autoSalvage, enabled } })),
@@ -111,32 +127,32 @@ export const createInventorySlice: StateCreator<GameStore, [], [], InventorySlic
   addLoot: (items, gems) =>
     set((s) => {
       const as = s.autoSalvage;
-      const taken = takenIds(s.inventory, s.stash);
       const invCap = inventoryCapacity(s.inventorySlotUpgrades);
       const stCap = stashCapacity(s.stashPages, s.stashSlotUpgrades);
       let inv = s.inventory;
       let st = s.stash;
       let salvaged = 0;
+      let nextId = s.nextEntryId;
       for (const raw of [...items, ...gems]) {
         if (isItem(raw) && as.enabled && as.tiers[raw.tier] === true) { salvaged += itemGoldValue(raw); continue; }
-        const e = uniquify(raw, taken);
+        const e = { ...raw, id: mintedIdString(nextId) }; // mint a fresh unique id
         const ni = place(inv, e, invCap);
-        if (ni !== null) { inv = ni; continue; }
+        if (ni !== null) { inv = ni; nextId++; continue; }
         const ns = place(st, e, stCap);
-        if (ns !== null) st = ns; // else both full → dropped
+        if (ns !== null) { st = ns; nextId++; } // else both full → dropped, id not consumed
       }
-      return { inventory: inv, stash: st, gold: s.gold + salvaged };
+      return { inventory: inv, stash: st, gold: s.gold + salvaged, nextEntryId: nextId };
     }),
 
   addItem: (item) =>
     set((s) => {
       const as = s.autoSalvage;
       if (isItem(item) && as.enabled && as.tiers[item.tier] === true) return { gold: s.gold + itemGoldValue(item) };
-      const it = uniquify(item, takenIds(s.inventory, s.stash));
+      const it = { ...item, id: mintedIdString(s.nextEntryId) }; // mint a fresh unique id
       const ni = place(s.inventory, it, inventoryCapacity(s.inventorySlotUpgrades));
-      if (ni !== null) return { inventory: ni };
+      if (ni !== null) return { inventory: ni, nextEntryId: s.nextEntryId + 1 };
       const ns = place(s.stash, it, stashCapacity(s.stashPages, s.stashSlotUpgrades));
-      return ns !== null ? { stash: ns } : s;
+      return ns !== null ? { stash: ns, nextEntryId: s.nextEntryId + 1 } : s;
     }),
 
   removeItem: (id) => {
@@ -203,13 +219,13 @@ export const createInventorySlice: StateCreator<GameStore, [], [], InventorySlic
     if (!canSynthesize(inputs)) return false;
     const out = synthesize(inputs);
     if (out === null) return false;
-    const taken = new Set([...entries(s.inventory).filter((e) => !ids.has(e.id)), ...entries(s.stash)].map((e) => e.id));
-    const unique = uniquify(out, taken);
     const invCap = inventoryCapacity(s.inventorySlotUpgrades);
     set((st) => {
       let inv = st.inventory;
       for (const id of ids) inv = removeId(inv, id);
-      return { inventory: place(inv, unique, invCap) ?? inv };
+      const minted = { ...out, id: mintedIdString(st.nextEntryId) }; // mint a fresh unique id
+      const placed = place(inv, minted, invCap);
+      return placed !== null ? { inventory: placed, nextEntryId: st.nextEntryId + 1 } : { inventory: inv };
     });
     return true;
   },
@@ -241,7 +257,7 @@ export const createInventorySlice: StateCreator<GameStore, [], [], InventorySlic
     set((st) => {
       let inv = st.inventory;
       for (const id of gemIds) inv = removeId(inv, id);
-      inv = inv.map((e) => (e !== null && isItem(e) && e.id === itemId ? { ...e, transfigured: true, bound: true } : e));
+      inv = inv.map((e) => (e !== null && isItem(e) && e.id === itemId ? { ...e, transfigured: true } : e)); // no binding (no trading/bound gear)
       return { inventory: inv };
     });
     return true;

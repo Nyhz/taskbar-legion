@@ -39,6 +39,13 @@ describe('migrateTechRanks', () => {
     expect(out.bogus).toBeUndefined();
   });
 
+  it('clamps the now-finite storage nodes to their caps (cleans up over-bought saves)', () => {
+    const out = migrateTechRanks({ chest_store_normal: 20, chest_store_stage: 9, chest_store_zone: 9 });
+    expect(out.store_normal).toBe(6); // base 6 + 6 ranks → 12 total
+    expect(out.store_stage).toBe(4); // base 4 + 4 → 8 total
+    expect(out.store_zone).toBe(4); // base 4 + 4 → 8 total
+  });
+
   it('is idempotent on already-migrated (new) keys', () => {
     const already = { chest_gem: 7, eco_gold: 3, party_size: 2 };
     expect(migrateTechRanks(already)).toEqual(already);

@@ -1,4 +1,5 @@
 import type { Rng } from './rng';
+import { deriveSeed64, makeRng64 } from './rng';
 import type { WorldState } from './world';
 import type { ItemInstance } from './items';
 import { generateItem, rollTier } from './loot';
@@ -17,6 +18,22 @@ import type { Bonuses } from './bonuses';
 export interface ChestOpenResult {
   items: ItemInstance[];
   gems: GemInstance[];
+}
+
+// Counter-based loot derivation: instead of carrying an opaque PRNG cursor across saves,
+// we persist `n` — the count of chests EVER opened. Each chest derives its own fresh
+// 64-bit-seeded rng from (seed, n), then n advances. The stream never repeats in any
+// practical play, and the Nth-ever drop is directly reproducible from (seed, n).
+export interface LootDraw {
+  seed: number; // the game seed (stable per game)
+  n: number; // monotonic index of the next chest to open
+}
+
+/** Fresh rng for the next chest; advances the draw cursor. */
+function nextChestRng(draw: LootDraw): Rng {
+  const rng = makeRng64(deriveSeed64(draw.seed, draw.n));
+  draw.n += 1;
+  return rng;
 }
 
 export function chestCapacity(type: ChestType, bonuses: Bonuses): number {
@@ -108,42 +125,42 @@ function emptyResult(): ChestOpenResult {
   return { items: [], gems: [] };
 }
 
-/** Open one stack: roll each chest at its OWN dropStage (loot tier). Empties the
- *  stack; mutates `merged` in place. */
+/** Open one stack: roll each chest at its OWN dropStage (loot tier), each from its own
+ *  derived rng (draw cursor advances per chest). Empties the stack; mutates `merged`. */
 function openStack(
   merged: ChestOpenResult,
   stack: ChestStack,
-  rng: Rng,
+  draw: LootDraw,
   bonuses: Bonuses,
   allowedClasses: string[],
 ): void {
   const n = stack.count;
   stack.count = 0;
   for (let i = 0; i < n; i++) {
-    const r = openChest(stack.type, stack.dropStage, rng, bonuses, allowedClasses);
+    const r = openChest(stack.type, stack.dropStage, nextChestRng(draw), bonuses, allowedClasses);
     merged.items.push(...r.items);
     merged.gems.push(...r.gems);
   }
 }
 
 /** Open every stored chest of a single `type` (the per-popup open). Empties that
- *  type's stacks and returns the merged loot. */
-export function openType(world: WorldState, type: ChestType, rng: Rng, bonuses: Bonuses): ChestOpenResult {
+ *  type's stacks and returns the merged loot; `draw` advances by the chests opened. */
+export function openType(world: WorldState, type: ChestType, draw: LootDraw, bonuses: Bonuses): ChestOpenResult {
   const merged = emptyResult();
   const allowed = partyClassKeys(world);
   for (const stack of world.chests) {
-    if (stack.type === type) openStack(merged, stack, rng, bonuses, allowed);
+    if (stack.type === type) openStack(merged, stack, draw, bonuses, allowed);
   }
   world.chests = world.chests.filter((c) => c.count > 0);
   return merged;
 }
 
 /** Open every stored chest (auto-open / Open All). Empties world.chests and returns
- *  the merged loot. */
-export function openAll(world: WorldState, rng: Rng, bonuses: Bonuses): ChestOpenResult {
+ *  the merged loot; `draw` advances by the chests opened. */
+export function openAll(world: WorldState, draw: LootDraw, bonuses: Bonuses): ChestOpenResult {
   const merged = emptyResult();
   const allowed = partyClassKeys(world);
-  for (const stack of world.chests) openStack(merged, stack, rng, bonuses, allowed);
+  for (const stack of world.chests) openStack(merged, stack, draw, bonuses, allowed);
   world.chests = world.chests.filter((c) => c.count > 0);
   return merged;
 }

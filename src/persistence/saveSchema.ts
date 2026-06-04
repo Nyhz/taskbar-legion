@@ -24,7 +24,9 @@ export interface SaveV1 {
   lastSavedAt: number;
   progress: { globalStageIndex: number; world: number; stage: number };
   maxClearedStage: number; // highest stage whose boss was beaten (travel-unlock + resume frontier)
-  lootRngState: number; // serialized chest-open RNG so loot (incl. slot/tier) CONTINUES across reloads instead of repeating
+  lootRngState: number; // DEPRECATED (pre-counter loot RNG cursor) — kept for back-compat, no longer read
+  lootDrawCount: number; // monotonic count of chests ever opened — seeds counter-based loot derivation
+  nextEntryId: number; // monotonic minter for inventory/stash/equipment ids (decoupled from rollSeed)
   gold: number;
   researchPoints: number; // RESERVED/unused in v1 (tech costs gold)
   unlockedClasses: string[];

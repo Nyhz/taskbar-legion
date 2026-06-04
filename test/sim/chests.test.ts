@@ -44,7 +44,7 @@ describe('chests', () => {
   it('opening frees storage and yields exactly one gear piece per chest', () => {
     const world = createWorld(2, [godHero()]);
     world.chests = [{ type: 'normal', dropStage: 30, count: 3 }];
-    const result = openAll(world, makeRng(7), bonuses);
+    const result = openAll(world, { seed: 7, n: 0 }, bonuses);
     expect(result.items.length).toBe(3); // every chest always yields its gear piece
     expect(world.chests.find((c) => c.type === 'normal')).toBeUndefined();
   });
@@ -79,11 +79,32 @@ describe('chests', () => {
     expect(gemRate('zoneBoss')).toBeGreaterThan(gemRate('stageBoss'));
   });
 
+  it('counter-based draw: advances n by chests opened, and (seed,n) is reproducible', () => {
+    const build = (): ReturnType<typeof createWorld> => {
+      const w = createWorld(1, [godHero()]);
+      w.chests = [{ type: 'normal', dropStage: 30, count: 5 }];
+      return w;
+    };
+    // The draw cursor advances by exactly the number of chests opened (5).
+    const draw = { seed: 4242, n: 10 };
+    const first = openAll(build(), draw, bonuses);
+    expect(draw.n).toBe(15);
+    expect(first.items.length).toBe(5);
+    // Replaying the SAME (seed, starting n) reproduces byte-identical loot (stats/tiers).
+    const replay = openAll(build(), { seed: 4242, n: 10 }, bonuses);
+    expect(replay.items.map((i) => ({ tier: i.tier, ilvl: i.ilvl, slot: i.slot }))).toEqual(
+      first.items.map((i) => ({ tier: i.tier, ilvl: i.ilvl, slot: i.slot })),
+    );
+    // A different starting index draws different loot (the stream moved on).
+    const moved = openAll(build(), { seed: 4242, n: 99 }, bonuses);
+    expect(moved.items.map((i) => i.ilvl)).not.toEqual(first.items.map((i) => i.ilvl));
+  });
+
   it('openAll rolls each stack at its own DROP stage (loot tier follows the chest, not the player)', () => {
     const meanFromStack = (dropStage: number): number => {
       const world = createWorld(1, [godHero()]); // current stage 1 in BOTH cases
       world.chests = [{ type: 'normal', dropStage, count: 3000 }];
-      const r = openAll(world, makeRng(7), bonuses);
+      const r = openAll(world, { seed: 7, n: 0 }, bonuses);
       const tiers = r.items.map((it) => it.tier as number);
       return tiers.reduce((a, b) => a + b, 0) / tiers.length;
     };

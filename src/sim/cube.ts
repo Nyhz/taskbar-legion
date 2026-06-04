@@ -48,8 +48,7 @@ export function synthesize(items: readonly ItemInstance[]): ItemInstance | null 
   // Output ilvl is the MEDIAN of the inputs (not a fresh stage roll), so feeding the
   // cube higher-ilvl gear yields a higher-ilvl result.
   const out = composeItem(slot, outTier, origin, rng, medianIlvl(items));
-  out.bound = true; // synthesis BINDS the output (SPEC §12.4)
-  return out;
+  return out; // no binding — this game has no trading/bound gear (out.bound stays false)
 }
 
 // ───────────────────────────── Alchemy ─────────────────────────────

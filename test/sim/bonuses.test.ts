@@ -4,12 +4,12 @@ import { getBonuses } from '@/sim/bonuses';
 describe('getBonuses', () => {
   it('sums tech mults by rank', () => {
     const b = getBonuses({ eco_gold: 2 }, []);
-    expect(b.goldMult).toBeCloseTo(1.16, 5); // 1 + 0.08*2
+    expect(b.goldMult).toBeCloseTo(1.05, 5); // 1 + 0.025*2
   });
 
   it('stacks a pet bonus on top of tech, regardless of selection', () => {
     const b = getBonuses({ eco_gold: 1 }, ['coin_sprite']);
-    expect(b.goldMult).toBeCloseTo(1.08 + 0.15, 5);
+    expect(b.goldMult).toBeCloseTo(1.025 + 0.15, 5);
   });
 
   it('party slots come from the single endless recruitment node', () => {

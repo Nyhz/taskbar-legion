@@ -9,8 +9,8 @@ import { StatRow } from './StatRow';
 import { PALETTE } from '@/styles/palette';
 
 // Confirmation for socketing a gem — raised by a paper-doll drop or a gem's right-click
-// menu. Shows exactly what the gem grants in THIS item's category and warns that
-// socketing binds the item permanently (SPEC §12.4). Commit or cancel.
+// menu. Shows exactly what the gem grants in THIS item's category and warns that the gem
+// is consumed and can't be recovered. Commit or cancel; a checkbox suppresses it for good.
 
 export interface PendingSocket {
   gem: GemInstance;
@@ -21,6 +21,7 @@ export interface PendingSocket {
 
 export function SocketConfirmModal({ pending, onClose }: { pending: PendingSocket; onClose: () => void }): React.JSX.Element | null {
   const socketGem = useStore((s) => s.socketGem);
+  const setHideSocketWarning = useStore((s) => s.setHideSocketWarning);
   const item = useStore((s) => s.roster.find((h) => h.id === pending.heroId)?.equipment[pending.slot]);
   if (item === undefined) return null; // target vanished (unequipped mid-flow)
 
@@ -64,8 +65,13 @@ export function SocketConfirmModal({ pending, onClose }: { pending: PendingSocke
         ))}
 
         <div style={{ color: PALETTE.enemyAccent, fontSize: 10, margin: '8px 0 2px' }}>
-          ⚠ Socketing binds this item permanently — it can no longer be traded, and the gem cannot be removed.
+          ⚠ The gem is consumed and can't be recovered once socketed.
         </div>
+
+        <label style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 6, fontSize: 10, color: PALETTE.textMute, cursor: 'pointer' }}>
+          <input type="checkbox" onChange={(e) => setHideSocketWarning(e.target.checked)} />
+          Don&apos;t show this again
+        </label>
 
         <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
           <button onClick={onClose} style={{ flex: 1, padding: 6, background: PALETTE.bgInset, border: `1px solid ${PALETTE.ink}`, color: PALETTE.textLight }}>
