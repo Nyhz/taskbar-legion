@@ -91,15 +91,14 @@ export class GameEngine {
     return events;
   }
 
-  /** Catch up `elapsedMs` of away-time (capped). Applies offline-multiplied gold/xp
-   *  + pets to the store, leaves chests/keys/stage progressed in the world, and
-   *  clears the raw pending buffer so the next frame doesn't double-count. */
+  /** Catch up `elapsedMs` of away-time (capped). Away-time banks offline-multiplied gold/xp
+   *  ONLY — no loot (chests), no pets, no stage advancement (the frontier moves solely during
+   *  active play). Clears the raw pending buffer so the next frame doesn't double-count. */
   runOffline(elapsedMs: number): OfflineSummary {
     const summary = simulateOffline(this.sim, this.ctx(), elapsedMs);
     const store = useStore.getState();
     if (summary.gold > 0) store.addGold(summary.gold);
     if (summary.xp > 0) store.gainExp(summary.xp);
-    for (const pet of summary.petDrops) store.addPet(pet);
     this.sim.world.pending.gold = 0;
     this.sim.world.pending.xp = 0;
     this.sim.world.pending.petDrops = [];

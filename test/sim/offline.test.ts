@@ -3,7 +3,6 @@ import { simulateOffline } from '@/sim/offline';
 import { Simulation, createWorld, type TickContext } from '@/sim/Simulation';
 import { buildHeroCombatant } from '@/sim/loadout';
 import { getBonuses } from '@/sim/bonuses';
-import { CHEST_CONFIG } from '@/data/chests';
 
 function makeSim(): Simulation {
   const hero = buildHeroCombatant(
@@ -23,14 +22,18 @@ const baseCtx = (offlineMult: number): TickContext => ({
 const THIRTY_MIN = 30 * 60 * 1000;
 
 describe('offline catch-up', () => {
-  it('yields gold/xp over time and respects per-type chest caps', () => {
-    const summary = simulateOffline(makeSim(), baseCtx(1), THIRTY_MIN);
+  it('banks gold/xp ONLY — no loot, no pets, frozen stage', () => {
+    const sim = makeSim();
+    const summary = simulateOffline(sim, baseCtx(1), THIRTY_MIN);
     expect(summary.gold).toBeGreaterThan(0);
     expect(summary.xp).toBeGreaterThan(0);
-    expect(summary.toStage).toBeGreaterThanOrEqual(1); // may retreat if undergeared
-    for (const c of summary.chests) {
-      expect(c.count).toBeLessThanOrEqual(CHEST_CONFIG.capacity[c.type]);
-    }
+    // Away-time grants no loot or pets, and never advances/retreats the frontier.
+    expect(summary.chests).toEqual([]);
+    expect(summary.petDrops).toEqual([]);
+    expect(sim.world.chests).toEqual([]); // no chests accrued into the world stash
+    expect(summary.fromStage).toBe(4);
+    expect(summary.toStage).toBe(4); // stage frozen across the whole window
+    expect(sim.world.maxClearedStage).toBe(0); // frontier untouched offline
   });
 
   it('is deterministic from the seed', () => {

@@ -24,7 +24,7 @@ export const DMG0 = 6;
 // Raised 0.82→1.0 so mid-game trash actually CHIPS the party (texture — the tank/healer matter)
 // instead of the old "damage lags HP" near-zero threat, while leaving the bootstrap floor
 // untouched. Tuned to sim-survival's minHP% column; bootstrap re-checked via sim-newgame.
-export const DMG_EXP = 1.0;
+export const DMG_EXP = 1.2; // tune-pass: 1.0→1.2 — enemy damage ramps harder with depth (waves + bosses threaten) while the stage-1 floor (Φ≈1) stays bootstrap-safe
 export const ENEMY_BASE_ATTACK_SPEED = 0.8; // attacks/sec baseline
 
 // ── DECOUPLED boss HP (2d) — each boss has its OWN Φ-power scale, INDEPENDENT of trash and of
@@ -34,19 +34,19 @@ export const ENEMY_BASE_ATTACK_SPEED = 0.8; // attacks/sec baseline
 // OVERRIDE map for the rare world the formula misfits — the "tune individual bosses" escape
 // hatch (the game is infinite + always-decelerating, so only a bounded prefix ever needs pins),
 // layered on top of the clean default. Boss DAMAGE still rides enemyDamage × these mults.
-export const BOSS_DMG_MULT = 5.0;
-export const ZONE_BOSS_DMG_MULT = 5.5;
+export const BOSS_DMG_MULT = 6.5; // tune-pass: 5.0→6.5 — stage bosses actually pressure party HP (mildly challenging, not a faceroll)
+export const ZONE_BOSS_DMG_MULT = 7.0; // tune-pass: 5.5→7.0 — world bosses hit hard (enrage on an over-long fight forces farming) without making the deep-tail survival cliff razor-thin
 
 // Stage boss (W-1..W-9): a ~10-20s fight with DECENT (not great) gear — a real fight, NOT a wall.
 // Scales ~Φ^1.7 (a hair over party power → ~constant TTK). The early-world bossHpRamp keeps the
 // fresh-party bootstrap burstable (the 1-1 boss); STAGE_BOSS_C is the W20+ anchor.
-export const STAGE_BOSS_C = 37_000;
-export const STAGE_BOSS_EXP = 1.7;
+export const STAGE_BOSS_C = 45_000; // tune-pass: 37k→45k — a bit beefier (mildly challenging)
+export const STAGE_BOSS_EXP = 1.85; // tune-pass: 1.7→1.85 — TTK grows a touch with depth
 export const STAGE_BOSS_HP_OVERRIDE: Record<number, number> = {}; // world → absolute HP (rare manual pin)
 export function stageBossHp(S: number): number {
   const o = STAGE_BOSS_HP_OVERRIDE[worldOf(S)];
   if (o !== undefined) return o;
-  return STAGE_BOSS_C * phi(S) ** STAGE_BOSS_EXP * bossHpRamp(S);
+  return STAGE_BOSS_C * phi(S) ** STAGE_BOSS_EXP * bossHpRamp(S) * enemyDiffMult(S);
 }
 
 // Zone/world boss (W-10): THE WALL / gear-check. Scales a HAIR steeper than party power (Φ^1.8)
@@ -54,15 +54,15 @@ export function stageBossHp(S: number): number {
 // good world ITEMS clear it within the enrage+survival window (gems/level are premium HEADROOM,
 // never required — directive); the PREVIOUS world's gear fails → you farm a few new pieces. The
 // deep-world LENGTH (W60≈3-4mo, W100≈1yr, approximate) is this growing gate × the farm treadmill.
-export const ZONE_BOSS_C = 185_000;
-export const ZONE_BOSS_EXP = 1.9; // FINITE: softened 2.1→1.9 so the wall tracks (not outruns) the bounded finite gear ceiling; C sized so the X-10 walls bite (force farming) without bricking
+export const ZONE_BOSS_C = 240_000; // tune-pass: 185k→240k — raise the wall anchor
+export const ZONE_BOSS_EXP = 1.0; // track gear's Φ^1.0 ilvl growth — the boss BASE keeps pace with raw gear; the per-world WALL excess comes from WORLD_WALL_GROWTH, so no difficulty bricks at its tail
 // Soft SATURATION (deep-tail flattener): the realistic gear ceiling saturates (level cap + gem
 // caps), so a pure Φ^2.1 wall would cross it and brick (~W165). Dividing by (1+Φ/SAT) flattens
 // the deep wall to ~Φ^1.1, keeping it well below the absolute ceiling (0.2-0.5×) through W250+ —
 // so the deep tail is GLACIAL (the intended multi-month grind), never a hard stop. Calibrated
 // via scripts/sim-pace.ts (the analytic pacing harness). NOTE: full W200≈1yr pacing also needs
 // the depth-dependent gear-treadmill slowdown — see the pacing writeup / difficulty-tier plan.
-export const ZONE_BOSS_SAT = 18;
+export const ZONE_BOSS_SAT = 80; // tune-pass: 18→80 — finite game (Φ tops ~6.2), so relax the deep-tail flattener; the wall should BITE through Torment, not saturate away
 // Early-world ramp (the "easy opening"): the flat C dominates when the party is still weak, so
 // without this the early walls would exceed the (low) early-game gear ceiling and brick. Ramp
 // 0.12 (W1) → 1.0 (W22) — long/low so the opening worlds stay beatable as gear ramps up.
@@ -74,7 +74,7 @@ export function zoneBossHp(S: number): number {
   const o = ZONE_BOSS_HP_OVERRIDE[W];
   if (o !== undefined) return o;
   const ramp = Math.min(1, ZONE_BOSS_RAMP_START + (1 - ZONE_BOSS_RAMP_START) * Math.max(0, W - 1) / (ZONE_BOSS_RAMP_END_WORLD - 1));
-  return (ZONE_BOSS_C * phi(S) ** ZONE_BOSS_EXP * ramp) / (1 + phi(S) / ZONE_BOSS_SAT);
+  return (ZONE_BOSS_C * phi(S) ** ZONE_BOSS_EXP * ramp * wallWorldMult(S)) / (1 + phi(S) / ZONE_BOSS_SAT);
 }
 // A stage is a lane-pusher "area": 20 enemy WAVES (each fills the progress bar 5%)
 // then the stage boss. Each wave is 2–8 mixed enemies that advance from the edge.
@@ -87,7 +87,7 @@ export const WAVES_PER_STAGE = 20; // design value (was a temporary 5 for fast t
 // so difficulty climbs across a world instead of within a single stage's waves. Indexed by
 // stageInWorld 1..9; X-10 is the boss (no trash waves). A wave teleports in as WAVE_BATCHES
 // batches (field.ts), each spread across a band so they arrive as loose groups.
-const WAVE_SIZE_BY_STAGE = [5, 6, 7, 8, 9, 10, 12, 14, 15] as const; // X-1 … X-9 mobs/wave
+const WAVE_SIZE_BY_STAGE = [5, 6, 7, 8, 10, 12, 15, 18, 22] as const; // tune-pass: steeper X-7/8/9 spike (more mobs = more incoming pressure late in a world)
 
 /** Enemies per wave for a stage, ramped by its position within the world (X-1..X-9). */
 export function waveSizeForStage(globalStageIndex: number): number {
@@ -103,7 +103,7 @@ export function waveSizeForStage(globalStageIndex: number): number {
 // fresh-start bootstrap). At 5×/5× an elite is a serious burst of DANGER (the tank/healer must
 // react) AND a chunkier kill. Rarer now (5%) so the spikes stay occasional rather than constant.
 // Rides on enemyDamage, so it stays bootstrap-safe. Tuned to sim-survival's minHP% dips.
-export const ELITE_CHANCE = 0.05; // ~0–1 elite per 10-20 wave
+export const ELITE_CHANCE = 0.08; // tune-pass: 0.05→0.08 — more frequent champion spikes (the wave threat texture)
 export const ELITE_HP_MULT = 5;
 export const ELITE_DMG_MULT = 5;
 export const ELITE_CHEST_MULT = 2;
@@ -118,7 +118,7 @@ export const ELITE_CHEST_MULT = 2;
 // left softer (0.6) so a geared frontline still tanks the longer fight. The fresh
 // *healer* (priest, 5 dmg) is exempt from invariant #0's "not a slog" bound.
 export const TRASH_HP_FRACTION = 1.5;
-export const TRASH_DMG_FRACTION = 0.6;
+export const TRASH_DMG_FRACTION = 0.75; // tune-pass: 0.6→0.75 — waves chip harder (kept moderate to protect the solo-knight bootstrap)
 
 // Boss/zone-boss kills pay a multiple of per-kill income.
 export const BOSS_INCOME_MULT = 8;
@@ -198,7 +198,7 @@ export const GEAR_POWER = 9.0;
 // Multi-stat gems (Diamond) split this fraction across their stats. BALANCE: raising this
 // lifts aggregate gear power (up to 4 sockets/item) — re-check the walls via sim-worlds /
 // sim-survival when changing it.
-export const GEM_AFFIX_FRACTION = 0.5;
+export const GEM_AFFIX_FRACTION = 0.9; // tune-pass: 0.5→0.9 — gems are a major, depth-weighted power axis (T8 gems across ~20-30 sockets ≫ T4). Farming a full T8 gem set is the "perfect your gear" grind that gives the DPS ceiling to crack the deep S-curve walls within the enrage window
 
 // The master scale Φ(S) = P(S) = (1 + S/P_K)^P_EXP. Closed-form (no memo needed); accepts
 // fractional S (used for ilvl/expectedLevel) and is monotonic, convex, and finite everywhere.
@@ -246,11 +246,41 @@ export function gearTrack(S: number): number {
   return GEARTRACK_BASE * Math.pow(phi(S) / phi(GEARTRACK_RAMP_END), GEARTRACK_EXP);
 }
 
+// ── Per-DIFFICULTY escalation (the accelerating curve) ──
+// phi(S) is near-flat (1→6.2 over the whole game) and its per-difficulty RATIO actually
+// DECELERATES, while player gear jumps a full tier each difficulty — so without an explicit
+// per-difficulty step, difficulty mathematically decelerates. These key off the difficulty index
+// (0=Normal … 4=Torment). Normal (d=0) is ×1 — "quick progress, no walls". Enemies + stage bosses
+// take a modest step each difficulty; WORLD bosses get the big ACCELERATING wall multiplier (the
+// farm-gate that must grow each difficulty). Tuned against the progression probe (npm run probe).
+export const ENEMY_DIFF_MULT = 1.3; // per-difficulty enemy HP & damage step. Kept modest because it ALSO compounds into boss damage (×ZONE_BOSS_DMG_MULT) — too high turns deep walls into binary instant-wipe cliffs instead of tunable DPS-races
+// World-boss difficulty is a SMOOTH S-CURVE (logistic) over the 50 worlds — NOT a per-difficulty
+// cliff, NOT a geometric runaway, NOT a front-loaded saturating curve. Shape:
+//   mult(w) = 1 + (WALL_CEIL-1) / (1 + e^(-WALL_RATE·(w - WALL_MID)))
+// This is FLAT & low early (Normal/Hell cruise), ACCELERATING through the middle (Inferno/Eternal
+// — "it increases a lot the further you go"), then SATURATING toward WALL_CEIL deep in Torment so
+// it approaches but never crosses the capped gear ceiling (no brick). The grind stays DISTRIBUTED
+// (farm a little, beat one, repeat); the deep-game LENGTH comes from gear getting slow near max
+// (farming the last T8 pieces + a full T8 gem set), not the wall outrunning gear.
+export const WALL_CEIL = 50; // deep-game world-boss HP multiplier the S-curve approaches (must stay UNDER the full-gem T8 ceiling — raised after the percent-affix ilvl buff lifted the deep DPS ceiling)
+export const WALL_MID = 35; // world index of the curve's steepest point (the heart of the difficulty ramp — deep so Torment IS the grind)
+export const WALL_RATE = 0.15; // steepness of the ramp through the middle
+function difficultyStep(S: number): number {
+  return Math.max(0, Math.min(4, Math.floor((Math.max(1, S) - 1) / 100)));
+}
+export function enemyDiffMult(S: number): number {
+  return ENEMY_DIFF_MULT ** difficultyStep(S);
+}
+export function wallWorldMult(S: number): number {
+  const w = worldOf(S); // 1..50 across the whole game
+  return 1 + (WALL_CEIL - 1) / (1 + Math.exp(-WALL_RATE * (w - WALL_MID)));
+}
+
 export function enemyHp(S: number): number {
-  return HP0 * phi(S) * gearTrack(S);
+  return HP0 * phi(S) * gearTrack(S) * enemyDiffMult(S);
 }
 export function enemyDamage(S: number): number {
-  return DMG0 * phi(S) ** DMG_EXP;
+  return DMG0 * phi(S) ** DMG_EXP * enemyDiffMult(S);
 }
 
 // Hard cap on armor/MR damage reduction (Diablo-style). The stage-scaled denominator keeps
@@ -288,6 +318,20 @@ export function expectedLevel(S: number): number {
   const g = Math.max(0, Math.min(FINITE_STAGES, S));
   const lvl = LVL_AT_END * (1 - Math.pow(1 - g / FINITE_STAGES, LVL_EXP));
   return Math.max(1, Math.min(MAX_LEVEL, Math.round(lvl)));
+}
+
+// ── Percent-affix ilvl feel (so items feel like upgrades) ──
+// Flat affixes scale with Φ(ilvl); percent affixes (attackSpeed/crit/healPower/CDR) deliberately do
+// NOT (they're bounded enablers — raw ilvl scaling would blow past their soft caps). To still make a
+// higher-ilvl item of the SAME tier feel like an upgrade on its %, the percent roll is multiplied by
+// a BOUNDED ilvl factor growing PCT_AFFIX_LO→PCT_AFFIX_HI across the level spine. The soft caps
+// (sim/stats) absorb the top, so this can't run away. Applied to item affixes AND gem grants.
+export const PCT_AFFIX_LO = 0.5; // percent-affix multiplier at ilvl 1
+export const PCT_AFFIX_HI = 1.5; // percent-affix multiplier once SATURATED (≈ Inferno-ilvl onward)
+export const PCT_AFFIX_FULL_ILVL = 80; // ilvl where the buff saturates (~Inferno) — beyond here, % upgrade feel comes from the TIER jump, not more ilvl (avoids over-buffing the endgame)
+export function pctAffixIlvlMult(ilvl: number): number {
+  const t = Math.max(0, Math.min(1, (ilvl - 1) / (PCT_AFFIX_FULL_ILVL - 1)));
+  return PCT_AFFIX_LO + (PCT_AFFIX_HI - PCT_AFFIX_LO) * t;
 }
 
 // ── Income (sub-linear in Φ so the economy keeps pace without trivializing) ──

@@ -33,15 +33,19 @@ export interface DifficultyDef {
   tierWeights: readonly number[];
 }
 
-// Drop tables — LOCKED (docs/DIFFICULTY.md §4). Inferno→Torment is one sliding kernel
-// [8,16,26,24,16,8,2] shifted up one tier per difficulty; Normal/Hell are the
-// front-loaded ramp-in. The new top tier is always ~2% — the chase.
+// Drop tables — LOCKED (docs/DIFFICULTY.md §4). Tune-pass: SHIFTED BACKWARD — weight moved from
+// the cap/near-cap "upgrade" tiers down into the low-tier trash, so the chest firehose (1.5%) stays
+// constant but a SMALLER fraction of drops are upgrades → the gear climb is slower (longer grind)
+// without making drops sparse. The cap tier is now the ~1% chase (was ~2%).
+// GENTLE shift: cap tier kept at ~2% (don't starve the gear the deep walls need); weight moved
+// only from the MID tiers (T3–T6) down into low-tier trash, so the CLIMB to near-cap is slower
+// while the endgame chase stays reachable.
 //                                  T0  T1  T2  T3  T4  T5  T6  T7  T8
-const W_NORMAL  = [40, 32, 18,  8,  2,  0,  0,  0,  0] as const;
-const W_HELL    = [12, 28, 30, 20,  8,  2,  0,  0,  0] as const;
-const W_INFERNO = [ 8, 16, 26, 24, 16,  8,  2,  0,  0] as const;
-const W_ETERNAL = [ 0,  8, 16, 26, 24, 16,  8,  2,  0] as const;
-const W_TORMENT = [ 0,  0,  8, 16, 26, 24, 16,  8,  2] as const;
+const W_NORMAL  = [44, 33, 15,  6,  2,  0,  0,  0,  0] as const;
+const W_HELL    = [16, 30, 30, 16,  6,  2,  0,  0,  0] as const;
+const W_INFERNO = [11, 20, 28, 22, 12,  5,  2,  0,  0] as const;
+const W_ETERNAL = [ 3, 12, 20, 27, 19, 12,  5,  2,  0] as const;
+const W_TORMENT = [ 0,  3, 12, 20, 26, 20, 12,  5,  2] as const;
 
 export const DIFFICULTIES: Readonly<Record<DifficultyKey, DifficultyDef>> = {
   normal:  { key: 'normal',  name: 'Normal',  index: 0, tierCap: 4, tierWeights: W_NORMAL },

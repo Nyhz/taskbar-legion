@@ -2,7 +2,7 @@ import type { GemInstance, GemKey, GemTier } from '@/data/gems';
 import { GEMS, GEM_KEYS } from '@/data/gems';
 import type { StatKey } from '@/data/stats';
 import { STATS } from '@/data/stats';
-import { phi, expectedLevel, EG_FLAT, GEAR_POWER, GEM_AFFIX_FRACTION } from '@/data/stageScaling';
+import { phi, expectedLevel, EG_FLAT, GEAR_POWER, GEM_AFFIX_FRACTION, pctAffixIlvlMult } from '@/data/stageScaling';
 import { tierDef } from '@/data/tiers';
 import { makeRng } from './rng';
 import { round2 } from './num';
@@ -47,7 +47,7 @@ export function gemGrants(gem: GemInstance): { key: StatKey; value: number }[] {
     const midRoll = (band.min + band.max) / 2; // the deterministic "average affix roll"
     const isPercent = STATS[key].kind === 'percent';
     const value = isPercent
-      ? round2(fractionPer * midRoll * tierMult)
+      ? round2(fractionPer * midRoll * tierMult * pctAffixIlvlMult(gemLevel(gem)))
       : round2(fractionPer * midRoll * tierMult * GEAR_POWER * phiFlat);
     return { key, value };
   });

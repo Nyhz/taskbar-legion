@@ -1,10 +1,11 @@
 import type { Simulation, TickContext } from './Simulation';
 import { TICK_MS } from './Simulation';
-import type { ChestStack, ChestType } from '@/data/chests';
+import type { ChestType } from '@/data/chests';
 
-// Offline catch-up: the same rules run in bulk at load with a capped elapsed time
-// (ARCHITECTURE). Deterministic (uses the world's seeded rng). Chests fill to
-// their per-type caps and stop (no overflow); gold/XP are scaled by offlineMult.
+// Offline catch-up: the combat rules run in bulk at load with a capped elapsed time
+// (ARCHITECTURE). Deterministic (uses the world's seeded rng). Away-time banks
+// gold/XP ONLY (scaled by offlineMult) — NO loot (chests), NO pet drops, and NO stage
+// advancement (the frontier moves only during active play). Enforced by ctx.offline.
 
 export const OFFLINE_CAP_MS = 12 * 60 * 60 * 1000; // 12 hours (BALANCE)
 
@@ -30,16 +31,14 @@ export function simulateOffline(
   const ticks = Math.floor(cappedMs / TICK_MS);
   const w = sim.world;
   const fromStage = w.globalStageIndex;
-  const chestsBefore = sumByType(w.chests);
 
-  for (let i = 0; i < ticks; i++) sim.tick(ctx);
+  // offline:true → gold/XP only; no chests, no pets, frozen stage (Simulation.awardKill /
+  // handleClear / retreatAfterWipe all honour the flag). fromStage === toStage by construction.
+  const offlineCtx: TickContext = { ...ctx, offline: true };
+  for (let i = 0; i < ticks; i++) sim.tick(offlineCtx);
 
-  const chestsAfter = sumByType(w.chests);
-  const chestGain: { type: ChestType; count: number }[] = [];
-  for (const [type, count] of chestsAfter) {
-    const delta = count - (chestsBefore.get(type) ?? 0);
-    if (delta > 0) chestGain.push({ type, count: delta });
-  }
+  // Offline grants no loot/pets by design — the summary reports gold/XP only (empty chest list).
+  const chests: { type: ChestType; count: number }[] = [];
 
   return {
     elapsedMs,
@@ -47,15 +46,9 @@ export function simulateOffline(
     ticks,
     gold: Math.round(w.pending.gold * ctx.bonuses.offlineMult),
     xp: Math.round(w.pending.xp * ctx.bonuses.offlineMult),
-    chests: chestGain,
-    petDrops: [...w.pending.petDrops],
+    chests,
+    petDrops: [],
     fromStage,
     toStage: w.globalStageIndex,
   };
-}
-
-function sumByType(chests: ChestStack[]): Map<ChestType, number> {
-  const m = new Map<ChestType, number>();
-  for (const c of chests) m.set(c.type, (m.get(c.type) ?? 0) + c.count);
-  return m;
 }

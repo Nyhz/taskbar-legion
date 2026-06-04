@@ -10,7 +10,7 @@ import type { StatKey } from '@/data/stats';
 import { STATS, FLEX_STATS, JEWELRY_STATS } from '@/data/stats';
 import { CLASS_KEYS } from '@/data/classes';
 import type { ChestType } from '@/data/chests';
-import { phi, EG_FLAT, GEAR_POWER, expectedLevel } from '@/data/stageScaling';
+import { phi, EG_FLAT, GEAR_POWER, expectedLevel, pctAffixIlvlMult } from '@/data/stageScaling';
 import { difficultyOf } from '@/data/difficulties';
 
 // The deterministic loot generator (the SPEC §4.6 contract): generateItem(origin)
@@ -172,7 +172,7 @@ export function itemSubstatPool(item: { category: SlotCategory; slot: SlotKey; c
 export function rollStatValue(key: StatKey, tierMult: number, itemLevel: number, rng: Rng): number {
   const band = STATS[key].rollPerIlvl;
   const r = rng.range(band.min, band.max);
-  if (STATS[key].kind === 'percent') return round2(r * tierMult);
+  if (STATS[key].kind === 'percent') return round2(r * tierMult * pctAffixIlvlMult(itemLevel));
   return round2(r * tierMult * GEAR_POWER * phi(itemLevel) ** EG_FLAT);
 }
 

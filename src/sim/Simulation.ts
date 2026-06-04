@@ -38,6 +38,10 @@ export interface TickContext {
   // black + phrase, respawn) over WIPE_TOTAL_MS. Omitted (headless balance probes) ⇒ retreat
   // + revive instantly the same tick, so the animation beat doesn't skew throughput.
   animateWipe?: boolean;
+  // Offline catch-up: bank gold/XP ONLY. No chests, no pet drops, and the stage is frozen
+  // (clears re-farm in place; wipes hold the stage) — offline never advances or retreats the
+  // frontier. Active play is the only way to progress stages or earn loot.
+  offline?: boolean;
 }
 
 export function createWorld(seed: number, heroes: Combatant[]): WorldState {
@@ -87,7 +91,7 @@ export class Simulation {
       // hidden, then REVIVE + resume at the end. Heroes stay dead throughout.
       const prev = w.wipeMs;
       w.wipeMs += TICK_MS;
-      if (prev < WIPE_RETREAT_AT_MS && w.wipeMs >= WIPE_RETREAT_AT_MS) this.retreatAfterWipe(ctx.retryStage === true);
+      if (prev < WIPE_RETREAT_AT_MS && w.wipeMs >= WIPE_RETREAT_AT_MS) this.retreatAfterWipe(ctx.retryStage === true || ctx.offline === true);
       if (w.wipeMs >= WIPE_TOTAL_MS) {
         w.wipeMs = undefined;
         this.resumeAfterWipe();
@@ -109,7 +113,7 @@ export class Simulation {
       events = resolveCombatTick(w, TICK_MS, this.rng);
       this.processDeaths(events, ctx);
       if (w.heroes.every((h) => !h.alive)) this.beginWipe(ctx);
-      else if (w.waveQueue.length === 0 && w.enemies.length > 0 && w.enemies.every((e) => !e.alive)) this.handleClear();
+      else if (w.waveQueue.length === 0 && w.enemies.length > 0 && w.enemies.every((e) => !e.alive)) this.handleClear(ctx.offline === true);
     }
 
     w.stageProgress = Math.min(1, w.wavesThisStage / WAVES_PER_STAGE);
@@ -180,6 +184,9 @@ export class Simulation {
     w.pending.gold += Math.round(goldPerKill(S) * incomeMult * ctx.bonuses.goldMult);
     w.pending.xp += Math.round(xpPerKill(S) * incomeMult * ctx.bonuses.xpMult);
 
+    // Offline catch-up banks gold/XP ONLY — no loot (chests) and no pet drops.
+    if (ctx.offline === true) return;
+
     const chestType: ChestType = enemy.isBoss ? (isZone ? 'zoneBoss' : 'stageBoss') : 'normal';
     tryAccrueChest(w, chestType, this.rng, ctx.bonuses, enemy.isElite === true ? ELITE_CHEST_MULT : 1);
 
@@ -188,7 +195,7 @@ export class Simulation {
   }
 
   // A wave or boss was fully defeated.
-  private handleClear(): void {
+  private handleClear(offline = false): void {
     const w = this.world;
     if (w.phase === 'fighting') {
       w.wavesThisStage += 1; // each cleared wave = +5% (20 waves → boss)
@@ -199,6 +206,14 @@ export class Simulation {
     // Past here a stage boss or zone boss just fell. Beating a boss is a checkpoint:
     // fully heal + revive the whole party before they move on (or re-farm / enter W-10).
     this.reviveParty();
+    // Offline catch-up NEVER advances the frontier: a boss clear just re-farms the same stage
+    // in place (no stage/maxCleared change), so away-time grants gold/XP only — never progress.
+    if (offline) {
+      w.wavesThisStage = 0;
+      w.phase = 'advancing';
+      w.advanceTimerMs = ADVANCE_MS;
+      return;
+    }
     // FIRST clear of a stage extends the frontier → auto-advance. RE-clearing an already-
     // beaten stage (the party dropped back to farm it) LOOPS it instead (DIFFICULTY.md §2).
     const firstClear = w.globalStageIndex > w.maxClearedStage;
@@ -274,7 +289,7 @@ export class Simulation {
   // probes skip the animation (animateWipe off) and retreat + revive instantly, the old behavior.
   private beginWipe(ctx: TickContext): void {
     if (ctx.animateWipe !== true) {
-      this.retreatAfterWipe(ctx.retryStage === true);
+      this.retreatAfterWipe(ctx.retryStage === true || ctx.offline === true);
       this.resumeAfterWipe();
       return;
     }
