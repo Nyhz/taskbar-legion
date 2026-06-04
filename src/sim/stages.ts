@@ -17,6 +17,7 @@ import {
   TRASH_DMG_FRACTION,
   waveSizeForStage,
   ELITE_CHANCE,
+  ELITE_MIN_STAGE,
   ELITE_HP_MULT,
   ELITE_DMG_MULT,
   ZONE_ENRAGE_MS,
@@ -114,7 +115,10 @@ export function spawnWave(world: WorldState, rng: Rng): void {
     const releaseTick = world.tick + b * WAVE_BATCH_TICKS; // batch b teleports in at b seconds
     for (let j = 0; j < batches[b]!; j++) {
       const kind = pickEnemyKind(rng.next(), S);
-      const spec = rng.chance(ELITE_CHANCE) ? eliteSpec(kind) : trashSpec(kind);
+      // Roll the elite chance ALWAYS (keep the RNG stream stable), but gate the result so the
+      // opening stages (before ELITE_MIN_STAGE) are elite-free — a fresh naked Knight can't survive
+      // an early champion spike before it has any gear.
+      const spec = rng.chance(ELITE_CHANCE) && S >= ELITE_MIN_STAGE ? eliteSpec(kind) : trashSpec(kind);
       const combatant = makeEnemy(world, S, index, world.partyX + SPAWN_AHEAD, spec);
       const spawnOffset = rng.int(WAVE_SPAWN_BAND); // spread within the batch's band (anti-stack)
       world.waveQueue.push({ combatant, releaseTick, spawnOffset });

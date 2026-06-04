@@ -104,6 +104,7 @@ export function waveSizeForStage(globalStageIndex: number): number {
 // react) AND a chunkier kill. Rarer now (5%) so the spikes stay occasional rather than constant.
 // Rides on enemyDamage, so it stays bootstrap-safe. Tuned to sim-survival's minHP% dips.
 export const ELITE_CHANCE = 0.08; // tune-pass: 0.05→0.08 — more frequent champion spikes (the wave threat texture)
+export const ELITE_MIN_STAGE = 5; // no elites before this global stage — protects the fresh-Knight bootstrap (a single elite one-shots a naked L1); elites become the threat once you have a few drops
 export const ELITE_HP_MULT = 5;
 export const ELITE_DMG_MULT = 5;
 export const ELITE_CHEST_MULT = 2;
@@ -276,11 +277,22 @@ export function wallWorldMult(S: number): number {
   return 1 + (WALL_CEIL - 1) / (1 + Math.exp(-WALL_RATE * (w - WALL_MID)));
 }
 
+// Early-game damage ramp (bootstrap protector): a fresh solo naked Knight must survive 1-1, but
+// the raised trash damage + wave swarm wore it down. Enemy DAMAGE ramps from EARLY_DMG_FLOOR at
+// stage 1 up to full by EARLY_DMG_RAMP_END (~world 2), so the opening is forgiving and full
+// difficulty arrives once you've geared a few pieces. Only touches the OPENING (≥END ⇒ ×1).
+export const EARLY_DMG_FLOOR = 0.65; // stage-1 enemy-damage multiplier
+export const EARLY_DMG_RAMP_END = 12; // global stage where enemy damage reaches full (≈ world 2, stage 2)
+export function earlyDmgRamp(S: number): number {
+  if (S >= EARLY_DMG_RAMP_END) return 1;
+  return EARLY_DMG_FLOOR + (1 - EARLY_DMG_FLOOR) * ((Math.max(1, S) - 1) / (EARLY_DMG_RAMP_END - 1));
+}
+
 export function enemyHp(S: number): number {
   return HP0 * phi(S) * gearTrack(S) * enemyDiffMult(S);
 }
 export function enemyDamage(S: number): number {
-  return DMG0 * phi(S) ** DMG_EXP * enemyDiffMult(S);
+  return DMG0 * phi(S) ** DMG_EXP * enemyDiffMult(S) * earlyDmgRamp(S);
 }
 
 // Hard cap on armor/MR damage reduction (Diablo-style). The stage-scaled denominator keeps
