@@ -9,7 +9,7 @@ import { ProjectileLayer } from './render/Projectiles';
 import { WorldFxLayer } from './render/WorldFx';
 import { PortalSprite } from './render/PortalSprite';
 import { castFx, isSupportCast, isWholeWaveCast, FX } from './render/fx';
-import { loadCharacterTextures } from './render/characterFrames';
+import { loadCharacterTextures, getFireballFrames } from './render/characterFrames';
 import { loadEnemyTextures, resolveEnemySprite, getEnemyFrames } from './render/enemyFrames';
 import { loadBackgroundTextures } from './render/backgroundLayers';
 import type { Combatant, CombatEvent, WorldState } from '@/sim/world';
@@ -499,6 +499,18 @@ export class GameStrip {
           if (heroCaster !== undefined && isSupportCast(ev.abilityKey)) heroCaster.supportCast();
           // Big AoE spectacles that play over the whole target band (the wave / the party).
           this.spawnAoeFx(ev.abilityKey, heroCaster !== undefined, groundY, caster.x);
+          // Explosive Arrow: a big arrow streaks to the front of the wave and detonates on
+          // impact (the fireball strip's blast frames), timed to the arrow's flight.
+          if (heroCaster !== undefined && ev.abilityKey === 'ranger_focus') {
+            const b = this.bandOf(this.enemySprites);
+            const fb = getFireballFrames();
+            if (b !== null) {
+              const tx = b.cx - b.halfW; // front of the wave, nearest the ranger
+              const ty = groundY - 8;
+              const flight = this.projectiles.spawn(caster.x, caster.y - 8, () => ({ x: tx, y: ty }), 'arrow', undefined, 1.9);
+              if (fb !== null) this.worldFx.fireballBurst(tx, ty - 4, fb, flight);
+            }
+          }
         }
       } else if (ev.tick === true) {
         // DoT/HoT periodic tick → floating number, no attack animation. A HoT HEAL tick
@@ -606,6 +618,12 @@ export class GameStrip {
     const heroSrc = this.heroSprites.get(sourceId);
     const src = heroSrc ?? this.enemySprites.get(sourceId);
     if (src === undefined) return;
+    if (abilityKey === 'ranger_focus') {
+      // Explosive Arrow's big arrow + blast are fired once from the cast handler; the per-hit
+      // damage events just replay the bow draw — no extra standard arrows.
+      heroSrc?.swing();
+      return;
+    }
     const viaAbility = abilityKey !== undefined;
     if (src.style === 'melee') {
       if (heroSrc !== undefined) heroSrc.swing(viaAbility);

@@ -47,12 +47,13 @@ export class ProjectileLayer extends Container {
 
   /** Fire a projectile at a LIVE target (read each frame so it homes on a moving enemy);
    *  returns the initial travel-time estimate (ms). `frames` is required for type 'magic'. */
-  spawn(fromX: number, fromY: number, target: () => Vec, type: ProjectileType, frames?: Texture[]): number {
+  spawn(fromX: number, fromY: number, target: () => Vec, type: ProjectileType, frames?: Texture[], scale = 1): number {
     const dest = target();
     const disp = type === 'arrow' ? this.takeArrow() : type === 'magic' ? this.takeMagic(frames ?? []) : this.takeFireball();
     disp.visible = true;
     disp.alpha = 1;
     disp.rotation = 0; // arrows fly flat (point right toward the enemies); fireballs spin
+    if (type === 'arrow' && scale !== 1) disp.scale.set(ARROW_SCALE * scale); // bigger arrow (Explosive Arrow)
     disp.x = fromX;
     disp.y = fromY;
     this.addChild(disp);
