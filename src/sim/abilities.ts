@@ -138,6 +138,16 @@ function isSelfOrPartyBuff(ability: AbilityDef): boolean {
   return ability.castCondition !== 'allyBelowHpPct';
 }
 
+/** True if the ability grants an absorb shield (applies any shield-kind effect). */
+function appliesShield(ability: AbilityDef): boolean {
+  return ability.applies.some((a) => effectDef(a.effectKey).kind.type === 'shield');
+}
+
+/** True if the combatant already carries an active (un-depleted) shield from any source. */
+function hasActiveShield(c: Combatant): boolean {
+  return c.effects.some((e) => e.remainingMs > 0 && e.value > 0 && effectDef(e.defKey).kind.type === 'shield');
+}
+
 function selectTargets(caster: Combatant, ability: AbilityDef, allies: Combatant[], enemies: Combatant[], rng: Rng): Combatant[] {
   switch (ability.target) {
     case 'self':
@@ -281,6 +291,11 @@ export function castReadyAbilities(
     if ((isSelfOrPartyBuff(ability) || ability.target === 'allEnemies') && !engaged(caster, enemies)) continue;
     const targets = selectTargets(caster, ability, allies, enemies, rng);
     if (targets.length === 0) continue;
+    // Don't stack shields: if this ability grants a shield and every target already has an
+    // active shield (from ANY source), skip the cast WITHOUT consuming its cooldown — it
+    // fires the moment the existing shield drops. Keeps the Knight's Bulwark and the
+    // Priest's Holy Shield from overwriting / wasting each other on the same tank.
+    if (appliesShield(ability) && targets.every(hasActiveShield)) continue;
     for (const applied of ability.applies) {
       if (applied.chance !== undefined && !rng.chance(applied.chance)) continue;
       const def = effectDef(applied.effectKey);
