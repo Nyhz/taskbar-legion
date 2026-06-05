@@ -83,7 +83,7 @@ jobs:
           args: ${{ matrix.args }}
 
       - name: Upload bundles as artifacts
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: taskbar-legion-${{ matrix.platform }}
           if-no-files-found: warn
