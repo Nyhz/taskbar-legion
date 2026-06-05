@@ -8,6 +8,7 @@ import { itemGlyph } from '@/ui/icons';
 import { ItemTooltip } from './ItemTooltip';
 import { GemTooltip } from './GemTooltip';
 import { PALETTE } from '@/styles/palette';
+import { setItemDragging } from '@/platform/dragState';
 
 // A tier-colored cell holding an item OR a loose gem: slot ICON / gem disc, tier
 // border + T# corner. Supports native drag (dragData payload) and right-click
@@ -117,7 +118,9 @@ export function ItemSlot({
       onDragStart={(e) => {
         if (dragData !== undefined) e.dataTransfer.setData('text/plain', dragData);
         setTip(null);
+        setItemDragging(true); // pin the desktop overlay interactive for the whole gesture
       }}
+      onDragEnd={() => setItemDragging(false)}
       style={{
         position: 'relative',
         width: size,
