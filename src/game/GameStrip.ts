@@ -25,6 +25,8 @@ import { isStripDragging } from '@/platform/dragState';
 // render layer READS sim state and never mutates it.
 
 const STRIP_HEIGHT = 160; // must match App.STRIP_LOGICAL_HEIGHT
+const STRIP_WIDTH = 600; // must match App.STRIP_LOGICAL_WIDTH — the canvas is a FIXED logical size
+                         // (rendered at ×uiScale); Game Scale zooms the whole strip in the DOM.
 const GROUND_FRAC = 0.72;
 // Deadzone + spring camera. The lead (melee) hero sits ~ANCHOR_FRAC across when settled —
 // around mid-screen — and the camera only tracks (as an underdamped SPRING) once the party
@@ -135,7 +137,10 @@ export class GameStrip {
       // Desktop overlay: a fully transparent canvas so only the sprites + backdrop
       // paint over the bare desktop. Browser build stays opaque (the page bg).
       ...(transparent ? { backgroundAlpha: 0 } : { background: '#14121a' }),
-      resizeTo: container,
+      // FIXED logical size (no resizeTo): the canvas is always STRIP_WIDTH×STRIP_HEIGHT at
+      // ×uiScale. Game Scale zooms the whole strip section in the DOM (App), not the canvas.
+      width: STRIP_WIDTH * uiScale,
+      height: STRIP_HEIGHT * uiScale,
       antialias: false,
       roundPixels: true,
       autoDensity: true,

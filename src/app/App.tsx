@@ -70,7 +70,7 @@ export function App(): React.JSX.Element {
           console.error('Save hydrate failed — starting fresh to avoid a boot loop', err);
         }
       }
-      await game.init(container, useStore.getState().uiScale * useStore.getState().gameScale, tauri);
+      await game.init(container, useStore.getState().uiScale, tauri);
       if (cancelled) return;
       if (save !== null) {
         const elapsed = Date.now() - save.lastSavedAt;
@@ -105,8 +105,8 @@ export function App(): React.JSX.Element {
   }, [tauri]);
 
   useEffect(() => {
-    gameRef.current?.applyScale(stripScale);
-  }, [stripScale]);
+    gameRef.current?.applyScale(uiScale);
+  }, [uiScale]);
 
   // Drag the whole window around the desktop by the strip. Past the threshold we hand the
   // gesture to the OS (startDragging) so the window itself travels — freely across monitors,
@@ -176,20 +176,14 @@ export function App(): React.JSX.Element {
                 menu can't hide them; anchored to the bottom of this zone, over the strip. */}
             <LootToasts />
           </div>
-          {/* The strip itself (HUD + canvas) is the drag handle — grab anywhere to move
-              the overlay. pointerEvents:auto re-enables it inside the transparent column. */}
-          {/* HUD + overlay are authored at the baseline (×uiScale) size and `zoom`-scaled by
-              stripZoom so they shrink/grow WITH the strip canvas (which scales via stripScale),
-              keeping the whole strip — bar, RETRY, banners — perfectly in step. */}
+          {/* The whole strip — HUD bar + combat canvas + overlay — is ONE unit, authored at the
+              baseline (×uiScale) size and `zoom`-scaled by gameScale so it all moves in lockstep.
+              The canvas itself is a FIXED-resolution bitmap (GameStrip) that this zoom scales; no
+              resizeTo, so width + height always change together. It's also the drag handle. */}
           <div style={{ width: STRIP_LOGICAL_WIDTH * uiScale, zoom: gameScale, pointerEvents: tauri ? 'auto' : undefined }} onPointerDown={onStripPointerDown}>
             <StripHud />
-          </div>
-          <div
-            style={{ position: 'relative', height: STRIP_LOGICAL_HEIGHT * stripScale, width: '100%', pointerEvents: tauri ? 'auto' : undefined }}
-            onPointerDown={onStripPointerDown}
-          >
-            <div ref={stripRef} style={{ height: '100%', width: '100%' }} />
-            <div style={{ position: 'absolute', left: 0, top: 0, width: STRIP_LOGICAL_WIDTH * uiScale, height: STRIP_LOGICAL_HEIGHT * uiScale, zoom: gameScale, pointerEvents: 'none' }}>
+            <div style={{ position: 'relative', width: STRIP_LOGICAL_WIDTH * uiScale, height: STRIP_LOGICAL_HEIGHT * uiScale }}>
+              <div ref={stripRef} style={{ height: '100%', width: '100%' }} />
               <StripOverlay />
             </div>
           </div>
