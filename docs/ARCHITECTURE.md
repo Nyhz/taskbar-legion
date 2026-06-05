@@ -23,7 +23,7 @@ how it's drawn or stored. Everything else follows from protecting that boundary.
                  └──────────────┘        └──────────────┘
                         ▲ imports nothing above this line
                  ┌──────────────┐
-                 │ persistence/ │  SaveV1 ↔ IndexedDB
+                 │ persistence/ │  SaveV1 ↔ platform storage (Tauri save.json)
                  └──────────────┘
 ```
 
@@ -38,8 +38,9 @@ how it's drawn or stored. Everything else follows from protecting that boundary.
 - `game/` (Pixi) imports: `state/`, `sim/` (read-only), `data/`. It renders; it never owns game logic.
 - `ui/` (React) imports: `state/`, `sim/` (read-only selectors), `data/`. It renders + dispatches intents.
 - `persistence/` imports: `data/`, `sim/` (types), the save schema. It serializes `state` ↔ `SaveV1`.
-- `platform/` (v1): just `surfaces.ts`, a registry of interactive regions. Imported by `ui/`/`game/` to
-  *register* themselves. No consumer in v1. (`hitTest`/`clickThrough`/`transparency` are v1.5 — absent now.)
+- `platform/` : runtime/OS adapters, all gated behind `isTauri()` and dynamically importing `@tauri-apps/*`
+  so the dev bundle + tests stay Tauri-free. Holds `storage.ts` (save backend), `desktopOverlay.ts`
+  (transparency / click-through / window drag), `saveTransfer.ts` (native export/import dialogs), `quit.ts`.
 
 ESLint enforces the `sim/`+`data/` half of this (`no-restricted-imports` in `eslint.config.js`). If a lint
 error tells you `sim/` can't import React/Pixi/state — **the fix is to restructure, not to disable the rule.**

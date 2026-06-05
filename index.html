@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Taskbar Legion</title>
     <style>
-      /* v1 is a NORMAL OPAQUE PAGE (SPEC §0.5). No transparency / click-through — those are v1.5.
+      /* The opaque background below applies ONLY to the plain `npm run dev` browser view
+         (used for fast UI iteration). In the Tauri desktop build, desktopOverlay.ts forces
+         html/body to transparent so the always-on-top overlay shows through.
          Pixel-art must stay crisp at every zoom. */
       :root {
         color-scheme: dark;

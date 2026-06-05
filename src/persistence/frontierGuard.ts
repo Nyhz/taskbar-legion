@@ -1,13 +1,13 @@
 // A tiny, SYNCHRONOUS backstop for the one piece of progress that must never be
 // lost: the cleared-stage frontier (which unlocks travel + the resume point).
 //
-// The full save is an ASYNC IndexedDB write (saveManager). On an abrupt teardown —
-// a dev-server restart, a hard reload, the browser dropping the `beforeunload`
-// handler's promise — that async write can be cut off before it commits, and if the
-// 30s autosave hadn't fired since the last boss kill, a just-unlocked stage is lost.
-// `localStorage.setItem` is synchronous and completes before the page tears down, so
-// mirroring just the frontier here guarantees "beating a stage permanently unlocks
-// it." On load we raise the (possibly stale) IndexedDB save's frontier to this guard.
+// The full save is an ASYNC write (saveManager → Tauri save.json / in-memory). On an
+// abrupt teardown — a dev-server restart, a hard reload, the webview being killed before
+// onCloseRequested finishes — that async write can be cut off before it commits, and if
+// the 30s autosave hadn't fired since the last boss kill, a just-unlocked stage is lost.
+// `localStorage.setItem` is synchronous and completes before teardown (and persists in
+// the Tauri webview), so mirroring just the frontier here guarantees "beating a stage
+// permanently unlocks it." On load we raise the (possibly stale) save's frontier to it.
 
 export const FRONTIER_KEY = 'taskbar-legion.frontier.v1';
 const KEY = FRONTIER_KEY;

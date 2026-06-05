@@ -1,6 +1,8 @@
-// Phase-0 temporary persistence for UI settings only (uiScale, dockOrientation).
-// Real, full-state persistence is IndexedDB in Phase 5 (persistence/saveManager.ts).
-// This shim is intentionally tiny and will be superseded.
+// Lightweight localStorage persistence for UI-only prefs (uiScale, dockOrientation,
+// retryStage, hideSocketWarning). Separate from the main save (persistence/saveManager.ts)
+// because these are device-local UI choices, and some — retryStage, hideSocketWarning —
+// aren't part of SaveV1. localStorage persists in the Tauri webview, so this works on
+// desktop too.
 
 import type { DockOrientation, UiScale } from './slices/uiSlice';
 

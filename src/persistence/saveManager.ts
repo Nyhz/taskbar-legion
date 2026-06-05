@@ -94,21 +94,6 @@ export async function resetGame(): Promise<void> {
   if (typeof location !== 'undefined') location.reload();
 }
 
-/** Ask the browser for DURABLE storage so the save isn't evicted under disk
- *  pressure or Safari's ~7-day script-storage cap (the classic "idle game lost my
- *  progress" failure). Best-effort and safe to call on every boot: an already-persisted
- *  origin short-circuits, and a denied request just leaves storage in its default
- *  best-effort mode. Never throws. */
-export async function requestPersistentStorage(): Promise<boolean> {
-  try {
-    if (typeof navigator === 'undefined' || navigator.storage?.persist === undefined) return false;
-    if (await navigator.storage.persisted()) return true;
-    return await navigator.storage.persist();
-  } catch {
-    return false;
-  }
-}
-
 /** Serialize the current game to a pretty JSON string for download/backup. */
 export function exportSave(): string {
   return JSON.stringify(buildSave(), null, 2);

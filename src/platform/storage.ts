@@ -1,58 +1,19 @@
-import { openDB, type IDBPDatabase } from 'idb';
 import type * as TauriFs from '@tauri-apps/plugin-fs';
 import type { SaveV1 } from '@/persistence/saveSchema';
 import { isTauri } from './tauri';
 
-// The save backend, abstracted so the SAME save manager works in two homes:
-//  - Browser / vitest  → IndexedDB (the original web path).
-//  - Tauri desktop     → a real `save.json` file in the OS app-data dir.
-// The Tauri filesystem plugin is imported DYNAMICALLY so the web bundle and the
-// node test suite never load `@tauri-apps/*`. `read()` returns the raw persisted
-// value (pre-migration) or null; the save manager owns migrate/reconcile.
+// The save backend. The game ships ONLY as the Tauri desktop app, so the real backend
+// is a `save.json` file in the OS app-data dir. The non-Tauri path (plain `npm run dev`
+// for UI iteration, and the vitest node suite) gets an EPHEMERAL in-memory store — there
+// is no browser persistence target anymore. The Tauri fs plugin is imported DYNAMICALLY
+// so the dev bundle and the node tests never load `@tauri-apps/*`. `read()` returns the
+// raw persisted value (pre-migration) or null; the save manager owns migrate/reconcile.
 
 export interface SaveStore {
   read(): Promise<unknown>;
   write(save: SaveV1): Promise<void>;
   clear(): Promise<void>;
 }
-
-// ── Web (IndexedDB) ─────────────────────────────────────────────────────────
-const DB_NAME = 'taskbar-legion';
-const STORE = 'save';
-const KEY = 'v1';
-
-let dbPromise: Promise<IDBPDatabase> | null = null;
-function db(): Promise<IDBPDatabase> {
-  dbPromise ??= openDB(DB_NAME, 1, {
-    upgrade(d) {
-      if (!d.objectStoreNames.contains(STORE)) d.createObjectStore(STORE);
-    },
-  });
-  return dbPromise;
-}
-
-const webStore: SaveStore = {
-  async read() {
-    const d = await db();
-    return (await d.get(STORE, KEY)) as unknown;
-  },
-  async write(save) {
-    const d = await db();
-    await d.put(STORE, save, KEY);
-  },
-  async clear() {
-    try {
-      (await db()).close(); // release our handle so deleteDatabase isn't blocked
-    } catch {
-      // ignore
-    }
-    dbPromise = null;
-    await new Promise<void>((resolve) => {
-      const req = indexedDB.deleteDatabase(DB_NAME);
-      req.onsuccess = req.onerror = req.onblocked = (): void => resolve();
-    });
-  },
-};
 
 // ── Tauri (filesystem) ──────────────────────────────────────────────────────
 const SAVE_FILE = 'save.json';
@@ -86,7 +47,23 @@ const tauriStore: SaveStore = {
   },
 };
 
-/** The active save backend for this runtime (Tauri fs on desktop, IndexedDB on web). */
+// ── Non-Tauri fallback (dev server / vitest) ──────────────────────────────────
+// Ephemeral: lets `npm run dev` and the test suite run without a filesystem. Does NOT
+// survive a reload — the desktop app is the only persistent target.
+let memory: SaveV1 | null = null;
+const memoryStore: SaveStore = {
+  read: () => Promise.resolve(memory),
+  write: (save) => {
+    memory = save;
+    return Promise.resolve();
+  },
+  clear: () => {
+    memory = null;
+    return Promise.resolve();
+  },
+};
+
+/** The active save backend for this runtime (Tauri fs on desktop, in-memory otherwise). */
 export function saveStore(): SaveStore {
-  return isTauri() ? tauriStore : webStore;
+  return isTauri() ? tauriStore : memoryStore;
 }

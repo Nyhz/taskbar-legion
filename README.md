@@ -71,20 +71,25 @@ It's a game you can check on for thirty seconds or stare at for an hour. Both ar
 
 ## Lives on your desktop
 
-Beyond the browser, Taskbar Legion can run as a **transparent, always-on-top desktop
-overlay** — borderless, docked to the bottom of your screen, clicking *through* to whatever's
+Taskbar Legion ships as a **transparent, always-on-top desktop overlay** (Windows, macOS,
+Linux) — borderless, docked to the bottom of your screen, clicking *through* to whatever's
 behind it until you reach for one of its panels. Your heroes, fighting in the margins of
 your actual work.
 
 ## Play it
 
+Grab an installer for your OS from the [Releases](https://github.com/Nyhz/taskbar-legion/releases)
+page (`.dmg` for macOS, `.exe` for Windows, `.AppImage` for Linux).
+
+Building from source:
+
 ```bash
 npm install
-npm run dev      # opens the game in your browser
+npm run tauri:dev   # run the desktop app
+npm run dev         # or just the UI in a browser, for fast iteration
 ```
 
-That's it — no account, no server, no internet. It's 100% offline and your save lives on
-your own machine.
+No account, no server, no internet. It's 100% offline and your save lives on your own machine.
 
 ---
 
