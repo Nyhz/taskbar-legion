@@ -28,6 +28,9 @@ import priestHurt from '@/assets/characters/priest/actions/priest-hurt.png';
 import priestDeath from '@/assets/characters/priest/actions/priest-death.png';
 import priestAtkFx from '@/assets/characters/priest/effects/priest-attack-effect.png';
 import priestHealFx from '@/assets/characters/priest/effects/priest-heal-effect.png';
+// Reused for Explosive Arrow's detonation (the Mage class is gone, but its fireball sheet
+// remains): a 7-frame 100px strip — last frames are the orange burst + pale flash.
+import fireballFx from '@/assets/characters/mage/projectiles/mage-attack02-effect.png';
 
 // Sprite-sheet character bodies (a deliberate override of ART.md's procedural-only rule,
 // at the user's request). Each sheet is a horizontal strip of 100×100 frames; we load it
@@ -127,6 +130,7 @@ const SHEETS: Record<string, SheetSpec> = {
 const cache = new Map<string, CharFrames>();
 let arrowTex: Texture | null = null;
 let healFxTex: Texture[] | null = null;
+let fireballTex: Texture[] | null = null;
 let loading: Promise<void> | null = null;
 
 // Slice a horizontal sheet into one Texture per frame. Frame count is derived from the
@@ -155,6 +159,9 @@ export async function loadCharacterTextures(): Promise<void> {
     arrow.source.scaleMode = 'nearest';
     arrowTex = arrow;
     healFxTex = slice(await Assets.load<Texture>(priestHealFx), COMMON.frameSize);
+    const fb = await Assets.load<Texture>(fireballFx);
+    fb.source.scaleMode = 'nearest';
+    fireballTex = slice(fb, COMMON.frameSize);
     for (const [key, spec] of Object.entries(SHEETS)) {
       const fs = spec.config.frameSize;
       const [idle, walk, attacks, attackFx, block, hurt, death, heal, projectile] = await Promise.all([
@@ -198,4 +205,9 @@ export function getArrowTexture(): Texture | null {
 /** The shared heal-sparkle effect frames (shown on any ally a Priest heals). */
 export function getHealEffectFrames(): Texture[] | null {
   return healFxTex;
+}
+
+/** The 7-frame fireball/blast strip (reused for Explosive Arrow's detonation). */
+export function getFireballFrames(): Texture[] | null {
+  return fireballTex;
 }

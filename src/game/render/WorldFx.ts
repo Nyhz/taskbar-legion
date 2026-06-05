@@ -1,4 +1,5 @@
 import { Container, Graphics, Sprite } from 'pixi.js';
+import type { Texture } from 'pixi.js';
 import { hexToNum } from '@/styles/palette';
 import { getArrowTexture } from './characterFrames';
 import { drawCrosshair, ARROW_RED } from './effectAuras';
@@ -174,6 +175,28 @@ export class WorldFxLayer extends Container {
         g.poly([s.x - s.w * 0.45, cy, s.x + s.w * 0.2, cy, s.x, cy - h * 0.95]).fill({ color: STEEL, alpha: 0.85 * a });
         g.poly([s.x - s.w * 0.3, cy - h * 0.68, s.x + s.w * 0.3, cy - h * 0.68, s.x, cy - h]).fill({ color: TIP, alpha: 0.6 * a });
       }
+    });
+  }
+
+  /** Explosive Arrow's detonation: the tail of the fireball strip (orange burst → pale flash)
+   *  pops at (cx, cy), growing + fading. Stays invisible for `delayMs` so it lands exactly when
+   *  the arrow arrives. `frames` is the 7-frame fireball sheet (we use its last 3 = the blast). */
+  fireballBurst(cx: number, cy: number, frames: Texture[], delayMs: number): void {
+    if (frames.length === 0) return;
+    const blast = frames.slice(-3); // dark ember → orange burst → pale flash
+    const s = new Sprite();
+    s.anchor.set(0.5);
+    s.visible = false;
+    const play = 300; // explosion duration after the arrow lands
+    this.push(s, delayMs + play, (t) => {
+      if (t < delayMs) { s.visible = false; return; }
+      s.visible = true;
+      const k = Math.min(0.999, (t - delayMs) / play); // 0→1 through the blast
+      const tex = blast[Math.min(blast.length - 1, Math.floor(k * blast.length))];
+      if (tex !== undefined && s.texture !== tex) s.texture = tex;
+      s.position.set(cx, cy);
+      s.scale.set(0.7 + k * 1.2); // swell as it detonates
+      s.alpha = 1 - k * 0.75;
     });
   }
 
