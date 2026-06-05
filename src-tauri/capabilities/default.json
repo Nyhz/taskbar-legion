@@ -18,10 +18,12 @@
     "core:window:allow-scale-factor",
     "core:window:allow-close",
     "core:window:allow-destroy",
-    { "identifier": "fs:allow-read-text-file", "allow": [{ "path": "$APPDATA/*" }] },
-    { "identifier": "fs:allow-write-text-file", "allow": [{ "path": "$APPDATA/*" }] },
+    { "identifier": "fs:allow-read-text-file", "allow": [{ "path": "$APPDATA/*" }, { "path": "$HOME/**" }] },
+    { "identifier": "fs:allow-write-text-file", "allow": [{ "path": "$APPDATA/*" }, { "path": "$HOME/**" }] },
     { "identifier": "fs:allow-mkdir", "allow": [{ "path": "$APPDATA" }, { "path": "$APPDATA/*" }] },
     { "identifier": "fs:allow-exists", "allow": [{ "path": "$APPDATA/*" }] },
-    { "identifier": "fs:allow-remove", "allow": [{ "path": "$APPDATA/*" }] }
+    { "identifier": "fs:allow-remove", "allow": [{ "path": "$APPDATA/*" }] },
+    "dialog:allow-save",
+    "dialog:allow-open"
   ]
 }
