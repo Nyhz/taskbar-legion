@@ -27,7 +27,7 @@ const POLL_MS = 20;
 // → ~875 at 1.25, plus the strip+HUD ≈ 270). Width holds the ~1200 band with a small margin.
 // On screens shorter than this the top may still clip — the strip always stays at the bottom.
 const OVERLAY_W = 1280;
-const OVERLAY_H = 1320;
+const OVERLAY_H = 720;
 
 const WIN_POS_KEY = 'taskbar-legion.overlay.winpos.v1';
 

@@ -27,8 +27,9 @@ export type UiScale = 1 | 1.5 | 2; // kept for save-schema back-compat; the live
 export const UI_SCALE = 1.5;
 /** The slider stops for the two independent scales (× on top of the baseline). */
 export const SCALE_MIN = 0.75;
-export const SCALE_MAX = 1.25;
-export const SCALE_STEP = 0.25; // → snaps to 0.75 / 1.00 / 1.25
+export const SCALE_STEP = 0.25;
+export const MENU_SCALE_MAX = 1; // menus only 0.75 / 1.00 (1.25 outgrows the capped overlay height)
+export const GAME_SCALE_MAX = 1.25; // game 0.75 / 1.00 / 1.25
 export type DockOrientation = 'bottom' | 'left' | 'right';
 
 export interface WindowPos {
@@ -74,7 +75,7 @@ export const createUiSlice: StateCreator<UiSlice, [], [], UiSlice> = (set, get) 
     openPanels: [],
     windowPos: {},
     uiScale: UI_SCALE, // fixed baseline — the user knobs are menuScale / gameScale
-    menuScale: persisted.menuScale ?? 1,
+    menuScale: Math.min(MENU_SCALE_MAX, persisted.menuScale ?? 1), // clamp a stale 1.25 down
     gameScale: persisted.gameScale ?? 1,
     dockOrientation: persisted.dockOrientation ?? 'bottom',
     retryStage: persisted.retryStage ?? false,
