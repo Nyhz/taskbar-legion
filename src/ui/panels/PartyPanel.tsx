@@ -367,9 +367,11 @@ function SharedInventory({ heroId, requestSocket }: { heroId: string; requestSoc
           else if (d.from === 'equip' && d.slot !== undefined) unequip(heroId, d.slot);
         }}
       >
-        {/* Cap the bag at 3 rows (size-32 cells + 3px gaps ⇒ 32·3 + 3·2 = 102px) and scroll
-            inside beyond that, so buying more slots never grows the panel upward. */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: 3, maxHeight: 102, overflowY: 'auto', overflowX: 'hidden', alignContent: 'start' }}>
+        {/* Cap the bag at 3 rows and scroll only beyond that, so buying more slots never grows
+            the panel upward. Each cell is 32px + a 2px border on each side = 36px tall; 3 rows
+            with 3px gaps ⇒ 36·3 + 3·2 = 114px (the old 102 forgot the borders, so it scrolled
+            at 3 rows). The 4th row of slots is what should start the scroll. */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: 3, maxHeight: 114, overflowY: 'auto', overflowX: 'hidden', alignContent: 'start' }}>
           {/* Fixed slots: render every cell up to capacity; holes stay empty in place. */}
           {Array.from({ length: cap }, (_, i) => {
             const entry = inventory[i] ?? null;
