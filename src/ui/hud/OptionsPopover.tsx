@@ -1,18 +1,27 @@
 import { useRef, useState } from 'react';
 import { resetGame, exportSave, importSave } from '@/persistence/saveManager';
+import { isTauri } from '@/platform/tauri';
+import { exportSaveToFile, readSaveFromFile } from '@/platform/saveTransfer';
 import { PALETTE } from '@/styles/palette';
 
-// Trigger a browser download of the current save as a JSON file. (Date is fine here —
-// this is a UI edge, not the deterministic sim.)
-function downloadSave(): void {
-  const json = exportSave();
+const IMPORT_CONFIRM = 'Import this save? It REPLACES your current progress and reloads.';
+
+function saveFileName(): string {
+  // Date is fine here — this is a UI edge, not the deterministic sim.
+  return `taskbar-legion-save-${new Date().toISOString().slice(0, 10)}.json`;
+}
+
+// Browser fallback (plain `npm run dev`): trigger a Blob download. Under Tauri the
+// native Save dialog is used instead — see onExport. Revoke is deferred a tick so the
+// download isn't cancelled before it starts.
+function downloadSave(json: string, name: string): void {
   const blob = new Blob([json], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `taskbar-legion-save-${new Date().toISOString().slice(0, 10)}.json`;
+  a.download = name;
   a.click();
-  URL.revokeObjectURL(url);
+  setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
 // Options popover (New Game, …). Opened from the cogwheel in the Party panel header.
@@ -21,11 +30,43 @@ function downloadSave(): void {
 export function OptionsPopover({ onClose }: { onClose: () => void }): React.JSX.Element {
   const fileRef = useRef<HTMLInputElement>(null);
 
+  // Export: native Save dialog under Tauri, Blob download in the browser dev build.
+  const onExport = (): void => {
+    const json = exportSave();
+    const name = saveFileName();
+    if (isTauri()) {
+      void exportSaveToFile(json, name).then((r) => {
+        if (r.status === 'error') window.alert(`Export failed: ${r.message}`);
+      });
+    } else {
+      downloadSave(json, name);
+    }
+  };
+
+  // Import: native Open dialog under Tauri, hidden <input file> in the browser dev build.
+  const onImport = (): void => {
+    if (!isTauri()) {
+      fileRef.current?.click();
+      return;
+    }
+    void readSaveFromFile().then(async (r) => {
+      if (r.status === 'cancelled') return;
+      if (r.status === 'error') {
+        window.alert(`Import failed: ${r.message}`);
+        return;
+      }
+      if (r.text === undefined || !window.confirm(IMPORT_CONFIRM)) return;
+      const err = await importSave(r.text); // null on success → triggers a reload
+      if (err !== null) window.alert(`Import failed: ${err}`);
+    });
+  };
+
+  // Browser-only fallback handler for the hidden file input.
   const onImportFile = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const file = e.target.files?.[0];
     e.target.value = ''; // allow re-importing the same file later
     if (file === undefined) return;
-    if (!window.confirm('Import this save? It REPLACES your current progress and reloads.')) return;
+    if (!window.confirm(IMPORT_CONFIRM)) return;
     void file.text().then(async (text) => {
       const err = await importSave(text); // null on success → triggers a reload
       if (err !== null) window.alert(`Import failed: ${err}`);
@@ -64,10 +105,10 @@ export function OptionsPopover({ onClose }: { onClose: () => void }): React.JSX.
       </div>
 
       <Section label="Backup">
-        <button onClick={downloadSave} style={backupBtn}>
+        <button onClick={onExport} style={backupBtn}>
           ⭳ Export
         </button>
-        <button onClick={() => fileRef.current?.click()} style={backupBtn}>
+        <button onClick={onImport} style={backupBtn}>
           ⭱ Import
         </button>
         <input
