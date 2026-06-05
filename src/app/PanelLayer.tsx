@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useStore } from '@/state/store';
 import { LEFT_PANELS, type PanelKey } from '@/state/slices/uiSlice';
 import { PixelWindow } from '@/ui/components/PixelWindow';
@@ -32,7 +32,6 @@ const TECH_SCALE = 1.3;
 // empty page margins (≈ party 513 + 2×340 ≈ 1200). Capped to the viewport on small screens.
 const BAND_TARGET = 1200;
 const BAND_MARGIN = 16; // keep the band off the screen edges
-const VERT_MARGIN = 8; // breathing room above the tallest panel when clamping the zoom to fit
 // Clamp the computed side-panel width so it can't collapse on a tiny band nor balloon
 // on an ultra-wide one. Side panels are unscaled (scale 1.0) so their width fills px.
 const SIDE_MIN = 120;
@@ -112,30 +111,6 @@ export function PanelLayer(): React.JSX.Element {
     return () => window.removeEventListener('resize', update);
   }, [uiZoom]);
 
-  // The band scales to the FULL uiZoom (so 1.25 is genuinely bigger). The panels rise from the
-  // strip, so at high zoom a tall one (party host / tech overlay) would grow past the top and
-  // clip its title bar — which holds the zoom control, trapping the player. Rather than shrink
-  // it, push the whole band DOWN by the overflow so the title bar stays on-screen; the bottom
-  // tucks over the strip and the panel body scrolls. (offsetHeight reflects each panel's own base
-  // `zoom` but not the band transform, so the measurement doesn't feed back into itself.)
-  const bandRef = useRef<HTMLDivElement>(null);
-  const [shift, setShift] = useState(0);
-  useLayoutEffect(() => {
-    const measure = (): void => {
-      const band = bandRef.current;
-      const zone = band?.parentElement?.clientHeight ?? 0;
-      if (band === null || zone <= 0) return;
-      let maxH = 0;
-      for (const child of Array.from(band.children) as HTMLElement[]) maxH = Math.max(maxH, child.offsetHeight);
-      const overflow = maxH * uiZoom - (zone - VERT_MARGIN);
-      const next = Math.max(0, overflow);
-      setShift((prev) => (Math.abs(prev - next) > 0.5 ? next : prev));
-    };
-    measure();
-    window.addEventListener('resize', measure);
-    return () => window.removeEventListener('resize', measure);
-  }, [entries, uiZoom, bandW]);
-
   // Party is fixed and centered; each side panel fills its half of the leftover space.
   const partyRendered = PARTY_W * PARTY_SCALE;
   const techRendered = TECH_W * TECH_SCALE;
@@ -151,16 +126,16 @@ export function PanelLayer(): React.JSX.Element {
 
   return (
     <div
-      ref={bandRef}
       style={{
         // Centre via left:50% + a margin (LAYOUT) so it stays exactly concentric with the strip;
-        // keep the transform purely scale (+ a downward translate) so it can't drift the centre
-        // the way translateX(-50%) combined with scale did.
-        position: 'absolute', left: '50%', marginLeft: -bandW / 2, top: 0, bottom: -shift, width: bandW, pointerEvents: 'none',
+        // keep the transform purely scale so it can't drift the centre the way translateX(-50%)
+        // combined with scale did.
+        position: 'absolute', left: '50%', marginLeft: -bandW / 2, top: 0, bottom: 0, width: bandW, pointerEvents: 'none',
         // Global UI zoom: scale the band from its BOTTOM-CENTRE so it grows UPWARD from the strip
-        // baseline (transform doesn't reflow the box). translateY(shift) pushes it down by the
-        // overflow when a tall panel wouldn't otherwise fit, keeping the title bar on-screen.
-        transform: `translateY(${shift}px) scale(${uiZoom})`,
+        // baseline at its FULL size (no height cap / scroll — the menu takes all the room it
+        // needs). At uiZoom=1 this is identity → crisp; the strip is capped at 1× so it never
+        // eats the space the bigger menu needs to grow into.
+        transform: `scale(${uiZoom})`,
         transformOrigin: 'bottom center',
       }}
     >

@@ -32,10 +32,14 @@ const DRAG_THRESHOLD = 4; // px of movement before a press becomes a drag (vs. a
 export function App(): React.JSX.Element {
   const stripRef = useRef<HTMLDivElement>(null);
   const gameRef = useRef<GameStrip | null>(null);
-  // The strip (canvas + HUD + overlay) stays a FIXED size at every zoom level; uiZoom scales
-  // ONLY the floating menus (PanelLayer). So the whole strip — combat scene, top bar, RETRY —
-  // is internally consistent and never resizes, and the panel zone above it stays stable.
   const uiScale = useStore((s) => s.uiScale);
+  const uiZoom = useStore((s) => s.uiZoom);
+  // Asymmetric zoom: the whole STRIP (combat canvas + top-bar HUD + RETRY overlay) scales by
+  // min(uiZoom, 1) — it shrinks below 1.0 but never grows past 1.0, so zooming UP only enlarges
+  // the menus and never crops/eats space from the strip. The menus (PanelLayer) scale by the
+  // full uiZoom. stripZoom drives the DOM HUD/overlay; stripScale drives the canvas.
+  const stripZoom = Math.min(uiZoom, 1);
+  const stripScale = uiScale * stripZoom;
   const [offline, setOffline] = useState<OfflineSummary | null>(null);
   const tauri = isTauri();
 
@@ -68,7 +72,7 @@ export function App(): React.JSX.Element {
           console.error('Save hydrate failed — starting fresh to avoid a boot loop', err);
         }
       }
-      await game.init(container, useStore.getState().uiScale, tauri);
+      await game.init(container, useStore.getState().uiScale * Math.min(useStore.getState().uiZoom, 1), tauri);
       if (cancelled) return;
       if (save !== null) {
         const elapsed = Date.now() - save.lastSavedAt;
@@ -103,8 +107,8 @@ export function App(): React.JSX.Element {
   }, [tauri]);
 
   useEffect(() => {
-    gameRef.current?.applyScale(uiScale);
-  }, [uiScale]);
+    gameRef.current?.applyScale(stripScale);
+  }, [stripScale]);
 
   // Drag the whole window around the desktop by the strip. Past the threshold we hand the
   // gesture to the OS (startDragging) so the window itself travels — freely across monitors,
@@ -158,7 +162,7 @@ export function App(): React.JSX.Element {
             bottom: 0,
             top: 0,
             transform: 'translateX(-50%)',
-            width: STRIP_LOGICAL_WIDTH * uiScale,
+            width: STRIP_LOGICAL_WIDTH * stripScale,
             display: 'flex',
             flexDirection: 'column',
             pointerEvents: tauri ? 'none' : undefined,
@@ -176,15 +180,20 @@ export function App(): React.JSX.Element {
           </div>
           {/* The strip itself (HUD + canvas) is the drag handle — grab anywhere to move
               the overlay. pointerEvents:auto re-enables it inside the transparent column. */}
-          <div style={{ pointerEvents: tauri ? 'auto' : undefined }} onPointerDown={onStripPointerDown}>
+          {/* HUD + overlay are authored at the baseline (×uiScale) size and `zoom`-scaled by
+              stripZoom so they shrink/grow WITH the strip canvas (which scales via stripScale),
+              keeping the whole strip — bar, RETRY, banners — perfectly in step. */}
+          <div style={{ width: STRIP_LOGICAL_WIDTH * uiScale, zoom: stripZoom, pointerEvents: tauri ? 'auto' : undefined }} onPointerDown={onStripPointerDown}>
             <StripHud />
           </div>
           <div
-            style={{ position: 'relative', height: STRIP_LOGICAL_HEIGHT * uiScale, width: '100%', pointerEvents: tauri ? 'auto' : undefined }}
+            style={{ position: 'relative', height: STRIP_LOGICAL_HEIGHT * stripScale, width: '100%', pointerEvents: tauri ? 'auto' : undefined }}
             onPointerDown={onStripPointerDown}
           >
             <div ref={stripRef} style={{ height: '100%', width: '100%' }} />
-            <StripOverlay />
+            <div style={{ position: 'absolute', left: 0, top: 0, width: STRIP_LOGICAL_WIDTH * uiScale, height: STRIP_LOGICAL_HEIGHT * uiScale, zoom: stripZoom, pointerEvents: 'none' }}>
+              <StripOverlay />
+            </div>
           </div>
         </div>
       </ContextMenuProvider>
