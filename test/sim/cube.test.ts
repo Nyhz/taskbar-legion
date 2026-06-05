@@ -88,22 +88,29 @@ describe('cube transfiguration', () => {
     return it;
   };
 
-  it('accepts one offensive + one defensive gem at the item tier; rejects otherwise', () => {
+  it('accepts 1 same-tier gem OR 2 one-tier-below gems (any colours); rejects otherwise', () => {
     const it = item(); // tier 3
-    expect(canTransfigure(it, [gem('ruby', 3), gem('sapphire', 3)])).toBe(true); // off + def
-    expect(canTransfigure(it, [gem('ruby', 3), gem('topaz', 3)])).toBe(false); // both offensive
-    expect(canTransfigure(it, [gem('ruby', 2), gem('sapphire', 3)])).toBe(false); // wrong tier
-    expect(canTransfigure(it, [gem('ruby', 3)])).toBe(false); // need two
-    expect(canTransfigure({ ...it, transfigured: true }, [gem('ruby', 3), gem('sapphire', 3)])).toBe(false);
+    expect(canTransfigure(it, [gem('ruby', 3)])).toBe(true); // 1 at the item's tier
+    expect(canTransfigure(it, [gem('topaz', 3)])).toBe(true); // colour doesn't matter
+    expect(canTransfigure(it, [gem('ruby', 2), gem('sapphire', 2)])).toBe(true); // 2 one tier below
+    expect(canTransfigure(it, [gem('ruby', 3), gem('sapphire', 3)])).toBe(false); // 2 at the item tier is not an option
+    expect(canTransfigure(it, [gem('ruby', 2)])).toBe(false); // 1 below tier is not an option
+    expect(canTransfigure(it, [gem('ruby', 1), gem('ruby', 1)])).toBe(false); // 2, but wrong tier
+    expect(canTransfigure(it, [])).toBe(false); // nothing
+    expect(canTransfigure({ ...it, transfigured: true }, [gem('ruby', 3)])).toBe(false);
   });
 
-  it('rolls a NEW stat (not the base or an existing affix), deterministically', () => {
+  it('rolls a NEW stat (not the base or ANY existing affix — incl. the one replaced), deterministically', () => {
     const it = item();
     const taken = new Set([...it.baseAffix.map((b) => b.key), ...it.stats.map((s) => s.key)]);
-    const rolled = transfigureRoll(it, 0);
-    expect(rolled).not.toBeNull();
-    expect(taken.has(rolled!.key)).toBe(false); // genuinely different stat
-    expect(transfigPool(it)).toContain(rolled!.key);
-    expect(transfigureRoll(it, 0)).toEqual(rolled); // same item+affix → same result
+    // Every affix index must roll into a genuinely different stat — never the same one back.
+    it.stats.forEach((replaced, i) => {
+      const rolled = transfigureRoll(it, i);
+      expect(rolled).not.toBeNull();
+      expect(rolled!.key).not.toBe(replaced.key); // can't roll the same stat it replaces
+      expect(taken.has(rolled!.key)).toBe(false); // nor any other current/base stat
+      expect(transfigPool(it)).toContain(rolled!.key);
+      expect(transfigureRoll(it, i)).toEqual(rolled); // same item+affix → same result
+    });
   });
 });

@@ -54,7 +54,7 @@ export function getBonuses(
         case 'gemDropMult': b.gemDropMult += e.value * rank; break;
         case 'chestStorage': b.chestStorageBonus[e.type] += e.value * rank; break;
         case 'unlockAutoOpen': b.autoOpenUnlocked = true; break;
-        case 'autoOpenReduce': b.autoOpenReduceMs += e.value * rank; break;
+        case 'autoOpenReduce': b.autoOpenReduceMs += e.value * rank; break; // 15m base − 45s/rank (12 ranks → 6m floor)
         case 'offlineMult': b.offlineMult += e.value * rank; break;
         case 'partySlot': b.partySlots = 1 + rank; break; // single endless node: rank ⇒ extra active slots
         case 'synthDoubleChance': b.synthDoubleChance += e.value * rank; break;

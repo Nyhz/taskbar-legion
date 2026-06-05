@@ -22,6 +22,8 @@ let clickEl: HTMLAudioElement | null = null;
 let available = true; // flips false once the source errors
 let prefs: AudioPrefs = { muted: false, volume: DEFAULT_VOLUME };
 let gestureArmed = false;
+let gestureUnlock: (() => void) | null = null; // the armed first-gesture handler (so we can disarm it)
+let silenced = false; // true once the game starts → no replay (not even from a stray gesture)
 const listeners = new Set<() => void>();
 
 // Same defensive feature-detect as settingsShim — some node runtimes expose a partial
@@ -63,7 +65,7 @@ function notify(): void {
 }
 
 function tryPlay(): void {
-  if (el === null || !available || prefs.muted) return;
+  if (el === null || !available || prefs.muted || silenced) return;
   el.play().catch(() => {
     // autoplay still blocked, or no source — a gesture (armGestureUnlock) will retry
   });
@@ -72,6 +74,7 @@ function tryPlay(): void {
 /** Create the audio element (idempotent) and attempt playback. */
 export function initTitleMusic(): void {
   if (typeof Audio === 'undefined') return; // node / SSR guard
+  silenced = false; // (re-)entering the title screen: playback is allowed again
   prefs = loadPrefs();
   if (el === null) {
     el = new Audio(musicUrl);
@@ -107,13 +110,22 @@ export function armGestureUnlock(): void {
   if (gestureArmed || typeof window === 'undefined') return;
   gestureArmed = true;
   const unlock = (): void => {
-    window.removeEventListener('pointerdown', unlock);
-    window.removeEventListener('keydown', unlock);
-    gestureArmed = false;
+    disarmGestureUnlock();
     tryPlay();
   };
+  gestureUnlock = unlock;
   window.addEventListener('pointerdown', unlock, { once: true });
   window.addEventListener('keydown', unlock, { once: true });
+}
+
+/** Remove the armed first-gesture listener so a later click can't (re)start the music. */
+function disarmGestureUnlock(): void {
+  if (gestureUnlock !== null && typeof window !== 'undefined') {
+    window.removeEventListener('pointerdown', gestureUnlock);
+    window.removeEventListener('keydown', gestureUnlock);
+  }
+  gestureUnlock = null;
+  gestureArmed = false;
 }
 
 export function isMusicMuted(): boolean {
@@ -145,8 +157,15 @@ export function setVolume(volume: number): void {
   notify();
 }
 
-/** Pause + rewind immediately. */
+/** Pause + rewind immediately, and HARD-stop any further title playback (disarm the gesture
+ *  unlock + silence) so once the game starts nothing can relaunch the track. */
 export function stopMusic(): void {
+  silenced = true;
+  disarmGestureUnlock();
+  if (fadeTimer !== undefined) {
+    window.clearInterval(fadeTimer);
+    fadeTimer = undefined;
+  }
   if (el === null) return;
   el.pause();
   try {
@@ -154,7 +173,7 @@ export function stopMusic(): void {
   } catch {
     // not yet seekable — harmless
   }
-  el.volume = prefs.volume; // restore for any later replay
+  el.volume = prefs.volume; // restore for any later replay (after a fresh initTitleMusic)
 }
 
 let fadeTimer: number | undefined;
@@ -162,6 +181,11 @@ let fadeTimer: number | undefined;
 /** Ramp the music volume to 0 over `durationMs`, then stop. Used when leaving the title for
  *  the game so the track bows out smoothly instead of cutting off. */
 export function fadeOutMusic(durationMs = 700): void {
+  // Hard-stop replay up front (disarm the first-gesture unlock + silence) so a click during
+  // the fade — e.g. the very Start press — can't kick the track back on; the fade itself
+  // drives el.volume directly, so silencing here doesn't interrupt it.
+  silenced = true;
+  disarmGestureUnlock();
   if (el === null || typeof window === 'undefined') {
     stopMusic();
     return;

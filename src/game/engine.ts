@@ -125,6 +125,10 @@ export class GameEngine {
     const draw = { seed: this.sim.world.seed, n: this.lootDraws };
     const loot = openType(this.sim.world, type, draw, this.bonuses);
     this.lootDraws = draw.n;
+    // Manually cracking chests RESETS the auto-open countdown (it only runs when chests have
+    // sat unopened for the full interval) — so a player who tends their loot pushes it back.
+    const store = useStore.getState();
+    if (store.autoOpen.unlocked) store.setAutoOpen({ unlocked: true, lastRunAt: this.sim.world.tick * TICK_MS });
     this.mirror();
     return { items: loot.items, gems: loot.gems };
   }

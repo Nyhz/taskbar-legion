@@ -1,5 +1,3 @@
-import type { GemKey } from './gems';
-
 // Cube crafting config (data-driven; sim/cube.ts holds the pure logic).
 
 // ── Alchemy: melt items into gold ──
@@ -14,8 +12,6 @@ export const ALCHEMY_TIER_MULT = 2.2;
 export const SYNTH_DOUBLE_TIER_CHANCE = 0.05;
 
 // ── Transfiguration: re-roll ONE affix on a gear piece ──
-// Cost is SLOT-INDEPENDENT (armor/jewelry are flex, so a slot→color rule breaks):
-// one gem from each family, BOTH at the item's tier. This consumes all six colors
-// over time and never depends on whether the slot is offensive or defensive.
-export const TRANSFIG_OFFENSIVE_GEMS: GemKey[] = ['ruby', 'topaz', 'amethyst'];
-export const TRANSFIG_DEFENSIVE_GEMS: GemKey[] = ['sapphire', 'emerald', 'diamond'];
+// Cost is colour-AGNOSTIC and tiered (see sim/cube.ts `transfigCostOptions`): pay either
+// ONE gem at the item's tier, or TWO gems one tier below. No offensive/defensive split —
+// any gem of the right tier works, which keeps the recipe simple and uses every colour.

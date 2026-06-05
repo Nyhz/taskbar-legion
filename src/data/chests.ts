@@ -40,6 +40,7 @@ export const CHEST_CONFIG: ChestDropConfig = {
 
 export const CHEST_TYPES: ChestType[] = ['normal', 'stageBoss', 'zoneBoss'];
 
-/** Auto-open base interval (10 min); reducible by tech down to this floor. */
-export const AUTO_OPEN_BASE_INTERVAL_MS = 600_000;
-export const AUTO_OPEN_FLOOR_MS = 60_000;
+/** Auto-open interval: 15-min base, shaved 45s per rank by the `auto_open` tech (12 ranks)
+ *  down to the 6-min floor (15m − 12×45s). */
+export const AUTO_OPEN_BASE_INTERVAL_MS = 900_000; // 15 min
+export const AUTO_OPEN_FLOOR_MS = 360_000; // 6 min (15m − 12×45s)
