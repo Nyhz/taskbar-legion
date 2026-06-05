@@ -100,9 +100,8 @@ export function PanelLayer(): React.JSX.Element {
 
   // The band targets BAND_TARGET px (centered on the viewport), capped to the viewport on
   // small screens — so the side panels fill the leftover space beside the fixed party menu.
-  // The whole band is rendered inside a `zoom: uiZoom` wrapper, so all the layout below stays
-  // in BASE coordinates and the user zoom scales it uniformly. The viewport (real px) therefore
-  // measures window.innerWidth / uiZoom in those base coords.
+  // The band is laid out in BASE px and then transform-scaled by uiZoom, so the rendered width
+  // is bandW * uiZoom. Cap bandW so that scaled width still fits the viewport (÷ uiZoom).
   const uiZoom = useStore((s) => s.uiZoom);
   const [bandW, setBandW] = useState(BAND_TARGET);
   useEffect(() => {
@@ -128,8 +127,13 @@ export function PanelLayer(): React.JSX.Element {
   return (
     <div
       style={{
-        position: 'absolute', left: '50%', transform: 'translateX(-50%)', top: 0, bottom: 0,
-        width: bandW, pointerEvents: 'none', zoom: uiZoom,
+        position: 'absolute', left: '50%', top: 0, bottom: 0, width: bandW, pointerEvents: 'none',
+        // Global UI zoom: scale the whole band from its BOTTOM-CENTRE so it stays centred on the
+        // strip and grows UPWARD from the strip baseline (transform doesn't reflow the box, so it
+        // can't overflow top+bottom the way `zoom` on a top:0/bottom:0 element did). At uiZoom=1
+        // this is identity → crisp; the panels' own `zoom` handles the base sizing.
+        transform: `translateX(-50%) scale(${uiZoom})`,
+        transformOrigin: 'bottom center',
       }}
     >
       {entries.map(({ key, phase }) => {
