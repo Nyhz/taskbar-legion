@@ -32,6 +32,9 @@ const WHITE = 0xffffff;
 /** Classify one active effect into its visual category (null = no overlay of its own —
  *  e.g. an instant damage/heal effect, or a pure tag). */
 export function categorize(e: ActiveEffect): AuraCategory | null {
+  // Battle Enrage gets its own dedicated red aura (HeroSprite), so suppress the generic
+  // offense overlay its stat buffs would otherwise add — keeps the ult's signal unique.
+  if (e.defKey === 'buff_enrage_cdr' || e.defKey === 'buff_enrage_as') return null;
   const def = effectDef(e.defKey);
   const k = def.kind;
   switch (k.type) {

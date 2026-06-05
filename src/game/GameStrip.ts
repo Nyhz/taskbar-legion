@@ -546,9 +546,9 @@ export class GameStrip {
         if (b !== null) this.worldFx.arrowRain(b.cx, groundY, b.halfW);
         return;
       }
-      case 'ranger_frozentrap': { // Frozen Trap → an icy pool under the wave (4s slow)
+      case 'ranger_frozentrap': { // Caltrops → a hazard field under the wave (5s DoT)
         const b = this.bandOf(this.enemySprites);
-        if (b !== null) this.worldFx.frostPool(b.cx, groundY, b.halfW, 4000);
+        if (b !== null) this.worldFx.frostPool(b.cx, groundY, b.halfW, 5000);
         return;
       }
       case 'priest_nova': { // Holy Nova → a golden burst through the wave

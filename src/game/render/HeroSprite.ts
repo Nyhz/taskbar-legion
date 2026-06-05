@@ -7,7 +7,7 @@ import { type AttackStyle, RESPAWN_MS } from '@/data/field';
 import { hexToNum } from '@/styles/palette';
 import { drawHero } from './textures';
 import { drawSwing, SWING_MS } from './swing';
-import { isInvulnerable, INVULN_YELLOW } from './fx';
+import { isInvulnerable, INVULN_YELLOW, isEnraged, ENRAGE_RED } from './fx';
 import { auraCategories, drawCategoryAuras, totalShield, drawShieldBar } from './effectAuras';
 import { SpriteBody } from './SpriteBody';
 import type { Texture } from 'pixi.js';
@@ -457,6 +457,13 @@ export class HeroSprite extends Container {
       const pulse = 0.16 + 0.1 * Math.abs(Math.sin(this.elapsed / 200));
       this.aura.circle(cx, cy, 16).fill({ color: INVULN_YELLOW, alpha: pulse });
       this.aura.circle(cx, cy, 16).stroke({ color: INVULN_YELLOW, width: 1.5, alpha: 0.75 });
+    }
+    // Battle Enrage (Priest ult): a pulsing red aura on every party member under the buff —
+    // a unique, unmistakable marker that the ultimate is active.
+    if (isEnraged(c.effects)) {
+      const pulse = 0.2 + 0.14 * Math.abs(Math.sin(this.elapsed / 160));
+      this.aura.circle(cx, cy, 15).fill({ color: ENRAGE_RED, alpha: pulse });
+      this.aura.circle(cx, cy, 15).stroke({ color: ENRAGE_RED, width: 1.5, alpha: 0.8 });
     }
     // Bold category overlays: green up-arrows (offense buff), dancing shields (defense
     // buff), red down-arrows (debuff) — drawn over the body's vertical span.

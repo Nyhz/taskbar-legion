@@ -54,3 +54,12 @@ export function isInvulnerable(effects: readonly ActiveEffect[]): boolean {
 
 /** Yellow used for the Last Stand invulnerability shield + INVULNERABLE callout. */
 export const INVULN_YELLOW = hexToNum('#ffe14d');
+
+/** True while the Priest's Battle Enrage ultimate buff is on the hero — drives the unique
+ *  red aura that marks every party member caught in the enrage. */
+export function isEnraged(effects: readonly ActiveEffect[]): boolean {
+  return effects.some((e) => e.defKey === 'buff_enrage_cdr' || e.defKey === 'buff_enrage_as');
+}
+
+/** Red used for the Battle Enrage party aura. */
+export const ENRAGE_RED = hexToNum('#ff3b30');

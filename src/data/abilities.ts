@@ -15,6 +15,11 @@ export interface AbilityPower {
   coeff: number; // multiplier at rank 1 (× attackDamage for damage/dot, × target maxHP for heal/hot/shield)
   coeffPerRank?: number; // added to coeff per rank beyond the first
   canCrit?: boolean; // instant `damage` effects may crit (uses caster crit stats)
+  // AoE splash for a SINGLE-TARGET damage ability: every OTHER living enemy also takes
+  // splashCoeff (× attackDamage). Used by Explosive Arrow — the front enemy takes the
+  // full `coeff`, the rest of the wave takes the reduced splash.
+  splashCoeff?: number;
+  splashCoeffPerRank?: number;
 }
 
 export interface AppliedEffect {
@@ -172,23 +177,20 @@ export const ABILITIES: Record<string, AbilityDef> = {
     castCondition: 'enemyPresent', power: { coeff: 1.2, coeffPerRank: 0.4, canCrit: true },
   },
   ranger_focus: {
-    key: 'ranger_focus', name: 'Hunter’s Focus', icon: 'aim',
-    desc: 'Take aim — a window of greatly increased crit chance and crit damage.',
-    cooldownMs: 18000, target: 'self',
-    // buff_focus_crit 15%→35% crit chance (+5/rank) + buff_focus_critdmg 30%→70% crit
-    // damage (+10/rank). 8s window — pairs with banked Aimed Shots.
-    applies: [
-      { effectKey: 'buff_focus_crit', valuePerRank: 5 },
-      { effectKey: 'buff_focus_critdmg', valuePerRank: 10 },
-    ],
+    key: 'ranger_focus', name: 'Explosive Arrow', icon: 'explosion',
+    desc: 'A detonating arrow: a heavy hit on the front enemy that blasts the rest of the wave for less.',
+    cooldownMs: 18000, target: 'frontEnemy', applies: [{ effectKey: 'fx_damage' }],
+    // Front enemy 1.6×→3.2× AD (+0.4/rank, can crit); splash 0.6×→1.2× AD (+0.15/rank) to
+    // every OTHER enemy in the wave.
     castCondition: 'enemyPresent',
+    power: { coeff: 1.6, coeffPerRank: 0.4, canCrit: true, splashCoeff: 0.6, splashCoeffPerRank: 0.15 },
   },
   ranger_frozentrap: {
-    key: 'ranger_frozentrap', name: 'Frozen Trap', icon: 'frost',
-    desc: 'A spreading ice pool under the wave — enemies are slowed for 4s.',
-    cooldownMs: 20000, target: 'allEnemies', applies: [{ effectKey: 'debuff_frozen', durationMsOverride: 4000 }],
-    // debuff_frozen slows enemy attack + movement: 40%→80% (−10/rank).
-    castCondition: 'enemyPresent', rankScaling: { perRank: { value: -10 } },
+    key: 'ranger_frozentrap', name: 'Caltrops', icon: 'dot',
+    desc: 'Scatter caltrops beneath the wave — a spreading field that bleeds every enemy for several seconds.',
+    cooldownMs: 20000, target: 'allEnemies', applies: [{ effectKey: 'fx_dot', durationMsOverride: 5000 }],
+    // Wave DoT: total damage per enemy over 5s = 0.6×→1.4× AD (+0.2/rank).
+    castCondition: 'enemyPresent', power: { coeff: 0.6, coeffPerRank: 0.2 },
   },
 
   // ───────────────────────── Enemies ─────────────────────────

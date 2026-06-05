@@ -56,13 +56,13 @@ export function normalAttackDamage(caster: Combatant, cs: EffectiveStats): numbe
  *  Damage/DoT are a multiple of the caster's normal attack (DoT = TOTAL over its
  *  duration, divided into per-second in applyToTarget). Heal/HoT/Shield are a
  *  fraction of the target's max HP (HoT = TOTAL over its duration). */
-function effectMagnitude(ability: AbilityDef, def: EffectDef, rank: number, cs: EffectiveStats, target: Combatant, caster: Combatant, perRankOverride?: number): number {
+function effectMagnitude(ability: AbilityDef, def: EffectDef, rank: number, cs: EffectiveStats, target: Combatant, caster: Combatant, perRankOverride?: number, coeffOverride?: number): number {
   const steps = Math.max(0, rank - 1);
   const t = def.kind.type;
   if (t === 'damage' || t === 'dot') {
     const p = ability.power;
     if (p === undefined) return 0;
-    const coeff = p.coeff + (p.coeffPerRank ?? 0) * steps;
+    const coeff = coeffOverride ?? p.coeff + (p.coeffPerRank ?? 0) * steps;
     return coeff * normalAttackDamage(caster, cs);
   }
   if (t === 'heal' || t === 'hot' || t === 'shield') {
@@ -222,10 +222,11 @@ function applyToTarget(
   S: number,
   rng: Rng,
   events: CombatEvent[],
+  coeffOverride?: number,
 ): void {
   const kind = def.kind.type;
   const duration = effectDuration(ability, def, rank, durationOverride);
-  let value = effectMagnitude(ability, def, rank, cs, target, caster, perRankOverride);
+  let value = effectMagnitude(ability, def, rank, cs, target, caster, perRankOverride, coeffOverride);
   // DoT/HoT coeffs are TOTALS over the effect's duration; store as per-second
   // (what dotDps/hotHps sum each tick).
   if (kind === 'dot' || kind === 'hot') value /= Math.max(0.001, duration / 1000);
@@ -324,6 +325,20 @@ export function castReadyAbilities(
       if (applied.chance !== undefined && !rng.chance(applied.chance)) continue;
       const def = effectDef(applied.effectKey);
       for (const t of targets) applyToTarget(caster, ability, def, rank, cs, t, applied.durationMsOverride, applied.valuePerRank, S, rng, events);
+    }
+    // AoE splash: a single-target damage ability with power.splashCoeff also blasts every
+    // OTHER living enemy for the reduced splash coeff (Explosive Arrow's detonation).
+    const splashBase = ability.power?.splashCoeff;
+    if (splashBase !== undefined) {
+      const splashCoeff = splashBase + (ability.power?.splashCoeffPerRank ?? 0) * Math.max(0, rank - 1);
+      const dmgApplied = ability.applies.find((a) => effectDef(a.effectKey).kind.type === 'damage');
+      if (dmgApplied !== undefined) {
+        const dmgDef = effectDef(dmgApplied.effectKey);
+        for (const e of enemies) {
+          if (!e.alive || targets.includes(e)) continue;
+          applyToTarget(caster, ability, dmgDef, rank, cs, e, dmgApplied.durationMsOverride, dmgApplied.valuePerRank, S, rng, events, splashCoeff);
+        }
+      }
     }
     if (ability.charge !== undefined) {
       (caster.charges ??= {})[ability.key] = 0; // spent — rebuild via auto-attacks
