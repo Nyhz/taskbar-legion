@@ -299,6 +299,7 @@ export class EnemySprite extends Container {
       cx: 0,
       topY: this.barY + 8,
       botY: FEET_OFFSET,
+      cy: this.cy, // corrected body centre (auraFrac) — keeps the mark reticle on the body
       halfW: Math.max(this.barW * 0.45, 9 * s),
       scale: s,
       elapsed: this.elapsed,
@@ -309,7 +310,7 @@ export class EnemySprite extends Container {
    *  the ranger's ult crosshair flies in and locks onto this exact spot. */
   markPoint(): { x: number; y: number; radius: number } {
     const r = this.auraRegion();
-    return { x: this.x, y: this.y + (r.topY + r.botY) / 2, radius: crosshairRadius(r) };
+    return { x: this.x, y: this.y + r.cy, radius: crosshairRadius(r) };
   }
 
   private drawAura(c: Combatant): void {
