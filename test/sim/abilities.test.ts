@@ -63,7 +63,7 @@ describe('ability mechanics', () => {
     for (const e of [e1, e2]) {
       const dot = e.effects.find((x) => x.defKey === 'fx_dot');
       expect(dot).toBeDefined();
-      expect(dot?.value).toBeCloseTo(12, 1); // 0.6×100 total ÷ 5s = 12/s
+      expect(dot?.value).toBeCloseTo(15, 1); // 0.6×100 total ÷ 4s = 15/s
     }
   });
 
@@ -191,7 +191,7 @@ describe('per-ability cooldowns', () => {
     expect(ABILITIES.ranger_fast_fire?.cooldownMs).toBe(24_000);
     expect(ABILITIES.ranger_multishot?.cooldownMs).toBe(20_000);
     expect(ABILITIES.ranger_focus?.cooldownMs).toBe(18_000);
-    expect(ABILITIES.ranger_frozentrap?.cooldownMs).toBe(20_000);
+    expect(ABILITIES.ranger_frozentrap?.cooldownMs).toBe(24_000);
     expect(ABILITIES.ranger_aimedshot?.charge).toEqual({ perAttack: 1, toCast: 10 }); // charge-gated, no cd
   });
 

@@ -187,9 +187,9 @@ export const ABILITIES: Record<string, AbilityDef> = {
   },
   ranger_frozentrap: {
     key: 'ranger_frozentrap', name: 'Caltrops', icon: 'dot',
-    desc: 'Scatter caltrops beneath the wave — a spreading field that bleeds every enemy for several seconds.',
-    cooldownMs: 20000, target: 'allEnemies', applies: [{ effectKey: 'fx_dot', durationMsOverride: 5000 }],
-    // Wave DoT: total damage per enemy over 5s = 0.6×→1.4× AD (+0.2/rank).
+    desc: 'Hurl a spray of caltrops that spread across the ground ahead — bleeding every enemy in the field for 4s.',
+    cooldownMs: 24000, target: 'allEnemies', applies: [{ effectKey: 'fx_dot', durationMsOverride: 4000 }],
+    // Wave DoT over 4s: total damage per enemy = 0.6×→1.4× AD (+0.2/rank), dealt in 100ms ticks.
     castCondition: 'enemyPresent', power: { coeff: 0.6, coeffPerRank: 0.2 },
   },
 
