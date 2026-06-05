@@ -48,6 +48,20 @@ describe('saveManager', () => {
     expect(migrate('garbage')).toBeNull();
   });
 
+  it('migrate rejects a version:1 save missing required fields (no boot-loop brick)', () => {
+    // A truncated / hand-edited / foreign file that happens to carry version:1 must be
+    // rejected here rather than crash hydrate on boot. Each required field, when dropped,
+    // makes the whole save invalid.
+    for (const field of ['roster', 'unlockedClasses', 'inventory', 'chests', 'progress', 'pets', 'settings', 'techTree'] as const) {
+      const broken: Record<string, unknown> = { ...fixture() };
+      delete broken[field];
+      expect(migrate(broken)).toBeNull();
+    }
+    // A wrong type for a required container is also rejected.
+    expect(migrate({ ...fixture(), roster: 'nope' })).toBeNull();
+    expect(migrate({ ...fixture(), progress: null })).toBeNull();
+  });
+
   it('migrate remaps a legacy "warrior" save → "knight" (roster, unlocks, abilities, items)', () => {
     const legacy = {
       ...fixture(),
