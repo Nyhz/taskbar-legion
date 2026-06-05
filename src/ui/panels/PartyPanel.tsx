@@ -10,6 +10,7 @@ import { SLOT_ICON } from '@/ui/icons';
 import { SLOTS, SLOT_KEYS, slotFamily, type SlotKey } from '@/data/itemSlots';
 import { inventorySlotCost, INVENTORY_MAX_SLOTS } from '@/data/inventory';
 import { ItemSlot } from '@/ui/components/ItemSlot';
+import { HoverTip } from '@/ui/components/HoverTip';
 import { countFilled, findEntry } from '@/sim/slots';
 import { AbilityBar } from '@/ui/panels/party/AbilityBar';
 import { HeroIdleSprite } from '@/ui/components/HeroIdleSprite';
@@ -158,10 +159,10 @@ function PaperDoll({ heroId, requestSocket, requestSocketChoice }: { heroId: str
         <HeroIdleSprite classKey={hero.classKey} width={112} height={116} />
         <div style={{ color: PALETTE.parchment, fontSize: 11 }}>
           Lv.{hero.level} · {def.role} ·{' '}
-          <span title={`Avg ilvl: ${avgIlvl}`}>iL {avgIlvl}</span>{' '}
-          <span title={gearQuality.tip} style={{ color: gearQuality.color, fontWeight: 700, cursor: 'help' }}>
-            {gearQuality.glyph}
-          </span>
+          <HoverTip text={`Avg ilvl: ${avgIlvl}`}>iL {avgIlvl}</HoverTip>{' '}
+          <HoverTip text={gearQuality.tip}>
+            <span style={{ color: gearQuality.color, fontWeight: 700 }}>{gearQuality.glyph}</span>
+          </HoverTip>
         </div>
         <div style={{ width: '100%', height: 5, background: PALETTE.bgInset, border: `1px solid ${PALETTE.ink}` }}>
           <div style={{ width: `${Math.min(100, (expInto / Math.max(1, expNeed)) * 100)}%`, height: '100%', background: PALETTE.xpBlue }} />
