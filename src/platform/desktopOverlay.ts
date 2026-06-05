@@ -1,5 +1,6 @@
 import type { Window } from '@tauri-apps/api/window';
 import { isTauri } from './tauri';
+import { isItemDragging } from './dragState';
 import { saveGame } from '@/persistence/saveManager';
 
 // Turns the Tauri webview into the ambient overlay: a transparent, borderless,
@@ -196,7 +197,10 @@ async function startClickThrough(win: Window): Promise<void> {
         const cursor = await cursorPosition();
         const x = (cursor.x - origin.x) / scale;
         const y = (cursor.y - origin.y) / scale;
-        const ignore = isBackground(document.elementFromPoint(x, y));
+        // While an item is being dragged, PIN the window interactive — the drag path crosses
+        // pointer-events:none gaps between panels, and toggling click-through mid-gesture makes
+        // the webview drop the drag. Otherwise fall back to the hit-test under the cursor.
+        const ignore = isItemDragging() ? false : isBackground(document.elementFromPoint(x, y));
         if (ignore !== ignoring) {
           ignoring = ignore;
           await win.setIgnoreCursorEvents(ignore);
