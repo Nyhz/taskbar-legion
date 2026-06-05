@@ -64,7 +64,7 @@ export function UltimateSlot({ classKey, level }: { classKey: string; level: num
             color: unlocked ? PALETTE.hpGreen : PALETTE.parchment, whiteSpace: 'nowrap',
           }}
         >
-          {unlocked ? `✓${ult.unlockLevel}` : `Lv${ult.unlockLevel}`}
+          {unlocked ? '✓' : `Lv${ult.unlockLevel}`}
         </span>
       </div>
 

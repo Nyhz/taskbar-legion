@@ -40,7 +40,7 @@ function QuitConfirmModal({ onClose }: { onClose: () => void }): React.JSX.Eleme
       style={{
         position: 'fixed',
         inset: 0,
-        background: 'rgba(0,0,0,0.55)',
+        background: 'transparent', // no dark backdrop — this is a transparent desktop overlay
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
