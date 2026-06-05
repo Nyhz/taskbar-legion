@@ -33,10 +33,15 @@ const FEET_OFFSET = 21;
 // Per-role render size: the figure SCALE (on the 100px frame), the figure height above the
 // feet (px in-frame, to place the HP bar just over the head), and the HP-bar width. World
 // bosses are very big; stage bosses bigger than trash but smaller than world bosses.
-const SIZE: Record<EnemySizeClass, { scale: number; figH: number; barW: number }> = {
-  normal: { scale: 2.7, figH: 28, barW: 20 },
-  stageBoss: { scale: 4.4, figH: 30, barW: 48 },
-  worldBoss: { scale: 5.8, figH: 56, barW: 72 }, // ~2× the prior world-boss scale — a towering wall
+// figH is GENEROUS (clears weapons/mounts) so the HP bar floats clear above the head.
+// auraFrac is the fraction of figH·scale ABOVE the feet where the body-centred overlays
+// (enrage aura, cast burst, teleport ring) sit. World bosses ride big mounts, so their
+// generous figH overshoots the actual body — a smaller frac drops those overlays onto the
+// creature instead of leaving them hovering in the air above it.
+const SIZE: Record<EnemySizeClass, { scale: number; figH: number; barW: number; auraFrac: number }> = {
+  normal: { scale: 2.7, figH: 28, barW: 20, auraFrac: 0.5 },
+  stageBoss: { scale: 4.4, figH: 30, barW: 48, auraFrac: 0.5 },
+  worldBoss: { scale: 5.8, figH: 56, barW: 72, auraFrac: 0.26 }, // ~2× scale; aura/cast hug the body, not the generous box
 };
 
 export class EnemySprite extends Container {
@@ -75,7 +80,7 @@ export class EnemySprite extends Container {
     this.barW = sz.barW;
     // Feet at FEET_OFFSET (on the party's ground line); figure rises figH·scale above that.
     this.barY = FEET_OFFSET - sz.figH * sz.scale - 6;
-    this.cy = FEET_OFFSET - (sz.figH * sz.scale) / 2;
+    this.cy = FEET_OFFSET - sz.figH * sz.scale * sz.auraFrac;
     this.auraScale = Math.max(1, sz.scale / 1.5);
 
     this.spriteBody = spec.frames !== null ? new SpriteBody(spec.frames) : null;
