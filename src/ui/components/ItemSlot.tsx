@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import type { ItemInstance } from '@/sim/items';
+import type { RoleScores, RoleKey } from '@/sim/roleScore';
 import type { GemInstance } from '@/data/gems';
 import { GEMS } from '@/data/gems';
 import { tierStyle } from '@/ui/tierStyle';
@@ -34,6 +35,8 @@ export function ItemSlot({
   dragData,
   selected = false,
   badge,
+  roleImpact,
+  roleKeys,
 }: {
   item: ItemInstance | null;
   /** a loose gem occupying this cell instead of an item (inventory/stash). */
@@ -59,6 +62,11 @@ export function ItemSlot({
   dragData?: string;
   selected?: boolean;
   badge?: ReactNode;
+  /** Net DPS/Tanking/Healing % this item would net the hero vs the equipped piece it's
+   *  compared against. Computed lazily (only the hovered cell renders its tooltip). */
+  roleImpact?: (newItem: ItemInstance, equipped: ItemInstance) => RoleScores;
+  /** Which role rows to show (per hero class) — hides roles the hero doesn't perform. */
+  roleKeys?: RoleKey[];
 }): React.JSX.Element {
   const rootRef = useRef<HTMLDivElement>(null);
   const [tip, setTip] = useState<{ left: number; top: number } | null>(null);
@@ -204,7 +212,7 @@ export function ItemSlot({
                 // equipped card(s) so the two can be read directly against each other.
                 <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
                   <TipColumn caption="New">
-                    <ItemTooltip item={item} compareTo={compare[0]} locked={locked} wrongClass={wrongClass} />
+                    <ItemTooltip item={item} compareTo={compare[0]} locked={locked} wrongClass={wrongClass} roleDelta={compare[0] !== undefined ? roleImpact?.(item, compare[0]) : undefined} roleKeys={roleKeys} />
                   </TipColumn>
                   {compare.map((eq, i) => (
                     <TipColumn key={eq.id} caption={compare.length > 1 ? `Equipped ${i + 1}` : 'Equipped'}>

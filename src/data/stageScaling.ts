@@ -322,6 +322,13 @@ export function mitigation(armorEff: number, S: number): number {
   return Math.min(MAX_ARMOR_DR, armorEff / denom);
 }
 
+/** The on-level armor/MR for stage S — the defense value that yields ~50% mitigation
+ *  (the design anchor: DR = armor/(armor + C_MIT·Φ) = 50% when armor = C_MIT·Φ). The stats
+ *  UI compares a hero's actual armor/MR to this to flag under-/over-defended for the stage. */
+export function expectedDefense(S: number): number {
+  return C_MIT * phi(S) ** MIT_EXP;
+}
+
 // ── Item level / level-curve spine (the rebalance) ──
 // ilvl is a PURE POWER source (item flat stats scale Φ^EG_FLAT of their ilvl). There is
 // NO equip-gate (PROGRESSION §0: any hero equips any item; only the weapon/off-hand class

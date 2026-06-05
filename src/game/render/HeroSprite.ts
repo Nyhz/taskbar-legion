@@ -35,6 +35,13 @@ const TP_BEAM = hexToNum('#fff2a8'); // teleport upward beam / sparks
 const TP_RING = hexToNum('#ffe27a'); // teleport charge ring
 const RECRUIT_SPAWN_MS = 650; // first-recruit materialise-in (the teleport-IN half of a respawn)
 
+// "Ghost"/delayed-damage HP bar: when a hero takes a hit, the chunk it's about to lose
+// lingers in bright red, then drains down to the real value — so you can read how much a
+// single hit cost. Held briefly for legibility, then drained at a steady fraction/ms.
+const GHOST_RED = hexToNum('#ff3b3b'); // the about-to-be-lost slice
+const GHOST_HOLD_MS = 240; // pause before the red slice starts draining
+const GHOST_DRAIN_PER_MS = 0.0016; // bar-fractions drained per ms (~full bar in ~625ms)
+
 // Overhead HUD geometry (HP bar, buff/debuff pips, ability-cooldown pips). The bigger
 // sprite knight needs a larger HUD lifted clear of its head; the small procedural
 // bodies keep the original tight layout. All coords are container-local (origin at the
@@ -113,6 +120,9 @@ export class HeroSprite extends Container {
   private castMs = 0;
   private castColor = 0xffffff;
   private elapsed = 0;
+  private hpGhost = 1; // lagging HP fraction → the red "about to lose" slice trails the real bar
+  private prevHpFrac = 1; // last frame's real HP fraction → detects the exact frame a hit lands
+  private ghostHoldMs = 0; // >0 while the red slice is held still before it starts draining
   private moveGraceMs = 0; // >0 while recently moving → play walk; 0 → hold idle pose
   private teleporting = false;
   private teleportK = 1; // 1 = fully present, 0 = fully dematerialised (mid-teleport)
@@ -328,11 +338,30 @@ export class HeroSprite extends Container {
       this.hpBar.rect(bx, h.barY, Math.max(1, Math.round(h.barW * prog)), h.barH).fill({ color: hexToNum('#4a78d6') });
       this.respawnLabel.text = `${Math.ceil((c.respawnMs ?? 0) / 1000)}s`;
       this.respawnLabel.visible = true;
+      this.hpGhost = prog; // don't carry a stale red slice into/out of the respawn bar
+      this.ghostHoldMs = 0;
     } else {
       const frac = c.maxHp > 0 ? Math.max(0, Math.min(1, c.hp / c.maxHp)) : 0;
+      // Advance the ghost: heals (or first frame) snap it up; a drop refreshes the hold,
+      // then it drains toward the real fraction so the lost slice reads as a red chunk.
+      if (frac >= this.hpGhost) {
+        this.hpGhost = frac;
+        this.ghostHoldMs = 0;
+      } else {
+        if (frac < this.prevHpFrac) this.ghostHoldMs = GHOST_HOLD_MS; // a fresh hit this frame
+        this.ghostHoldMs = Math.max(0, this.ghostHoldMs - dtMs);
+        if (this.ghostHoldMs === 0) this.hpGhost = Math.max(frac, this.hpGhost - GHOST_DRAIN_PER_MS * dtMs);
+      }
+      this.prevHpFrac = frac;
       this.hpBar
         .rect(bx, h.barY, Math.round(h.barW * frac), h.barH)
         .fill({ color: frac > 0.4 ? hexToNum('#4caf50') : hexToNum('#c0473a') });
+      // Delayed-damage slice: the red chunk between the real bar and the lagging ghost.
+      if (this.hpGhost > frac) {
+        const gx = bx + Math.round(h.barW * frac);
+        const gw = Math.max(1, Math.round(h.barW * (this.hpGhost - frac)));
+        this.hpBar.rect(gx, h.barY, gw, h.barH).fill({ color: GHOST_RED });
+      }
       // WoW-style absorb overlay: a yellow shell laid over the HP from the right edge,
       // drawn AFTER the fill so it sits on top, shrinking as the shield soaks hits.
       drawShieldBar(this.hpBar, bx, h.barY, h.barW, h.barH, totalShield(c.effects), c.maxHp, this.elapsed);
