@@ -171,7 +171,8 @@ export function spawnZoneBoss(world: WorldState, rng: Rng): void {
       magic: rng.chance(0.4),
       range: RANGE.melee + 30, // towering sprite → stop well clear of the tank
       moveSpeed: MOVE_SPEED.melee,
-      // +1 ability per difficulty (DIFFICULTY.md §5): Normal cleaves; Torment wields all five.
+      // World-boss special abilities by difficulty (DIFFICULTY.md §5): none on Normal/Hell,
+      // Frenzy from Inferno, + Mortal Wound at Torment. Empty = a pure stat wall.
       abilities: worldBossAbilityKeys(difficultyIndexOf(S)).map((k) => ({ def: abilityDef(k), rank: 1 })),
       isBoss: true,
       isElite: false,

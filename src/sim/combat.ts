@@ -11,8 +11,9 @@ import {
   isInvulnerable,
   vulnerabilityMult,
   weakenMult,
+  healReceivedMult,
 } from './effects';
-import { tickCooldowns, castReadyAbilities } from './abilities';
+import { tickCooldowns, castReadyAbilities, resolveChanneledCast } from './abilities';
 import { effectDef } from '@/data/effects';
 import { mitigation, enrageMultiplier, MAX_DAMAGE_REDUCTION } from '@/data/stageScaling';
 import { WALK_SPEED, HERO_SPACING, MOVE_EPS, RANGE, RESPAWN_MS } from '@/data/field';
@@ -136,10 +137,13 @@ export function resolveCombatTick(world: WorldState, deltaMs: number, rng: Rng):
       // Boss enrage clock counts FIGHT time (once engaged), not the walk-up.
       if (gap <= 0) {
         e.fightMs = (e.fightMs ?? 0) + deltaMs;
-        // First moment a boss is engaged → fire the party's onBossEngage ults (once).
+        // First moment a boss is engaged → fire the party's onBossEngage ults (once) and
+        // seed its ability openers, so the kit's cadence is measured from ENGAGEMENT (not
+        // from spawn, which the walk-up would otherwise eat into and bunch the openers).
         if (e.isBoss === true && e.bossUltTriggered !== true) {
           e.bossUltTriggered = true;
           triggerBossEngageUlts(heroes, e, events);
+          seedAbilityOpeners(e);
         }
       }
     }
@@ -169,9 +173,20 @@ export function resolveCombatTick(world: WorldState, deltaMs: number, rng: Rng):
     });
   }
 
-  // 5. Enemy ability casts (their cadence is independent of their swing — unchanged).
+  // 5. Enemy ability casts (their cadence is independent of their swing). A boss mid-channel
+  //    (Frenzy / Mortal Wound) winds up its cast bar here and resolves when it fills, instead
+  //    of starting anything new; everyone else fires every ready ability as before.
   for (const e of enemies) {
-    if (!e.alive || e.abilities.length === 0) continue;
+    if (!e.alive) continue;
+    if (e.casting !== undefined) {
+      e.casting.remainingMs -= deltaMs;
+      if (e.casting.remainingMs <= 0) {
+        const key = resolveChanneledCast(e, enemies, heroes, S, rng, events);
+        if (key !== null) events.push({ type: 'cast', targetId: e.id, abilityKey: key });
+      }
+      continue; // channeling → starts no new cast this tick
+    }
+    if (e.abilities.length === 0) continue;
     for (const key of castReadyAbilities(e, enemies, heroes, S, rng, events)) events.push({ type: 'cast', targetId: e.id, abilityKey: key });
   }
 
@@ -199,16 +214,18 @@ function tickCombatantUpkeep(c: Combatant, worldTick: number, deltaMs: number, d
   // Marked targets (Ranger ult) take amplified DoT ticks; an invulnerable hero takes none.
   const dot = dotDps(c.effects) * dtSec * vulnerabilityMult(c.effects);
   if (dot > 0 && !isInvulnerable(c.effects)) c.hp -= absorbDamage(c.effects, dot); // shields soak DoTs too
-  const hot = hotHps(c.effects) * dtSec;
+  // Mortal Wound (healReduction) cuts every heal the target receives — HoT ticks + regen.
+  const healMult = healReceivedMult(c.effects);
+  const hot = hotHps(c.effects) * dtSec * healMult;
   if (hot > 0) c.hp = Math.min(c.maxHp, c.hp + hot);
   if (worldTick % 10 === 0) {
     const dps = dotDps(c.effects);
     if (dps > 0) events.push({ type: 'damage', targetId: c.id, amount: dps, tick: true });
-    const hps = hotHps(c.effects);
+    const hps = hotHps(c.effects) * healMult;
     if (hps > 0) events.push({ type: 'heal', targetId: c.id, amount: hps, tick: true });
   }
   if (c.side === 'hero') {
-    const regen = (heroStats(c).hpRegen ?? 0) * dtSec;
+    const regen = (heroStats(c).hpRegen ?? 0) * dtSec * healMult;
     if (regen > 0) c.hp = Math.min(c.maxHp, c.hp + regen);
   }
   if (c.hp <= 0) kill(c, events);
@@ -283,7 +300,7 @@ function heroAttack(h: Combatant, stats: EffectiveStats, target: Combatant, rng:
     dmg *= vulnerabilityMult(target.effects); // Ranger's Mark amplifies all damage to the boss
     target.hp -= dmg;
     events.push({ type: 'damage', targetId: target.id, sourceId: h.id, amount: dmg, crit });
-    const heal = (dmg * stats.lifesteal) / 100;
+    const heal = ((dmg * stats.lifesteal) / 100) * healReceivedMult(h.effects); // Mortal Wound cuts lifesteal too
     if (heal > 0) h.hp = Math.min(h.maxHp, h.hp + heal);
   };
   strike();
@@ -347,6 +364,18 @@ function tryDeathBlock(c: Combatant): boolean {
   c.hp = Math.max(1, c.maxHp * ult.effect.healFrac);
   applyEffect(c.effects, effectDef('fx_invuln'), c.id, 0, ult.effect.invulnMs);
   return true;
+}
+
+/** Seed a freshly-engaged boss's ability openers: an ability with `openerMs` starts on that
+ *  initial cooldown so its first cast is offset (the kit staggers instead of all firing at
+ *  once on engage). Abilities without an opener stay ready. */
+function seedAbilityOpeners(e: Combatant): void {
+  for (const { def } of e.abilities) {
+    const op = def.openerMs;
+    if (op === undefined || op <= 0) continue;
+    e.cooldowns[def.key] = op;
+    (e.cooldownTotals ??= {})[def.key] = op;
+  }
 }
 
 /** Fire the party's onBossEngage ultimates against a freshly-engaged boss (once). Pushes a

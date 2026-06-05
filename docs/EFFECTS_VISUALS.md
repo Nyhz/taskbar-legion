@@ -33,7 +33,8 @@ their `cast` event in `GameStrip.spawnAoeFx`:
 | Ranger **Frozen Trap** | an icy pool spreads under the wave (crystal shards + drifting frost), lingering the slow's 4s |
 | Priest **Holy Nova** | a golden ring + radiating rays + sparkles burst through the wave |
 | Knight **Battle Cry** | an amber war-cry shockwave rolls out over the party |
-| World-boss **Quake / Maelstrom / Cataclysm** | a heavy red ground shockwave rocks the whole party |
+| World-boss **Frenzy** (Inferno+) | a fast cast bar fills under the boss, then a red aura pools at its feet while it swings 50% faster |
+| World-boss **Mortal Wound** (Torment) | a cast bar fills, then a heavy strike on the tank + crossed-out green heal crosses float over it while its healing is cut |
 
 ## Full coverage table — ability → effect → visual
 
@@ -70,8 +71,9 @@ their `cast` event in `GameStrip.spawnAoeFx`:
 ### Enemies / world bosses
 | Ability | Applies | Visual added |
 |---|---|---|
-| Dark Bolt / Brutal Smash / Piercing Shot / Cleave / Smite | `fx_damage` (front hero) | cast flourish + projectile/swing + damage number (pre-existing) |
-| Quake / Maelstrom / Cataclysm | `fx_damage` to all heroes | **red shockwave** over the party |
+| Dark Bolt / Brutal Smash / Piercing Shot | `fx_damage` (front hero) | cast flourish + projectile/swing + damage number (pre-existing) |
+| World-boss **Frenzy** (Inferno+) | self `buff_boss_frenzy` (+attack speed) | 1.5s **cast bar** under the boss → **red foot aura** while frenzied |
+| World-boss **Mortal Wound** (Torment) | `fx_damage` (tank) + `debuff_mortal_wound` (healing −25%) | 1.5s **cast bar** → heavy strike + **crossed-out heal crosses** over the tank |
 
 ### Generic / latent effects (data-driven, ready if any future ability applies them)
 `debuff_expose`, `debuff_chill`, `debuff_root`, `debuff_silence`, `fx_mark` → **red down-arrows**;

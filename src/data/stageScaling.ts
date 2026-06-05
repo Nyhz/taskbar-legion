@@ -54,7 +54,7 @@ export function stageBossHp(S: number): number {
 // good world ITEMS clear it within the enrage+survival window (gems/level are premium HEADROOM,
 // never required — directive); the PREVIOUS world's gear fails → you farm a few new pieces. The
 // deep-world LENGTH (W60≈3-4mo, W100≈1yr, approximate) is this growing gate × the farm treadmill.
-export const ZONE_BOSS_C = 240_000; // tune-pass: 185k→240k — raise the wall anchor
+export const ZONE_BOSS_C = 260_000; // tune-pass: small bump over the 240k smoothing pass — the wall→months curve is hypersensitive near the gear ceiling (240k→1.7mo, 300k→7.9mo+bricks), so nudge gently toward ~2.5mo
 export const ZONE_BOSS_EXP = 1.0; // track gear's Φ^1.0 ilvl growth — the boss BASE keeps pace with raw gear; the per-world WALL excess comes from WORLD_WALL_GROWTH, so no difficulty bricks at its tail
 // Soft SATURATION (deep-tail flattener): the realistic gear ceiling saturates (level cap + gem
 // caps), so a pure Φ^2.1 wall would cross it and brick (~W165). Dividing by (1+Φ/SAT) flattens
@@ -74,7 +74,8 @@ export function zoneBossHp(S: number): number {
   const o = ZONE_BOSS_HP_OVERRIDE[W];
   if (o !== undefined) return o;
   const ramp = Math.min(1, ZONE_BOSS_RAMP_START + (1 - ZONE_BOSS_RAMP_START) * Math.max(0, W - 1) / (ZONE_BOSS_RAMP_END_WORLD - 1));
-  return (ZONE_BOSS_C * phi(S) ** ZONE_BOSS_EXP * ramp * wallWorldMult(S) * wallDiffMult(S)) / (1 + phi(S) / ZONE_BOSS_SAT);
+  // wallWorldMult is the per-world table (it already bakes in the per-difficulty step).
+  return (ZONE_BOSS_C * phi(S) ** ZONE_BOSS_EXP * ramp * wallWorldMult(S)) / (1 + phi(S) / ZONE_BOSS_SAT);
 }
 // A stage is a lane-pusher "area": 20 enemy WAVES (each fills the progress bar 5%)
 // then the stage boss. Each wave is 2–8 mixed enemies that advance from the edge.
@@ -263,8 +264,8 @@ export const ENEMY_DIFF_MULT = 1.3; // per-difficulty enemy HP & damage step. Ke
 // it approaches but never crosses the capped gear ceiling (no brick). The grind stays DISTRIBUTED
 // (farm a little, beat one, repeat); the deep-game LENGTH comes from gear getting slow near max
 // (farming the last T8 pieces + a full T8 gem set), not the wall outrunning gear.
-export const WALL_CEIL = 50; // deep-game world-boss HP multiplier the S-curve approaches (must stay UNDER the full-gem T8 ceiling — raised after the percent-affix ilvl buff lifted the deep DPS ceiling)
-export const WALL_MID = 35; // world index of the curve's steepest point (the heart of the difficulty ramp — deep so Torment IS the grind)
+export const WALL_CEIL = 64; // deep-game world-boss HP multiplier the S-curve approaches — kept modest: CEIL=72 pushed the Eternal/Torment walls into the gear ceiling and BRICKED (W39 stalled 1.7mo). Slightly above the 62 smoothing pass for a touch more deep bite.
+export const WALL_MID = 40; // world index of the curve's steepest point — pushed deeper (35→40) so the steep wall climb lands in Eternal/Torment, NOT at the Inferno gate (W30), flattening the Inferno spike
 export const WALL_RATE = 0.15; // steepness of the ramp through the middle
 // Explicit per-DIFFICULTY wall step (d = 0 Normal … 4 Torment), multiplied INTO the world
 // boss HP on top of the world S-curve. The S-curve SATURATES toward WALL_CEIL at the top, so
@@ -288,9 +289,35 @@ export function enemyDiffMult(S: number): number {
 export function wallDiffMult(S: number): number {
   return WALL_DIFF_MULT[difficultyStep(S)] ?? 1;
 }
+/** The pure S-curve × difficulty-step wall multiplier — kept as the GENERATOR/fallback that
+ *  seeds the hand-tuned per-world table below (and covers any world past 50). */
+export function wallCurveMult(S: number): number {
+  const w = worldOf(S);
+  return (1 + (WALL_CEIL - 1) / (1 + Math.exp(-WALL_RATE * (w - WALL_MID)))) * wallDiffMult(S);
+}
+
+// ── PER-WORLD wall table (the finite game has only 50 worlds, so we tune each one) ──
+// One HP multiplier per world (index = world-1), applied to the zone-boss base. This REPLACES
+// the global S-curve so each difficulty's gate can be shaped individually — guaranteeing a
+// MONOTONIC, progressively-harder curve with no single spike and the deep Torment worlds as the
+// real grind. Seeded from the smoothed S-curve (WALL_MID=40), then hand-raised through Torment
+// (W41-50) so the back end keeps climbing instead of trivializing once T8 gear lands. The
+// wall→months response is hypersensitive near the gear ceiling, so values are tuned against the
+// progression probe (npm run probe), NOT derived analytically. Worlds past 50 fall back to the
+// S-curve generator (wallCurveMult).
+export const WORLD_WALL_MULT: readonly number[] = [
+  1.18, 1.21, 1.24, 1.28, 1.33, 1.38, 1.44, 1.51, 1.60, 1.69, //  W1-10  Normal
+  1.80, 1.93, 2.08, 2.25, 2.45, 2.65, 2.85, 3.05, 3.25, 3.45, //  W11-20 Hell (gate W20 ≤1d)
+  // Each difficulty: gentle ramp through x-1..x-9 (the ~1-2d farming worlds), then a clear
+  // STEP at x-10 (the GATE = the difficulty's climax). Sized so beating x-9 does NOT trivialize
+  // the gate. Gate day-targets (probe): Inferno W30 ~2-3d, Eternal W40 ~5-6d, Torment W50 = the
+  // final wall, needing near-perfect T8 gear (pushed toward the T8 brick ceiling ~110).
+  4.40, 4.80, 5.30, 5.80, 6.40, 6.90, 7.50, 8.40, 9.60, 13.00, //  W21-30 Inferno (gate W30 ~3-4d)
+  18.0, 20.0, 22.0, 25.0, 28.0, 31.0, 34.0, 37.0, 40.0, 44.0, //  W31-40 Eternal — firm ramp + gate step → W40 ~5-6d with a tight range (a bigger step hits 7-8d but reopens 26d+ outliers from loot-gear variance, so we keep it moderate)
+  54, 59, 64, 69, 74, 80, 86, 91, 96, 100, //  W41-50 Torment — even ramp, the hardest band (78 wipes, far above the rest); W50 toward the T8 brick = near-perfect-gear endgame climax ≈ 5-6d (T8 is the best gear in the game, so a CLEAN 7+ here would need a near-brick tail — capped for a sane range instead)
+];
 export function wallWorldMult(S: number): number {
-  const w = worldOf(S); // 1..50 across the whole game
-  return 1 + (WALL_CEIL - 1) / (1 + Math.exp(-WALL_RATE * (w - WALL_MID)));
+  return WORLD_WALL_MULT[worldOf(S) - 1] ?? wallCurveMult(S);
 }
 
 // Early-game damage ramp (bootstrap protector): a fresh solo naked Knight must survive 1-1, but

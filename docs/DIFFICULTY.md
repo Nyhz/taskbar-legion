@@ -96,9 +96,21 @@ the same per-difficulty cap and table shape, as an **extra** roll on top of the 
 - **`10-10` = the difficulty gate.** The biggest wall in the difficulty; clearing it unlocks the next
   difficulty. Calibrated to require the difficulty's **new top tier** in core slots (§9).
 
-**World-boss ability escalation:** each world boss gains **+1 new ability per difficulty** on top of its stat
-jump — Normal = base kit, +1 in Hell, … +4 in Torment. Data-driven (`data/abilities.ts` + a per-difficulty
-modifier layer, Phase 4). This is *why* the replay is a new fight, not just bigger numbers.
+**World-boss ability escalation:** world bosses are **pure stat walls on Normal/Hell**, then gain **special
+abilities at the higher difficulties** — all single-target / self (no party-wide AoE), so the kit stays balanced
+around the tank taking the hits. Each special **channels for 1.5s** (a cast bar fills under the boss) before it
+resolves, telegraphing the cast.
+
+| Difficulty | Special abilities | Cadence (from engage) |
+|---|---|---|
+| Normal · Hell | — (stat wall) | — |
+| **Inferno · Eternal** | **Frenzy** — self-buff: +50% attack speed for 6s | every **15s**, first at **7.5s** |
+| **Torment** | Frenzy **+ Mortal Wound** — a strong hit that cuts the tank's **healing received −25% for 8s** | Mortal Wound every 15s from **0s** → interleaved with Frenzy, **one cast ~every 7.5s** |
+
+Each ability has its own read: Frenzy = a **red aura at the boss's feet**; Mortal Wound = **crossed-out heal
+crosses** over the wounded tank. Data-driven (`data/abilities.ts` `WORLD_BOSS_ABILITIES` + per-ability
+`openerMs` / `castTimeMs`; the heal cut is the `healReduction` effect kind). This is *why* the replay is a new
+fight, not just bigger numbers.
 
 ## 6. The scaling model (finite, continuous, gear-anchored)
 

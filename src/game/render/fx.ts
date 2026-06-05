@@ -39,9 +39,9 @@ export function isSupportCast(abilityKey: string): boolean {
   return def.target !== 'frontEnemy' && def.target !== 'allEnemies';
 }
 
-/** True when a cast hits the WHOLE wave (target 'allEnemies' — Holy Nova, Raining Arrows,
- *  boss Quake/Maelstrom/Cataclysm). Its flourish belongs over the TARGET band, not the
- *  caster, so an AoE doesn't read as landing on the caster's own side. */
+/** True when a cast hits the WHOLE wave (target 'allEnemies' — Holy Nova, Raining Arrows).
+ *  Its flourish belongs over the TARGET band, not the caster, so an AoE doesn't read as
+ *  landing on the caster's own side. */
 export function isWholeWaveCast(abilityKey: string): boolean {
   return tryAbilityDef(abilityKey)?.target === 'allEnemies';
 }

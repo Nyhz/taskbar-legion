@@ -8,7 +8,7 @@ import { hexToNum } from '@/styles/palette';
 import { drawHero } from './textures';
 import { drawSwing, SWING_MS } from './swing';
 import { isInvulnerable, INVULN_YELLOW, isEnraged, ENRAGE_RED } from './fx';
-import { auraCategories, drawCategoryAuras, totalShield, drawShieldBar } from './effectAuras';
+import { auraCategories, drawCategoryAuras, totalShield, drawShieldBar, drawMortalWoundCrosses, hasMortalWound } from './effectAuras';
 import { SpriteBody } from './SpriteBody';
 import type { Texture } from 'pixi.js';
 import type { CharFrames } from './characterFrames';
@@ -498,7 +498,7 @@ export class HeroSprite extends Container {
     // buff), red down-arrows (debuff) — drawn over the body's vertical span.
     const cats = auraCategories(c.effects);
     const sprite = this.spriteBody !== null;
-    drawCategoryAuras(this.aura, cats, {
+    const region = {
       cx,
       topY: this.hud.barY * 0.78,
       botY: 4,
@@ -506,7 +506,11 @@ export class HeroSprite extends Container {
       halfW: this.hud.barW * 0.4,
       scale: sprite ? 1.1 : 0.7,
       elapsed: this.elapsed,
-    });
+    };
+    drawCategoryAuras(this.aura, cats, region);
+    // World-boss Mortal Wound: crossed-out heal crosses over the wounded tank (its generic
+    // debuff overlay is suppressed so this is the sole, unmistakable read).
+    if (hasMortalWound(c.effects)) drawMortalWoundCrosses(this.aura, region);
   }
 
   // Up to two ability cooldown pips at the TOP-LEFT of the hero (stacked vertically):

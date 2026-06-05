@@ -39,6 +39,14 @@ export interface AbilityDef {
   icon: string;
   desc: string; // one-line flavor/effect summary for tooltips
   cooldownMs: number; // per-ability base cooldown (ms); reduced by CDR at cast time
+  // Initial cooldown (ms) seeded when an ENEMY spawns/engages with this ability, so the
+  // first cast is offset instead of firing the instant it engages (sim/combat seeds it on
+  // boss engage). Undefined/0 = ready immediately. Lets the boss kit stagger its openers.
+  openerMs?: number;
+  // Cast time (ms): an ENEMY ability with a windup CHANNELS for this long (a cast bar fills
+  // under the boss) before its effect resolves — telegraphs the cast. Heroes ignore it
+  // (instant, one-per-swing). Undefined/0 = instant.
+  castTimeMs?: number;
   target: 'self' | 'lowestAllyHp' | 'frontEnemy' | 'allEnemies' | 'allAllies' | 'randomDpsAlly' | 'tank';
   applies: AppliedEffect[];
   castCondition?: 'always' | 'enemyPresent' | 'allyBelowHpPct' | 'tankEngaged';
@@ -219,58 +227,40 @@ export const ABILITIES: Record<string, AbilityDef> = {
   },
 
   // ───────────────────── World-boss kit (DIFFICULTY.md §5) ─────────────────────
-  // The escalating pool a W-10 world boss draws from — one MORE ability unlocks per
-  // difficulty (Normal wields just the cleave; Torment wields all five). Coeffs are × the
-  // boss's already-multiplied enemyDamage and route through hero armor/MR, so they add burst
-  // pressure on top of autos (the survival half of the wall) without one-shotting.
-  boss_cleave: {
-    key: 'boss_cleave', name: 'Cleave', icon: 'explosion',
-    desc: 'The world boss cleaves the front hero for heavy damage.',
-    cooldownMs: 8000, target: 'frontEnemy', applies: [{ effectKey: 'fx_damage' }],
-    castCondition: 'enemyPresent', power: { coeff: 1.8 },
+  // World bosses are pure STAT walls on Normal/Hell; they gain ONE special ability at
+  // Inferno (Frenzy) and a SECOND at Torment (Mortal Wound). Both CHANNEL for 1.5s (a cast
+  // bar fills under the boss) before resolving, so the cast is telegraphed. Their openers
+  // stagger the cadence: one cast every 15s from Inferno (Frenzy, first at 7.5s); in Torment
+  // Mortal Wound (first at 0s) interleaves so something fires every ~7.5s.
+  boss_frenzy: {
+    key: 'boss_frenzy', name: 'Frenzy', icon: 'flurry',
+    desc: 'The world boss works itself into a frenzy, attacking 50% faster for 6s.',
+    cooldownMs: 15000, openerMs: 7500, castTimeMs: 1500, target: 'self',
+    applies: [{ effectKey: 'buff_boss_frenzy' }], castCondition: 'enemyPresent',
   },
-  boss_quake: {
-    key: 'boss_quake', name: 'Quake', icon: 'explosion',
-    desc: 'A shockwave rocks the whole party — pressures the healer.',
-    cooldownMs: 10000, target: 'allEnemies', applies: [{ effectKey: 'fx_damage' }],
-    castCondition: 'enemyPresent', power: { coeff: 1.0 },
-  },
-  boss_smite: {
-    key: 'boss_smite', name: 'Smite', icon: 'aim',
-    desc: 'A heavy bolt hammers the front hero.',
-    cooldownMs: 9000, target: 'frontEnemy', applies: [{ effectKey: 'fx_damage' }],
-    castCondition: 'enemyPresent', power: { coeff: 2.4 },
-  },
-  boss_maelstrom: {
-    key: 'boss_maelstrom', name: 'Maelstrom', icon: 'frost',
-    desc: 'A swirling storm batters the entire party.',
-    cooldownMs: 9000, target: 'allEnemies', applies: [{ effectKey: 'fx_damage' }],
-    castCondition: 'enemyPresent', power: { coeff: 1.5 },
-  },
-  boss_cataclysm: {
-    key: 'boss_cataclysm', name: 'Cataclysm', icon: 'explosion',
-    desc: 'A devastating eruption engulfs every hero.',
-    cooldownMs: 8000, target: 'allEnemies', applies: [{ effectKey: 'fx_damage' }],
-    castCondition: 'enemyPresent', power: { coeff: 2.0 },
+  boss_mortal_wound: {
+    key: 'boss_mortal_wound', name: 'Mortal Wound', icon: 'expose',
+    desc: 'A crippling blow that wounds the tank, cutting its healing received by 25% for 8s.',
+    cooldownMs: 15000, openerMs: 0, castTimeMs: 1500, target: 'frontEnemy',
+    applies: [{ effectKey: 'fx_damage' }, { effectKey: 'debuff_mortal_wound' }],
+    castCondition: 'enemyPresent', power: { coeff: 2.5 },
   },
 };
 
-// The escalating world-boss ability pool — the boss at difficulty index d (0=Normal …
-// 4=Torment) wields the first (d+1) of these. So +1 new ability per difficulty on top of
-// the stat jump (DIFFICULTY.md §5). Shared across the 10 world bosses for v1; per-world
-// flavor can layer on later.
-export const WORLD_BOSS_ABILITY_POOL: readonly string[] = [
-  'boss_cleave', // Normal+
-  'boss_quake', // Hell+
-  'boss_smite', // Inferno+
-  'boss_maelstrom', // Eternal+
-  'boss_cataclysm', // Torment+
+// The world-boss special abilities, each gated to a MINIMUM difficulty index (0=Normal …
+// 4=Torment). A boss at difficulty d wields every ability whose minDifficulty ≤ d — so
+// Normal/Hell get none (stat walls), Inferno+ get Frenzy, Torment also gets Mortal Wound.
+// Shared across the 10 world bosses for v1; per-world flavor can layer on later.
+const WORLD_BOSS_ABILITIES: readonly { key: string; minDifficulty: number }[] = [
+  { key: 'boss_frenzy', minDifficulty: 2 }, // Inferno+
+  { key: 'boss_mortal_wound', minDifficulty: 4 }, // Torment+
 ];
 
-/** Ability keys a world boss wields at difficulty index `d` (0..4): the first d+1 of the pool. */
+/** Ability keys a world boss wields at difficulty index `d` (0..4): those whose
+ *  minDifficulty ≤ d (empty on Normal/Hell). */
 export function worldBossAbilityKeys(d: number): string[] {
-  const n = Math.max(1, Math.min(WORLD_BOSS_ABILITY_POOL.length, Math.floor(d) + 1));
-  return WORLD_BOSS_ABILITY_POOL.slice(0, n);
+  const di = Math.floor(d);
+  return WORLD_BOSS_ABILITIES.filter((a) => di >= a.minDifficulty).map((a) => a.key);
 }
 
 export function abilityDef(key: string): AbilityDef {

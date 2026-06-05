@@ -68,6 +68,8 @@ export interface WorldMilestone {
   topTier: number; // highest tier equipped across the party
   bossKillSec: number;
   bossMinHpPct: number; // survival margin at the kill (0 = someone nearly died)
+  bossFails: number; // failed wall attempts (power-gated retries) before this clear
+  daysOnWorld: number; // calendar days spent on THIS world (since the previous world's clear)
 }
 
 export interface ProbeResult {
@@ -79,6 +81,9 @@ export interface ProbeResult {
   milestones: WorldMilestone[];
   difficultyActiveHours: Record<string, number>; // cumulative active playtime at each difficulty's end
   difficultyCalendarDays: Record<string, number>;
+  techNodeCount: number; // distinct tech nodes with ≥1 rank at the end
+  techTotalRanks: number; // total tech ranks purchased across all nodes
+  totalBossFails: number; // total failed wall attempts across the whole run
 }
 
 const CHEST_TYPES: ChestType[] = ['normal', 'stageBoss', 'zoneBoss'];
@@ -190,6 +195,9 @@ export function runProbe(seed: number, cfg: ProbeConfig = DEFAULT_CONFIG): Probe
   const diffDays: Record<string, number> = {};
   let lastProgressDay = 0;
   let lastWallAttemptPower = -1;
+  let wallFails = 0; // failed attempts at the CURRENT world boss (reset on a clear)
+  let totalBossFails = 0;
+  let lastWorldClearDay = 0; // calendar day the previous world boss fell (for per-world days)
 
   while (state.frontier < MAX_GLOBAL_STAGE && state.calendarDays < cfg.maxDays) {
     const bonuses = getBonuses(state.techRanks, []);
@@ -220,9 +228,16 @@ export function runProbe(seed: number, cfg: ProbeConfig = DEFAULT_CONFIG): Probe
               topTier: topTier(state.party),
               bossKillSec: res.killSec,
               bossMinHpPct: res.minHpFrac * 100,
+              bossFails: wallFails,
+              daysOnWorld: state.calendarDays - lastWorldClearDay,
             });
+            wallFails = 0;
+            lastWorldClearDay = state.calendarDays;
             continue;
           }
+          // a power-gated attempt that didn't clear → a wall failure ("wipe")
+          wallFails += 1;
+          totalBossFails += 1;
         }
         // walled: farm this world's W-9 (target-1) for a chunk
         const dt = Math.min(active, cfg.chunkSec);
@@ -276,5 +291,8 @@ export function runProbe(seed: number, cfg: ProbeConfig = DEFAULT_CONFIG): Probe
     milestones,
     difficultyActiveHours: diffActive,
     difficultyCalendarDays: diffDays,
+    techNodeCount: Object.values(state.techRanks).filter((r) => r > 0).length,
+    techTotalRanks: Object.values(state.techRanks).reduce((a, r) => a + r, 0),
+    totalBossFails,
   };
 }

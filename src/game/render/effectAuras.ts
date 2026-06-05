@@ -35,6 +35,9 @@ export function categorize(e: ActiveEffect): AuraCategory | null {
   // Battle Enrage gets its own dedicated red aura (HeroSprite), so suppress the generic
   // offense overlay its stat buffs would otherwise add — keeps the ult's signal unique.
   if (e.defKey === 'buff_enrage_cdr' || e.defKey === 'buff_enrage_as') return null;
+  // World-boss Frenzy (red foot aura, EnemySprite) and Mortal Wound (crossed-out heal
+  // crosses, HeroSprite) each draw their OWN dedicated overlay — suppress the generic one.
+  if (e.defKey === 'buff_boss_frenzy' || e.defKey === 'debuff_mortal_wound') return null;
   const def = effectDef(e.defKey);
   const k = def.kind;
   switch (k.type) {
@@ -234,6 +237,79 @@ function drawDancingShields(g: Graphics, r: AuraRegion): void {
     const s = 4.6 * r.scale * depth;
     const a = 0.5 + 0.5 * (front * 0.5 + 0.5);
     drawShield(g, x, y, s, a, depth);
+  }
+}
+
+// ── World-boss special-ability overlays ──
+// Frenzy reads as an angry RED aura pooled at the boss's FEET (ground plane), distinct from
+// the body-centred enrage flames; Mortal Wound reads as crossed-out heal crosses over the
+// wounded tank. Both are their own unmistakable signal (the generic overlay is suppressed
+// for their effects in `categorize`).
+
+export const FRENZY_RED = hexToNum('#ff3322');
+const MORTAL_GREEN = hexToNum('#7fe6a0'); // heal-cross green (it's healing being denied)
+const MORTAL_SLASH = hexToNum('#ff3b30'); // the red "no" slash through the cross
+
+/** True while the boss carries the Frenzy attack-speed buff. */
+export function hasFrenzy(effects: readonly ActiveEffect[]): boolean {
+  return effects.some((e) => e.defKey === 'buff_boss_frenzy');
+}
+
+/** True while the tank carries the Mortal Wound healing-reduction debuff. */
+export function hasMortalWound(effects: readonly ActiveEffect[]): boolean {
+  return effects.some((e) => e.defKey === 'debuff_mortal_wound');
+}
+
+/** A red frenzy aura pooled on the ground at the boss's feet: a pulsing base glow + two
+ *  expanding rings + flickering flame licks, all flattened to the ground plane. `cy` is the
+ *  container-local feet line; `scale` sizes it to the body; `elapsed` drives the animation. */
+export function drawFrenzyGround(g: Graphics, cx: number, cy: number, scale: number, elapsed: number): void {
+  const FLAT = 0.4; // ground-plane flatten (y radius ÷ x radius)
+  const maxR = 26 * scale;
+  const pulse = 0.55 + 0.45 * Math.sin(elapsed / 90);
+  // base glow
+  g.ellipse(cx, cy, maxR * 0.6, maxR * 0.6 * FLAT).fill({ color: FRENZY_RED, alpha: 0.14 * pulse });
+  // two expanding rings, staggered so one is always growing
+  for (let i = 0; i < 2; i++) {
+    const t = (elapsed / 620 + i / 2) % 1;
+    const r = t * maxR;
+    const a = (1 - t) * 0.7;
+    if (a <= 0.02 || r < 0.5) continue;
+    g.ellipse(cx, cy, r, r * FLAT).stroke({ color: FRENZY_RED, width: 2.5, alpha: a });
+  }
+  // flame licks rising off the ring
+  for (let i = 0; i < 6; i++) {
+    const ang = (i / 6) * Math.PI * 2 + elapsed / 200;
+    const br = maxR * 0.5;
+    const bx = cx + Math.cos(ang) * br;
+    const by = cy + Math.sin(ang) * br * FLAT;
+    const len = (5 + 4 * Math.abs(Math.sin(elapsed / 80 + i))) * scale;
+    g.moveTo(bx, by).lineTo(bx, by - len).stroke({ color: 0xff5a2a, width: 2, alpha: 0.35 + 0.4 * pulse });
+  }
+}
+
+/** Crossed-out heal crosses floating over a tank under Mortal Wound — green "+" plus signs
+ *  with a red diagonal slash through each, bobbing and fading, the universal "healing
+ *  denied" read. Drawn over the body's upper span (region.topY..cy). */
+export function drawMortalWoundCrosses(g: Graphics, r: AuraRegion): void {
+  const N = 3;
+  const period = 1100;
+  const arm = 4 * r.scale; // half-length of each cross arm
+  const span = r.cy - r.topY;
+  for (let i = 0; i < N; i++) {
+    const phase = (r.elapsed / period + i / N) % 1; // 0 (low) → 1 (high), rises + fades
+    const y = r.cy - span * phase - 2;
+    const x = r.cx + (i - (N - 1) / 2) * r.halfW * 0.9;
+    const a = Math.sin(phase * Math.PI); // fade in low, peak mid, out at top
+    if (a <= 0.03) continue;
+    const w = Math.max(1.5, 1.6 * r.scale);
+    // green heal cross (glow + body)
+    g.rect(x - arm, y - w / 2, arm * 2, w).fill({ color: MORTAL_GREEN, alpha: a * 0.9 });
+    g.rect(x - w / 2, y - arm, w, arm * 2).fill({ color: MORTAL_GREEN, alpha: a * 0.9 });
+    // red "no" slash across it
+    g.moveTo(x - arm * 1.2, y + arm * 1.2)
+      .lineTo(x + arm * 1.2, y - arm * 1.2)
+      .stroke({ color: MORTAL_SLASH, width: Math.max(1.5, r.scale), alpha: a });
   }
 }
 

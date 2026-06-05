@@ -4,7 +4,7 @@ import { effectDef } from '@/data/effects';
 import type { Combatant, CombatEvent } from './world';
 import type { Rng } from './rng';
 import { aggregate, type EffectiveStats } from './stats';
-import { applyEffect, effectStatMods, absorbDamage, isSilenced, isInvulnerable, vulnerabilityMult, weakenMult } from './effects';
+import { applyEffect, effectStatMods, absorbDamage, isSilenced, isInvulnerable, vulnerabilityMult, weakenMult, healReceivedMult } from './effects';
 import { STATS } from '@/data/stats';
 import { classDef } from '@/data/classes';
 import { mitigation, MAX_DAMAGE_REDUCTION } from '@/data/stageScaling';
@@ -71,9 +71,12 @@ function effectMagnitude(ability: AbilityDef, def: EffectDef, rank: number, cs: 
     const coeff = p.coeff + (p.coeffPerRank ?? 0) * steps;
     return coeff * target.maxHp * (1 + cs.healPower / 100);
   }
-  // statMod / weaken / silence / root / tag: base value + per-rank. A per-effect
-  // `valuePerRank` (perRankOverride) wins over the ability-wide rankScaling.
-  const base = def.kind.type === 'statMod' || def.kind.type === 'weaken' ? def.kind.value : 0;
+  // statMod / weaken / healReduction / silence / root / tag: base value + per-rank. A
+  // per-effect `valuePerRank` (perRankOverride) wins over the ability-wide rankScaling.
+  const base =
+    def.kind.type === 'statMod' || def.kind.type === 'weaken' || def.kind.type === 'healReduction'
+      ? def.kind.value
+      : 0;
   const perRank = perRankOverride ?? ability.rankScaling?.perRank.value ?? 0;
   return base + perRank * steps;
 }
@@ -273,7 +276,8 @@ function applyToTarget(
     return;
   }
   if (kind === 'heal') {
-    const heal = Math.max(0, value);
+    // Mortal Wound (and any healReduction) cuts the healing the target receives.
+    const heal = Math.max(0, value) * healReceivedMult(target.effects);
     target.hp = Math.min(target.maxHp, target.hp + heal);
     events.push({ type: 'heal', targetId: target.id, sourceId: caster.id, amount: heal, crit: healCrit });
     return;
@@ -297,6 +301,9 @@ export function castReadyAbilities(
   events: CombatEvent[],
 ): string[] {
   if (!caster.alive || isSilenced(caster.effects)) return [];
+  // A combatant mid-channel (winding up a cast bar) takes no new action — its in-progress
+  // cast resolves in combat.resolveChanneledCast when the bar fills.
+  if (caster.casting !== undefined) return [];
   const single = caster.side === 'hero'; // one ability per swing for heroes
   const cs = casterStats(caster);
   const cast: string[] = [];
@@ -321,44 +328,98 @@ export function castReadyAbilities(
     // fires the moment the existing shield drops. Keeps the Knight's Bulwark and the
     // Priest's Holy Shield from overwriting / wasting each other on the same tank.
     if (appliesShield(ability) && targets.every(hasActiveShield)) continue;
-    for (const applied of ability.applies) {
-      if (applied.chance !== undefined && !rng.chance(applied.chance)) continue;
-      const def = effectDef(applied.effectKey);
-      for (const t of targets) applyToTarget(caster, ability, def, rank, cs, t, applied.durationMsOverride, applied.valuePerRank, S, rng, events);
+    // A channeled enemy cast (world-boss Frenzy / Mortal Wound) winds up FIRST: begin the
+    // channel + start its cooldown now, but resolve the effect only when the cast bar fills
+    // (combat.resolveChanneledCast). A channeling enemy starts nothing else this call.
+    if (caster.side === 'enemy' && (ability.castTimeMs ?? 0) > 0) {
+      const ms = ability.castTimeMs as number;
+      caster.casting = { key: ability.key, remainingMs: ms, totalMs: ms };
+      commitCooldown(caster, ability, rank);
+      break;
     }
-    // AoE splash: a single-target damage ability with power.splashCoeff also blasts enemies
-    // WITHIN splashRadius (world px) of the primary target for the reduced splash coeff
-    // (Explosive Arrow's detonation — only the front enemy + those near it).
-    const splashBase = ability.power?.splashCoeff;
-    const primary = targets[0];
-    if (splashBase !== undefined && primary !== undefined) {
-      const splashCoeff = splashBase + (ability.power?.splashCoeffPerRank ?? 0) * Math.max(0, rank - 1);
-      const radius = ability.power?.splashRadius ?? 45;
-      const dmgApplied = ability.applies.find((a) => effectDef(a.effectKey).kind.type === 'damage');
-      if (dmgApplied !== undefined) {
-        const dmgDef = effectDef(dmgApplied.effectKey);
-        for (const e of enemies) {
-          if (!e.alive || targets.includes(e)) continue;
-          if (Math.abs(e.x - primary.x) > radius) continue; // outside the blast radius → spared
-          applyToTarget(caster, ability, dmgDef, rank, cs, e, dmgApplied.durationMsOverride, dmgApplied.valuePerRank, S, rng, events, splashCoeff);
-        }
-      }
-    }
-    if (ability.charge !== undefined) {
-      (caster.charges ??= {})[ability.key] = 0; // spent — rebuild via auto-attacks
-    } else {
-      // Store the BASE cooldown (no CDR baked in); tickCooldowns drains it at a rate scaled
-      // by the caster's live CDR, so a CDR buff gained later still shortens this cooldown.
-      const base = baseCooldownMs(ability, rank);
-      caster.cooldowns[ability.key] = base;
-      (caster.cooldownTotals ??= {})[ability.key] = base; // base also drives the UI fill fraction
-    }
+    applyAbilityEffectsTo(caster, ability, rank, cs, targets, enemies, S, rng, events);
+    commitCooldown(caster, ability, rank);
     cast.push(ability.key);
     // Heroes take just one action per swing — the cast consumed it; the rest wait for the
     // next swing. Enemies keep firing every ready ability.
     if (single) break;
   }
   return cast;
+}
+
+/** Apply an ability's declarative effects to its (pre-selected) targets, plus any AoE
+ *  splash. Split out so a channeled cast can resolve the SAME way an instant cast does.
+ *  Targets are passed in (selected once) so RNG-targeted abilities don't re-roll. */
+function applyAbilityEffectsTo(
+  caster: Combatant,
+  ability: AbilityDef,
+  rank: number,
+  cs: EffectiveStats,
+  targets: Combatant[],
+  enemies: Combatant[],
+  S: number,
+  rng: Rng,
+  events: CombatEvent[],
+): void {
+  for (const applied of ability.applies) {
+    if (applied.chance !== undefined && !rng.chance(applied.chance)) continue;
+    const def = effectDef(applied.effectKey);
+    for (const t of targets) applyToTarget(caster, ability, def, rank, cs, t, applied.durationMsOverride, applied.valuePerRank, S, rng, events);
+  }
+  // AoE splash: a single-target damage ability with power.splashCoeff also blasts enemies
+  // WITHIN splashRadius (world px) of the primary target for the reduced splash coeff
+  // (Explosive Arrow's detonation — only the front enemy + those near it).
+  const splashBase = ability.power?.splashCoeff;
+  const primary = targets[0];
+  if (splashBase !== undefined && primary !== undefined) {
+    const splashCoeff = splashBase + (ability.power?.splashCoeffPerRank ?? 0) * Math.max(0, rank - 1);
+    const radius = ability.power?.splashRadius ?? 45;
+    const dmgApplied = ability.applies.find((a) => effectDef(a.effectKey).kind.type === 'damage');
+    if (dmgApplied !== undefined) {
+      const dmgDef = effectDef(dmgApplied.effectKey);
+      for (const e of enemies) {
+        if (!e.alive || targets.includes(e)) continue;
+        if (Math.abs(e.x - primary.x) > radius) continue; // outside the blast radius → spared
+        applyToTarget(caster, ability, dmgDef, rank, cs, e, dmgApplied.durationMsOverride, dmgApplied.valuePerRank, S, rng, events, splashCoeff);
+      }
+    }
+  }
+}
+
+/** Commit an ability's cost after it fires: spend a charge, or start its base cooldown. */
+function commitCooldown(caster: Combatant, ability: AbilityDef, rank: number): void {
+  if (ability.charge !== undefined) {
+    (caster.charges ??= {})[ability.key] = 0; // spent — rebuild via auto-attacks
+    return;
+  }
+  // Store the BASE cooldown (no CDR baked in); tickCooldowns drains it at a rate scaled by
+  // the caster's live CDR, so a CDR buff gained later still shortens this cooldown.
+  const base = baseCooldownMs(ability, rank);
+  caster.cooldowns[ability.key] = base;
+  (caster.cooldownTotals ??= {})[ability.key] = base; // base also drives the UI fill fraction
+}
+
+/** Resolve a combatant's in-progress channeled cast: select targets fresh (the field moved
+ *  during the windup) and apply the ability's effects, clearing the channel. Returns the
+ *  resolved ability key (for the render 'cast' marker), or null if there was no cast / it
+ *  fizzled. The cooldown was already started when the channel began. */
+export function resolveChanneledCast(
+  caster: Combatant,
+  allies: Combatant[],
+  enemies: Combatant[],
+  S: number,
+  rng: Rng,
+  events: CombatEvent[],
+): string | null {
+  const ch = caster.casting;
+  caster.casting = undefined;
+  if (ch === undefined) return null;
+  const resolved = caster.abilities.find((a) => a.def.key === ch.key);
+  if (resolved === undefined) return null;
+  const cs = casterStats(caster);
+  const targets = selectTargets(caster, resolved.def, allies, enemies, rng);
+  if (targets.length > 0) applyAbilityEffectsTo(caster, resolved.def, resolved.rank, cs, targets, enemies, S, rng, events);
+  return resolved.def.key;
 }
 
 // ── Tooltip helpers (pure; UI reads these to show scaled values at a hero's stats) ──
