@@ -90,10 +90,11 @@ function PaperDoll({ heroId, requestSocket, requestSocketChoice }: { heroId: str
   const GEAR_OVER = 1.1; // ≥ +10% over recommended → well geared
   const GEAR_UNDER = 0.9; // < −10% under recommended → under-geared
   const equipped = Object.values(hero.equipment).filter((it): it is ItemInstance => it !== undefined);
-  const avgIlvl = equipped.length > 0 ? Math.round(equipped.reduce((sum, it) => sum + it.ilvl, 0) / equipped.length) : 0;
-  const gearRatio = avgIlvl / Math.max(1, expectedLevel(stage));
+  const avgIlvlNum = equipped.length > 0 ? equipped.reduce((sum, it) => sum + it.ilvl, 0) / equipped.length : 0;
+  const avgIlvl = avgIlvlNum.toFixed(1); // display with a single decimal
+  const gearRatio = avgIlvlNum / Math.max(1, expectedLevel(stage));
   const gearQuality =
-    avgIlvl === 0 || gearRatio < GEAR_UNDER
+    avgIlvlNum === 0 || gearRatio < GEAR_UNDER
       ? { glyph: '▼', color: '#ff6f6f', tip: 'Under-geared for this stage — your gear is below the recommended level. Farm more drops before pushing.' }
       : gearRatio > GEAR_OVER
         ? { glyph: '▲', color: '#5fd47a', tip: 'Well geared for this stage — your gear is above the recommended level.' }
