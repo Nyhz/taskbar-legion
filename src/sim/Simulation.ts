@@ -301,7 +301,11 @@ export class Simulation {
   private retreatAfterWipe(retryStage: boolean): void {
     const w = this.world;
     w.wipes += 1; // diagnostic (balance probes)
-    if (!retryStage) w.globalStageIndex = Math.max(1, w.globalStageIndex - 1);
+    // A zone-boss stage (X-10) has NO trash waves — only the boss. Staying there on a retry
+    // would soft-lock the party (nothing to fight, no boss to re-trigger), so a wipe ALWAYS
+    // steps back to X-9 (re-enter the boss via the portal), even with retry on.
+    const stay = retryStage && !isZoneBossStage(w.globalStageIndex);
+    if (!stay) w.globalStageIndex = Math.max(1, w.globalStageIndex - 1);
     w.wavesThisStage = 0;
     w.enemies = [];
     w.waveQueue = [];
