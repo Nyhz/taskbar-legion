@@ -39,7 +39,9 @@ export const CLASSES: Record<string, ClassDef> = {
     // so the tank needs an innate damage floor instead of leaning on any-weapon + offensive
     // armor. The Sword stacks on top. (Starting value — tune the knight's offense here.)
     baseStats: { health: 145, armor: 15, magicResist: 11, attackDamage: 12, attackSpeed: 1.4, critChance: 8, critDamage: 60, hpRegen: 5, block: 5 },
-    statGrowthPerLevel: { health: 5, armor: 0.5, magicResist: 0.3, attackDamage: 2.8, hpRegen: 0.15 },
+    // hpRegen is intentionally NOT in the growth: it's a FLAT early-game cushion (5),
+    // not a stat that scales with level — it tapers to irrelevance as enemy damage grows.
+    statGrowthPerLevel: { health: 5, armor: 0.5, magicResist: 0.3, attackDamage: 2.8 },
     unlock: { type: 'free' },
     signatureAbility: 'knight_guard',
     style: 'melee', range: RANGE.melee,
@@ -55,7 +57,7 @@ export const CLASSES: Record<string, ClassDef> = {
   priest: {
     key: 'priest', name: 'Priest', role: 'healer',
     baseStats: { health: 115, armor: 10, magicResist: 13, attackDamage: 5, attackSpeed: 1.0, critChance: 6, critDamage: 50, hpRegen: 2 },
-    statGrowthPerLevel: { health: 4, armor: 0.3, magicResist: 0.4, attackDamage: 1.5, hpRegen: 0.15 },
+    statGrowthPerLevel: { health: 4, armor: 0.3, magicResist: 0.4, attackDamage: 1.5 }, // hpRegen stays flat (2) — not a scaling stat
     unlock: { type: 'gold', cost: 500 },
     signatureAbility: 'priest_mend',
     style: 'caster', range: RANGE.caster,
