@@ -100,13 +100,17 @@ export function PanelLayer(): React.JSX.Element {
 
   // The band targets BAND_TARGET px (centered on the viewport), capped to the viewport on
   // small screens — so the side panels fill the leftover space beside the fixed party menu.
+  // The whole band is rendered inside a `zoom: uiZoom` wrapper, so all the layout below stays
+  // in BASE coordinates and the user zoom scales it uniformly. The viewport (real px) therefore
+  // measures window.innerWidth / uiZoom in those base coords.
+  const uiZoom = useStore((s) => s.uiZoom);
   const [bandW, setBandW] = useState(BAND_TARGET);
   useEffect(() => {
-    const update = (): void => setBandW(Math.min(BAND_TARGET, window.innerWidth - BAND_MARGIN));
+    const update = (): void => setBandW(Math.min(BAND_TARGET, window.innerWidth / uiZoom - BAND_MARGIN));
     update();
     window.addEventListener('resize', update);
     return () => window.removeEventListener('resize', update);
-  }, []);
+  }, [uiZoom]);
 
   // Party is fixed and centered; each side panel fills its half of the leftover space.
   const partyRendered = PARTY_W * PARTY_SCALE;
@@ -125,7 +129,7 @@ export function PanelLayer(): React.JSX.Element {
     <div
       style={{
         position: 'absolute', left: '50%', transform: 'translateX(-50%)', top: 0, bottom: 0,
-        width: bandW, pointerEvents: 'none',
+        width: bandW, pointerEvents: 'none', zoom: uiZoom,
       }}
     >
       {entries.map(({ key, phase }) => {
