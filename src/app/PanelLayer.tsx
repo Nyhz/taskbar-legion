@@ -153,12 +153,14 @@ export function PanelLayer(): React.JSX.Element {
     <div
       ref={bandRef}
       style={{
-        position: 'absolute', left: '50%', top: 0, bottom: -shift, width: bandW, pointerEvents: 'none',
-        // Global UI zoom: scale the band from its BOTTOM-CENTRE so it stays centred on the strip
-        // and grows UPWARD from the baseline (transform doesn't reflow the box). `bottom: -shift`
-        // pushes it down by the overflow when a tall panel wouldn't otherwise fit, keeping the
-        // title bar on-screen. At uiZoom=1 (shift 0) this is identity → crisp.
-        transform: `translateX(-50%) scale(${uiZoom})`,
+        // Centre via left:50% + a margin (LAYOUT) so it stays exactly concentric with the strip;
+        // keep the transform purely scale (+ a downward translate) so it can't drift the centre
+        // the way translateX(-50%) combined with scale did.
+        position: 'absolute', left: '50%', marginLeft: -bandW / 2, top: 0, bottom: -shift, width: bandW, pointerEvents: 'none',
+        // Global UI zoom: scale the band from its BOTTOM-CENTRE so it grows UPWARD from the strip
+        // baseline (transform doesn't reflow the box). translateY(shift) pushes it down by the
+        // overflow when a tall panel wouldn't otherwise fit, keeping the title bar on-screen.
+        transform: `translateY(${shift}px) scale(${uiZoom})`,
         transformOrigin: 'bottom center',
       }}
     >

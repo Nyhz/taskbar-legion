@@ -32,9 +32,10 @@ const DRAG_THRESHOLD = 4; // px of movement before a press becomes a drag (vs. a
 export function App(): React.JSX.Element {
   const stripRef = useRef<HTMLDivElement>(null);
   const gameRef = useRef<GameStrip | null>(null);
+  // The strip (canvas + HUD + overlay) stays a FIXED size at every zoom level; uiZoom scales
+  // ONLY the floating menus (PanelLayer). So the whole strip — combat scene, top bar, RETRY —
+  // is internally consistent and never resizes, and the panel zone above it stays stable.
   const uiScale = useStore((s) => s.uiScale);
-  const uiZoom = useStore((s) => s.uiZoom);
-  const effScale = uiScale * uiZoom; // global zoom scales EVERYTHING — the strip canvas included
   const [offline, setOffline] = useState<OfflineSummary | null>(null);
   const tauri = isTauri();
 
@@ -67,7 +68,7 @@ export function App(): React.JSX.Element {
           console.error('Save hydrate failed — starting fresh to avoid a boot loop', err);
         }
       }
-      await game.init(container, useStore.getState().uiScale * useStore.getState().uiZoom, tauri);
+      await game.init(container, useStore.getState().uiScale, tauri);
       if (cancelled) return;
       if (save !== null) {
         const elapsed = Date.now() - save.lastSavedAt;
@@ -102,8 +103,8 @@ export function App(): React.JSX.Element {
   }, [tauri]);
 
   useEffect(() => {
-    gameRef.current?.applyScale(effScale);
-  }, [effScale]);
+    gameRef.current?.applyScale(uiScale);
+  }, [uiScale]);
 
   // Drag the whole window around the desktop by the strip. Past the threshold we hand the
   // gesture to the OS (startDragging) so the window itself travels — freely across monitors,
@@ -157,7 +158,7 @@ export function App(): React.JSX.Element {
             bottom: 0,
             top: 0,
             transform: 'translateX(-50%)',
-            width: STRIP_LOGICAL_WIDTH * effScale,
+            width: STRIP_LOGICAL_WIDTH * uiScale,
             display: 'flex',
             flexDirection: 'column',
             pointerEvents: tauri ? 'none' : undefined,
@@ -179,7 +180,7 @@ export function App(): React.JSX.Element {
             <StripHud />
           </div>
           <div
-            style={{ position: 'relative', height: STRIP_LOGICAL_HEIGHT * effScale, width: '100%', pointerEvents: tauri ? 'auto' : undefined }}
+            style={{ position: 'relative', height: STRIP_LOGICAL_HEIGHT * uiScale, width: '100%', pointerEvents: tauri ? 'auto' : undefined }}
             onPointerDown={onStripPointerDown}
           >
             <div ref={stripRef} style={{ height: '100%', width: '100%' }} />
