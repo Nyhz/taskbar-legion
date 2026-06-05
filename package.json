@@ -4,6 +4,7 @@
   "version": "0.1.0",
   "type": "module",
   "description": "Ambient idle RPG that auto-battles in a thin horizontal strip (v1: browser, offline).",
+  "license": "SEE LICENSE IN LICENSE.md",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
