@@ -8,6 +8,7 @@ import { chestDropChance } from '@/sim/chests';
 import { CHEST_TYPES, type ChestType } from '@/data/chests';
 import { OFFENSIVE_STATS, DEFENSIVE_STATS, STATS, ENABLER_SOFT_CAPS, type StatKey } from '@/data/stats';
 import { effectDef } from '@/data/effects';
+import { mitigation, expectedDefense } from '@/data/stageScaling';
 import { format } from '@/sim/num';
 import { PALETTE } from '@/styles/palette';
 
@@ -20,7 +21,7 @@ import { PALETTE } from '@/styles/palette';
 const CHEST_LABEL: Record<ChestType, string> = { normal: 'Normal', stageBoss: 'Stage boss', zoneBoss: 'Zone boss' };
 
 export function HeroStatsTab({ heroId }: { heroId: string }): React.JSX.Element {
-  useStore((s) => s.hud); // re-render roughly per frame for live effects
+  const stage = useStore((s) => s.hud.globalStage); // re-render ~per frame; current stage for the defense check
   const hero = useStore((s) => s.roster.find((h) => h.id === heroId));
   const techRanks = useStore((s) => s.techRanks);
   const ownedPets = useStore((s) => s.ownedPets);
@@ -51,7 +52,7 @@ export function HeroStatsTab({ heroId }: { heroId: string }): React.JSX.Element 
           labels never need to scroll sideways. */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         <StatCol title="Offensive" keys={OFFENSIVE_STATS} stats={stats} />
-        <StatCol title="Defensive" keys={DEFENSIVE_STATS} stats={stats} />
+        <StatCol title="Defensive" keys={DEFENSIVE_STATS} stats={stats} stage={stage} />
       </div>
 
       <UtilitySection stats={stats} bonuses={bonuses} />
@@ -74,7 +75,7 @@ export function HeroStatsTab({ heroId }: { heroId: string }): React.JSX.Element 
   );
 }
 
-function StatCol({ title, keys, stats }: { title: string; keys: StatKey[]; stats: Record<StatKey, number> }): React.JSX.Element {
+function StatCol({ title, keys, stats, stage }: { title: string; keys: StatKey[]; stats: Record<StatKey, number>; stage?: number }): React.JSX.Element {
   return (
     <div style={{ flex: 1 }}>
       <div style={{ color: title === 'Offensive' ? '#e8a0a0' : '#a0c8e8', fontWeight: 700 }}>{title}</div>
@@ -83,18 +84,52 @@ function StatCol({ title, keys, stats }: { title: string; keys: StatKey[]; stats
         const v = stats[k]; // already the EFFECTIVE (soft-capped) value from aggregate
         if (v === 0) return null;
         const cap = ENABLER_SOFT_CAPS[k]?.cap; // enablers show their diminishing-returns ceiling
+        const def = stage !== undefined ? defenseInfo(k, v, stage) : undefined;
         return (
           <div key={k} style={{ display: 'flex', justifyContent: 'space-between', gap: 6, fontSize: 10, whiteSpace: 'nowrap' }}>
             <span style={{ color: PALETTE.textMute }}>{STATS[k].label}</span>
             <span style={{ color: PALETTE.textLight }}>
               {pct ? `${v.toFixed(1)}%` : format(Math.round(v))}
               {cap !== undefined && <span style={{ color: PALETTE.textMute }}> / {cap}%</span>}
+              {def !== undefined && (
+                // Neutral, parenthesised reduction (−X% dmg) + a single colored arrow that
+                // judges whether it's enough for this stage.
+                <span title={def.tip} style={{ color: PALETTE.textMute }}>
+                  {' (−'}{def.dr}% dmg){' '}
+                  <span style={{ color: def.color, fontWeight: 700 }}>{def.glyph}</span>
+                </span>
+              )}
             </span>
           </div>
         );
       })}
     </div>
   );
+}
+
+// Armor / Magic Resist adequacy vs the CURRENT stage's enemies. Mirrors the party-window
+// ilvl check: compare actual defense to the on-level value (`expectedDefense`, the ~50%-DR
+// anchor) with the same ±10% band, and surface the real damage reduction the stat is buying
+// against this stage (`mitigation`). Returns undefined for non-defense stats.
+const DEF_UNDER = 0.9; // < −10% of on-level defense → under-defended (red ▼)
+const DEF_OVER = 1.1; // ≥ +10% over on-level defense → well-defended (green ▲)
+function defenseInfo(k: StatKey, value: number, stage: number): { dr: string; glyph: string; color: string; tip: string } | undefined {
+  if (k !== 'armor' && k !== 'magicResist') return undefined;
+  const dr = (mitigation(value, stage) * 100).toFixed(0);
+  const type = k === 'armor' ? 'physical' : 'magic';
+  const ratio = value / Math.max(1, expectedDefense(stage));
+  const band =
+    ratio < DEF_UNDER
+      ? { glyph: '▼', color: '#ff6f6f', verdict: 'Under-defended' }
+      : ratio > DEF_OVER
+        ? { glyph: '▲', color: '#5fd47a', verdict: 'Well-defended' }
+        : { glyph: '▬', color: PALETTE.gold, verdict: 'On-level' };
+  return {
+    dr,
+    glyph: band.glyph,
+    color: band.color,
+    tip: `${band.verdict} for stage ${stage}: cuts ${dr}% of incoming ${type} damage from this stage's enemies (on-level ≈ 50%).`,
+  };
 }
 
 // Account-wide multipliers are stored as final factors (1 + Σ); show the bonus part.

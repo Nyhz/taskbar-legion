@@ -1,24 +1,26 @@
 import type { ItemInstance } from '@/sim/items';
 import { SLOTS, tryWeaponTypeFor } from '@/data/itemSlots';
 import { classDef } from '@/data/classes';
-import { GEMS } from '@/data/gems';
+import { GEMS, type GemInstance } from '@/data/gems';
 import { gemGrants } from '@/sim/gems';
 import { tierStyle, tierName } from '@/ui/tierStyle';
 import { STAT_ICON, itemGlyph } from '@/ui/icons';
 import { StatRow, statText } from './StatRow';
 import { PALETTE } from '@/styles/palette';
 import { STATS, type StatKey } from '@/data/stats';
+import { ROLE_LABEL, type RoleScores, type RoleKey } from '@/sim/roleScore';
 
 // Hover tooltip styled as a pixel-art item card: a rarity-framed title bar, an icon +
-// grade header with the base stat, an "Inherent Stats" block (rolled substats + any
-// socketed gem grants, folded so the display reflects the real total), and a "Gem Slots"
-// block. Comparison is now SIDE-BY-SIDE (ItemSlot renders the equipped card next to this
-// one); when `compareTo` is set, each stat on THIS card carries a green/red ▲▼ delta vs the
-// equipped piece, and any stat only the equipped item has shows as a red loss. Totals are
-// gem-INCLUSIVE on both sides — the equipped card sits right beside it, so what you'd have
-// vs what you have now reads honestly (gems and all).
+// grade header with the base stat, an "Inherent Stats" block (the item's OWN rolled
+// substats), and a "Gem Slots" block where each socketed gem lists what it grants. Item
+// stats and gem stats are kept VISUALLY SEPARATE — gems are not folded into the inherent
+// total. Comparison is SIDE-BY-SIDE (ItemSlot renders the equipped card next to this one);
+// when `compareTo` is set, each inherent stat on THIS card carries a green/red ▲▼ delta vs
+// the equipped piece (item stats only), and any stat only the equipped item has shows as a
+// red loss.
 
-// Full stat total INCLUDING socketed gems — the basis for both display and comparison.
+// The item's OWN stat total — base affix + rolled substats only. Socketed gems are
+// shown separately under "Gem Slots" so item stats and gem stats stay visually distinct.
 function totalByKey(item: ItemInstance): Map<StatKey, number> {
   const m = new Map<StatKey, number>();
   const add = (k: StatKey, v: number): void => {
@@ -26,9 +28,6 @@ function totalByKey(item: ItemInstance): Map<StatKey, number> {
   };
   for (const b of item.baseAffix) add(b.key, b.value);
   for (const s of item.stats) add(s.key, s.value);
-  for (const so of item.sockets) {
-    if (so.gem !== null) for (const gr of gemGrants(so.gem)) add(gr.key, gr.value);
-  }
   return m;
 }
 
@@ -42,7 +41,7 @@ function itemTitle(item: ItemInstance): string {
   return SLOTS[item.slot].label;
 }
 
-export function ItemTooltip({ item, compareTo, locked, wrongClass }: { item: ItemInstance; compareTo?: ItemInstance; locked?: boolean; wrongClass?: boolean }): React.JSX.Element {
+export function ItemTooltip({ item, compareTo, locked, wrongClass, roleDelta, roleKeys }: { item: ItemInstance; compareTo?: ItemInstance; locked?: boolean; wrongClass?: boolean; roleDelta?: RoleScores; roleKeys?: RoleKey[] }): React.JSX.Element {
   const ts = tierStyle(item.tier);
   const rarity = ts.iridescent ? '#e0b0ff' : ts.color;
   const mine = totalByKey(item);
@@ -143,7 +142,17 @@ export function ItemTooltip({ item, compareTo, locked, wrongClass }: { item: Ite
           <>
             <SectionHeader glyph="💎" label="Gem Slots" />
             {item.sockets.map((so, i) => (
-              <SocketRow key={i} gemKey={so.gem?.key} tier={so.gem?.tier} />
+              <SocketRow key={i} gem={so.gem} />
+            ))}
+          </>
+        )}
+
+        {/* net role impact vs the equipped piece (only when comparing) */}
+        {roleDelta !== undefined && (
+          <>
+            <SectionHeader glyph="⚖" label="Role Impact" />
+            {(roleKeys ?? (['dps', 'tank', 'heal'] as RoleKey[])).map((r) => (
+              <RoleRow key={r} label={ROLE_LABEL[r]} pct={roleDelta[r]} />
             ))}
           </>
         )}
@@ -185,6 +194,21 @@ function DeltaTag({ k, d }: { k: StatKey; d: number }): React.JSX.Element | null
   );
 }
 
+// One role line in the "Role Impact" block: a green/red signed % (the net change to this
+// role's combat proxy if equipped). ~0 reads as a muted "no change" so swaps that don't
+// touch a role don't shout. Rounded to 0.1% — sub-0.05 collapses to 0.
+function RoleRow({ label, pct }: { label: string; pct: number }): React.JSX.Element {
+  const flat = Math.abs(pct) < 0.05;
+  const color = flat ? PALETTE.textMute : pct > 0 ? PALETTE.hpGreen : PALETTE.enemyAccent;
+  const text = flat ? '—' : `${pct > 0 ? '+' : ''}${pct.toFixed(1)}%`;
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 6, fontSize: 10, whiteSpace: 'nowrap' }}>
+      <span style={{ color: PALETTE.textMute }}>{label}</span>
+      <span style={{ color, fontWeight: 700 }}>{text}</span>
+    </div>
+  );
+}
+
 function SectionHeader({ glyph, label }: { glyph: string; label: string }): React.JSX.Element {
   return (
     <div
@@ -205,26 +229,35 @@ function SectionHeader({ glyph, label }: { glyph: string; label: string }): Reac
   );
 }
 
-function SocketRow({ gemKey, tier }: { gemKey?: string; tier?: number }): React.JSX.Element {
-  const gem = gemKey !== undefined ? GEMS[gemKey as keyof typeof GEMS] : undefined;
+function SocketRow({ gem }: { gem: GemInstance | null }): React.JSX.Element {
+  const def = gem !== null ? GEMS[gem.key as keyof typeof GEMS] : undefined;
+  const grants = gem !== null ? gemGrants(gem) : [];
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-      <span
-        style={{
-          width: 12,
-          height: 12,
-          flexShrink: 0,
-          borderRadius: '50%',
-          background: gem ? gem.color : 'transparent',
-          border: `1px solid ${gem ? PALETTE.ink : PALETTE.textMute}`,
-          boxShadow: gem ? `0 0 4px ${gem.color}` : undefined,
-        }}
-      />
-      {gem ? (
-        <span style={{ color: PALETTE.textLight }}>{gem.name} <span style={{ color: PALETTE.textMute }}>T{tier}</span></span>
-      ) : (
-        <span style={{ color: PALETTE.textMute }}>Empty Slot</span>
-      )}
+    <div style={{ marginBottom: 2 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+        <span
+          style={{
+            width: 12,
+            height: 12,
+            flexShrink: 0,
+            borderRadius: '50%',
+            background: def ? def.color : 'transparent',
+            border: `1px solid ${def ? PALETTE.ink : PALETTE.textMute}`,
+            boxShadow: def ? `0 0 4px ${def.color}` : undefined,
+          }}
+        />
+        {def && gem ? (
+          <span style={{ color: PALETTE.textLight }}>{def.name} <span style={{ color: PALETTE.textMute }}>T{gem.tier}</span></span>
+        ) : (
+          <span style={{ color: PALETTE.textMute }}>Empty Slot</span>
+        )}
+      </div>
+      {grants.map((gr) => (
+        <div key={gr.key} style={{ display: 'flex', alignItems: 'center', gap: 5, paddingLeft: 17 }}>
+          <span style={{ width: 14, textAlign: 'center', fontSize: 10 }}>{STAT_ICON[gr.key]}</span>
+          <span style={{ flex: 1, color: def?.color ?? PALETTE.textLight }}>{statText(gr.key, gr.value)} {STATS[gr.key].label}</span>
+        </div>
+      ))}
     </div>
   );
 }

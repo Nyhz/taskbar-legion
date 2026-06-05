@@ -3,6 +3,7 @@ import { useStore } from '@/state/store';
 import type { PanelKey } from '@/state/slices/uiSlice';
 import { classDef, CLASS_KEYS } from '@/data/classes';
 import { getBonuses } from '@/sim/bonuses';
+import { roleDeltaPct, visibleRoles, type RoleScores } from '@/sim/roleScore';
 import { format } from '@/sim/num';
 import { CLASS_ACCENT } from '@/game/render/textures';
 import { totalExpToReach, expectedLevel } from '@/data/stageScaling';
@@ -274,9 +275,32 @@ function SharedInventory({ heroId, requestSocket }: { heroId: string; requestSoc
   const buySlot = useStore((s) => s.buyInventorySlot);
   const sortInventory = useStore((s) => s.sortInventory);
   const stashAllGems = useStore((s) => s.stashAllGems);
-  const equipped = useStore((s) => s.roster.find((h) => h.id === heroId)?.equipment ?? {});
-  const heroClass = useStore((s) => s.roster.find((h) => h.id === heroId)?.classKey);
+  const hero = useStore((s) => s.roster.find((h) => h.id === heroId));
+  const techRanks = useStore((s) => s.techRanks);
+  const ownedPets = useStore((s) => s.ownedPets);
+  const stage = useStore((s) => s.hud.globalStage);
+  const equipped = hero?.equipment ?? {};
+  const heroClass = hero?.classKey;
   const openMenu = useContextMenu();
+
+  // Net DPS/Tanking/Healing the hovered item would net THIS hero vs the equipped piece —
+  // computed lazily by ItemSlot (only the hovered cell builds its tooltip).
+  const bonuses = getBonuses(techRanks, ownedPets);
+  const roleKeys = hero !== undefined ? visibleRoles(hero.classKey) : undefined;
+  const roleImpactFor =
+    hero === undefined
+      ? undefined
+      : (newItem: ItemInstance, eq: ItemInstance): RoleScores =>
+          roleDeltaPct({
+            classKey: hero.classKey,
+            level: hero.level,
+            equipment: equipped,
+            swapSlot: eq.slot,
+            swapItem: newItem,
+            talents: hero.talents,
+            extraMods: bonuses.combatMods,
+            stage,
+          });
 
   const slotCost = inventorySlotCost(slotUpgrades);
   const canExpand = slotUpgrades < INVENTORY_MAX_SLOTS && gold >= slotCost;
@@ -336,6 +360,8 @@ function SharedInventory({ heroId, requestSocket }: { heroId: string; requestSoc
         key={`slot-${slotIndex}`}
         item={entry}
         compare={compareTargets(entry)}
+        roleImpact={roleImpactFor}
+        roleKeys={roleKeys}
         unequippable={cannotEquip}
         wrongClass={wrongClass}
         size={32}
