@@ -35,19 +35,19 @@ describe('ability mechanics', () => {
     expect(enemy.hp).toBeCloseTo(820, 1);
   });
 
-  it('Explosive Arrow hits the front enemy hard and splashes the rest of the wave for less', () => {
+  it('Explosive Arrow hits the front enemy hard and splashes only nearby enemies (45px radius)', () => {
     const caster = unit({
       id: 'r', side: 'hero',
       baseStats: base({ attackDamage: 100, critChance: 0 }),
-      abilities: [{ def: abilityDef('ranger_focus'), rank: 1 }], // 1.6× front, 0.6× splash
+      abilities: [{ def: abilityDef('ranger_focus'), rank: 1 }], // 1.6× front, 0.6× splash, r=45
     });
     const front = unit({ id: 'e1', side: 'enemy', x: 10, hp: 1000, maxHp: 1000 });
-    const b = unit({ id: 'e2', side: 'enemy', x: 20, hp: 1000, maxHp: 1000 });
-    const c = unit({ id: 'e3', side: 'enemy', x: 25, hp: 1000, maxHp: 1000 });
-    castReadyAbilities(caster, [caster], [front, b, c], 1, makeRng(1), []);
+    const near = unit({ id: 'e2', side: 'enemy', x: 40, hp: 1000, maxHp: 1000 }); // Δ30 ≤ 45 → splashed
+    const far = unit({ id: 'e3', side: 'enemy', x: 200, hp: 1000, maxHp: 1000 }); // Δ190 > 45 → spared
+    castReadyAbilities(caster, [caster], [front, near, far], 1, makeRng(1), []);
     expect(front.hp).toBeCloseTo(840, 1); // 1000 − 1.6×100
-    expect(b.hp).toBeCloseTo(940, 1); // 1000 − splash 0.6×100
-    expect(c.hp).toBeCloseTo(940, 1);
+    expect(near.hp).toBeCloseTo(940, 1); // 1000 − splash 0.6×100
+    expect(far.hp).toBe(1000); // outside the blast radius — untouched
   });
 
   it('Caltrops lays a damage-over-time on every enemy in the wave', () => {
