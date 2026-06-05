@@ -1,7 +1,7 @@
 {
   "name": "taskbar-legion",
   "private": true,
-  "version": "1.0.0",
+  "version": "0.1.0",
   "type": "module",
   "description": "Ambient idle RPG that auto-battles in a thin horizontal strip (v1: browser, offline).",
   "scripts": {
@@ -12,6 +12,7 @@
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build",
     "gen:icon": "node scripts/gen-icon.mjs && tauri icon src-tauri/app-icon.png",
+    "release": "node scripts/release.mjs",
     "test": "vitest run",
     "probe": "vite-node scripts/sim-progression.ts",
     "test:watch": "vitest",
