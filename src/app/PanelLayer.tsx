@@ -112,14 +112,14 @@ export function PanelLayer(): React.JSX.Element {
     return () => window.removeEventListener('resize', update);
   }, [uiZoom]);
 
-  // Vertical fit: the panels rise from the strip, so a tall one (party host / tech overlay)
-  // could grow past the top of the available area and clip its title bar — trapping the player
-  // (the zoom control lives in that title bar). Measure the tallest panel against the zone and
-  // clamp the effective zoom so the band ALWAYS fits: uiZoom when it fits, else the largest that
-  // does. (Panel offsetHeight reflects its own base `zoom` but not the band transform, so this
-  // doesn't feed back into itself.)
+  // The band scales to the FULL uiZoom (so 1.25 is genuinely bigger). The panels rise from the
+  // strip, so at high zoom a tall one (party host / tech overlay) would grow past the top and
+  // clip its title bar — which holds the zoom control, trapping the player. Rather than shrink
+  // it, push the whole band DOWN by the overflow so the title bar stays on-screen; the bottom
+  // tucks over the strip and the panel body scrolls. (offsetHeight reflects each panel's own base
+  // `zoom` but not the band transform, so the measurement doesn't feed back into itself.)
   const bandRef = useRef<HTMLDivElement>(null);
-  const [fitScale, setFitScale] = useState(1);
+  const [shift, setShift] = useState(0);
   useLayoutEffect(() => {
     const measure = (): void => {
       const band = bandRef.current;
@@ -127,14 +127,14 @@ export function PanelLayer(): React.JSX.Element {
       if (band === null || zone <= 0) return;
       let maxH = 0;
       for (const child of Array.from(band.children) as HTMLElement[]) maxH = Math.max(maxH, child.offsetHeight);
-      const fit = maxH > 0 ? (zone - VERT_MARGIN) / maxH : 1;
-      setFitScale((prev) => (Math.abs(prev - fit) > 0.005 ? fit : prev));
+      const overflow = maxH * uiZoom - (zone - VERT_MARGIN);
+      const next = Math.max(0, overflow);
+      setShift((prev) => (Math.abs(prev - next) > 0.5 ? next : prev));
     };
     measure();
     window.addEventListener('resize', measure);
     return () => window.removeEventListener('resize', measure);
   }, [entries, uiZoom, bandW]);
-  const effZoom = Math.min(uiZoom, fitScale);
 
   // Party is fixed and centered; each side panel fills its half of the leftover space.
   const partyRendered = PARTY_W * PARTY_SCALE;
@@ -153,13 +153,12 @@ export function PanelLayer(): React.JSX.Element {
     <div
       ref={bandRef}
       style={{
-        position: 'absolute', left: '50%', top: 0, bottom: 0, width: bandW, pointerEvents: 'none',
-        // Global UI zoom: scale the whole band from its BOTTOM-CENTRE so it stays centred on the
-        // strip and grows UPWARD from the strip baseline (transform doesn't reflow the box, so it
-        // can't overflow top+bottom the way `zoom` on a top:0/bottom:0 element did). At effZoom=1
-        // this is identity → crisp; the panels' own `zoom` handles the base sizing. effZoom is the
-        // requested uiZoom clamped so the tallest panel still fits (title bar stays reachable).
-        transform: `translateX(-50%) scale(${effZoom})`,
+        position: 'absolute', left: '50%', top: 0, bottom: -shift, width: bandW, pointerEvents: 'none',
+        // Global UI zoom: scale the band from its BOTTOM-CENTRE so it stays centred on the strip
+        // and grows UPWARD from the baseline (transform doesn't reflow the box). `bottom: -shift`
+        // pushes it down by the overflow when a tall panel wouldn't otherwise fit, keeping the
+        // title bar on-screen. At uiZoom=1 (shift 0) this is identity → crisp.
+        transform: `translateX(-50%) scale(${uiZoom})`,
         transformOrigin: 'bottom center',
       }}
     >
