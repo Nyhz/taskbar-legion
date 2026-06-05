@@ -22,8 +22,11 @@ function sideOf(key: PanelKey): readonly PanelKey[] | null {
 }
 
 export type UiScale = 1 | 1.5 | 2; // kept for save-schema back-compat; the live value is fixed
-/** The one and only UI sizing. 1.5× is the baseline now — zoom is no longer adjustable. */
+/** Baseline UI sizing baked into the layout (the strip canvas + panel base scales). The user
+ *  zoom multiplies ON TOP of this, so uiZoom = 1 reproduces the original 1.5×/1.3×… look. */
 export const UI_SCALE = 1.5;
+/** Global UI zoom levels the player can pick (× on top of the baseline). 1 = native size. */
+export const UI_ZOOM_LEVELS = [0.75, 1, 1.25] as const;
 export type DockOrientation = 'bottom' | 'left' | 'right';
 
 export interface WindowPos {
@@ -35,6 +38,7 @@ export interface UiSlice {
   openPanels: PanelKey[];
   windowPos: Partial<Record<PanelKey, WindowPos>>;
   uiScale: UiScale;
+  uiZoom: number; // user zoom multiplier on top of UI_SCALE (default 1)
   dockOrientation: DockOrientation;
   retryStage: boolean; // when true, a wipe keeps the party on its stage (no retreat)
   hideSocketWarning: boolean; // when true, socketing skips the confirm modal
@@ -47,6 +51,7 @@ export interface UiSlice {
   setDockOrientation: (orientation: DockOrientation) => void;
   setRetryStage: (on: boolean) => void;
   setHideSocketWarning: (on: boolean) => void;
+  setUiZoom: (zoom: number) => void;
 }
 
 export const createUiSlice: StateCreator<UiSlice, [], [], UiSlice> = (set, get) => {
@@ -55,6 +60,7 @@ export const createUiSlice: StateCreator<UiSlice, [], [], UiSlice> = (set, get) 
   const persist = (): void =>
     saveSettings({
       uiScale: get().uiScale,
+      uiZoom: get().uiZoom,
       dockOrientation: get().dockOrientation,
       retryStage: get().retryStage,
       hideSocketWarning: get().hideSocketWarning,
@@ -62,7 +68,8 @@ export const createUiSlice: StateCreator<UiSlice, [], [], UiSlice> = (set, get) 
   return {
     openPanels: [],
     windowPos: {},
-    uiScale: UI_SCALE, // fixed — zoom is no longer adjustable
+    uiScale: UI_SCALE, // fixed baseline — the user knob is uiZoom
+    uiZoom: persisted.uiZoom ?? 1,
     dockOrientation: persisted.dockOrientation ?? 'bottom',
     retryStage: persisted.retryStage ?? false,
     hideSocketWarning: persisted.hideSocketWarning ?? false,
@@ -110,6 +117,11 @@ export const createUiSlice: StateCreator<UiSlice, [], [], UiSlice> = (set, get) 
 
     setHideSocketWarning: (on) => {
       set({ hideSocketWarning: on });
+      persist();
+    },
+
+    setUiZoom: (zoom) => {
+      set({ uiZoom: zoom });
       persist();
     },
   };

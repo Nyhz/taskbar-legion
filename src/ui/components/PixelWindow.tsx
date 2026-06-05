@@ -59,8 +59,10 @@ export function PixelWindow({
         userSelect: 'none',
         display: 'flex',
         flexDirection: 'column',
-        transform: `scale(${scale})`,
-        transformOrigin: 'bottom left',
+        // `zoom` (not transform: scale) so the scaled text/borders RE-RASTERIZE crisply
+        // instead of being a stretched bitmap. zoom also grows the layout box, so the
+        // bottom-anchored wrapper sizes to it naturally (no transform-origin needed).
+        zoom: scale,
       }}
     >
       <div
