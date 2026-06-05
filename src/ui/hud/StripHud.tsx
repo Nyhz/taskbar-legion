@@ -3,6 +3,7 @@ import { format } from '@/sim/num';
 import { CLASS_ACCENT } from '@/game/render/textures';
 import { classDef } from '@/data/classes';
 import { stageLabelOf } from '@/data/difficulties';
+import { ScaleControls } from './ScaleControls';
 import { PALETTE } from '@/styles/palette';
 
 // The always-visible HUD row above the strip: stage label W-S, stage progress
@@ -59,6 +60,7 @@ export function StripHud(): React.JSX.Element {
       <ChestTray chests={hud.chests} />
 
       <div style={{ flex: 1 }} />
+      <ScaleControls />
     </div>
   );
 }

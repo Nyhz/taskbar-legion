@@ -10,7 +10,8 @@ const KEY = 'taskbar-legion.settings.v0';
 
 export interface UiSettings {
   uiScale: UiScale;
-  uiZoom: number; // global UI zoom multiplier (0.75 / 1 / 1.25); 1 = native size
+  menuScale: number; // independent menu zoom (0.75 / 1 / 1.25); 1 = native size
+  gameScale: number; // independent strip+topbar zoom (0.75 / 1 / 1.25); 1 = native size
   dockOrientation: DockOrientation;
   retryStage: boolean; // keep the party on its stage after a wipe instead of retreating
   hideSocketWarning: boolean; // skip the "gem can't be recovered" confirm when socketing

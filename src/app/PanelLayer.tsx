@@ -100,16 +100,16 @@ export function PanelLayer(): React.JSX.Element {
 
   // The band targets BAND_TARGET px (centered on the viewport), capped to the viewport on
   // small screens — so the side panels fill the leftover space beside the fixed party menu.
-  // The band is laid out in BASE px and then transform-scaled by uiZoom, so the rendered width
-  // is bandW * uiZoom. Cap bandW so that scaled width still fits the viewport (÷ uiZoom).
-  const uiZoom = useStore((s) => s.uiZoom);
+  // The band is laid out in BASE px and then transform-scaled by menuScale, so the rendered width
+  // is bandW * menuScale. Cap bandW so that scaled width still fits the viewport (÷ menuScale).
+  const menuScale = useStore((s) => s.menuScale);
   const [bandW, setBandW] = useState(BAND_TARGET);
   useEffect(() => {
-    const update = (): void => setBandW(Math.min(BAND_TARGET, window.innerWidth / uiZoom - BAND_MARGIN));
+    const update = (): void => setBandW(Math.min(BAND_TARGET, window.innerWidth / menuScale - BAND_MARGIN));
     update();
     window.addEventListener('resize', update);
     return () => window.removeEventListener('resize', update);
-  }, [uiZoom]);
+  }, [menuScale]);
 
   // Party is fixed and centered; each side panel fills its half of the leftover space.
   const partyRendered = PARTY_W * PARTY_SCALE;
@@ -131,11 +131,11 @@ export function PanelLayer(): React.JSX.Element {
         // keep the transform purely scale so it can't drift the centre the way translateX(-50%)
         // combined with scale did.
         position: 'absolute', left: '50%', marginLeft: -bandW / 2, top: 0, bottom: 0, width: bandW, pointerEvents: 'none',
-        // Global UI zoom: scale the band from its BOTTOM-CENTRE so it grows UPWARD from the strip
-        // baseline at its FULL size (no height cap / scroll — the menu takes all the room it
-        // needs). At uiZoom=1 this is identity → crisp; the strip is capped at 1× so it never
-        // eats the space the bigger menu needs to grow into.
-        transform: `scale(${uiZoom})`,
+        // Menu Scale: scale the band from its BOTTOM-CENTRE so it grows UPWARD from the strip
+        // baseline at its full size (no cap / scroll). Independent of Game Scale — the band is
+        // anchored to the (gameScale-sized) strip top and scaled by menuScale on top, so it always
+        // sits glued above the strip whatever the strip's size. At menuScale=1 this is identity.
+        transform: `scale(${menuScale})`,
         transformOrigin: 'bottom center',
       }}
     >

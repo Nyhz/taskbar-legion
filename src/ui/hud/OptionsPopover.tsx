@@ -2,8 +2,6 @@ import { useRef, useState } from 'react';
 import { resetGame, exportSave, importSave } from '@/persistence/saveManager';
 import { isTauri } from '@/platform/tauri';
 import { exportSaveToFile, readSaveFromFile } from '@/platform/saveTransfer';
-import { useStore } from '@/state/store';
-import { UI_ZOOM_LEVELS } from '@/state/slices/uiSlice';
 import { PALETTE } from '@/styles/palette';
 
 const IMPORT_CONFIRM = 'Import this save? It REPLACES your current progress and reloads.';
@@ -31,8 +29,6 @@ function downloadSave(json: string, name: string): void {
 
 export function OptionsPopover({ onClose }: { onClose: () => void }): React.JSX.Element {
   const fileRef = useRef<HTMLInputElement>(null);
-  const uiZoom = useStore((s) => s.uiZoom);
-  const setUiZoom = useStore((s) => s.setUiZoom);
 
   // Export: native Save dialog under Tauri, Blob download in the browser dev build.
   const onExport = (): void => {
@@ -107,28 +103,6 @@ export function OptionsPopover({ onClose }: { onClose: () => void }): React.JSX.
           ×
         </button>
       </div>
-
-      <Section label="UI Zoom">
-        {UI_ZOOM_LEVELS.map((z) => {
-          const active = Math.abs(uiZoom - z) < 0.001;
-          return (
-            <button
-              key={z}
-              onClick={() => setUiZoom(z)}
-              style={{
-                flex: 1,
-                padding: '5px 0',
-                background: active ? PALETTE.gold : PALETTE.bgInset,
-                border: `1px solid ${active ? PALETTE.gold : PALETTE.goldDim}`,
-                color: active ? PALETTE.ink : PALETTE.gold,
-                fontWeight: 700,
-              }}
-            >
-              {z.toFixed(2)}×
-            </button>
-          );
-        })}
-      </Section>
 
       <Section label="Backup">
         <button onClick={onExport} style={backupBtn}>
