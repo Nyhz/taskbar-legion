@@ -158,8 +158,8 @@ function PaperDoll({ heroId, requestSocket, requestSocketChoice }: { heroId: str
         <div style={{ color: PALETTE.gold, fontWeight: 700 }}>{def.name}</div>
         <HeroIdleSprite classKey={hero.classKey} width={112} height={116} />
         <div style={{ color: PALETTE.parchment, fontSize: 11 }}>
-          Lv.{hero.level} · {def.role} ·{' '}
-          <HoverTip text={`Avg ilvl: ${avgIlvl}`}>iL {avgIlvl}</HoverTip>{' '}
+          Lv.{hero.level} ·{' '}
+          <HoverTip text={`Avg ilvl: ${avgIlvl}`}>iLv. {avgIlvl}</HoverTip>{' '}
           <HoverTip text={gearQuality.tip}>
             <span style={{ color: gearQuality.color, fontWeight: 700 }}>{gearQuality.glyph}</span>
           </HoverTip>
