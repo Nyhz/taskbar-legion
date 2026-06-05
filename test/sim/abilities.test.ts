@@ -58,6 +58,22 @@ describe('ability mechanics', () => {
     expect(c.effects[0]?.remainingMs).toBe(0); // depleted → expired
   });
 
+  it('a shield ability holds (no cast, no cooldown) when the target is already shielded', () => {
+    const enemy = unit({ id: 'e', side: 'enemy', x: 10 }); // in range → engaged + enemyPresent
+    const knight = unit({ id: 'k', side: 'hero', classKey: 'knight', abilities: [{ def: abilityDef('knight_bulwark'), rank: 1 }] });
+    // Already shielded (e.g. by the Priest's Holy Shield) → Bulwark must not double it up.
+    applyEffect(knight.effects, effectDef('fx_shield'), 'priest', 50, 4000);
+    const held = castReadyAbilities(knight, [knight], [enemy], 1, makeRng(1), []);
+    expect(held).not.toContain('knight_bulwark');
+    expect(knight.cooldowns.knight_bulwark ?? 0).toBe(0); // cooldown NOT spent → fires when the shield drops
+
+    // With no pre-existing shield it casts as normal.
+    knight.effects = [];
+    const cast = castReadyAbilities(knight, [knight], [enemy], 1, makeRng(1), []);
+    expect(cast).toContain('knight_bulwark');
+    expect(knight.cooldowns.knight_bulwark ?? 0).toBeGreaterThan(0);
+  });
+
   it('a hero casts at most ONE ability per swing (no global cooldown — the swing paces them)', () => {
     const caster = unit({
       id: 'm', side: 'hero',
