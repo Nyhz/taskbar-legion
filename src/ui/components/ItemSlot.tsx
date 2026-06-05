@@ -159,6 +159,13 @@ export function ItemSlot({
           T{filled.tier}
         </span>
       )}
+      {item && !unequippable && (
+        // Item level in the bottom-LEFT — the corner the red ✕ takes over for a wrong-class
+        // item, so a usable item shows its ilvl and an unusable one shows the ✕ instead.
+        <span style={{ position: 'absolute', bottom: -2, left: 1, fontSize: 8, color: PALETTE.parchment, fontWeight: 700, textShadow: `0 1px 0 ${PALETTE.ink}` }}>
+          {item.ilvl}
+        </span>
+      )}
       {unequippable && item && (
         <span
           title="Can't equip: wrong class or level too low"
