@@ -93,25 +93,6 @@ export const EFFECTS: Record<string, EffectDef> = {
     kind: { type: 'statMod', stat: 'cooldownReduction', mode: 'percent', value: 30 },
     durationMs: 6000, maxStacks: 1, stackRule: 'refresh', beneficial: true,
   },
-  // Hunter's Focus (self): a crit window. Crit chance 15%→35% (+5/rank) and crit damage
-  // 30%→70% (+10/rank) — per-effect valuePerRank on the ability. 8s uptime.
-  buff_focus_crit: {
-    key: 'buff_focus_crit', name: 'Hunter’s Focus', icon: 'aim',
-    kind: { type: 'statMod', stat: 'critChance', mode: 'percent', value: 15 },
-    durationMs: 8000, maxStacks: 1, stackRule: 'refresh', beneficial: true,
-  },
-  buff_focus_critdmg: {
-    key: 'buff_focus_critdmg', name: 'Hunter’s Focus', icon: 'aim',
-    kind: { type: 'statMod', stat: 'critDamage', mode: 'percent', value: 30 },
-    durationMs: 8000, maxStacks: 1, stackRule: 'refresh', beneficial: true,
-  },
-  // Frozen Trap (Ranger): an ice pool that slows the wave's attacks AND movement.
-  // −40% at rank 1, −10/rank → −80% at rank 5 (the ability supplies the per-rank). 4s.
-  debuff_frozen: {
-    key: 'debuff_frozen', name: 'Frozen', icon: 'frost',
-    kind: { type: 'statMod', stat: 'attackSpeed', mode: 'percent', value: -40 },
-    durationMs: 4000, maxStacks: 1, stackRule: 'refresh', beneficial: false,
-  },
   buff_guard_block: {
     key: 'buff_guard_block', name: 'Stone Skin', icon: 'guard',
     // Stone Skin is a flat damage-reduction cooldown: 20% DR at rank 1, +5%/rank → 40% at
@@ -148,26 +129,6 @@ export const EFFECTS: Record<string, EffectDef> = {
     kind: { type: 'weaken', value: 15 },
     durationMs: 6000, maxStacks: 1, stackRule: 'refresh', beneficial: false,
   },
-  buff_arcane_dmg: {
-    key: 'buff_arcane_dmg', name: 'Arcane Surge', icon: 'surge',
-    kind: { type: 'statMod', stat: 'damageIncrease', mode: 'percent', value: 25 },
-    durationMs: 8000, maxStacks: 1, stackRule: 'refresh', beneficial: true,
-  },
-  buff_arcane_as: {
-    key: 'buff_arcane_as', name: 'Arcane Surge', icon: 'surge',
-    kind: { type: 'statMod', stat: 'attackSpeed', mode: 'percent', value: 20 },
-    durationMs: 8000, maxStacks: 1, stackRule: 'refresh', beneficial: true,
-  },
-  buff_flurry_as: {
-    key: 'buff_flurry_as', name: 'Blade Flurry', icon: 'flurry',
-    kind: { type: 'statMod', stat: 'attackSpeed', mode: 'percent', value: 30 },
-    durationMs: 6000, maxStacks: 1, stackRule: 'refresh', beneficial: true,
-  },
-  buff_flurry_crit: {
-    key: 'buff_flurry_crit', name: 'Blade Flurry', icon: 'flurry',
-    kind: { type: 'statMod', stat: 'critChance', mode: 'percent', value: 12 },
-    durationMs: 6000, maxStacks: 1, stackRule: 'refresh', beneficial: true,
-  },
   // ── Ultimates (off-tree, auto-granted at L60; values resolved from data/ultimates) ──
   // Knight Last Stand: brief total invulnerability after a would-be-lethal blow. The
   // duration is overridden by the ult def's invulnMs at apply time.
@@ -200,16 +161,6 @@ export const EFFECTS: Record<string, EffectDef> = {
     key: 'debuff_expose', name: 'Expose', icon: 'expose',
     kind: { type: 'statMod', stat: 'armor', mode: 'percent', value: -20 },
     durationMs: 5000, maxStacks: 5, stackRule: 'independent', beneficial: false,
-  },
-  debuff_chill: {
-    key: 'debuff_chill', name: 'Chill', icon: 'chill',
-    kind: { type: 'statMod', stat: 'attackSpeed', mode: 'percent', value: -30 },
-    durationMs: 3000, maxStacks: 1, stackRule: 'refresh', beneficial: false,
-  },
-  debuff_root: {
-    key: 'debuff_root', name: 'Root', icon: 'root',
-    kind: { type: 'root' },
-    durationMs: 2000, maxStacks: 1, stackRule: 'refresh', beneficial: false,
   },
   debuff_silence: {
     key: 'debuff_silence', name: 'Silence', icon: 'silence',
