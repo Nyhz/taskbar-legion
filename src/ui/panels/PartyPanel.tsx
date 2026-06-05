@@ -5,7 +5,7 @@ import { classDef, CLASS_KEYS } from '@/data/classes';
 import { getBonuses } from '@/sim/bonuses';
 import { format } from '@/sim/num';
 import { CLASS_ACCENT } from '@/game/render/textures';
-import { totalExpToReach } from '@/data/stageScaling';
+import { totalExpToReach, expectedLevel } from '@/data/stageScaling';
 import { SLOT_ICON } from '@/ui/icons';
 import { SLOTS, SLOT_KEYS, slotFamily, type SlotKey } from '@/data/itemSlots';
 import { inventorySlotCost, INVENTORY_MAX_SLOTS } from '@/data/inventory';
@@ -74,12 +74,29 @@ function PaperDoll({ heroId, requestSocket, requestSocketChoice }: { heroId: str
   const equip = useStore((s) => s.equip);
   const unequip = useStore((s) => s.unequip);
   const togglePanel = useStore((s) => s.togglePanel);
+  const stage = useStore((s) => s.hud.globalStage);
   const openMenu = useContextMenu();
   if (hero === undefined) return <div />;
 
   const def = classDef(hero.classKey);
   const expInto = hero.exp - totalExpToReach(hero.level);
   const expNeed = totalExpToReach(hero.level + 1) - totalExpToReach(hero.level);
+
+  // Average item level of the EQUIPPED gear + a QUALITY read of how it compares to the level
+  // loot is centred on at the current stage (expectedLevel). We don't show the exact target —
+  // just an arrow: ▲ green (geared above level), ▬ amber (at/near level, within ±10%), ▼ red
+  // (under-geared / naked). Thresholds are intentionally loose (±10%); tweak GEAR_* to taste.
+  const GEAR_OVER = 1.1; // ≥ +10% over recommended → well geared
+  const GEAR_UNDER = 0.9; // < −10% under recommended → under-geared
+  const equipped = Object.values(hero.equipment).filter((it): it is ItemInstance => it !== undefined);
+  const avgIlvl = equipped.length > 0 ? Math.round(equipped.reduce((sum, it) => sum + it.ilvl, 0) / equipped.length) : 0;
+  const gearRatio = avgIlvl / Math.max(1, expectedLevel(stage));
+  const gearQuality =
+    avgIlvl === 0 || gearRatio < GEAR_UNDER
+      ? { glyph: '▼', color: '#ff6f6f', tip: 'Under-geared for this stage — your gear is below the recommended level. Farm more drops before pushing.' }
+      : gearRatio > GEAR_OVER
+        ? { glyph: '▲', color: '#5fd47a', tip: 'Well geared for this stage — your gear is above the recommended level.' }
+        : { glyph: '▬', color: PALETTE.gold, tip: 'On level for this stage — your gear is at or near the recommended level.' };
 
   const gearSlot = (slot: SlotKey): ReactNode => {
     const item = hero.equipment[slot] ?? null;
@@ -139,7 +156,13 @@ function PaperDoll({ heroId, requestSocket, requestSocketChoice }: { heroId: str
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, flex: 1, padding: '0 4px', minWidth: 0 }}>
         <div style={{ color: PALETTE.gold, fontWeight: 700 }}>{def.name}</div>
         <HeroIdleSprite classKey={hero.classKey} width={112} height={116} />
-        <div style={{ color: PALETTE.parchment, fontSize: 11 }}>Lv.{hero.level} · {def.role}</div>
+        <div style={{ color: PALETTE.parchment, fontSize: 11 }}>
+          Lv.{hero.level} · {def.role} ·{' '}
+          <span title={`Average equipped item level: ${avgIlvl}`}>iL {avgIlvl}</span>{' '}
+          <span title={gearQuality.tip} style={{ color: gearQuality.color, fontWeight: 700, cursor: 'help' }}>
+            {gearQuality.glyph}
+          </span>
+        </div>
         <div style={{ width: '100%', height: 5, background: PALETTE.bgInset, border: `1px solid ${PALETTE.ink}` }}>
           <div style={{ width: `${Math.min(100, (expInto / Math.max(1, expNeed)) * 100)}%`, height: '100%', background: PALETTE.xpBlue }} />
         </div>
