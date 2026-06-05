@@ -74,7 +74,11 @@ if (!dryRun) {
   const dirty = git('status --porcelain')
     .split('\n')
     .filter(Boolean)
-    .filter((line) => line.slice(3).trim() !== 'CHANGELOG.md');
+    // Strip the porcelain status prefix to get the path. git() .trim()s its output, so a
+    // leading-space status (e.g. " M" for an unstaged-only change) loses its space on the
+    // first line — a fixed `slice(3)` then misreads the path. Parse the path robustly so a
+    // lone, unstaged CHANGELOG.md is correctly tolerated (the documented behavior).
+    .filter((line) => line.trim().replace(/^\S{1,2}\s+/, '') !== 'CHANGELOG.md');
   if (dirty.length) {
     fail(
       'Working tree is dirty (only CHANGELOG.md may be uncommitted):\n  ' +
