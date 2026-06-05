@@ -23,11 +23,11 @@ import { saveGame } from '@/persistence/saveManager';
 const POLL_MS = 20;
 
 // Fixed, non-maximized footprint in LOGICAL px (constant across monitor DPI). Height holds
-// the tallest panel (tech ≈ 700 rendered) above the HUD + strip; width holds the ~1200 band
-// with a small margin. On cramped high-DPI laptops a tall panel may clip at the very top —
-// the strip itself always stays at the bottom and draggable.
+// the tallest panel above the HUD + strip even at Menu Scale 1.25 (tech ≈ 700 rendered at 1.0
+// → ~875 at 1.25, plus the strip+HUD ≈ 270). Width holds the ~1200 band with a small margin.
+// On screens shorter than this the top may still clip — the strip always stays at the bottom.
 const OVERLAY_W = 1280;
-const OVERLAY_H = 1040;
+const OVERLAY_H = 1320;
 
 const WIN_POS_KEY = 'taskbar-legion.overlay.winpos.v1';
 
