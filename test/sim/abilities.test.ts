@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { castReadyAbilities } from '@/sim/abilities';
+import { castReadyAbilities, tickCooldowns } from '@/sim/abilities';
 import { applyEffect, absorbDamage } from '@/sim/effects';
 import { effectDef } from '@/data/effects';
 import { abilityDef, ABILITIES } from '@/data/abilities';
@@ -101,7 +101,7 @@ describe('ability mechanics', () => {
     expect(cast).toHaveLength(2); // both fire — enemy cadence unchanged
   });
 
-  it('cooldown reduction shortens the cast cooldown (soft-capped)', () => {
+  it('cooldown reduction drains the cooldown faster (dynamic, soft-capped)', () => {
     const caster = unit({
       id: 'm', side: 'hero',
       baseStats: base({ attackDamage: 50, cooldownReduction: 50 }),
@@ -109,8 +109,29 @@ describe('ability mechanics', () => {
     });
     const enemy = unit({ id: 'e', side: 'enemy' });
     castReadyAbilities(caster, [caster], [enemy], 1, makeRng(1), []);
-    // raw 50 CDR → diminishing-returns effective = 50·50/(50+40) = 27.8% (cap 50%) → 20000×(1−0.278).
-    expect(caster.cooldowns['priest_nova']).toBeCloseTo(14444, 0);
+    // The stored cooldown is the BASE (no CDR baked in) — CDR is applied while it ticks.
+    expect(caster.cooldowns['priest_nova']).toBe(20_000);
+    // raw 50 CDR → diminishing-returns effective ≈ 27.8% → effective total 14444 → drains at
+    // 20000/14444 ≈ 1.385× speed: 1000ms of ticking removes ~1385ms.
+    tickCooldowns(caster, 1000);
+    expect(caster.cooldowns['priest_nova']).toBeCloseTo(20_000 - 1384.6, 0);
+  });
+
+  it('a CDR buff gained AFTER the cast still shortens the remaining cooldown', () => {
+    const caster = unit({
+      id: 'm', side: 'hero',
+      baseStats: base({ attackDamage: 50 }), // 0% CDR at cast
+      abilities: [{ def: abilityDef('priest_nova'), rank: 1 }],
+    });
+    const enemy = unit({ id: 'e', side: 'enemy' });
+    castReadyAbilities(caster, [caster], [enemy], 1, makeRng(1), []);
+    tickCooldowns(caster, 1000); // no CDR yet → drains 1:1
+    expect(caster.cooldowns['priest_nova']).toBe(19_000);
+    // Now a buff grants CDR mid-cooldown (e.g. Power Infusion). The SAME remaining cooldown
+    // must now drain faster, instead of the old behaviour where CDR only mattered at cast.
+    caster.staticMods = [{ key: 'cooldownReduction', mode: 'percent', value: 50 }];
+    tickCooldowns(caster, 1000); // effective ≈27.8% → ~1.385× speed
+    expect(caster.cooldowns['priest_nova']).toBeCloseTo(19_000 - 1384.6, 0);
   });
 });
 
@@ -125,17 +146,17 @@ describe('per-ability cooldowns', () => {
   it('Knight cooldown spot-checks', () => {
     expect(ABILITIES.knight_guard?.cooldownMs).toBe(20_000);
     expect(ABILITIES.knight_debilitate?.cooldownMs).toBe(12_000);
-    expect(ABILITIES.knight_bulwark?.cooldownMs).toBe(18_000);
-    expect(ABILITIES.knight_battlecry?.cooldownMs).toBe(20_000);
-    expect(ABILITIES.knight_bloodlust?.cooldownMs).toBe(20_000);
+    expect(ABILITIES.knight_bulwark?.cooldownMs).toBe(24_000);
+    expect(ABILITIES.knight_battlecry?.cooldownMs).toBe(24_000);
+    expect(ABILITIES.knight_bloodlust?.cooldownMs).toBe(24_000);
   });
 
   it('Priest & Ranger cooldown spot-checks', () => {
     expect(ABILITIES.priest_mend?.cooldownMs).toBe(20_000);
     expect(ABILITIES.priest_powerinfusion?.cooldownMs).toBe(24_000);
-    expect(ABILITIES.priest_holyshield?.cooldownMs).toBe(18_000);
+    expect(ABILITIES.priest_holyshield?.cooldownMs).toBe(24_000);
     expect(ABILITIES.priest_nova?.cooldownMs).toBe(20_000);
-    expect(ABILITIES.ranger_fast_fire?.cooldownMs).toBe(20_000);
+    expect(ABILITIES.ranger_fast_fire?.cooldownMs).toBe(24_000);
     expect(ABILITIES.ranger_multishot?.cooldownMs).toBe(20_000);
     expect(ABILITIES.ranger_focus?.cooldownMs).toBe(18_000);
     expect(ABILITIES.ranger_frozentrap?.cooldownMs).toBe(20_000);

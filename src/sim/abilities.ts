@@ -18,9 +18,21 @@ const ALLY_HELP_THRESHOLD = 0.7; // 'allyBelowHpPct' triggers below 70% HP
 const MAX_CDR = 75; // cap cooldown reduction so abilities can't go free
 
 export function tickCooldowns(c: Combatant, deltaMs: number): void {
-  for (const key of Object.keys(c.cooldowns)) {
+  const keys = Object.keys(c.cooldowns);
+  if (keys.length === 0) return;
+  // CDR applies DYNAMICALLY: cooldowns store their BASE duration (no CDR baked in), and we
+  // drain them faster the higher the caster's CURRENT cooldown reduction. So a CDR buff
+  // gained mid-cooldown shortens the remaining wait, and losing it returns the drain to
+  // normal speed — instead of CDR only mattering at the instant of casting.
+  let cdr = -1; // resolved lazily on the first active cooldown (skips the cost when idle)
+  for (const key of keys) {
     const v = c.cooldowns[key];
-    if (v !== undefined && v > 0) c.cooldowns[key] = Math.max(0, v - deltaMs);
+    if (v === undefined || v <= 0) continue;
+    if (cdr < 0) cdr = Math.min(MAX_CDR, Math.max(0, casterStats(c).cooldownReduction));
+    const total = c.cooldownTotals?.[key] ?? v; // base cooldown this cast started from
+    const effectiveTotal = Math.max(500, total * (1 - cdr / 100));
+    const speed = total / effectiveTotal; // ≥ 1: more CDR ⇒ faster drain
+    c.cooldowns[key] = Math.max(0, v - deltaMs * speed);
   }
 }
 
@@ -71,11 +83,19 @@ function effectDuration(ability: AbilityDef, def: EffectDef, rank: number, overr
   return (override ?? def.durationMs) + (ability.rankScaling?.perRank.durationMs ?? 0) * steps;
 }
 
-function effectiveCooldown(ability: AbilityDef, rank: number, cs: EffectiveStats): number {
+/** The ability's rank-adjusted base cooldown (ms), BEFORE cooldown reduction. CDR is applied
+ *  dynamically as the cooldown ticks (tickCooldowns), not baked in here at cast time. */
+function baseCooldownMs(ability: AbilityDef, rank: number): number {
   const steps = Math.max(0, rank - 1);
+  return Math.max(500, ability.cooldownMs + (ability.rankScaling?.perRank.cooldownMs ?? 0) * steps);
+}
+
+/** Cooldown a cast WOULD take at the caster's current CDR — for tooltips/UI display only.
+ *  In combat the real drain is dynamic (see tickCooldowns), so a CDR buff applied after the
+ *  cast still shortens the remaining cooldown. */
+function effectiveCooldown(ability: AbilityDef, rank: number, cs: EffectiveStats): number {
   const cdr = Math.min(MAX_CDR, Math.max(0, cs.cooldownReduction));
-  const base = ability.cooldownMs + (ability.rankScaling?.perRank.cooldownMs ?? 0) * steps;
-  return Math.max(500, base * (1 - cdr / 100));
+  return Math.max(500, baseCooldownMs(ability, rank) * (1 - cdr / 100));
 }
 
 /** A combatant's class role (tank/dps/healer/support), if it has a class. */
@@ -173,7 +193,11 @@ function selectTargets(caster: Combatant, ability: AbilityDef, allies: Combatant
     }
     case 'randomDpsAlly': {
       const dps = allies.filter((a) => a.alive && roleOf(a) === 'dps');
-      return dps.length === 0 ? [] : [rng.pick(dps)];
+      // Prefer a DPS; if the party has none, fall back to the tank so Power Infusion still
+      // does something useful rather than fizzling.
+      if (dps.length > 0) return [rng.pick(dps)];
+      const tank = findTank(allies);
+      return tank !== undefined ? [tank] : [];
     }
     case 'tank': {
       const tank = findTank(allies);
@@ -304,9 +328,11 @@ export function castReadyAbilities(
     if (ability.charge !== undefined) {
       (caster.charges ??= {})[ability.key] = 0; // spent — rebuild via auto-attacks
     } else {
-      const cd = effectiveCooldown(ability, rank, cs);
-      caster.cooldowns[ability.key] = cd;
-      (caster.cooldownTotals ??= {})[ability.key] = cd; // display-only: lets the UI show a fill fraction
+      // Store the BASE cooldown (no CDR baked in); tickCooldowns drains it at a rate scaled
+      // by the caster's live CDR, so a CDR buff gained later still shortens this cooldown.
+      const base = baseCooldownMs(ability, rank);
+      caster.cooldowns[ability.key] = base;
+      (caster.cooldownTotals ??= {})[ability.key] = base; // base also drives the UI fill fraction
     }
     cast.push(ability.key);
     // Heroes take just one action per swing — the cast consumed it; the rest wait for the

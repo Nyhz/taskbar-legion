@@ -122,13 +122,13 @@ export const EFFECTS: Record<string, EffectDef> = {
   buff_battlecry_ad: {
     key: 'buff_battlecry_ad', name: 'Battle Cry', icon: 'cry',
     kind: { type: 'statMod', stat: 'attackDamage', mode: 'percent', value: 15 },
-    durationMs: 10000, maxStacks: 1, stackRule: 'refresh', beneficial: true,
+    durationMs: 8000, maxStacks: 1, stackRule: 'refresh', beneficial: true,
   },
   buff_battlecry_crit: {
     key: 'buff_battlecry_crit', name: 'Battle Cry', icon: 'cry',
     // 5% crit at rank 1, +2.5%/rank → 15% at rank 5 (matches the AD line's +2.5/rank).
     kind: { type: 'statMod', stat: 'critChance', mode: 'percent', value: 5 },
-    durationMs: 10000, maxStacks: 1, stackRule: 'refresh', beneficial: true,
+    durationMs: 8000, maxStacks: 1, stackRule: 'refresh', beneficial: true,
   },
   // Bloodlust (self): faster swings + lifesteal. AS 24%→40% (+4/rank) and lifesteal
   // 8%→12% (+1/rank) — per-effect valuePerRank on the ability. 8s uptime.
