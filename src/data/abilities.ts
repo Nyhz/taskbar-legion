@@ -80,7 +80,7 @@ export const ABILITIES: Record<string, AbilityDef> = {
   knight_bulwark: {
     key: 'knight_bulwark', name: 'Bulwark', icon: 'shield',
     desc: 'Brace behind a bulwark — a heavy absorb shield on himself.',
-    cooldownMs: 18000, target: 'self',
+    cooldownMs: 24000, target: 'self',
     applies: [{ effectKey: 'fx_shield', durationMsOverride: 8000 }],
     // Self-shield: 30%→50% of his max HP absorbed (+5%/rank).
     castCondition: 'enemyPresent', power: { coeff: 0.3, coeffPerRank: 0.05 },
@@ -88,15 +88,15 @@ export const ABILITIES: Record<string, AbilityDef> = {
   knight_battlecry: {
     key: 'knight_battlecry', name: 'Battle Cry', icon: 'cry',
     desc: 'A war cry that sharpens the whole party’s offense.',
-    cooldownMs: 20000, target: 'allAllies',
-    // buff_battlecry_ad 15%→25% AD + buff_battlecry_crit 5%→15% crit (both +2.5/rank).
+    cooldownMs: 24000, target: 'allAllies',
+    // buff_battlecry_ad 15%→25% AD + buff_battlecry_crit 5%→15% crit (both +2.5/rank). 8s uptime.
     applies: [{ effectKey: 'buff_battlecry_ad' }, { effectKey: 'buff_battlecry_crit' }],
     castCondition: 'enemyPresent', rankScaling: { perRank: { value: 2.5 } },
   },
   knight_bloodlust: {
     key: 'knight_bloodlust', name: 'Bloodlust', icon: 'flurry',
     desc: 'Fly into a bloodlust — faster swings that leech life from every hit.',
-    cooldownMs: 20000, target: 'self',
+    cooldownMs: 24000, target: 'self',
     // buff_bloodlust_as 24%→40% attack speed (+4/rank) + buff_bloodlust_ls 8%→12%
     // lifesteal (+1/rank) — the two scale at different rates, so per-effect valuePerRank.
     applies: [
@@ -117,7 +117,7 @@ export const ABILITIES: Record<string, AbilityDef> = {
   },
   priest_powerinfusion: {
     key: 'priest_powerinfusion', name: 'Power Infusion', icon: 'surge',
-    desc: 'Infuse a damage-dealer with frenzied speed and cooldown reduction.',
+    desc: 'Infuse a damage-dealer with frenzied speed and cooldown reduction. Prefers a DPS; if the party has none, infuses the tank instead.',
     cooldownMs: 24000, target: 'randomDpsAlly',
     // buff_infusion_as + buff_infusion_cdr: both 30%→50% (+5/rank) for 6s.
     applies: [
@@ -129,15 +129,16 @@ export const ABILITIES: Record<string, AbilityDef> = {
   priest_holyshield: {
     key: 'priest_holyshield', name: 'Holy Shield', icon: 'shield',
     desc: 'A divine barrier on the tank — absorbs a burst of the hits it’s taking.',
-    cooldownMs: 18000, target: 'tank', applies: [{ effectKey: 'fx_shield', durationMsOverride: 4000 }],
-    // Shield = 15%→25% of the tank's max HP (+2.5/rank). Only while the tank is engaged.
-    castCondition: 'tankEngaged', power: { coeff: 0.15, coeffPerRank: 0.025 },
+    cooldownMs: 24000, target: 'tank', applies: [{ effectKey: 'fx_shield', durationMsOverride: 4000 }],
+    // Shield = 10%→20% of the tank's max HP (+2.5/rank). Only while the tank is engaged.
+    castCondition: 'tankEngaged', power: { coeff: 0.1, coeffPerRank: 0.025 },
   },
   priest_nova: {
     key: 'priest_nova', name: 'Holy Nova', icon: 'holy',
     desc: 'A burst of holy light damaging the whole wave.',
     cooldownMs: 20000, target: 'allEnemies', applies: [{ effectKey: 'fx_damage' }],
-    castCondition: 'enemyPresent', power: { coeff: 0.8, coeffPerRank: 0.18, canCrit: true },
+    // Per-target wave damage: 1.2× → 2.8× AD (+0.4/rank).
+    castCondition: 'enemyPresent', power: { coeff: 1.2, coeffPerRank: 0.4, canCrit: true },
   },
   priest_retribution: {
     key: 'priest_retribution', name: 'Retribution Aura', icon: 'surge',
@@ -152,7 +153,7 @@ export const ABILITIES: Record<string, AbilityDef> = {
   ranger_fast_fire: {
     key: 'ranger_fast_fire', name: 'Rapid Fire', icon: 'fast',
     desc: 'A sustained burst of attack speed.',
-    cooldownMs: 20000, target: 'self', applies: [{ effectKey: 'buff_fast_fire' }],
+    cooldownMs: 24000, target: 'self', applies: [{ effectKey: 'buff_fast_fire' }],
     // buff_fast_fire 25%→45% attack speed (+5/rank). 8s uptime.
     castCondition: 'enemyPresent', rankScaling: { perRank: { value: 5 } },
   },
@@ -167,7 +168,8 @@ export const ABILITIES: Record<string, AbilityDef> = {
     key: 'ranger_multishot', name: 'Raining Arrows', icon: 'arrows',
     desc: 'A volley spread across the whole wave.',
     cooldownMs: 20000, target: 'allEnemies', applies: [{ effectKey: 'fx_damage' }],
-    castCondition: 'enemyPresent', power: { coeff: 0.8, coeffPerRank: 0.18, canCrit: true },
+    // Per-target wave damage: 1.2× → 2.8× AD (+0.4/rank).
+    castCondition: 'enemyPresent', power: { coeff: 1.2, coeffPerRank: 0.4, canCrit: true },
   },
   ranger_focus: {
     key: 'ranger_focus', name: 'Hunter’s Focus', icon: 'aim',
