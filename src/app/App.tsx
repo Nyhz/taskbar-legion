@@ -32,9 +32,9 @@ const DRAG_THRESHOLD = 4; // px of movement before a press becomes a drag (vs. a
 export function App(): React.JSX.Element {
   const stripRef = useRef<HTMLDivElement>(null);
   const gameRef = useRef<GameStrip | null>(null);
+  // The strip canvas keeps its fixed baseline scale; the user's uiZoom scales ONLY the panel
+  // menus (PanelLayer), so zooming the UI never shrinks the strip nor eats the panel zone.
   const uiScale = useStore((s) => s.uiScale);
-  const uiZoom = useStore((s) => s.uiZoom);
-  const effScale = uiScale * uiZoom; // baseline 1.5× × the user's zoom knob — drives the strip canvas
   const [offline, setOffline] = useState<OfflineSummary | null>(null);
   const tauri = isTauri();
 
@@ -67,7 +67,7 @@ export function App(): React.JSX.Element {
           console.error('Save hydrate failed — starting fresh to avoid a boot loop', err);
         }
       }
-      await game.init(container, useStore.getState().uiScale * useStore.getState().uiZoom, tauri);
+      await game.init(container, useStore.getState().uiScale, tauri);
       if (cancelled) return;
       if (save !== null) {
         const elapsed = Date.now() - save.lastSavedAt;
@@ -102,8 +102,8 @@ export function App(): React.JSX.Element {
   }, [tauri]);
 
   useEffect(() => {
-    gameRef.current?.applyScale(effScale);
-  }, [effScale]);
+    gameRef.current?.applyScale(uiScale);
+  }, [uiScale]);
 
   // Drag the whole window around the desktop by the strip. Past the threshold we hand the
   // gesture to the OS (startDragging) so the window itself travels — freely across monitors,
@@ -157,7 +157,7 @@ export function App(): React.JSX.Element {
             bottom: 0,
             top: 0,
             transform: 'translateX(-50%)',
-            width: STRIP_LOGICAL_WIDTH * effScale,
+            width: STRIP_LOGICAL_WIDTH * uiScale,
             display: 'flex',
             flexDirection: 'column',
             pointerEvents: tauri ? 'none' : undefined,
@@ -179,7 +179,7 @@ export function App(): React.JSX.Element {
             <StripHud />
           </div>
           <div
-            style={{ position: 'relative', height: STRIP_LOGICAL_HEIGHT * effScale, width: '100%', pointerEvents: tauri ? 'auto' : undefined }}
+            style={{ position: 'relative', height: STRIP_LOGICAL_HEIGHT * uiScale, width: '100%', pointerEvents: tauri ? 'auto' : undefined }}
             onPointerDown={onStripPointerDown}
           >
             <div ref={stripRef} style={{ height: '100%', width: '100%' }} />
