@@ -52,12 +52,27 @@ export interface ProgressSlice {
   hydrate: (save: SaveV1) => void;
 }
 
+/** A fresh 32-bit seed for a brand-new game, so each installation rolls its own loot
+ *  stream instead of every player getting the identical sequence. Generated at the edge
+ *  (state/, where non-determinism is allowed — NOT sim/): the sim stays deterministic from
+ *  whatever seed it's handed, and this value is persisted into the save, so a given install
+ *  remains fully reproducible. Overwritten by `hydrate` whenever a save exists, so it only
+ *  takes effect for new games / after a reset. Prefers crypto entropy, falls back to Math.random. */
+function randomSeed(): number {
+  if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
+    const buf = new Uint32Array(1);
+    crypto.getRandomValues(buf);
+    return (buf[0] ?? 0) >>> 0;
+  }
+  return (Math.random() * 0x1_0000_0000) >>> 0;
+}
+
 export const createProgressSlice: StateCreator<GameStore, [], [], ProgressSlice> = (set, get) => ({
   gold: 0,
   researchPoints: 0,
   techRanks: {},
   unlockedClasses: ['knight'],
-  seed: 0xc0ffee,
+  seed: randomSeed(),
   configEpoch: 0,
   resumeStage: 1,
   maxClearedStage: 0,
