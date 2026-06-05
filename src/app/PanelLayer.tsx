@@ -58,7 +58,9 @@ function sideGroup(key: PanelKey): Side {
 
 interface Entry {
   key: PanelKey;
-  phase: 'in' | 'out';
+  // 'in' = playing the open animation, 'steady' = settled (NO animation class, so the panel
+  // drops its composited layer and its scaled content re-rasterizes crisply), 'out' = exiting.
+  phase: 'in' | 'out' | 'steady';
 }
 
 export function PanelLayer(): React.JSX.Element {
@@ -74,7 +76,12 @@ export function PanelLayer(): React.JSX.Element {
   useEffect(() => {
     setEntries((prev) => {
       const seen = new Set(prev.map((e) => e.key));
-      const result: Entry[] = prev.map((e) => ({ key: e.key, phase: openPanels.includes(e.key) ? 'in' : 'out' }));
+      // Keep an already-shown panel in its current phase (don't restart its open animation);
+      // only a panel coming back from 'out' replays 'in'. Closed panels go to 'out'.
+      const result: Entry[] = prev.map((e) => ({
+        key: e.key,
+        phase: openPanels.includes(e.key) ? (e.phase === 'out' ? 'in' : e.phase) : 'out',
+      }));
       for (const k of openPanels) if (!seen.has(k)) result.push({ key: k, phase: 'in' });
       return result;
     });
@@ -83,6 +90,12 @@ export function PanelLayer(): React.JSX.Element {
   const onExitEnd = (key: PanelKey): void => {
     if (openRef.current.includes(key)) return; // reopened mid-exit — keep it
     setEntries((prev) => prev.filter((e) => e.key !== key));
+  };
+
+  // Open animation finished → settle to 'steady', dropping the animation class (and with it the
+  // composited layer) so the scaled panel re-rasterizes sharp instead of staying a blurry bitmap.
+  const onEnterEnd = (key: PanelKey): void => {
+    setEntries((prev) => prev.map((e) => (e.key === key && e.phase === 'in' ? { ...e, phase: 'steady' } : e)));
   };
 
   // The band targets BAND_TARGET px (centered on the viewport), capped to the viewport on
@@ -118,13 +131,17 @@ export function PanelLayer(): React.JSX.Element {
       {entries.map(({ key, phase }) => {
         const group = sideGroup(key);
         const z = group === 'tech' ? 50 : key === 'party' ? 10 : 20;
-        const anim = group === 'tech' ? `tl-tech-${phase}` : `tl-panel-${group}-${phase}`;
+        const anim = phase === 'steady' ? undefined : group === 'tech' ? `tl-tech-${phase}` : `tl-panel-${group}-${phase}`;
         const { left, width, scale, height } = layoutOf(key, group);
         return (
           <div
             key={key}
             className={anim}
-            onAnimationEnd={() => { if (phase === 'out') onExitEnd(key); }}
+            onAnimationEnd={(e) => {
+              if (e.target !== e.currentTarget) return; // ignore animations bubbling up from children
+              if (phase === 'out') onExitEnd(key);
+              else if (phase === 'in') onEnterEnd(key);
+            }}
             style={{ position: 'absolute', left, bottom: 0, zIndex: z, pointerEvents: 'auto' }}
           >
             <PixelWindow
