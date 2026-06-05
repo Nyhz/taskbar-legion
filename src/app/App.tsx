@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { GameStrip } from '@/game/GameStrip';
 import { getEngine } from '@/game/engineRef';
 import { useStore } from '@/state/store';
-import { loadGame, saveGame, resetGame, requestPersistentStorage } from '@/persistence/saveManager';
+import { loadGame, saveGame, resetGame } from '@/persistence/saveManager';
 import type { OfflineSummary } from '@/sim/offline';
 import { PanelLayer } from './PanelLayer';
 import { StripHud } from '@/ui/hud/StripHud';
@@ -47,11 +47,6 @@ export function App(): React.JSX.Element {
     // ALL persistence and reloads to a fresh 1-1 (also available as Options → New Game).
     (window as unknown as { resetGame: () => void }).resetGame = () => void resetGame();
 
-    // Ask for durable storage up front so the save survives eviction / Safari's
-    // 7-day script-storage cap. Best-effort — fire and forget. (No-op under Tauri,
-    // where the save is a real file on disk and durability isn't the browser's call.)
-    void requestPersistentStorage();
-
     // Make the desktop window a transparent, click-through, bottom-docked overlay.
     // No-op in a plain browser.
     void setupDesktopOverlay();
@@ -73,28 +68,21 @@ export function App(): React.JSX.Element {
     })();
 
     // Persist promptly on progress milestones (stage advance / a newly-beaten boss),
-    // not just on the 30s timer — the unload save is an async write the browser often
-    // drops, so recent progress would otherwise be lost on reload.
+    // not just on the 30s timer, so recent progress survives an abrupt teardown.
     const unsubProgress = useStore.subscribe((s, prev) => {
       if (s.hud.globalStage !== prev.hud.globalStage || s.hud.maxClearedStage !== prev.hud.maxClearedStage) {
         void saveGame();
       }
     });
 
+    // Save on app quit is owned by the Tauri window's onCloseRequested hook
+    // (desktopOverlay.ts); here we just keep the periodic autosave + the unmount save.
     const interval = window.setInterval(() => void saveGame(), AUTOSAVE_MS);
-    const onHide = (): void => {
-      if (document.visibilityState === 'hidden') void saveGame();
-    };
-    const onUnload = (): void => void saveGame();
-    document.addEventListener('visibilitychange', onHide);
-    window.addEventListener('beforeunload', onUnload);
 
     return () => {
       cancelled = true;
       window.clearInterval(interval);
       unsubProgress();
-      document.removeEventListener('visibilitychange', onHide);
-      window.removeEventListener('beforeunload', onUnload);
       void saveGame();
       game.destroy();
       gameRef.current = null;
