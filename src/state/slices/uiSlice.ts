@@ -37,7 +37,14 @@ export interface WindowPos {
   y: number;
 }
 
+/** Which top-level view is showing. The app boots at the title screen every launch and
+ *  switches to 'game' once the player picks Start/Continue. Session-only — never persisted
+ *  (not part of SaveV1 / the settings shim), so every boot lands back on the title. */
+export type Screen = 'title' | 'game';
+
 export interface UiSlice {
+  screen: Screen;
+  setScreen: (screen: Screen) => void;
   openPanels: PanelKey[];
   windowPos: Partial<Record<PanelKey, WindowPos>>;
   uiScale: UiScale;
@@ -72,6 +79,8 @@ export const createUiSlice: StateCreator<UiSlice, [], [], UiSlice> = (set, get) 
       hideSocketWarning: get().hideSocketWarning,
     });
   return {
+    screen: 'title',
+    setScreen: (screen) => set({ screen }),
     openPanels: [],
     windowPos: {},
     uiScale: UI_SCALE, // fixed baseline — the user knobs are menuScale / gameScale

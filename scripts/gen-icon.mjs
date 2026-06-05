@@ -1,7 +1,7 @@
-// One-shot generator for the desktop app icon: the Knight idle sprite standing on a
-// miniature of the GameStrip backdrop (sky gradient → horizon → grass), framed with the
-// pixel-window ink border. Outputs a 1024² PNG; feed it to `npx tauri icon` to expand
-// into every platform size. Pure pngjs (nearest-neighbour) so the pixel art stays crisp.
+// One-shot generator for the desktop app icon: the "Taskbar Legion" logo, cropped tight
+// (its wide side margins trimmed so it reads LARGE in the square), composited over a dark
+// vertical gradient with the pixel-window ink border. Outputs a 1024² PNG; feed it to
+// `npx tauri icon` to expand into every platform size.
 //
 //   node scripts/gen-icon.mjs && npx tauri icon src-tauri/app-icon.png
 
@@ -12,57 +12,28 @@ import { PNG } from 'pngjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const SIZE = 1024;
+const BORDER = 12;
+const ALPHA = 16; // alpha threshold for the logo's bounding box
 
-// Palette pulled from StageBackground.ts / palette.ts so the icon matches the strip.
-const SKY_STOPS = [
-  [0.0, 53, 122, 171],
-  [0.45, 112, 119, 177],
-  [0.62, 176, 150, 140],
-];
-const GLOW = [214, 170, 150];
-const SEA = [86, 94, 139];
-const GRASS_EDGE = [158, 151, 41];
-const GRASS_BODY = [84, 115, 45];
+// Logo placement knobs. The logo is ~2:1, so it can't fill a square without cutting letters —
+// we trim the sides INTO the artwork a touch (SIDE_CROP) to make it bigger, then fill most of
+// the width. Bump SIDE_CROP for a larger logo (cuts more of the outer vines/shield/letters).
+const SIDE_CROP = 0.07; // fraction of the content width trimmed off EACH side
+const FILL_W = 0.95; // logo spans this fraction of the icon width
+const Y_BIAS = -0.02; // nudge up slightly for optical centering
+
+const TOP = [28, 23, 40]; // gradient top (#1c1728)
+const BOT = [13, 11, 18]; // gradient bottom (#0d0b12)
 const INK = [13, 11, 18];
-
-const SKY_BOTTOM = 700;
-const GLOW_BOTTOM = 706;
-const SEA_BOTTOM = 742;
-const GRASS_EDGE_BOTTOM = 756;
-const BORDER = 10;
 
 function lerp(a, b, t) {
   return Math.round(a + (b - a) * t);
-}
-
-function sampleSky(t) {
-  let lo = SKY_STOPS[0];
-  let hi = SKY_STOPS[SKY_STOPS.length - 1];
-  for (let i = 0; i < SKY_STOPS.length - 1; i++) {
-    if (t >= SKY_STOPS[i][0] && t <= SKY_STOPS[i + 1][0]) {
-      lo = SKY_STOPS[i];
-      hi = SKY_STOPS[i + 1];
-      break;
-    }
-  }
-  const span = hi[0] - lo[0] || 1;
-  const k = Math.min(1, Math.max(0, (t - lo[0]) / span));
-  return [lerp(lo[1], hi[1], k), lerp(lo[2], hi[2], k), lerp(lo[3], hi[3], k)];
-}
-
-function rowColor(y) {
-  if (y < SKY_BOTTOM) return sampleSky(y / SKY_BOTTOM);
-  if (y < GLOW_BOTTOM) return GLOW;
-  if (y < SEA_BOTTOM) return SEA;
-  if (y < GRASS_EDGE_BOTTOM) return GRASS_EDGE;
-  return GRASS_BODY;
 }
 
 const out = new PNG({ width: SIZE, height: SIZE });
 function set(x, y, r, g, b, a = 255) {
   if (x < 0 || y < 0 || x >= SIZE || y >= SIZE) return;
   const i = (y * SIZE + x) * 4;
-  // alpha-composite over whatever is already there
   const ia = a / 255;
   out.data[i] = lerp(out.data[i], r, ia);
   out.data[i + 1] = lerp(out.data[i + 1], g, ia);
@@ -70,44 +41,74 @@ function set(x, y, r, g, b, a = 255) {
   out.data[i + 3] = 255;
 }
 
-// 1) Background.
+// 1) Background — vertical gradient + a faint warm centre glow so the gold logo pops.
 for (let y = 0; y < SIZE; y++) {
-  const [r, g, b] = rowColor(y);
-  for (let x = 0; x < SIZE; x++) set(x, y, r, g, b);
-}
-
-// 2) Knight idle frame 0 (first 100×100 cell of the 600×100 sheet). Crop to the
-//    character's tight bounding box, then nearest-neighbour scale it to fill most of
-//    the icon, centred.
-const sheet = PNG.sync.read(readFileSync(resolve(root, 'src/assets/characters/knight/actions/knight-idle.png')));
-const FRAME = 100;
-const ALPHA = 16;
-let minX = FRAME, minY = FRAME, maxX = -1, maxY = -1;
-for (let sy = 0; sy < FRAME; sy++) {
-  for (let sx = 0; sx < FRAME; sx++) {
-    if (sheet.data[(sy * sheet.width + sx) * 4 + 3] < ALPHA) continue;
-    if (sx < minX) minX = sx;
-    if (sx > maxX) maxX = sx;
-    if (sy < minY) minY = sy;
-    if (sy > maxY) maxY = sy;
+  const t = y / SIZE;
+  const r = lerp(TOP[0], BOT[0], t);
+  const g = lerp(TOP[1], BOT[1], t);
+  const b = lerp(TOP[2], BOT[2], t);
+  for (let x = 0; x < SIZE; x++) {
+    const dx = (x - SIZE / 2) / SIZE;
+    const dy = (y - SIZE * 0.42) / SIZE;
+    const glow = Math.max(0, 1 - (dx * dx + dy * dy) * 5) * 26; // soft radial warm lift
+    set(x, y, Math.min(255, r + glow), Math.min(255, g + glow * 0.8), Math.min(255, b + glow * 0.4));
   }
 }
-const bw = maxX - minX + 1;
+
+// 2) Logo — find its tight alpha bounding box, trim the sides, then bilinear-scale it to fill
+//    most of the icon width and composite (preserving its own alpha for the soft edges).
+const logo = PNG.sync.read(readFileSync(resolve(root, 'src/assets/logos/taskbar-legion-logo.png')));
+const LW = logo.width;
+const LH = logo.height;
+let minX = LW, minY = LH, maxX = -1, maxY = -1;
+for (let y = 0; y < LH; y++) {
+  for (let x = 0; x < LW; x++) {
+    if (logo.data[(y * LW + x) * 4 + 3] < ALPHA) continue;
+    if (x < minX) minX = x;
+    if (x > maxX) maxX = x;
+    if (y < minY) minY = y;
+    if (y > maxY) maxY = y;
+  }
+}
+const cropX = Math.round((maxX - minX + 1) * SIDE_CROP);
+const bx0 = minX + cropX;
+const bw = maxX - cropX - bx0 + 1;
 const bh = maxY - minY + 1;
-const TARGET = SIZE * 0.78; // knight fills ~78% of the icon
-const scale = TARGET / Math.max(bw, bh);
-const dw = Math.round(bw * scale);
-const dh = Math.round(bh * scale);
+
+const dw = Math.round(SIZE * FILL_W);
+const dh = Math.round((dw * bh) / bw);
 const dx0 = Math.round((SIZE - dw) / 2);
-const dy0 = Math.round((SIZE - dh) / 2);
+const dy0 = Math.round((SIZE - dh) / 2 + SIZE * Y_BIAS);
+
+function sample(fx, fy) {
+  // bilinear sample of the logo at fractional (fx,fy) in logo pixel space
+  const x0 = Math.floor(fx);
+  const y0 = Math.floor(fy);
+  const x1 = Math.min(LW - 1, x0 + 1);
+  const y1 = Math.min(LH - 1, y0 + 1);
+  const tx = fx - x0;
+  const ty = fy - y0;
+  const px = (xx, yy) => {
+    const i = (yy * LW + xx) * 4;
+    return [logo.data[i], logo.data[i + 1], logo.data[i + 2], logo.data[i + 3]];
+  };
+  const a = px(x0, y0);
+  const b = px(x1, y0);
+  const c = px(x0, y1);
+  const d = px(x1, y1);
+  const mix = (p, q, t) => p + (q - p) * t;
+  const o = [];
+  for (let k = 0; k < 4; k++) o[k] = Math.round(mix(mix(a[k], b[k], tx), mix(c[k], d[k], tx), ty));
+  return o;
+}
+
 for (let dy = 0; dy < dh; dy++) {
   for (let dx = 0; dx < dw; dx++) {
-    const sx = minX + Math.min(bw - 1, Math.floor(dx / scale));
-    const sy = minY + Math.min(bh - 1, Math.floor(dy / scale));
-    const si = (sy * sheet.width + sx) * 4;
-    const a = sheet.data[si + 3];
+    const fx = bx0 + (dx / dw) * bw;
+    const fy = minY + (dy / dh) * bh;
+    const [r, g, b, a] = sample(fx, fy);
     if (a < ALPHA) continue;
-    set(dx0 + dx, dy0 + dy, sheet.data[si], sheet.data[si + 1], sheet.data[si + 2], a);
+    set(dx0 + dx, dy0 + dy, r, g, b, a);
   }
 }
 

@@ -9,7 +9,7 @@ import { itemGlyph } from '@/ui/icons';
 import { ItemTooltip } from './ItemTooltip';
 import { GemTooltip } from './GemTooltip';
 import { PALETTE } from '@/styles/palette';
-import { setItemDragging } from '@/platform/dragState';
+import { beginItemDrag } from './dnd';
 
 // A tier-colored cell holding an item OR a loose gem: slot ICON / gem disc, tier
 // border + T# corner. Supports native drag (dragData payload) and right-click
@@ -70,9 +70,43 @@ export function ItemSlot({
 }): React.JSX.Element {
   const rootRef = useRef<HTMLDivElement>(null);
   const [tip, setTip] = useState<{ left: number; top: number } | null>(null);
+  const draggedRef = useRef(false); // true after a drag this press → swallow the trailing click
   const filled = item ?? gem ?? null; // the entry occupying this cell, if any
   const ts = item ? tierStyle(item.tier) : gem ? tierStyle(gem.tier) : null;
   const border = selected ? PALETTE.gold : ts ? ts.color : PALETTE.ink;
+
+  // Pointer-based drag (native HTML5 DnD doesn't work in the Tauri overlay — see dnd.tsx).
+  // A press that moves past a small threshold starts the drag, showing a ghost of this cell.
+  const onSlotPointerDown = (e: React.PointerEvent): void => {
+    if (e.button !== 0 || !draggable || filled === null || dragData === undefined) return;
+    draggedRef.current = false;
+    const start = { x: e.clientX, y: e.clientY };
+    const move = (ev: PointerEvent): void => {
+      if (Math.hypot(ev.clientX - start.x, ev.clientY - start.y) < 5) return;
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      draggedRef.current = true;
+      setTip(null);
+      beginItemDrag(dragData, dragGhost, ev);
+    };
+    const up = (): void => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  };
+
+  // A miniature of this cell that rides the cursor during a drag.
+  const dragGhost = (
+    <div style={{ width: size, height: size, display: 'flex', alignItems: 'center', justifyContent: 'center', background: PALETTE.bgInset, border: `2px solid ${border}`, fontSize: size > 30 ? 18 : 15 }}>
+      {item ? (
+        <span>{itemGlyph(item)}</span>
+      ) : gem ? (
+        <span style={{ width: size * 0.5, height: size * 0.5, borderRadius: '50%', background: GEMS[gem.key].color, boxShadow: `0 0 5px ${GEMS[gem.key].color}` }} />
+      ) : null}
+    </div>
+  );
 
   const onEnter = (): void => {
     const rect = rootRef.current?.getBoundingClientRect();
@@ -119,16 +153,16 @@ export function ItemSlot({
       ref={rootRef}
       onMouseEnter={onEnter}
       onMouseLeave={() => setTip(null)}
-      onClick={onClick}
+      onClick={() => {
+        if (draggedRef.current) {
+          draggedRef.current = false; // this "click" is the tail of a drag — swallow it
+          return;
+        }
+        onClick?.();
+      }}
       onContextMenu={onContextMenu}
       title={label}
-      draggable={draggable && filled !== null}
-      onDragStart={(e) => {
-        if (dragData !== undefined) e.dataTransfer.setData('text/plain', dragData);
-        setTip(null);
-        setItemDragging(true); // pin the desktop overlay interactive for the whole gesture
-      }}
-      onDragEnd={() => setItemDragging(false)}
+      onPointerDown={onSlotPointerDown}
       style={{
         position: 'relative',
         width: size,
@@ -141,6 +175,7 @@ export function ItemSlot({
         justifyContent: 'center',
         cursor: onClick ? 'pointer' : draggable && filled ? 'grab' : 'default',
         fontSize: size > 30 ? 18 : 15,
+        touchAction: draggable && filled !== null ? 'none' : undefined, // let the pointer drag own the gesture
       }}
     >
       {item ? (
