@@ -33,13 +33,11 @@ export function App(): React.JSX.Element {
   const stripRef = useRef<HTMLDivElement>(null);
   const gameRef = useRef<GameStrip | null>(null);
   const uiScale = useStore((s) => s.uiScale);
-  const uiZoom = useStore((s) => s.uiZoom);
-  // Asymmetric zoom: the whole STRIP (combat canvas + top-bar HUD + RETRY overlay) scales by
-  // min(uiZoom, 1) — it shrinks below 1.0 but never grows past 1.0, so zooming UP only enlarges
-  // the menus and never crops/eats space from the strip. The menus (PanelLayer) scale by the
-  // full uiZoom. stripZoom drives the DOM HUD/overlay; stripScale drives the canvas.
-  const stripZoom = Math.min(uiZoom, 1);
-  const stripScale = uiScale * stripZoom;
+  // Game Scale: the whole STRIP — combat canvas + top-bar HUD + RETRY overlay — scales together
+  // by gameScale. Independent of Menu Scale (PanelLayer), which the menus use. stripScale drives
+  // the canvas; gameScale drives the DOM HUD/overlay zoom (authored at the baseline size).
+  const gameScale = useStore((s) => s.gameScale);
+  const stripScale = uiScale * gameScale;
   const [offline, setOffline] = useState<OfflineSummary | null>(null);
   const tauri = isTauri();
 
@@ -72,7 +70,7 @@ export function App(): React.JSX.Element {
           console.error('Save hydrate failed — starting fresh to avoid a boot loop', err);
         }
       }
-      await game.init(container, useStore.getState().uiScale * Math.min(useStore.getState().uiZoom, 1), tauri);
+      await game.init(container, useStore.getState().uiScale * useStore.getState().gameScale, tauri);
       if (cancelled) return;
       if (save !== null) {
         const elapsed = Date.now() - save.lastSavedAt;
@@ -183,7 +181,7 @@ export function App(): React.JSX.Element {
           {/* HUD + overlay are authored at the baseline (×uiScale) size and `zoom`-scaled by
               stripZoom so they shrink/grow WITH the strip canvas (which scales via stripScale),
               keeping the whole strip — bar, RETRY, banners — perfectly in step. */}
-          <div style={{ width: STRIP_LOGICAL_WIDTH * uiScale, zoom: stripZoom, pointerEvents: tauri ? 'auto' : undefined }} onPointerDown={onStripPointerDown}>
+          <div style={{ width: STRIP_LOGICAL_WIDTH * uiScale, zoom: gameScale, pointerEvents: tauri ? 'auto' : undefined }} onPointerDown={onStripPointerDown}>
             <StripHud />
           </div>
           <div
@@ -191,7 +189,7 @@ export function App(): React.JSX.Element {
             onPointerDown={onStripPointerDown}
           >
             <div ref={stripRef} style={{ height: '100%', width: '100%' }} />
-            <div style={{ position: 'absolute', left: 0, top: 0, width: STRIP_LOGICAL_WIDTH * uiScale, height: STRIP_LOGICAL_HEIGHT * uiScale, zoom: stripZoom, pointerEvents: 'none' }}>
+            <div style={{ position: 'absolute', left: 0, top: 0, width: STRIP_LOGICAL_WIDTH * uiScale, height: STRIP_LOGICAL_HEIGHT * uiScale, zoom: gameScale, pointerEvents: 'none' }}>
               <StripOverlay />
             </div>
           </div>
