@@ -15,11 +15,12 @@ export interface AbilityPower {
   coeff: number; // multiplier at rank 1 (× attackDamage for damage/dot, × target maxHP for heal/hot/shield)
   coeffPerRank?: number; // added to coeff per rank beyond the first
   canCrit?: boolean; // instant `damage` effects may crit (uses caster crit stats)
-  // AoE splash for a SINGLE-TARGET damage ability: every OTHER living enemy also takes
-  // splashCoeff (× attackDamage). Used by Explosive Arrow — the front enemy takes the
-  // full `coeff`, the rest of the wave takes the reduced splash.
+  // AoE splash for a SINGLE-TARGET damage ability: enemies WITHIN splashRadius (world px) of
+  // the primary target also take splashCoeff (× attackDamage). Used by Explosive Arrow — the
+  // front enemy takes the full `coeff`, only nearby enemies take the reduced splash.
   splashCoeff?: number;
   splashCoeffPerRank?: number;
+  splashRadius?: number; // world-px blast radius around the primary target (default 45 ≈ 1.5 bodies)
 }
 
 export interface AppliedEffect {
@@ -178,12 +179,12 @@ export const ABILITIES: Record<string, AbilityDef> = {
   },
   ranger_focus: {
     key: 'ranger_focus', name: 'Explosive Arrow', icon: 'explosion',
-    desc: 'A detonating arrow: a heavy hit on the front enemy that blasts the rest of the wave for less.',
+    desc: 'A detonating arrow: a heavy hit on the front enemy that blasts nearby enemies for less.',
     cooldownMs: 18000, target: 'frontEnemy', applies: [{ effectKey: 'fx_damage' }],
     // Front enemy 1.6×→3.2× AD (+0.4/rank, can crit); splash 0.6×→1.2× AD (+0.15/rank) to
-    // every OTHER enemy in the wave.
+    // enemies within ~1.5 bodies (45 world-px) of the primary target.
     castCondition: 'enemyPresent',
-    power: { coeff: 1.6, coeffPerRank: 0.4, canCrit: true, splashCoeff: 0.6, splashCoeffPerRank: 0.15 },
+    power: { coeff: 1.6, coeffPerRank: 0.4, canCrit: true, splashCoeff: 0.6, splashCoeffPerRank: 0.15, splashRadius: 45 },
   },
   ranger_frozentrap: {
     key: 'ranger_frozentrap', name: 'Caltrops', icon: 'dot',

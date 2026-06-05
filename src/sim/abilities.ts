@@ -326,16 +326,20 @@ export function castReadyAbilities(
       const def = effectDef(applied.effectKey);
       for (const t of targets) applyToTarget(caster, ability, def, rank, cs, t, applied.durationMsOverride, applied.valuePerRank, S, rng, events);
     }
-    // AoE splash: a single-target damage ability with power.splashCoeff also blasts every
-    // OTHER living enemy for the reduced splash coeff (Explosive Arrow's detonation).
+    // AoE splash: a single-target damage ability with power.splashCoeff also blasts enemies
+    // WITHIN splashRadius (world px) of the primary target for the reduced splash coeff
+    // (Explosive Arrow's detonation — only the front enemy + those near it).
     const splashBase = ability.power?.splashCoeff;
-    if (splashBase !== undefined) {
+    const primary = targets[0];
+    if (splashBase !== undefined && primary !== undefined) {
       const splashCoeff = splashBase + (ability.power?.splashCoeffPerRank ?? 0) * Math.max(0, rank - 1);
+      const radius = ability.power?.splashRadius ?? 45;
       const dmgApplied = ability.applies.find((a) => effectDef(a.effectKey).kind.type === 'damage');
       if (dmgApplied !== undefined) {
         const dmgDef = effectDef(dmgApplied.effectKey);
         for (const e of enemies) {
           if (!e.alive || targets.includes(e)) continue;
+          if (Math.abs(e.x - primary.x) > radius) continue; // outside the blast radius → spared
           applyToTarget(caster, ability, dmgDef, rank, cs, e, dmgApplied.durationMsOverride, dmgApplied.valuePerRank, S, rng, events, splashCoeff);
         }
       }
