@@ -28,10 +28,13 @@ const POLL_MS = 20;
 // On screens shorter than this the top may still clip — the strip always stays at the bottom.
 const OVERLAY_W = 1280;
 const OVERLAY_H = 1040;
+// Lift the whole window off the screen's bottom edge so the strip clears the OS Dock/taskbar
+// (and the title band, centred in the window, rises with it). The window's top simply runs a
+// little further off-screen — that region is transparent margin, so nothing is lost.
+const BOTTOM_DOCK_MARGIN = 80; // logical px gap between the window bottom and the screen bottom
 
-const WIN_POS_KEY = 'taskbar-legion.overlay.winpos.v1';
-
-let started = false;
+let overlayStarted = false;
+let closeHookSet = false;
 let winRef: Window | null = null; // cached so the drag handler can grab it synchronously
 
 interface WinPos {
@@ -39,53 +42,50 @@ interface WinPos {
   y: number;
 } // PHYSICAL outer-position (absolute on the virtual desktop, DPI-independent)
 
-function loadWinPos(): WinPos | null {
-  try {
-    const raw = localStorage.getItem(WIN_POS_KEY);
-    if (raw === null) return null;
-    const p = JSON.parse(raw) as Partial<WinPos>;
-    if (typeof p.x !== 'number' || typeof p.y !== 'number') return null;
-    return { x: p.x, y: p.y };
-  } catch {
-    return null;
-  }
-}
+// The ambient overlay — set up ONCE on boot and used for BOTH the title screen and the game.
+// A transparent, click-through, bottom-docked window: the title content lives in a centred
+// band (the rest shows the desktop through), and the game's strip + panels paint at the
+// bottom. Because title and game share this exact window, the hand-off needs no resize — the
+// title band simply gives way to the strip in place.
+export async function setupTitleWindow(): Promise<void> {
+  if (!isTauri() || overlayStarted) return;
+  overlayStarted = true;
 
-function saveWinPos(p: WinPos): void {
-  try {
-    localStorage.setItem(WIN_POS_KEY, JSON.stringify(p));
-  } catch {
-    // private mode / quota — non-fatal, the window just won't remember its spot
-  }
-}
-
-export async function setupDesktopOverlay(): Promise<void> {
-  if (!isTauri() || started) return;
-  started = true;
-
-  // Kill every opaque background so the native transparent window shows through —
-  // the page itself paints a solid colour otherwise, defeating `transparent: true`.
+  // Kill every opaque background so the native transparent window shows through — the page
+  // itself paints a solid colour otherwise, defeating `transparent: true`. (The title band
+  // paints its own scene; everything around it stays see-through.)
   document.documentElement.style.background = 'transparent';
   document.body.style.background = 'transparent';
 
-  const { getCurrentWindow, currentMonitor, availableMonitors, LogicalSize, PhysicalPosition } = await import(
-    '@tauri-apps/api/window'
-  );
+  const { getCurrentWindow, currentMonitor, LogicalSize, PhysicalPosition } = await import('@tauri-apps/api/window');
   const win = getCurrentWindow();
   winRef = win;
 
-  // Non-maximized fixed footprint. LogicalSize keeps the footprint constant across DPI, so
-  // moving to a higher-DPI monitor re-renders crisply at the same logical size.
-  await win.setSize(new LogicalSize(OVERLAY_W, OVERLAY_H));
+  try {
+    // Non-maximized fixed footprint. LogicalSize keeps the footprint constant across DPI, so
+    // moving to a higher-DPI monitor re-renders crisply at the same logical size.
+    await win.setSize(new LogicalSize(OVERLAY_W, OVERLAY_H));
 
-  // Restore the last position only if it still lands on a connected monitor; otherwise dock
-  // bottom-centre of the current monitor. This is the guard against the off-screen brick.
-  const target = await resolveBootPosition(win, currentMonitor, availableMonitors);
-  if (target !== null) await win.setPosition(new PhysicalPosition(target.x, target.y));
+    // ALWAYS dock bottom-centre of the current monitor (NOT a remembered prior position).
+    const target = await dockBottomPosition(win, currentMonitor);
+    if (target !== null) await win.setPosition(new PhysicalPosition(target.x, target.y));
 
-  await win.setAlwaysOnTop(true);
+    await win.setAlwaysOnTop(true);
+    await registerCloseHook(win);
+    await startClickThrough(win);
+  } finally {
+    // The window boots HIDDEN (tauri.conf `visible:false`) so the user never sees the opaque
+    // page paint at the wrong spot — reveal it only now that it's transparent + docked. In a
+    // `finally` so a setup hiccup can never leave the window stuck invisible.
+    await win.show().catch(() => {});
+  }
+}
 
-  // Persist before the OS tears the window down (Cmd+Q, app quit, logout).
+// Persist before the OS tears the window down (Cmd+Q, app quit, logout). Registered once,
+// whichever window state set it up first — re-registering would double-save / double-destroy.
+async function registerCloseHook(win: Window): Promise<void> {
+  if (closeHookSet) return;
+  closeHookSet = true;
   await win.onCloseRequested(async (e) => {
     e.preventDefault();
     try {
@@ -95,8 +95,6 @@ export async function setupDesktopOverlay(): Promise<void> {
     }
     await win.destroy();
   });
-
-  await startClickThrough(win);
 }
 
 // OS-level window drag — moves the actual window, so it travels freely across monitors and
@@ -111,66 +109,34 @@ export async function startOverlayDrag(): Promise<void> {
   }
 }
 
-type MonitorList = () => Promise<Array<{ position: { x: number; y: number }; size: { width: number; height: number } }>>;
 type CurrentMonitor = () => Promise<{ position: { x: number; y: number }; size: { width: number; height: number } } | null>;
 
-async function resolveBootPosition(win: Window, currentMonitor: CurrentMonitor, availableMonitors: MonitorList): Promise<WinPos | null> {
+// Bottom-centre of the current monitor for the overlay footprint (logical → physical via DPI).
+async function dockBottomPosition(win: Window, currentMonitor: CurrentMonitor): Promise<WinPos | null> {
   const scale = await win.scaleFactor();
   const physW = Math.round(OVERLAY_W * scale);
   const physH = Math.round(OVERLAY_H * scale);
-
-  const saved = loadWinPos();
-  if (saved !== null && (await stripAnchorOnScreen(saved, physW, physH, availableMonitors))) return saved;
-
   const mon = await currentMonitor();
-  if (mon === null) return saved; // best effort if the monitor query fails
+  if (mon === null) return null; // best effort if the monitor query fails
   return {
     x: mon.position.x + Math.round((mon.size.width - physW) / 2),
-    y: mon.position.y + mon.size.height - physH,
+    y: mon.position.y + mon.size.height - physH - Math.round(BOTTOM_DOCK_MARGIN * scale),
   };
-}
-
-// The visible, draggable strip sits at the bottom-centre of the window. A saved position is
-// only safe to restore if THAT anchor is on a real monitor — otherwise the strip would be
-// unreachable even though the window technically exists.
-async function stripAnchorOnScreen(pos: WinPos, physW: number, physH: number, availableMonitors: MonitorList): Promise<boolean> {
-  const monitors = await availableMonitors();
-  const anchorX = pos.x + physW / 2;
-  const anchorY = pos.y + physH - 1;
-  return monitors.some(
-    (m) =>
-      anchorX >= m.position.x &&
-      anchorX < m.position.x + m.size.width &&
-      anchorY >= m.position.y &&
-      anchorY < m.position.y + m.size.height,
-  );
 }
 
 async function startClickThrough(win: Window): Promise<void> {
   const { cursorPosition } = await import('@tauri-apps/api/window');
 
   // The window moves whenever the user drags it; keep its origin + scale fresh so the
-  // cursor→viewport hit-test below stays accurate, and persist the resting position.
+  // cursor→viewport hit-test below stays accurate. (Position is NOT persisted — the overlay
+  // always docks bottom-centre under the title on entry.)
   let origin = await win.outerPosition();
   let scale = await win.scaleFactor();
-  let persistTimer: number | undefined;
   const refresh = async (): Promise<void> => {
     origin = await win.outerPosition();
     scale = await win.scaleFactor();
   };
-  const persistSoon = (): void => {
-    if (persistTimer !== undefined) window.clearTimeout(persistTimer);
-    persistTimer = window.setTimeout(() => {
-      void (async () => {
-        const p = await win.outerPosition();
-        saveWinPos({ x: p.x, y: p.y });
-      })();
-    }, 300);
-  };
-  await win.onMoved(() => {
-    void refresh();
-    persistSoon();
-  });
+  await win.onMoved(() => void refresh());
   await win.onResized(() => void refresh());
 
   // The cursor is over "nothing" (→ click straight through to whatever app is behind us)

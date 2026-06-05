@@ -1,142 +1,86 @@
 import { useEffect, useRef, useState } from 'react';
-import { GameStrip } from '@/game/GameStrip';
-import { getEngine } from '@/game/engineRef';
 import { useStore } from '@/state/store';
-import { loadGame, saveGame, resetGame } from '@/persistence/saveManager';
-import type { OfflineSummary } from '@/sim/offline';
-import { PanelLayer } from './PanelLayer';
-import { StripHud } from '@/ui/hud/StripHud';
-import { StripOverlay } from '@/ui/overlay/StripOverlay';
-import { LootToasts } from '@/ui/overlay/LootToasts';
-import { OfflineSummaryModal } from '@/ui/components/OfflineSummaryModal';
+import { loadGame, resetGame } from '@/persistence/saveManager';
+import type { SaveV1 } from '@/persistence/saveSchema';
+import { GameView } from './GameView';
+import { TitleScreen } from '@/ui/title/TitleScreen';
 import { ContextMenuProvider } from '@/ui/components/ContextMenu';
+import { DragOverlay } from '@/ui/components/dnd';
 import { PALETTE } from '@/styles/palette';
 import { isTauri } from '@/platform/tauri';
-import { setupDesktopOverlay, startOverlayDrag } from '@/platform/desktopOverlay';
-import { setStripDragging } from '@/platform/dragState';
+import { fadeOutMusic } from '@/platform/audio';
 
-const STRIP_LOGICAL_HEIGHT = 160; // must match GameStrip.STRIP_HEIGHT
-// The game is a fixed-size strip anchored to the bottom-center of the page — sized for the
-// eventual taskbar dock, NOT the full screen width. uiScale zooms the whole thing
-// proportionally; at the default 1.5× this renders ~900×240 actual px. A narrower logical
-// width (600) shows the same world span in fewer px → a more zoomed-in view (bigger sprites).
-const STRIP_LOGICAL_WIDTH = 600;
-const MIN_OFFLINE_MS = 60_000; // only show the summary after a meaningful break
-const AUTOSAVE_MS = 30_000;
+const EXIT_MS = 680; // title shrink-out duration (matches the .tl-title-exit animation)
 
-// Desktop overlay: dragging the strip moves the actual OS window (via startDragging), so it
-// travels freely across monitors and stays DPI-correct. A press only becomes a drag past
-// this threshold, so in-game taps (collect / portal) still work.
-const DRAG_THRESHOLD = 4; // px of movement before a press becomes a drag (vs. a tap)
-
+// Top-level router: boots at the title screen, then hands off to the live game once the
+// player picks Start/Continue. Title + game share ONE window (no resize), so the hand-off is
+// a clean "descent": the game mounts BEHIND the still-opaque title, and once it has painted
+// the title shrinks toward the bottom-centre strip and fades, revealing the live game in place.
 export function App(): React.JSX.Element {
-  const stripRef = useRef<HTMLDivElement>(null);
-  const gameRef = useRef<GameStrip | null>(null);
-  const uiScale = useStore((s) => s.uiScale);
-  // Game Scale: the whole STRIP — combat canvas + top-bar HUD + RETRY overlay — scales together
-  // by gameScale. Independent of Menu Scale (PanelLayer), which the menus use. stripScale drives
-  // the canvas; gameScale drives the DOM HUD/overlay zoom (authored at the baseline size).
-  const gameScale = useStore((s) => s.gameScale);
-  const stripScale = uiScale * gameScale;
-  const [offline, setOffline] = useState<OfflineSummary | null>(null);
+  const screen = useStore((s) => s.screen);
+  const setScreen = useStore((s) => s.setScreen);
   const tauri = isTauri();
 
+  const saveRef = useRef<SaveV1 | null>(null);
+  const [booted, setBooted] = useState(false);
+  const [transitioning, setTransitioning] = useState(false);
+  const [exiting, setExiting] = useState(false); // title kept mounted on TOP of the game while it leaves
+  const [slideOut, setSlideOut] = useState(false); // play the shrink-out animation
+  const revealedRef = useRef(false); // dedupe: the reveal fires once (onReady or the fallback)
+
+  // Boot: load the save ONCE (don't hydrate yet — that happens at the title→game hand-off so
+  // the title screen runs on defaults and the offline summary fires on the game, not here).
   useEffect(() => {
-    const container = stripRef.current;
-    if (container === null) return;
-    const game = new GameStrip();
-    gameRef.current = game;
-    let cancelled = false;
-
-    // Dev/console escape hatch for a clean restart: `resetGame()` in the console wipes
-    // ALL persistence and reloads to a fresh 1-1 (also available as Options → New Game).
     (window as unknown as { resetGame: () => void }).resetGame = () => void resetGame();
-
-    // Make the desktop window a transparent, click-through, bottom-docked overlay.
-    // No-op in a plain browser.
-    void setupDesktopOverlay();
-
+    let cancelled = false;
     void (async () => {
       const save = await loadGame();
       if (cancelled) return;
-      if (save !== null) {
-        try {
-          useStore.getState().hydrate(save);
-        } catch (err) {
-          // A save that passed migrate but still throws in hydrate must NOT brick the app
-          // (the file is persisted → every reload would re-crash). Fall back to a fresh
-          // game: hydrate builds its next-state object before calling set, so a throw
-          // leaves the store at defaults rather than half-applied.
-          console.error('Save hydrate failed — starting fresh to avoid a boot loop', err);
-        }
-      }
-      await game.init(container, useStore.getState().uiScale, tauri);
-      if (cancelled) return;
-      if (save !== null) {
-        const elapsed = Date.now() - save.lastSavedAt;
-        if (elapsed > MIN_OFFLINE_MS) {
-          const summary = getEngine()?.runOffline(elapsed);
-          if (summary !== undefined && summary.ticks > 0) setOffline(summary);
-        }
-      }
-      void saveGame(); // engine is live now → capture current state (gate is getEngine()!==null)
+      saveRef.current = save;
+      setBooted(true);
     })();
-
-    // Persist promptly on progress milestones (stage advance / a newly-beaten boss),
-    // not just on the 30s timer, so recent progress survives an abrupt teardown.
-    const unsubProgress = useStore.subscribe((s, prev) => {
-      if (s.hud.globalStage !== prev.hud.globalStage || s.hud.maxClearedStage !== prev.hud.maxClearedStage) {
-        void saveGame();
-      }
-    });
-
-    // Save on app quit is owned by the Tauri window's onCloseRequested hook
-    // (desktopOverlay.ts); here we just keep the periodic autosave + the unmount save.
-    const interval = window.setInterval(() => void saveGame(), AUTOSAVE_MS);
-
     return () => {
       cancelled = true;
-      window.clearInterval(interval);
-      unsubProgress();
-      void saveGame();
-      game.destroy();
-      gameRef.current = null;
     };
-  }, [tauri]);
+  }, []);
 
-  useEffect(() => {
-    gameRef.current?.applyScale(uiScale);
-  }, [uiScale]);
-
-  // Drag the whole window around the desktop by the strip. Past the threshold we hand the
-  // gesture to the OS (startDragging) so the window itself travels — freely across monitors,
-  // DPI-correct. A press that doesn't move stays a tap, so in-game taps still work. Browser
-  // builds have no window to move, so this is a no-op there.
-  const onStripPointerDown = (e: React.PointerEvent): void => {
-    if (!tauri || e.button !== 0) return;
-    const start = { cx: e.clientX, cy: e.clientY };
-    let dragging = false;
-    const cleanup = (): void => {
-      window.removeEventListener('pointermove', onMove);
-      window.removeEventListener('pointerup', onUp);
-    };
-    const onMove = (ev: PointerEvent): void => {
-      if (dragging) return;
-      if (Math.hypot(ev.clientX - start.cx, ev.clientY - start.cy) > DRAG_THRESHOLD) {
-        dragging = true;
-        setStripDragging(true);
-        cleanup();
-        void startOverlayDrag(); // OS takes over the gesture from here
-        // The OS owns the drag now and may swallow the matching pointerup; clear the
-        // tap-suppression flag on a short delay so the portal/collect tap stays suppressed
-        // through the gesture but re-enables afterwards.
-        setTimeout(() => setStripDragging(false), 150);
-      }
-    };
-    const onUp = (): void => cleanup();
-    window.addEventListener('pointermove', onMove);
-    window.addEventListener('pointerup', onUp);
+  // Once the game has actually painted (GameView.onReady), shrink the title away to reveal it.
+  // A fallback fires it too, so a missed onReady can't strand the title covering the game.
+  const startReveal = (): void => {
+    if (revealedRef.current) return;
+    revealedRef.current = true;
+    setSlideOut(true);
+    window.setTimeout(() => {
+      setExiting(false);
+      setTransitioning(false);
+    }, EXIT_MS + 60);
   };
+
+  const handleStart = (): void => {
+    if (transitioning) return;
+    revealedRef.current = false;
+    setTransitioning(true);
+    const save = saveRef.current;
+    if (save !== null) {
+      try {
+        useStore.getState().hydrate(save);
+      } catch (err) {
+        // A save that passed migrate but throws in hydrate must NOT brick the app —
+        // fall through to a fresh game (hydrate leaves the store at defaults on throw).
+        console.error('Save hydrate failed — starting fresh to avoid a boot loop', err);
+      }
+    }
+    fadeOutMusic(); // bow the title track out smoothly as the game takes over
+    // The window is ALREADY the overlay (set up on boot) — no resize. Keep the title band ON
+    // TOP covering the game as it spins up, then shrink it away once the strip has painted.
+    setExiting(true);
+    setScreen('game'); // mount GameView BEHIND the title band
+    window.setTimeout(startReveal, 4000); // fallback if onReady never arrives
+  };
+
+  // In Tauri it's ALL one transparent overlay (title band + game both float over the desktop);
+  // only the plain-browser dev build paints the opaque page background.
+  const overlayChrome = tauri;
 
   return (
     <div
@@ -146,54 +90,24 @@ export function App(): React.JSX.Element {
         height: '100vh',
         width: '100vw',
         overflow: 'hidden',
-        background: tauri ? 'transparent' : PALETTE.bgDeep,
+        background: overlayChrome ? 'transparent' : PALETTE.bgDeep,
         display: 'flex',
         flexDirection: 'column',
-        pointerEvents: tauri ? 'none' : undefined,
+        pointerEvents: overlayChrome ? 'none' : undefined,
       }}
     >
       <ContextMenuProvider>
-        <div
-          style={{
-            position: 'absolute',
-            left: '50%',
-            bottom: 0,
-            top: 0,
-            transform: 'translateX(-50%)',
-            width: STRIP_LOGICAL_WIDTH * stripScale,
-            display: 'flex',
-            flexDirection: 'column',
-            pointerEvents: tauri ? 'none' : undefined,
-          }}
-        >
-          {/* Transparent zone above the strip where the floating menu panels live;
-              they are bottom-anchored so they rise from the top of the strip. zIndex
-              lifts it above the topbar/strip so the tech tree can visibly slide up
-              over them from below (panel-zone is pointer-transparent — see PanelLayer). */}
-          <div style={{ flex: 1, minHeight: 0, position: 'relative', zIndex: 5, pointerEvents: tauri ? 'none' : undefined }}>
-            <PanelLayer />
-            {/* Loot toasts live here (above the panels via their own zIndex) so an open
-                menu can't hide them; anchored to the bottom of this zone, over the strip. */}
-            <LootToasts />
-          </div>
-          {/* The whole strip — HUD bar + combat canvas + overlay — is ONE unit, authored at the
-              baseline (×uiScale) size and `zoom`-scaled by gameScale so it all moves in lockstep.
-              The canvas itself is a FIXED-resolution bitmap (GameStrip) that this zoom scales; no
-              resizeTo, so width + height always change together. It's also the drag handle. */}
-          <div style={{ width: STRIP_LOGICAL_WIDTH * uiScale, zoom: gameScale, pointerEvents: tauri ? 'auto' : undefined }} onPointerDown={onStripPointerDown}>
-            <StripHud />
-            <div style={{ position: 'relative', width: STRIP_LOGICAL_WIDTH * uiScale, height: STRIP_LOGICAL_HEIGHT * uiScale }}>
-              <div ref={stripRef} style={{ height: '100%', width: '100%' }} />
-              <StripOverlay />
-            </div>
-          </div>
-        </div>
+        {booted && (
+          <>
+            {screen === 'game' && <GameView bootSave={saveRef.current} onReady={startReveal} />}
+            {(screen === 'title' || exiting) && (
+              <TitleScreen hasSave={saveRef.current !== null} onStart={handleStart} exiting={slideOut} />
+            )}
+          </>
+        )}
       </ContextMenuProvider>
-      {offline !== null && (
-        <div style={{ pointerEvents: 'auto' }}>
-          <OfflineSummaryModal summary={offline} onClose={() => setOffline(null)} />
-        </div>
-      )}
+      {/* The floating drag ghost (portals to <body>); renders nothing unless dragging. */}
+      <DragOverlay />
     </div>
   );
 }

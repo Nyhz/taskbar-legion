@@ -11,6 +11,7 @@ import { SLOT_ICON } from '@/ui/icons';
 import { SLOTS, SLOT_KEYS, slotFamily, type SlotKey } from '@/data/itemSlots';
 import { inventorySlotCost, INVENTORY_MAX_SLOTS } from '@/data/inventory';
 import { ItemSlot } from '@/ui/components/ItemSlot';
+import { useDropZone } from '@/ui/components/dnd';
 import { HoverTip } from '@/ui/components/HoverTip';
 import { countFilled, findEntry } from '@/sim/slots';
 import { AbilityBar } from '@/ui/panels/party/AbilityBar';
@@ -476,19 +477,12 @@ function EquipFlash({ itemId, children }: { itemId: string | null; children: Rea
 }
 
 function DropTarget({ accept, onDrop, children }: { accept: (d: DragPayload) => boolean; onDrop: (d: DragPayload) => void; children: ReactNode }): React.JSX.Element {
-  const [over, setOver] = useState(false);
+  const { ref, over } = useDropZone(
+    (p) => accept(parseDrag(p)),
+    (p) => onDrop(parseDrag(p)),
+  );
   return (
-    <div
-      onDragOver={(e) => { e.preventDefault(); if (!over) setOver(true); }}
-      onDragLeave={() => setOver(false)}
-      onDrop={(e) => {
-        e.preventDefault();
-        setOver(false);
-        const d = parseDrag(e.dataTransfer.getData('text/plain'));
-        if (accept(d)) onDrop(d);
-      }}
-      style={{ outline: over ? `2px solid ${PALETTE.gold}` : 'none', borderRadius: 2 }}
-    >
+    <div ref={ref} style={{ outline: over ? `2px solid ${PALETTE.gold}` : 'none', borderRadius: 2 }}>
       {children}
     </div>
   );

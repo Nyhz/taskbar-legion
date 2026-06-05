@@ -49,13 +49,19 @@ export class StageBackground extends Container {
   private groundY = 0;
   private cloudY = 0;
   private sunBaseX = 0;
+  private skyK = 1; // vertical squash of the sky/sea band (= groundFrac / 0.72); 1 = native
 
-  build(width: number, height: number): void {
+  // `groundFrac` is the fraction of the height where the grass line sits (default 0.72 — the
+  // game's look, unchanged). A smaller value raises the horizon (less sky, more grass) and
+  // the title screen passes one; the sky/sea/cloud/sun anchors all squash proportionally so
+  // the scene stays coherent.
+  build(width: number, height: number, groundFrac = 0.72): void {
     this.removeChildren();
     this.width0 = width;
     this.height0 = height;
-    this.groundY = Math.round(height * 0.72);
-    this.cloudY = Math.round(height * 0.37);
+    this.skyK = groundFrac / 0.72;
+    this.groundY = Math.round(height * groundFrac);
+    this.cloudY = Math.round(height * 0.37 * this.skyK);
 
     this.drawSky(width, height);
     this.addChild(this.sky);
@@ -66,7 +72,7 @@ export class StageBackground extends Container {
       this.sun.texture = sunTex;
       const h = Math.round(height * 0.17);
       this.sun.scale.set(h / sunTex.height);
-      this.sun.y = Math.round(height * 0.06);
+      this.sun.y = Math.round(height * 0.06 * this.skyK);
       this.sunBaseX = Math.round(width * 0.72);
       this.addChild(this.sun);
     }
@@ -113,14 +119,15 @@ export class StageBackground extends Container {
 
   private drawSky(width: number, height: number): void {
     this.sky.clear();
+    // Divide by skyK so the gradient compresses into the (raised) horizon when groundFrac < 0.72.
     for (let y = 0; y < height; y++) {
-      const [r, g, b] = sampleSky(y / height);
+      const [r, g, b] = sampleSky(y / height / this.skyK);
       this.sky.rect(0, y, width, 1).fill({ color: (r << 16) | (g << 8) | b });
     }
   }
 
   private drawBand(width: number): void {
-    const seaTop = Math.round(this.height0 * 0.615);
+    const seaTop = Math.round(this.height0 * 0.615 * this.skyK);
     this.band.clear();
     this.band.rect(0, seaTop - 2, width, 2).fill({ color: GLOW });
     this.band.rect(0, seaTop, width, this.groundY - seaTop).fill({ color: SEA });

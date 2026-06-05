@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useStore } from '@/state/store';
 import { ItemSlot } from '@/ui/components/ItemSlot';
+import { useDropZone } from '@/ui/components/dnd';
 import { useContextMenu } from '@/ui/components/ContextMenu';
 import {
   stashSlotCost, stashPageCost, STASH_PER_PAGE, STASH_MAX_PAGES, STASH_MAX_SLOTS,
@@ -32,6 +33,14 @@ export function StashPanel(): React.JSX.Element {
   const openMenu = useContextMenu();
   const [filter, setFilter] = useState<Filter>('all');
   const [page, setPage] = useState(1);
+  // Drop zone: an inventory item dropped onto the stash grid moves to the stash.
+  const stashDrop = useDropZone(
+    (p) => p.startsWith('inv|'),
+    (p) => {
+      const id = p.split('|')[1];
+      if (id !== undefined) moveToStash(id);
+    },
+  );
 
   const perPage = STASH_PER_PAGE + slotUpgrades;
   // "all" keeps the sparse layout (holes render as empty cells, so positions are
@@ -69,13 +78,8 @@ export function StashPanel(): React.JSX.Element {
       )}
 
       <div
-        onDragOver={(e) => e.preventDefault()}
-        onDrop={(e) => {
-          e.preventDefault();
-          const [from, id] = e.dataTransfer.getData('text/plain').split('|');
-          if (from === 'inv' && id !== undefined) moveToStash(id);
-        }}
-        style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(36px, 1fr))', gap: 3, justifyItems: 'center', minHeight: 120, alignContent: 'start' }}
+        ref={stashDrop.ref}
+        style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(36px, 1fr))', gap: 3, justifyItems: 'center', minHeight: 120, alignContent: 'start', outline: stashDrop.over ? `2px solid ${PALETTE.gold}` : 'none' }}
       >
         {/* Fixed slots: render every cell on the page; holes (null) stay empty in place. */}
         {Array.from({ length: perPage }, (_, j) => {
