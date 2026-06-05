@@ -35,6 +35,38 @@ describe('ability mechanics', () => {
     expect(enemy.hp).toBeCloseTo(820, 1);
   });
 
+  it('Explosive Arrow hits the front enemy hard and splashes the rest of the wave for less', () => {
+    const caster = unit({
+      id: 'r', side: 'hero',
+      baseStats: base({ attackDamage: 100, critChance: 0 }),
+      abilities: [{ def: abilityDef('ranger_focus'), rank: 1 }], // 1.6× front, 0.6× splash
+    });
+    const front = unit({ id: 'e1', side: 'enemy', x: 10, hp: 1000, maxHp: 1000 });
+    const b = unit({ id: 'e2', side: 'enemy', x: 20, hp: 1000, maxHp: 1000 });
+    const c = unit({ id: 'e3', side: 'enemy', x: 25, hp: 1000, maxHp: 1000 });
+    castReadyAbilities(caster, [caster], [front, b, c], 1, makeRng(1), []);
+    expect(front.hp).toBeCloseTo(840, 1); // 1000 − 1.6×100
+    expect(b.hp).toBeCloseTo(940, 1); // 1000 − splash 0.6×100
+    expect(c.hp).toBeCloseTo(940, 1);
+  });
+
+  it('Caltrops lays a damage-over-time on every enemy in the wave', () => {
+    const caster = unit({
+      id: 'r', side: 'hero',
+      baseStats: base({ attackDamage: 100 }),
+      abilities: [{ def: abilityDef('ranger_frozentrap'), rank: 1 }], // 0.6× AD total over 5s
+    });
+    const e1 = unit({ id: 'e1', side: 'enemy', x: 10 });
+    const e2 = unit({ id: 'e2', side: 'enemy', x: 20 });
+    const cast = castReadyAbilities(caster, [caster], [e1, e2], 1, makeRng(1), []);
+    expect(cast).toContain('ranger_frozentrap');
+    for (const e of [e1, e2]) {
+      const dot = e.effects.find((x) => x.defKey === 'fx_dot');
+      expect(dot).toBeDefined();
+      expect(dot?.value).toBeCloseTo(12, 1); // 0.6×100 total ÷ 5s = 12/s
+    }
+  });
+
   it('a heal-over-time scales with healPower and lands on the lowest ally', () => {
     const priest = unit({
       id: 'p', side: 'hero', hp: 100, maxHp: 100,
