@@ -137,6 +137,46 @@ export class WorldFxLayer extends Container {
     });
   }
 
+  /** Caltrops: a spray of iron spikes erupts from `originX` (the ranger) and sweeps forward
+   *  along the ground to `endX`, popping up in sequence then holding for `dur` and retracting.
+   *  Drawn on the GROUND layer (below the enemies) so the wave walks over the spikes. */
+  groundSpikes(originX: number, groundY: number, endX: number, dur: number): void {
+    const g = new Graphics();
+    const STEEL = hexToNum('#9aa0ab');
+    const STEEL_DARK = hexToNum('#565b65');
+    const TIP = hexToNum('#c0473a'); // bloodied point — sells the bleed
+    const cy = groundY - 1;
+    const dir = Math.sign(endX - originX) || 1;
+    const span = Math.max(20, Math.abs(endX - originX));
+    const N = Math.max(6, Math.round(span / 13));
+    interface Sp { x: number; h: number; w: number; delay: number; }
+    const spikes: Sp[] = [];
+    for (let i = 0; i < N; i++) {
+      const f = i / Math.max(1, N - 1); // 0 at the ranger → 1 at the far edge
+      spikes.push({
+        x: originX + dir * span * f + (Math.random() * 2 - 1) * 4,
+        h: 8 + Math.random() * 7,
+        w: 3 + Math.random() * 1.5,
+        delay: f * 300, // erupt in sequence, sweeping out from the ranger
+      });
+    }
+    this.push(g, dur, (t) => {
+      g.clear();
+      const retract = t > dur - 380 ? Math.max(0, (dur - t) / 380) : 1;
+      for (const s of spikes) {
+        const local = t - s.delay;
+        if (local < 0) continue;
+        const erupt = Math.min(1, local / 150); // quick pop-up
+        const h = s.h * erupt * retract;
+        if (h <= 0.5) continue;
+        const a = retract;
+        g.poly([s.x - s.w, cy, s.x + s.w, cy, s.x, cy - h]).fill({ color: STEEL_DARK, alpha: 0.9 * a });
+        g.poly([s.x - s.w * 0.45, cy, s.x + s.w * 0.2, cy, s.x, cy - h * 0.95]).fill({ color: STEEL, alpha: 0.85 * a });
+        g.poly([s.x - s.w * 0.3, cy - h * 0.68, s.x + s.w * 0.3, cy - h * 0.68, s.x, cy - h]).fill({ color: TIP, alpha: 0.6 * a });
+      }
+    });
+  }
+
   /** Holy Nova: a golden ring + radiating rays + sparkles bursting through the wave. */
   holyNova(cx: number, cy: number, radius: number): void {
     const g = new Graphics();

@@ -95,6 +95,8 @@ export class GameStrip {
   // Big AoE ability spectacles (arrow rain, frost pool, holy nova, boss shockwaves) drawn
   // over a target band — above the bodies, below the floating numbers.
   private readonly worldFx = new WorldFxLayer();
+  // Ground-level FX drawn BELOW the bodies (Caltrops spikes) so the wave walks over them.
+  private readonly groundFx = new WorldFxLayer();
   private readonly floating = new FloatingTextLayer();
   // The world-boss portal, pinned screen-right while farming a beaten W-9 (see frame()).
   private readonly portal = new PortalSprite();
@@ -149,10 +151,10 @@ export class GameStrip {
     setEngine(this.engine);
 
     this.combatants.sortableChildren = true; // honour zIndex (party above enemies)
-    this.world.addChild(this.background, this.combatants, this.worldFx, this.projectiles, this.floating, this.portal, this.blackout, this.wipePhrase);
+    this.world.addChild(this.background, this.groundFx, this.combatants, this.worldFx, this.projectiles, this.floating, this.portal, this.blackout, this.wipePhrase);
     // The portal is the ONLY interactive object — prune every other layer (and its whole
     // subtree of sprites/graphics) from pointer hit-testing so a tap walks just the portal.
-    for (const layer of [this.background, this.combatants, this.worldFx, this.projectiles, this.floating, this.blackout, this.wipePhrase]) {
+    for (const layer of [this.background, this.groundFx, this.combatants, this.worldFx, this.projectiles, this.floating, this.blackout, this.wipePhrase]) {
       layer.eventMode = 'none';
     }
     this.wipePhrase.anchor.set(0.5);
@@ -231,6 +233,7 @@ export class GameStrip {
     this.reconcileEnemies(w, groundY, dtMs, toScreen);
     this.applyEvents(events, groundY);
     this.worldFx.update(dtMs);
+    this.groundFx.update(dtMs);
     this.projectiles.update(dtMs);
     this.floating.update(dtMs);
     this.updatePortal(w, groundY, dtMs);
@@ -495,7 +498,7 @@ export class GameStrip {
           // A supportive cast by a sprite hero (Priest heal) plays its heal-cast pose.
           if (heroCaster !== undefined && isSupportCast(ev.abilityKey)) heroCaster.supportCast();
           // Big AoE spectacles that play over the whole target band (the wave / the party).
-          this.spawnAoeFx(ev.abilityKey, heroCaster !== undefined, groundY);
+          this.spawnAoeFx(ev.abilityKey, heroCaster !== undefined, groundY, caster.x);
         }
       } else if (ev.tick === true) {
         // DoT/HoT periodic tick → floating number, no attack animation. A HoT HEAL tick
@@ -539,16 +542,16 @@ export class GameStrip {
   // Map an AoE ability's cast to its world spectacle, played over the target band:
   // a hero's wave-wide ability rains on the enemies; an enemy/boss's AoE rocks the party;
   // a party buff (Battle Cry) bursts over the heroes. Single-target abilities → no band FX.
-  private spawnAoeFx(abilityKey: string, heroCaster: boolean, groundY: number): void {
+  private spawnAoeFx(abilityKey: string, heroCaster: boolean, groundY: number, casterX: number): void {
     switch (abilityKey) {
       case 'ranger_multishot': { // Raining Arrows → a volley onto the wave
         const b = this.bandOf(this.enemySprites);
         if (b !== null) this.worldFx.arrowRain(b.cx, groundY, b.halfW);
         return;
       }
-      case 'ranger_frozentrap': { // Caltrops → a hazard field under the wave (5s DoT)
+      case 'ranger_frozentrap': { // Caltrops → iron spikes erupt from the ranger across the ground (4s)
         const b = this.bandOf(this.enemySprites);
-        if (b !== null) this.worldFx.frostPool(b.cx, groundY, b.halfW, 5000);
+        if (b !== null) this.groundFx.groundSpikes(casterX, groundY, b.cx + b.halfW, 4000);
         return;
       }
       case 'priest_nova': { // Holy Nova → a golden burst through the wave
