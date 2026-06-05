@@ -83,6 +83,8 @@ function trackDisplay(prev: number, target: number, dtMs: number, speedPxps: num
 // rear hero's HUD is lifted above the one just ahead of it (tiered upward).
 const HUD_OVERLAP_PX = 38; // horizontal gap (screen px) under which two hero HUDs collide
 const HUD_LIFT_STEP = 16; // px each successive crowded HUD is raised
+const ENEMY_BAR_OVERLAP_PX = 22; // horizontal gap under which two enemy HP bars collide
+const ENEMY_BAR_LIFT_STEP = 6; // px each successive crowded enemy bar is raised (bars are thin)
 
 export class GameStrip {
   private app: Application | null = null;
@@ -398,6 +400,21 @@ export class GameStrip {
     }
   }
 
+  // Same anti-overlap pass for enemy HP bars: enemies bunch at the front line on the same x,
+  // so each successive crowded bar (frontmost first) is nudged up a step instead of stacking
+  // directly on the one behind it. The bar's strip-top clamp keeps a lifted bar on-screen.
+  private layoutEnemyHuds(placed: { sprite: EnemySprite; x: number }[]): void {
+    const order = placed.slice().sort((a, b) => b.x - a.x); // frontmost (largest x) first
+    let prevX = Number.POSITIVE_INFINITY;
+    let prevLift = 0;
+    for (const p of order) {
+      const lift = prevX - p.x < ENEMY_BAR_OVERLAP_PX ? prevLift + ENEMY_BAR_LIFT_STEP : 0;
+      p.sprite.setBarLift(lift);
+      prevX = p.x;
+      prevLift = lift;
+    }
+  }
+
   private reconcileEnemies(w: WorldState, groundY: number, dtMs: number, toScreen: (wx: number) => number): void {
     const enemies = w.enemies;
     const live = new Set(enemies.map((e) => e.id));
@@ -405,6 +422,7 @@ export class GameStrip {
     // this is the W-10 zone-boss fight (a world boss) vs a normal stage boss.
     const ctx = { world: worldOf(w.globalStageIndex), isWorldBoss: isZoneBossStage(w.globalStageIndex) };
 
+    const placed: { sprite: EnemySprite; x: number }[] = [];
     for (const c of enemies) {
       let sprite = this.enemySprites.get(c.id);
       if (sprite === undefined) {
@@ -420,8 +438,11 @@ export class GameStrip {
       const prev = this.enemyDisplayX.get(c.id);
       const disp = prev === undefined ? c.x : trackDisplay(prev, c.x, dtMs, c.moveSpeed > 0 ? c.moveSpeed : WALK_SPEED);
       this.enemyDisplayX.set(c.id, disp);
-      sprite.update(c, toScreen(disp), groundY, dtMs);
+      const sx = toScreen(disp);
+      sprite.update(c, sx, groundY, dtMs);
+      if (c.alive) placed.push({ sprite, x: sx });
     }
+    this.layoutEnemyHuds(placed);
 
     // Sprites whose combatant the sim has pruned: keep them playing the death-hold (~1s) at
     // their last world position (still tracking the camera), then remove once expired.

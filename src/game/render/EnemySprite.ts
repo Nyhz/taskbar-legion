@@ -65,6 +65,7 @@ export class EnemySprite extends Container {
   private dying = false;
   private prevAlive = true;
   private hpBgY = Number.NaN; // y the static HP-bar backdrop was last drawn at (rebuild only on change)
+  private barLift = 0; // px the HP bar is raised to dodge a crowded neighbour's bar (set by GameStrip)
 
   constructor(c: Combatant, stageTint: number, spec: { frames: CharFrames | null; sizeClass: EnemySizeClass }) {
     super();
@@ -102,6 +103,12 @@ export class EnemySprite extends Container {
 
   flashHit(): void {
     this.flash = 1;
+  }
+
+  /** Raise this enemy's HP bar by `px` so it doesn't sit on top of a neighbour's bar when
+   *  enemies bunch at the same x (GameStrip computes the crowding, like it does for heroes). */
+  setBarLift(px: number): void {
+    this.barLift = px;
   }
 
   // Sprite bodies carry their own attack motion; the procedural fallback had a lunge but
@@ -199,7 +206,9 @@ export class EnemySprite extends Container {
     this.hpBar.visible = true;
     // Clamp inside the strip: the container sits at groundY, so the strip's top edge is at
     // container-local -groundY — a very tall boss's bar pins there instead of slipping off.
-    const y = Math.max(this.barY, -groundY + 6);
+    // barLift raises the bar (more negative y) to dodge a crowded neighbour; the same clamp
+    // keeps a lifted bar from sliding off the top.
+    const y = Math.max(this.barY - this.barLift, -groundY + 6);
     const frac = c.maxHp > 0 ? Math.max(0, Math.min(1, c.hp / c.maxHp)) : 0;
     // The backdrop is static geometry — only re-tessellate it when its y actually moves
     // (a tall boss's bar pinned against the strip top as the camera shifts).
