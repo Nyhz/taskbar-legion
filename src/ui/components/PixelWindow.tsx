@@ -13,6 +13,7 @@ export interface PixelWindowProps {
   title: string;
   width?: number;
   height?: number;
+  maxHeight?: number; // cap (pre-`zoom` px) so the panel never outgrows the space above the strip — its body scrolls instead
   scale?: number; // per-panel zoom (default PANEL_SCALE) — the party is enlarged, wings compact
   headerActions?: ReactNode; // rendered in the title bar, left of the close button
   onClose: () => void;
@@ -30,6 +31,7 @@ export function PixelWindow({
   title,
   width = 360,
   height,
+  maxHeight,
   scale = PANEL_SCALE,
   headerActions,
   onClose,
@@ -51,6 +53,7 @@ export function PixelWindow({
         position: 'relative',
         width,
         ...(height !== undefined ? { height } : {}),
+        ...(maxHeight !== undefined ? { maxHeight } : {}),
         background: PALETTE.bgPanel,
         border: `2px solid ${PALETTE.ink}`,
         boxShadow: `0 0 0 1px ${PALETTE.goldDim}, 4px 4px 0 0 rgba(0,0,0,0.5)`,
