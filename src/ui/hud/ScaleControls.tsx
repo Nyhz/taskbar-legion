@@ -73,6 +73,21 @@ export function ScaleControls(): React.JSX.Element {
             fontSize: 11,
           }}
         >
+          <span
+            style={{
+              alignSelf: 'flex-start',
+              padding: '1px 5px',
+              background: PALETTE.titleRed,
+              border: `1px solid ${PALETTE.enemyAccent}`,
+              color: PALETTE.textLight,
+              fontSize: 9,
+              fontWeight: 700,
+              letterSpacing: 1,
+              textTransform: 'uppercase',
+            }}
+          >
+            Experimental
+          </span>
           <Slider label="Menu Scale" value={menuScale} onChange={setMenuScale} />
           <Slider label="Game Scale" value={gameScale} onChange={setGameScale} />
         </div>
