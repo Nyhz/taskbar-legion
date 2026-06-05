@@ -54,7 +54,17 @@ export function App(): React.JSX.Element {
     void (async () => {
       const save = await loadGame();
       if (cancelled) return;
-      if (save !== null) useStore.getState().hydrate(save);
+      if (save !== null) {
+        try {
+          useStore.getState().hydrate(save);
+        } catch (err) {
+          // A save that passed migrate but still throws in hydrate must NOT brick the app
+          // (the file is persisted → every reload would re-crash). Fall back to a fresh
+          // game: hydrate builds its next-state object before calling set, so a throw
+          // leaves the store at defaults rather than half-applied.
+          console.error('Save hydrate failed — starting fresh to avoid a boot loop', err);
+        }
+      }
       await game.init(container, useStore.getState().uiScale, tauri);
       if (cancelled) return;
       if (save !== null) {

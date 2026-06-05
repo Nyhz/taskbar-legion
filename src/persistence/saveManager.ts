@@ -154,6 +154,29 @@ export function reconcileFrontier(save: SaveV1 | null): SaveV1 | null {
   };
 }
 
+/** True when `save` carries the fields hydrate dereferences without a `??`/guard, with
+ *  the right container types. These have all existed since v1, so any genuine save passes;
+ *  the check exists to reject malformed/foreign JSON before it can crash hydrate on boot. */
+function hasRequiredV1Shape(save: Partial<SaveV1>): boolean {
+  const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null;
+  return (
+    Array.isArray(save.roster) &&
+    Array.isArray(save.unlockedClasses) &&
+    Array.isArray(save.inventory) &&
+    Array.isArray(save.chests) &&
+    typeof save.gold === 'number' &&
+    typeof save.seed === 'number' &&
+    isObj(save.progress) &&
+    typeof save.progress.globalStageIndex === 'number' &&
+    isObj(save.pets) &&
+    Array.isArray(save.pets.ownedKeys) &&
+    isObj(save.autoOpen) &&
+    isObj(save.settings) &&
+    typeof save.settings.dockOrientation === 'string' &&
+    isObj(save.techTree)
+  );
+}
+
 /** Migration hook (ready for v2). v1 saves pass through; unknown shapes are dropped.
  *  In-place field migrations keep older v1 saves loadable:
  *   - chests: legacy entries lacked `dropStage` → assume they dropped where the save
@@ -163,6 +186,15 @@ export function migrate(raw: unknown): SaveV1 | null {
   const save = raw as Partial<SaveV1> & { chests?: unknown };
   if (save.version !== 1) {
     console.warn(`Unknown save version ${String(save.version)}; ignoring.`);
+    return null;
+  }
+  // Reject malformed/foreign files that happen to carry version:1 BEFORE they reach
+  // `hydrate`, which dereferences these fields without guards. Without this, a truncated
+  // or hand-edited save would crash hydrate on boot → permanent black-screen boot loop
+  // (the file is already persisted). Only original-since-v1 fields are required here, so
+  // every genuine save passes; the `??` defaults in hydrate cover later-added optionals.
+  if (!hasRequiredV1Shape(save)) {
+    console.warn('Save is version 1 but missing required fields; ignoring.');
     return null;
   }
   // Legacy class rename: the Warrior class was renamed to Knight (class key
