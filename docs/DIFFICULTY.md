@@ -1,10 +1,10 @@
 # DIFFICULTY.md — The finite, multi-difficulty model (CANONICAL)
 
-> **⚠️ This document supersedes the INFINITE-SCALING model.** Where `PROGRESSION.md`, `BALANCE.md`, or `SPEC.md`
-> describe infinite stages, per-world zone-boss walls (`ZONE_WALL_GROWTH`), world-depth-scaled rarity, or a
-> "world 100 ≈ 1 year" tail, **this file wins.** The game is now a **finite 5-difficulty** structure. The
-> still-valid machinery in `stageScaling.ts` (the polynomial Φ curve, `gearTrack` hit-count anchor, decoupled
-> boss scales, `expectedLevel`, mitigation) is **re-parameterized**, not discarded.
+> **⚠️ This is the CANONICAL scaling doc.** It replaced the old infinite-scaling model (retired): wherever
+> `BALANCE.md` or `SPEC.md` still describe infinite stages, world-depth-scaled rarity, or a "world 100 ≈ 1 year"
+> tail, **this file wins.** The game is a **finite 5-difficulty** structure. The still-valid machinery in
+> `stageScaling.ts` (the polynomial Φ curve, `gearTrack` hit-count anchor, decoupled boss scales,
+> `expectedLevel`, mitigation) is **re-parameterized**, not discarded.
 >
 > Decided 2026-06-03. Status: **Phase 0 (spec + spine) — pending sign-off.** See `docs/PROGRESS.md` for phases.
 
@@ -221,10 +221,10 @@ climbs. The gate is a **hard wall**: a party with the expected kit *minus its ca
 
 ## 10. What this supersedes & the phase map
 
-Supersedes: `PROGRESSION.md §0` infinite model, §1 "infinite scaling" / accelerating-ratio goal, §13
-world-depth-scaled rarity + `unlockStage` schedule, §14 zone-key / zone-boss gate, and the W100≈1yr tail.
+Supersedes the retired infinite model: infinite stages / accelerating-ratio goal, world-depth-scaled rarity +
+`unlockStage` schedule, the zone-key / zone-boss gate, and the "world 100 ≈ 1 year" tail.
 **Retained** (re-parameterized): the polynomial Φ curve, `gearTrack` hit-count anchor, decoupled boss scales,
-mitigation, `expectedLevel`, the FLAT-vs-PERCENT stat rule (§6 of PROGRESSION), and the income shape.
+mitigation, `expectedLevel`, the FLAT-vs-PERCENT stat rule, and the income shape.
 **Zone keys are removed** — `10-10` is entered freely once `10-9` is cleared (the wall is the boss, not a key).
 
 Execution phases (see `docs/PROGRESS.md`):

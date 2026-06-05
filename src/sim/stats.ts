@@ -2,7 +2,7 @@ import type { StatKey } from '@/data/stats';
 import { ALL_STAT_KEYS, STATS, ENABLER_SOFT_CAPS, softCapValue } from '@/data/stats';
 
 // Effective-stat aggregation. PURE: output depends only on inputs. Combat reads
-// only EffectiveStats. The flat/percent semantics (PROGRESSION §6):
+// only EffectiveStats. The flat/percent semantics (DIFFICULTY.md §6):
 //   - FLAT stats:    (base + Σflat) × (1 + Σpercent/100)   ← percent mods scale the flat total
 //   - PERCENT stats: base + Σ(all mod values)              ← stored as percent points
 //   - attackSpeed:   base × (1 + Σ(all mod values)/100)    ← the cadence (attacks/sec)

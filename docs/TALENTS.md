@@ -37,7 +37,7 @@ passive %-stat investment. The player fields **2 of the 5** abilities at a time 
 - **Every passive node is a PERCENT bonus.** Flat-origin stats (health/armor/magicResist/attackDamage)
   convert via `FLAT_TO_PERCENT` and add to a "% of base" pool that rides the `Φ^1.0` scaling; already-percent
   stats (crit, attack-speed, dodge, block, lifesteal, CDR, heal-power, damage-increase) add percentage points.
-  Additive stacking, no double-dipping (PROGRESSION §6). The flat oddballs (`hpRegen`/`hpPerHit`) are no
+  Additive stacking, no double-dipping (DIFFICULTY.md §6). The flat oddballs (`hpRegen`/`hpPerHit`) are no
   longer talent nodes.
 - **Abilities scale off the caster's stats**, never flat:
   - damage / DoT magnitude = `coeff × attackDamage × (1 + damageIncrease%)`, may crit.
@@ -157,7 +157,7 @@ generic statMod buffs (`buff_enrage_cdr` / `buff_enrage_as`).
 - Max rank = 5 on every node. Row unlock = `(row−1)×10` points spent. Abilities live in rows 1–4.
 - Per-rank stat values live in `data/talents.ts` (`CLASS_TALENTS`, applied as percent via `FLAT_TO_PERCENT`
   or native percent). Ability `coeff` values live in `data/abilities.ts`; ult numbers in `data/ultimates.ts`.
-- Tuned against the Φ curve so the PROGRESSION invariants still hold (the smoke harness spends every point;
+- Tuned against the Φ curve so the DIFFICULTY.md invariants still hold (the smoke harness spends every point;
   note ults only matter at L60+, deep past the smoke run's reach — they're covered by `test/sim/ultimates.test.ts`).
 - **Migration note:** the rework changes node keys/abilities, so talent points spent on the OLD tree don't map
   cleanly — a fresh build (or a one-time talent reset) is expected when adopting this.

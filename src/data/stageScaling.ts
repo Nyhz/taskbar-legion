@@ -1,4 +1,4 @@
-// THE scaling bible, implemented (PROGRESSION.md — canonical, supersedes SPEC's
+// THE scaling bible, implemented (DIFFICULTY.md — canonical, supersedes SPEC's
 // linear example). Phase 2: the master scale Φ(S) is now a POLYNOMIAL B-curve
 // P(S) = (1 + S/P_K)^P_EXP — NOT the old exponential product (which blew up to ~e42 by
 // world 50). Enemy stats, mitigation, income and XP all derive from Φ; flat gear scales
@@ -32,8 +32,8 @@ export const ENEMY_BASE_ATTACK_SPEED = 0.8; // attacks/sec baseline
 // geared) so their TTK HOLDS or GROWS with depth — the gate never erodes (the bug when bosses
 // rode trash HP at ~Φ^1.3 and facerolled deep). Each function also takes an optional per-world
 // OVERRIDE map for the rare world the formula misfits — the "tune individual bosses" escape
-// hatch (the game is infinite + always-decelerating, so only a bounded prefix ever needs pins),
-// layered on top of the clean default. Boss DAMAGE still rides enemyDamage × these mults.
+// hatch (the finite 50-world game, so only a rare misfit world ever needs a pin), layered on
+// top of the clean default. Boss DAMAGE still rides enemyDamage × these mults.
 export const BOSS_DMG_MULT = 6.5; // tune-pass: 5.0→6.5 — stage bosses actually pressure party HP (mildly challenging, not a faceroll)
 export const ZONE_BOSS_DMG_MULT = 7.0; // tune-pass: 5.5→7.0 — world bosses hit hard (enrage on an over-long fight forces farming) without making the deep-tail survival cliff razor-thin
 
@@ -52,16 +52,15 @@ export function stageBossHp(S: number): number {
 // Zone/world boss (W-10): THE WALL / gear-check. Scales a HAIR steeper than party power (Φ^1.8)
 // so its TTK GROWS with depth → each world takes a bit longer = the decelerating curve. Sized so
 // good world ITEMS clear it within the enrage+survival window (gems/level are premium HEADROOM,
-// never required — directive); the PREVIOUS world's gear fails → you farm a few new pieces. The
-// deep-world LENGTH (W60≈3-4mo, W100≈1yr, approximate) is this growing gate × the farm treadmill.
+// never required — directive); the PREVIOUS world's gear fails → you farm a few new pieces. Each
+// world's LENGTH is set by the per-world `WORLD_WALL_MULT` table × the farm treadmill.
 export const ZONE_BOSS_C = 260_000; // tune-pass: small bump over the 240k smoothing pass — the wall→months curve is hypersensitive near the gear ceiling (240k→1.7mo, 300k→7.9mo+bricks), so nudge gently toward ~2.5mo
 export const ZONE_BOSS_EXP = 1.0; // track gear's Φ^1.0 ilvl growth — the boss BASE keeps pace with raw gear; the per-world WALL excess comes from WORLD_WALL_GROWTH, so no difficulty bricks at its tail
 // Soft SATURATION (deep-tail flattener): the realistic gear ceiling saturates (level cap + gem
 // caps), so a pure Φ^2.1 wall would cross it and brick (~W165). Dividing by (1+Φ/SAT) flattens
 // the deep wall to ~Φ^1.1, keeping it well below the absolute ceiling (0.2-0.5×) through W250+ —
-// so the deep tail is GLACIAL (the intended multi-month grind), never a hard stop. Calibrated
-// via scripts/sim-pace.ts (the analytic pacing harness). NOTE: full W200≈1yr pacing also needs
-// the depth-dependent gear-treadmill slowdown — see the pacing writeup / difficulty-tier plan.
+// so the deep Torment tail is the intended multi-week grind, never a hard stop. Calibrated via
+// `npm run probe` (the finite curve is shaped per-world in `WORLD_WALL_MULT`).
 export const ZONE_BOSS_SAT = 80; // tune-pass: 18→80 — finite game (Φ tops ~6.2), so relax the deep-tail flattener; the wall should BITE through Torment, not saturate away
 // Early-world ramp (the "easy opening"): the flat C dominates when the party is still weak, so
 // without this the early walls would exceed the (low) early-game gear ceiling and brick. Ramp
@@ -138,12 +137,12 @@ export const ZONE_BOSS_INCOME_MULT = 40;
 export const C_MIT = 450;
 export const MIT_EXP = 1.0; // MUST track EG_FLAT (armor is a flat stat)
 // Cap on the flat `damageReduction` stat (a defensive-buff mechanic) so it can never
-// reach immunity, however many sources stack — a bounded percent stat (PROGRESSION §6).
+// reach immunity, however many sources stack — a bounded percent stat (DIFFICULTY.md §6).
 export const MAX_DAMAGE_REDUCTION = 80;
 // NOTE: multistrike / critChance / block / cooldownReduction are now bounded via the
 // DIMINISHING-RETURNS soft caps in data/stats.ts (ENABLER_SOFT_CAPS), not hard caps here.
 
-// Boss enrage (the DPS-race wall, PROGRESSION §6). Geared boss TTK is ~constant in Φ
+// Boss enrage (the DPS-race wall, DIFFICULTY.md §6). Geared boss TTK is ~constant in Φ
 // (gear flat ~Φ tracks boss HP ~Φ), so a FIXED enrage window gates every stage the
 // same way: kill the boss before it enrages, or wipe.
 //
@@ -212,7 +211,7 @@ export function phi(S: number): number {
 // Per-stage growth RATIO g(S) = P(S)/P(S-1). Kept for callers/tests that reason about
 // per-stage difficulty. Under the polynomial this gently DECREASES toward 1 with depth
 // (the relative jump shrinks), while the ABSOLUTE increment P(S)-P(S-1) grows — that
-// rising absolute increment is the "accelerating difficulty" (PROGRESSION §11 #4).
+// rising absolute increment is the "accelerating difficulty" (DIFFICULTY.md §11 #4).
 export function g(S: number): number {
   if (S <= 1) return phi(1) / phi(0);
   return phi(S) / phi(S - 1);
@@ -358,7 +357,7 @@ export function expectedDefense(S: number): number {
 
 // ── Item level / level-curve spine (the rebalance) ──
 // ilvl is a PURE POWER source (item flat stats scale Φ^EG_FLAT of their ilvl). There is
-// NO equip-gate (PROGRESSION §0: any hero equips any item; only the weapon/off-hand class
+// NO equip-gate (DIFFICULTY.md §0: any hero equips any item; only the weapon/off-hand class
 // lock remains). `expectedLevel(S)` is the level a player is meant to be at stage S and the
 // anchor for generated-item ilvl: it tracks stage 1:1 through world 1 so the intro stays
 // brisk, then grows SUB-LINEARLY so level (and thus geared power) LAGS the raw stage by a
@@ -400,7 +399,7 @@ export function pctAffixIlvlMult(ilvl: number): number {
 // Deliberately TIGHT (design directive): gold gates the tech-unlock pace and XP
 // gates leveling, so the player must FARM, not just advance non-stop. Tech gold×/xp×
 // bonuses (up to ~23×/~13× fully invested) are the relief that rewards Economy nodes.
-// These bases supersede BALANCE.md's looser 5/6 (see PROGRESSION §8 note).
+// These bases supersede BALANCE.md's looser 5/6 (see DIFFICULTY.md §8 note).
 export const GOLD_PER_KILL_BASE = 3; // was 5 (×3 test-mult also removed)
 export const XP_PER_KILL_BASE = 4; // was 6 — leveling ~1.5× slower (kept early-snappy)
 // Gold buys NON-COMBAT tech only (economy/QoL), so it can't be a buy-your-power runaway —
@@ -418,8 +417,8 @@ export function xpPerKill(S: number): number {
 // (4.4^(L-39), negligible below ~L45) that turns the climb to the cap into a months-long
 // grind tracking the deep, wall-gated worlds. Safe to be steep because gear is DECOUPLED
 // from level (it can't gate content) and level is hard-capped — so this can't recreate the
-// old impossibility. Re-paced against the zone-wall W100≈1yr timeline so roughly L100 lands
-// a few months in and L120 ~15 months (the long tail).
+// old impossibility. Paced against the finite difficulty timeline (~2-3 months to Torment
+// 10-10); L120 is the post-completion grind, not on the critical path.
 export const MAX_LEVEL = 120;
 // FINITE model: a pure polynomial (the old 4.4^(L-39) tail hard-capped a farming party at
 // ~L46, far below the L≤115 the 500-stage game now needs). Cheap early (core talents/abilities

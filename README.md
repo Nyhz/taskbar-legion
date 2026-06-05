@@ -61,11 +61,12 @@ It's a loop, and it's a good one:
 
 ## The grind, lovingly tuned
 
-The worlds never stop, and they get *meaner* — difficulty accelerates, so the jump from
-world 50 to 51 hurts more than 1 to 2 ever did. Your power comes from stacking **gear ×
-level × talents × tech**, all multiplying together. Coast on last stage's loot and you'll
-stall within a few stages; keep every part of your build moving and the treadmill keeps
-rolling — all the way to a roughly year-long climb to the deepest worlds.
+The climb runs through **five difficulties** — Normal, Hell, Inferno, Eternal, Torment — each
+meaner than the last, and every one caps off at a **world boss** that won't fall until you've
+geared up for it. Your power comes from stacking **gear × level × talents × tech**, all
+multiplying together. Coast on last difficulty's loot and you'll stall at the next wall; keep
+every part of your build moving and the treadmill keeps rolling — a **months-long** haul to
+cracking the final Torment boss.
 
 It's a game you can check on for thirty seconds or stare at for an hour. Both are correct.
 
@@ -90,6 +91,12 @@ npm run dev         # or just the UI in a browser, for fast iteration
 ```
 
 No account, no server, no internet. It's 100% offline and your save lives on your own machine.
+
+## License
+
+The source is **available to read, build, and play for personal / noncommercial use** under the
+[PolyForm Noncommercial 1.0.0](./LICENSE.md) license. Commercial use requires a separate license.
+© 2026 Daniel Calvo.
 
 ---
 

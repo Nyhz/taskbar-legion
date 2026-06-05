@@ -45,7 +45,7 @@ Write these in Phase 1. Each must pass before Phase 1 is done.
 - [ ] A gem's flat grants scale with `Φ(gem.origin.stageIndex)`; percent grants do not (same rule as items).
 - [ ] Socketing any gem sets `item.bound = true`; gem grants stack on top of item affixes (can exceed 4).
 
-**Tier rarity & unlock (`rollTier`, PROGRESSION §13):**
+**Tier rarity & unlock (`rollTier`, DIFFICULTY.md §13):**
 - [ ] No tier drops before its `unlockStage` (no T4 before S=10, no T8 before S=50) — for items AND gems.
 - [ ] Drop-rate target: simulated stage-50 farming yields ~2 T6/day, ~1 T7/day, ~1 T8/2days (calibration).
 
@@ -67,7 +67,7 @@ Write these in Phase 1. Each must pass before Phase 1 is done.
 - [ ] Stage scaling is **monotonic** (enemy HP/damage, gold, research, ilvl band all non-decreasing in
       global stage index).
 
-**Progression / gear-check treadmill (`docs/PROGRESSION.md` §11 — the four invariants):**
+**Progression / gear-check treadmill (`docs/DIFFICULTY.md` §11 — the four invariants):**
 - [ ] **Accelerating difficulty:** `g(S)` strictly increasing → per-stage power ratio at S=50 > at S=1;
       `Φ(S)` strictly increasing.
 - [ ] **Fast early game:** a "greedy" party (always equips best dropped item per slot, spends points) clears

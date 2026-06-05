@@ -15,7 +15,7 @@ import { difficultyOf } from '@/data/difficulties';
 
 // The deterministic loot generator (the SPEC §4.6 contract): generateItem(origin)
 // reproduces an item byte-for-byte from its birth certificate. Tier is stage-gated
-// and rare (PROGRESSION §13). Affix routing per AFFIXES.md.
+// and rare (DIFFICULTY.md §13). Affix routing per AFFIXES.md.
 
 export interface ItemOrigin {
   rollSeed: number;
@@ -149,7 +149,7 @@ function rollArmorBase(rng: Rng, mult: number, itemLevel: number): AffixRoll[] {
 
 /** Roll an item's level from the drop stage: ~80% at the stage's expected level,
  *  ~15% a touch higher (+1..3), ~5% an aspirational drop (+4..8) you grow into.
- *  ilvl is the pure power anchor — there is no equip requirement (PROGRESSION §0). */
+ *  ilvl is the pure power anchor — there is no equip requirement (DIFFICULTY.md §0). */
 export function rollItemLevel(S: number, rng: Rng): number {
   const base = expectedLevel(S);
   const r = rng.next();

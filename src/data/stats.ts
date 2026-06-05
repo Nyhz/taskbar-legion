@@ -1,6 +1,6 @@
 // The two stat pools (SPEC §4.1 / AFFIXES.md). Each stat has a `kind` that drives
 // scaling: FLAT stats scale with Φ(stageIndex); PERCENT stats are bounded rolls
-// (PROGRESSION §6 — the critical flat/percent split). `rollPerIlvl` is the legacy
+// (DIFFICULTY.md §6 — the critical flat/percent split). `rollPerIlvl` is the legacy
 // SPEC field name; it is the rand(min,max) band, NOT multiplied by ilvl anymore.
 
 export type StatGroup = 'offensive' | 'defensive' | 'utility';

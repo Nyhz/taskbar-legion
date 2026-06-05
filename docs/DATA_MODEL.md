@@ -79,13 +79,13 @@ export interface TierDef {
   extraStats: number;    // 0,1,1,2,2,3,3,4,4
   sockets: number;       // 0,0,1,1,2,2,3,3,4
   statMultiplier: number;
-  dropWeight: number;    // BASE weight (tiny for top tiers); stage bias + RARITY shift it (PROGRESSION §13)
+  dropWeight: number;    // BASE weight (tiny for top tiers); stage bias + RARITY shift it (DIFFICULTY.md §13)
   unlockStage: number;   // tier cannot drop before this global stage (T4@10,T5@20,T6@30,T7@40,T8@50)
 }
 ```
 
 Rules: stat cap = **4** extra stats always (T7/T8 share it; T8 only adds a 4th socket). Jewelry rejected at
-T0 (reroll). **Tier drop-rate is stage-gated + extremely rare at the top** — see PROGRESSION §13
+T0 (reroll). **Tier drop-rate is stage-gated + extremely rare at the top** — see DIFFICULTY.md §13
 (`rollTier`, unlock schedule, drop-rate targets). Items use T0–T8; gems use T1–T8. See BALANCE.md for values.
 
 ## Item instance — created by `sim/loot.ts`
@@ -126,7 +126,7 @@ export interface ItemInstance {
 ## Gems — `data/gems.ts` (now TIERED, T1–T8 — overrides SPEC §4.5's single-stat gem)
 
 Gems have **tiers T1–T8**: higher tier = **more affixes** + bigger values, and gem tier drop-rate **scales
-with stage** exactly like items (the shared `rollTier`, PROGRESSION §13). A gem is an **instance** (not a
+with stage** exactly like items (the shared `rollTier`, DIFFICULTY.md §13). A gem is an **instance** (not a
 stackable key), with its own birth certificate so flat grants scale with the stage it dropped at.
 
 ```ts
@@ -156,7 +156,7 @@ stat(s), the SAME in any socket. Each grant equals `GEM_AFFIX_FRACTION` (split a
 ONE same-tier, same-ilvl gear affix of that stat, using gear's normalization:
 `tierMult = tierDef(tier).statMultiplier`, `gemLevel = expectedLevel(origin.stageIndex)`,
 `mid = avg(STATS[stat].rollPerIlvl)`; `flat = round2(fractionPer × mid × tierMult × GEAR_POWER × Φ(gemLevel)^EG_FLAT)`,
-`percent = round2(fractionPer × mid × tierMult)` (same flat/percent rule as items, PROGRESSION §6). So a gem
+`percent = round2(fractionPer × mid × tierMult)` (same flat/percent rule as items, DIFFICULTY.md §6). So a gem
 scales with ilvl + tier exactly like gear. The knob (`GEM_AFFIX_FRACTION`) + the grant identities are in
 BALANCE.md; `gemLevel(gem)` is surfaced as "Gem Lv." in the tooltip. **Socketing sets `item.bound = true`**
 with a confirmation (SPEC §4.5 / §12.4). Gem grants are **added on top** of the item's own affixes (they can

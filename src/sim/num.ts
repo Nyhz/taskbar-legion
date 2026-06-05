@@ -1,4 +1,4 @@
-// The numeric seam (PROGRESSION §10). Route Φ-derived unbounded quantities
+// The numeric seam (DIFFICULTY.md §10). Route Φ-derived unbounded quantities
 // (enemyHP/dmg, flat stat values, gold, XP, costs) through these helpers so a
 // big-number type (e.g. break_infinity.js) can be dropped in later behind one
 // module. v1 uses plain `number` (finite to ~stage 2800); be honest in UI copy.
