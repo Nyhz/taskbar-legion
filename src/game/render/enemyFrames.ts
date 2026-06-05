@@ -64,9 +64,13 @@ export async function loadEnemyTextures(): Promise<void> {
       const attackUrls = ['attack01', 'attack02', 'attack03', 'attack']
         .map((a) => actions[a])
         .filter((u): u is string => u !== undefined);
+      // Walk: prefer a plain "walk" sheet, else a numbered one (e.g. the lancer ships
+      // walk01/walk02 with no plain "walk", which used to fall back to idle → it slid in on
+      // its idle pose). walk02 first per art tuning, then walk01, then idle as a last resort.
+      const walkUrl = actions.walk ?? actions.walk02 ?? actions.walk01 ?? actions.idle;
       const [idle, walk, death, hurt, block, ...attacks] = await Promise.all([
-        loadSheet(actions.idle ?? actions.walk),
-        loadSheet(actions.walk ?? actions.idle),
+        loadSheet(actions.idle ?? walkUrl),
+        loadSheet(walkUrl),
         loadSheet(actions.death),
         loadSheet(actions.hurt),
         loadSheet(actions.block),
