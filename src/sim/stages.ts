@@ -148,7 +148,7 @@ export function spawnStageBoss(world: WorldState, rng: Rng): void {
       hpAbsolute: stageBossHp(S),
       dmgMult: BOSS_DMG_MULT,
       magic: rng.chance(0.4),
-      range: RANGE.melee,
+      range: RANGE.melee + 15, // bigger sprite → stop further from the tank so it doesn't overlap it
       moveSpeed: MOVE_SPEED.melee,
       abilities: [],
       isBoss: true,
@@ -169,7 +169,7 @@ export function spawnZoneBoss(world: WorldState, rng: Rng): void {
       hpAbsolute: zoneBossHp(S),
       dmgMult: ZONE_BOSS_DMG_MULT,
       magic: rng.chance(0.4),
-      range: RANGE.melee,
+      range: RANGE.melee + 30, // towering sprite → stop well clear of the tank
       moveSpeed: MOVE_SPEED.melee,
       // +1 ability per difficulty (DIFFICULTY.md §5): Normal cleaves; Torment wields all five.
       abilities: worldBossAbilityKeys(difficultyIndexOf(S)).map((k) => ({ def: abilityDef(k), rank: 1 })),
