@@ -86,7 +86,7 @@ export const TECH_NODES: TechNode[] = [
   // ───────────────────────────── Utility ─────────────────────────────
   // Auto-open: rank 1 UNLOCKS it; each rank also shaves the interval (floored at 60s in
   // chests.ts, so ranks past the floor are wasted — hence a finite cap).
-  node('auto_open', 'Utility', '⚡', 'Auto-Open', 'Unlock auto-open · −45s interval / rank', [{ kind: 'unlockAutoOpen' }, { kind: 'autoOpenReduce', value: 45_000 }], 500, 2.2, 12),
+  node('auto_open', 'Utility', '⚡', 'Auto-Open', 'Unlock auto-open · 15m base, −45s / rank', [{ kind: 'unlockAutoOpen' }, { kind: 'autoOpenReduce', value: 45_000 }], 500, 2.2, 12),
   // Party size: each rank unlocks the next active slot (2 then 3). Hand-priced LOW so the
   // tank·dps·healer trio forms in early world 1 (BALANCE) — NOT behind the deep sink.
   // costGrowth 2.5 ⇒ slot 2 = 1000g, slot 3 = 2500g.

@@ -34,7 +34,7 @@ describe('migrateTechRanks', () => {
 
   it('clamps auto-open to its cap and drops removed/unknown keys', () => {
     const out = migrateTechRanks({ chest_autoopen: 1, chest_autoopen_1: 8, chest_autoopen_2: 8, inventory_slots: 5, bogus: 3 });
-    expect(out.auto_open).toBe(12); // 1+8+8 = 17, clamped to maxRanks 12
+    expect(out.auto_open).toBe(TECH_NODE_MAP.auto_open!.maxRanks); // 1+8+8 = 17, clamped to the cap
     expect(out.inventory_slots).toBeUndefined();
     expect(out.bogus).toBeUndefined();
   });

@@ -11,19 +11,21 @@ import {
   canTransfigure,
   transfigPool,
   transfigureRoll,
+  transfigCostOptions,
+  type TransfigCost,
 } from '@/sim/cube';
 import { tierName } from '@/ui/tierStyle';
 import { format } from '@/sim/num';
 import { TIERS } from '@/data/tiers';
 import type { StatKey } from '@/data/stats';
 import { GEMS, type GemInstance } from '@/data/gems';
-import { TRANSFIG_OFFENSIVE_GEMS, TRANSFIG_DEFENSIVE_GEMS } from '@/data/cube';
 import { PALETTE } from '@/styles/palette';
 
 // The Cube — three recipes behind a tab row:
 //  • Synthesize: 9 same-tier items → 1 of the next tier (ilvl = median of inputs).
 //  • Alchemy:    melt items → gold (per-item value by tier + ilvl).
-//  • Transfigure: re-roll one affix into a different stat, paid with two gems.
+//  • Transfigure: re-roll one affix into a different stat, paid with gems (1 same-tier or
+//    2 one-tier-below).
 // Inputs sit in a 3×3 "cube" grid.
 
 type Mode = 'synthesize' | 'alchemy' | 'transfigure';
@@ -70,7 +72,7 @@ export function CubeHelpButton(): React.JSX.Element {
           <div style={{ color: PALETTE.gold, fontWeight: 700, fontSize: 11 }}>How the Cube works</div>
           <div><b style={{ color: PALETTE.parchment }}>Synthesize</b> — combine 9 items OR 9 gems of the same tier into one of the next tier (5% chance to jump TWO tiers, marked with a gold glow — raise it with the <i>Transmuter&apos;s Fortune</i> tech). Tick <i>Include stash items</i> to also pull from your stash. An item&apos;s level is the median of the inputs.</div>
           <div><b style={{ color: PALETTE.parchment }}>Alchemy</b> — melt any items into gold; higher tier and item level are worth more. Optional auto-salvage melts chosen rarities the moment they drop.</div>
-          <div><b style={{ color: PALETTE.parchment }}>Transfigure</b> — re-roll ONE affix on a gear piece into a different stat, paid with 1 offensive + 1 defensive gem at the item&apos;s tier. One-time per item; keep either the new roll or the original.</div>
+          <div><b style={{ color: PALETTE.parchment }}>Transfigure</b> — re-roll ONE affix on a gear piece into a different stat, paid with either 1 gem at the item&apos;s tier OR 2 gems one tier below (any colours). One-time per item; keep either the new roll or the original.</div>
         </div>
       )}
     </span>
@@ -305,6 +307,7 @@ function TransfigureMode(): React.JSX.Element {
   const cubeApplyTransfigure = useStore((s) => s.cubeApplyTransfigure);
   const [itemId, setItemId] = useState<string | null>(null);
   const [affixIndex, setAffixIndex] = useState<number | null>(null);
+  const [costIdx, setCostIdx] = useState(0); // which payment option is selected
   const [pending, setPending] = useState<Pending | null>(null);
   const [result, setResult] = useState<string | null>(null);
 
@@ -312,33 +315,40 @@ function TransfigureMode(): React.JSX.Element {
   const gems = inventory.filter(isGem);
   const item = gear.find((i) => i.id === itemId) ?? null;
 
-  // The two gems that will pay: one of each family at the item's tier.
-  const pickGem = (family: readonly string[]): GemInstance | null =>
-    item === null ? null : gems.find((g) => g.tier === item.tier && family.includes(g.key)) ?? null;
-  const offGem = pickGem(TRANSFIG_OFFENSIVE_GEMS);
-  const defGem = pickGem(TRANSFIG_DEFENSIVE_GEMS);
+  const gemsAtTier = (tier: number): GemInstance[] => gems.filter((g) => g.tier === tier);
+  // Available payment options for this item, plus how many qualifying gems are owned.
+  const options: { cost: TransfigCost; have: number }[] =
+    item === null ? [] : transfigCostOptions(item).map((cost) => ({ cost, have: gemsAtTier(cost.tier).length }));
+  const sel = options[costIdx] ?? null;
+  // The exact gems that will be spent for the selected option (any colours at that tier).
+  const payGems = sel === null ? [] : gemsAtTier(sel.cost.tier).slice(0, sel.cost.count);
+  const afford = sel !== null && payGems.length === sel.cost.count;
+
+  // Default the cost to the FIRST affordable option when an item is picked.
+  const firstAffordable = (i: ItemInstance): number => {
+    const opts = transfigCostOptions(i);
+    const idx = opts.findIndex((o) => gemsAtTier(o.tier).length >= o.count);
+    return idx >= 0 ? idx : 0;
+  };
 
   const selectItem = (i: ItemInstance): void => {
     setResult(null);
     setPending(null);
     setAffixIndex(null);
-    setItemId((cur) => (cur === i.id ? null : i.id));
+    const next = itemId === i.id ? null : i.id;
+    setItemId(next);
+    if (next !== null) setCostIdx(firstAffordable(i));
   };
 
-  const haveGems = offGem !== null && defGem !== null;
   const canDo =
-    item !== null &&
-    affixIndex !== null &&
-    haveGems &&
-    pending === null &&
-    canTransfigure(item, [offGem, defGem].filter((g): g is GemInstance => g !== null));
+    item !== null && affixIndex !== null && afford && pending === null && canTransfigure(item, payGems);
 
   const transform = (): void => {
-    if (item === null || affixIndex === null || offGem === null || defGem === null) return;
+    if (item === null || affixIndex === null || !afford) return;
     const oldStat = item.stats[affixIndex];
     const newStat = transfigureRoll(item, affixIndex);
     if (oldStat === undefined || newStat === null) return;
-    if (cubeTransfigure(item.id, [offGem.id, defGem.id], affixIndex)) {
+    if (cubeTransfigure(item.id, payGems.map((g) => g.id), affixIndex)) {
       setPending({ itemId: item.id, affixIndex, oldStat, newStat });
     }
   };
@@ -358,12 +368,17 @@ function TransfigureMode(): React.JSX.Element {
 
   return (
     <>
-      {/* item + the two paying gems */}
+      {/* item + the gem(s) that will pay */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'center' }}>
         <SlotBox label="Item"><ItemSlot item={item} size={44} label="·" /></SlotBox>
         <span style={{ color: PALETTE.textMute }}>+</span>
-        <SlotBox label="Off. gem"><ItemSlot item={null} gem={offGem ?? undefined} size={40} label="·" /></SlotBox>
-        <SlotBox label="Def. gem"><ItemSlot item={null} gem={defGem ?? undefined} size={40} label="·" /></SlotBox>
+        <SlotBox label={sel === null ? 'Gems' : `${sel.cost.count}× T${sel.cost.tier}`}>
+          <div style={{ display: 'flex', gap: 3 }}>
+            {Array.from({ length: sel?.cost.count ?? 1 }, (_, i) => (
+              <ItemSlot key={i} item={null} gem={payGems[i]} size={40} label="·" />
+            ))}
+          </div>
+        </SlotBox>
       </div>
 
       {item !== null && pending === null && (
@@ -373,7 +388,33 @@ function TransfigureMode(): React.JSX.Element {
           <Result>No different stat is available to roll into for this item.</Result>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-            <div style={{ color: PALETTE.textMute, fontSize: 11 }}>Choose the affix to alter:</div>
+            {/* Payment option picker: 1 same-tier gem, or 2 one-tier-below gems. */}
+            <div style={{ color: PALETTE.textMute, fontSize: 11 }}>Pay with:</div>
+            <div style={{ display: 'flex', gap: 4 }}>
+              {options.map((o, i) => {
+                const ok = o.have >= o.cost.count;
+                const active = i === costIdx;
+                return (
+                  <button
+                    key={i}
+                    onClick={() => setCostIdx(i)}
+                    style={{
+                      flex: 1, padding: '4px 6px', fontSize: 11, cursor: 'pointer',
+                      background: active ? PALETTE.bgPanel : PALETTE.bgInset,
+                      border: `1px solid ${active ? PALETTE.gold : PALETTE.ink}`,
+                      color: ok ? PALETTE.textLight : PALETTE.textMute,
+                    }}
+                  >
+                    {o.cost.count}× T{o.cost.tier} gem{o.cost.count > 1 ? 's' : ''}
+                    <span style={{ display: 'block', fontSize: 9, color: ok ? PALETTE.hpGreen : PALETTE.enemyAccent }}>
+                      {ok ? 'have' : 'need'} {o.have}/{o.cost.count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div style={{ color: PALETTE.textMute, fontSize: 11, marginTop: 2 }}>Choose the affix to alter:</div>
             {item.stats.map((s, i) => (
               <button
                 key={i}
@@ -387,9 +428,9 @@ function TransfigureMode(): React.JSX.Element {
                 <StatRow statKey={s.key} value={s.value} />
               </button>
             ))}
-            {!haveGems && (
+            {!afford && (
               <div style={{ color: PALETTE.enemyAccent, fontSize: 10 }}>
-                Need 1 offensive + 1 defensive gem at {item ? `T${item.tier}` : 'matching tier'}.
+                Not enough gems for this option — pick the other, or get more gems.
               </div>
             )}
             <button onClick={transform} disabled={!canDo} style={{ ...btn(canDo), marginTop: 2 }}>Transform</button>

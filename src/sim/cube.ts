@@ -7,7 +7,7 @@ import type { ItemTier } from '@/data/tiers';
 import { tierDef } from '@/data/tiers';
 import type { GemInstance, GemTier } from '@/data/gems';
 import { GENERATOR_VERSION } from '@/data/lootTables';
-import { ALCHEMY_BASE, ALCHEMY_TIER_MULT, SYNTH_DOUBLE_TIER_CHANCE, TRANSFIG_OFFENSIVE_GEMS, TRANSFIG_DEFENSIVE_GEMS } from '@/data/cube';
+import { ALCHEMY_BASE, ALCHEMY_TIER_MULT, SYNTH_DOUBLE_TIER_CHANCE } from '@/data/cube';
 
 // The Cube's three recipes (all PURE + deterministic — no Math.random / Date):
 //  • Synthesize: 9 same-tier items → 1 of the next tier, ilvl = MEDIAN of the inputs.
@@ -90,10 +90,20 @@ export function alchemyTotal(items: readonly ItemInstance[]): number {
 
 // ───────────────────────────── Transfiguration ─────────────────────────────
 
-function gemFamily(g: GemInstance): 'offensive' | 'defensive' | null {
-  if (TRANSFIG_OFFENSIVE_GEMS.includes(g.key)) return 'offensive';
-  if (TRANSFIG_DEFENSIVE_GEMS.includes(g.key)) return 'defensive';
-  return null;
+/** A way to pay for a transfiguration: `count` gems of ANY colour, all at `tier`. */
+export interface TransfigCost {
+  tier: GemTier;
+  count: number;
+}
+
+/** The accepted ways to pay for transfiguring `item`: ONE gem at the item's tier, OR TWO
+ *  gems one tier below (any colours — type no longer matters). Gems exist only at T1+, so
+ *  the same-tier option needs tier ≥ 1 and the cheaper 2-gem option needs tier ≥ 2. */
+export function transfigCostOptions(item: ItemInstance): TransfigCost[] {
+  const opts: TransfigCost[] = [];
+  if (item.tier >= 1) opts.push({ tier: item.tier as GemTier, count: 1 });
+  if (item.tier >= 2) opts.push({ tier: (item.tier - 1) as GemTier, count: 2 });
+  return opts;
 }
 
 /** The pool of NEW affixes a transfiguration could roll for this item: the slot's
@@ -104,15 +114,16 @@ export function transfigPool(item: ItemInstance): StatKey[] {
   return itemSubstatPool(item).filter((k) => !taken.has(k));
 }
 
-/** True if `item` may be transfigured paying exactly `gems` (consumed either way). */
+/** True if `item` may be transfigured paying exactly `gems` (consumed either way). The gems
+ *  must match one of the accepted cost options — 1 same-tier gem, or 2 one-tier-below gems
+ *  (any colours). */
 export function canTransfigure(item: ItemInstance, gems: readonly GemInstance[]): boolean {
   if (item.transfigured === true) return false;
   if (item.stats.length === 0) return false; // no affix to alter
   if (transfigPool(item).length === 0) return false; // no different stat to roll into
-  if (gems.length !== 2) return false;
-  if (!gems.every((g) => g.tier === item.tier)) return false;
-  const fams = gems.map(gemFamily);
-  return fams.filter((f) => f === 'offensive').length === 1 && fams.filter((f) => f === 'defensive').length === 1;
+  return transfigCostOptions(item).some(
+    (o) => gems.length === o.count && gems.every((g) => g.tier === o.tier),
+  );
 }
 
 /** The replacement affix a transfiguration of `item`'s affix #`affixIndex` would

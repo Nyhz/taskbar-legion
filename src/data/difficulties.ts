@@ -33,23 +33,17 @@ export interface DifficultyDef {
   tierWeights: readonly number[];
 }
 
-// Drop tables — LOCKED (docs/DIFFICULTY.md §4). Tune-pass: SHIFTED BACKWARD — weight moved from
-// the cap/near-cap "upgrade" tiers down into the low-tier trash, so the chest firehose (1.5%) stays
-// constant but a SMALLER fraction of drops are upgrades → the gear climb is slower (longer grind)
-// without making drops sparse. The cap tier is now the ~1% chase (was ~2%).
-// GENTLE shift: cap tier kept low (~3% — don't starve the gear the deep walls need); weight moved
-// only from the MID tiers (T3–T6) down into low-tier trash, so the CLIMB to near-cap is slower
-// while the endgame chase stays reachable.
-// Forgiveness pass: each difficulty's cap tier sits at 2.5pt and the tier just below it at 6pt —
-// pulled from the lowest trash tier — so mid-high drops land a touch more often across the board
-// without over-flooding the rarest cap tier. A small, even-handed easing of the grind that keeps
-// the back-loaded shape (the per-difficulty WALL_DIFF_MULT, stageScaling.ts) intact.
-//                                  T0   T1  T2  T3  T4  T5  T6  T7  T8
-const W_NORMAL  = [42.5, 33, 15,  7, 2.5,  0,  0,  0,  0] as const;
-const W_HELL    = [14.5, 30, 30, 16,  7, 2.5,  0,  0,  0] as const;
-const W_INFERNO = [ 9.5, 20, 28, 22, 12,  6, 2.5,  0,  0] as const;
-const W_ETERNAL = [ 2.5, 11, 20, 27, 19, 12,  6, 2.5,  0] as const;
-const W_TORMENT = [   0, 2.5, 11, 20, 26, 20, 12,  6, 2.5] as const;
+// Drop tables — LOCKED (docs/DIFFICULTY.md §4). MIDDLE-WEIGHTED pass: the two top tiers of every
+// difficulty are fixed at 7.5 (just below the cap) and 2 (the cap chase), and the remaining weight
+// is humped on the MIDDLE tiers of each difficulty's range, tapering toward the low trash — so most
+// drops land in the mid band rather than the T0/T1 floor, while the endgame chase stays rare. Each
+// row sums to 100.
+//                                  T0   T1   T2  T3  T4   T5   T6   T7  T8
+const W_NORMAL  = [40.5, 30, 20,  7.5,  2,   0,   0,   0,  0] as const;
+const W_HELL    = [12.5, 25, 33, 20,  7.5,  2,   0,   0,  0] as const;
+const W_INFERNO = [ 7.5, 15, 24, 28, 16,   7.5,  2,   0,  0] as const;
+const W_ETERNAL = [ 4.5, 10, 17, 24, 21,  14,   7.5,  2,  0] as const;
+const W_TORMENT = [   0, 5.5, 12, 19, 24,  18,  12,   7.5, 2] as const;
 
 export const DIFFICULTIES: Readonly<Record<DifficultyKey, DifficultyDef>> = {
   normal:  { key: 'normal',  name: 'Normal',  index: 0, tierCap: 4, tierWeights: W_NORMAL },
