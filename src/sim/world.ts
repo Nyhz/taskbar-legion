@@ -43,6 +43,10 @@ export interface Combatant {
   isElite?: boolean; // a beefed-up "champion" trash mob (2× hp/dmg, 2× chest) — render bigger
   enrageMs?: number; // enrage window for this boss (Infinity = never; zone boss = 30s)
   bossUltTriggered?: boolean; // boss-only: the party's onBossEngage ults have fired for this boss
+  // Channeled cast in progress (world-boss Frenzy / Mortal Wound): the ability winds up
+  // `totalMs` (the cast bar) before its effect resolves. While set, the boss starts no new
+  // cast. Render reads this to draw the under-boss cast bar (GameStrip → EnemySprite).
+  casting?: { key: string; remainingMs: number; totalMs: number };
 }
 
 // Render/accrual event emitted by a combat tick (lives here so both combat.ts and

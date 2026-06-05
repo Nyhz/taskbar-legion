@@ -26,6 +26,10 @@ export type EffectKind =
   // attacks/abilities. The mirror of `vulnerable`. `value` is the base %; ability
   // rankScaling adds to it. Read by sim/effects.weakenMult in the outgoing-damage paths.
   | { type: 'weaken'; value: number }
+  // Healing reduction (world-boss Mortal Wound): the holder RECEIVES `value`% LESS healing
+  // from all sources (heals, HoTs, regen, lifesteal) while active. Read by
+  // sim/effects.healReceivedMult in every heal path.
+  | { type: 'healReduction'; value: number }
   | { type: 'tag'; tag: string };
 
 export interface EffectDef {
@@ -154,6 +158,24 @@ export const EFFECTS: Record<string, EffectDef> = {
     key: 'buff_enrage_as', name: 'Battle Enrage', icon: 'cry',
     kind: { type: 'statMod', stat: 'attackSpeed', mode: 'percent', value: 0 },
     durationMs: 10000, maxStacks: 1, stackRule: 'refresh', beneficial: true,
+  },
+
+  // ── World-boss special abilities (DIFFICULTY.md §5) ──
+  // Boss Frenzy (Inferno+): the world boss whips itself into a frenzy, swinging 50% faster
+  // for 6s. A self-buff on the enemy's attack-speed stat (sim/combat.enemySpeedFactor reads
+  // it for both swing cadence and movement). Suppressed from the generic offense overlay so
+  // its dedicated red foot-aura is the only read (effectAuras.categorize).
+  buff_boss_frenzy: {
+    key: 'buff_boss_frenzy', name: 'Frenzy', icon: 'flurry',
+    kind: { type: 'statMod', stat: 'attackSpeed', mode: 'percent', value: 35 },
+    durationMs: 6000, maxStacks: 1, stackRule: 'refresh', beneficial: true,
+  },
+  // Boss Mortal Wound (Torment+): a crippling blow that cuts the tank's healing received by
+  // 25% for 8s (on top of the strike's damage). Read by sim/effects.healReceivedMult.
+  debuff_mortal_wound: {
+    key: 'debuff_mortal_wound', name: 'Mortal Wound', icon: 'expose',
+    kind: { type: 'healReduction', value: 25 },
+    durationMs: 8000, maxStacks: 1, stackRule: 'refresh', beneficial: false,
   },
 
   // ── Debuffs / CC ──

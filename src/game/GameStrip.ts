@@ -490,9 +490,9 @@ export class GameStrip {
         const caster = heroCaster ?? this.enemySprites.get(ev.targetId);
         if (caster !== undefined) {
           const fx = castFx(ev.abilityKey);
-          // A whole-wave cast (Holy Nova, Raining Arrows, boss Quake…) puts its flourish
-          // over the TARGET band — the side it actually hits — so it never reads as landing
-          // on the caster's own party. Everything else rises from the caster.
+          // A whole-wave cast (Holy Nova, Raining Arrows) puts its flourish over the TARGET
+          // band — the side it actually hits — so it never reads as landing on the caster's
+          // own party. Everything else (incl. single-target boss specials) rises from the caster.
           const band = isWholeWaveCast(ev.abilityKey) ? this.targetBand(heroCaster !== undefined) : null;
           if (band !== null) {
             this.floating.spawn(band.cx, groundY - 40, fx.glyph, fx.color, 1.3);
@@ -503,7 +503,7 @@ export class GameStrip {
           // A supportive cast by a sprite hero (Priest heal) plays its heal-cast pose.
           if (heroCaster !== undefined && isSupportCast(ev.abilityKey)) heroCaster.supportCast();
           // Big AoE spectacles that play over the whole target band (the wave / the party).
-          this.spawnAoeFx(ev.abilityKey, heroCaster !== undefined, groundY, caster.x);
+          this.spawnAoeFx(ev.abilityKey, groundY, caster.x);
           // Explosive Arrow: a big arrow streaks to the front of the wave and detonates on
           // impact (the fireball strip's blast frames), timed to the arrow's flight.
           if (heroCaster !== undefined && ev.abilityKey === 'ranger_focus') {
@@ -559,7 +559,7 @@ export class GameStrip {
   // Map an AoE ability's cast to its world spectacle, played over the target band:
   // a hero's wave-wide ability rains on the enemies; an enemy/boss's AoE rocks the party;
   // a party buff (Battle Cry) bursts over the heroes. Single-target abilities → no band FX.
-  private spawnAoeFx(abilityKey: string, heroCaster: boolean, groundY: number, casterX: number): void {
+  private spawnAoeFx(abilityKey: string, groundY: number, casterX: number): void {
     switch (abilityKey) {
       case 'ranger_multishot': { // Raining Arrows → a volley onto the wave
         const b = this.bandOf(this.enemySprites);
@@ -579,14 +579,6 @@ export class GameStrip {
       case 'knight_battlecry': { // Battle Cry → an amber war-cry shockwave over the party
         const b = this.bandOf(this.heroSprites);
         if (b !== null) this.worldFx.shockwave(b.cx, groundY, b.halfW + 16, FX.offense);
-        return;
-      }
-      case 'boss_quake': case 'boss_maelstrom': case 'boss_cataclysm': {
-        // A boss AoE rocks the whole party — a heavy red shockwave over the heroes.
-        if (!heroCaster) {
-          const b = this.bandOf(this.heroSprites);
-          if (b !== null) this.worldFx.shockwave(b.cx, groundY, b.halfW + 20, hexToNum('#ff5a3c'));
-        }
         return;
       }
       default:

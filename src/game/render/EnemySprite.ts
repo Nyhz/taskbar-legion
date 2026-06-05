@@ -4,7 +4,7 @@ import type { AttackStyle } from '@/data/field';
 import { RANGE } from '@/data/field';
 import { hexToNum } from '@/styles/palette';
 import { drawEnemy } from './textures';
-import { auraCategories, drawCategoryAuras, totalShield, drawShieldBar, crosshairRadius, type AuraRegion } from './effectAuras';
+import { auraCategories, drawCategoryAuras, totalShield, drawShieldBar, crosshairRadius, drawFrenzyGround, hasFrenzy, type AuraRegion } from './effectAuras';
 import { SpriteBody } from './SpriteBody';
 import type { CharFrames } from './characterFrames';
 import type { EnemySizeClass } from './enemyFrames';
@@ -50,6 +50,8 @@ export class EnemySprite extends Container {
   private readonly body = new Graphics(); // procedural fallback (no sheet)
   private readonly aura = new Graphics();
   private readonly enrageAura = new Graphics();
+  private readonly frenzyAura = new Graphics(); // red ground pool while the boss is Frenzied
+  private readonly castBar = new Graphics(); // under-boss cast bar while channeling a special
   private readonly eliteAura = new Graphics(); // ground pulse marking a champion (elite) mob
   private readonly isElite: boolean;
   private readonly hpBg = new Graphics();
@@ -94,10 +96,11 @@ export class EnemySprite extends Container {
       drawEnemy(this.body, { isBoss: c.isBoss === true, magic: c.enemyMagic === true, tint: stageTint });
       this.body.position.set(0, FEET_OFFSET);
     }
-    // eliteAura sits on the ground UNDER the feet, then enrageAura behind the body; HP bar on top.
-    this.addChild(this.eliteAura, this.enrageAura);
+    // eliteAura + frenzy pool sit on the ground UNDER the feet, then enrageAura behind the
+    // body; HP bar + cast bar on top.
+    this.addChild(this.eliteAura, this.frenzyAura, this.enrageAura);
     if (this.spriteBody !== null) this.addChild(this.spriteBody); else this.addChild(this.body);
-    this.addChild(this.aura, this.hpBg, this.hpBar, this.tpRing);
+    this.addChild(this.aura, this.hpBg, this.hpBar, this.castBar, this.tpRing);
   }
 
   /** Begin the teleport-in materialise (grow + fade-in + ring). */
@@ -163,6 +166,8 @@ export class EnemySprite extends Container {
     this.castMs = Math.max(0, this.castMs - dtMs);
     this.drawAura(c);
     this.drawEnrage(enraged);
+    this.drawFrenzy(c);
+    this.drawCastBar(c);
     this.drawEliteAura(c.alive);
     this.applyMaterialize(dtMs);
     this.tickDeath(dtMs);
@@ -289,6 +294,32 @@ export class EnemySprite extends Container {
         .lineTo(Math.cos(ang) * len, cy + Math.sin(ang) * len)
         .stroke({ color: 0xff5a2a, width: 2, alpha: 0.4 + 0.4 * pulse });
     }
+  }
+
+  // Frenzy: a red aura pooled on the ground at the boss's feet while the attack-speed buff
+  // is up (distinct from the body-centred enrage flames above).
+  private drawFrenzy(c: Combatant): void {
+    this.frenzyAura.clear();
+    if (!c.alive || !hasFrenzy(c.effects)) return;
+    drawFrenzyGround(this.frenzyAura, 0, FEET_OFFSET, this.auraScale, this.elapsed);
+  }
+
+  // A fast cast bar UNDER the boss while it channels a special (Frenzy / Mortal Wound),
+  // filling over the cast's windup — telegraphs the incoming ability. Colored per ability.
+  private drawCastBar(c: Combatant): void {
+    this.castBar.clear();
+    const ch = c.casting;
+    if (!c.alive || this.dying || ch === undefined || ch.totalMs <= 0) return;
+    const frac = Math.max(0, Math.min(1, 1 - ch.remainingMs / ch.totalMs));
+    const w = Math.max(this.barW * 1.6, 34);
+    const x = -w / 2;
+    const y = FEET_OFFSET + 7; // just below the feet, on the ground in front of the boss
+    const col = ch.key === 'boss_mortal_wound' ? hexToNum('#c061ff') : hexToNum('#ff7a2a');
+    this.castBar.rect(x - 1, y - 1, w + 2, 6).fill({ color: hexToNum('#160b12'), alpha: 0.9 }); // backdrop
+    const fillW = Math.max(1, Math.round(w * frac));
+    this.castBar.rect(x, y, fillW, 4).fill({ color: col });
+    this.castBar.rect(x, y, fillW, 1.5).fill({ color: 0xffffff, alpha: 0.5 }); // top sheen
+    this.castBar.rect(x + fillW - 1, y, 1.5, 4).fill({ color: 0xffffff, alpha: 0.85 }); // leading edge
   }
 
   // The vertical band auras play over, in container-local coords. Shared by drawAura and

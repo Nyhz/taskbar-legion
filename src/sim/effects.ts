@@ -100,6 +100,17 @@ export function weakenMult(effects: readonly ActiveEffect[]): number {
   return Math.max(0.1, 1 - reduction / 100);
 }
 
+/** Healing multiplier from healReduction effects (world-boss Mortal Wound): the holder
+ *  RECEIVES less healing. 1 when unafflicted; clamped at 0 (never negative). Applied to
+ *  every heal path on the target (instant heal, HoT tick, regen, lifesteal). */
+export function healReceivedMult(effects: readonly ActiveEffect[]): number {
+  let reduction = 0;
+  for (const e of effects) {
+    if (effectDef(e.defKey).kind.type === 'healReduction') reduction += e.value * e.stacks;
+  }
+  return Math.max(0, 1 - reduction / 100);
+}
+
 export function hasTag(effects: readonly ActiveEffect[], tag: string): boolean {
   return effects.some((e) => {
     const k = effectDef(e.defKey).kind;

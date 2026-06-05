@@ -67,8 +67,37 @@ for (const key of DIFFICULTY_KEYS) {
 const mid = [...results].sort((a, b) => a.totalCalendarDays - b.totalCalendarDays)[Math.floor(results.length / 2)];
 if (mid !== undefined) {
   console.log(`\n--- world-boss walls (seed ${mid.seed}: ${fmtDays(mid.totalCalendarDays)} calendar, ${mid.totalActiveHours.toFixed(0)}h active) ---`);
-  console.log('world\tdiff\tstage\tactive\tcalendar\tlvl\ttopTier\tkillSec\tbossMinHP%');
+  console.log('world\tdiff\tstage\tactive\tcalendar\tdaysOnWorld\twipes\tlvl\ttopTier\tkillSec\tbossMinHP%');
   for (const m of mid.milestones) {
-    console.log([m.world, m.difficulty, m.stage, fmtHours(m.activeHours), fmtDays(m.calendarDays), m.partyLevel, `T${m.topTier}`, m.bossKillSec.toFixed(0), m.bossMinHpPct.toFixed(0)].join('\t'));
+    const stall = m.daysOnWorld >= 30 ? ' ◄STALL' : '';
+    console.log([m.world, m.difficulty, m.stage, fmtHours(m.activeHours), fmtDays(m.calendarDays), fmtDays(m.daysOnWorld), m.bossFails, m.partyLevel, `T${m.topTier}`, m.bossKillSec.toFixed(0), m.bossMinHpPct.toFixed(0) + stall].join('\t'));
   }
+}
+
+// PER-GATE report (median ACROSS seeds) — the x-10 difficulty walls. Single-seed per-world
+// days are pure RNG noise (the shared loot stream reshuffles on any upstream change), so the
+// gate day/wipe targets are only meaningful aggregated across seeds.
+console.log('\n--- difficulty GATES (x-10): median across seeds ---');
+console.log('gate\tworld\tdaysOnWorld\twipes\t(range days)');
+for (const gw of [10, 20, 30, 40, 50]) {
+  const days = results.map((r) => r.milestones.find((m) => m.world === gw)?.daysOnWorld).filter((x): x is number => x !== undefined);
+  const wp = results.map((r) => r.milestones.find((m) => m.world === gw)?.bossFails).filter((x): x is number => x !== undefined);
+  if (days.length === 0) { console.log(`W${gw}\t—\tnot reached`); continue; }
+  const diffName = DIFFICULTY_KEYS[Math.floor((gw * 10 - 1) / 100)] ?? '?';
+  const lo = Math.min(...days), hi = Math.max(...days);
+  console.log(`${diffName} ${gw}-10\tW${gw}\t${median(days).toFixed(1)}d\t${median(wp).toFixed(0)}\t(${lo.toFixed(0)}-${hi.toFixed(0)}d)`);
+}
+
+// Tech-node + wipe summary (median across seeds).
+console.log('\n--- progression summary (median across seeds) ---');
+console.log(`tech nodes unlocked: ${median(results.map((r) => r.techNodeCount)).toFixed(0)} distinct · ${median(results.map((r) => r.techTotalRanks)).toFixed(0)} total ranks`);
+console.log(`world-boss wall failures (wipes) total: ${median(results.map((r) => r.totalBossFails)).toFixed(0)}`);
+// Wipes broken down by difficulty (median seed).
+if (mid !== undefined) {
+  const byDiff: Record<string, number> = {};
+  for (const m of mid.milestones) byDiff[m.difficulty] = (byDiff[m.difficulty] ?? 0) + m.bossFails;
+  console.log('wipes by difficulty (median seed): ' + DIFFICULTY_KEYS.map((k) => `${k}=${byDiff[k] ?? 0}`).join(' · '));
+  // Worlds where the party stalled ≥30 calendar days.
+  const stalls = mid.milestones.filter((m) => m.daysOnWorld >= 30);
+  console.log('stalled worlds (≥30d on one world): ' + (stalls.length === 0 ? 'none' : stalls.map((m) => `W${m.world}(${m.difficulty}, ${fmtDays(m.daysOnWorld)}, ${m.bossFails} wipes)`).join(' · ')));
 }
