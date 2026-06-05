@@ -80,6 +80,7 @@ export interface AuraRegion {
   cx: number;
   topY: number;
   botY: number;
+  cy: number; // the body CENTRE y for point-overlays (the mark reticle) — corrected for big mounts
   halfW: number;
   scale: number;
   elapsed: number;
@@ -133,7 +134,7 @@ export function drawCrosshair(g: Graphics, cx: number, cy: number, radius: numbe
 // The persistent reticle the marked boss wears for the whole fight — a soft pulse and a
 // slow spin so it reads as "actively locked on" rather than a static decal.
 function drawMarkCrosshair(g: Graphics, r: AuraRegion): void {
-  const cy = (r.topY + r.botY) / 2;
+  const cy = r.cy;
   const pulse = 0.72 + 0.28 * Math.sin(r.elapsed / 320);
   drawCrosshair(g, r.cx, cy, crosshairRadius(r), pulse, r.elapsed / 1100);
 }

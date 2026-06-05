@@ -473,6 +473,7 @@ export class HeroSprite extends Container {
       cx,
       topY: this.hud.barY * 0.78,
       botY: 4,
+      cy: (this.hud.barY * 0.78 + 4) / 2, // heroes never wear the mark; midpoint is fine
       halfW: this.hud.barW * 0.4,
       scale: sprite ? 1.1 : 0.7,
       elapsed: this.elapsed,
