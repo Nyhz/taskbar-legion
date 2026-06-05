@@ -16,7 +16,7 @@
         "label": "main",
         "title": "Taskbar Legion",
         "width": 1280,
-        "height": 1320,
+        "height": 720,
         "resizable": false,
         "maximizable": false,
         "minimizable": false,

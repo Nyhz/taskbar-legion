@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { useStore } from '@/state/store';
-import { SCALE_MIN, SCALE_MAX, SCALE_STEP } from '@/state/slices/uiSlice';
+import { SCALE_MIN, SCALE_STEP, MENU_SCALE_MAX, GAME_SCALE_MAX } from '@/state/slices/uiSlice';
 import { PALETTE } from '@/styles/palette';
 
 // The scale button on the RIGHT of the strip top bar. Opens a small popover with two
 // independent sliders — Menu Scale (the floating menus) and Game Scale (the strip + its
 // top bar) — each snapping to 0.75 / 1.00 / 1.25.
 
-function Slider({ label, value, onChange }: { label: string; value: number; onChange: (v: number) => void }): React.JSX.Element {
+function Slider({ label, value, max, onChange }: { label: string; value: number; max: number; onChange: (v: number) => void }): React.JSX.Element {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
@@ -17,7 +17,7 @@ function Slider({ label, value, onChange }: { label: string; value: number; onCh
       <input
         type="range"
         min={SCALE_MIN}
-        max={SCALE_MAX}
+        max={max}
         step={SCALE_STEP}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
@@ -88,8 +88,8 @@ export function ScaleControls(): React.JSX.Element {
           >
             Experimental
           </span>
-          <Slider label="Menu Scale" value={menuScale} onChange={setMenuScale} />
-          <Slider label="Game Scale" value={gameScale} onChange={setGameScale} />
+          <Slider label="Menu Scale" value={menuScale} max={MENU_SCALE_MAX} onChange={setMenuScale} />
+          <Slider label="Game Scale" value={gameScale} max={GAME_SCALE_MAX} onChange={setGameScale} />
         </div>
       )}
     </div>
