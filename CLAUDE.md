@@ -10,18 +10,18 @@ actionable rules.
 **Authority order when sources disagree:** SPEC.md is the default authority, **EXCEPT** where a `docs/` file
 explicitly states it overrides/supersedes the SPEC — those are deliberate, post-SPEC design decisions and
 they win. The standing overrides are:
-- **PROGRESSION OVERHAUL (current model — see `docs/PROGRESSION.md` §0, which supersedes the rest where they
-  conflict).** Combat power lives in **ITEMS** (ilvl × tier × affixes × gems) + talents + level + ultimates —
-  *not* tech. **Tech is NON-COMBAT only** (Economy/Chests/Utility). **No equip-gate** (ilvl is pure power;
-  any hero equips any item bar the class lock). **Level is hard-capped at 120** (cheap-early/steep-tail XP
-  curve). **Tier multipliers widened** (T8 = 9×) so drops feel impactful and gate the deep walls. The **walls
-  are the W-10 zone bosses**, HP scaling per-world (`ZONE_WALL_GROWTH`), tuned for **world 100 ≈ ~1 year**.
-  Normal chests **2%**/kill; gem is EXTRA; keys come from stage-boss chests. `WAVES_PER_STAGE = 20`. Naked
-  party walls by world 2. Validated by `scripts/sim-calib.ts` / `sim-gear.ts` / `sim-multiseed.ts`.
-- **`docs/PROGRESSION.md` supersedes SPEC §4.6 / §5.3 scaling** — gear power and difficulty are *exponential
-  and accelerating*, not the SPEC's linear example (linear would make the game impossible by ~stage 10).
-  Flat stats scale `Φ^1.0`, percent stats are bounded (§6). Tier drop-rate is world-depth-scaled + gated
-  (§0/§13). The farming loop + zone-key/zone-boss gate is §14.
+- **PROGRESSION OVERHAUL (current model — see `docs/DIFFICULTY.md`, the canonical scaling doc).** Combat power
+  lives in **ITEMS** (ilvl × tier × affixes × gems) + talents + level + ultimates — *not* tech. **Tech is
+  NON-COMBAT only** (Economy/Chests/Utility). **No equip-gate** (ilvl is pure power; any hero equips any item
+  bar the class lock). **Level is hard-capped at 120** (cheap-early/steep-tail XP curve). **Tier multipliers
+  widened** (T8 = 9×) so drops feel impactful and gate the deep walls. The **walls are the W-10 world bosses**,
+  HP per-world via the hand-tuned `WORLD_WALL_MULT` table, tuned for **~2-3 months to Torment 10-10**. Normal
+  chests **2%**/kill; gem is EXTRA; keys come from stage-boss chests. `WAVES_PER_STAGE = 20`. Naked party walls
+  by world 2. Validated by `npm run probe`.
+- **`docs/DIFFICULTY.md` supersedes SPEC §4.6 / §5.3 scaling** — gear power and difficulty are *gear-checked
+  and progressive* across the finite 5-difficulty ladder, not the SPEC's linear example (linear would make the
+  game impossible by ~stage 10). Flat stats scale `Φ^1.0`, percent stats are bounded. Tier drop-rate is
+  difficulty-gated; the farming loop + W-10 world-boss walls are the gates.
 - **`docs/AFFIXES.md` overrides SPEC §4.2 jewelry routing** — jewelry AND armor are flex slots, rolling
   *both* offensive and defensive stats mixed (armor also rolls its base affix from a mixed pool, so it can be
   fully offensive/defensive/hybrid — pick offensive armor for DPS, defensive for tanks). Weapon stays
@@ -66,10 +66,10 @@ drive progression. Management lives in draggable **pixel-art panels** (React) fl
 3. **Everything is data-driven.** Classes, stats, tiers, gems, effects, abilities, talents, tech nodes,
    pets, stage scaling, loot tables — all typed config under `src/data/`. **No game numbers hardcoded in
    logic.** Adding an ability/effect/item type = writing data, never editing the combat loop.
-   - **Scaling is exponential & gear-checked** (`docs/PROGRESSION.md`), NOT SPEC §4.6's linear example.
-     Player power = Gear × Level × Talent × Tech (multiplicative). Difficulty *accelerates* (50→51 harder
-     than 1→2). You can advance on previous-stage gear, but freezing any axis stalls you in 2–4 stages.
-     The four invariants in PROGRESSION §11 are tested by the smoke harness — they define "balanced."
+   - **Scaling is progressive & gear-checked** (`docs/DIFFICULTY.md`), NOT SPEC §4.6's linear example.
+     Player power = Gear × Level × Talent × Tech (multiplicative). Difficulty climbs across the finite
+     5-difficulty ladder, each W-10 boss a harder gate than the last. You can advance on previous-difficulty
+     gear, but freezing any axis stalls you at the next wall. Validate pacing with `npm run probe`.
 4. **Render/logic split.** The sim owns world state; Pixi and React only *read* it and send intents. Panel
    logic is separate from panel chrome/placement (`PixelWindow`). This is what makes v1.5 a re-skin.
 5. ~~**v1 is an opaque web page.** Do NOT build `backgroundAlpha: 0`, click-through, or `setIgnoreCursorEvents`.~~
@@ -100,8 +100,8 @@ docs/
   ARCHITECTURE.md        ← layering, data flow, folder responsibilities, the sim↔render boundary
   CODING_STANDARDS.md    ← clean-code rules, naming, file size, immutability, error handling
   DATA_MODEL.md          ← all TypeScript type contracts consolidated (copy these verbatim)
-  PROGRESSION.md         ← THE SCALING BIBLE: infinite/accelerating difficulty, exponential gear power,
-                           the gear-check treadmill, steep XP, + four testable invariants (canonical)
+  DIFFICULTY.md          ← THE CANONICAL SCALING DOC: finite 5-difficulty model, world bosses = walls,
+                           tier ladder, XP bands, pacing (supersedes the retired infinite model)
   AFFIXES.md             ← which stats each item type (armor/weapon/jewelry) can roll; base affixes
   TESTING.md             ← test strategy, the mandatory test list, how to screenshot
   ART.md                 ← the procedural pixel-art approach (no external assets) + palette

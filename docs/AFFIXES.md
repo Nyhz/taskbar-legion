@@ -7,7 +7,7 @@ and which gear **slots** each soft-capped enabler is restricted to. Authoritativ
 > **⚠️ Overrides SPEC §4.2 and all earlier AFFIXES drafts.** Reflects the stat-system rework (dodge/hpPerHit
 > removed; damageIncrease/lifesteal made buff-only; hpRegen made base-only; multistrike added; soft-capped
 > enablers + per-slot restrictions). The numeric *scaling* (flat magnitudes) is being reworked separately in
-> the Phase 2 polynomial pass — see PROGRESSION.md.
+> the Phase 2 polynomial pass — see DIFFICULTY.md.
 
 ---
 
@@ -65,7 +65,7 @@ For tier `T`, roll exactly `tierDef.extraStats` substats (0,1,1,2,2,3,3,4,4 for 
 1. **Pool by category:** weapon/off-hand → that TYPE's `pool`; armor → `FLEX_STATS`; jewelry → `JEWELRY_STATS`.
 2. **Distinct keys:** no substat repeats, and none duplicates any base-affix key.
 3. **Value** by `kind`: **flat** scales with item level; **percent** is bounded by tier. *(The exact flat
-   curve is the Φ-vs-polynomial Phase 2 rework — see PROGRESSION.md.)* Enabler percents are summed raw and
+   curve is the Φ-vs-polynomial Phase 2 rework — see DIFFICULTY.md.)* Enabler percents are summed raw and
    soft-capped in `aggregate`, never per-roll.
 4. **Class lock:** weapon/off-hand roll a launch class → their TYPE, set `classKey`; only that class equips.
 

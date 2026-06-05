@@ -1,26 +1,16 @@
 # BALANCE.md — Resolved `tune` values (starting numbers)
 
-> **⚠️ STALE stat tables (mid-rework).** The stat list, gem grants, and talent tables below predate the
-> stat-system rework. Source of truth is now `data/stats.ts` / `data/gems.ts` / `data/talents.ts` + AFFIXES.md.
-> Removed: dodge, hpPerHit, penetration. Buff-only now: damageIncrease, lifesteal. Base-only: hpRegen. Added:
-> multistrike. Soft-capped enablers (`ENABLER_SOFT_CAPS`): critChance 100/k60, block 75/k50, cooldownReduction
-> 50/k40, multistrike 25/k20. Gems are scaler-only, one stat each. Armor DR capped at 90%. The flat-stat
-> MAGNITUDES are re-tuned in the Phase 2 polynomial pass (see PROGRESSION.md + memory `number-system-rework`).
+> **⚠️ Many tables below are STALE (pre-rework shape).** The live source of truth is the `data/*.ts` files
+> (`stats.ts` / `gems.ts` / `talents.ts` / `stageScaling.ts`) + `AFFIXES.md`, with `DIFFICULTY.md` as the
+> canonical scaling/pacing model. Kept here for the *shape* and rationale — trust the data files for live
+> numbers. Headline model: tech is **non-combat only** (combat power = items); **no equip-gate**; **level cap
+> 120**; **tier multipliers widened** (T8 = 9×); a finite 5-difficulty ladder whose **W-10 world bosses are
+> the walls** (per-world `WORLD_WALL_MULT`), tuned to **~2-3 months to Torment 10-10**; `WAVES_PER_STAGE = 20`;
+> normal chests **2%**/kill.
 
 The SPEC marks open values `tune`. They are resolved here into concrete starting numbers so the build never
 blocks. **These are reasonable first-pass defaults, not sacred** — they live in `data/*.ts` and exist to be
 tuned. Put each number in its matching `data/` file; reference it, never re-type a literal in logic.
-
-> Guiding feel: a brisk early game (first stages clear in seconds), exponential pressure that demands gear,
-> chest storage that fills in a few minutes of away-time, pets as a marquee monthly rare.
-
-> ⚠ **POST-OVERHAUL — many numbers below are superseded.** See `docs/PROGRESSION.md §0` for the current model.
-> Key changes: tech is **non-combat only** (combat power = items); **no equip-gate**; **level cap 120** with a
-> cheap-early/steep-tail XP curve (`0.5·L^3.5 + 4.4^(L-39)`); **tier multipliers widened** (T8 = 9×);
-> `GEAR_POWER = 9.0`; zone bosses 220/5.5 + a **per-world wall** (`ZONE_WALL_GROWTH ≈ 1.11`) tuned for
-> **W100 ≈ ~1 year**; `WAVES_PER_STAGE = 20`; normal chests **2%**/kill; gold `Φ^0.85`; world-depth rarity
-> curve with tier unlocks at worlds 12–20. The tables below are kept for the *shape*; trust the `data/*.ts`
-> values + PROGRESSION §0 for live numbers.
 
 ---
 
@@ -31,7 +21,7 @@ tuned. Put each number in its matching `data/` file; reference it, never re-type
 - **Autosave:** every 30 s + on meaningful events (chest open, equip, tech/talent purchase, stage advance).
 - **Party wipe penalty:** retreat 1 stage; resume. No permadeath.
 
-## Tiers — `data/tiers.ts`  (rarity & unlock scale with stage — see PROGRESSION §13)
+## Tiers — `data/tiers.ts`  (rarity & unlock scale with stage — see DIFFICULTY.md §13)
 
 | Tier | Name | extraStats | sockets | statMult | baseWeight | unlockStage |
 |---|---|---|---|---|---|---|
@@ -46,7 +36,7 @@ tuned. Put each number in its matching `data/` file; reference it, never re-type
 | T8 | Primordial | 4 | 4 | 4.20 | 0.05 | **50** |
 
 Colors: see ART.md. `baseWeight` is tiny at the top on purpose. `rollTier(S, chestFactor, rng)` zeroes any
-tier below its `unlockStage`, then applies the stage/chest bias and the global `RARITY` knob (PROGRESSION
+tier below its `unlockStage`, then applies the stage/chest bias and the global `RARITY` knob (DIFFICULTY.md
 §13). **Drop-rate target** (stage-50 nonstop farming): ~2 T6/day, ~1 T7/day, ~1 T8/2days — harness-calibrated.
 Same tier roll governs **gems** (T1–T8). The old `tierBias` formula stays as the bias term inside `rollTier`.
 
@@ -69,7 +59,7 @@ Same tier roll governs **gems** (T1–T8). The old `tierBias` formula stays as t
 | hpPerHit | defensive | flat | 0.3 | 0.7 |
 | block | defensive | percent | 0.3 | 0.7 |
 
-Roll value depends on the stat's `kind` (**`docs/PROGRESSION.md` §6** — the critical flat/percent split):
+Roll value depends on the stat's `kind` (**`docs/DIFFICULTY.md` §6** — the critical flat/percent split):
 - **flat** stats: `round2( rand(min,max) × tier.statMultiplier × Φ(origin.stageIndex) )` (scales with stage).
 - **percent** stats: `round2( rand(min,max) × tier.statMultiplier )` (**bounded — no stage scaling**; their
   growth comes from higher tiers + sockets).
@@ -85,7 +75,7 @@ offhand → `attackDamage`, ring1 → `critChance`, ring2 → `critChance`, amul
 (offensive + defensive may coexist — the flex slot; overrides SPEC §4.2). Substats distinct, never duplicate
 the base affix, ≤4 total.
 
-## Gems — `data/gems.ts` (TIERED T1–T8; see DATA_MODEL `GemDef`/`GemInstance` + PROGRESSION §13/§14b)
+## Gems — `data/gems.ts` (TIERED T1–T8; see DATA_MODEL `GemDef`/`GemInstance` + DIFFICULTY.md §13/§14b)
 
 **Gem rework (normalized-to-affix model).** Each gem grants ONE scaler stat (Diamond grants two: armor +
 magicResist), the SAME in any socket — tier + ilvl scale the magnitude, never the count. Gems are
@@ -131,18 +121,16 @@ gemChance:      { normal: 0.05, stageBoss: 0.12, zoneBoss: 0.25 }   // per chest
 ```
 
 Full type → stops accruing. Auto-open base interval 600000 ms (10 min), reducible by tech (floor 60 s).
-**Zone-key target: ~1 key per ~30 min of W-9 farming** (PROGRESSION §14) — harness-tune `zoneKeyChance`
+**Zone-key target: ~1 key per ~30 min of W-9 farming** (DIFFICULTY.md §14) — harness-tune `zoneKeyChance`
 against simulated W-9 throughput. Keys stockpile; entering W-10 (boss-only stage) consumes one.
 
-## Stage scaling, gear power & XP — see `docs/PROGRESSION.md` (canonical)
+## Stage scaling, gear power & XP — see `docs/DIFFICULTY.md` (canonical)
 
-> ⚠️ The infinite-scaling model lives in **`docs/PROGRESSION.md`** (accelerating difficulty, exponential
-> gear power matched to enemies, the gear-check treadmill, the steep XP curve, and the four testable
-> invariants). It **supersedes** any linear/constant-exponential placeholders. The constants below are the
-> *starting values* PROGRESSION specifies — implement them in `data/stageScaling.ts`, then let the smoke
-> harness co-tune them until PROGRESSION §11's four invariants hold.
+> ⚠️ The canonical scaling model lives in **`docs/DIFFICULTY.md`** (finite 5-difficulty ladder, gear power
+> matched to enemies, the gear-check treadmill, the XP curve, the W-10 world-boss walls). The constants below
+> are *starting values* — implement them in `data/stageScaling.ts`, then co-tune via `npm run probe`.
 
-Starting constants (full formulas + rationale in PROGRESSION.md):
+Starting constants (live values in `data/stageScaling.ts`):
 
 ```
 g(S)  = G0 + (G1-G0) * S/(S+KMID);  Φ(S) = Π g(i)     // accelerating master growth
@@ -150,7 +138,7 @@ G0 = 1.12   G1 = 1.30   KMID = 160                    // 1→2 ≈ +12%, 50→51
 enemyHp(S)     = 40 * Φ(S)
 enemyDamage(S) = 6  * Φ(S)^0.82                        // damage lags HP → DPS-race wall
 mitigation(S)  = armorEff / (armorEff + 50*Φ(S)^1.0)   // MIT_EXP=1.0 tracks EG_FLAT (armor is flat)
-bossHpMult = 8  bossDamageMult = 1.7                   // zoneBoss: 35 / 3.0 (hard farming gate, PROGRESSION §14)
+bossHpMult = 8  bossDamageMult = 1.7                   // zoneBoss: 35 / 3.0 (hard farming gate, DIFFICULTY.md §14)
 killsPerStage = 10
 
 EG_FLAT = 1.0     // flat-stat gear exponent — MUST be ~1.0 (in [0.98,1.0]); lower breaks the late game
@@ -174,7 +162,7 @@ totalExpToReach(L) = floor(50*L^3 + 8*1.55^L)          // Lv36≈59M, Lv100≈8e
 > tech is hand-priced CHEAP (slot 2 = 1000g, slot 3 = 10000g via `costOverride`) so the tank·dps·healer
 > trio forms in early world 1 (2nd member by ~stage 1-3, trio by ~stage 4-6) despite the tight gold.
 
-**Tier drop weights are stage-gated + rare** — `rollTier` (PROGRESSION §13) uses per-tier `baseWeight` +
+**Tier drop weights are stage-gated + rare** — `rollTier` (DIFFICULTY.md §13) uses per-tier `baseWeight` +
 `unlockStage` + bias `(1 + tier × (S/40) × chestFactor)`, `chestFactor = { normal: 1.0, stageBoss: 1.6,
 zoneBoss: 2.6 }`, × global `RARITY`. Boss/zone kills pay ×8 / ×40 the per-kill income (`tune`).
 
@@ -300,7 +288,7 @@ knight unlocked & in slot 1; empty inventory; base chest capacities; auto-open l
 
 ## REBALANCE — unified ability/enemy pattern + the gear knob (applied)
 
-**The damage curve was re-anchored** (see `docs/REBALANCE.md`). Resolved numbers:
+**The damage curve was re-anchored.** Resolved numbers (live in `src/data/stageScaling.ts`):
 
 - **`GEAR_POWER = 2.1`** (`src/data/stageScaling.ts`) — global multiplier on FLAT gear-stat
   rolls (`loot.ts → rollStatValue`). Compensates the base-AD cut so a *geared* hero recovers

@@ -32,7 +32,7 @@ export const TIERS: readonly TierDef[] = [
   { tier: 8, name: 'Primordial', color: 'iridescent', extraStats: 4, sockets: 4, statMultiplier: 9.0 },
 ] as const;
 
-export const MAX_SUBSTATS = 4; // hard cap (AFFIXES.md / PROGRESSION §13)
+export const MAX_SUBSTATS = 4; // hard cap (AFFIXES.md / DIFFICULTY.md §13)
 
 export function tierDef(tier: ItemTier): TierDef {
   const def = TIERS[tier];

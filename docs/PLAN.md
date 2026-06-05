@@ -58,7 +58,7 @@ use a temporary localStorage shim or in-memory + note it; real persistence is Ph
 important phase. The loot generator is the deterministic `generateItem(origin)` contract.
 
 **Read:** SPEC §4 (all of it), §5, §6, §9 Phase 1, §11. `docs/DATA_MODEL.md` (copy the type contracts
-verbatim), **`docs/PROGRESSION.md` (the canonical scaling model — implement these formulas, NOT SPEC §4.6's
+verbatim), **`docs/DIFFICULTY.md` (the canonical scaling model — implement these formulas, NOT SPEC §4.6's
 linear example)**, `docs/AFFIXES.md` (the per-item-type stat pools), `docs/BALANCE.md` (the numbers),
 `docs/TESTING.md` (the mandatory test list).
 
@@ -74,17 +74,17 @@ linear example)**, `docs/AFFIXES.md` (the per-item-type stat pools), `docs/BALAN
 - 📄 `data/techTree.ts` — the **large** tech DAG; nodes have `ring` + **gold** `cost` (Economy/Chests/Combat/Offline/Slots).
 - 📄 `data/pets.ts` — pet defs + economy-only bonuses.
 - 📄 `data/chests.ts` — `ChestDropConfig` (drop chances, capacity, itemsPerChest, zoneKeyChance, gemChance).
-- 📄 `data/stageScaling.ts` — `g(S)`/`Φ(S)`, enemy/gold/xp curves, `rollTier`, `ilvl`, `goldCost(ring,rank)` (PROGRESSION).
+- 📄 `data/stageScaling.ts` — `g(S)`/`Φ(S)`, enemy/gold/xp curves, `rollTier`, `ilvl`, `goldCost(ring,rank)` (DIFFICULTY.md).
 - 📄 `data/lootTables.ts` — any remaining loot constants; `generatorVersion`; the `RARITY` knob.
 
 **Build — `sim/` (pure logic):**
 - 📄 `sim/rng.ts` — mulberry32 seeded RNG, serializable state. The ONLY randomness source.
-- 📄 `sim/num.ts` — the numeric seam (PROGRESSION §10): `pow/mul/add/cmp/format` helpers + the big-number
+- 📄 `sim/num.ts` — the numeric seam (DIFFICULTY.md §10): `pow/mul/add/cmp/format` helpers + the big-number
   formatter (`1.2K/3.4M/…/1.2e45`). Route all `Φ`-derived quantities through it so a big-number type can be
   dropped in later. `Φ(S)` + `g(S)` live in `data/stageScaling.ts`; this is the arithmetic/format layer.
 - 📄 `sim/stats.ts` — `aggregate(base, equipment, talentPassives, activeStatMods)` → effective stats.
 - 📄 `sim/loot.ts` — `generateItem(origin): ItemInstance` + `rollTier(S, chestFactor, rng)` (stage-gated,
-  rare — PROGRESSION §13), deterministic (the §4.6 contract).
+  rare — DIFFICULTY.md §13), deterministic (the §4.6 contract).
 - 📄 `sim/gems.ts` — `generateGem(origin)` (tiered) + `gemGrants(gem, itemCategory)` (the category-routed,
   tier-scaled grant computation).
 - 📄 `sim/effects.ts` — active-effect processing (tick, expire, stack rules, DoT/HoT, gates).
@@ -104,7 +104,7 @@ storage caps stop accrual; W-10 unreachable without a key; **generator determini
 Fuego Rápido raises attack speed +50% for 8s then reverts; stun blocks attacks; stacking debuffs stack per
 `stackRule`; deterministic combat (same seed ⇒ same outcome); stage scaling monotonic; offline calc sane.
 
-✅ **Gate:** `npm test` green (incl. the **four progression invariants** from PROGRESSION.md §11); the smoke
+✅ **Gate:** `npm test` green (incl. the **four progression invariants** from DIFFICULTY.md §11); the smoke
 harness (`scripts/sim-smoke.ts`) runs ≥300 stages with abilities firing and logs sane curves (HP, gold,
 research, tier distribution, per-stage clear times) **and reports the measured gear-check buffer `B`**.
 Constants are co-tuned until all four invariants hold (record measured B + early/late clear times in

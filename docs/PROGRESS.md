@@ -35,7 +35,7 @@ Status key: `[ ]` not started · `[~]` in progress · `[x]` done & gates green.
 - [x] `sim/chests.ts` accrual + caps + open → loot/keys/**tiered gems**. (Pets drop on kill, sim/pets.ts.)
 - [x] `sim/gems.ts` (generateGem tiered + category-routed, tier-scaled grants).
 - [x] `sim/pets.ts`, `sim/bonuses.ts` (getBonuses merge), `sim/offline.ts`, `sim/Simulation.ts`, `sim/world.ts`.
-- [x] Scaling per PROGRESSION.md (accelerating g(S)/Φ(S); **flat scale Φ^1.0, percent bounded** §6; MIT_EXP=1.0;
+- [x] Scaling per DIFFICULTY.md (accelerating g(S)/Φ(S); **flat scale Φ^1.0, percent bounded** §6; MIT_EXP=1.0;
       steep XP; stage-anchored loot). NOT the linear SPEC §4.6 example.
 - [x] **Tier rarity §13:** `rollTier` stage-gated (T4@10…T8@50) + extremely rare; same roll for items & gems.
 - [x] **Gems tiered T1–T8** (more affixes per tier; instances w/ origin; flat grants scale Φ, percent bounded).
@@ -43,7 +43,7 @@ Status key: `[ ]` not started · `[~]` in progress · `[x]` done & gates green.
       system (20 base → 200 via 20 slots + 4 pages; capacity = pages×(20+slotUpgrades)) — data/inventory.ts.
 - [x] **Zone gate §14:** W-10 boss-only, key-gated (~1 key/30min), keys stockpile, consumed on attempt.
 - [x] `sim/num.ts` numeric seam + big-number formatter; Φ-derived values routed through it.
-- [x] Implementation's numbers match the PROGRESSION §12 worked-example table (Φ/enemyHP at S=10/50/100/200 verified).
+- [x] Implementation's numbers match the DIFFICULTY.md §12 worked-example table (Φ/enemyHP at S=10/50/100/200 verified).
 - [x] Affix pools per AFFIXES.md (armor→defensive, weapon→offensive, jewelry→both/mixed).
 - [x] 🧪 All mandatory tests in TESTING.md written and green, incl. the **six progression invariants**.
 - [x] `scripts/sim-smoke.ts` runs ≥300 stages (reaches 400), logs sane curves + per-stage clear times; no Pixi/React in sim/tests.
@@ -54,7 +54,7 @@ Status key: `[ ]` not started · `[~]` in progress · `[x]` done & gates green.
     - All normal clears over 325 stages: **p50 5.1s, p90 8.1s, p95 10.2s, p99 13.2s** (invariant #2: bounded <25s ✓).
     - **Frozen-gear B** (stop equipping at S0, keep leveling/talents/tech): S0=20→B≈20, S0=80→B≈0–10, S0=200→B≈10–15.
       B is **bounded/finite** (gear freeze always walls — no infinite coast) and **tightens late** (gear-dominant).
-      It is NOT in the literal [2,4] at low S0 because *levels carry the early/mid game* (PROGRESSION §2) and the
+      It is NOT in the literal [2,4] at low S0 because *levels carry the early/mid game* (DIFFICULTY.md §2) and the
       frozen probe keeps leveling/party-slot/tech growth — so freezing GEAR alone can't wall in 2-4 stages at S0=20.
       This is a faithful reading; the doc itself says "treat 1.5× as the sanity anchor, not the literal rule / the
       harness measures the real B." Tests assert B is bounded (≤18) at S0=80/200 (the gear-dominant regime).
@@ -175,7 +175,7 @@ Status key: `[ ]` not started · `[~]` in progress · `[x]` done & gates green.
 ## REBALANCE pass (damage-curve re-anchor + unified ability/enemy pattern)
 
 - Re-anchored base AD (cut ~9×) + `GEAR_POWER=2.1` so a fresh L1 hero is matched to stage 1
-  (~2-hit trash) while geared progression is preserved. See `docs/REBALANCE.md §13`, `docs/BALANCE.md`.
+  (~2-hit trash) while geared progression is preserved. See, `docs/BALANCE.md`.
 - Unified all damaging abilities (hero + **enemy**) onto `coeff × normalAttack`; DoT/HoT coeffs are
   now totals-over-duration; heals/shields stay max-HP based. `sim/abilities.ts`.
 - Talent flat stat nodes (AD/health/armor/MR) converted to **percent**. `data/talents.ts`.
@@ -183,7 +183,7 @@ Status key: `[ ]` not started · `[~]` in progress · `[x]` done & gates green.
 - New probe (`progression.test.ts #0`) asserts a fresh L1 hero takes ~2 auto-hits on stage-1 trash.
 - All green: typecheck + lint + 72/72 tests (6 invariants un-relaxed); smoke reaches ~192 stages.
 
-## Survival pass — applied, tuned around tank · dps · healer (REBALANCE §14)
+## Survival pass — applied, tuned around tank · dps · healer
 
 - Design call: balance around an optimal **tank · dps · healer** party; good on-level gear = easy-not-trivial,
   mediocre gear = brutal / forces a farm-retreat. Not all comps need to be viable. The greedy/probe agent now
@@ -224,7 +224,7 @@ Status key: `[ ]` not started · `[~]` in progress · `[x]` done & gates green.
   (timer cleared). Indicator: `HeroSprite` turns the HP bar into a blue respawn-progress bar + a `Ns`
   countdown label, body stays a touch brighter so it reads.
 - **Two active abilities per hero.** New `HeroState.activeAbilities` (≤2 ability keys). `activeHeroAbilities`
-  in loadout: `undefined` → full kit (the headless harness, so PROGRESSION invariants are unchanged), `[]` →
+  in loadout: `undefined` → full kit (the headless harness, so DIFFICULTY.md invariants are unchanged), `[]` →
   first 2 ranked, explicit → exactly those (capped, in order). Engine passes an array (live cap); harness
   passes nothing. Auto-managed: `freshHero`/`spendTalent` fill free active slots as abilities are ranked;
   `respec`/`switchClass` clear them; legacy saves seed from ranked talents on hydrate.
@@ -439,7 +439,7 @@ can pay**, grouped into categories with a nicer UI.
   connectors) with a categorized **card grid** — `TechTreePanel` + `tech/TechCard` + `tech/techMeta` +
   `tech/techDisplay`. Each card shows the cumulative bonus owned, the per-rank effect, rank/cap, and a
   next-cost buy button in the category accent. Static preview: `npx vite-node scripts/tech-preview.tsx`.
-- **Balance held:** all 6 PROGRESSION invariants pass (smoke ≥25, frozen-gear B≤12, drop rates in range);
+- **Balance held:** all 6 DIFFICULTY.md invariants pass (smoke ≥25, frozen-gear B≤12, drop rates in range);
   `sim-newgame` bootstraps all 4 seeds; `sim-pacing` shows save-for-upgrade staying in the minutes range and
   gold×/xp× climbing gently (≈4.9× by stage 60 — the exponential rank cost throttles runaway). All green:
   typecheck + lint + **116 tests** + build. Docs updated (CLAUDE.md override, DATA_MODEL.md, BALANCE.md).
@@ -458,7 +458,7 @@ tuning is unambiguous; new classes get added later with comparable curves. Remov
   class left); `progression.test.ts #0` iterates the 3 classes. `debuff_expose` effect kept (effects.test.ts
   uses it directly); a few mage/rogue-only buff effects are now orphaned-but-harmless.
 - **Verify:** typecheck + lint + **122 tests** green; `sim-newgame` bootstraps all 4 seeds (W/R/P).
-- **KNOWN-STALE docs** (historical, not updated): SPEC.md §4.7, REBALANCE.md, TALENTS.md (Rogue section),
+- **KNOWN-STALE docs** (historical, not updated): SPEC.md §4.7, TALENTS.md (Rogue section),
   PLAN.md "5 classes" — superseded by the CLAUDE.md override.
 
 ## Gear overhaul — three slot identities (armor=mitigation, weapon=class-locked types, jewelry=freestyle)
@@ -511,7 +511,7 @@ storage *durability* and *portability*.
 ## Stat-system rework — Phase 1 (structural; numbers are Phase 2)
 A large gameplay-stat overhaul (user directive — kill exponential number bloat + make upgrades always
 meaningful). Phase 1 = all the STRUCTURAL changes, fully wired + sim-green. Phase 2 (next) = the polynomial
-scaling spine + enemy rebalance. See memory `number-system-rework` + PROGRESSION.md banner.
+scaling spine + enemy rebalance. See memory `number-system-rework` + DIFFICULTY.md banner.
 - **Removed entirely:** `dodge`, `hpPerHit` (and `penetration` earlier). **Buff/aura-only now:** `damageIncrease`
   (Battle Cry/Retribution), `lifesteal` (Bloodlust) — kept in combat formulas, pulled from gear/gems/talents.
   **Base-only:** `hpRegen` (class-base early cushion). **Added:** `multistrike` (% chance of a 2nd auto-hit).
@@ -531,9 +531,9 @@ scaling spine + enemy rebalance. See memory `number-system-rework` + PROGRESSION
   tests deferred to Phase 2 (frontline margin `it.skip`; smoke magnitude floors lowered with PHASE 2 markers) —
   the party is intentionally squishier mid-rework (removed sustain) until the rebalance. **140 pass / 1 skip;
   typecheck + lint (0 warnings) green; sim-newgame bootstraps all 4 seeds.**
-- **Docs:** AFFIXES.md + DATA_MODEL.md rewritten to the new model; PROGRESSION.md/BALANCE.md got mid-rework
+- **Docs:** AFFIXES.md + DATA_MODEL.md rewritten to the new model; DIFFICULTY.md/BALANCE.md got mid-rework
   banners (magnitude sections stale until Phase 2).
-- **PENDING Phase 2 inputs (confirmed):** on-level armor DR ~50%; keep W100≈1yr; curve exponents adjustable.
+- **PENDING Phase 2 inputs (confirmed):** on-level armor DR ~50%; finite pacing per DIFFICULTY.md; curve exponents adjustable.
 
 ## Wave spawn rework (A) + elite mobs (B)
 - **A — teleport-in group waves.** Wave size is now FLAT **5-10 mobs at every stage** (removed the world-1
