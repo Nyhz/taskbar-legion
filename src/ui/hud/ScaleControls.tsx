@@ -4,25 +4,42 @@ import { SCALE_MIN, SCALE_STEP, MENU_SCALE_MAX, GAME_SCALE_MAX } from '@/state/s
 import { PALETTE } from '@/styles/palette';
 
 // The scale button on the RIGHT of the strip top bar. Opens a small popover with two
-// independent sliders — Menu Scale (the floating menus) and Game Scale (the strip + its
-// top bar) — each snapping to 0.75 / 1.00 / 1.25.
+// independent rows of buttons — Menu Scale (the floating menus, 0.75/1.00) and Game Scale
+// (the strip + its top bar, 0.75/1.00/1.25).
 
-function Slider({ label, value, max, onChange }: { label: string; value: number; max: number; onChange: (v: number) => void }): React.JSX.Element {
+// The discrete stops from SCALE_MIN up to `max`, in SCALE_STEP increments (rounded to dodge
+// float drift): max 1.0 → [0.75, 1.00]; max 1.25 → [0.75, 1.00, 1.25].
+function stopsTo(max: number): number[] {
+  const out: number[] = [];
+  for (let s = SCALE_MIN; s <= max + 1e-6; s += SCALE_STEP) out.push(Math.round(s * 100) / 100);
+  return out;
+}
+
+function ScaleRow({ label, value, max, onChange }: { label: string; value: number; max: number; onChange: (v: number) => void }): React.JSX.Element {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-        <span style={{ color: PALETTE.parchment }}>{label}</span>
-        <span style={{ color: PALETTE.gold, fontWeight: 700 }}>{value.toFixed(2)}×</span>
+      <span style={{ color: PALETTE.parchment }}>{label}</span>
+      <div style={{ display: 'flex', gap: 4 }}>
+        {stopsTo(max).map((s) => {
+          const active = Math.abs(value - s) < 0.001;
+          return (
+            <button
+              key={s}
+              onClick={() => onChange(s)}
+              style={{
+                flex: 1,
+                padding: '3px 0',
+                background: active ? PALETTE.gold : PALETTE.bgInset,
+                border: `1px solid ${active ? PALETTE.gold : PALETTE.goldDim}`,
+                color: active ? PALETTE.ink : PALETTE.gold,
+                fontWeight: 700,
+              }}
+            >
+              {s.toFixed(2)}×
+            </button>
+          );
+        })}
       </div>
-      <input
-        type="range"
-        min={SCALE_MIN}
-        max={max}
-        step={SCALE_STEP}
-        value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
-        style={{ width: '100%', accentColor: PALETTE.gold, cursor: 'pointer' }}
-      />
     </div>
   );
 }
@@ -88,8 +105,8 @@ export function ScaleControls(): React.JSX.Element {
           >
             Experimental
           </span>
-          <Slider label="Menu Scale" value={menuScale} max={MENU_SCALE_MAX} onChange={setMenuScale} />
-          <Slider label="Game Scale" value={gameScale} max={GAME_SCALE_MAX} onChange={setGameScale} />
+          <ScaleRow label="Menu Scale" value={menuScale} max={MENU_SCALE_MAX} onChange={setMenuScale} />
+          <ScaleRow label="Game Scale" value={gameScale} max={GAME_SCALE_MAX} onChange={setGameScale} />
         </div>
       )}
     </div>
