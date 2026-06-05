@@ -89,8 +89,9 @@ function PaperDoll({ heroId, requestSocket, requestSocketChoice }: { heroId: str
   // (under-geared / naked). Thresholds are intentionally loose (±10%); tweak GEAR_* to taste.
   const GEAR_OVER = 1.1; // ≥ +10% over recommended → well geared
   const GEAR_UNDER = 0.9; // < −10% under recommended → under-geared
-  const equipped = Object.values(hero.equipment).filter((it): it is ItemInstance => it !== undefined);
-  const avgIlvlNum = equipped.length > 0 ? equipped.reduce((sum, it) => sum + it.ilvl, 0) / equipped.length : 0;
+  // Average over ALL gear slots, counting an EMPTY slot as 0 — so a hero in one ilvl-1 helm
+  // reads ~0.1 (mostly naked), not 1.0 (which looked like "fully geared at ilvl 1").
+  const avgIlvlNum = SLOT_KEYS.reduce((sum, slot) => sum + (hero.equipment[slot]?.ilvl ?? 0), 0) / SLOT_KEYS.length;
   const avgIlvl = avgIlvlNum.toFixed(1); // display with a single decimal
   const gearRatio = avgIlvlNum / Math.max(1, expectedLevel(stage));
   const gearQuality =
@@ -160,7 +161,7 @@ function PaperDoll({ heroId, requestSocket, requestSocketChoice }: { heroId: str
         <HeroIdleSprite classKey={hero.classKey} width={112} height={116} />
         <div style={{ color: PALETTE.parchment, fontSize: 11 }}>
           Lv.{hero.level} ·{' '}
-          <HoverTip text={`Avg ilvl: ${avgIlvl}`}>iLv. {avgIlvl}</HoverTip>{' '}
+          <HoverTip text={`Avg ilvl across all ${SLOT_KEYS.length} gear slots (empty = 0): ${avgIlvl}`}>iLv. {avgIlvl}</HoverTip>{' '}
           <HoverTip text={gearQuality.tip}>
             <span style={{ color: gearQuality.color, fontWeight: 700 }}>{gearQuality.glyph}</span>
           </HoverTip>
