@@ -53,7 +53,7 @@ export class FloatingTextLayer extends Container {
   private makeText(): BitmapText {
     return new BitmapText({
       text: '',
-      style: { fontFamily: 'monospace', fontSize: 9, fill: 0xffffff, fontWeight: 'bold' },
+      style: { fontFamily: 'monospace', fontSize: 12, fill: 0xffffff, fontWeight: 'bold' },
     });
   }
 }

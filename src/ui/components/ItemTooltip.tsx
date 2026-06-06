@@ -42,7 +42,7 @@ function itemTitle(item: ItemInstance): string {
   return SLOTS[item.slot].label;
 }
 
-export function ItemTooltip({ item, compareTo, locked, wrongClass, roleDelta, roleKeys }: { item: ItemInstance; compareTo?: ItemInstance; locked?: boolean; wrongClass?: boolean; roleDelta?: RoleScores; roleKeys?: RoleKey[] }): React.JSX.Element {
+export function ItemTooltip({ item, compareTo, locked, wrongClass, roleDelta, roleKeys, ignoreGems }: { item: ItemInstance; compareTo?: ItemInstance; locked?: boolean; wrongClass?: boolean; roleDelta?: RoleScores; roleKeys?: RoleKey[]; ignoreGems?: boolean }): React.JSX.Element {
   const ts = tierStyle(item.tier);
   const rarity = ts.iridescent ? '#e0b0ff' : ts.color;
   const mine = totalByKey(item);
@@ -145,23 +145,27 @@ export function ItemTooltip({ item, compareTo, locked, wrongClass, roleDelta, ro
           })
         )}
 
-        {/* gem slots (the card's "Decoration Slot") */}
+        {/* gem slots (the card's "Decoration Slot"). Dimmed while a Shift-hover comparison is
+            ignoring gems, so it's clear they're not being counted. */}
         {item.sockets.length > 0 && (
-          <>
-            <SectionHeader glyph="💎" label="Gem Slots" />
+          <div style={{ opacity: ignoreGems === true ? 0.4 : 1 }}>
+            <SectionHeader glyph="💎" label={ignoreGems === true ? 'Gem Slots (ignored)' : 'Gem Slots'} />
             {item.sockets.map((so, i) => (
               <SocketRow key={i} gem={so.gem} />
             ))}
-          </>
+          </div>
         )}
 
         {/* net role impact vs the equipped piece (only when comparing) */}
         {roleDelta !== undefined && (
           <>
-            <SectionHeader glyph="⚖" label="Role Impact" />
+            <SectionHeader glyph="⚖" label={ignoreGems === true ? 'Role Impact (no gems)' : 'Role Impact'} />
             {(roleKeys ?? (['dps', 'tank', 'heal'] as RoleKey[])).map((r) => (
               <RoleRow key={r} label={ROLE_LABEL[r]} pct={roleDelta[r]} />
             ))}
+            <div style={{ color: ignoreGems === true ? PALETTE.gold : PALETTE.textMute, fontSize: 9, marginTop: 2 }}>
+              {ignoreGems === true ? '⇧ Comparing base items — gems ignored' : '⇧ Hold Shift to compare without gems'}
+            </div>
           </>
         )}
 

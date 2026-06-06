@@ -65,12 +65,13 @@ export function ItemSlot({
   badge?: ReactNode;
   /** Net DPS/Tanking/Healing % this item would net the hero vs the equipped piece it's
    *  compared against. Computed lazily (only the hovered cell renders its tooltip). */
-  roleImpact?: (newItem: ItemInstance, equipped: ItemInstance) => RoleScores;
+  roleImpact?: (newItem: ItemInstance, equipped: ItemInstance, ignoreGems: boolean) => RoleScores;
   /** Which role rows to show (per hero class) — hides roles the hero doesn't perform. */
   roleKeys?: RoleKey[];
 }): React.JSX.Element {
   const rootRef = useRef<HTMLDivElement>(null);
   const [tip, setTip] = useState<{ left: number; top: number } | null>(null);
+  const [ignoreGems, setIgnoreGems] = useState(false); // Shift held while hovering → compare base items without gems
   const draggedRef = useRef(false); // true after a drag this press → swallow the trailing click
   const filled = item ?? gem ?? null; // the entry occupying this cell, if any
   const ts = item ? tierStyle(item.tier) : gem ? tierStyle(gem.tier) : null;
@@ -137,7 +138,9 @@ export function ItemSlot({
       const r = rootRef.current?.getBoundingClientRect();
       if (r === undefined || e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) {
         clear();
+        return;
       }
+      setIgnoreGems(e.shiftKey); // pick up Shift even if it was already held before the hover began
     };
     window.addEventListener('mousemove', onMove, true);
     window.addEventListener('scroll', clear, true);
@@ -150,6 +153,19 @@ export function ItemSlot({
       window.removeEventListener('pointerdown', clear, true);
       window.removeEventListener('blur', clear);
       document.removeEventListener('visibilitychange', clear);
+    };
+  }, [tip]);
+
+  // While the tooltip is open, track the Shift key so a comparison can be recomputed WITHOUT
+  // gems (compare the base items' own potential). Reset when the tip closes.
+  useEffect(() => {
+    if (tip === null) { setIgnoreGems(false); return; }
+    const sync = (e: KeyboardEvent): void => setIgnoreGems(e.shiftKey);
+    window.addEventListener('keydown', sync);
+    window.addEventListener('keyup', sync);
+    return () => {
+      window.removeEventListener('keydown', sync);
+      window.removeEventListener('keyup', sync);
     };
   }, [tip]);
 
@@ -252,7 +268,7 @@ export function ItemSlot({
                 // equipped card(s) so the two can be read directly against each other.
                 <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
                   <TipColumn caption="New">
-                    <ItemTooltip item={item} compareTo={compare[0]} locked={locked} wrongClass={wrongClass} roleDelta={compare[0] !== undefined ? roleImpact?.(item, compare[0]) : undefined} roleKeys={roleKeys} />
+                    <ItemTooltip item={item} compareTo={compare[0]} locked={locked} wrongClass={wrongClass} roleDelta={compare[0] !== undefined ? roleImpact?.(item, compare[0], ignoreGems) : undefined} roleKeys={roleKeys} ignoreGems={ignoreGems} />
                   </TipColumn>
                   {compare.map((eq, i) => (
                     <TipColumn key={eq.id} caption={compare.length > 1 ? `Equipped ${i + 1}` : 'Equipped'}>

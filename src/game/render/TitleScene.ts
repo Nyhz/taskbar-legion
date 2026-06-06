@@ -17,7 +17,7 @@ import { hexToNum } from '@/styles/palette';
 
 const WIDTH = 1280;
 // The scene renders at the previous title proportions (720) inside a centred band of the
-// 1040 overlay window — the rest of the window is transparent (desktop shows through).
+// 1060 overlay window — the rest of the window is transparent (desktop shows through).
 const HEIGHT = 720;
 const GROUND_FRAC = 0.56; // raised horizon vs the game (0.72): less sky, more green
 

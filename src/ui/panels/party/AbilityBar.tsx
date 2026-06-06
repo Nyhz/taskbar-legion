@@ -5,6 +5,7 @@ import { tryAbilityDef } from '@/data/abilities';
 import { abilityIcon } from '@/ui/icons';
 import { PALETTE } from '@/styles/palette';
 import { UltimateSlot } from './UltimateSlot';
+import { LoadoutSlots } from './LoadoutSlots';
 
 // The selected hero's combat loadout, centered below the paper doll: the class ULTIMATE
 // pinned on the left, then the hero's (≤2) ranked abilities as live-cooldown icons. The
@@ -21,27 +22,40 @@ export function AbilityBar({ heroId }: { heroId: string }): React.JSX.Element {
   const combatant = getEngine()?.world.heroes.find((h) => h.id === heroId);
 
   return (
-    <div style={{ width: '100%', marginTop: 2, borderTop: `1px solid ${PALETTE.goldDim}`, paddingTop: 5, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+    // Three clearly-separated groups: the ultimate · the active abilities · the Farm/Boss
+    // loadouts. The extra top padding leaves room for the loadout labels so they sit BELOW the
+    // panel's divider line, not on top of it. Generous divider margins keep the groups apart.
+    <div style={{ width: '100%', marginTop: 2, borderTop: `1px solid ${PALETTE.goldDim}`, paddingTop: 16, paddingBottom: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
       {/* The class ultimate (with its level requirement), pinned to the left of the row. */}
       <UltimateSlot classKey={hero.classKey} level={hero.level} />
-      <span style={{ width: 1, height: 22, background: PALETTE.goldDim }} />
+      <GroupDivider />
 
       {/* The two ability slots — filled by whatever the hero has ranked in Talents. */}
-      {[0, 1].map((i) => {
-        const entry = pool[i];
-        // A stale key (e.g. a renamed ability left in an old save) resolves to nothing —
-        // show an empty slot instead of throwing and blacking out the whole UI.
-        const def = entry === undefined ? undefined : tryAbilityDef(entry.def.key);
-        if (entry === undefined || def === undefined) return <EmptySlot key={i} />;
-        const key = entry.def.key;
-        const chargeMax = def.charge?.toCast;
-        const charge = chargeMax !== undefined ? { cur: combatant?.charges?.[key] ?? 0, max: chargeMax } : undefined;
-        const remaining = combatant?.cooldowns[key] ?? 0;
-        const total = combatant?.cooldownTotals?.[key] ?? 0;
-        return <ActiveSlot key={i} abilityKey={key} remaining={remaining} total={total} charge={charge} />;
-      })}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        {[0, 1].map((i) => {
+          const entry = pool[i];
+          // A stale key (e.g. a renamed ability left in an old save) resolves to nothing —
+          // show an empty slot instead of throwing and blacking out the whole UI.
+          const def = entry === undefined ? undefined : tryAbilityDef(entry.def.key);
+          if (entry === undefined || def === undefined) return <EmptySlot key={i} />;
+          const key = entry.def.key;
+          const chargeMax = def.charge?.toCast;
+          const charge = chargeMax !== undefined ? { cur: combatant?.charges?.[key] ?? 0, max: chargeMax } : undefined;
+          const remaining = combatant?.cooldowns[key] ?? 0;
+          const total = combatant?.cooldownTotals?.[key] ?? 0;
+          return <ActiveSlot key={i} abilityKey={key} remaining={remaining} total={total} charge={charge} />;
+        })}
+      </div>
+
+      {/* Farm / Boss gear+talent presets, to the RIGHT of the active abilities. */}
+      <GroupDivider />
+      <LoadoutSlots heroId={heroId} />
     </div>
   );
+}
+
+function GroupDivider(): React.JSX.Element {
+  return <span style={{ width: 1, height: 22, background: PALETTE.goldDim, margin: '0 8px' }} />;
 }
 
 function ActiveSlot({ abilityKey, remaining, total, charge }: { abilityKey: string; remaining: number; total: number; charge?: { cur: number; max: number } }): React.JSX.Element {

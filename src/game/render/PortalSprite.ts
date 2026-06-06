@@ -29,18 +29,18 @@ export class PortalSprite extends Container {
       style: { fontFamily: 'monospace', fontSize: 10, fontWeight: '700', fill: hexToNum('#ff7a7a') },
     });
     this.bossText.anchor.set(0.5);
-    this.bossText.y = -RY - 9;
+    this.bossText.y = -RY - 21;
     this.keyText = new Text({
       text: '🗝 0/1',
       style: { fontFamily: 'monospace', fontSize: 10, fontWeight: '700', fill: hexToNum('#e8c34c') },
     });
     this.keyText.anchor.set(0.5);
-    this.keyText.y = RY + 9; // just below the vortex
+    this.keyText.y = -RY - 9; // just above the vortex, under the BOSS label
     this.addChild(this.frame, this.swirl, this.bossText, this.keyText);
     // A generous, fixed hit area so the whole portal (and its labels) is reliably tappable.
     this.eventMode = 'static';
     this.cursor = 'pointer';
-    this.hitArea = new Rectangle(-RX - 6, -RY - 16, (RX + 6) * 2, (RY + 6) * 2 + 32);
+    this.hitArea = new Rectangle(-RX - 6, -RY - 28, (RX + 6) * 2, RY * 2 + 38);
   }
 
   /** Driven each frame with the zone's keys held: ≥1 → enterable (lit, the count gold);

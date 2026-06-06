@@ -9,6 +9,6 @@ export const CATEGORY_COLOR: Record<TechCategory, string> = {
 
 export const CATEGORY_BLURB: Record<TechCategory, string> = {
   Economy: 'Gold, XP & offline income',
-  Chests: 'Drop rates, gems, keys & storage',
+  Chests: 'Drop rates, gems & storage',
   Utility: 'Auto-open & party size',
 };
