@@ -105,7 +105,19 @@ with the three installers attached — one per OS.
    ```bash
    gh release edit $TAG --draft=false --latest
    ```
-3. Report the public release URL: `gh release view $TAG --json url --jq '.url'`.
+3. Verify it published and report the URL with this EXACT command:
+   ```bash
+   gh release view $TAG --json isDraft,tagName,url --jq '{isDraft, tagName, url}'
+   ```
+   `isDraft` must be `false`.
+
+   > ⚠️ **Do NOT add `isLatest` to that `--json` list** — it is **not** a queryable field on
+   > `gh release view` and makes the command exit non-zero (this has broken the verify step on
+   > past releases). The `--latest` *flag* on the `gh release edit` publish command above is what
+   > marks it latest; if you want to *confirm* that separately, query the API instead:
+   > ```bash
+   > gh api repos/{owner}/{repo}/releases/latest --jq '.tag_name'   # must equal $TAG
+   > ```
 
 ---
 
