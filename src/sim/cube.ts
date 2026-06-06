@@ -1,5 +1,5 @@
 import type { ItemInstance } from './items';
-import { composeItem, rollStatValue, itemSubstatPool, type ItemOrigin } from './loot';
+import { composeItem, rollStatValue, perfectStatValue, itemSubstatPool, type ItemOrigin } from './loot';
 import { makeRng } from './rng';
 import { SLOT_KEYS } from '@/data/itemSlots';
 import type { StatKey } from '@/data/stats';
@@ -7,7 +7,7 @@ import type { ItemTier } from '@/data/tiers';
 import { tierDef } from '@/data/tiers';
 import type { GemInstance, GemTier } from '@/data/gems';
 import { GENERATOR_VERSION } from '@/data/lootTables';
-import { ALCHEMY_BASE, ALCHEMY_TIER_MULT, SYNTH_DOUBLE_TIER_CHANCE } from '@/data/cube';
+import { ALCHEMY_BASE, ALCHEMY_TIER_MULT, SYNTH_DOUBLE_TIER_CHANCE, SYNTH_PERFECT_CHANCE, TRANSFIGURE_PERFECT_CHANCE } from '@/data/cube';
 
 // The Cube's three recipes (all PURE + deterministic — no Math.random / Date):
 //  • Synthesize: 9 same-tier items → 1 of the next tier, ilvl = MEDIAN of the inputs.
@@ -49,8 +49,9 @@ export function synthesize(items: readonly ItemInstance[], doubleTierChance: num
   const slot = rng.pick(SLOT_KEYS);
   const origin: ItemOrigin = { rollSeed: h, stageIndex, chestType: 'normal', generatorVersion: GENERATOR_VERSION };
   // Output ilvl is the MEDIAN of the inputs (not a fresh stage roll), so feeding the
-  // cube higher-ilvl gear yields a higher-ilvl result.
-  const out = composeItem(slot, outTier, origin, rng, medianIlvl(items));
+  // cube higher-ilvl gear yields a higher-ilvl result. Synthesized gear is "more lucky":
+  // the perfect-stat pass uses SYNTH_PERFECT_CHANCE instead of the base chance.
+  const out = composeItem(slot, outTier, origin, rng, medianIlvl(items), undefined, undefined, SYNTH_PERFECT_CHANCE);
   return out; // no binding — this game has no trading/bound gear (out.bound stays false)
 }
 
@@ -130,12 +131,18 @@ export function canTransfigure(item: ItemInstance, gems: readonly GemInstance[])
  *  produce — deterministic from the item's birth seed + the slot, so previewing and
  *  committing always agree (and it can't be re-rolled for a better result). Returns
  *  null if there is no eligible new stat. */
-export function transfigureRoll(item: ItemInstance, affixIndex: number): { key: StatKey; value: number } | null {
+export function transfigureRoll(item: ItemInstance, affixIndex: number): { key: StatKey; value: number; perfect?: boolean } | null {
   const pool = transfigPool(item);
   if (pool.length === 0 || item.stats[affixIndex] === undefined) return null;
   const seed = (item.origin.rollSeed ^ Math.imul(affixIndex + 1, 0x9e3779b1)) >>> 0;
   const rng = makeRng(seed);
+  const mult = tierDef(item.tier).statMultiplier;
   const key = rng.pick(pool);
-  const value = rollStatValue(key, tierDef(item.tier).statMultiplier, item.ilvl, rng);
+  const value = rollStatValue(key, mult, item.ilvl, rng);
+  // The replacement has its own chance to come out perfect (rolled AFTER the value, so the
+  // key/value stay stable for a given seed regardless of whether the perfect roll hits).
+  if (rng.chance(TRANSFIGURE_PERFECT_CHANCE)) {
+    return { key, value: perfectStatValue(key, mult, item.ilvl), perfect: true };
+  }
   return { key, value };
 }

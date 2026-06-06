@@ -22,6 +22,10 @@ export interface ClassDef {
   /** Combat reach: melee must be at the front line; ranged/casters hit from afar. */
   style: AttackStyle;
   range: number;
+  /** Basic auto-attack AoE: the primary target takes full damage, every other enemy within
+   *  `radius` world-px takes `coeff×` the hit (e.g. 0.5 = 50%). Omit for single-target autos.
+   *  The Priest's holy strike uses this (mirrors Explosive Arrow's splash, but on the auto). */
+  autoSplash?: { coeff: number; radius: number };
 }
 
 export const CLASSES: Record<string, ClassDef> = {
@@ -44,7 +48,7 @@ export const CLASSES: Record<string, ClassDef> = {
     statGrowthPerLevel: { health: 5, armor: 0.5, magicResist: 0.3, attackDamage: 2.8 },
     unlock: { type: 'free' },
     signatureAbility: 'knight_guard',
-    style: 'melee', range: RANGE.melee,
+    style: 'melee', range: RANGE.melee + 5, // a touch longer reach than base melee
   },
   ranger: {
     key: 'ranger', name: 'Ranger', role: 'dps',
@@ -61,6 +65,9 @@ export const CLASSES: Record<string, ClassDef> = {
     unlock: { type: 'gold', cost: 500 },
     signatureAbility: 'priest_mend',
     style: 'caster', range: RANGE.caster,
+    // The priest's holy strike lands ON the target and splashes nearby enemies for 50% (45
+    // world-px ≈ 1.5 bodies, same radius as Explosive Arrow) — turns the auto into light AoE.
+    autoSplash: { coeff: 0.5, radius: 45 },
   },
 };
 

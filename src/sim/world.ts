@@ -28,6 +28,7 @@ export interface Combatant {
   alive: boolean;
   respawnMs?: number; // when a hero is dead: ms left until it revives (heroes only); undefined = not respawning
   abilities: ResolvedAbility[];
+  autoSplash?: { coeff: number; radius: number }; // basic-auto AoE (Priest): nearby enemies take coeff× the hit
   movedThisTick?: boolean; // closed distance this tick → can't attack on it (must be standing still to fire)
   moveDelayMs?: number; // ranged/caster heroes: a brief, varied hold before resuming a forward chase
   //   (set when they stop, counts down) — desyncs the back line so it shuffles, not marches as one.
@@ -59,6 +60,8 @@ export interface CombatEvent {
   crit?: boolean;
   blocked?: boolean; // the target blocked this hit (block-stat proc) — drives the block animation
   invuln?: boolean; // the hit was negated by invulnerability (Last Stand) — render "INVULNERABLE"
+  multi?: boolean; // this hit is a MULTISTRIKE proc (the bonus second auto-hit) — render "MULTI!"
+  splash?: boolean; // this hit is AoE splash off a primary target (Priest auto) — reduced damage
   abilityKey?: string;
   tick?: boolean; // a DoT/HoT periodic tick (render as a number; no attack animation)
 }

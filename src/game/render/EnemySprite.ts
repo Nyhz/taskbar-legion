@@ -344,6 +344,12 @@ export class EnemySprite extends Container {
     return { x: this.x, y: this.y + r.cy, radius: crosshairRadius(r) };
   }
 
+  /** This enemy's feet on the ground line (parent coords) — where an on-target effect such as
+   *  the Priest's holy strike is seated so it rises up from the feet. */
+  feetPoint(): { x: number; y: number } {
+    return { x: this.x, y: this.y + FEET_OFFSET };
+  }
+
   private drawAura(c: Combatant): void {
     this.aura.clear();
     const cy = this.cy;

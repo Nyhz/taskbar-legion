@@ -58,6 +58,7 @@ export function StripHud(): React.JSX.Element {
       <PartyLevels party={hud.party} />
       <Counter label="Gold" value={format(hud.gold)} color={PALETTE.gold} />
       <ChestTray chests={hud.chests} />
+      <ZoneKeys held={hud.zoneKeysHeld} />
 
       <div style={{ flex: 1 }} />
       <ScaleControls />
@@ -93,6 +94,16 @@ function PartyLevels({ party }: { party: { classKey: string; level: number }[] }
           <span style={{ color: PALETTE.xpBlue, fontWeight: 700 }}>{h.level}</span>
         </span>
       ))}
+    </span>
+  );
+}
+
+// World-boss keys held for the CURRENT zone (world+difficulty) — one is spent to challenge
+// this zone's X-10 boss (even on a wipe). Earned from the zone's stage-boss chests.
+function ZoneKeys({ held }: { held: number }): React.JSX.Element {
+  return (
+    <span title="World-boss keys for this zone — one spent per X-10 attempt (even on a wipe)" style={{ color: PALETTE.textMute }}>
+      🗝<span style={{ color: held > 0 ? PALETTE.gold : PALETTE.textMute, fontWeight: 700 }}>{held}</span>
     </span>
   );
 }

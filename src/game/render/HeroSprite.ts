@@ -7,15 +7,21 @@ import { type AttackStyle, RESPAWN_MS } from '@/data/field';
 import { hexToNum } from '@/styles/palette';
 import { drawHero } from './textures';
 import { drawSwing, SWING_MS } from './swing';
-import { isInvulnerable, INVULN_YELLOW, isEnraged, ENRAGE_RED } from './fx';
-import { auraCategories, drawCategoryAuras, totalShield, drawShieldBar, drawMortalWoundCrosses, hasMortalWound } from './effectAuras';
+import { isInvulnerable, INVULN_YELLOW, isEnraged } from './fx';
+import { auraCategories, drawCategoryAuras, totalShield, drawShieldBar, drawMortalWoundCrosses, hasMortalWound, drawHolyGround } from './effectAuras';
 import { SpriteBody } from './SpriteBody';
 import type { Texture } from 'pixi.js';
 import type { CharFrames } from './characterFrames';
-import { getCharacterFrames, getHealEffectFrames } from './characterFrames';
+import { getCharacterFrames, getHealEffectFrames, getBattleEnrageFrames } from './characterFrames';
 
 const MS_PER_FRAME = 1000 / 60; // Pixi AnimatedSprite.update expects ticker-frame units
 const HEAL_FX_FPS = 14;
+const ENRAGE_FX_FPS = 14; // cadence of the looping Battle Enrage swirl
+// Mend + Battle Enrage share the same 128px on-ally sheet geometry, so they share a transform:
+// seated with the sheet's BASE at the hero's feet (anchorY 1) and the same scale — so the ult
+// swirl reads at the same size/height as the heal it tops up. Slightly smaller than before.
+const ALLY_FX_SCALE = 0.78;
+const ALLY_FX_ANCHOR_Y = 1; // frame bottom sits on the feet → the effect rises from the feet up
 
 // A hero display object: procedural body + HP bar + effect aura (twinkling stars for
 // HoTs/buffs) + buff/debuff pips + two ability cooldown pips (top-left) + a cast burst
@@ -99,6 +105,7 @@ export class HeroSprite extends Container {
   private readonly swingG = new Graphics();
   private readonly hpBg = new Graphics();
   private readonly hpBar = new Graphics();
+  private readonly holyGround = new Graphics(); // Retribution Aura: golden ground halo at the feet
   private readonly aura = new Graphics(); // ongoing-effect stars + cast burst
   private readonly pips = new Container();
   private readonly cdPips = new Graphics(); // up to 2 ability cooldown indicators
@@ -112,6 +119,8 @@ export class HeroSprite extends Container {
   // Heal sparkle shown ON this hero whenever a Priest heals it (shared effect frames,
   // authored on the same 100px grid as the bodies, so it overlays the sprite squarely).
   private readonly healFx: AnimatedSprite | null;
+  // Battle Enrage swirl looped over this hero while the Priest ult buff is on it.
+  private readonly enrageFx: AnimatedSprite | null;
   private readonly fxShim = { deltaTime: 0 } as unknown as Ticker;
   private prevAlive = true; // tracks the alive→dead / dead→alive edge to drive death/revive
   private flash = 0;
@@ -150,15 +159,18 @@ export class HeroSprite extends Container {
     this.ultLabel.visible = false;
     this.ultCross.visible = false;
     this.healFx = this.makeHealFx(h.bodyCx);
+    this.enrageFx = this.makeEnrageFx(h.bodyCx);
     if (this.spriteBody !== null) {
       // Anchored at its feet/body-centre so the torso centre lands exactly on the HUD's
       // bodyCx (HP bar + aura share it) and the feet sit ~y22 below the container origin.
       this.spriteBody.position.set(h.bodyCx, SPRITE_FEET_Y);
-      this.addChild(this.hpBg, this.hpBar, this.spriteBody, this.aura, this.pips, this.cdPips, this.respawnLabel, this.ultLabel, this.ultCross, this.tpRing);
+      // holyGround sits UNDER the body so the halo pools on the ground beneath the priest.
+      this.addChild(this.hpBg, this.hpBar, this.holyGround, this.spriteBody, this.aura, this.pips, this.cdPips, this.respawnLabel, this.ultLabel, this.ultCross, this.tpRing);
     } else {
       drawHero(this.body, classKey);
-      this.addChild(this.hpBg, this.hpBar, this.feet, this.body, this.aura, this.swingG, this.pips, this.cdPips, this.respawnLabel, this.ultLabel, this.ultCross, this.tpRing);
+      this.addChild(this.hpBg, this.hpBar, this.holyGround, this.feet, this.body, this.aura, this.swingG, this.pips, this.cdPips, this.respawnLabel, this.ultLabel, this.ultCross, this.tpRing);
     }
+    if (this.enrageFx !== null) this.addChild(this.enrageFx); // enrage swirl over the body
     if (this.healFx !== null) this.addChild(this.healFx); // sparkle on top of everything
     this.tpRing.visible = false;
   }
@@ -267,15 +279,18 @@ export class HeroSprite extends Container {
     fx.gotoAndPlay(0);
   }
 
-  /** Build the heal-sparkle overlay from the shared effect frames, anchored on the same
-   *  100px grid as the bodies so it sits squarely over the sprite. Null if not loaded. */
+  /** Build the on-ally heal overlay from the Mend effect frames (a 5×3 grid of 128px cells —
+   *  see characterFrames). The pillar content nearly fills the frame with its base at the very
+   *  bottom, so we anchor the frame bottom on the feet (ALLY_FX_ANCHOR_Y) and the effect rises
+   *  from there; ALLY_FX_SCALE keeps it a touch smaller (shared with the enrage swirl). Null if
+   *  not loaded. */
   private makeHealFx(bodyCx: number): AnimatedSprite | null {
     const frames = getHealEffectFrames();
     if (frames === null || frames.length === 0) return null;
     const fx = new AnimatedSprite(frames);
     fx.autoUpdate = false;
-    fx.anchor.set(0.51, 0.6); // effect content centred on x51, baseline y60 within the frame
-    fx.scale.set(2.9); // matches the (enlarged) hero body scale
+    fx.anchor.set(0.5, ALLY_FX_ANCHOR_Y); // seat the sheet's base on the hero's feet
+    fx.scale.set(ALLY_FX_SCALE); // slightly smaller than before; matches the enrage swirl
     fx.position.set(bodyCx, SPRITE_FEET_Y);
     fx.loop = false;
     fx.animationSpeed = HEAL_FX_FPS / 60;
@@ -369,6 +384,7 @@ export class HeroSprite extends Container {
     }
 
     this.castMs = Math.max(0, this.castMs - dtMs);
+    this.drawHolyGround(c);
     this.drawAura(c);
     this.drawPips(c);
     this.drawCooldowns(c, reviving);
@@ -380,9 +396,39 @@ export class HeroSprite extends Container {
       this.teleportK = 1 - this.spawnMs / RECRUIT_SPAWN_MS;
     }
     this.applyTeleport();
+    this.updateEnrageFx(c, dtMs); // after teleport so it stands down while the body de/materialises
     this.drawUlt(c, reviving); // after teleport so it owns the badge's visibility
     this.advanceHealFx(dtMs);
     this.prevAlive = c.alive;
+  }
+
+  // Build the looping Battle Enrage swirl from its shared frames (a 5×3 grid of 128px cells,
+  // see characterFrames). Seated at the feet with the SAME transform as the Mend effect
+  // (ALLY_FX_ANCHOR_Y + ALLY_FX_SCALE) so the ult swirl reads at the same height/positioning as
+  // a heal. Hidden until updateEnrageFx turns it on. Null if the sheet isn't loaded.
+  private makeEnrageFx(bodyCx: number): AnimatedSprite | null {
+    const frames = getBattleEnrageFrames();
+    if (frames === null || frames.length === 0) return null;
+    const fx = new AnimatedSprite(frames);
+    fx.autoUpdate = false;
+    fx.anchor.set(0.5, ALLY_FX_ANCHOR_Y); // same as Mend: seat the sheet's base on the feet
+    fx.scale.set(ALLY_FX_SCALE); // same height as the Mend effect (shared on-ally geometry)
+    fx.position.set(bodyCx, SPRITE_FEET_Y); // seated at the feet, matching Mend's positioning
+    fx.loop = true;
+    fx.animationSpeed = ENRAGE_FX_FPS / 60;
+    fx.visible = false;
+    return fx;
+  }
+
+  // Battle Enrage (Priest ult): loop the swirl over every buffed ally for the buff's whole
+  // duration. Shown only while alive and not mid-teleport; advanced from our own dtMs.
+  private updateEnrageFx(c: Combatant, dtMs: number): void {
+    const fx = this.enrageFx;
+    if (fx === null) return;
+    const on = c.alive && !this.teleporting && isEnraged(c.effects);
+    if (on && !fx.visible) { fx.visible = true; fx.gotoAndPlay(0); }
+    else if (!on && fx.visible) { fx.visible = false; fx.stop(); }
+    if (fx.visible && dtMs > 0) { this.fxShim.deltaTime = dtMs / MS_PER_FRAME; fx.update(this.fxShim); }
   }
 
   // Advance the heal-sparkle one-shot while it's playing (manual update — autoUpdate off).
@@ -469,6 +515,18 @@ export class HeroSprite extends Container {
     }
   }
 
+  // Retribution Aura: a golden holy halo pooled on the ground beneath the priest while the
+  // passive party damage aura is slotted (it lives in c.abilities — see sim/loadout). It has
+  // no ActiveEffect of its own, so this dedicated ground overlay is its only visual read.
+  private drawHolyGround(c: Combatant): void {
+    this.holyGround.clear();
+    const active = c.alive && !this.teleporting && c.abilities.some((a) => a.def.aura?.stat === 'damageIncrease');
+    if (!active) return;
+    const sprite = this.spriteBody !== null;
+    const feetY = sprite ? SPRITE_FEET_Y : 20;
+    drawHolyGround(this.holyGround, this.hud.bodyCx, feetY, sprite ? 1.1 : 0.75, this.elapsed);
+  }
+
   // Effect aura: twinkling diamond "stars" orbiting the hero while an ongoing effect
   // is active (gold for a Renew/HoT, cyan shield, violet buff, etc.) + a cast burst
   // ring that expands and fades on each ability cast.
@@ -487,13 +545,8 @@ export class HeroSprite extends Container {
       this.aura.circle(cx, cy, 16).fill({ color: INVULN_YELLOW, alpha: pulse });
       this.aura.circle(cx, cy, 16).stroke({ color: INVULN_YELLOW, width: 1.5, alpha: 0.75 });
     }
-    // Battle Enrage (Priest ult): a pulsing red aura on every party member under the buff —
-    // a unique, unmistakable marker that the ultimate is active.
-    if (isEnraged(c.effects)) {
-      const pulse = 0.2 + 0.14 * Math.abs(Math.sin(this.elapsed / 160));
-      this.aura.circle(cx, cy, 15).fill({ color: ENRAGE_RED, alpha: pulse });
-      this.aura.circle(cx, cy, 15).stroke({ color: ENRAGE_RED, width: 1.5, alpha: 0.8 });
-    }
+    // Battle Enrage (Priest ult) is NOT an aura: every buffed ally rhythmically SWELLS and
+    // reddens (drawn in applyEnrage, after teleport, so it owns the body's scale + tint).
     // Bold category overlays: green up-arrows (offense buff), dancing shields (defense
     // buff), red down-arrows (debuff) — drawn over the body's vertical span.
     const cats = auraCategories(c.effects);

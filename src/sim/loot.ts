@@ -12,6 +12,7 @@ import { CLASS_KEYS } from '@/data/classes';
 import type { ChestType } from '@/data/chests';
 import { phi, EG_FLAT, GEAR_POWER, expectedLevel, pctAffixIlvlMult } from '@/data/stageScaling';
 import { difficultyOf } from '@/data/difficulties';
+import { PERFECT_STAT_CHANCE, PERFECT_STAT_BONUS } from '@/data/lootTables';
 
 // The deterministic loot generator (the SPEC §4.6 contract): generateItem(origin)
 // reproduces an item byte-for-byte from its birth certificate. Tier is stage-gated
@@ -72,6 +73,7 @@ export function composeItem(
   forcedIlvl?: number,
   forcedClass?: string,
   classPool?: string[],
+  perfectChance: number = PERFECT_STAT_CHANCE,
 ): ItemInstance {
   const S = origin.stageIndex;
   const category = SLOTS[slot].category;
@@ -112,6 +114,10 @@ export function composeItem(
   const subPool = pool.filter((k) => !baseKeys.has(k));
   const subKeys = pickDistinct(subPool, def.extraStats, rng);
   const stats = subKeys.map((key) => ({ key, value: rollStatValue(key, mult, itemLevel, rng) }));
+
+  // Perfect-stat pass — runs AFTER the normal substat rolls (so a non-hit item is
+  // byte-identical to the pre-feature roll). Only inherent substats can be perfect.
+  applyPerfectRolls(stats, mult, itemLevel, rng, perfectChance);
 
   const sockets = Array.from({ length: def.sockets }, () => ({ gem: null }));
 
@@ -174,6 +180,31 @@ export function rollStatValue(key: StatKey, tierMult: number, itemLevel: number,
   const r = rng.range(band.min, band.max);
   if (STATS[key].kind === 'percent') return round2(r * tierMult * pctAffixIlvlMult(itemLevel));
   return round2(r * tierMult * GEAR_POWER * phi(itemLevel) ** EG_FLAT);
+}
+
+/** The value a "perfect" roll of `key` produces: the HIGHEST normal roll (band.max) lifted
+ *  by PERFECT_STAT_BONUS. Deterministic (no rng) — a perfect stat is always the same value
+ *  for a given key/tier/ilvl, ~15% above the normal ceiling. Mirrors `rollStatValue`'s two
+ *  branches (percent vs flat scaling) with r fixed to the boosted max. */
+export function perfectStatValue(key: StatKey, tierMult: number, itemLevel: number): number {
+  const r = STATS[key].rollPerIlvl.max * (1 + PERFECT_STAT_BONUS);
+  if (STATS[key].kind === 'percent') return round2(r * tierMult * pctAffixIlvlMult(itemLevel));
+  return round2(r * tierMult * GEAR_POWER * phi(itemLevel) ** EG_FLAT);
+}
+
+/** Roll each item's "perfect" substats IN PLACE: while there is still a non-perfect substat
+ *  and an rng.chance(chance) hit, upgrade one (random) remaining substat to its perfect value.
+ *  Caps at one perfect per substat (so a T8's 4 substats yield at most 4 stars). The base
+ *  affix is intentionally excluded. */
+function applyPerfectRolls(stats: AffixRoll[], tierMult: number, itemLevel: number, rng: Rng, chance: number): void {
+  const candidates = stats.map((_, i) => i); // substat indices not yet made perfect
+  while (candidates.length > 0 && rng.chance(chance)) {
+    const idx = candidates.splice(rng.int(candidates.length), 1)[0];
+    if (idx === undefined) break;
+    const s = stats[idx];
+    if (s === undefined) continue;
+    stats[idx] = { key: s.key, value: perfectStatValue(s.key, tierMult, itemLevel), perfect: true };
+  }
 }
 
 // Pick `count` distinct keys from `pool` without replacement (Fisher–Yates prefix).

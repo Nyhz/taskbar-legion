@@ -181,7 +181,7 @@ export class WorldFxLayer extends Container {
   /** Explosive Arrow's detonation: the tail of the fireball strip (orange burst → pale flash)
    *  pops at (cx, cy), growing + fading. Stays invisible for `delayMs` so it lands exactly when
    *  the arrow arrives. `frames` is the 7-frame fireball sheet (we use its last 3 = the blast). */
-  fireballBurst(cx: number, cy: number, frames: Texture[], delayMs: number): void {
+  fireballBurst(cx: number, cy: number, frames: Texture[], delayMs: number, sizeScale = 1): void {
     if (frames.length === 0) return;
     const blast = frames.slice(-3); // dark ember → orange burst → pale flash
     const s = new Sprite();
@@ -195,8 +195,31 @@ export class WorldFxLayer extends Container {
       const tex = blast[Math.min(blast.length - 1, Math.floor(k * blast.length))];
       if (tex !== undefined && s.texture !== tex) s.texture = tex;
       s.position.set(cx, cy);
-      s.scale.set(0.7 + k * 1.2); // swell as it detonates
+      s.scale.set((0.7 + k * 1.2) * sizeScale); // swell as it detonates (× caller's size)
       s.alpha = 1 - k * 0.75;
+    });
+  }
+
+  /** Priest holy strike: the attack-effect frames play ONCE directly on the struck enemy
+   *  (replacing the old flying bolt) — a light pillar that grows then fades. `cx`/`cy` is the
+   *  enemy's FEET on the ground line, and the anchor seats the pillar's baseline there so it
+   *  rises up from the feet; `frames` is the priest's loaded effect strip. The layer sits above
+   *  `combatants`, so it draws OVER the enemy. Default scale is bumped well past the Priest's
+   *  Mend effect so the holy strike reads big on the struck enemy. */
+  strikeBurst(cx: number, cy: number, frames: Texture[], scale = 2): void {
+    if (frames.length === 0) return;
+    const s = new Sprite();
+    s.anchor.set(0.5, 0.62); // content centred ~x50, baseline ~y62 within the 100px frame
+    s.scale.set(scale);
+    s.visible = false;
+    const play = 360;
+    this.push(s, play, (t) => {
+      s.visible = true;
+      const k = Math.min(0.999, t / play); // 0→1 through the frames
+      const tex = frames[Math.min(frames.length - 1, Math.floor(k * frames.length))];
+      if (tex !== undefined && s.texture !== tex) s.texture = tex;
+      s.position.set(cx, cy);
+      s.alpha = t > play * 0.65 ? Math.max(0, 1 - (t - play * 0.65) / (play * 0.35)) : 1; // hold then fade
     });
   }
 

@@ -2,6 +2,8 @@ import type { TalentNode } from '@/data/talents';
 import { abilityDef, TARGET_LABEL } from '@/data/abilities';
 import { STATS } from '@/data/stats';
 import { abilityEffectLines, abilityCooldownMs, abilityAuraLine } from '@/sim/abilities';
+import { healPowerEffectiveness } from '@/data/difficulties';
+import { useStore } from '@/state/store';
 import type { EffectiveStats } from '@/sim/stats';
 import { PALETTE } from '@/styles/palette';
 
@@ -25,10 +27,13 @@ function AbilityCard({ abilityKey, rank, stats }: { abilityKey: string; rank: nu
   // first point grants), so only show a separate "next" block once at least rank 1 is owned.
   const nextRank = rank >= 1 && rank < MAX_RANK ? rank + 1 : null;
 
+  // Heal magnitudes reflect the CURRENT zone's heal-power debuff (so the tooltip matches what
+  // a heal would actually do here), exactly as combat resolves it.
+  const healEff = healPowerEffectiveness(useStore.getState().hud.globalStage);
   // Effect lines + (for aura abilities) the party-aura line, resolved at a given rank.
   const linesAt = (r: number): string[] => {
     const aura = abilityAuraLine(ability, r);
-    const lines = abilityEffectLines(ability, r, stats, stats.health);
+    const lines = abilityEffectLines(ability, r, stats, stats.health, healEff);
     return aura !== null ? [aura, ...lines] : lines;
   };
   const cur = linesAt(shown);

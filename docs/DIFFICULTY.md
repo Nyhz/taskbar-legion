@@ -189,13 +189,22 @@ The pattern is a clean ladder: arrive on last difficulty's top 1–2 tiers; the 
 difficulty's new top tier landing across all your key slots**. Because the new top tier is ~2% drops, "break the
 gate" = "farm `10-9` until the rare upgrade drops **for each core slot, on each hero**" — the core idle loop.
 
-**Keys are gone, so the `X-10` boss IS the entire gate — it must be a REAL wall.** With no key time-gate to lean
-on, the world boss alone carries all the farming pressure: it is tuned so a party at the *expected kit minus its
-cap-tier pieces* is **decisively walled** (not a close call), and only the broad cap-tier breakthrough above —
-weapon + every role-critical slot, across all three heroes — clears it. This is deliberately a **higher** gear
-bar than a single-slot upgrade: it converts the removed ~30-min/world key farm into farming the rare cap-tier
-for the full role-slot set (≈3× the slots), which is what holds the §8 timeline. Wall multipliers (Phase 2) are
-sized to this; if a gate proves bruteforceable with partial cap-tier gear, raise the multiplier, not the spine.
+**The `X-10` boss carries the GEAR gate — it must be a REAL wall.** The world boss is tuned so a party at the
+*expected kit minus its cap-tier pieces* is **decisively walled** (not a close call), and only the broad cap-tier
+breakthrough above — weapon + every role-critical slot, across all three heroes — clears it. This is deliberately
+a **higher** gear bar than a single-slot upgrade: farming the rare cap-tier for the full role-slot set (≈3× the
+slots) is what holds the §8 timeline. Wall multipliers (Phase 2) are sized to this; if a gate proves
+bruteforceable with partial cap-tier gear, raise the multiplier, not the spine.
+
+**Keys are BACK (2026-06, re-added) — but as a GEM-FARM limiter, not a progression gate.** Now that the `X-10`
+boss drops a guaranteed gem, free re-entry would be an unlimited fast gem fountain. So entering an `X-10` costs
+ONE **zone key** (per world+difficulty), spent per attempt even on a wipe. Keys drop from that zone's **stage-boss
+chests at 50%** (`STAGE_KEY_DROP_CHANCE`) — keyed to the zone via `worldBossStageOf(dropStage)`, stored
+permanently, never in inventory. The math is deliberately self-balancing: ~1 key per first zone clear (9 stage
+bosses × 0.25 chest/kill × 0.5) — just enough for the natural attempt — while wall-farming W-9 for gear floods
+keys, so the gate **never blocks progression**. Re-farming an easy zone's guaranteed gem, by contrast, now costs
+a lap of that zone's slow stage farming instead of free `X-10` spam. (Tune the one constant if players hoard.)
+Shown as `held/1` on the strip portal + the topbar (current zone) and per-world in the Map panel.
 
 **The gear state is PARTY-WIDE (all three heroes), not one hero.** The gate is two simultaneous checks on the
 canonical trio: the **DPS/enrage check** needs the damage dealers (ranger + supporting offense) at the cap tier

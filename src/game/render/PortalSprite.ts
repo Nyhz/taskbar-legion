@@ -2,9 +2,9 @@ import { Container, Graphics, Rectangle, Text } from 'pixi.js';
 import { hexToNum } from '@/styles/palette';
 
 // A red, swirling world-boss portal pinned to the right edge of the strip while the
-// party farms a beaten W-9. Tapping it enters the W-10 world boss (keys are gone — the
-// boss is the wall). Cosmetic + an interactive affordance — it reads no sim state
-// itself; GameStrip drives its enabled state and tap handler.
+// party farms a beaten W-9. Tapping it enters the W-10 world boss — which costs ONE zone
+// key (one spent per attempt, even on a wipe). The portal shows held/1 keys and greys out
+// when key-less. Cosmetic + an interactive affordance — GameStrip drives its key count + tap.
 
 const RING = hexToNum('#c0473a');
 const RING_HI = hexToNum('#ff7a7a');
@@ -18,6 +18,7 @@ export class PortalSprite extends Container {
   private readonly frame = new Graphics();
   private readonly swirl = new Graphics();
   private readonly bossText: Text;
+  private readonly keyText: Text; // "🗝 held/1" — keys held vs the 1 needed to enter
   private elapsed = 0;
   private enabled = false;
 
@@ -29,19 +30,29 @@ export class PortalSprite extends Container {
     });
     this.bossText.anchor.set(0.5);
     this.bossText.y = -RY - 9;
-    this.addChild(this.frame, this.swirl, this.bossText);
-    // A generous, fixed hit area so the whole portal (and its label) is reliably tappable.
+    this.keyText = new Text({
+      text: '🗝 0/1',
+      style: { fontFamily: 'monospace', fontSize: 10, fontWeight: '700', fill: hexToNum('#e8c34c') },
+    });
+    this.keyText.anchor.set(0.5);
+    this.keyText.y = RY + 9; // just below the vortex
+    this.addChild(this.frame, this.swirl, this.bossText, this.keyText);
+    // A generous, fixed hit area so the whole portal (and its labels) is reliably tappable.
     this.eventMode = 'static';
     this.cursor = 'pointer';
-    this.hitArea = new Rectangle(-RX - 6, -RY - 16, (RX + 6) * 2, (RY + 6) * 2 + 16);
+    this.hitArea = new Rectangle(-RX - 6, -RY - 16, (RX + 6) * 2, (RY + 6) * 2 + 32);
   }
 
-  /** `enabled` when the W-10 boss can be entered (W-9 beaten); otherwise greyed/inert. */
-  update(dtMs: number, enabled: boolean): void {
+  /** Driven each frame with the zone's keys held: ≥1 → enterable (lit, the count gold);
+   *  0 → greyed/inert (you must farm this zone's stage bosses for a key). One key is spent
+   *  per attempt regardless, so the count is a live budget of remaining tries. */
+  update(dtMs: number, keysHeld: number): void {
     this.elapsed += dtMs;
-    this.enabled = enabled;
-    this.cursor = enabled ? 'pointer' : 'default';
-    this.alpha = enabled ? 1 : 0.5;
+    this.enabled = keysHeld > 0;
+    this.keyText.text = `🗝 ${keysHeld}/1`;
+    this.keyText.style.fill = this.enabled ? hexToNum('#e8c34c') : hexToNum('#9a8f80');
+    this.cursor = this.enabled ? 'pointer' : 'default';
+    this.alpha = this.enabled ? 1 : 0.5;
     this.draw();
   }
 

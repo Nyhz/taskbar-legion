@@ -62,7 +62,7 @@ export const SPAWN_AHEAD = 240; // how far ahead of the lead hero a wave spawns
 export const RANGE: Record<AttackStyle, number> = {
   melee: 50, // standard melee reach for ALL melee units (heroes, trash, bosses)
   ranged: 160, // ranger / archer hang well back
-  caster: 180, // priest / mage (future) / enemy caster hang back furthest
+  caster: 195, // priest / mage (future) / enemy caster hang back furthest (+15 reach, 2026-06)
 };
 
 // Base movement speed by style (px/s) — deliberate, not a rush; the party out-paces

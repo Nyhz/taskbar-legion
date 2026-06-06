@@ -39,6 +39,7 @@ export function buildSave(): SaveV1 {
     stashSlotUpgrades: s.stashSlotUpgrades,
     techTree: s.techRanks,
     chests: world ? world.chests.map((c) => ({ ...c })) : s.chests,
+    zoneKeys: { ...s.zoneKeys },
     autoOpen: s.autoOpen,
     pets: { ownedKeys: s.ownedPets, selectedKey: s.selectedPet },
     settings: { uiScale: s.uiScale, dockOrientation: s.dockOrientation, autoSalvage: s.autoSalvage },

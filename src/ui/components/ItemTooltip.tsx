@@ -1,4 +1,5 @@
 import type { ItemInstance } from '@/sim/items';
+import { itemPerfectCount } from '@/sim/items';
 import { SLOTS, tryWeaponTypeFor } from '@/data/itemSlots';
 import { classDef } from '@/data/classes';
 import { GEMS, type GemInstance } from '@/data/gems';
@@ -49,6 +50,8 @@ export function ItemTooltip({ item, compareTo, locked, wrongClass, roleDelta, ro
   const delta = (k: StatKey): number => (theirs === undefined ? 0 : (mine.get(k) ?? 0) - (theirs.get(k) ?? 0));
   const irid = ts.iridescent ? 'tl-iridescent' : undefined;
   const baseKeys = new Set(item.baseAffix.map((b) => b.key));
+  const perfectKeys = new Set(item.stats.filter((s) => s.perfect === true).map((s) => s.key));
+  const perfectCount = itemPerfectCount(item);
   // Inherent rows: every non-base stat THIS item has, plus (when comparing) any non-base
   // stat only the EQUIPPED item has — so a swap's losses show as red rows here too.
   const inherentKeys = [...new Set<StatKey>([...mine.keys(), ...(theirs?.keys() ?? [])])].filter((k) => !baseKeys.has(k));
@@ -81,6 +84,11 @@ export function ItemTooltip({ item, compareTo, locked, wrongClass, roleDelta, ro
         className={irid}
       >
         {itemTitle(item)}
+        {perfectCount > 0 && (
+          <span style={{ color: PALETTE.gold, marginLeft: 4, letterSpacing: 1 }} title={`${perfectCount} perfect stat${perfectCount > 1 ? 's' : ''}`}>
+            {'★'.repeat(perfectCount)}
+          </span>
+        )}
       </div>
 
       <div style={{ padding: 6 }}>
@@ -129,7 +137,7 @@ export function ItemTooltip({ item, compareTo, locked, wrongClass, roleDelta, ro
               <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                 <span style={{ width: 14, textAlign: 'center', fontSize: 10 }}>{STAT_ICON[k]}</span>
                 <div style={{ flex: 1 }}>
-                  {v > 0 ? <StatRow statKey={k} value={v} /> : <span style={{ color: PALETTE.textMute }}>{STATS[k].label}</span>}
+                  {v > 0 ? <StatRow statKey={k} value={v} perfect={perfectKeys.has(k)} /> : <span style={{ color: PALETTE.textMute }}>{STATS[k].label}</span>}
                 </div>
                 <DeltaTag k={k} d={delta(k)} />
               </div>

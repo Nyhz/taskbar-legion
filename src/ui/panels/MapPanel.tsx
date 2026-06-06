@@ -27,6 +27,7 @@ function stageLabel(globalStage: number): string {
 
 export function MapPanel(): React.JSX.Element {
   const hud = useStore((s) => s.hud);
+  const zoneKeys = useStore((s) => s.zoneKeys);
   const requestTravel = useStore((s) => s.requestTravel);
   const requestEnterZoneBoss = useStore((s) => s.requestEnterZoneBoss);
 
@@ -73,6 +74,7 @@ export function MapPanel(): React.JSX.Element {
             frontier={frontier}
             maxCleared={hud.maxClearedStage}
             current={hud.globalStage}
+            keysHeld={zoneKeys[(baseWorld + lw) * 10] ?? 0}
             onHover={setHoverStage}
             onTravel={requestTravel}
             onEnterBoss={requestEnterZoneBoss}
@@ -165,13 +167,14 @@ function DifficultyDropdown({
 }
 
 function ZoneRow({
-  world, localWorld, frontier, maxCleared, current, onHover, onTravel, onEnterBoss,
+  world, localWorld, frontier, maxCleared, current, keysHeld, onHover, onTravel, onEnterBoss,
 }: {
   world: number; // GLOBAL world index (drives stage math)
   localWorld: number; // 1..10 within its difficulty (display)
   frontier: number;
   maxCleared: number;
   current: number;
+  keysHeld: number; // world-boss keys held for THIS zone (world+difficulty)
   onHover: (g: number | null) => void;
   onTravel: (g: number) => void;
   onEnterBoss: (world: number) => void;
@@ -182,6 +185,15 @@ function ZoneRow({
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
         <span style={{ color: PALETTE.parchment, fontWeight: 700, fontSize: 10 }}>World {localWorld}</span>
+        {/* World-boss keys for this zone — shown once W-9 is beaten (the boss is reachable). */}
+        {nineBeaten && (
+          <span
+            title={`World-boss keys for ${localWorld}-10 (one spent per attempt, even on a wipe). Earned from this zone's stage-boss chests.`}
+            style={{ fontSize: 10, fontWeight: 700, color: keysHeld > 0 ? PALETTE.gold : PALETTE.textMute }}
+          >
+            🗝 {keysHeld}
+          </span>
+        )}
       </div>
       <div style={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
         {stages.map((s) => {
@@ -191,8 +203,8 @@ function ZoneRow({
           const isBoss = isZoneBossStage(g);
           const isCurrent = g === current;
           // W-1..W-9: travel as before. W-10: not a travel target — entered as the
-          // world-boss fight once W-9 is beaten (re-fightable thereafter; no key).
-          const canEnterBoss = isBoss && nineBeaten;
+          // world-boss fight once W-9 is beaten AND a zone key is held (one spent per attempt).
+          const canEnterBoss = isBoss && nineBeaten && keysHeld > 0;
           const travelable = reached && !isBoss;
           const clickable = travelable || canEnterBoss;
 
@@ -200,9 +212,11 @@ function ZoneRow({
           const border = isCurrent || canEnterBoss ? PALETTE.gold : isBoss ? PALETTE.titleRedHi : reached ? PALETTE.goldDim : PALETTE.ink;
           const fg = isBoss ? (beaten ? PALETTE.gold : PALETTE.titleRedHi) : !reached ? PALETTE.textMute : PALETTE.textLight;
           const title = isBoss
-            ? nineBeaten
-              ? `${localWorld}-10 world boss — enter (a wall; gear up)`
-              : `${localWorld}-10 world boss — beat ${localWorld}-9 first`
+            ? !nineBeaten
+              ? `${localWorld}-10 world boss — beat ${localWorld}-9 first`
+              : keysHeld > 0
+                ? `${localWorld}-10 world boss — enter (spends 1 of ${keysHeld} keys; a wall, gear up)`
+                : `${localWorld}-10 world boss — need a key (farm this zone's stage bosses)`
             : reached ? `Travel to ${localWorld}-${s}` : `${localWorld}-${s} (locked)`;
 
           return (

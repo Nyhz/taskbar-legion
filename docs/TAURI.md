@@ -45,6 +45,31 @@ feel) is verified by launching the `.app`; the Windows `.exe` is verified from C
 **Still to verify at runtime (needs a human at the screen / a Windows box):** transparency edges, click-through
 latency feel, drag feel, and that saves round-trip on Windows (different native paths than macOS — see §0/§6).
 
+## Linux — known issues & fixes (from a v0.2.0 Arch/NVIDIA bug report, 2026-06-06)
+
+A tester on CachyOS (Arch) / KDE Plasma 6 Wayland / NVIDIA proprietary found the Linux build unrunnable
+out of the box. Four independent layers; the first two are fixed in-tree (land in 0.3.0), the third is
+partially mitigated, the fourth is an upstream ecosystem limitation.
+
+- **FIXED — tao panic: `setIgnoreCursorEvents` on a not-yet-shown window.** The window boots `visible:false`,
+  but `startClickThrough()` → `setIgnoreCursorEvents(true)` ran before `win.show()`. On GTK an unrealized
+  window's `GdkWindow` is `None`, and tao `unwrap()`s it → SIGABRT. Fix: `desktopOverlay.ts` now `win.show()`s
+  BEFORE `startClickThrough()` **on Linux only** (`isLinuxWebview()` via UA); macOS/Windows keep the reveal in
+  `finally` to avoid the opaque first-paint flash.
+- **FIXED — native Wayland is unsupported.** GDK aborts with "protocol error 71", and neither `setPosition()`
+  (bottom dock) nor the `cursorPosition()` poll (click-through) work on Wayland. Fix: `src-tauri/src/lib.rs`
+  pins `GDK_BACKEND=x11` (XWayland) at startup on Linux unless the user already set it. XWayland supports both.
+- **PARTIAL — AppImage bundles Ubuntu's webkit2gtk, which aborts (SIGABRT) against non-Ubuntu system libs**
+  (e.g. Arch), so no window maps. Added a **`.deb`** bundle target (links the host WebKit, works on
+  Debian/Ubuntu without bundling). Arch/Fedora users still have no native package — the workaround is
+  `--appimage-extract` + run `usr/bin/app` from OUTSIDE the tree so its RPATH stops resolving the bundled
+  WebKit. A proper raw-binary / AUR path would need CI work + a non-Ubuntu runner to test.
+- **UPSTREAM (not fixable in our code) — NVIDIA proprietary: WebGL canvas vs window transparency are mutually
+  exclusive.** WebKitGTK's DMA-BUF path vs the NVIDIA driver: with transparency on, the Pixi (WebGL) strip
+  never composites or freezes after one frame; disabling the DMA-BUF renderer makes the window opaque. A
+  future **opaque, non-click-through fallback mode** (boot a normal window when transparency+WebGL can't
+  coexist) is the only app-side mitigation — tracked as a possible feature, not yet built.
+
 ---
 
 ## 0. The one hard constraint: you build on macOS, you ship on Windows

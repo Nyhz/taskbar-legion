@@ -196,6 +196,7 @@ export function buildHeroCombatant(config: HeroConfig, combatMods: readonly Stat
     range: classDef(config.classKey).range,
     moveSpeed: 0, // heroes hold formation; only partyX advances them
     abilities: activeHeroAbilities(config.classKey, config.talents, config.activeAbilities, config.autoDefaultAbilities),
+    autoSplash: classDef(config.classKey).autoSplash,
     alive: true,
     ult,
     ultCharge,

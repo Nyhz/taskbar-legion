@@ -288,6 +288,54 @@ export function drawFrenzyGround(g: Graphics, cx: number, cy: number, scale: num
   }
 }
 
+// ── Priest Retribution Aura: a holy ground aura at the priest's feet ──
+// The passive party damage aura (sim/loadout.partyAuraMods) has no ActiveEffect to drive the
+// generic overlay, so it gets its own dedicated, unmistakable read: a warm GOLDEN halo pooled
+// on the ground beneath the priest — a soft pulsing base glow, two slow expanding rings, a ring
+// of radiant spokes, and gentle light motes rising off it. Reads as "blessed / empowered party".
+
+export const HOLY_GOLD = hexToNum('#ffd76a');
+const HOLY_PALE = hexToNum('#fff3c4'); // brighter inner/highlight gold
+
+/** A golden holy aura pooled on the ground at a hero's feet. `cx`/`cy` are the container-local
+ *  feet point; `scale` sizes it to the body; `elapsed` drives the (slow, gentle) animation. */
+export function drawHolyGround(g: Graphics, cx: number, cy: number, scale: number, elapsed: number): void {
+  const FLAT = 0.42; // ground-plane flatten (y radius ÷ x radius)
+  const maxR = 24 * scale;
+  const pulse = 0.6 + 0.4 * Math.sin(elapsed / 280); // slow, calm breathing
+  // base glow — a soft pooled disc
+  g.ellipse(cx, cy, maxR * 0.62, maxR * 0.62 * FLAT).fill({ color: HOLY_GOLD, alpha: 0.13 + 0.07 * pulse });
+  // two expanding rings, staggered so one is always blooming outward
+  for (let i = 0; i < 2; i++) {
+    const t = (elapsed / 1500 + i / 2) % 1;
+    const r = t * maxR;
+    const a = (1 - t) * 0.55;
+    if (a <= 0.02 || r < 0.5) continue;
+    g.ellipse(cx, cy, r, r * FLAT).stroke({ color: HOLY_GOLD, width: 2, alpha: a });
+  }
+  // a ring of radiant spokes slowly turning around the disc — the "sacred" tick read
+  const spokeR = maxR * 0.5;
+  const outer = maxR * 0.74;
+  for (let i = 0; i < 8; i++) {
+    const ang = (i / 8) * Math.PI * 2 + elapsed / 900;
+    const c0 = Math.cos(ang), s0 = Math.sin(ang) * FLAT;
+    g.moveTo(cx + c0 * spokeR, cy + s0 * spokeR)
+      .lineTo(cx + c0 * outer, cy + s0 * outer)
+      .stroke({ color: HOLY_PALE, width: 1.5, alpha: 0.35 + 0.3 * pulse });
+  }
+  // gentle light motes rising off the halo
+  for (let i = 0; i < 5; i++) {
+    const ang = (i / 5) * Math.PI * 2 + elapsed / 600;
+    const br = spokeR;
+    const bx = cx + Math.cos(ang) * br;
+    const by = cy + Math.sin(ang) * br * FLAT;
+    const rise = ((elapsed / 22 + i * 37) % 20) * scale; // drifts upward, then loops
+    const a = (1 - rise / (20 * scale)) * 0.7;
+    if (a <= 0.03) continue;
+    g.circle(bx, by - rise, 1.4 * scale).fill({ color: HOLY_PALE, alpha: a });
+  }
+}
+
 /** Crossed-out heal crosses floating over a tank under Mortal Wound — green "+" plus signs
  *  with a red diagonal slash through each, bobbing and fading, the universal "healing
  *  denied" read. Drawn over the body's upper span (region.topY..cy). */
