@@ -15,6 +15,24 @@ While the project is pre-1.0, minor versions may include breaking save changes.
 
 ### Fixed
 
+## [0.4.0] - 2026-06-06
+
+### Added
+
+- **Loadouts** — each hero now has two saved gear + talent presets (labelled **Farm** and **Boss**) next to the active abilities. Left-click to instantly switch to a setup, right-click to save the current one or clear it. Loading re-equips whatever of the saved gear you still have (in your bags, stash, or already worn) and skips anything you sold, with a rich hover card showing exactly what each preset holds.
+- **Compare items without gems** — hold **Shift** while hovering an item to see its role-impact comparison based on the base items alone, gems set aside.
+
+### Changed
+
+- **Precise item placement** — dragging an item now drops it into the exact slot you release it on (swapping with whatever was there), in both the inventory and the stash, and you can place an item on a later stash page even when earlier pages aren't full.
+- Bigger, easier-to-read combat damage numbers.
+- Taller overlay window so the top of the tallest panels has more breathing room.
+
+### Fixed
+
+- The drop highlight now frames the exact slot an item will land in, instead of overflowing the cell.
+- Moved the world-boss portal's key count above the portal so it no longer overlaps the strip.
+
 ## [0.3.0] - 2026-06-06
 
 ### Added
@@ -72,7 +90,8 @@ While the project is pre-1.0, minor versions may include breaking save changes.
 - Initial desktop builds: Tauri v2 transparent, always-on-top, bottom-docked overlay.
 - Multi-platform release pipeline (macOS universal, Windows, Linux) via GitHub Actions.
 
-[Unreleased]: https://github.com/Nyhz/taskbar-legion/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/Nyhz/taskbar-legion/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/Nyhz/taskbar-legion/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/Nyhz/taskbar-legion/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/Nyhz/taskbar-legion/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Nyhz/taskbar-legion/releases/tag/v0.1.0
