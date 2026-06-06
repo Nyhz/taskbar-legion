@@ -23,9 +23,9 @@ export interface EnemyKind {
 }
 
 export const ENEMY_KINDS: EnemyKind[] = [
-  { key: 'grunt', name: 'Grunt', style: 'melee', range: RANGE.melee, moveSpeed: MOVE_SPEED.melee, hpMult: 1.0, dmgMult: 1.0, magic: false, abilities: [], weight: 5, accent: '#c0473a' },
-  { key: 'brute', name: 'Brute', style: 'melee', range: RANGE.melee, moveSpeed: MOVE_SPEED.melee * 0.8, hpMult: 1.8, dmgMult: 1.25, magic: false, abilities: ['enemy_smash'], weight: 2, accent: '#9a3a30' },
-  { key: 'archer', name: 'Archer', style: 'ranged', range: RANGE.ranged, moveSpeed: MOVE_SPEED.ranged, hpMult: 0.65, dmgMult: 0.95, magic: false, abilities: ['enemy_aimed'], weight: 3, accent: '#b8863a' },
+  { key: 'grunt', name: 'Grunt', style: 'melee', range: RANGE.melee + 5, moveSpeed: MOVE_SPEED.melee, hpMult: 1.0, dmgMult: 1.0, magic: false, abilities: [], weight: 5, accent: '#c0473a' },
+  { key: 'brute', name: 'Brute', style: 'melee', range: RANGE.melee + 5, moveSpeed: MOVE_SPEED.melee * 0.8, hpMult: 1.8, dmgMult: 1.25, magic: false, abilities: ['enemy_smash'], weight: 2, accent: '#9a3a30' },
+  { key: 'archer', name: 'Archer', style: 'ranged', range: RANGE.ranged + 10, moveSpeed: MOVE_SPEED.ranged, hpMult: 0.65, dmgMult: 0.95, magic: false, abilities: ['enemy_aimed'], weight: 3, accent: '#b8863a' },
 ];
 
 // Ranged enemies (archer/caster) are GATED IN over the first worlds: a lone melee

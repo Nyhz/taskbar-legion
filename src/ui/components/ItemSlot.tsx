@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import type { ItemInstance } from '@/sim/items';
+import { hasPerfect } from '@/sim/items';
 import type { RoleScores, RoleKey } from '@/sim/roleScore';
 import type { GemInstance } from '@/data/gems';
 import { GEMS } from '@/data/gems';
@@ -74,6 +75,10 @@ export function ItemSlot({
   const filled = item ?? gem ?? null; // the entry occupying this cell, if any
   const ts = item ? tierStyle(item.tier) : gem ? tierStyle(gem.tier) : null;
   const border = selected ? PALETTE.gold : ts ? ts.color : PALETTE.ink;
+  // A tier-colored glow when the item has at least one perfect stat — readable at a glance
+  // in the inventory / paper-doll grid (composes with the gold "selected" glow).
+  const perfectGlow = item !== null && ts !== null && hasPerfect(item) ? `0 0 7px 1px ${ts.color}` : null;
+  const boxShadow = [selected ? `0 0 6px ${PALETTE.gold}` : null, perfectGlow].filter((g) => g !== null).join(', ') || undefined;
 
   // Pointer-based drag (native HTML5 DnD doesn't work in the Tauri overlay — see dnd.tsx).
   // A press that moves past a small threshold starts the drag, showing a ghost of this cell.
@@ -169,7 +174,7 @@ export function ItemSlot({
         height: size,
         background: PALETTE.bgInset,
         border: `2px solid ${border}`,
-        boxShadow: selected ? `0 0 6px ${PALETTE.gold}` : undefined,
+        boxShadow,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',

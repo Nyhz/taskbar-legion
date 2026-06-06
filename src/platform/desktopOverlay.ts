@@ -33,6 +33,13 @@ const OVERLAY_H = 1040;
 // little further off-screen — that region is transparent margin, so nothing is lost.
 const BOTTOM_DOCK_MARGIN = 80; // logical px gap between the window bottom and the screen bottom
 
+// True when running in the Linux desktop webview (WebKitGTK). Used to work around a tao/GTK
+// crash where setIgnoreCursorEvents() panics on a not-yet-shown window. The WebKitGTK user
+// agent always carries "Linux"; Android (which also does) is never a target for this overlay.
+function isLinuxWebview(): boolean {
+  return typeof navigator !== 'undefined' && /\bLinux\b/i.test(navigator.userAgent) && !/Android/i.test(navigator.userAgent);
+}
+
 let overlayStarted = false;
 let closeHookSet = false;
 let winRef: Window | null = null; // cached so the drag handler can grab it synchronously
@@ -72,6 +79,13 @@ export async function setupTitleWindow(): Promise<void> {
 
     await win.setAlwaysOnTop(true);
     await registerCloseHook(win);
+    // Linux (tao/GTK): setIgnoreCursorEvents() — called inside startClickThrough — panics the
+    // Rust event loop if the window has never been shown (its GdkWindow is still None, and tao
+    // unwraps it: tao event_loop.rs CursorIgnoreEvents). The window boots hidden, so REALIZE it
+    // first on Linux by showing it now. macOS/Windows keep the reveal in `finally` below so the
+    // opaque first paint never flashes; on Linux the page background is already transparent and
+    // the window is positioned, so showing here is flash-free.
+    if (isLinuxWebview()) await win.show().catch(() => {});
     await startClickThrough(win);
   } finally {
     // The window boots HIDDEN (tauri.conf `visible:false`) so the user never sees the opaque

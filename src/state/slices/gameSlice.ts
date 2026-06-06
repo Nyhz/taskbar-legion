@@ -17,6 +17,7 @@ export interface HudSnapshot {
   chests: Record<ChestType, number>;
   clockMs: number; // current sim time (world.tick * TICK_MS) — drives the auto-open countdown
   party: { classKey: string; level: number }[]; // one entry per fielded hero
+  zoneKeysHeld: number; // world-boss keys valid for the CURRENT zone (world+difficulty)
 }
 
 export const EMPTY_HUD: HudSnapshot = {
@@ -30,6 +31,7 @@ export const EMPTY_HUD: HudSnapshot = {
   chests: { normal: 0, stageBoss: 0, zoneBoss: 0 },
   clockMs: 0,
   party: [],
+  zoneKeysHeld: 0,
 };
 
 export interface GameSlice {
@@ -46,6 +48,12 @@ export interface GameSlice {
   pendingEnterZoneWorld: number | null;
   requestEnterZoneBoss: (world: number) => void;
   clearPendingEnterZoneBoss: () => void;
+  /** Auto-open (tech) is DUE: the engine sets this when its interval elapses + the bag has
+   *  room; the UI consumes it to reveal every chest with staggered toasts (like a manual
+   *  click), then clears it. Decouples the engine's timing from the UI's reveal. */
+  autoOpenPending: boolean;
+  requestAutoOpen: () => void;
+  clearAutoOpen: () => void;
 }
 
 export const createGameSlice: StateCreator<GameSlice, [], [], GameSlice> = (set) => ({
@@ -57,4 +65,7 @@ export const createGameSlice: StateCreator<GameSlice, [], [], GameSlice> = (set)
   pendingEnterZoneWorld: null,
   requestEnterZoneBoss: (world) => set({ pendingEnterZoneWorld: world }),
   clearPendingEnterZoneBoss: () => set({ pendingEnterZoneWorld: null }),
+  autoOpenPending: false,
+  requestAutoOpen: () => set({ autoOpenPending: true }),
+  clearAutoOpen: () => set({ autoOpenPending: false }),
 });

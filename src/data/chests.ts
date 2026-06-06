@@ -32,13 +32,21 @@ export const CHEST_CONFIG: ChestDropConfig = {
   baseDropChance: { normal: 0.015, stageBoss: 0.25, zoneBoss: 1.0 },
   capacity: { normal: 6, stageBoss: 4, zoneBoss: 4 },
   itemsPerChest: { normal: 1, stageBoss: 1, zoneBoss: 1 }, // every chest = exactly 1 item
-  // Gem chance per chest opened. The ONLY thing that differs between chest TYPES (the item
-  // tier table is identical across them — docs/DIFFICULTY.md §4): stage-boss chest = ×2 the
-  // normal gem chance, world-boss chest = ×4. (Phase 3 may retune the base 0.05.)
-  gemChance: { normal: 0.05, stageBoss: 0.10, zoneBoss: 0.20 },
+  // Gem chance per chest opened (× gemDropMult tech, capped at 1.0). The ONLY thing that
+  // differs between chest TYPES (the item tier table is identical across them —
+  // docs/DIFFICULTY.md §4): normal chests stay the rare trickle (7.5%) while boss chests are a
+  // reliable gem source — stage-boss chest = 50%, world-boss chest = 100% (always a bonus gem).
+  gemChance: { normal: 0.1, stageBoss: 0.5, zoneBoss: 1.0 },
 };
 
 export const CHEST_TYPES: ChestType[] = ['normal', 'stageBoss', 'zoneBoss'];
+
+// Challenge-key drop: each STAGE-BOSS chest opened has this chance to also yield one world-boss
+// key for its zone (world+difficulty). Keys gate entering the X-10 world boss (one consumed per
+// attempt, even on a wipe) — so re-farming an easy zone's guaranteed-gem world boss costs a lap
+// of its slow stage farming, instead of free X-10 spam. ~1 key per first zone clear (9 stage
+// bosses × 0.25 chest/kill × 0.5); abundant while wall-farming. Tune here if players hoard keys.
+export const STAGE_KEY_DROP_CHANCE = 0.5;
 
 /** Auto-open interval: 15-min base, shaved 45s per rank by the `auto_open` tech (12 ranks)
  *  down to the 6-min floor (15m − 12×45s). */

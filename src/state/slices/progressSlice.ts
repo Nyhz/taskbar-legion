@@ -2,6 +2,7 @@ import type { StateCreator } from 'zustand';
 import type { GameStore } from '../store';
 import { techNode, nodeCost, migrateTechRanks } from '@/data/techTree';
 import { resumeStageFor } from '@/data/stageScaling';
+import { worldBossStageOf } from '@/data/difficulties';
 import { dedupeIds, maxMintedId, DEFAULT_AUTO_SALVAGE } from './inventorySlice';
 import { classDef, CLASSES } from '@/data/classes';
 import { SLOTS, type SlotKey } from '@/data/itemSlots';
@@ -11,9 +12,10 @@ import type { ItemInstance, InvEntry } from '@/sim/items';
 import { heroAbilities } from '@/sim/loadout';
 import type { SaveV1 } from '@/persistence/saveSchema';
 
-// Account-wide progression: gold (the main currency), zone keys (mirrored from the
-// sim), tech ranks (gold-bought), unlocked classes. `configEpoch` bumps whenever
-// something that affects combat changes, so the engine knows to rebuild heroes.
+// Account-wide progression: gold (the main currency), zone keys (world-boss challenge
+// keys, earned from stage-boss chests, consumed entering an X-10), tech ranks (gold-bought),
+// unlocked classes. `configEpoch` bumps whenever something that affects combat changes, so
+// the engine knows to rebuild heroes.
 
 // Keep only post-overhaul gear/gems on load — an older generatorVersion is a clean WIPE
 // (the gear overhaul changed item shape: array base affix, class weapons, new slots).
@@ -43,12 +45,22 @@ export interface ProgressSlice {
   maxClearedStage: number; // highest stage whose boss was beaten (fallback for save when no engine)
   lootRngState: number; // DEPRECATED pre-counter loot cursor (kept for save back-compat, unused)
   lootDrawCount: number; // fallback chest-open counter for the save when the engine isn't up
+  // World-boss challenge keys, keyed by the zone's X-10 global stage (worldBossStageOf). Earned
+  // from stage-boss chests; one is consumed to enter that world boss (even on a wipe). Persisted;
+  // never occupies inventory.
+  zoneKeys: Record<number, number>;
 
   addGold: (n: number) => void;
   bumpConfig: () => void;
   canBuyTech: (key: string) => boolean;
   buyTech: (key: string) => boolean;
   unlockClass: (key: string) => boolean;
+  // Add a batch of earned keys (bossStage → count), as returned by opening chests.
+  addZoneKeys: (earned: Record<number, number>) => void;
+  // Spend one key for the given world-boss stage; false (no spend) if none held.
+  consumeZoneKey: (bossStage: number) => boolean;
+  // Keys valid for the zone CONTAINING `globalStage` (its world+difficulty).
+  zoneKeysFor: (globalStage: number) => number;
   hydrate: (save: SaveV1) => void;
 }
 
@@ -78,9 +90,25 @@ export const createProgressSlice: StateCreator<GameStore, [], [], ProgressSlice>
   maxClearedStage: 0,
   lootRngState: 0,
   lootDrawCount: 0,
+  zoneKeys: {},
 
   addGold: (n) => set((s) => ({ gold: s.gold + n })),
   bumpConfig: () => set((s) => ({ configEpoch: s.configEpoch + 1 })),
+
+  addZoneKeys: (earned) =>
+    set((s) => {
+      const keys = Object.keys(earned).length === 0 ? s.zoneKeys : { ...s.zoneKeys };
+      for (const [stage, count] of Object.entries(earned)) keys[Number(stage)] = (keys[Number(stage)] ?? 0) + count;
+      return { zoneKeys: keys };
+    }),
+
+  consumeZoneKey: (bossStage) => {
+    if ((get().zoneKeys[bossStage] ?? 0) <= 0) return false;
+    set((s) => ({ zoneKeys: { ...s.zoneKeys, [bossStage]: (s.zoneKeys[bossStage] ?? 0) - 1 } }));
+    return true;
+  },
+
+  zoneKeysFor: (globalStage) => get().zoneKeys[worldBossStageOf(globalStage)] ?? 0,
 
   canBuyTech: (key) => {
     const s = get();
@@ -125,6 +153,7 @@ export const createProgressSlice: StateCreator<GameStore, [], [], ProgressSlice>
       seed: save.seed,
       lootRngState: save.lootRngState ?? 0, // DEPRECATED, retained for back-compat
       lootDrawCount: save.lootDrawCount ?? 0, // resume the chest-open counter (old saves: 0)
+      zoneKeys: save.zoneKeys ?? {}, // world-boss keys (old saves: none — earned by farming)
       // Resume the id minter ABOVE any id already in the save (guards a missing/stale counter;
       // legacy `i*`/`g*` ids are ignored — they never collide with the minted `e*` namespace).
       nextEntryId: Math.max(

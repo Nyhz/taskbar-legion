@@ -117,7 +117,7 @@ baseDropChance: { normal: 0.02, stageBoss: 0.25, zoneBoss: 1.00 }   // per relev
 capacity:       { normal: 6,    stageBoss: 4,    zoneBoss: 4 }
 itemsPerChest:  { normal: 1,    stageBoss: 2,    zoneBoss: 3 }
 zoneKeyChance:  { normal: 0.02, stageBoss: 0.06, zoneBoss: 0.25 }   // per chest opened
-gemChance:      { normal: 0.05, stageBoss: 0.12, zoneBoss: 0.25 }   // per chest opened → a tiered gem (rollTier)
+gemChance:      { normal: 0.075, stageBoss: 0.50, zoneBoss: 1.00 }  // per chest opened → a tiered gem (rollTier) × gemDropMult tech (cap 1.0); boss chests are a reliable source
 ```
 
 Full type → stops accruing. Auto-open base interval 600000 ms (10 min), reducible by tech (floor 60 s).
@@ -232,7 +232,7 @@ Nodes are grouped into four presentation **categories** (Combat / Economy / Ches
 | eco_gold / eco_xp | Economy | +8% gold / XP per kill | 60 | 1.3 | ∞ |
 | eco_offline | Economy | +10% offline yield | 250 | 1.45 | ∞ |
 | chest_drop_normal/stage/zone | Chests | +10/5/5% per-type drop | 90/110/140 | 1.35–1.4 | ∞ |
-| chest_gem / chest_key | Chests | +5% gem / +5% key | 150 | 1.5 | ∞ |
+| chest_gem | Chests | +2.5% gem drop chance (× base, capped 1.0) | 400 | 1.5 | ∞ |
 | store_normal/stage/zone | Chests | +1 storage (per type) | 250/300/350 | 1.7 | ∞ |
 | auto_open | Utility | unlock + −45s interval / rank | 500 | 1.6 | 12 (floor) |
 | party_size | Utility | +1 active party slot | 1000 | 2.5 | 2 |
@@ -260,7 +260,8 @@ Players start with **20 slots, 1 page**. Two gold purchases, both escalating, ex
 - **Capacity = `inventoryPages × (20 + inventorySlotUpgrades)`**, max `5 × 40 = 200`.
 
 ```
-slotCost(k)  = round( 100  * 1.5^k  )   // k = the (k+1)-th slot upgrade, 0..19;  k19 ≈ 332K, Σ ≈ 1.0M gold
+slotCost(k)  = round( 150  * 1.25^k )   // k = the (k+1)-th slot upgrade, 0..59 (cap +60 → 80 total);
+                                         // relaxed 2026-06 from 1.6× → 1.25× for QoL: k20≈8.3K, k40≈4.5M, Σ ≈ 391M gold (full cap reachable late-game)
 pageCost(p)  = round( 5000 * 8^(p-2) )  // p = page being unlocked, 2..5; p2=5K, p3=40K, p4=320K, p5=2.56M
 ```
 

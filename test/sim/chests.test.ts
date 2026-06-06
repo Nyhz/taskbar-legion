@@ -1,8 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { openChest, openAll, tryAccrueChest } from '@/sim/chests';
+import { rollTier } from '@/sim/loot';
 import { getBonuses } from '@/sim/bonuses';
 import { createWorld } from '@/sim/Simulation';
 import { makeRng } from '@/sim/rng';
+import { worldBossStageOf } from '@/data/difficulties';
 import { godHero } from './_helpers';
 
 const bonuses = getBonuses({}, []);
@@ -31,6 +33,53 @@ describe('chests', () => {
     const zone = meanTier('zoneBoss', 60, 1500);
     expect(Math.abs(stage - normal)).toBeLessThan(0.05);
     expect(Math.abs(zone - normal)).toBeLessThan(0.05);
+  });
+
+  it('gem tier distribution matches the ITEM tier table per difficulty (T0 folds into T1)', () => {
+    // A gem's tier rolls off the SAME per-difficulty tierWeights as gear. Gems can't be T0
+    // (GemTier 1–8), so the item table's T0 share folds into T1; every tier T≥2 must match the
+    // item rate. Histogram many gems vs many gear pieces at a Hell stage (155 = Hell 6-5).
+    const S = 155;
+    const N = 60000;
+    const gemH = Array(9).fill(0) as number[];
+    const itemH = Array(9).fill(0) as number[];
+    const rng = makeRng(31);
+    for (let i = 0; i < N; i++) {
+      const g = Math.max(1, rollTier(S, rng, 0)); // gem: full table, T0→T1
+      gemH[g] = (gemH[g] ?? 0) + 1;
+      const it = rollTier(S, rng, 0); // a standard (armor/weapon) item: full table
+      itemH[it] = (itemH[it] ?? 0) + 1;
+    }
+    expect(gemH[0]).toBe(0); // never a T0 gem
+    // T≥2 rates match within sampling noise; T1 (gem) ≈ item T0 + T1 (the fold).
+    for (let t = 2; t <= 5; t++) {
+      expect(Math.abs((gemH[t] ?? 0) - (itemH[t] ?? 0)) / N).toBeLessThan(0.01);
+    }
+    expect(Math.abs((gemH[1] ?? 0) - ((itemH[0] ?? 0) + (itemH[1] ?? 0))) / N).toBeLessThan(0.01);
+  });
+
+  it('world-boss keys drop ONLY from stage-boss chests, credited to the zone (~50%)', () => {
+    const S = 135; // Hell 4-5 → its zone's world boss is Hell 4-10 (global 140)
+    const bossStage = worldBossStageOf(S);
+    expect(bossStage).toBe(140);
+
+    const keyRate = (type: 'normal' | 'stageBoss' | 'zoneBoss'): number => {
+      const rng = makeRng(99);
+      let keys = 0;
+      for (let i = 0; i < 4000; i++) keys += openChest(type, S, rng, bonuses).keys[bossStage] ?? 0;
+      return keys / 4000;
+    };
+    expect(keyRate('normal')).toBe(0); // only stage-boss chests carry keys
+    expect(keyRate('zoneBoss')).toBe(0);
+    expect(keyRate('stageBoss')).toBeGreaterThan(0.45); // ~0.5 (STAGE_KEY_DROP_CHANCE)
+    expect(keyRate('stageBoss')).toBeLessThan(0.55);
+
+    // The key is credited to the world-boss of the chest's OWN zone, never another.
+    const rng = makeRng(7);
+    for (let i = 0; i < 50; i++) {
+      const keys = openChest('stageBoss', S, rng, bonuses).keys;
+      for (const k of Object.keys(keys)) expect(Number(k)).toBe(bossStage);
+    }
   });
 
   it('per-type storage caps stop accrual (no overflow)', () => {

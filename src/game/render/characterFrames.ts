@@ -27,7 +27,8 @@ import priestHeal from '@/assets/characters/priest/actions/priest-heal.png';
 import priestHurt from '@/assets/characters/priest/actions/priest-hurt.png';
 import priestDeath from '@/assets/characters/priest/actions/priest-death.png';
 import priestAtkFx from '@/assets/characters/priest/effects/priest-attack-effect.png';
-import priestHealFx from '@/assets/characters/priest/effects/priest-heal-effect.png';
+import priestMendFx from '@/assets/characters/priest/effects/priest-mend-effect.png';
+import priestEnrageFx from '@/assets/characters/priest/effects/priest-battle-enrage.png';
 // Reused for Explosive Arrow's detonation (the Mage class is gone, but its fireball sheet
 // remains): a 7-frame 100px strip — last frames are the orange burst + pale flash.
 import fireballFx from '@/assets/characters/mage/projectiles/mage-attack02-effect.png';
@@ -113,7 +114,9 @@ const SHEETS: Record<string, SheetSpec> = {
     attacks: [rangerAttack1, rangerAttack2],
     hurt: rangerHurt,
     death: rangerDeath,
-    config: { ...COMMON, bodyCx: 51, scale: 3.05, fps: { idle: 7, walk: 12, attack: 19, block: 14, hurt: 12, death: 9, heal: 12 } },
+    // attacks[0] (attack01) is the basic auto-attack draw; attacks[1] (attack02) is reserved
+    // for ATTACK ability casts (Aimed Shot, Explosive Arrow) — swing(special) selects it.
+    config: { ...COMMON, bodyCx: 51, scale: 3.05, abilityAttackIndex: 1, fps: { idle: 7, walk: 12, attack: 19, block: 14, hurt: 12, death: 9, heal: 12 } },
   },
   priest: {
     idle: priestIdle,
@@ -130,8 +133,15 @@ const SHEETS: Record<string, SheetSpec> = {
 const cache = new Map<string, CharFrames>();
 let arrowTex: Texture | null = null;
 let healFxTex: Texture[] | null = null;
+let enrageFxTex: Texture[] | null = null;
 let fireballTex: Texture[] | null = null;
 let loading: Promise<void> | null = null;
+
+// The Battle Enrage + Mend sheets are 5×3 grids of 128px frames with a few empty trailing
+// cells, so we slice exactly the populated ones.
+const GRID_FRAME = 128;
+const ENRAGE_FRAME_COUNT = 12;
+const MEND_FRAME_COUNT = 11;
 
 // Slice a horizontal sheet into one Texture per frame. Frame count is derived from the
 // texture width so the data drives it.
@@ -141,6 +151,20 @@ function slice(base: Texture, frameSize: number): Texture[] {
   const out: Texture[] = [];
   for (let i = 0; i < count; i++) {
     out.push(new Texture({ source: base.source, frame: new Rectangle(i * frameSize, 0, frameSize, frameSize) }));
+  }
+  return out;
+}
+
+/** Slice a multi-row GRID sheet into the first `count` frames, read left-to-right then
+ *  top-to-bottom (skips empty trailing cells the caller knows about). */
+function sliceGrid(base: Texture, frameSize: number, count: number): Texture[] {
+  base.source.scaleMode = 'nearest';
+  const cols = Math.max(1, Math.floor(base.width / frameSize));
+  const out: Texture[] = [];
+  for (let i = 0; i < count; i++) {
+    const fx = (i % cols) * frameSize;
+    const fy = Math.floor(i / cols) * frameSize;
+    out.push(new Texture({ source: base.source, frame: new Rectangle(fx, fy, frameSize, frameSize) }));
   }
   return out;
 }
@@ -158,7 +182,9 @@ export async function loadCharacterTextures(): Promise<void> {
     const arrow = await Assets.load<Texture>(arrowUrl);
     arrow.source.scaleMode = 'nearest';
     arrowTex = arrow;
-    healFxTex = slice(await Assets.load<Texture>(priestHealFx), COMMON.frameSize);
+    // The Priest's on-ally heal effect now uses the bigger Mend sheet (5×3 grid of 128px).
+    healFxTex = sliceGrid(await Assets.load<Texture>(priestMendFx), GRID_FRAME, MEND_FRAME_COUNT);
+    enrageFxTex = sliceGrid(await Assets.load<Texture>(priestEnrageFx), GRID_FRAME, ENRAGE_FRAME_COUNT);
     const fb = await Assets.load<Texture>(fireballFx);
     fb.source.scaleMode = 'nearest';
     fireballTex = slice(fb, COMMON.frameSize);
@@ -202,9 +228,14 @@ export function getArrowTexture(): Texture | null {
   return arrowTex;
 }
 
-/** The shared heal-sparkle effect frames (shown on any ally a Priest heals). */
+/** The on-ally heal effect frames — the Mend sheet, shown on any ally a Priest heals. */
 export function getHealEffectFrames(): Texture[] | null {
   return healFxTex;
+}
+
+/** The Battle Enrage swirl frames (looped over every ally while the Priest ult buff is up). */
+export function getBattleEnrageFrames(): Texture[] | null {
+  return enrageFxTex;
 }
 
 /** The 7-frame fireball/blast strip (reused for Explosive Arrow's detonation). */

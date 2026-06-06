@@ -8,6 +8,7 @@ import { applyEffect, effectStatMods, absorbDamage, isSilenced, isInvulnerable, 
 import { STATS } from '@/data/stats';
 import { classDef } from '@/data/classes';
 import { mitigation, MAX_DAMAGE_REDUCTION } from '@/data/stageScaling';
+import { healPowerEffectiveness } from '@/data/difficulties';
 import { format } from './num';
 
 // Cooldown tracking + AI cast logic. Abilities apply declarative effects; power
@@ -56,7 +57,7 @@ export function normalAttackDamage(caster: Combatant, cs: EffectiveStats): numbe
  *  Damage/DoT are a multiple of the caster's normal attack (DoT = TOTAL over its
  *  duration, divided into per-second in applyToTarget). Heal/HoT/Shield are a
  *  fraction of the target's max HP (HoT = TOTAL over its duration). */
-function effectMagnitude(ability: AbilityDef, def: EffectDef, rank: number, cs: EffectiveStats, target: Combatant, caster: Combatant, perRankOverride?: number, coeffOverride?: number): number {
+function effectMagnitude(ability: AbilityDef, def: EffectDef, rank: number, cs: EffectiveStats, target: Combatant, caster: Combatant, perRankOverride?: number, coeffOverride?: number, healEff = 1): number {
   const steps = Math.max(0, rank - 1);
   const t = def.kind.type;
   if (t === 'damage' || t === 'dot') {
@@ -69,7 +70,9 @@ function effectMagnitude(ability: AbilityDef, def: EffectDef, rank: number, cs: 
     const p = ability.power;
     if (p === undefined) return 0;
     const coeff = p.coeff + (p.coeffPerRank ?? 0) * steps;
-    return coeff * target.maxHp * (1 + cs.healPower / 100);
+    // healPower's benefit is scaled by the difficulty's heal-power effectiveness (the zone
+    // debuff) — the base coeff floor is untouched, only the healPower amplification diminishes.
+    return coeff * target.maxHp * (1 + (cs.healPower * healEff) / 100);
   }
   // statMod / weaken / healReduction / silence / root / tag: base value + per-rank. A
   // per-effect `valuePerRank` (perRankOverride) wins over the ability-wide rankScaling.
@@ -229,7 +232,9 @@ function applyToTarget(
 ): void {
   const kind = def.kind.type;
   const duration = effectDuration(ability, def, rank, durationOverride);
-  let value = effectMagnitude(ability, def, rank, cs, target, caster, perRankOverride, coeffOverride);
+  // The zone heal-power debuff applies to healPower-scaled effects (heal/hot/shield).
+  const healEff = healPowerEffectiveness(S);
+  let value = effectMagnitude(ability, def, rank, cs, target, caster, perRankOverride, coeffOverride, healEff);
   // DoT/HoT coeffs are TOTALS over the effect's duration; store as per-second
   // (what dotDps/hotHps sum each tick).
   if (kind === 'dot' || kind === 'hot') value /= Math.max(0.001, duration / 1000);
@@ -445,19 +450,19 @@ export function abilityAuraLine(ability: AbilityDef, rank: number): string | nul
 
 /** Human-readable line per applied effect, with magnitudes resolved at the given
  *  rank + stats. `refMaxHp` stands in for the target's max HP (heal/shield basis). */
-export function abilityEffectLines(ability: AbilityDef, rank: number, cs: EffectiveStats, refMaxHp: number): string[] {
+export function abilityEffectLines(ability: AbilityDef, rank: number, cs: EffectiveStats, refMaxHp: number, healEff = 1): string[] {
   const r = Math.max(1, rank);
   const refTarget = { maxHp: refMaxHp } as Combatant;
   const refCaster = { side: 'hero' } as Combatant;
   // Heal/HoT/Shield scale with the TARGET's max HP (× heal power), so a flat number is
   // meaningless in a tooltip — the target varies and isn't the caster. Show the % of max
-  // HP it actually grants (heal-power-amplified, matching the combat formula), labelled by
-  // whose HP it's a fraction of.
+  // HP it actually grants (heal-power-amplified AND zone-debuffed via healEff, matching the
+  // combat formula), labelled by whose HP it's a fraction of.
   const healPctOfMaxHp = (): number => {
     const p = ability.power;
     if (p === undefined) return 0;
     const coeff = p.coeff + (p.coeffPerRank ?? 0) * Math.max(0, r - 1);
-    return coeff * (1 + cs.healPower / 100) * 100;
+    return coeff * (1 + (cs.healPower * healEff) / 100) * 100;
   };
   const pf = (x: number): string => `${+x.toFixed(1)}%`;
   const hpBasis =

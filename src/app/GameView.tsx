@@ -9,6 +9,7 @@ import { PanelLayer } from './PanelLayer';
 import { StripHud } from '@/ui/hud/StripHud';
 import { StripOverlay } from '@/ui/overlay/StripOverlay';
 import { LootToasts } from '@/ui/overlay/LootToasts';
+import { revealAllChests } from '@/ui/loot/revealLoot';
 import { OfflineSummaryModal } from '@/ui/components/OfflineSummaryModal';
 import { isTauri } from '@/platform/tauri';
 import { startOverlayDrag } from '@/platform/desktopOverlay';
@@ -47,6 +48,7 @@ export function GameView({ bootSave, onReady }: { bootSave: SaveV1 | null; onRea
   // the canvas; gameScale drives the DOM HUD/overlay zoom (authored at the baseline size).
   const gameScale = useStore((s) => s.gameScale);
   const stripScale = uiScale * gameScale;
+  const autoOpenPending = useStore((s) => s.autoOpenPending);
   const [offline, setOffline] = useState<OfflineSummary | null>(null);
   const tauri = isTauri();
 
@@ -102,6 +104,14 @@ export function GameView({ bootSave, onReady }: { bootSave: SaveV1 | null; onRea
   useEffect(() => {
     gameRef.current?.applyScale(uiScale);
   }, [uiScale]);
+
+  // Auto-open: when the engine signals its interval is due (autoOpenPending), reveal every
+  // chest with the same staggered floating toasts as a manual click — never a silent dump.
+  useEffect(() => {
+    if (!autoOpenPending) return;
+    revealAllChests();
+    useStore.getState().clearAutoOpen();
+  }, [autoOpenPending]);
 
   // Drag the whole window around the desktop by the strip. Past the threshold we hand the
   // gesture to the OS (startDragging) so the window itself travels — freely across monitors,

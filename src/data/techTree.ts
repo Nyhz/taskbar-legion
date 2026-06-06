@@ -76,7 +76,7 @@ export const TECH_NODES: TechNode[] = [
   node('chest_drop_normal', 'Chests', '📦', 'Common Hauls', '+0.25% normal chest drop', [{ kind: 'chestTypeDropMult', type: 'normal', value: 0.0025 }], 250, 1.35),
   node('chest_drop_stage', 'Chests', '🎁', 'Boss Spoils', '+0.5% stage-boss chest drop', [{ kind: 'chestTypeDropMult', type: 'stageBoss', value: 0.005 }], 300, 1.35),
   // (no zone-boss chest node — zone bosses already drop a chest 100% of the time)
-  node('chest_gem', 'Chests', '💎', 'Gem Sense', '+1% gem drop chance', [{ kind: 'gemDropMult', value: 0.01 }], 400, 1.5),
+  node('chest_gem', 'Chests', '💎', 'Gem Sense', '+2.5% gem drop chance', [{ kind: 'gemDropMult', value: 0.025 }], 400, 1.5),
   // Storage nodes are now FINITE (base capacity + max ranks): normal 6+6=12, stage 4+4=8,
   // zone 4+4=8. Costs ramp hard so filling the cap is a real long-game gold sink.
   node('store_normal', 'Chests', '🗄', 'Stockpile', '+1 normal chest storage', [{ kind: 'chestStorage', type: 'normal', value: 1 }], 1200, 2.0, 6),

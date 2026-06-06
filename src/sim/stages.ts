@@ -148,7 +148,7 @@ export function spawnStageBoss(world: WorldState, rng: Rng): void {
       hpAbsolute: stageBossHp(S),
       dmgMult: BOSS_DMG_MULT,
       magic: rng.chance(0.4),
-      range: RANGE.melee + 15, // bigger sprite → stop further from the tank so it doesn't overlap it
+      range: RANGE.melee + 30, // bigger sprite → stop further from the tank so it doesn't overlap it (+15 reach)
       moveSpeed: MOVE_SPEED.melee,
       abilities: [],
       isBoss: true,
@@ -169,7 +169,7 @@ export function spawnZoneBoss(world: WorldState, rng: Rng): void {
       hpAbsolute: zoneBossHp(S),
       dmgMult: ZONE_BOSS_DMG_MULT,
       magic: rng.chance(0.4),
-      range: RANGE.melee + 30, // towering sprite → stop well clear of the tank
+      range: RANGE.melee + 60, // towering sprite → stop well clear of the tank (+30 reach)
       moveSpeed: MOVE_SPEED.melee,
       // World-boss special abilities by difficulty (DIFFICULTY.md §5): none on Normal/Hell,
       // Frenzy from Inferno, + Mortal Wound at Torment. Empty = a pure stat wall.

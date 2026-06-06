@@ -6,7 +6,8 @@ import { generateItem, rollTier } from './loot';
 import type { GemInstance, GemTier } from '@/data/gems';
 import { generateGem } from './gems';
 import type { ChestStack, ChestType } from '@/data/chests';
-import { CHEST_CONFIG, AUTO_OPEN_BASE_INTERVAL_MS, AUTO_OPEN_FLOOR_MS, chestCountOf } from '@/data/chests';
+import { CHEST_CONFIG, AUTO_OPEN_BASE_INTERVAL_MS, AUTO_OPEN_FLOOR_MS, STAGE_KEY_DROP_CHANCE, chestCountOf } from '@/data/chests';
+import { worldBossStageOf } from '@/data/difficulties';
 import { GENERATOR_VERSION } from '@/data/lootTables';
 import type { Bonuses } from './bonuses';
 
@@ -18,6 +19,7 @@ import type { Bonuses } from './bonuses';
 export interface ChestOpenResult {
   items: ItemInstance[];
   gems: GemInstance[];
+  keys: Record<number, number>; // worldBossStage → challenge keys earned (stage-boss chests only)
 }
 
 // Counter-based loot derivation: instead of carrying an opaque PRNG cursor across saves,
@@ -101,6 +103,7 @@ export function openChest(
 ): ChestOpenResult {
   const items: ItemInstance[] = [];
   const gems: GemInstance[] = [];
+  const keys: Record<number, number> = {};
   // Gear: every chest yields its item(s).
   for (let i = 0; i < CHEST_CONFIG.itemsPerChest[type]; i++) {
     items.push(
@@ -113,16 +116,24 @@ export function openChest(
   // Gem: an independent EXTRA roll on top of the gear — its own chance, never displacing
   // the gear piece. Higher for boss/zone chests so they feel more rewarding.
   if (rng.chance(Math.min(1, CHEST_CONFIG.gemChance[type] * bonuses.gemDropMult))) {
-    const tier = rollTier(S, rng, 1) as GemTier; // T1–T8 (capped by difficulty), no T0 gem
+    // Gem tier uses the SAME per-difficulty tier distribution as ITEMS (full tierWeights,
+    // minTier 0), so e.g. a Hell T5 drops at the same % for gems as for gear. Gems have no T0
+    // (GemTier is 1–8), so a T0 roll folds up to T1 — its floor — leaving every T≥1 % identical.
+    const tier = Math.max(1, rollTier(S, rng, 0)) as GemTier;
     gems.push(generateGem({ rollSeed: seedFrom(rng), stageIndex: S, generatorVersion: GENERATOR_VERSION }, tier));
   }
+  // Challenge key: STAGE-BOSS chests only. Rolled AFTER the gem so the gear+gem stream is
+  // unchanged. Credits the world boss of this chest's zone (worldBossStageOf its dropStage S).
+  if (type === 'stageBoss' && rng.chance(STAGE_KEY_DROP_CHANCE)) {
+    keys[worldBossStageOf(S)] = (keys[worldBossStageOf(S)] ?? 0) + 1;
+  }
 
-  return { items, gems };
+  return { items, gems, keys };
 }
 
 // Empty open
 function emptyResult(): ChestOpenResult {
-  return { items: [], gems: [] };
+  return { items: [], gems: [], keys: {} };
 }
 
 /** Open one stack: roll each chest at its OWN dropStage (loot tier), each from its own
@@ -140,6 +151,9 @@ function openStack(
     const r = openChest(stack.type, stack.dropStage, nextChestRng(draw), bonuses, allowedClasses);
     merged.items.push(...r.items);
     merged.gems.push(...r.gems);
+    for (const [bossStage, count] of Object.entries(r.keys)) {
+      merged.keys[Number(bossStage)] = (merged.keys[Number(bossStage)] ?? 0) + count;
+    }
   }
 }
 

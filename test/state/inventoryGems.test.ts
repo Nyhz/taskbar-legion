@@ -61,6 +61,57 @@ describe('unified gem inventory', () => {
     expect(equipped?.bound).toBe(false); // no trading/bound gear in this game
   });
 
+  it('auto-salvage melts a marked-tier item but never the gem from the same chest', () => {
+    const item = composeItem('helmet', 4, itemOrigin(11, 20), makeRng(11)); // T4 item
+    const gem = generateGem({ rollSeed: 13, stageIndex: 20, generatorVersion: 1 }, 4); // T4 gem (same marked tier)
+    useStore.setState({
+      inventory: [], stash: [], roster: [hero()], selectedHeroId: 'h0', gold: 0,
+      autoSalvage: { enabled: true, tiers: Array(9).fill(false).map((_, t) => t === 4) as boolean[] },
+    });
+
+    useStore.getState().addLoot([item], [gem]);
+    const st = useStore.getState();
+    const inv = entries(st.inventory);
+    expect(inv).toHaveLength(1); // only the gem remains — the item was salvaged
+    expect(inv.filter(isGem)).toHaveLength(1); // the gem survived despite its tier being marked
+    expect(inv.filter(isItem)).toHaveLength(0); // the marked-tier item was melted
+    expect(st.gold).toBeGreaterThan(0); // item value went to gold; gem value did NOT
+  });
+
+  it('a gem carrying a stray `slot: undefined` key is still NOT auto-salvaged (hardening)', () => {
+    // The single theoretical hole: `isItem` once tested only `'slot' in e`, so a gem with a
+    // `slot: undefined` key would have read as gear and been melted. isItem now tests the VALUE.
+    const realGem = generateGem({ rollSeed: 21, stageIndex: 20, generatorVersion: 1 }, 4);
+    const stray = { ...realGem, slot: undefined } as unknown as Parameters<ReturnType<typeof useStore.getState>['addItem']>[0];
+    expect(isGem(stray)).toBe(true); // classified as a gem despite the stray key
+    expect(isItem(stray)).toBe(false);
+    useStore.setState({
+      inventory: [], stash: [], roster: [hero()], selectedHeroId: 'h0', gold: 0,
+      autoSalvage: { enabled: true, tiers: Array(9).fill(false).map((_, t) => t === 4) as boolean[] },
+    });
+    useStore.getState().addItem(stray);
+    const st = useStore.getState();
+    expect(entries(st.inventory).filter(isGem)).toHaveLength(1); // bagged, not melted
+    expect(st.gold).toBe(0); // never turned into gold
+  });
+
+  it('opening one chest (1 gear of a marked tier + 1 gem) salvages the gear but BAGS the gem', () => {
+    // Mirrors the reported scenario through the real reveal path (addItem one entry at a time,
+    // gear then gem) to prove only ONE thing is recycled — the gem is always kept.
+    const item = composeItem('chest', 4, itemOrigin(31, 20), makeRng(31)); // T4 gear (marked)
+    const gem = generateGem({ rollSeed: 33, stageIndex: 20, generatorVersion: 1 }, 4); // T4 gem (marked)
+    useStore.setState({
+      inventory: [], stash: [], roster: [hero()], selectedHeroId: 'h0', gold: 0,
+      autoSalvage: { enabled: true, tiers: Array(9).fill(false).map((_, t) => t === 4) as boolean[] },
+    });
+    useStore.getState().addItem(item); // gear → salvaged
+    useStore.getState().addItem(gem); // gem → bagged
+    const st = useStore.getState();
+    expect(entries(st.inventory).filter(isItem)).toHaveLength(0); // the gear was melted
+    expect(entries(st.inventory).filter(isGem)).toHaveLength(1); // the gem is in the bag
+    expect(st.gold).toBeGreaterThan(0); // exactly one salvage (the gear)
+  });
+
   it('a gem cannot be equipped as gear', () => {
     const gem = generateGem({ rollSeed: 3, stageIndex: 20, generatorVersion: 1 }, 2);
     useStore.setState({ inventory: [gem], stash: [], roster: [hero()], selectedHeroId: 'h0' });

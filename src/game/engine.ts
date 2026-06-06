@@ -1,7 +1,7 @@
 import { Simulation, createWorld, TICK_MS, type TickContext } from '@/sim/Simulation';
 import { buildHeroCombatant, refreshHeroLoadout, partyAuraMods, heroAbilities, MAX_ACTIVE_ABILITIES, type HeroConfig } from '@/sim/loadout';
 import { getBonuses, type Bonuses } from '@/sim/bonuses';
-import { openAll, openType, autoOpenIntervalMs } from '@/sim/chests';
+import { openType, autoOpenIntervalMs } from '@/sim/chests';
 import { countFilled } from '@/sim/slots';
 import { simulateOffline, type OfflineSummary } from '@/sim/offline';
 import type { CombatEvent } from '@/sim/combat';
@@ -108,29 +108,20 @@ export class GameEngine {
     return summary;
   }
 
-  /** Open every stored chest now → route loot to inventory. */
-  openChests(): { items: number; gems: number } {
-    const draw = { seed: this.sim.world.seed, n: this.lootDraws };
-    const loot = openAll(this.sim.world, draw, this.bonuses);
-    this.lootDraws = draw.n;
-    const store = useStore.getState();
-    store.addLoot(loot.items, loot.gems);
-    this.mirror();
-    return { items: loot.items.length, gems: loot.gems.length };
-  }
-
   /** Open only the chests of `type` (the per-popup open). The rolled ITEMS and GEMS are
-   *  returned so the UI can reveal each into the bag one-by-one with floating loot text. */
-  openChestType(type: ChestType): { items: ItemInstance[]; gems: GemInstance[] } {
+   *  returned so the UI can reveal each into the bag one-by-one with floating loot text;
+   *  any KEYS are credited here (silent to the reveal) and also returned for a toast. */
+  openChestType(type: ChestType): { items: ItemInstance[]; gems: GemInstance[]; keys: Record<number, number> } {
     const draw = { seed: this.sim.world.seed, n: this.lootDraws };
     const loot = openType(this.sim.world, type, draw, this.bonuses);
     this.lootDraws = draw.n;
     // Manually cracking chests RESETS the auto-open countdown (it only runs when chests have
     // sat unopened for the full interval) — so a player who tends their loot pushes it back.
     const store = useStore.getState();
+    store.addZoneKeys(loot.keys); // world-boss keys credited up front; reveal handles items/gems
     if (store.autoOpen.unlocked) store.setAutoOpen({ unlocked: true, lastRunAt: this.sim.world.tick * TICK_MS });
     this.mirror();
-    return { items: loot.items, gems: loot.gems };
+    return { items: loot.items, gems: loot.gems, keys: loot.keys };
   }
 
   private autoOpen(): void {
@@ -144,7 +135,9 @@ export class GameEngine {
     // rather than spilling loot into the stash. Retry next tick (lastRunAt unchanged).
     const items = this.sim.world.chests.reduce((n, c) => n + c.count * CHEST_CONFIG.itemsPerChest[c.type], 0);
     if (store.inventoryCap() - countFilled(store.inventory) < items) return;
-    this.openChests();
+    // Don't open silently — signal the UI to reveal every chest with staggered toasts (the same
+    // path as a manual click). The engine only owns the TIMING; the reveal lives in the UI.
+    store.requestAutoOpen();
     store.setAutoOpen({ unlocked: true, lastRunAt: nowMs });
   }
 
@@ -174,7 +167,14 @@ export class GameEngine {
     const world = store.pendingEnterZoneWorld;
     if (world === null) return;
     store.clearPendingEnterZoneBoss();
+    const bossStage = world * 10; // this world's global X-10 stage (= worldBossStageOf any of its stages)
+    // Gate: a world-boss challenge needs a key for THIS zone. Refuse (with a nudge) if none.
+    if (store.zoneKeysFor(bossStage) <= 0) {
+      store.pushLootToast({ text: 'No key — clear this zone\'s stage bosses to earn one', color: '#e8c34c' });
+      return;
+    }
     if (this.sim.enterZoneBoss(world)) {
+      store.consumeZoneKey(bossStage); // one key per attempt — spent on ENTRY, even if they wipe
       this.accMs = 0;
       this.mirror();
       this.pushHud();
@@ -232,6 +232,7 @@ export class GameEngine {
       chests,
       clockMs: w.tick * TICK_MS,
       party: useStore.getState().roster.map((h) => ({ classKey: h.classKey, level: h.level })),
+      zoneKeysHeld: useStore.getState().zoneKeysFor(w.globalStageIndex),
     });
   }
 }

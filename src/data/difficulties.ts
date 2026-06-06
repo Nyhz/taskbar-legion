@@ -114,6 +114,14 @@ export function isWorldBossStage(globalStage: number): boolean {
   return stageInWorldOf(globalStage) === 10;
 }
 
+/** The world-boss (X-10) global stage of the zone CONTAINING `globalStage` — i.e. its
+ *  (world, difficulty) identity. This is the canonical key for that zone's challenge keys:
+ *  a stage-boss chest dropped anywhere in a world credits a key here, and entering the world
+ *  boss consumes one. E.g. Hell 4-5 (135) → 140 (Hell 4-10); Normal 3-7 (27) → 30. */
+export function worldBossStageOf(globalStage: number): number {
+  return Math.floor((Math.max(1, globalStage) - 1) / STAGES_PER_WORLD) * STAGES_PER_WORLD + STAGES_PER_WORLD;
+}
+
 /** True when this is the final stage of the game (Torment 10-10). */
 export function isFinalStage(globalStage: number): boolean {
   return globalStage >= MAX_GLOBAL_STAGE;
@@ -127,4 +135,28 @@ export function globalStageOf(difficultyIndex: number, world: number, stageInWor
 /** Display label, e.g. "Normal 3-7" / "Torment 10-10". */
 export function stageLabelOf(globalStage: number): string {
   return `${difficultyOf(globalStage).name} ${worldInDifficulty(globalStage)}-${stageInWorldOf(globalStage)}`;
+}
+
+// ── Heal-power effectiveness per difficulty (the "zone debuff") ──
+// Healing scales `coeff × maxHP × (1 + healPower × THIS / 100)`. Raw healPower balloons across
+// progression (~60% at Normal → ~900% at Torment), which would let Mend/Holy Shield heal 100-250%
+// of the tank's max HP and let undergeared parties out-sustain walls. Rather than CAP healPower
+// (which would punish gearing), each difficulty DEVALUES its benefit — a treadmill that forces the
+// priest to keep upgrading, mirroring how enemy mitigation devalues raw attack. Tuned (via
+// scripts/calibrate-heal.ts) so an acceptably-geared priest heals ~40% of the tank's max HP and a
+// best-in-slot one ~45% (a touch more at the deepest tiers), in EVERY difficulty. Entering a
+// difficulty with the previous one's gear drops healing below that band until you re-gear. NOT a
+// cap: more healPower always heals more. (Normal is 1.0 — its raw healPower already lands ~40%,
+// so no debuff there; the treadmill kicks in from Hell.)
+export const HEAL_POWER_EFFECTIVENESS: Record<DifficultyKey, number> = {
+  normal: 1.0,
+  hell: 0.33,
+  inferno: 0.20,
+  eternal: 0.15,
+  torment: 0.11,
+};
+
+/** The healPower-effectiveness multiplier for the difficulty containing `globalStage`. */
+export function healPowerEffectiveness(globalStage: number): number {
+  return HEAL_POWER_EFFECTIVENESS[DIFFICULTY_KEYS[difficultyIndexOf(globalStage)] ?? 'normal'];
 }

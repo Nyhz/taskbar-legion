@@ -168,7 +168,7 @@ export function resolveCombatTick(world: WorldState, deltaMs: number, rng: Rng):
       }
       const target = nearestEnemyInRange(h, enemies);
       if (target === undefined) return false;
-      heroAttack(h, stats, target, rng, events);
+      heroAttack(h, stats, target, enemies, rng, events);
       return true;
     });
   }
@@ -289,26 +289,40 @@ function advanceAttack(c: Combatant, attacksPerSec: number, deltaMs: number, doA
   c.attackTimerMs = fired ? interval : 0;
 }
 
-function heroAttack(h: Combatant, stats: EffectiveStats, target: Combatant, rng: Rng, events: CombatEvent[]): void {
-  // One resolved hit (own crit roll). Auto-attacks land one of these, plus a capped
-  // multistrike chance for a second — each hit heals lifesteal + can crit independently.
-  const strike = (): void => {
-    let dmg = stats.attackDamage * (1 + stats.damageIncrease / 100);
+export function heroAttack(h: Combatant, stats: EffectiveStats, target: Combatant, enemies: Combatant[], rng: Rng, events: CombatEvent[]): void {
+  // One resolved hit (own crit roll) on `victim`, scaled by `mult` (1 = full; <1 = AoE splash).
+  // Auto-attacks land one of these on the target, plus a capped multistrike chance for a
+  // second — each hit heals lifesteal + can crit independently.
+  const strike = (victim: Combatant, mult: number, multi: boolean): void => {
+    let dmg = stats.attackDamage * (1 + stats.damageIncrease / 100) * mult;
     const crit = rng.chance(Math.min(1, stats.critChance / 100));
     if (crit) dmg *= 1 + stats.critDamage / 100;
     dmg = Math.max(1, dmg);
-    dmg *= vulnerabilityMult(target.effects); // Ranger's Mark amplifies all damage to the boss
-    target.hp -= dmg;
-    events.push({ type: 'damage', targetId: target.id, sourceId: h.id, amount: dmg, crit });
+    dmg *= vulnerabilityMult(victim.effects); // Ranger's Mark amplifies all damage to the boss
+    victim.hp -= dmg;
+    events.push({ type: 'damage', targetId: victim.id, sourceId: h.id, amount: dmg, crit, multi, splash: mult < 1 ? true : undefined });
     const heal = ((dmg * stats.lifesteal) / 100) * healReceivedMult(h.effects); // Mortal Wound cuts lifesteal too
     if (heal > 0) h.hp = Math.min(h.maxHp, h.hp + heal);
+    if (victim.hp <= 0) kill(victim, events);
   };
-  strike();
+  strike(target, 1, false);
   // Multistrike: a chance for a second hit this swing (already soft-capped in aggregate).
   // Gated on `> 0` first so a hero without the stat draws no RNG (keeps the combat stream
-  // stable), and skipped if the first hit already downed the target.
+  // stable), and skipped if the first hit already downed the target. The bonus hit is tagged
+  // `multi` so the render layer pops a bright "MULTI!" callout on the proc.
   const ms = Math.max(0, stats.multistrike);
-  if (ms > 0 && target.hp > 0 && rng.chance(ms / 100)) strike();
+  if (ms > 0 && target.alive && rng.chance(ms / 100)) strike(target, 1, true);
+  // Auto-attack AoE (Priest holy strike): every OTHER enemy within `radius` of the primary
+  // target takes `coeff×` the hit. Gated on `autoSplash` so single-target classes draw no
+  // extra RNG (the combat stream for knight/ranger is unchanged).
+  const sp = h.autoSplash;
+  if (sp !== undefined) {
+    for (const e of enemies) {
+      if (!e.alive || e === target) continue;
+      if (Math.abs(e.x - target.x) > sp.radius) continue; // outside the blast → spared
+      strike(e, sp.coeff, false);
+    }
+  }
   // Bank a charge per auto-attack for any charge-gated ability the hero has equipped
   // (e.g. Aimed Shot) — so faster attacks fire it more often.
   for (const { def } of h.abilities) {
@@ -316,7 +330,7 @@ function heroAttack(h: Combatant, stats: EffectiveStats, target: Combatant, rng:
     const cur = (h.charges ??= {})[def.key] ?? 0;
     h.charges[def.key] = Math.min(def.charge.toCast, cur + def.charge.perAttack);
   }
-  if (target.hp <= 0) kill(target, events);
+  // (kills are resolved inside `strike` as each hit lands — no trailing kill needed)
 }
 
 function enemyAttack(e: Combatant, target: Combatant, S: number, rng: Rng, events: CombatEvent[]): void {

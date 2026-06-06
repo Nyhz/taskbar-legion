@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useStore } from '@/state/store';
 import { ItemSlot } from '@/ui/components/ItemSlot';
 import { StatRow } from '@/ui/components/StatRow';
-import { isItem, isGem, type ItemInstance, type InvEntry } from '@/sim/items';
+import { isItem, isGem, itemPerfectCount, type ItemInstance, type InvEntry } from '@/sim/items';
 import { entries } from '@/sim/slots';
 import {
   CUBE_INPUT_COUNT,
@@ -192,7 +192,12 @@ function SynthResultCard({ result, onAccept }: { result: SynthResult; onAccept: 
       >
         <ItemSlot item={isItem(entry) ? entry : null} gem={isGem(entry) ? entry : undefined} size={72} />
       </div>
-      <div style={{ color: PALETTE.textMute, fontSize: 11, textAlign: 'center' }}>{subtitle}</div>
+      <div style={{ color: PALETTE.textMute, fontSize: 11, textAlign: 'center' }}>
+        {subtitle}
+        {isItem(entry) && itemPerfectCount(entry) > 0 && (
+          <span style={{ color: PALETTE.gold, marginLeft: 4 }}>{'★'.repeat(itemPerfectCount(entry))}</span>
+        )}
+      </div>
       <button onClick={onAccept} style={{ ...btn(true), flex: 'none', minWidth: 130, padding: '8px 20px' }}>Accept</button>
     </div>
   );
@@ -298,7 +303,7 @@ interface Pending {
   itemId: string;
   affixIndex: number;
   oldStat: { key: StatKey; value: number };
-  newStat: { key: StatKey; value: number };
+  newStat: { key: StatKey; value: number; perfect?: boolean };
 }
 
 function TransfigureMode(): React.JSX.Element {
@@ -443,7 +448,7 @@ function TransfigureMode(): React.JSX.Element {
           <div style={{ color: PALETTE.textMute, fontSize: 10 }}>Old</div>
           <StatRow statKey={pending.oldStat.key} value={pending.oldStat.value} />
           <div style={{ color: PALETTE.textMute, fontSize: 10 }}>New</div>
-          <StatRow statKey={pending.newStat.key} value={pending.newStat.value} />
+          <StatRow statKey={pending.newStat.key} value={pending.newStat.value} perfect={pending.newStat.perfect} />
           <div style={{ display: 'flex', gap: 4, marginTop: 2 }}>
             <button onClick={keepOld} style={btn(true)}>Keep Old</button>
             <button onClick={keepNew} style={btn(true)}>Keep New</button>

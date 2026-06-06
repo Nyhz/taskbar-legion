@@ -3,7 +3,8 @@ import { castReadyAbilities, tickCooldowns } from '@/sim/abilities';
 import { applyEffect, absorbDamage } from '@/sim/effects';
 import { effectDef } from '@/data/effects';
 import { abilityDef, ABILITIES } from '@/data/abilities';
-import { partyAuraMods, type HeroConfig } from '@/sim/loadout';
+import { partyAuraMods, heroBaseStats, heroStaticMods, type HeroConfig } from '@/sim/loadout';
+import { aggregate } from '@/sim/stats';
 import type { Combatant, CombatEvent } from '@/sim/world';
 import { makeRng } from '@/sim/rng';
 import type { StatKey } from '@/data/stats';
@@ -67,18 +68,41 @@ describe('ability mechanics', () => {
     }
   });
 
-  it('a heal-over-time scales with healPower and lands on the lowest ally', () => {
+  it('a heal-over-time scales with healPower (zone-debuffed) and lands on the lowest ally', () => {
     const priest = unit({
       id: 'p', side: 'hero', hp: 100, maxHp: 100,
-      baseStats: base({ healPower: 100 }), // ×2 amplifier
+      baseStats: base({ healPower: 100 }), // ×2 amplifier raw — but devalued by the zone debuff
       abilities: [{ def: abilityDef('priest_mend'), rank: 1 }], // coeff 0.15 total over 6s × maxHp
     });
     const ally = unit({ id: 'a', side: 'hero', hp: 10, maxHp: 100 });
-    castReadyAbilities(priest, [priest, ally], [], 1, makeRng(1), []);
-    // ally is lowest (10%) and below 70% → HoT total 0.15 × 100 × (1+100/100) = 30 over
-    // 6s, stored as 5/sec on the effect.
+    castReadyAbilities(priest, [priest, ally], [], 1, makeRng(1), []); // stage 1 = Normal (heal eff 1.0)
+    // ally is lowest (10%) and below 70% → HoT total = 0.15 × 100 × (1 + 100×1.0/100) = 30
+    // over 6s, stored as 5/sec on the effect (Normal has no heal debuff).
     const hot = ally.effects.find((e) => e.defKey === 'fx_hot');
     expect(hot?.value).toBeCloseTo(5, 1);
+  });
+
+  it('the zone heal-power debuff shrinks the SAME heal as difficulty rises (Mend)', () => {
+    const mk = (): Combatant => unit({
+      id: 'p', side: 'hero', hp: 100, maxHp: 100, baseStats: base({ healPower: 200 }),
+      abilities: [{ def: abilityDef('priest_mend'), rank: 1 }],
+    });
+    const hotPerSec = (stage: number): number => {
+      const priest = mk();
+      const ally = unit({ id: 'a', side: 'hero', hp: 10, maxHp: 100 });
+      castReadyAbilities(priest, [priest, ally], [], stage, makeRng(1), []);
+      return ally.effects.find((e) => e.defKey === 'fx_hot')?.value ?? 0;
+    };
+    // Same priest (healPower 200), same target — only the zone changes. Normal (1.0) heals more
+    // than Hell (0.33) than Torment (0.11): the treadmill devalues stale gear each difficulty.
+    const normal = hotPerSec(1); // 0.15×100×(1+200×1.0/100)/6 = (0.15×300)/6 = 7.5
+    const hell = hotPerSec(105); // (1+200×0.33/100) → 0.15×166/6 = 4.15
+    const torment = hotPerSec(450); // (1+200×0.11/100) → 0.15×122/6 = 3.05
+    expect(normal).toBeCloseTo(7.5, 1);
+    expect(hell).toBeCloseTo(4.15, 1);
+    expect(torment).toBeCloseTo(3.05, 1);
+    expect(normal).toBeGreaterThan(hell);
+    expect(hell).toBeGreaterThan(torment);
   });
 
   it('shield absorbs incoming damage before HP, then expires when drained', () => {
@@ -234,5 +258,21 @@ describe('Retribution Aura (passive party buff)', () => {
     const enemy = unit({ id: 'e', side: 'enemy' });
     expect(castReadyAbilities(caster, [caster], [enemy], 1, makeRng(1), [])).toHaveLength(0);
     expect(caster.cooldowns.priest_retribution ?? 0).toBe(0);
+  });
+
+  it('actually raises an ALLY\'s effective per-hit damage when active (end-to-end)', () => {
+    // The Knight is the ALLY — proves the aura is party-wide, not just self. Effective auto
+    // damage = attackDamage × (1 + damageIncrease/100), exactly as combat.ts applies it.
+    const knight = (): HeroConfig => ({ id: 'k', classKey: 'knight', level: 20, equipment: {}, talents: {} });
+    const priest = cfg({ level: 20, talents: { priest_retribution: 5 }, activeAbilities: ['priest_retribution'] });
+    const hitDamage = (mods: ReturnType<typeof partyAuraMods>): number => {
+      const k = knight();
+      const s = aggregate(heroBaseStats(k.classKey, k.level), heroStaticMods(k, mods));
+      return s.attackDamage * (1 + s.damageIncrease / 100);
+    };
+    const without = hitDamage([]); // no aura slotted
+    const withAura = hitDamage(partyAuraMods([priest, knight()])); // priest's rank-5 aura → +15%
+    expect(withAura).toBeGreaterThan(without);
+    expect(withAura / without).toBeCloseTo(1.15, 2); // exactly +15% more party damage
   });
 });

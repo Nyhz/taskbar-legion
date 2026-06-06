@@ -10,9 +10,12 @@ export const STASH_PER_PAGE = 30;
 export const STASH_MAX_PAGES = 8;
 export const STASH_MAX_SLOTS = 20;
 
-/** Gold for the (k+1)-th inventory slot, k = 0..19 (k0=150 … k19≈5.2M). */
+/** Gold for the (k+1)-th inventory slot, k = 0..59. Relaxed scaling (1.25×, was 1.6×)
+ *  so the full slot cap is actually reachable by a late-game farmer while mid-game slots
+ *  stop competing with tech-node spend: k0=150, k20≈8.3K, k40≈4.5M, k59≈78M
+ *  (all 60 ≈ 391M). Boosts QoL and keeps the tech tree as the endless gold sink. */
 export function inventorySlotCost(k: number): number {
-  return Math.round(150 * 1.6 ** k);
+  return Math.round(150 * 1.25 ** k);
 }
 
 export function inventoryCapacity(slotUpgrades: number): number {

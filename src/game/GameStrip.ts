@@ -319,14 +319,14 @@ export class GameStrip {
   }
 
   // Show the world-boss portal, pinned to the strip's right edge, ONLY while the party
-  // farms a beaten W-9 (the gate into the W-10 world boss). Keys are gone — the boss
-  // itself is the wall, so the portal is always ready; tapping it drops into the fight.
+  // farms a beaten W-9 (the gate into the W-10 world boss). It now needs a zone KEY: the
+  // portal shows held/1 and greys out when key-less (tapping it still nudges via a toast).
   private updatePortal(w: WorldState, groundY: number, dtMs: number): void {
     const onBeatenNine = stageInWorld(w.globalStageIndex) === 9 && w.maxClearedStage >= w.globalStageIndex;
     this.portal.visible = onBeatenNine;
     if (!onBeatenNine) return;
     this.portal.position.set(this.logicalWidth - 30, groundY - 12);
-    this.portal.update(dtMs, true);
+    this.portal.update(dtMs, useStore.getState().zoneKeysFor(w.globalStageIndex));
   }
 
   private onPortalTap(): void {
@@ -512,8 +512,9 @@ export class GameStrip {
             if (b !== null) {
               const tx = b.cx - b.halfW; // front of the wave, nearest the ranger
               const ty = groundY - 8;
-              const flight = this.projectiles.spawn(caster.x, caster.y - 8, () => ({ x: tx, y: ty }), 'arrow', undefined, 1.9);
-              if (fb !== null) this.worldFx.fireballBurst(tx, ty - 4, fb, flight);
+              // Same arrow as the basic auto (no size override), then a bigger detonation.
+              const flight = this.projectiles.spawn(caster.x, caster.y - 8, () => ({ x: tx, y: ty }), 'arrow');
+              if (fb !== null) this.worldFx.fireballBurst(tx, ty - 4, fb, flight, 1.8);
             }
           }
         }
@@ -532,8 +533,10 @@ export class GameStrip {
       } else if (ev.type === 'damage' && sprite !== undefined) {
         // An attack connected — ALWAYS play the attacker's swing/projectile, even on a
         // 0-damage hit (INVULNERABLE), so enemies keep visibly attacking. An ability-tagged
-        // hit plays the caster's ability swing (the knight's heavy attack).
-        this.playAttack(ev.sourceId, sprite, ev.abilityKey);
+        // hit plays the caster's ability swing (the knight's heavy attack). AoE splash hits
+        // (Priest auto) are skipped here: they only show their damage number — the holy strike
+        // effect + swing fire once, on the PRIMARY target, not on every splashed enemy.
+        if (ev.splash !== true) this.playAttack(ev.sourceId, sprite, ev.abilityKey);
         if (ev.invuln === true) {
           // Negated by Last Stand invulnerability: yellow callout, no number/hit-flash.
           this.floating.spawn(sprite.x, sprite.y - 22, 'INVULNERABLE', hexToNum('#ffe14d'), 0.95);
@@ -543,6 +546,12 @@ export class GameStrip {
           sprite.flashHit();
           if (heroSprite !== undefined) heroSprite.hurtReact(); // sprite heroes flinch when hit
           this.floating.spawn(sprite.x, sprite.y - 18, formatDmg(amt), color, ev.crit === true ? 1.4 : 1);
+          // Multistrike proc: a big, bright-yellow "MULTI!" pops over the ALLY that procced it
+          // (the attacker, resolved from sourceId), not over the enemy taking the hit.
+          if (ev.multi === true) {
+            const attacker = ev.sourceId === undefined ? undefined : this.heroSprites.get(ev.sourceId);
+            if (attacker !== undefined) this.floating.spawn(attacker.x, attacker.y - 40, 'MULTI!', hexToNum('#ffee33'), 1.6);
+          }
           // A blocked hit (block-stat proc) on a hero plays its shield-block reaction.
           if (ev.blocked === true && heroSprite !== undefined) {
             heroSprite.blockReact();
@@ -617,8 +626,9 @@ export class GameStrip {
     if (src === undefined) return;
     if (abilityKey === 'ranger_focus') {
       // Explosive Arrow's big arrow + blast are fired once from the cast handler; the per-hit
-      // damage events just replay the bow draw — no extra standard arrows.
-      heroSrc?.swing();
+      // damage events just replay the bow draw — no extra standard arrows. It's an ATTACK
+      // ability, so swing(true) plays the ranger's reserved attack02 sheet.
+      heroSrc?.swing(true);
       return;
     }
     const viaAbility = abilityKey !== undefined;
@@ -634,13 +644,20 @@ export class GameStrip {
     // A sprite-bodied ranged/caster hero (ranger, priest) plays its own attack frames;
     // a sprite enemy (skeleton-archer draw / slime cast) plays its attack too; everyone
     // else lunges. A caster with its own bolt frames (Priest) throws that animated bolt;
-    // generic casters fall back to the procedural fireball.
-    if (heroSrc !== undefined && heroSrc.usesSpriteBody) heroSrc.swing();
+    // generic casters fall back to the procedural fireball. `viaAbility` selects the ranger's
+    // reserved attack02 sheet for ATTACK abilities (only damage hits reach here, never buffs).
+    if (heroSrc !== undefined && heroSrc.usesSpriteBody) heroSrc.swing(viaAbility);
     else if (heroSrc === undefined) src.swing(); // enemy: play its ranged/caster attack frames
     else src.lungeAttack();
     const magic = src.style === 'caster' ? (heroSrc?.projectileFrames ?? null) : null;
-    if (magic !== null) this.projectiles.spawn(src.x, src.y - 8, liveTarget, 'magic', magic);
-    else this.projectiles.spawn(src.x, src.y - 8, liveTarget, src.style === 'caster' ? 'fireball' : 'arrow');
+    // Priest (caster hero with its own effect frames): the holy strike lands ON the target
+    // instead of flying there as a bolt. Each per-hit damage event (primary + AoE splash)
+    // replays this, so the effect pops on every enemy the auto strikes.
+    if (magic !== null) {
+      // Seat the holy strike on the enemy's FEET so the pillar rises up from the ground.
+      const feet = target instanceof EnemySprite ? target.feetPoint() : { x: target.x, y: target.y };
+      this.worldFx.strikeBurst(feet.x, feet.y, magic);
+    } else this.projectiles.spawn(src.x, src.y - 8, liveTarget, src.style === 'caster' ? 'fireball' : 'arrow');
   }
 }
 
