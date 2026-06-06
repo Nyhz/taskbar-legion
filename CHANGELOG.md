@@ -15,6 +15,28 @@ While the project is pre-1.0, minor versions may include breaking save changes.
 
 ### Fixed
 
+## [0.3.0] - 2026-06-06
+
+### Added
+
+- **Perfect item stats** — items can now roll "perfect" inherent stats, about 15% above the normal maximum for their item level and rarity. Perfect stats show a ★ on the stat and on the item's name, and any item with one gets a tier-colored glow in your bags. Synthesizing rolls perfects more often, and transfiguring a stat can also come up perfect.
+- **World-boss challenge keys** — world bosses (the X-10 fights) now cost a key to enter, earned from stage-boss chests. Held keys are shown in the Map panel and on the strip, and the portal blocks entry — with a nudge to go farm — when you're out.
+- **Zone healing-penalty indicator** — a ☠ badge on the strip shows how much the current difficulty weakens healing, with a per-difficulty breakdown when you hover it.
+- The Priest's basic attack now **splashes nearby enemies** for partial damage, giving the healer some light area damage.
+
+### Changed
+
+- **Gem drops rebalanced** — gems are now far more reliable from stage- and world-boss chests while normal chests stay rare, and the Gem Sense tech gives a bigger bonus per rank.
+- **Healing scales down more on higher difficulties**, tuned so a well-geared Priest keeps restoring a meaningful share of the tank's health as you climb — healing power stays worth upgrading instead of plateauing.
+- **Inventory-slot upgrades are much cheaper**, so late-game farmers can open up far more bag space.
+- **Priest visual overhaul** — a new, larger Mend heal effect; the holy-strike auto-attack now bursts from the enemy's feet and reads bigger; a golden Retribution Aura pools on the ground under the Priest; and the Battle Enrage ult swirl was reworked to sit on each buffed ally.
+- Casters hang back a little further and the Priest reaches slightly further in melee, for cleaner party spacing.
+- A bold **MULTI!** popup now flags multistrike procs over the attacker.
+
+### Fixed
+
+- **Auto-open** now reveals its haul with the same floating loot toasts as opening chests by hand (including world-boss keys), instead of silently banking everything.
+
 ## [0.2.0] - 2026-06-05
 
 ### Added
@@ -50,6 +72,7 @@ While the project is pre-1.0, minor versions may include breaking save changes.
 - Initial desktop builds: Tauri v2 transparent, always-on-top, bottom-docked overlay.
 - Multi-platform release pipeline (macOS universal, Windows, Linux) via GitHub Actions.
 
-[Unreleased]: https://github.com/Nyhz/taskbar-legion/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/Nyhz/taskbar-legion/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/Nyhz/taskbar-legion/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/Nyhz/taskbar-legion/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Nyhz/taskbar-legion/releases/tag/v0.1.0
