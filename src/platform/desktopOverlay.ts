@@ -27,7 +27,7 @@ const POLL_MS = 20;
 // → ~875 at 1.25, plus the strip+HUD ≈ 270). Width holds the ~1200 band with a small margin.
 // On screens shorter than this the top may still clip — the strip always stays at the bottom.
 const OVERLAY_W = 1280;
-const OVERLAY_H = 1040;
+const OVERLAY_H = 1060;
 // Lift the whole window off the screen's bottom edge so the strip clears the OS Dock/taskbar
 // (and the title band, centred in the window, rises with it). The window's top simply runs a
 // little further off-screen — that region is transparent margin, so nothing is lost.

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useStore } from '@/state/store';
 import { ItemSlot } from '@/ui/components/ItemSlot';
-import { useDropZone } from '@/ui/components/dnd';
+import { useDropZone, DropCell } from '@/ui/components/dnd';
 import { useContextMenu } from '@/ui/components/ContextMenu';
 import {
   stashSlotCost, stashPageCost, STASH_PER_PAGE, STASH_MAX_PAGES, STASH_MAX_SLOTS,
@@ -27,6 +27,7 @@ export function StashPanel(): React.JSX.Element {
   const invLen = useStore((s) => countFilled(s.inventory));
   const moveToInventory = useStore((s) => s.moveToInventory);
   const moveToStash = useStore((s) => s.moveToStash);
+  const moveEntryToSlot = useStore((s) => s.moveEntryToSlot);
   const sortStash = useStore((s) => s.sortStash);
   const buySlot = useStore((s) => s.buyStashSlot);
   const buyPage = useStore((s) => s.buyStashPage);
@@ -83,9 +84,11 @@ export function StashPanel(): React.JSX.Element {
       >
         {/* Fixed slots: render every cell on the page; holes (null) stay empty in place. */}
         {Array.from({ length: perPage }, (_, j) => {
-          const entry = filtered[start + j] ?? null;
-          if (entry === null) return <ItemSlot key={`slot-${j}`} item={null} size={32} />;
-          return (
+          const absIndex = start + j;
+          const entry = filtered[absIndex] ?? null;
+          const cell = entry === null ? (
+            <ItemSlot key={`slot-${j}`} item={null} size={32} />
+          ) : (
             <ItemSlot
               key={`slot-${j}`}
               item={isGem(entry) ? null : entry}
@@ -101,6 +104,23 @@ export function StashPanel(): React.JSX.Element {
                 ]);
               }}
             />
+          );
+          // Per-cell exact-drop only in the unfiltered ("all") view, where the grid maps 1:1 to
+          // the sparse stash array (so start+j is the true slot index — including later pages).
+          // A category/gem filter is a compacted lens, so dropping by index there is meaningless;
+          // fall back to the grid-wide first-free drop zone.
+          if (filter !== 'all') return cell;
+          return (
+            <DropCell
+              key={`cell-${j}`}
+              accept={(p) => p.startsWith('inv|') || p.startsWith('stash|')}
+              onDrop={(p) => {
+                const id = p.split('|')[1];
+                if (id !== undefined) moveEntryToSlot(id, 'stash', absIndex);
+              }}
+            >
+              {cell}
+            </DropCell>
           );
         })}
       </div>

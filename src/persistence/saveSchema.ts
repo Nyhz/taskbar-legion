@@ -7,6 +7,16 @@ import type { ChestType } from '@/data/chests';
 // fields (cube, online, researchPoints) for forward-compat — never stripped. The
 // store is shaped to make this a near-direct projection (saveManager in Phase 5).
 
+// A saved gear+talent snapshot a hero can swap back to (Farm / Boss presets). Items are
+// stored by ID (not copied) so loading never duplicates gear — on load each id is resolved
+// from whatever container currently holds it (equip/inventory/stash); missing ids are skipped.
+export interface Loadout {
+  classKey: string; // talents are class-specific — only re-applied if the hero is still this class
+  items: Partial<Record<SlotKey, string>>; // slot -> itemId
+  talents: Record<string, number>;
+  activeAbilities: string[];
+}
+
 export interface HeroState {
   id: string;
   classKey: string;
@@ -16,6 +26,7 @@ export interface HeroState {
   talentPoints: number;
   talents: Record<string, number>; // talentNodeKey -> rank
   activeAbilities: string[]; // ≤2 selected ability keys that fire in combat (empty ⇒ first 2 ranked)
+  loadouts?: (Loadout | null)[]; // length 2: [0]=Farm, [1]=Boss (optional — old saves lack it)
 }
 
 export interface SaveV1 {

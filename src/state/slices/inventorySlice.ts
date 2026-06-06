@@ -90,6 +90,11 @@ export interface InventorySlice {
   removeItem: (id: string) => InvEntry | undefined;
   moveToStash: (id: string) => boolean;
   moveToInventory: (id: string) => boolean;
+  /** Drag-drop with SLOT PRECISION: drop the entry at EXACTLY `index` in `dest` (inventory or
+   *  stash), swapping back whatever already sat there (within OR across the two containers).
+   *  Holes are padded up to `index`, so you can drop onto a later stash page even when earlier
+   *  slots are empty. No-op if the entry is dropped on its own slot or `index` exceeds capacity. */
+  moveEntryToSlot: (id: string, dest: 'inventory' | 'stash', index: number) => void;
   /** Move every gem in the inventory into the stash (until the stash fills); leaves gear. */
   stashAllGems: () => void;
   buyInventorySlot: () => boolean;
@@ -187,6 +192,42 @@ export const createInventorySlice: StateCreator<GameStore, [], [], InventorySlic
     set((st) => ({ stash: removeId(st.stash, id), inventory: place(st.inventory, item, invCap) ?? st.inventory }));
     return true;
   },
+
+  // Exact-slot move/swap for drag-drop. Resolves the dragged entry's source container, then
+  // either swaps two slots in one container or moves across containers (sending the displaced
+  // occupant — or a hole — back to the source slot). Padding holes up to `index` is what lets
+  // an item land on stash page 2 while page 1 is still half-empty.
+  moveEntryToSlot: (id, dest, index) =>
+    set((s) => {
+      const srcInvIdx = s.inventory.findIndex((e) => e !== null && e.id === id);
+      const srcStIdx = s.stash.findIndex((e) => e !== null && e.id === id);
+      const src: 'inventory' | 'stash' | null = srcInvIdx >= 0 ? 'inventory' : srcStIdx >= 0 ? 'stash' : null;
+      if (src === null) return s;
+      const srcIdx = src === 'inventory' ? srcInvIdx : srcStIdx;
+      const destCap = dest === 'inventory'
+        ? inventoryCapacity(s.inventorySlotUpgrades)
+        : stashCapacity(s.stashPages, s.stashSlotUpgrades);
+      if (index < 0 || index >= destCap) return s;
+      if (src === dest && srcIdx === index) return s; // dropped on its own slot — no-op
+
+      const inv = s.inventory.slice();
+      const stash = s.stash.slice();
+      if (src === dest) {
+        const arr = dest === 'inventory' ? inv : stash;
+        while (arr.length <= index) arr.push(null);
+        const tmp = arr[index] ?? null;
+        arr[index] = arr[srcIdx] ?? null;
+        arr[srcIdx] = tmp; // swap whatever sat at the target (may be null) back into the old slot
+      } else {
+        const srcArr = src === 'inventory' ? inv : stash;
+        const destArr = dest === 'inventory' ? inv : stash;
+        while (destArr.length <= index) destArr.push(null);
+        const moving = srcArr[srcIdx] ?? null;
+        srcArr[srcIdx] = destArr[index] ?? null; // displaced occupant (or a hole) → source slot
+        destArr[index] = moving; // dragged entry → exact target slot
+      }
+      return { inventory: inv, stash };
+    }),
 
   // Sweep every gem from the bag into the stash, in slot order, stopping if the stash
   // fills (the overflow stays in the bag). Gear is untouched.

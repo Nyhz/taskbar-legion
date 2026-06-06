@@ -68,6 +68,13 @@ export function roleScores(s: EffectiveStats, stage: number): RoleScores {
 /** Percentage change in each role proxy from swapping `swapItem` into `swapSlot` of the hero's
  *  current loadout. Positive = gain, negative = loss. Passive sources only (gear + talents +
  *  tech/pet `extraMods`) — transient combat effects are excluded so the comparison is stable. */
+/** Strip every socketed gem from an item (sockets kept, emptied) — used by the gem-free
+ *  comparison so two base items can be weighed by their own stats alone. */
+function withoutGems(item: ItemInstance): ItemInstance {
+  if (item.sockets.every((so) => so.gem === null)) return item;
+  return { ...item, sockets: item.sockets.map(() => ({ gem: null })) };
+}
+
 export function roleDeltaPct(args: {
   classKey: string;
   level: number;
@@ -77,12 +84,21 @@ export function roleDeltaPct(args: {
   talents: Record<string, number>;
   extraMods: readonly StatMod[];
   stage: number;
+  /** Ignore socketed gems on BOTH the equipped set and the swap item (Shift-hover) so the
+   *  comparison reflects the base items' own potential, gems aside. */
+  ignoreGems?: boolean;
 }): RoleScores {
-  const { classKey, level, equipment, swapSlot, swapItem, talents, extraMods, stage } = args;
+  const { classKey, level, equipment, swapSlot, swapItem, talents, extraMods, stage, ignoreGems } = args;
+  const equip = ignoreGems !== true
+    ? equipment
+    : (Object.fromEntries(
+        Object.entries(equipment).map(([k, v]) => [k, v === undefined ? undefined : withoutGems(v)]),
+      ) as Partial<Record<SlotKey, ItemInstance>>);
+  const swap = ignoreGems === true ? withoutGems(swapItem) : swapItem;
   const base = heroBaseStats(classKey, level);
   const passive = [...talentPassiveMods(classKey, talents), ...extraMods];
-  const before = roleScores(aggregate(base, [...equipmentMods(equipment), ...passive]), stage);
-  const after = roleScores(aggregate(base, [...equipmentMods({ ...equipment, [swapSlot]: swapItem }), ...passive]), stage);
+  const before = roleScores(aggregate(base, [...equipmentMods(equip), ...passive]), stage);
+  const after = roleScores(aggregate(base, [...equipmentMods({ ...equip, [swapSlot]: swap }), ...passive]), stage);
   const pct = (b: number, a: number): number => (b <= 0 ? (a > 0 ? 100 : 0) : ((a - b) / b) * 100);
   return { dps: pct(before.dps, after.dps), tank: pct(before.tank, after.tank), heal: pct(before.heal, after.heal) };
 }

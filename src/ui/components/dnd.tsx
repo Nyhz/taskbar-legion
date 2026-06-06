@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { setItemDragging } from '@/platform/dragState';
+import { PALETTE } from '@/styles/palette';
 
 // Pointer-based drag-and-drop for inventory/stash/equipment items. NATIVE HTML5 DnD is
 // unreliable in the Tauri/WKWebView desktop overlay (the click-through window can't initiate
@@ -114,6 +115,31 @@ export function useDropZone(
     };
   }, []);
   return { ref, over };
+}
+
+/** A single-cell drop zone wrapping one inventory/stash cell, so an item can be dropped onto an
+ *  EXACT slot instead of falling into the first free one. A nested zone wins over its container
+ *  zone (zoneAt returns the nearest ancestor), and it flashes a gold outline while hovered. */
+export function DropCell({
+  accept,
+  onDrop,
+  children,
+}: {
+  accept: (payload: string) => boolean;
+  onDrop: (payload: string) => void;
+  children: ReactNode;
+}): React.JSX.Element {
+  const { ref, over } = useDropZone(accept, onDrop);
+  return (
+    // Shrink to the cell's own size and center within its grid track — otherwise a stretched
+    // grid item (e.g. the inventory's 1fr columns) draws the highlight outline wider than the
+    // slot. Sized to content, the outline rings the slot exactly; offset 1 keeps it just OUTSIDE
+    // the slot so the cell's own opaque background can't paint over it (a negative offset hides
+    // it behind the slot).
+    <div ref={ref} style={{ display: 'flex', justifySelf: 'center', alignSelf: 'center', outline: over ? `2px solid ${PALETTE.gold}` : undefined, outlineOffset: 1 }}>
+      {children}
+    </div>
+  );
 }
 
 /** The floating ghost that follows the cursor while dragging. Mount once near the app root. */

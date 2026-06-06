@@ -11,7 +11,7 @@ import { SLOT_ICON } from '@/ui/icons';
 import { SLOTS, SLOT_KEYS, slotFamily, type SlotKey } from '@/data/itemSlots';
 import { inventorySlotCost, INVENTORY_MAX_SLOTS } from '@/data/inventory';
 import { ItemSlot } from '@/ui/components/ItemSlot';
-import { useDropZone } from '@/ui/components/dnd';
+import { useDropZone, DropCell } from '@/ui/components/dnd';
 import { HoverTip } from '@/ui/components/HoverTip';
 import { countFilled, findEntry } from '@/sim/slots';
 import { AbilityBar } from '@/ui/panels/party/AbilityBar';
@@ -272,6 +272,7 @@ function SharedInventory({ heroId, requestSocket }: { heroId: string; requestSoc
   const equip = useStore((s) => s.equip);
   const moveToStash = useStore((s) => s.moveToStash);
   const moveToInventory = useStore((s) => s.moveToInventory);
+  const moveEntryToSlot = useStore((s) => s.moveEntryToSlot);
   const unequip = useStore((s) => s.unequip);
   const buySlot = useStore((s) => s.buyInventorySlot);
   const sortInventory = useStore((s) => s.sortInventory);
@@ -291,7 +292,7 @@ function SharedInventory({ heroId, requestSocket }: { heroId: string; requestSoc
   const roleImpactFor =
     hero === undefined
       ? undefined
-      : (newItem: ItemInstance, eq: ItemInstance): RoleScores =>
+      : (newItem: ItemInstance, eq: ItemInstance, ignoreGems: boolean): RoleScores =>
           roleDeltaPct({
             classKey: hero.classKey,
             level: hero.level,
@@ -301,6 +302,7 @@ function SharedInventory({ heroId, requestSocket }: { heroId: string; requestSoc
             talents: hero.talents,
             extraMods: bonuses.combatMods,
             stage,
+            ignoreGems,
           });
 
   const slotCost = inventorySlotCost(slotUpgrades);
@@ -425,10 +427,24 @@ function SharedInventory({ heroId, requestSocket }: { heroId: string; requestSoc
             with 3px gaps ⇒ 36·3 + 3·2 = 114px (the old 102 forgot the borders, so it scrolled
             at 3 rows). The 4th row of slots is what should start the scroll. */}
         <div className="tl-scroll" style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: 3, maxHeight: 114, overflowY: 'auto', overflowX: 'hidden', alignContent: 'start' }}>
-          {/* Fixed slots: render every cell up to capacity; holes stay empty in place. */}
+          {/* Fixed slots: render every cell up to capacity; holes stay empty in place. Each cell
+              is its own drop zone so a dragged item lands in EXACTLY this slot (inv reorder or a
+              precise stash→bag move), not just the first free one. */}
           {Array.from({ length: cap }, (_, i) => {
             const entry = inventory[i] ?? null;
-            return entry === null ? <ItemSlot key={`slot-${i}`} item={null} size={32} /> : renderEntry(entry, i);
+            const cell = entry === null ? <ItemSlot key={`slot-${i}`} item={null} size={32} /> : renderEntry(entry, i);
+            return (
+              <DropCell
+                key={`cell-${i}`}
+                accept={(p) => p.startsWith('inv|') || p.startsWith('stash|')}
+                onDrop={(p) => {
+                  const id = p.split('|')[1];
+                  if (id !== undefined) moveEntryToSlot(id, 'inventory', i);
+                }}
+              >
+                {cell}
+              </DropCell>
+            );
           })}
         </div>
       </DropTarget>
