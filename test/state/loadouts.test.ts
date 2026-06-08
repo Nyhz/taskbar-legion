@@ -6,8 +6,8 @@ import { findEntry } from '@/sim/slots';
 import type { ItemInstance } from '@/sim/items';
 import type { HeroState } from '@/persistence/saveSchema';
 
-// Per-hero Farm/Boss loadouts: a snapshot of equipment (by id) + talents the hero can swap
-// back to. Restoring re-equips whatever saved gear is still available and skips the rest.
+// Per-hero Farm/Boss loadouts: a TALENT-ONLY snapshot (talents + active abilities) the hero
+// can swap back to. Loading restores the build and never touches gear/inventory/stash.
 
 const origin = (seed: number): ItemOrigin => ({ rollSeed: seed, stageIndex: 20, chestType: 'normal', generatorVersion: 1 });
 // Armor (no class lock) with an explicit id so we can equip/look it up deterministically.
@@ -17,50 +17,6 @@ const hero = (over?: Partial<HeroState>): HeroState => ({
 });
 
 describe('hero loadouts', () => {
-  it('saves the current equipment and restores it after a change', () => {
-    const a = mkItem('a', 'helmet', 1);
-    const b = mkItem('b', 'chest', 2);
-    useStore.setState({ inventory: [a, b], stash: [], roster: [hero()], selectedHeroId: 'h0' });
-    const g = useStore.getState();
-
-    g.equip('h0', 'a');
-    g.equip('h0', 'b');
-    g.saveLoadout('h0', 0);
-
-    // Strip the gear off — both pieces go back to the bag.
-    g.unequip('h0', 'helmet');
-    g.unequip('h0', 'chest');
-    expect(useStore.getState().roster[0]!.equipment.helmet).toBeUndefined();
-
-    g.applyLoadout('h0', 0);
-    const eq = useStore.getState().roster[0]!.equipment;
-    expect(eq.helmet?.id).toBe('a');
-    expect(eq.chest?.id).toBe('b');
-    // The re-equipped items left the shared inventory.
-    expect(findEntry(useStore.getState().inventory, 'a')).toBeUndefined();
-    expect(findEntry(useStore.getState().inventory, 'b')).toBeUndefined();
-  });
-
-  it('loads every still-available item and skips a sold/deleted one', () => {
-    const a = mkItem('a', 'helmet', 3);
-    const b = mkItem('b', 'chest', 4);
-    useStore.setState({ inventory: [a, b], stash: [], roster: [hero()], selectedHeroId: 'h0' });
-    const g = useStore.getState();
-    g.equip('h0', 'a');
-    g.equip('h0', 'b');
-    g.saveLoadout('h0', 1);
-
-    // Take it all off, then "sell" the helmet (remove it from existence).
-    g.unequip('h0', 'helmet');
-    g.unequip('h0', 'chest');
-    useStore.setState((s) => ({ inventory: s.inventory.filter((e) => e === null || e.id !== 'a') }));
-
-    g.applyLoadout('h0', 1);
-    const eq = useStore.getState().roster[0]!.equipment;
-    expect(eq.helmet).toBeUndefined(); // sold → skipped
-    expect(eq.chest?.id).toBe('b'); // the rest still loads
-  });
-
   it('snapshots and restores the talent set, recomputing remaining points', () => {
     useStore.setState({ inventory: [], stash: [], roster: [hero({ talentPoints: 3, talents: { knight_guard: 2 } })], selectedHeroId: 'h0' });
     const g = useStore.getState();
@@ -73,5 +29,26 @@ describe('hero loadouts', () => {
     const h = useStore.getState().roster[0]!;
     expect(h.talents).toEqual({ knight_guard: 2 });
     expect(h.talentPoints).toBe(3); // 5 earned − 2 re-spent
+  });
+
+  it('leaves gear, inventory and stash untouched on load (talent-only)', () => {
+    const a = mkItem('a', 'helmet', 1);
+    const b = mkItem('b', 'chest', 2);
+    // Hero wearing `a`, with `b` in the bag, and a saved talent build.
+    useStore.setState({ inventory: [b], stash: [], roster: [hero({ talents: { knight_guard: 1 }, equipment: { helmet: a } })], selectedHeroId: 'h0' });
+    const g = useStore.getState();
+    g.saveLoadout('h0', 0);
+
+    // After saving, the player respecs AND rearranges gear (both pieces now in the bag, none worn).
+    useStore.setState((s) => ({ roster: [{ ...s.roster[0]!, talents: {}, talentPoints: 1, equipment: {} }], inventory: [a, b] }));
+
+    g.applyLoadout('h0', 0);
+    const st = useStore.getState();
+    // Talents are restored…
+    expect(st.roster[0]!.talents).toEqual({ knight_guard: 1 });
+    // …but gear + containers stay exactly as they were before the load — loadouts never move gear.
+    expect(st.roster[0]!.equipment.helmet).toBeUndefined();
+    expect(findEntry(st.inventory, 'a')).toBeDefined();
+    expect(findEntry(st.inventory, 'b')).toBeDefined();
   });
 });

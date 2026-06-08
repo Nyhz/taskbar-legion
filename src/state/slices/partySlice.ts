@@ -1,11 +1,9 @@
 import type { StateCreator } from 'zustand';
 import type { GameStore } from '../store';
 import type { HeroState, Loadout } from '@/persistence/saveSchema';
-import type { ItemInstance } from '@/sim/items';
 import { isGem, isItem } from '@/sim/items';
 import { findEntry, place, removeId } from '@/sim/slots';
 import { heroAbilities, canLearnNewAbility } from '@/sim/loadout';
-import { inventoryCapacity, stashCapacity } from '@/data/inventory';
 import { slotFamily, type SlotKey } from '@/data/itemSlots';
 import { totalExpToReach, MAX_LEVEL } from '@/data/stageScaling';
 import { talentNodes, rowUnlockThreshold } from '@/data/talents';
@@ -244,19 +242,14 @@ export const createPartySlice: StateCreator<GameStore, [], [], PartySlice> = (se
       configEpoch: st.configEpoch + 1,
     })),
 
-  // Snapshot the current equipment + talents into a Farm/Boss slot. Gear is stored by id, so
-  // the loadout shares the live items — saving never copies/duplicates gear.
+  // Snapshot the current talents + active abilities into a Farm/Boss slot. Talent-only — gear
+  // is never captured, so loading a loadout swaps the build without touching equipment.
   saveLoadout: (heroId, index) =>
     set((st) => {
       const hero = st.roster.find((h) => h.id === heroId);
       if (hero === undefined || index < 0 || index >= LOADOUT_COUNT) return st;
-      const items: Partial<Record<SlotKey, string>> = {};
-      for (const [slot, item] of Object.entries(hero.equipment)) {
-        if (item !== undefined) items[slot as SlotKey] = item.id;
-      }
       const lo: Loadout = {
         classKey: hero.classKey,
-        items,
         talents: { ...hero.talents },
         activeAbilities: [...hero.activeAbilities],
       };
@@ -266,65 +259,25 @@ export const createPartySlice: StateCreator<GameStore, [], [], PartySlice> = (se
       return { roster: mapHero(st.roster, heroId, (h) => ({ ...h, loadouts })) };
     }),
 
-  // Restore a saved loadout. Each saved item id is resolved from wherever it currently lives —
-  // own equipment, the shared inventory, or the stash; items that were sold/deleted or are now
-  // worn by ANOTHER hero are in none of those pools and are simply skipped (the rest still load).
-  // Talents are only re-applied if the hero is still the class the loadout was saved for.
+  // Restore a saved loadout's talents + active abilities. Talent-only — gear is never touched,
+  // so equipment, inventory and stash are left exactly as they are. Talents are class-specific,
+  // so a loadout saved as another class is a no-op (it can't apply to this hero).
   applyLoadout: (heroId, index) =>
     set((st) => {
       const hero = st.roster.find((h) => h.id === heroId);
       const lo = hero?.loadouts?.[index];
       if (hero === undefined || lo === undefined || lo === null) return st;
+      if (lo.classKey !== hero.classKey) return st;
 
-      const invCap = inventoryCapacity(st.inventorySlotUpgrades);
-      const stCap = stashCapacity(st.stashPages, st.stashSlotUpgrades);
-
-      const ownEquip = new Map<string, ItemInstance>();
-      for (const it of Object.values(hero.equipment)) if (it !== undefined) ownEquip.set(it.id, it);
-
-      const resolved: Partial<Record<SlotKey, ItemInstance>> = {};
-      const usedIds = new Set<string>();
-      for (const [slotStr, itemId] of Object.entries(lo.items)) {
-        if (itemId === undefined) continue;
-        const found = ownEquip.get(itemId) ?? findEntry(st.inventory, itemId) ?? findEntry(st.stash, itemId);
-        if (found === undefined || !isItem(found)) continue; // sold/deleted/on another hero
-        if (found.classKey !== undefined && found.classKey !== hero.classKey) continue; // class lock
-        resolved[slotStr as SlotKey] = found;
-        usedIds.add(itemId);
-      }
-
-      // Pull every newly-equipped item out of the shared containers…
-      let inv = st.inventory;
-      let stash = st.stash;
-      for (const id of usedIds) { inv = removeId(inv, id); stash = removeId(stash, id); }
-
-      // …and return any currently-worn piece the loadout doesn't reuse to the bag (then stash).
-      for (const it of Object.values(hero.equipment)) {
-        if (it === undefined || usedIds.has(it.id)) continue;
-        const placedInv = place(inv, it, invCap);
-        if (placedInv !== null) { inv = placedInv; continue; }
-        const placedStash = place(stash, it, stCap);
-        if (placedStash !== null) { stash = placedStash; continue; }
-        inv = [...inv, it]; // last resort: never destroy an item, even if both containers are full
-      }
-
-      const applyTalents = lo.classKey === hero.classKey;
       const totalEarned = hero.talentPoints + Object.values(hero.talents).reduce((a, b) => a + b, 0);
       const wanted = Object.values(lo.talents).reduce((a, b) => a + b, 0);
 
       return {
-        inventory: inv,
-        stash,
         roster: mapHero(st.roster, heroId, (h) => ({
           ...h,
-          equipment: resolved,
-          ...(applyTalents
-            ? {
-                talents: { ...lo.talents },
-                talentPoints: Math.max(0, totalEarned - wanted),
-                activeAbilities: [...lo.activeAbilities],
-              }
-            : {}),
+          talents: { ...lo.talents },
+          talentPoints: Math.max(0, totalEarned - wanted),
+          activeAbilities: [...lo.activeAbilities],
         })),
         configEpoch: st.configEpoch + 1,
       };
