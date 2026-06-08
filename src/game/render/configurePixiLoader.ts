@@ -24,7 +24,11 @@ export function configurePixiLoader(): void {
     loadTextures.config = {
       preferCreateImageBitmap: false,
       preferWorkers: false,
-      crossOrigin: loadTextures.config?.crossOrigin ?? 'anonymous',
+      // crossOrigin must be null (NOT 'anonymous'/''): the bundled assets are the app's own
+      // files, but the tauri:// asset protocol returns no CORS headers, so an anonymous CORS
+      // <img> request is blocked by WebKit (img.onerror) — the second failure we hit. A plain,
+      // non-CORS load works and can't taint the canvas for same-origin app assets.
+      crossOrigin: null,
     };
   }
 }
