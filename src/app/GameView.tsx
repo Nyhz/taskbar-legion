@@ -11,6 +11,7 @@ import { StripOverlay } from '@/ui/overlay/StripOverlay';
 import { LootToasts } from '@/ui/overlay/LootToasts';
 import { revealAllChests } from '@/ui/loot/revealLoot';
 import { OfflineSummaryModal } from '@/ui/components/OfflineSummaryModal';
+import { RenderErrorPanel } from '@/ui/components/RenderErrorPanel';
 import { isTauri } from '@/platform/tauri';
 import { startOverlayDrag } from '@/platform/desktopOverlay';
 import { setStripDragging } from '@/platform/dragState';
@@ -50,6 +51,7 @@ export function GameView({ bootSave, onReady }: { bootSave: SaveV1 | null; onRea
   const stripScale = uiScale * gameScale;
   const autoOpenPending = useStore((s) => s.autoOpenPending);
   const [offline, setOffline] = useState<OfflineSummary | null>(null);
+  const [renderError, setRenderError] = useState<unknown>(null);
   const tauri = isTauri();
 
   useEffect(() => {
@@ -60,7 +62,18 @@ export function GameView({ bootSave, onReady }: { bootSave: SaveV1 | null; onRea
     let cancelled = false;
 
     void (async () => {
-      await game.init(container, useStore.getState().uiScale, tauri);
+      try {
+        await game.init(container, useStore.getState().uiScale, tauri);
+      } catch (err) {
+        // A renderer failure must not strand a black canvas — surface a real diagnostics
+        // panel instead, and still release the title fade so the panel is visible.
+        console.error('Game strip init failed', err);
+        if (!cancelled) {
+          setRenderError(err);
+          requestAnimationFrame(() => onReadyRef.current?.());
+        }
+        return;
+      }
       if (cancelled) return;
       // Signal readiness after the first frame has painted, so the fade reveal lines up with
       // the strip actually being on screen (rather than popping in mid-fade).
@@ -185,6 +198,7 @@ export function GameView({ bootSave, onReady }: { bootSave: SaveV1 | null; onRea
           <OfflineSummaryModal summary={offline} onClose={() => setOffline(null)} />
         </div>
       )}
+      {renderError !== null && <RenderErrorPanel error={renderError} />}
     </>
   );
 }
