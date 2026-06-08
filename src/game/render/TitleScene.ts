@@ -1,10 +1,12 @@
-import { Application, Container, Rectangle, Text } from 'pixi.js';
+import { Container, Rectangle, Text } from 'pixi.js';
+import type { Application } from 'pixi.js';
 import { StageBackground } from './StageBackground';
 import { SpriteBody } from './SpriteBody';
 import { TitleParticles } from './TitleParticles';
 import { loadCharacterTextures, getCharacterFrames } from './characterFrames';
 import { loadEnemyTextures, getEnemyFrames } from './enemyFrames';
 import { loadBackgroundTextures } from './backgroundLayers';
+import { createPixiApp } from './createPixiApp';
 import { CLASS_KEYS, classDef } from '@/data/classes';
 import { hexToNum } from '@/styles/palette';
 
@@ -83,16 +85,9 @@ export class TitleScene {
   private elapsed = 0;
 
   async init(container: HTMLElement): Promise<void> {
-    const app = new Application();
-    await app.init({
-      background: '#14121a',
-      width: WIDTH,
-      height: HEIGHT,
-      antialias: false,
-      roundPixels: true,
-      autoDensity: true,
-      resolution: Math.min(2, Math.ceil(window.devicePixelRatio || 1)),
-    });
+    // Opaque canvas (the title band paints its own backdrop). Hardened init + retry ladder
+    // lives in createPixiApp; a total failure throws → TitleStage shows the RenderErrorPanel.
+    const app = await createPixiApp({ width: WIDTH, height: HEIGHT, transparent: false });
     if (this.destroyed) {
       app.destroy({ removeView: true, releaseGlobalResources: false }, { children: true });
       return;

@@ -1,4 +1,5 @@
-import { Application, Container, Graphics, Text } from 'pixi.js';
+import { Container, Graphics, Text } from 'pixi.js';
+import type { Application } from 'pixi.js';
 import { GameEngine } from './engine';
 import { setEngine } from './engineRef';
 import { HeroSprite } from './render/HeroSprite';
@@ -12,6 +13,7 @@ import { castFx, isSupportCast, isWholeWaveCast, FX } from './render/fx';
 import { loadCharacterTextures, getFireballFrames } from './render/characterFrames';
 import { loadEnemyTextures, resolveEnemySprite, getEnemyFrames } from './render/enemyFrames';
 import { loadBackgroundTextures } from './render/backgroundLayers';
+import { createPixiApp } from './render/createPixiApp';
 import type { Combatant, CombatEvent, WorldState } from '@/sim/world';
 import { worldOf, stageInWorld, isZoneBossStage } from '@/data/stageScaling';
 import { SPAWN_AHEAD, RANGE, WALK_SPEED, TELEPORT_HOLD_MS, WIPE_DEAD_MS, WIPE_FADE_MS, WIPE_BLACK_MS, WIPE_RETREAT_AT_MS } from '@/data/field';
@@ -132,20 +134,11 @@ export class GameStrip {
 
   async init(container: HTMLElement, uiScale: number, transparent = false): Promise<void> {
     this.uiScale = uiScale;
-    const app = new Application();
-    await app.init({
-      // Desktop overlay: a fully transparent canvas so only the sprites + backdrop
-      // paint over the bare desktop. Browser build stays opaque (the page bg).
-      ...(transparent ? { backgroundAlpha: 0 } : { background: '#14121a' }),
-      // FIXED logical size (no resizeTo): the canvas is always STRIP_WIDTH×STRIP_HEIGHT at
-      // ×uiScale. Game Scale zooms the whole strip section in the DOM (App), not the canvas.
-      width: STRIP_WIDTH * uiScale,
-      height: STRIP_HEIGHT * uiScale,
-      antialias: false,
-      roundPixels: true,
-      autoDensity: true,
-      resolution: Math.min(2, Math.ceil(window.devicePixelRatio || 1)),
-    });
+    // FIXED logical size (no resizeTo): the canvas is always STRIP_WIDTH×STRIP_HEIGHT at
+    // ×uiScale. Game Scale zooms the whole strip section in the DOM (App), not the canvas.
+    // The transparent overlay canvas falls back to opaque if a GL surface can't be composited
+    // — see createPixiApp. A total failure throws (caught by GameView → RenderErrorPanel).
+    const app = await createPixiApp({ width: STRIP_WIDTH * uiScale, height: STRIP_HEIGHT * uiScale, transparent });
     container.appendChild(app.canvas);
     this.app = app;
     // Load the character sprite sheets (+ arrow) and the background layers before the

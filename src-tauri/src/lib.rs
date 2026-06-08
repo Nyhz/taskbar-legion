@@ -9,6 +9,14 @@ pub fn run() {
     std::env::set_var("GDK_BACKEND", "x11");
   }
 
+  // Linux: WebKitGTK's DMABUF renderer produces a black/blank WebGL canvas on many GPU+driver
+  // combos (notably NVIDIA) — exactly the "game doesn't render" symptom. Disabling it forces a
+  // path that reliably presents the GL surface. Respect an explicit user override.
+  #[cfg(target_os = "linux")]
+  if std::env::var_os("WEBKIT_DISABLE_DMABUF_RENDERER").is_none() {
+    std::env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
+  }
+
   tauri::Builder::default()
     .plugin(tauri_plugin_fs::init())
     .plugin(tauri_plugin_dialog::init())
