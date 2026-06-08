@@ -1,12 +1,10 @@
 import { useMemo, useState } from 'react';
 import { PALETTE } from '@/styles/palette';
 import { collectRenderDiagnostics, formatDiagnostics } from '@/game/render/gpuDiagnostics';
-import { PixiInitError } from '@/game/render/createPixiApp';
-import { setRenderSafeMode, isRenderSafeMode } from '@/game/render/renderSafeMode';
 
-// Shown when a Pixi canvas fails to initialise. Replaces the old silent-black-screen failure
-// with a real, copyable report (which webview, which GPU, what WebGL exists, every init
-// attempt's error) and a one-click "safe mode" reload. Pure DOM — needs no working canvas.
+// Shown when a Pixi canvas fails to initialise or its textures fail to load. Replaces the old
+// silent-black-screen failure with a real, copyable report (which webview, which GPU, what
+// WebGL exists, the actual error) plus a reload. Pure DOM — needs no working canvas.
 
 function reload(): void {
   window.location.reload();
@@ -14,16 +12,8 @@ function reload(): void {
 
 export function RenderErrorPanel({ error }: { error: unknown }): React.JSX.Element {
   const [copied, setCopied] = useState(false);
-  const alreadySafe = isRenderSafeMode();
 
-  const details = useMemo(() => {
-    const diag = collectRenderDiagnostics();
-    let text = formatDiagnostics(diag, error);
-    if (error instanceof PixiInitError && error.attempts.length > 0) {
-      text += '\nattempts:\n' + error.attempts.map((a) => `  - ${a.label}: ${a.error}`).join('\n');
-    }
-    return text;
-  }, [error]);
+  const details = useMemo(() => formatDiagnostics(collectRenderDiagnostics(), error), [error]);
 
   const copy = (): void => {
     void navigator.clipboard?.writeText(details).then(
@@ -35,11 +25,6 @@ export function RenderErrorPanel({ error }: { error: unknown }): React.JSX.Eleme
         /* clipboard blocked — the text is on screen to copy by hand */
       },
     );
-  };
-
-  const enterSafeMode = (): void => {
-    setRenderSafeMode(true);
-    reload();
   };
 
   return (
@@ -71,9 +56,8 @@ export function RenderErrorPanel({ error }: { error: unknown }): React.JSX.Eleme
       >
         <h2 style={{ margin: '0 0 8px', color: PALETTE.gold, fontSize: 18 }}>Graphics failed to start</h2>
         <p style={{ margin: '0 0 14px', fontSize: 13, color: PALETTE.textMute, lineHeight: 1.5 }}>
-          The game canvas couldn&apos;t initialise on this machine.{' '}
-          {alreadySafe ? 'Safe mode is already on. ' : 'Try safe mode (opaque, low-detail) below. '}
-          Please send these details to the developer.
+          The game canvas couldn&apos;t start on this machine. Please copy these details and send
+          them to the developer.
         </p>
         <pre
           style={{
@@ -93,12 +77,7 @@ export function RenderErrorPanel({ error }: { error: unknown }): React.JSX.Eleme
           {details}
         </pre>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          {!alreadySafe && (
-            <button type="button" onClick={enterSafeMode} style={btnStyle(true)}>
-              Reload in safe mode
-            </button>
-          )}
-          <button type="button" onClick={copy} style={btnStyle(false)}>
+          <button type="button" onClick={copy} style={btnStyle(true)}>
             {copied ? 'Copied!' : 'Copy details'}
           </button>
           <button type="button" onClick={reload} style={btnStyle(false)}>
