@@ -27,7 +27,7 @@ export interface CastFx {
  *  it targets enemies (offense) or allies/self (support). */
 export function castFx(abilityKey: string): CastFx {
   const def = abilityDef(abilityKey);
-  const offensive = def.target === 'frontEnemy' || def.target === 'allEnemies';
+  const offensive = def.target === 'frontEnemy' || def.target === 'meleeEnemies' || def.target === 'allEnemies';
   return { glyph: abilityIcon(def), color: offensive ? FX.offense : FX.support };
 }
 
@@ -36,7 +36,7 @@ export function castFx(abilityKey: string): CastFx {
 export function isSupportCast(abilityKey: string): boolean {
   const def = tryAbilityDef(abilityKey);
   if (def === undefined) return false;
-  return def.target !== 'frontEnemy' && def.target !== 'allEnemies';
+  return def.target !== 'frontEnemy' && def.target !== 'meleeEnemies' && def.target !== 'allEnemies';
 }
 
 /** True when a cast hits the WHOLE wave (target 'allEnemies' — Holy Nova, Raining Arrows).

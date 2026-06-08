@@ -344,7 +344,7 @@ function enemyAttack(e: Combatant, target: Combatant, S: number, rng: Rng, event
   const defense = e.enemyMagic ? stats.magicResist : stats.armor;
   const mit = mitigation(Math.max(0, defense), S);
   const enrage = e.isBoss === true ? enrageMultiplier(e.fightMs ?? 0, e.enrageMs ?? Number.POSITIVE_INFINITY) : 1;
-  // weakenMult: a Debilitated enemy (Knight's Debilitating Strike) deals less damage.
+  // weakenMult: a Debilitated enemy (Knight's Debilitating Cleave) deals less damage.
   let dmg = (e.enemyDamage ?? 1) * enrage * weakenMult(e.effects) * (1 - mit);
   const blocked = rng.chance(Math.min(1, stats.block / 100));
   if (blocked) dmg *= 0.5;

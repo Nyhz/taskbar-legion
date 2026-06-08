@@ -68,6 +68,25 @@ describe('ability mechanics', () => {
     }
   });
 
+  it('Debilitating Cleave damages + weakens every enemy in melee range, sparing those out of reach', () => {
+    const caster = unit({
+      id: 'k', side: 'hero', x: 0, range: 55, // knight melee reach
+      baseStats: base({ attackDamage: 100, critChance: 0 }),
+      abilities: [{ def: abilityDef('knight_debilitate'), rank: 1 }], // 1.2× AD + 15% weaken/6s
+    });
+    const nearA = unit({ id: 'e1', side: 'enemy', x: 20, hp: 1000, maxHp: 1000 }); // Δ20 ≤ 55 → cleaved
+    const nearB = unit({ id: 'e2', side: 'enemy', x: 50, hp: 1000, maxHp: 1000 }); // Δ50 ≤ 55 → cleaved
+    const far = unit({ id: 'e3', side: 'enemy', x: 200, hp: 1000, maxHp: 1000 }); // Δ200 > 55 → spared
+    const cast = castReadyAbilities(caster, [caster], [nearA, nearB, far], 1, makeRng(1), []);
+    expect(cast).toContain('knight_debilitate');
+    for (const e of [nearA, nearB]) {
+      expect(e.hp).toBeCloseTo(880, 1); // 1000 − 1.2×100
+      expect(e.effects.find((x) => x.defKey === 'debuff_weaken')?.value).toBeCloseTo(15, 1);
+    }
+    expect(far.hp).toBe(1000); // beyond melee reach — untouched
+    expect(far.effects.find((x) => x.defKey === 'debuff_weaken')).toBeUndefined();
+  });
+
   it('a heal-over-time scales with healPower (zone-debuffed) and lands on the lowest ally', () => {
     const priest = unit({
       id: 'p', side: 'hero', hp: 100, maxHp: 100,
