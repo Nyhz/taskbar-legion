@@ -54,6 +54,11 @@ export interface GameSlice {
   autoOpenPending: boolean;
   requestAutoOpen: () => void;
   clearAutoOpen: () => void;
+  /** True after a persist write threw — surfaces a "progress isn't saving" warning so a
+   *  silent save failure (e.g. the macOS app-data dir bug) can never lose hours unnoticed.
+   *  Set/cleared by saveManager.saveGame on each write attempt. */
+  saveFailed: boolean;
+  setSaveFailed: (failed: boolean) => void;
 }
 
 export const createGameSlice: StateCreator<GameSlice, [], [], GameSlice> = (set) => ({
@@ -68,4 +73,6 @@ export const createGameSlice: StateCreator<GameSlice, [], [], GameSlice> = (set)
   autoOpenPending: false,
   requestAutoOpen: () => set({ autoOpenPending: true }),
   clearAutoOpen: () => set({ autoOpenPending: false }),
+  saveFailed: false,
+  setSaveFailed: (failed) => set({ saveFailed: failed }),
 });

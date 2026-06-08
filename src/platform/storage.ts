@@ -31,9 +31,13 @@ const tauriStore: SaveStore = {
   },
   async write(save) {
     const { writeTextFile, mkdir, BaseDirectory } = await fs();
-    // The app-data dir may not exist on first launch — create it (idempotent).
+    // The app-data dir is NOT auto-created by Tauri, and writeTextFile won't create parent
+    // dirs — so on a fresh install the dir is missing and the write fails (ENOENT). On macOS
+    // `mkdir('.')` did NOT create it (saves silently lost → "Start Game" every launch);
+    // mkdir'ing the RESOLVED absolute path does. See tauri discussion #11279.
     try {
-      await mkdir('.', { baseDir: BaseDirectory.AppData, recursive: true });
+      const { appDataDir } = await import('@tauri-apps/api/path');
+      await mkdir(await appDataDir(), { recursive: true });
     } catch {
       // already exists — non-fatal
     }
