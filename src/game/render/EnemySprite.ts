@@ -360,7 +360,7 @@ export class EnemySprite extends Container {
     }
     if (!c.alive) return;
     // Bold category overlays — enemies most often wear DEBUFFS (red down-arrows from
-    // Debilitating Strike / Frozen Trap, etc.) or the ranger's MARK reticle, drawn over the
+    // Debilitating Cleave / Frozen Trap, etc.) or the ranger's MARK reticle, drawn over the
     // figure's vertical span.
     const cats = auraCategories(c.effects);
     drawCategoryAuras(this.aura, cats, this.auraRegion());

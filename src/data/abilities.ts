@@ -47,7 +47,7 @@ export interface AbilityDef {
   // under the boss) before its effect resolves — telegraphs the cast. Heroes ignore it
   // (instant, one-per-swing). Undefined/0 = instant.
   castTimeMs?: number;
-  target: 'self' | 'lowestAllyHp' | 'frontEnemy' | 'allEnemies' | 'allAllies' | 'randomDpsAlly' | 'tank';
+  target: 'self' | 'lowestAllyHp' | 'frontEnemy' | 'meleeEnemies' | 'allEnemies' | 'allAllies' | 'randomDpsAlly' | 'tank';
   applies: AppliedEffect[];
   castCondition?: 'always' | 'enemyPresent' | 'allyBelowHpPct' | 'tankEngaged';
   power?: AbilityPower;
@@ -66,6 +66,7 @@ export const TARGET_LABEL: Record<AbilityDef['target'], string> = {
   self: 'Self',
   lowestAllyHp: 'Lowest-HP ally',
   frontEnemy: 'Front enemy',
+  meleeEnemies: 'Enemies in melee range',
   allEnemies: 'All enemies',
   allAllies: 'All allies',
   randomDpsAlly: 'Random damage-dealer',
@@ -83,10 +84,11 @@ export const ABILITIES: Record<string, AbilityDef> = {
     castCondition: 'enemyPresent', rankScaling: { perRank: { value: 5 } },
   },
   knight_debilitate: {
-    key: 'knight_debilitate', name: 'Debilitating Strike', icon: 'expose',
-    desc: 'A crippling blow — heavy damage that saps the target, cutting the damage it deals.',
-    cooldownMs: 12000, target: 'frontEnemy',
-    // Bonus damage (1.2×→2.0× AD) + debuff_weaken: target deals 15%→25% less damage for 6s.
+    key: 'knight_debilitate', name: 'Debilitating Cleave', icon: 'expose',
+    desc: 'A sweeping blow — heavy damage to every enemy in melee range, sapping the damage they deal.',
+    cooldownMs: 12000, target: 'meleeEnemies',
+    // Bonus damage (1.2×→2.0× AD) + debuff_weaken to EVERY enemy in melee reach: each deals
+    // 15%→25% less damage for 6s.
     applies: [{ effectKey: 'fx_damage' }, { effectKey: 'debuff_weaken' }],
     castCondition: 'enemyPresent', power: { coeff: 1.2, coeffPerRank: 0.2, canCrit: true },
     rankScaling: { perRank: { value: 2.5 } },

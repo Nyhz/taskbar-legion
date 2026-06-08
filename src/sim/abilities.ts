@@ -191,6 +191,11 @@ function selectTargets(caster: Combatant, ability: AbilityDef, allies: Combatant
       const front = enemies.find((e) => e.alive && inRange(caster, e));
       return front ? [front] : [];
     }
+    case 'meleeEnemies':
+      // A melee cleave (Knight's Debilitating Cleave): hits + debuffs EVERY living enemy
+      // within the caster's own reach — the front cluster, not the whole wave. Returns []
+      // when nothing is in range, so (like frontEnemy) it self-gates during the walk-up.
+      return enemies.filter((e) => e.alive && inRange(caster, e));
     case 'lowestAllyHp': {
       const living = allies.filter((a) => a.alive);
       if (living.length === 0) return [];
