@@ -68,8 +68,12 @@ export async function saveGame(): Promise<void> {
   writeFrontier(save.seed, save.maxClearedStage);
   try {
     await saveStore().write(save);
+    useStore.getState().setSaveFailed(false);
   } catch (err) {
     console.error('Save failed', err);
+    // Surface it — a silent persist failure (e.g. a missing app-data dir) must never lose
+    // hours of progress unnoticed. The overlay shows a warning badge while this is set.
+    useStore.getState().setSaveFailed(true);
   }
 }
 
