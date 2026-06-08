@@ -15,6 +15,20 @@ While the project is pre-1.0, minor versions may include breaking save changes.
 
 ### Fixed
 
+## [0.4.1] - 2026-06-08
+
+### Added
+
+### Changed
+
+- **Loadouts are now talent-only** — switching a loadout swaps only your talents and leaves your equipped gear untouched, so presets never re-shuffle or drop items.
+- **Knight's Debilitating Strike is now Debilitating Cleave** — it hits every enemy within melee range instead of a single target.
+
+### Fixed
+
+- Fixed the black / blank game screen that could appear in the packaged desktop app on some machines.
+- Saves now persist reliably on macOS — the packaged app no longer silently fails to write your progress, so **Continue** always picks up where you left off.
+
 ## [0.4.0] - 2026-06-06
 
 ### Added
@@ -90,7 +104,8 @@ While the project is pre-1.0, minor versions may include breaking save changes.
 - Initial desktop builds: Tauri v2 transparent, always-on-top, bottom-docked overlay.
 - Multi-platform release pipeline (macOS universal, Windows, Linux) via GitHub Actions.
 
-[Unreleased]: https://github.com/Nyhz/taskbar-legion/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/Nyhz/taskbar-legion/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/Nyhz/taskbar-legion/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/Nyhz/taskbar-legion/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/Nyhz/taskbar-legion/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/Nyhz/taskbar-legion/compare/v0.1.0...v0.2.0
