@@ -1,6 +1,7 @@
 import { Application } from 'pixi.js';
 import type { ApplicationOptions } from 'pixi.js';
-import { isRenderSafeMode } from './renderSafeMode';
+import { isRenderSafeMode, setRenderSafeMode } from './renderSafeMode';
+import { configurePixiLoader } from './configurePixiLoader';
 
 // The ONE place a Pixi Application is created. Both canvases (the game strip + the title
 // scene) go through here so they share the same hardened init path:
@@ -51,7 +52,7 @@ function background(transparent: boolean): Partial<ApplicationOptions> {
   return transparent ? { backgroundAlpha: 0 } : { background: OPAQUE_BG };
 }
 
-function buildAttempts(o: CreatePixiAppOptions): Attempt[] {
+function buildAttempts(o: CreatePixiAppOptions, safe: boolean): Attempt[] {
   const common: Partial<ApplicationOptions> = {
     width: o.width,
     height: o.height,
@@ -63,8 +64,8 @@ function buildAttempts(o: CreatePixiAppOptions): Attempt[] {
     webgl: { preferWebGLVersion: 2 },
   };
 
-  // Sticky safe mode: skip straight to the most conservative config.
-  if (isRenderSafeMode()) {
+  // Safe mode: skip straight to the most conservative config (opaque, resolution 1).
+  if (safe) {
     return [{ label: 'safe-opaque-res1', opts: { ...common, ...background(false), resolution: 1 } }];
   }
 
@@ -82,8 +83,16 @@ function buildAttempts(o: CreatePixiAppOptions): Attempt[] {
 }
 
 export async function createPixiApp(o: CreatePixiAppOptions): Promise<Application> {
+  // Must run before any Assets.load (the texture loaders run right after init in both the
+  // title + game paths) so the tauri:// createImageBitmap decode bug never bites.
+  configurePixiLoader();
+  // Safe mode is ONE-SHOT: consume it now so a user who entered it (e.g. during a past
+  // failure) isn't stranded in the opaque/low-detail canvas forever — the next launch tries
+  // the normal transparent path again, and the panel re-offers safe mode if it's still needed.
+  const safe = isRenderSafeMode();
+  if (safe) setRenderSafeMode(false);
   const failures: InitAttemptFailure[] = [];
-  for (const attempt of buildAttempts(o)) {
+  for (const attempt of buildAttempts(o, safe)) {
     const app = new Application();
     try {
       await app.init(attempt.opts);
