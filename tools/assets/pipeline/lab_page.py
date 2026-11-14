@@ -197,6 +197,90 @@ def candidates_section(cands: list[dict], bg: tuple[int, int, int], figs: dict) 
 '''
 
 
+ICONS = Path(__file__).resolve().parents[1] / "out" / "icons"
+
+
+def items_section() -> tuple[str, dict[str, str]]:
+    """The item icons (`sh run.sh icons` first): one block per group of its manifest, shown at 3×."""
+    manifest = ICONS / "manifest.json"
+    if not manifest.exists():
+        return "", {}
+    files: dict[str, str] = {}
+    blocks = []
+    order = ["tiers", "helmets", "chest", "gloves", "legs", "boots", "swords", "shield", "bow", "quiver", "wand", "tome",
+             "ring", "amulet", "trinket", "gems", "chests", "chests_open", "keys", "stats", "ui", "chrome"]
+
+    def rank(g: dict) -> int:
+        key = g["key"]
+        for i, o in enumerate(order):  # exact name first, then "<slot>_<family>"
+            if key == o:
+                return i * 10
+        for i, o in enumerate(order):
+            if key.startswith(o + "_"):
+                return i * 10 + 1 + ["plate", "leather", "cloth"].index(key.rsplit("_", 1)[1]) if key.rsplit("_", 1)[1] in ("plate", "leather", "cloth") else i * 10 + 5
+        return 999
+
+    for g in sorted(json.loads(manifest.read_text()), key=rank):
+        cells = []
+        for it in g["items"]:
+            files[f"img/icons/{it['file']}"] = str((ICONS / it["file"]).relative_to(ROOT))
+            w, h = Image.open(ICONS / it["file"]).size
+            k = 2 if w > 48 else 3 if w >= 32 else 4  # framed items at 3×; the small glyphs at 4×; big pieces at 2×
+            cells.append(f'        <figure class="item"><img class="px" src="img/icons/{it["file"]}" width="{w * k}" height="{h * k}" '
+                         f'style="width:{w * k}px;height:{h * k}px" alt="{esc(it["name"])}"><figcaption>{esc(it["name"])}</figcaption></figure>')
+        blocks.append(f'''      <div class="item-group">
+        <h3>{esc(g["title"])}</h3>
+        <p class="muted">{esc(g["note"])}</p>
+        <div class="items">
+{chr(10).join(cells)}
+        </div>
+      </div>''')
+    return f'''  <section id="items">
+    <div class="sec-head">
+      <span class="eyebrow">Objetos</span>
+      <h2>Iconos de objetos</h2>
+      <p class="muted">Iconos de 32 × 32 en la misma paleta que los personajes, hechos con planos facetados y contorno. La rareza no se redibuja: la dice el marco. Cada tipo de objeto tiene cinco categorías, de lo tosco a una pieza de la Grieta; la armadura, además, tres familias, una por clase.</p>
+    </div>
+{chr(10).join(blocks)}
+  </section>
+''', files
+
+
+MOCKUPS = ROOT / "docs" / "redesign" / "mockups"
+
+
+def mockups_section() -> tuple[str, dict[str, str]]:
+    """The interface mock-ups: every fragment of docs/redesign/mockups, in name order, with the icons they use."""
+    parts = [f.read_text() for f in sorted(MOCKUPS.glob("*.html"))]
+    if not parts:
+        return "", {}
+    body = "\n".join(parts)
+    files = {f"img/icons/{name}": str((ICONS / name).relative_to(ROOT)) for name in sorted(set(re.findall(r'img/icons/(\w+\.png)', body)))}
+    return f'''  <section id="ui">
+    <div class="sec-head">
+      <span class="eyebrow">Interfaz · maqueta 2</span>
+      <h2>Panel de héroe y alijo</h2>
+      <p class="muted">Segunda maqueta, hecha para que deje de parecer una plantilla: signos en lugar de palabras, y las palabras solo en los tooltips (pasa el ratón por casillas, estadísticas, pestañas y botones). El marco es pixel art de verdad, con cantoneras de latón; los nombres van en gótica y los números en una pixel limpia. El Knight del nicho es su animación de reposo.</p>
+    </div>
+    <div class="mock-stage">
+{body}
+    </div>
+  </section>
+''', files
+
+
+def refresh_items() -> None:
+    """Only the items region of the page and its files (no figures or worlds are re-exported)."""
+    section, files = items_section()
+    mock, mock_files = mockups_section()
+    files |= mock_files
+    PAGE.write_text(between(between(PAGE.read_text(), "items", section), "mockups", mock))
+    listed = json.loads((OUT / "files.json").read_text()) if (OUT / "files.json").exists() else {}
+    listed = {k: v for k, v in listed.items() if not k.startswith("img/icons/")} | files
+    (OUT / "files.json").write_text(json.dumps(listed))
+    print(f"items: {len(files)} icons")
+
+
 def between(page: str, tag: str, body: str, js: bool = False) -> str:
     a, b = (f"/* {tag}:start */", f"/* {tag}:end */") if js else (f"<!-- {tag}:start -->", f"<!-- {tag}:end -->")
     i, j = page.index(a) + len(a), page.index(b)
@@ -232,10 +316,16 @@ def main() -> None:
     page = PAGE.read_text()
     page = between(page, "worldsel", "\n".join(buttons))
     page = between(page, "worlds", "\n".join(sections))
+    items_html, item_files = items_section()
+    page = between(page, "items", items_html)
+    mock_html, mock_files = mockups_section()
+    page = between(page, "mockups", mock_html)
+    item_files |= mock_files
     page = between(page, "data", "  var DATA = " + json.dumps(data, ensure_ascii=False, separators=(",", ":")) + ";", js=True)
     PAGE.write_text(page)
     files = {f"img/{f.name}": str(f.relative_to(ROOT)) for f in sorted((OUT / "img").glob("*.png"))
              if f.stem.removeprefix("f_") in figs or f.stem.rsplit("_", 1)[0] in {k for k, _i, _b in worlds}}
+    files |= item_files
     missing = sorted(set(re.findall(r'data-char="(\w+)"', page)) - set(figs))
     (OUT / "files.json").write_text(json.dumps(files))
     print(f"page: {len(worlds)} worlds, {len(figs)} figures, {len(files)} files; clips without a figure: {missing}")

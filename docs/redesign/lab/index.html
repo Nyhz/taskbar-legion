@@ -2,7 +2,7 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Jersey+10&family=Jersey+20&family=Jacquard+12&display=swap">
 <style>
 /* Layout: a single review column in the game's own "dusk" palette — dark by design, because pixel art is judged on the dark strip it will live on. */
 :root {
@@ -66,6 +66,13 @@ section { display: grid; gap: 18px; }
 .clip { display: grid; justify-items: center; flex: 1 1 240px; }
 .clip canvas { width: 288px; max-width: 100%; height: auto; }
 .clip span { font: 500 11px/1 var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--clip-label, #f8c48a); padding: 0 0 12px; }
+.item-group { display: grid; gap: 8px; margin-top: 22px; }
+.item-group h3 { margin: 0; }
+.items { display: flex; flex-wrap: wrap; gap: 14px; }
+.item { display: grid; justify-items: center; gap: 6px; width: 116px; margin: 0; }
+.item img { width: 108px; height: 108px; }
+.item figcaption { font: 500 11px/1.3 var(--f-mono); color: var(--muted); text-align: center; }
+.mock-stage { background: #2a1f3d; border: 1px solid var(--line); padding: 20px 16px; overflow-x: auto; }
 .world-name { font: 500 12px/1 var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--gold); align-self: center; }
 button.link { background: none; border: 0; padding: 0; font: inherit; color: var(--gold); text-decoration: underline; cursor: pointer; }
 .how { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); }
@@ -94,8 +101,8 @@ button.link { background: none; border: 0; padding: 0; font: inherit; color: var
     <h1>Laboratorio de arte</h1>
     <p class="muted">Aquí va apareciendo todo lo que se genera para el rediseño. Los personajes empiezan de cero: esqueletos nuevos y un motor de animación propio.</p>
     <div class="status">
-      <span class="chip on">Fase: Torment, atmósfera y contraste</span>
-      <span class="chip wait">Esperando tu revisión de la cuarta pasada</span>
+      <span class="chip on">Fase: interfaz · maqueta 2</span>
+      <span class="chip wait">Esperando tu opinión sobre la maqueta de la interfaz</span>
       <span class="chip">Rama redesign/foundations</span>
       <span class="chip">Actualizado 14 nov 2026</span>
     </div>
@@ -1089,6 +1096,696 @@ button.link { background: none; border: 0; padding: 0; font: inherit; color: var
 
 <!-- worlds:end -->
 
+<!-- mockups:start -->
+  <section id="ui">
+    <div class="sec-head">
+      <span class="eyebrow">Interfaz · maqueta 2</span>
+      <h2>Panel de héroe y alijo</h2>
+      <p class="muted">Segunda maqueta, hecha para que deje de parecer una plantilla: signos en lugar de palabras, y las palabras solo en los tooltips (pasa el ratón por casillas, estadísticas, pestañas y botones). El marco es pixel art de verdad, con cantoneras de latón; los nombres van en gótica y los números en una pixel limpia. El Knight del nicho es su animación de reposo.</p>
+    </div>
+    <div class="mock-stage">
+<!--
+  Mock-up 2 — the Hero panel (paper doll) and the Stash.
+  A fragment: the lab page injects it (tools/assets/pipeline/lab_page.py). Drawn at the game's 1× pixel size and
+  shown through `zoom`, so every piece keeps whole pixels.
+
+  Rules of this pass (asked for by the user): signs instead of words, words only in tooltips; chrome drawn as pixel
+  art (nine-slices from tools/assets/pipeline/icon_sets/s95_chrome.py), not CSS boxes; two typefaces with a job
+  each — a blackletter for names, a pixel grotesque for numbers; gold only where it matters; no inset boxes, no
+  title bars, space instead of lines. These recipes are the design system to port to src/ui/kit.
+-->
+<style>
+.gm {                                   /* tokens straight from the "dusk" palette */
+  --k0: #0b0d17; --k1: #151a2b; --k2: #212a40; --k3: #303c55; --k4: #43506a; --k5: #5b6880; --k6: #77839a; --k7: #97a1b3; --k8: #bcc3cf; --k9: #e6e6e8;
+  --gold: #ebb94f; --gold-hi: #f8dc84; --gold-dim: #a96628; --gold-dk: #4f2b22;
+  --xp: #3f68a6; --xp-hi: #82b0da; --xp-dk: #2e4a88; --good: #86ab5a; --bad: #dc5f48;
+  --t0: #97a1b3; --t1: #86ab5a; --t2: #82b0da; --t3: #cba2dd; --t4: #ee9f72; --t5: #f08a62; --t6: #6fb9a6; --t7: #f8dc84; --t8: #ead2f0;
+  --f-name: "Jacquard 12", "Pixelify Sans", serif;      /* names of things: 12 px grid */
+  --f-title: "Jacquard 12", "Pixelify Sans", serif;     /* window titles: the same face at twice the size, the hero's pixel */
+  --f-num: "Jersey 10", "Pixelify Sans", monospace;     /* numbers and tooltip text: 10 px grid */
+  --f-big: "Jersey 20", "Pixelify Sans", monospace;     /* the one big number: 20 px grid */
+  zoom: 2;
+  font: 10px/10px var(--f-num);
+  color: var(--k8);
+  display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: flex-start;
+  image-rendering: pixelated;
+}
+@media (max-width: 760px) { .gm { zoom: 1; } }
+.gm * { box-sizing: border-box; }
+.gm img, .gm canvas { image-rendering: pixelated; display: block; }
+.gm p { margin: 0; }
+
+/* Window: one nine-slice, brass only on the corners. */
+.gm-win { position: relative; z-index: 1; border: 10px solid transparent; border-image: url(img/icons/ui_window.png) 10 fill / 10px / 0 stretch;
+  filter: drop-shadow(2px 2px 0 rgba(11, 13, 23, .55)); }
+.gm-in { margin: -3px; }
+.gm-close { position: absolute; right: -10px; top: -10px; width: 13px; height: 13px; }   /* takes the place of the corner fitting */
+.gm-close:hover { filter: brightness(1.25); }
+
+/* Titles: blackletter, gold. */
+.gm-title { font: 24px/22px var(--f-title); color: var(--gold-hi); text-shadow: 1px 1px 0 var(--k0); }
+.gm-rule { display: flex; align-items: center; gap: 1px; }
+.gm-rule i { flex: 1; height: 1px; background: var(--k3); }
+
+/* Tabs: bookmarks on the window's left edge, a sign each. */
+.gm-book { padding-left: 19px; }
+.gm-tabs { position: absolute; left: 0; top: 12px; display: grid; gap: 2px; }
+.gm-tab { position: relative; width: 22px; height: 22px; background: url(img/icons/ui_tab.png); padding: 3px 0 0 3px; }
+.gm-tab img { opacity: .55; }
+.gm-tab:hover img { opacity: 1; }
+.gm-tab.on { z-index: 2; background-image: url(img/icons/ui_tab_on.png); }
+.gm-tab.on img { opacity: 1; }
+
+/* Slot: the icon already carries its rarity frame (36×36). */
+.gm-slot { position: relative; width: 36px; height: 36px; }
+.gm-slot > img { width: 36px; height: 36px; }
+.gm-slot.empty > img.ghost { position: absolute; inset: 0; opacity: .16; filter: grayscale(1) brightness(1.6); clip-path: inset(2px); }
+.gm-slot.sel::after { content: ""; position: absolute; inset: -2px; pointer-events: none;
+  background:
+    linear-gradient(var(--gold-hi), var(--gold-hi)) 0 0 / 6px 1px, linear-gradient(var(--gold-hi), var(--gold-hi)) 0 0 / 1px 6px,
+    linear-gradient(var(--gold-hi), var(--gold-hi)) 100% 0 / 6px 1px, linear-gradient(var(--gold-hi), var(--gold-hi)) 100% 0 / 1px 6px,
+    linear-gradient(var(--gold-hi), var(--gold-hi)) 0 100% / 6px 1px, linear-gradient(var(--gold-hi), var(--gold-hi)) 0 100% / 1px 6px,
+    linear-gradient(var(--gold-hi), var(--gold-hi)) 100% 100% / 6px 1px, linear-gradient(var(--gold-hi), var(--gold-hi)) 100% 100% / 1px 6px;
+  background-repeat: no-repeat; }
+.gm-slot:hover > img:first-child { filter: brightness(1.18); }
+.gm-slot > b { position: absolute; right: 3px; bottom: 3px; font-weight: 400; color: var(--k9); text-shadow: 1px 0 0 var(--k0), -1px 0 0 var(--k0), 0 1px 0 var(--k0), 0 -1px 0 var(--k0); }
+.gm-slot > .up { position: absolute; left: 1px; top: 1px; width: 16px; height: 16px; }
+
+/* Bars: stepped corners, a lit top row, the number inside. */
+.gm-bar { position: relative; height: 11px; background: var(--k0);
+  clip-path: polygon(1px 0, calc(100% - 1px) 0, calc(100% - 1px) 1px, 100% 1px, 100% calc(100% - 1px), calc(100% - 1px) calc(100% - 1px), calc(100% - 1px) 100%, 1px 100%, 1px calc(100% - 1px), 0 calc(100% - 1px), 0 1px, 1px 1px); }
+.gm-bar > u { position: absolute; left: 1px; top: 1px; bottom: 1px; background: linear-gradient(var(--xp-hi) 0 1px, var(--xp) 1px 7px, var(--xp-dk) 7px); }
+.gm-bar > b { position: absolute; inset: 0; font-weight: 400; text-align: center; line-height: 11px; color: var(--k9); text-shadow: 1px 1px 0 var(--k0); }
+
+/* Hero panel. */
+.gm-hero { display: grid; grid-template-columns: 36px 100px 36px 50px; gap: 0 6px; }
+.gm-col { display: grid; gap: 2px; align-content: start; }
+.gm-mid { display: grid; align-content: start; justify-items: center; }
+.gm-who { display: flex; align-items: center; gap: 4px; height: 24px; margin-top: -2px; }
+.gm-doll { position: relative; width: 100px; height: 116px; margin-top: 4px; background: url(img/icons/ui_alcove.png); }
+.gm-doll .fig { position: absolute; inset: 6px 6px 1px; overflow: hidden; }
+.gm-doll canvas { position: absolute; left: -36px; top: -34px; width: 192px; height: 140px; }
+.gm-lvl { position: absolute; left: 50%; top: -3px; transform: translateX(-50%); z-index: 1; min-width: 19px; height: 14px; padding: 0 4px; text-align: center; line-height: 11px; color: var(--gold-dk); }
+.gm-lvl::before { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(var(--gold-hi) 0 1px, var(--gold) 1px 9px, var(--gold-dim) 9px);   /* a pennant; on a layer of its own so the tooltip is not clipped */
+  clip-path: polygon(1px 0, calc(100% - 1px) 0, calc(100% - 1px) 1px, 100% 1px, 100% calc(100% - 3px), 50% 100%, 0 calc(100% - 3px), 0 1px, 1px 1px); }
+.gm-line { display: grid; grid-template-columns: 16px 1fr; gap: 3px; align-items: center; width: 100px; margin-top: 5px; }
+.gm-power { display: flex; align-items: center; gap: 4px; margin-top: 5px; font: 20px/20px var(--f-big); color: var(--gold-hi); text-shadow: 1px 1px 0 var(--k0); }
+
+/* Stats: a sign and a number. What it is, and where it comes from, lives in the tooltip. */
+.gm-stats { display: grid; align-content: start; margin-left: 2px; }
+.gm-stat { position: relative; display: grid; grid-template-columns: 16px 1fr; gap: 3px; align-items: center; height: 18px; padding-right: 2px; }
+.gm-stat > b { font-weight: 400; text-align: right; color: var(--k9); }
+.gm-stat:hover { background: var(--k2); }
+.gm-stat.gap { margin-top: 8px; }
+.gm-stat > b.up { color: var(--good); }
+
+/* Tooltips: the only place where things are spelled out. */
+.gm-tip { width: 150px; border: 4px solid transparent; border-image: url(img/icons/ui_tip.png) 4 fill / 4px / 0 stretch; padding: 2px 3px 3px; color: var(--k7); text-align: left; font: 10px/10px var(--f-num);
+  filter: drop-shadow(2px 2px 0 rgba(11, 13, 23, .55)); }
+.gm-tip.mini { width: 116px; }
+.gm-tip.tag { width: auto; white-space: nowrap; }
+.gm-tip .nm { font: 12px/12px var(--f-name); padding-bottom: 3px; }
+.gm-tip .hd { color: var(--gold-hi); padding-bottom: 3px; }
+.gm-tip .sub { display: flex; align-items: center; gap: 2px; height: 16px; margin: -3px 0; }
+.gm-tip .sub .r { margin-left: auto; display: flex; align-items: center; color: var(--k9); }
+.gm-tip .gm-rule { margin: 4px 0 3px; }
+.gm-tip .aff { display: grid; grid-template-columns: 16px auto 1fr; gap: 3px; align-items: center; height: 15px; }
+.gm-tip .aff b, .gm-tip .cmp b, .gm-tip .ln b { font-weight: 400; color: var(--k9); }
+.gm-tip .aff.gem b { color: #f08a62; }
+.gm-tip .cmp { display: flex; align-items: center; gap: 1px; height: 16px; margin: 0 0 -3px -2px; }
+.gm-tip .cmp b { color: var(--good); }
+.gm-tip .lore { color: var(--k5); padding-top: 4px; }
+.gm-tip .ln { display: flex; justify-content: space-between; padding-top: 3px; }
+.gm-tip p + .ln { padding-top: 5px; }
+.t0 .nm { color: var(--t0); } .t1 .nm { color: var(--t1); } .t2 .nm { color: var(--t2); } .t3 .nm { color: var(--t3); } .t4 .nm { color: var(--t4); }
+.t5 .nm { color: var(--t5); } .t6 .nm { color: var(--t6); } .t7 .nm { color: var(--t7); } .t8 .nm { color: var(--t8); }
+.gm .tt { display: none; position: absolute; left: calc(100% + 5px); top: 0; z-index: 40; pointer-events: none; }
+.gm .tt.above { left: 0; top: auto; bottom: calc(100% + 4px); }
+.gm .tt.left { left: auto; right: calc(100% + 5px); }
+.gm .has:hover > .tt { display: block; }
+.gm-line, .gm-power, .gm-gold { position: relative; }
+.gm-grid .gm-slot:nth-child(6n+4) > .tt, .gm-grid .gm-slot:nth-child(6n+5) > .tt, .gm-grid .gm-slot:nth-child(6n) > .tt { left: auto; right: calc(100% + 5px); }
+.gm-book, .gm-side > * { position: relative; z-index: 1; }      /* the panel under the pointer comes to the front, tooltips and all */
+.gm-book:hover, .gm-side > *:hover { z-index: 9; }
+
+/* Stash. */
+.gm-top { display: flex; align-items: center; gap: 5px; height: 22px; margin-top: -2px; }
+.gm-top > span { color: var(--k6); padding-top: 5px; }
+.gm-filter { margin-left: auto; display: flex; gap: 1px; padding-right: 8px; }
+.gm-filter > div { position: relative; width: 18px; height: 20px; padding: 1px; }
+.gm-filter > div > img { opacity: .4; }
+.gm-filter > div:hover > img { opacity: .8; }
+.gm-filter > div.on { box-shadow: inset 0 -1px 0 var(--gold); }
+.gm-filter > div.on > img { opacity: 1; }
+.gm-grid { display: grid; grid-template-columns: repeat(6, 36px); gap: 2px; margin-top: 5px; }
+.gm-foot { display: flex; align-items: center; gap: 3px; margin-top: 6px; }
+.gm-btn { position: relative; width: 24px; height: 24px; border: 4px solid transparent; border-image: url(img/icons/ui_btn.png) 4 fill / 4px / 0 stretch; }
+.gm-btn > img { margin-top: -1px; }
+.gm-btn:hover { filter: brightness(1.15); }
+.gm-btn.gold { border-image-source: url(img/icons/ui_btn_gold.png); }
+.gm-btn.off { border-image-source: url(img/icons/ui_btn_off.png); }
+.gm-btn.off > img { opacity: .45; filter: grayscale(1); }
+.gm-btn > b { position: absolute; right: -6px; top: -7px; min-width: 9px; height: 9px; padding: 0 2px; font-weight: 400; line-height: 9px; text-align: center; color: var(--k9); background: #8f2433; box-shadow: 0 0 0 1px var(--k0); }
+.gm-gold { margin-left: auto; display: flex; align-items: center; gap: 2px; color: var(--gold-hi); }
+.gm-side { display: grid; gap: 10px; align-content: start; justify-items: start; }
+</style>
+
+<div class="gm" role="group" aria-label="Maqueta de la interfaz: panel de héroe del Knight con su equipo y estadísticas, un tooltip de objeto y el alijo.">
+  <div class="gm-book">
+    <div class="gm-tabs">
+      <div class="gm-tab on has"><img src="img/icons/tab_gear.png" alt="Equipo"><div class="gm-tip tag tt"><div class="hd" style="padding:0">Equipo</div></div></div>
+      <div class="gm-tab has"><img src="img/icons/tab_talents.png" alt="Talentos"><div class="gm-tip tag tt"><div class="hd" style="padding:0">Talentos</div></div></div>
+      <div class="gm-tab has"><img src="img/icons/tab_skills.png" alt="Habilidades"><div class="gm-tip tag tt"><div class="hd" style="padding:0">Habilidades</div></div></div>
+    </div>
+    <div class="gm-win">
+      <img class="gm-close" src="img/icons/ui_x.png" alt="Cerrar">
+      <div class="gm-in gm-hero">
+        <div class="gm-col">
+          <div class="gm-slot has"><img src="img/icons/helmet_plate_3.png" alt="Gran yelmo de acero">
+            <div class="gm-tip tt t3"><div class="nm">Gran yelmo de acero</div><div class="sub"><span>Yelmo</span><span class="r"><img src="img/icons/ui_power.png" alt="Poder">82</span><img src="img/icons/crest_knight.png" alt="Knight"></div><div class="gm-rule"><i></i><img src="img/icons/ui_rule.png" alt=""><i></i></div>
+              <div class="aff"><img src="img/icons/stat_armor.png" alt=""><b>+624</b><span>Armadura</span></div><div class="aff"><img src="img/icons/stat_health.png" alt=""><b>+3 180</b><span>Vida</span></div><div class="aff"><img src="img/icons/stat_block.png" alt=""><b>+4,2 %</b><span>Bloqueo</span></div></div></div>
+          <div class="gm-slot has"><img src="img/icons/chest_plate_4.png" alt="Coraza dorada alada">
+            <div class="gm-tip tt t5"><div class="nm">Coraza dorada alada</div><div class="sub"><span>Pechera</span><span class="r"><img src="img/icons/ui_power.png" alt="Poder">91</span><img src="img/icons/crest_knight.png" alt="Knight"></div><div class="gm-rule"><i></i><img src="img/icons/ui_rule.png" alt=""><i></i></div>
+              <div class="aff"><img src="img/icons/stat_armor.png" alt=""><b>+1 140</b><span>Armadura</span></div><div class="aff"><img src="img/icons/stat_magicResist.png" alt=""><b>+410</b><span>Resistencia mágica</span></div><div class="aff"><img src="img/icons/stat_health.png" alt=""><b>+5 020</b><span>Vida</span></div><div class="aff"><img src="img/icons/stat_damageReduction.png" alt=""><b>+3,1 %</b><span>Reducción de daño</span></div></div></div>
+          <div class="gm-slot has"><img src="img/icons/gloves_plate_2.png" alt="Guantelete articulado">
+            <div class="gm-tip tt t1"><div class="nm">Guantelete articulado</div><div class="sub"><span>Guantes</span><span class="r"><img src="img/icons/ui_power.png" alt="Poder">74</span><img src="img/icons/crest_knight.png" alt="Knight"></div><div class="gm-rule"><i></i><img src="img/icons/ui_rule.png" alt=""><i></i></div>
+              <div class="aff"><img src="img/icons/stat_attackSpeed.png" alt=""><b>+0,08</b><span>Velocidad de ataque</span></div><div class="aff"><img src="img/icons/stat_armor.png" alt=""><b>+212</b><span>Armadura</span></div></div></div>
+          <div class="gm-slot has"><img src="img/icons/legs_plate_3.png" alt="Arnés acanalado">
+            <div class="gm-tip tt t3"><div class="nm">Arnés acanalado</div><div class="sub"><span>Perneras</span><span class="r"><img src="img/icons/ui_power.png" alt="Poder">80</span><img src="img/icons/crest_knight.png" alt="Knight"></div><div class="gm-rule"><i></i><img src="img/icons/ui_rule.png" alt=""><i></i></div>
+              <div class="aff"><img src="img/icons/stat_magicResist.png" alt=""><b>+538</b><span>Resistencia mágica</span></div><div class="aff"><img src="img/icons/stat_health.png" alt=""><b>+2 960</b><span>Vida</span></div><div class="aff"><img src="img/icons/stat_hpRegen.png" alt=""><b>+84</b><span>Regeneración</span></div></div></div>
+          <div class="gm-slot has"><img src="img/icons/boots_plate_1.png" alt="Canillera de hierro">
+            <div class="gm-tip tt t0"><div class="nm">Canillera de hierro</div><div class="sub"><span>Botas</span><span class="r"><img src="img/icons/ui_power.png" alt="Poder">61</span><img src="img/icons/crest_knight.png" alt="Knight"></div><div class="gm-rule"><i></i><img src="img/icons/ui_rule.png" alt=""><i></i></div>
+              <div class="aff"><img src="img/icons/stat_armor.png" alt=""><b>+148</b><span>Armadura</span></div></div></div>
+        </div>
+
+        <div class="gm-mid">
+          <div class="gm-who"><img src="img/icons/crest_knight.png" alt=""><div class="gm-title">Knight</div></div>
+          <div class="gm-doll">
+            <div class="gm-lvl has">47<div class="gm-tip mini tt"><div class="hd">Nivel 47</div><p>Tope: 120. Cada nivel sube la vida y el daño base.</p></div></div>
+            <div class="fig"><canvas class="px anim" data-char="knight" data-anim="idle" width="96" height="70" role="img" aria-label="El Knight en reposo."></canvas></div>
+          </div>
+          <div class="gm-line has"><img src="img/icons/ui_xp.png" alt="Experiencia"><div class="gm-bar"><u style="width:62%"></u><b>62 %</b></div>
+            <div class="gm-tip mini tt above"><div class="hd">Experiencia</div><div class="ln" style="padding-top:0"><span>Para el nivel 48</span><b>184 300</b></div></div></div>
+          <div class="gm-power has"><img src="img/icons/ui_power.png" alt="Poder de equipo">1 284
+            <div class="gm-tip mini tt above"><div class="hd">Poder de equipo</div><p>Lo que vale todo lo que lleva puesto, en un número.</p></div></div>
+        </div>
+
+        <div class="gm-col">
+          <div class="gm-slot sel"><img src="img/icons/sword_3.png" alt="Hoja de caballero"></div>
+          <div class="gm-slot has"><img src="img/icons/shield_4.png" alt="Égida alada">
+            <div class="gm-tip tt t5"><div class="nm">Égida alada</div><div class="sub"><span>Escudo</span><span class="r"><img src="img/icons/ui_power.png" alt="Poder">90</span><img src="img/icons/crest_knight.png" alt="Knight"></div><div class="gm-rule"><i></i><img src="img/icons/ui_rule.png" alt=""><i></i></div>
+              <div class="aff"><img src="img/icons/stat_block.png" alt=""><b>+14,5 %</b><span>Bloqueo</span></div><div class="aff"><img src="img/icons/stat_armor.png" alt=""><b>+780</b><span>Armadura</span></div><div class="aff"><img src="img/icons/stat_critChance.png" alt=""><b>+3,8 %</b><span>Crítico</span></div></div></div>
+          <div class="gm-slot has"><img src="img/icons/ring_5.png" alt="Anillo de la Grieta">
+            <div class="gm-tip tt t8"><div class="nm">Anillo de la Grieta</div><div class="sub"><span>Anillo</span><span class="r"><img src="img/icons/ui_power.png" alt="Poder">104</span><img src="img/icons/ui_all.png" alt="Cualquier clase"></div><div class="gm-rule"><i></i><img src="img/icons/ui_rule.png" alt=""><i></i></div>
+              <div class="aff"><img src="img/icons/stat_critDamage.png" alt=""><b>+42 %</b><span>Daño crítico</span></div><div class="aff"><img src="img/icons/stat_multistrike.png" alt=""><b>+6,4 %</b><span>Golpe múltiple</span></div><div class="aff"><img src="img/icons/stat_health.png" alt=""><b>+4 400</b><span>Vida</span></div><div class="aff"><img src="img/icons/stat_lifesteal.png" alt=""><b>+2,2 %</b><span>Robo de vida</span></div></div></div>
+          <div class="gm-slot has"><img src="img/icons/amulet_2.png" alt="Medalla de bronce">
+            <div class="gm-tip tt t1"><div class="nm">Medalla de bronce</div><div class="sub"><span>Amuleto</span><span class="r"><img src="img/icons/ui_power.png" alt="Poder">70</span><img src="img/icons/ui_all.png" alt="Cualquier clase"></div><div class="gm-rule"><i></i><img src="img/icons/ui_rule.png" alt=""><i></i></div>
+              <div class="aff"><img src="img/icons/stat_health.png" alt=""><b>+1 920</b><span>Vida</span></div><div class="aff"><img src="img/icons/stat_attackDamage.png" alt=""><b>+96</b><span>Daño de ataque</span></div></div></div>
+          <div class="gm-slot empty has"><img src="img/icons/ui_well.png" alt="Abalorio: vacío"><img class="ghost" src="img/icons/trinket_1.png" alt="">
+            <div class="gm-tip tag tt"><div class="hd" style="padding:0">Abalorio</div></div></div>
+        </div>
+
+        <div class="gm-stats">
+          <div class="gm-stat has"><img src="img/icons/stat_attackDamage.png" alt="Daño de ataque"><b>1 842</b>
+            <div class="gm-tip mini tt"><div class="hd">Daño de ataque</div><p>Lo que quita cada golpe antes de la armadura del enemigo.</p><div class="ln"><span>Equipo</span><b>1 420</b></div><div class="ln"><span>Nivel</span><b>310</b></div><div class="ln"><span>Talentos</span><b>+6 %</b></div></div></div>
+          <div class="gm-stat has"><img src="img/icons/stat_attackSpeed.png" alt="Velocidad de ataque"><b>1,32</b>
+            <div class="gm-tip mini tt"><div class="hd">Velocidad de ataque</div><p>Golpes por segundo. Las habilidades salen al ritmo de los golpes.</p></div></div>
+          <div class="gm-stat has"><img src="img/icons/stat_critChance.png" alt="Probabilidad de crítico"><b>24,5 %</b>
+            <div class="gm-tip mini tt"><div class="hd">Crítico</div><p>Probabilidad de que un golpe sea crítico.</p></div></div>
+          <div class="gm-stat has"><img src="img/icons/stat_critDamage.png" alt="Daño crítico"><b class="up">182 %</b>
+            <div class="gm-tip mini tt"><div class="hd">Daño crítico</div><p>Cuánto pega un crítico respecto a un golpe normal.</p><div class="ln"><span>Base</span><b>150 %</b></div><div class="ln"><span>Equipo</span><b>+32 %</b></div></div></div>
+          <div class="gm-stat has"><img src="img/icons/stat_multistrike.png" alt="Golpe múltiple"><b>12 %</b>
+            <div class="gm-tip mini tt"><div class="hd">Golpe múltiple</div><p>Probabilidad de que el golpe caiga una segunda vez.</p></div></div>
+          <div class="gm-stat gap has"><img src="img/icons/stat_health.png" alt="Vida"><b>48 210</b>
+            <div class="gm-tip mini tt"><div class="hd">Vida</div><p>El daño que aguanta antes de caer.</p><div class="ln"><span>Equipo</span><b>29 400</b></div><div class="ln"><span>Nivel</span><b>18 810</b></div></div></div>
+          <div class="gm-stat has"><img src="img/icons/stat_armor.png" alt="Armadura"><b class="up">3 480</b>
+            <div class="gm-tip mini tt"><div class="hd">Armadura</div><p>Reduce el daño físico.</p><div class="ln"><span>Ahora mismo</span><b>−41 %</b></div></div></div>
+          <div class="gm-stat has"><img src="img/icons/stat_magicResist.png" alt="Resistencia mágica"><b>1 120</b>
+            <div class="gm-tip mini tt"><div class="hd">Resistencia mágica</div><p>Reduce el daño mágico.</p><div class="ln"><span>Ahora mismo</span><b>−19 %</b></div></div></div>
+          <div class="gm-stat has"><img src="img/icons/stat_block.png" alt="Bloqueo"><b>31 %</b>
+            <div class="gm-tip mini tt"><div class="hd">Bloqueo</div><p>Probabilidad de parar un golpe con el escudo.</p></div></div>
+          <div class="gm-stat has"><img src="img/icons/stat_damageReduction.png" alt="Reducción de daño"><b>18 %</b>
+            <div class="gm-tip mini tt"><div class="hd">Reducción de daño</div><p>Se resta de todo el daño, después de armadura y resistencia.</p></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="gm-side">
+    <div class="gm-tip t3">
+      <div class="nm">Hoja de caballero</div>
+      <div class="sub"><span>Espada</span><span class="r"><img src="img/icons/ui_power.png" alt="Poder">86</span><img src="img/icons/crest_knight.png" alt="Knight"></div>
+      <div class="gm-rule"><i></i><img src="img/icons/ui_rule.png" alt=""><i></i></div>
+      <div class="aff"><img src="img/icons/stat_attackDamage.png" alt=""><b>+412</b><span>Daño de ataque</span></div>
+      <div class="aff"><img src="img/icons/stat_critDamage.png" alt=""><b>+18,4 %</b><span>Daño crítico</span></div>
+      <div class="aff"><img src="img/icons/stat_armor.png" alt=""><b>+96</b><span>Armadura</span></div>
+      <div class="aff gem"><img src="img/icons/ui_gem.png" alt="Gema"><b>+38</b><span>Daño de ataque</span></div>
+      <div class="lore">«Forjada para un juramento que ya nadie recuerda.»</div>
+    </div>
+
+    <div class="gm-win">
+      <img class="gm-close" src="img/icons/ui_x.png" alt="Cerrar">
+      <div class="gm-in">
+        <div class="gm-top">
+          <div class="gm-title">Alijo</div><span>18 / 60</span>
+          <div class="gm-filter">
+            <div class="on has"><img src="img/icons/ui_all.png" alt="Todo"><div class="gm-tip tag tt above"><div class="hd" style="padding:0">Todo</div></div></div>
+            <div class="has"><img src="img/icons/crest_knight.png" alt="Knight"><div class="gm-tip tag tt above"><div class="hd" style="padding:0">Knight</div></div></div>
+            <div class="has"><img src="img/icons/crest_ranger.png" alt="Ranger"><div class="gm-tip tag tt above"><div class="hd" style="padding:0">Ranger</div></div></div>
+            <div class="has"><img src="img/icons/crest_priest.png" alt="Priest"><div class="gm-tip tag tt above"><div class="hd" style="padding:0">Priest</div></div></div>
+          </div>
+        </div>
+        <div class="gm-grid">
+          <div class="gm-slot has"><img src="img/icons/helmet_plate_4.png" alt="Yelmo alado"><img class="up" src="img/icons/ui_up.png" alt="Mejora">
+            <div class="gm-tip tt t5"><div class="nm">Yelmo alado</div><div class="sub"><span>Yelmo</span><span class="r"><img src="img/icons/ui_power.png" alt="Poder">93</span><img src="img/icons/crest_knight.png" alt="Knight"></div><div class="gm-rule"><i></i><img src="img/icons/ui_rule.png" alt=""><i></i></div>
+              <div class="aff"><img src="img/icons/stat_armor.png" alt=""><b>+802</b><span>Armadura</span></div><div class="aff"><img src="img/icons/stat_health.png" alt=""><b>+3 940</b><span>Vida</span></div><div class="aff"><img src="img/icons/stat_critChance.png" alt=""><b>+2,6 %</b><span>Crítico</span></div>
+              <div class="cmp"><img src="img/icons/ui_up.png" alt="Mejora"><b>+126</b><img src="img/icons/ui_power.png" alt="de poder"></div></div></div>
+          <div class="gm-slot has"><img src="img/icons/chest_cloth_3.png" alt="Casulla blanca"><div class="gm-tip tag tt t3"><div class="nm" style="padding:0">Casulla blanca</div></div></div>
+          <div class="gm-slot has"><img src="img/icons/bow_4.png" alt="Gran arco dorado"><div class="gm-tip tag tt t5"><div class="nm" style="padding:0">Gran arco dorado</div></div></div>
+          <div class="gm-slot has"><img src="img/icons/tome_5.png" alt="Tomo de la Grieta"><div class="gm-tip tag tt t8"><div class="nm" style="padding:0">Tomo de la Grieta</div></div></div>
+          <div class="gm-slot has"><img src="img/icons/boots_plate_3.png" alt="Escarpe acanalado"><img class="up" src="img/icons/ui_up.png" alt="Mejora"><div class="gm-tip tag tt t3"><div class="nm" style="padding:0">Escarpe acanalado</div></div></div>
+          <div class="gm-slot has"><img src="img/icons/wand_2.png" alt="Vara de acólito"><div class="gm-tip tag tt t1"><div class="nm" style="padding:0">Vara de acólito</div></div></div>
+          <div class="gm-slot has"><img src="img/icons/gem_ruby.png" alt="Rubí"><b>3</b><div class="gm-tip tag tt t2"><div class="nm" style="padding:0">Rubí</div></div></div>
+          <div class="gm-slot has"><img src="img/icons/gem_emerald.png" alt="Esmeralda"><b>2</b><div class="gm-tip tag tt t2"><div class="nm" style="padding:0">Esmeralda</div></div></div>
+          <div class="gm-slot has"><img src="img/icons/gem_diamond.png" alt="Diamante"><div class="gm-tip tag tt t2"><div class="nm" style="padding:0">Diamante</div></div></div>
+          <div class="gm-slot has"><img src="img/icons/quiver_3.png" alt="Carcaj repujado"><div class="gm-tip tag tt t3"><div class="nm" style="padding:0">Carcaj repujado</div></div></div>
+          <div class="gm-slot has"><img src="img/icons/legs_cloth_4.png" alt="Falda solar"><div class="gm-tip tag tt t5"><div class="nm" style="padding:0">Falda solar</div></div></div>
+          <div class="gm-slot has"><img src="img/icons/amulet_4.png" alt="Colgante solar"><div class="gm-tip tag tt t5"><div class="nm" style="padding:0">Colgante solar</div></div></div>
+          <div class="gm-slot has"><img src="img/icons/gloves_leather_4.png" alt="Guante de lobero"><div class="gm-tip tag tt t5"><div class="nm" style="padding:0">Guante de lobero</div></div></div>
+          <div class="gm-slot has"><img src="img/icons/shield_2.png" alt="Escudo de infante"><div class="gm-tip tag tt t1"><div class="nm" style="padding:0">Escudo de infante</div></div></div>
+          <div class="gm-slot has"><img src="img/icons/key_world.png" alt="Llave de jefe de mundo"><b>1</b><div class="gm-tip tag tt"><div class="hd" style="padding:0">Llave de jefe de mundo</div></div></div>
+          <div class="gm-slot"><img src="img/icons/ui_well.png" alt=""></div>
+          <div class="gm-slot"><img src="img/icons/ui_well.png" alt=""></div>
+          <div class="gm-slot"><img src="img/icons/ui_well.png" alt=""></div>
+          <div class="gm-slot"><img src="img/icons/ui_well.png" alt=""></div>
+          <div class="gm-slot"><img src="img/icons/ui_well.png" alt=""></div>
+          <div class="gm-slot"><img src="img/icons/ui_well.png" alt=""></div>
+          <div class="gm-slot"><img src="img/icons/ui_well.png" alt=""></div>
+          <div class="gm-slot"><img src="img/icons/ui_well.png" alt=""></div>
+          <div class="gm-slot"><img src="img/icons/ui_well.png" alt=""></div>
+        </div>
+        <div class="gm-foot">
+          <div class="gm-btn gold has"><img src="img/icons/btn_open.png" alt="Abrir cofres"><b>7</b><div class="gm-tip tag tt above"><div class="hd" style="padding:0">Abrir cofres</div></div></div>
+          <div class="gm-btn has"><img src="img/icons/btn_sort.png" alt="Ordenar"><div class="gm-tip tag tt above"><div class="hd" style="padding:0">Ordenar</div></div></div>
+          <div class="gm-btn off has"><img src="img/icons/btn_sell.png" alt="Vender"><div class="gm-tip mini tt above"><div class="hd">Vender</div><p>Marca objetos para venderlos.</p></div></div>
+          <div class="gm-gold has"><img src="img/icons/ui_gold.png" alt="Oro">12 480<div class="gm-tip tag tt above" style="left:auto;right:0"><div class="hd" style="padding:0">Oro</div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    </div>
+  </section>
+
+<!-- mockups:end -->
+<!-- items:start -->
+  <section id="items">
+    <div class="sec-head">
+      <span class="eyebrow">Objetos</span>
+      <h2>Iconos de objetos</h2>
+      <p class="muted">Iconos de 32 × 32 en la misma paleta que los personajes, hechos con planos facetados y contorno. La rareza no se redibuja: la dice el marco. Cada tipo de objeto tiene cinco categorías, de lo tosco a una pieza de la Grieta; la armadura, además, tres familias, una por clase.</p>
+    </div>
+      <div class="item-group">
+        <h3>Las nueve rarezas · el mismo objeto, otro marco</h3>
+        <p class="muted">La rareza no se redibuja: la dice el marco. Primordial es iridiscente (en el juego, animado).</p>
+        <div class="items">
+        <figure class="item"><img class="px" src="img/icons/tier_0.png" width="108" height="108" style="width:108px;height:108px" alt="T0 · Normal"><figcaption>T0 · Normal</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/tier_1.png" width="108" height="108" style="width:108px;height:108px" alt="T1 · Uncommon"><figcaption>T1 · Uncommon</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/tier_2.png" width="108" height="108" style="width:108px;height:108px" alt="T2 · Rare"><figcaption>T2 · Rare</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/tier_3.png" width="108" height="108" style="width:108px;height:108px" alt="T3 · Epic"><figcaption>T3 · Epic</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/tier_4.png" width="108" height="108" style="width:108px;height:108px" alt="T4 · Legendary"><figcaption>T4 · Legendary</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/tier_5.png" width="108" height="108" style="width:108px;height:108px" alt="T5 · Mythic"><figcaption>T5 · Mythic</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/tier_6.png" width="108" height="108" style="width:108px;height:108px" alt="T6 · Ancestral"><figcaption>T6 · Ancestral</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/tier_7.png" width="108" height="108" style="width:108px;height:108px" alt="T7 · Divine"><figcaption>T7 · Divine</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/tier_8.png" width="108" height="108" style="width:108px;height:108px" alt="T8 · Primordial"><figcaption>T8 · Primordial</figcaption></figure>
+        </div>
+      </div>
+      <div class="item-group">
+        <h3>Yelmos · Placa · Knight</h3>
+        <p class="muted">Cada clase viste su familia: placas el Knight, cuero el Ranger y tela la Priest. Dentro de cada familia la pieza puede ser de armadura, mixta o de resistencia mágica.</p>
+        <div class="items">
+        <figure class="item"><img class="px" src="img/icons/helmet_plate_1.png" width="108" height="108" style="width:108px;height:108px" alt="Casco de hierro"><figcaption>Casco de hierro</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/helmet_plate_2.png" width="108" height="108" style="width:108px;height:108px" alt="Capacete con nasal"><figcaption>Capacete con nasal</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/helmet_plate_3.png" width="108" height="108" style="width:108px;height:108px" alt="Gran yelmo de acero"><figcaption>Gran yelmo de acero</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/helmet_plate_4.png" width="108" height="108" style="width:108px;height:108px" alt="Yelmo alado dorado"><figcaption>Yelmo alado dorado</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/helmet_plate_5.png" width="108" height="108" style="width:108px;height:108px" alt="Corona de la Grieta"><figcaption>Corona de la Grieta</figcaption></figure>
+        </div>
+      </div>
+      <div class="item-group">
+        <h3>Yelmos · Cuero · Ranger</h3>
+        <p class="muted">Cada clase viste su familia: placas el Knight, cuero el Ranger y tela la Priest. Dentro de cada familia la pieza puede ser de armadura, mixta o de resistencia mágica.</p>
+        <div class="items">
+        <figure class="item"><img class="px" src="img/icons/helmet_leather_1.png" width="108" height="108" style="width:108px;height:108px" alt="Gorro de cuero"><figcaption>Gorro de cuero</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/helmet_leather_2.png" width="108" height="108" style="width:108px;height:108px" alt="Sombrero de montero"><figcaption>Sombrero de montero</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/helmet_leather_3.png" width="108" height="108" style="width:108px;height:108px" alt="Casco de explorador"><figcaption>Casco de explorador</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/helmet_leather_4.png" width="108" height="108" style="width:108px;height:108px" alt="Pellejo de lobo"><figcaption>Pellejo de lobo</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/helmet_leather_5.png" width="108" height="108" style="width:108px;height:108px" alt="Capucha de la Grieta"><figcaption>Capucha de la Grieta</figcaption></figure>
+        </div>
+      </div>
+      <div class="item-group">
+        <h3>Yelmos · Tela · Priest</h3>
+        <p class="muted">Cada clase viste su familia: placas el Knight, cuero el Ranger y tela la Priest. Dentro de cada familia la pieza puede ser de armadura, mixta o de resistencia mágica.</p>
+        <div class="items">
+        <figure class="item"><img class="px" src="img/icons/helmet_cloth_1.png" width="108" height="108" style="width:108px;height:108px" alt="Cofia de lino"><figcaption>Cofia de lino</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/helmet_cloth_2.png" width="108" height="108" style="width:108px;height:108px" alt="Bonete de acólito"><figcaption>Bonete de acólito</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/helmet_cloth_3.png" width="108" height="108" style="width:108px;height:108px" alt="Mitra"><figcaption>Mitra</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/helmet_cloth_4.png" width="108" height="108" style="width:108px;height:108px" alt="Corona solar"><figcaption>Corona solar</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/helmet_cloth_5.png" width="108" height="108" style="width:108px;height:108px" alt="Corona de esquirlas"><figcaption>Corona de esquirlas</figcaption></figure>
+        </div>
+      </div>
+      <div class="item-group">
+        <h3>Petos · Placa · Knight</h3>
+        <p class="muted">Corazas rígidas con sisas y faldar corto, del peto oxidado a la coraza partida por el cristal de la Grieta.</p>
+        <div class="items">
+        <figure class="item"><img class="px" src="img/icons/chest_plate_1.png" width="108" height="108" style="width:108px;height:108px" alt="Peto oxidado"><figcaption>Peto oxidado</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/chest_plate_2.png" width="108" height="108" style="width:108px;height:108px" alt="Coraza de soldado"><figcaption>Coraza de soldado</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/chest_plate_3.png" width="108" height="108" style="width:108px;height:108px" alt="Coraza acanalada"><figcaption>Coraza acanalada</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/chest_plate_4.png" width="108" height="108" style="width:108px;height:108px" alt="Coraza dorada alada"><figcaption>Coraza dorada alada</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/chest_plate_5.png" width="108" height="108" style="width:108px;height:108px" alt="Coraza de la Grieta"><figcaption>Coraza de la Grieta</figcaption></figure>
+        </div>
+      </div>
+      <div class="item-group">
+        <h3>Petos · Cuero · Ranger</h3>
+        <p class="muted">Jubones y gabanes sin mangas, con cuello en pico, cordones o correas y el bajo abierto.</p>
+        <div class="items">
+        <figure class="item"><img class="px" src="img/icons/chest_leather_1.png" width="108" height="108" style="width:108px;height:108px" alt="Chaleco de piel"><figcaption>Chaleco de piel</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/chest_leather_2.png" width="108" height="108" style="width:108px;height:108px" alt="Jubón de montero"><figcaption>Jubón de montero</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/chest_leather_3.png" width="108" height="108" style="width:108px;height:108px" alt="Brigantina tachonada"><figcaption>Brigantina tachonada</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/chest_leather_4.png" width="108" height="108" style="width:108px;height:108px" alt="Manto de lobo"><figcaption>Manto de lobo</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/chest_leather_5.png" width="108" height="108" style="width:108px;height:108px" alt="Gabán de la Grieta"><figcaption>Gabán de la Grieta</figcaption></figure>
+        </div>
+      </div>
+      <div class="item-group">
+        <h3>Petos · Tela · Priest</h3>
+        <p class="muted">Túnicas y vestiduras con mangas, que caen hasta abajo en pliegues.</p>
+        <div class="items">
+        <figure class="item"><img class="px" src="img/icons/chest_cloth_1.png" width="108" height="108" style="width:108px;height:108px" alt="Túnica de lino"><figcaption>Túnica de lino</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/chest_cloth_2.png" width="108" height="108" style="width:108px;height:108px" alt="Hábito de acólito"><figcaption>Hábito de acólito</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/chest_cloth_3.png" width="108" height="108" style="width:108px;height:108px" alt="Casulla blanca"><figcaption>Casulla blanca</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/chest_cloth_4.png" width="108" height="108" style="width:108px;height:108px" alt="Vestidura solar"><figcaption>Vestidura solar</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/chest_cloth_5.png" width="108" height="108" style="width:108px;height:108px" alt="Hábito del vacío"><figcaption>Hábito del vacío</figcaption></figure>
+        </div>
+      </div>
+      <div class="item-group">
+        <h3>Guantes · Placa · Knight</h3>
+        <p class="muted">Guanteletes de dedos articulados y bocamanga acampanada.</p>
+        <div class="items">
+        <figure class="item"><img class="px" src="img/icons/gloves_plate_1.png" width="108" height="108" style="width:108px;height:108px" alt="Manopla oxidada"><figcaption>Manopla oxidada</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/gloves_plate_2.png" width="108" height="108" style="width:108px;height:108px" alt="Guantelete articulado"><figcaption>Guantelete articulado</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/gloves_plate_3.png" width="108" height="108" style="width:108px;height:108px" alt="Guantelete acanalado"><figcaption>Guantelete acanalado</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/gloves_plate_4.png" width="108" height="108" style="width:108px;height:108px" alt="Guantelete dorado"><figcaption>Guantelete dorado</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/gloves_plate_5.png" width="108" height="108" style="width:108px;height:108px" alt="Garra de la Grieta"><figcaption>Garra de la Grieta</figcaption></figure>
+        </div>
+      </div>
+      <div class="item-group">
+        <h3>Guantes · Cuero · Ranger</h3>
+        <p class="muted">Guantes de piel sobre el brazal del arquero.</p>
+        <div class="items">
+        <figure class="item"><img class="px" src="img/icons/gloves_leather_1.png" width="108" height="108" style="width:108px;height:108px" alt="Guante de pellejo"><figcaption>Guante de pellejo</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/gloves_leather_2.png" width="108" height="108" style="width:108px;height:108px" alt="Mitón de montero"><figcaption>Mitón de montero</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/gloves_leather_3.png" width="108" height="108" style="width:108px;height:108px" alt="Guante de tiro tachonado"><figcaption>Guante de tiro tachonado</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/gloves_leather_4.png" width="108" height="108" style="width:108px;height:108px" alt="Guante de lobero"><figcaption>Guante de lobero</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/gloves_leather_5.png" width="108" height="108" style="width:108px;height:108px" alt="Guante de la Grieta"><figcaption>Guante de la Grieta</figcaption></figure>
+        </div>
+      </div>
+      <div class="item-group">
+        <h3>Guantes · Tela · Priest</h3>
+        <p class="muted">Guantes finos con la manga cayendo bajo la muñeca.</p>
+        <div class="items">
+        <figure class="item"><img class="px" src="img/icons/gloves_cloth_1.png" width="108" height="108" style="width:108px;height:108px" alt="Vendas de lino"><figcaption>Vendas de lino</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/gloves_cloth_2.png" width="108" height="108" style="width:108px;height:108px" alt="Guante de acólito"><figcaption>Guante de acólito</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/gloves_cloth_3.png" width="108" height="108" style="width:108px;height:108px" alt="Guante bordado"><figcaption>Guante bordado</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/gloves_cloth_4.png" width="108" height="108" style="width:108px;height:108px" alt="Guante de hilo de oro"><figcaption>Guante de hilo de oro</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/gloves_cloth_5.png" width="108" height="108" style="width:108px;height:108px" alt="Guante del vacío"><figcaption>Guante del vacío</figcaption></figure>
+        </div>
+      </div>
+      <div class="item-group">
+        <h3>Piernas · Placa · Knight</h3>
+        <p class="muted">Arnés de piernas articulado: ancho en la cadera, con rodilleras que sobresalen.</p>
+        <div class="items">
+        <figure class="item"><img class="px" src="img/icons/legs_plate_1.png" width="108" height="108" style="width:108px;height:108px" alt="Escarcelas oxidadas"><figcaption>Escarcelas oxidadas</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/legs_plate_2.png" width="108" height="108" style="width:108px;height:108px" alt="Quijotes de acero"><figcaption>Quijotes de acero</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/legs_plate_3.png" width="108" height="108" style="width:108px;height:108px" alt="Arnés acanalado"><figcaption>Arnés acanalado</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/legs_plate_4.png" width="108" height="108" style="width:108px;height:108px" alt="Arnés alado dorado"><figcaption>Arnés alado dorado</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/legs_plate_5.png" width="108" height="108" style="width:108px;height:108px" alt="Arnés de la Grieta"><figcaption>Arnés de la Grieta</figcaption></figure>
+        </div>
+      </div>
+      <div class="item-group">
+        <h3>Piernas · Cuero · Ranger</h3>
+        <p class="muted">Calzas ceñidas que se estrechan hacia el tobillo, con cinturón, pieles y cordones.</p>
+        <div class="items">
+        <figure class="item"><img class="px" src="img/icons/legs_leather_1.png" width="108" height="108" style="width:108px;height:108px" alt="Calzas de piel"><figcaption>Calzas de piel</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/legs_leather_2.png" width="108" height="108" style="width:108px;height:108px" alt="Calzas de montero"><figcaption>Calzas de montero</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/legs_leather_3.png" width="108" height="108" style="width:108px;height:108px" alt="Zahones tachonados"><figcaption>Zahones tachonados</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/legs_leather_4.png" width="108" height="108" style="width:108px;height:108px" alt="Polainas de lobo"><figcaption>Polainas de lobo</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/legs_leather_5.png" width="108" height="108" style="width:108px;height:108px" alt="Calzas de la Grieta"><figcaption>Calzas de la Grieta</figcaption></figure>
+        </div>
+      </div>
+      <div class="item-group">
+        <h3>Piernas · Tela · Priest</h3>
+        <p class="muted">Una falda de una pieza que se abre hacia el bajo, con pliegues, fajín y bordados.</p>
+        <div class="items">
+        <figure class="item"><img class="px" src="img/icons/legs_cloth_1.png" width="108" height="108" style="width:108px;height:108px" alt="Falda de lino"><figcaption>Falda de lino</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/legs_cloth_2.png" width="108" height="108" style="width:108px;height:108px" alt="Faldón de acólito"><figcaption>Faldón de acólito</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/legs_cloth_3.png" width="108" height="108" style="width:108px;height:108px" alt="Faldón bordado"><figcaption>Faldón bordado</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/legs_cloth_4.png" width="108" height="108" style="width:108px;height:108px" alt="Falda solar"><figcaption>Falda solar</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/legs_cloth_5.png" width="108" height="108" style="width:108px;height:108px" alt="Falda del vacío"><figcaption>Falda del vacío</figcaption></figure>
+        </div>
+      </div>
+      <div class="item-group">
+        <h3>Botas · Placa · Knight</h3>
+        <p class="muted">Grebas rígidas sobre escarpe, con rodillera: de una chapa atada con correas a una pieza de la Grieta.</p>
+        <div class="items">
+        <figure class="item"><img class="px" src="img/icons/boots_plate_1.png" width="108" height="108" style="width:108px;height:108px" alt="Canillera de hierro"><figcaption>Canillera de hierro</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/boots_plate_2.png" width="108" height="108" style="width:108px;height:108px" alt="Greba de soldado"><figcaption>Greba de soldado</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/boots_plate_3.png" width="108" height="108" style="width:108px;height:108px" alt="Greba acanalada"><figcaption>Greba acanalada</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/boots_plate_4.png" width="108" height="108" style="width:108px;height:108px" alt="Escarpe alado dorado"><figcaption>Escarpe alado dorado</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/boots_plate_5.png" width="108" height="108" style="width:108px;height:108px" alt="Escarpe de la Grieta"><figcaption>Escarpe de la Grieta</figcaption></figure>
+        </div>
+      </div>
+      <div class="item-group">
+        <h3>Botas · Cuero · Ranger</h3>
+        <p class="muted">Botas de media caña con vuelta y suela blanda.</p>
+        <div class="items">
+        <figure class="item"><img class="px" src="img/icons/boots_leather_1.png" width="108" height="108" style="width:108px;height:108px" alt="Abarca de pellejo"><figcaption>Abarca de pellejo</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/boots_leather_2.png" width="108" height="108" style="width:108px;height:108px" alt="Bota de montero"><figcaption>Bota de montero</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/boots_leather_3.png" width="108" height="108" style="width:108px;height:108px" alt="Bota de montar tachonada"><figcaption>Bota de montar tachonada</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/boots_leather_4.png" width="108" height="108" style="width:108px;height:108px" alt="Bota de piel de lobo"><figcaption>Bota de piel de lobo</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/boots_leather_5.png" width="108" height="108" style="width:108px;height:108px" alt="Bota de la Grieta"><figcaption>Bota de la Grieta</figcaption></figure>
+        </div>
+      </div>
+      <div class="item-group">
+        <h3>Botas · Tela · Priest</h3>
+        <p class="muted">Calzado bajo y blando: vendas, escarpines y sandalias, con la punta cada vez más vuelta.</p>
+        <div class="items">
+        <figure class="item"><img class="px" src="img/icons/boots_cloth_1.png" width="108" height="108" style="width:108px;height:108px" alt="Vendas y esparteña"><figcaption>Vendas y esparteña</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/boots_cloth_2.png" width="108" height="108" style="width:108px;height:108px" alt="Escarpín de acólito"><figcaption>Escarpín de acólito</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/boots_cloth_3.png" width="108" height="108" style="width:108px;height:108px" alt="Escarpín bordado"><figcaption>Escarpín bordado</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/boots_cloth_4.png" width="108" height="108" style="width:108px;height:108px" alt="Sandalia solar"><figcaption>Sandalia solar</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/boots_cloth_5.png" width="108" height="108" style="width:108px;height:108px" alt="Escarpín del vacío"><figcaption>Escarpín del vacío</figcaption></figure>
+        </div>
+      </div>
+      <div class="item-group">
+        <h3>Espadas · Knight</h3>
+        <p class="muted">Arma del Knight, en cinco categorías: de hierro tosco a una pieza de la Grieta.</p>
+        <div class="items">
+        <figure class="item"><img class="px" src="img/icons/sword_1.png" width="108" height="108" style="width:108px;height:108px" alt="Espada de hierro"><figcaption>Espada de hierro</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/sword_2.png" width="108" height="108" style="width:108px;height:108px" alt="Espada larga de acero"><figcaption>Espada larga de acero</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/sword_3.png" width="108" height="108" style="width:108px;height:108px" alt="Hoja de caballero"><figcaption>Hoja de caballero</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/sword_4.png" width="108" height="108" style="width:108px;height:108px" alt="Mandoble rúnico"><figcaption>Mandoble rúnico</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/sword_5.png" width="108" height="108" style="width:108px;height:108px" alt="Filo de la Grieta"><figcaption>Filo de la Grieta</figcaption></figure>
+        </div>
+      </div>
+      <div class="item-group">
+        <h3>Escudos · Knight</h3>
+        <p class="muted">Mano secundaria del Knight: cada categoría cambia de forma, de la rodela de madera a una losa de la Grieta.</p>
+        <div class="items">
+        <figure class="item"><img class="px" src="img/icons/shield_1.png" width="108" height="108" style="width:108px;height:108px" alt="Rodela de madera"><figcaption>Rodela de madera</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/shield_2.png" width="108" height="108" style="width:108px;height:108px" alt="Escudo de infante"><figcaption>Escudo de infante</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/shield_3.png" width="108" height="108" style="width:108px;height:108px" alt="Escudo de caballero"><figcaption>Escudo de caballero</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/shield_4.png" width="108" height="108" style="width:108px;height:108px" alt="Égida alada"><figcaption>Égida alada</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/shield_5.png" width="108" height="108" style="width:108px;height:108px" alt="Losa de la Grieta"><figcaption>Losa de la Grieta</figcaption></figure>
+        </div>
+      </div>
+      <div class="item-group">
+        <h3>Arcos · Ranger</h3>
+        <p class="muted">Arma del Ranger, en diagonal como las espadas y con la cuerda a la vista.</p>
+        <div class="items">
+        <figure class="item"><img class="px" src="img/icons/bow_1.png" width="108" height="108" style="width:108px;height:108px" alt="Arco de fresno"><figcaption>Arco de fresno</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/bow_2.png" width="108" height="108" style="width:108px;height:108px" alt="Arco largo de montero"><figcaption>Arco largo de montero</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/bow_3.png" width="108" height="108" style="width:108px;height:108px" alt="Arco recurvo de asta"><figcaption>Arco recurvo de asta</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/bow_4.png" width="108" height="108" style="width:108px;height:108px" alt="Gran arco dorado"><figcaption>Gran arco dorado</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/bow_5.png" width="108" height="108" style="width:108px;height:108px" alt="Arco de la Grieta"><figcaption>Arco de la Grieta</figcaption></figure>
+        </div>
+      </div>
+      <div class="item-group">
+        <h3>Carcajs · Ranger</h3>
+        <p class="muted">Mano secundaria del Ranger: las plumas de las flechas asoman por la boca.</p>
+        <div class="items">
+        <figure class="item"><img class="px" src="img/icons/quiver_1.png" width="108" height="108" style="width:108px;height:108px" alt="Carcaj de pellejo"><figcaption>Carcaj de pellejo</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/quiver_2.png" width="108" height="108" style="width:108px;height:108px" alt="Carcaj de montero"><figcaption>Carcaj de montero</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/quiver_3.png" width="108" height="108" style="width:108px;height:108px" alt="Carcaj repujado"><figcaption>Carcaj repujado</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/quiver_4.png" width="108" height="108" style="width:108px;height:108px" alt="Carcaj de lobo"><figcaption>Carcaj de lobo</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/quiver_5.png" width="108" height="108" style="width:108px;height:108px" alt="Carcaj de la Grieta"><figcaption>Carcaj de la Grieta</figcaption></figure>
+        </div>
+      </div>
+      <div class="item-group">
+        <h3>Varas · Priest</h3>
+        <p class="muted">Arma de la Priest, en cinco categorías: de una vara de avellano pelada a una que la Grieta partió en dos.</p>
+        <div class="items">
+        <figure class="item"><img class="px" src="img/icons/wand_1.png" width="108" height="108" style="width:108px;height:108px" alt="Vara de avellano"><figcaption>Vara de avellano</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/wand_2.png" width="108" height="108" style="width:108px;height:108px" alt="Vara de acólito"><figcaption>Vara de acólito</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/wand_3.png" width="108" height="108" style="width:108px;height:108px" alt="Vara del rubí"><figcaption>Vara del rubí</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/wand_4.png" width="108" height="108" style="width:108px;height:108px" alt="Cetro solar"><figcaption>Cetro solar</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/wand_5.png" width="108" height="108" style="width:108px;height:108px" alt="Vara de la Grieta"><figcaption>Vara de la Grieta</figcaption></figure>
+        </div>
+      </div>
+      <div class="item-group">
+        <h3>Tomos · Priest</h3>
+        <p class="muted">Mano izquierda de la Priest: cinco encuadernaciones, del cuadernillo cosido al tomo que deja escapar luz entre las páginas.</p>
+        <div class="items">
+        <figure class="item"><img class="px" src="img/icons/tome_1.png" width="108" height="108" style="width:108px;height:108px" alt="Cuadernillo cosido"><figcaption>Cuadernillo cosido</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/tome_2.png" width="108" height="108" style="width:108px;height:108px" alt="Devocionario de tela"><figcaption>Devocionario de tela</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/tome_3.png" width="108" height="108" style="width:108px;height:108px" alt="Tomo de piel blanca"><figcaption>Tomo de piel blanca</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/tome_4.png" width="108" height="108" style="width:108px;height:108px" alt="Evangeliario dorado"><figcaption>Evangeliario dorado</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/tome_5.png" width="108" height="108" style="width:108px;height:108px" alt="Tomo de la Grieta"><figcaption>Tomo de la Grieta</figcaption></figure>
+        </div>
+      </div>
+      <div class="item-group">
+        <h3>Anillos · cualquier clase</h3>
+        <p class="muted">Las joyas no tienen familia: las lleva cualquier héroe. El anillo es siempre un aro con su engaste arriba.</p>
+        <div class="items">
+        <figure class="item"><img class="px" src="img/icons/ring_1.png" width="108" height="108" style="width:108px;height:108px" alt="Aro de hierro"><figcaption>Aro de hierro</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/ring_2.png" width="108" height="108" style="width:108px;height:108px" alt="Sello de bronce"><figcaption>Sello de bronce</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/ring_3.png" width="108" height="108" style="width:108px;height:108px" alt="Anillo de rubí"><figcaption>Anillo de rubí</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/ring_4.png" width="108" height="108" style="width:108px;height:108px" alt="Sortija de zafiro"><figcaption>Sortija de zafiro</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/ring_5.png" width="108" height="108" style="width:108px;height:108px" alt="Anillo de la Grieta"><figcaption>Anillo de la Grieta</figcaption></figure>
+        </div>
+      </div>
+      <div class="item-group">
+        <h3>Amuletos · cualquier clase</h3>
+        <p class="muted">Siempre cuelgan de una cadena que entra por las esquinas de arriba.</p>
+        <div class="items">
+        <figure class="item"><img class="px" src="img/icons/amulet_1.png" width="108" height="108" style="width:108px;height:108px" alt="Colmillo en cordel"><figcaption>Colmillo en cordel</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/amulet_2.png" width="108" height="108" style="width:108px;height:108px" alt="Medalla de bronce"><figcaption>Medalla de bronce</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/amulet_3.png" width="108" height="108" style="width:108px;height:108px" alt="Guardapelo de oro"><figcaption>Guardapelo de oro</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/amulet_4.png" width="108" height="108" style="width:108px;height:108px" alt="Colgante solar"><figcaption>Colgante solar</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/amulet_5.png" width="108" height="108" style="width:108px;height:108px" alt="Cristal enjaulado"><figcaption>Cristal enjaulado</figcaption></figure>
+        </div>
+      </div>
+      <div class="item-group">
+        <h3>Abalorios · cualquier clase</h3>
+        <p class="muted">Un objeto distinto en cada categoría, apoyado en su base; el último flota.</p>
+        <div class="items">
+        <figure class="item"><img class="px" src="img/icons/trinket_1.png" width="108" height="108" style="width:108px;height:108px" alt="Dados de hueso"><figcaption>Dados de hueso</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/trinket_2.png" width="108" height="108" style="width:108px;height:108px" alt="Reloj de arena"><figcaption>Reloj de arena</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/trinket_3.png" width="108" height="108" style="width:108px;height:108px" alt="Campanilla de oro"><figcaption>Campanilla de oro</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/trinket_4.png" width="108" height="108" style="width:108px;height:108px" alt="Esfera armilar"><figcaption>Esfera armilar</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/trinket_5.png" width="108" height="108" style="width:108px;height:108px" alt="Fragmento de la Grieta"><figcaption>Fragmento de la Grieta</figcaption></figure>
+        </div>
+      </div>
+      <div class="item-group">
+        <h3>Gemas · una talla por tipo</h3>
+        <p class="muted">Seis gemas con seis tallas distintas, para reconocerlas por la forma y no solo por el color.</p>
+        <div class="items">
+        <figure class="item"><img class="px" src="img/icons/gem_ruby.png" width="108" height="108" style="width:108px;height:108px" alt="Rubí"><figcaption>Rubí</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/gem_sapphire.png" width="108" height="108" style="width:108px;height:108px" alt="Zafiro"><figcaption>Zafiro</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/gem_emerald.png" width="108" height="108" style="width:108px;height:108px" alt="Esmeralda"><figcaption>Esmeralda</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/gem_topaz.png" width="108" height="108" style="width:108px;height:108px" alt="Topacio"><figcaption>Topacio</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/gem_amethyst.png" width="108" height="108" style="width:108px;height:108px" alt="Amatista"><figcaption>Amatista</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/gem_diamond.png" width="108" height="108" style="width:108px;height:108px" alt="Diamante"><figcaption>Diamante</figcaption></figure>
+        </div>
+      </div>
+      <div class="item-group">
+        <h3>Cofres</h3>
+        <p class="muted">Los tres tipos de cofre, del más común al del jefe de mundo.</p>
+        <div class="items">
+        <figure class="item"><img class="px" src="img/icons/chest_normal.png" width="108" height="108" style="width:108px;height:108px" alt="Cofre común"><figcaption>Cofre común</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/chest_stageBoss.png" width="108" height="108" style="width:108px;height:108px" alt="Cofre de jefe de etapa"><figcaption>Cofre de jefe de etapa</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/chest_zoneBoss.png" width="108" height="108" style="width:108px;height:108px" alt="Cofre de jefe de mundo"><figcaption>Cofre de jefe de mundo</figcaption></figure>
+        </div>
+      </div>
+      <div class="item-group">
+        <h3>Cofres abiertos</h3>
+        <p class="muted">Los tres cofres con la tapa echada atrás: un resplandor, oro hasta el borde y un chorro de luz.</p>
+        <div class="items">
+        <figure class="item"><img class="px" src="img/icons/chest_open_normal.png" width="108" height="108" style="width:108px;height:108px" alt="Cofre común abierto"><figcaption>Cofre común abierto</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/chest_open_stageBoss.png" width="108" height="108" style="width:108px;height:108px" alt="Cofre de jefe de etapa abierto"><figcaption>Cofre de jefe de etapa abierto</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/chest_open_zoneBoss.png" width="108" height="108" style="width:108px;height:108px" alt="Cofre de jefe de mundo abierto"><figcaption>Cofre de jefe de mundo abierto</figcaption></figure>
+        </div>
+      </div>
+      <div class="item-group">
+        <h3>Llaves y monedas</h3>
+        <p class="muted">La llave que abre el paso a un jefe de mundo, y el oro.</p>
+        <div class="items">
+        <figure class="item"><img class="px" src="img/icons/key_world.png" width="108" height="108" style="width:108px;height:108px" alt="Llave de jefe de mundo"><figcaption>Llave de jefe de mundo</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/gold_coin.png" width="108" height="108" style="width:108px;height:108px" alt="Moneda de oro"><figcaption>Moneda de oro</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/gold_pile.png" width="108" height="108" style="width:108px;height:108px" alt="Montón de oro"><figcaption>Montón de oro</figcaption></figure>
+        </div>
+      </div>
+      <div class="item-group">
+        <h3>Estadísticas</h3>
+        <p class="muted">Quince glifos de 16 × 16 para acompañar a los números en paneles y descripciones: cada uno con su color y su forma.</p>
+        <div class="items">
+        <figure class="item"><img class="px" src="img/icons/stat_attackDamage.png" width="64" height="64" style="width:64px;height:64px" alt="Daño de ataque"><figcaption>Daño de ataque</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/stat_attackSpeed.png" width="64" height="64" style="width:64px;height:64px" alt="Velocidad de ataque"><figcaption>Velocidad de ataque</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/stat_critChance.png" width="64" height="64" style="width:64px;height:64px" alt="Prob. de crítico"><figcaption>Prob. de crítico</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/stat_critDamage.png" width="64" height="64" style="width:64px;height:64px" alt="Daño crítico"><figcaption>Daño crítico</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/stat_multistrike.png" width="64" height="64" style="width:64px;height:64px" alt="Golpe múltiple"><figcaption>Golpe múltiple</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/stat_damageIncrease.png" width="64" height="64" style="width:64px;height:64px" alt="Aumento de daño"><figcaption>Aumento de daño</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/stat_lifesteal.png" width="64" height="64" style="width:64px;height:64px" alt="Robo de vida"><figcaption>Robo de vida</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/stat_armor.png" width="64" height="64" style="width:64px;height:64px" alt="Armadura"><figcaption>Armadura</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/stat_magicResist.png" width="64" height="64" style="width:64px;height:64px" alt="Resistencia mágica"><figcaption>Resistencia mágica</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/stat_health.png" width="64" height="64" style="width:64px;height:64px" alt="Vida"><figcaption>Vida</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/stat_hpRegen.png" width="64" height="64" style="width:64px;height:64px" alt="Regeneración"><figcaption>Regeneración</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/stat_block.png" width="64" height="64" style="width:64px;height:64px" alt="Bloqueo"><figcaption>Bloqueo</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/stat_cooldownReduction.png" width="64" height="64" style="width:64px;height:64px" alt="Reducción de enfriamiento"><figcaption>Reducción de enfriamiento</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/stat_healPower.png" width="64" height="64" style="width:64px;height:64px" alt="Poder de curación"><figcaption>Poder de curación</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/stat_damageReduction.png" width="64" height="64" style="width:64px;height:64px" alt="Reducción de daño"><figcaption>Reducción de daño</figcaption></figure>
+        </div>
+      </div>
+      <div class="item-group">
+        <h3>Glifos de interfaz</h3>
+        <p class="muted">Signos de 16 × 16 que la interfaz usa en lugar de palabras: emblemas de clase, pestañas, oro, experiencia y botones.</p>
+        <div class="items">
+        <figure class="item"><img class="px" src="img/icons/crest_knight.png" width="64" height="64" style="width:64px;height:64px" alt="Emblema del Knight"><figcaption>Emblema del Knight</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/crest_ranger.png" width="64" height="64" style="width:64px;height:64px" alt="Emblema del Ranger"><figcaption>Emblema del Ranger</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/crest_priest.png" width="64" height="64" style="width:64px;height:64px" alt="Emblema de la Priest"><figcaption>Emblema de la Priest</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/ui_all.png" width="64" height="64" style="width:64px;height:64px" alt="Todas las clases"><figcaption>Todas las clases</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/tab_gear.png" width="64" height="64" style="width:64px;height:64px" alt="Pestaña de equipo"><figcaption>Pestaña de equipo</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/tab_talents.png" width="64" height="64" style="width:64px;height:64px" alt="Pestaña de talentos"><figcaption>Pestaña de talentos</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/tab_skills.png" width="64" height="64" style="width:64px;height:64px" alt="Pestaña de habilidades"><figcaption>Pestaña de habilidades</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/ui_gold.png" width="64" height="64" style="width:64px;height:64px" alt="Oro"><figcaption>Oro</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/ui_xp.png" width="64" height="64" style="width:64px;height:64px" alt="Experiencia"><figcaption>Experiencia</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/ui_power.png" width="64" height="64" style="width:64px;height:64px" alt="Poder de equipo"><figcaption>Poder de equipo</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/ui_up.png" width="64" height="64" style="width:64px;height:64px" alt="Mejora"><figcaption>Mejora</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/ui_gem.png" width="64" height="64" style="width:64px;height:64px" alt="Gema engastada"><figcaption>Gema engastada</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/btn_open.png" width="64" height="64" style="width:64px;height:64px" alt="Abrir cofres"><figcaption>Abrir cofres</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/btn_sort.png" width="64" height="64" style="width:64px;height:64px" alt="Ordenar"><figcaption>Ordenar</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/btn_sell.png" width="64" height="64" style="width:64px;height:64px" alt="Vender"><figcaption>Vender</figcaption></figure>
+        </div>
+      </div>
+      <div class="item-group">
+        <h3>Piezas del marco</h3>
+        <p class="muted">El marco de la interfaz dibujado en pixel art: ventana, tooltip, botones, pestañas y casilla vacía se estiran por sus bordes (nine-slice); el nicho es donde posa el héroe en su panel.</p>
+        <div class="items">
+        <figure class="item"><img class="px" src="img/icons/ui_window.png" width="96" height="96" style="width:96px;height:96px" alt="Ventana"><figcaption>Ventana</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/ui_tip.png" width="48" height="48" style="width:48px;height:48px" alt="Tooltip"><figcaption>Tooltip</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/ui_btn.png" width="56" height="52" style="width:56px;height:52px" alt="Botón"><figcaption>Botón</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/ui_btn_gold.png" width="56" height="52" style="width:56px;height:52px" alt="Botón principal"><figcaption>Botón principal</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/ui_btn_off.png" width="56" height="52" style="width:56px;height:52px" alt="Botón apagado"><figcaption>Botón apagado</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/ui_tab.png" width="88" height="88" style="width:88px;height:88px" alt="Pestaña"><figcaption>Pestaña</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/ui_tab_on.png" width="88" height="88" style="width:88px;height:88px" alt="Pestaña activa"><figcaption>Pestaña activa</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/ui_well.png" width="108" height="108" style="width:108px;height:108px" alt="Casilla vacía"><figcaption>Casilla vacía</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/ui_rule.png" width="36" height="20" style="width:36px;height:20px" alt="Adorno de separador"><figcaption>Adorno de separador</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/ui_x.png" width="52" height="52" style="width:52px;height:52px" alt="Cerrar"><figcaption>Cerrar</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/ui_alcove.png" width="200" height="232" style="width:200px;height:232px" alt="Nicho del héroe"><figcaption>Nicho del héroe</figcaption></figure>
+        </div>
+      </div>
+  </section>
+
+<!-- items:end -->
   <section id="how">
     <div class="sec-head">
       <span class="eyebrow">Por qué ya no anda como un robot</span>
@@ -1108,10 +1805,10 @@ button.link { background: none; border: 0; padding: 0; font: inherit; color: var
       <h2>Lo que necesito de ti</h2>
     </div>
     <div class="questions">
-      <div class="q"><b>Torment</b><span class="muted">Cada mundo tiene su tonalidad: sangre (1), podredumbre (2), ahogados (3), azufre (4), ventisca blanca (5), abismo (6), plaga (7), forjas frías (8), deslustre (9) y violeta extremo (10). ¿Alguno no te da miedo, o se parece demasiado a otro?</span></div>
-      <div class="q"><b>Efectos atmosféricos</b><span class="muted">Míralos en la tira con «Torment» y espera unos segundos. ¿Más frecuentes, más fuertes, más sutiles? El trueno como sonido llegará con la fase de audio.</span></div>
-      <div class="q"><b>Contraste</b><span class="muted">He calmado la franja que queda detrás de los combatientes en los diez mundos, en Normal y en Torment. Dime en qué mundo sigue perdiéndose alguien.</span></div>
-      <div class="q"><b>Sierpe de la Fragua</b><span class="muted">El candidato A convertido en fuego, como jefe del mundo 8. ¿Vale como sustituto del Señor del Horno?</span></div>
+      <div class="q"><b>Interfaz</b><span class="muted">Maqueta 2 del panel de héroe y el alijo: signos en vez de palabras, tooltips al pasar el ratón, marco en pixel art con cantoneras de latón, nombres en gótica. ¿Va por aquí el estilo? ¿La gótica se lee bien o prefieres otra letra para los nombres?</span></div>
+      <div class="q"><b>Guantes</b><span class="muted">Rehechos los quince con una sola mano bien construida: dorso a la vista, cuatro dedos rectos y el pulgar a un lado. Placa con dedos articulados y bocamanga acampanada, cuero sobre brazal, tela fina con la manga cayendo. ¿Ahora sí?</span></div>
+      <div class="q"><b>Piezas de la Grieta</b><span class="muted">Cada familia conserva ahora su material en la quinta categoría: acero oscuro la placa, piel oscura el cuero y un tejido ciruela la tela. ¿Se distinguen?</span></div>
+      <div class="q"><b>Resto del repaso</b><span class="muted">Arcos más gruesos, flechas de los carcajs separadas, escarpe alado dorado con la greba más ancha, polainas de lobo sin la cola y la estadística de armadura como un gran yelmo. Dime qué más desentona.</span></div>
     </div>
   </section>
 
@@ -1128,6 +1825,28 @@ button.link { background: none; border: 0; padding: 0; font: inherit; color: var
           <li>Corregir lo que salga de tu revisión de los diez mundos</li>
           <li>Jefes de mundo y élites; gradaciones Hell, Inferno y Eternal</li>
           <li>Atlas y manifiesto para Pixi; la tira real del juego</li>
+        </ul>
+      </div>
+      <div class="entry">
+        <time>14 nov 2026</time>
+        <h3>Catálogo de iconos de objetos</h3>
+        <ul>
+          <li>Pecho, guantes, piernas y botas en tres familias (placa, cuero, tela) y cinco categorías: 60 iconos</li>
+          <li>Anillos, amuletos y abalorios; escudos, arcos, carcajs, varas y tomos: 40 iconos</li>
+          <li>Llave de jefe de mundo, monedas, cofres abiertos y las quince estadísticas en 16 px</li>
+          <li>Yelmo alado rehecho como yelmo cerrado con alas en las sienes; la capucha con antifaz pasa a ser un casco de explorador</li>
+          <li>Tras tu revisión: los quince guantes rehechos (los de placas parecían tener los dedos torcidos), piezas de la Grieta con el material de su familia, arcos, carcajs, escarpe alado, polainas de lobo y estadística de armadura</li>
+        </ul>
+      </div>
+      <div class="entry">
+        <time>14 nov 2026</time>
+        <h3>Iconos de objetos: prueba de estilo</h3>
+        <ul>
+          <li>Segundo commit de control: todo el arte de la tira de batalla</li>
+          <li>Iconos de 32 × 32 construidos con planos facetados: espadas y yelmos en cinco categorías, seis gemas con talla propia y tres cofres</li>
+          <li>Nueve marcos de rareza; el objeto no se redibuja al subir de rareza</li>
+          <li>Tras tu revisión: yelmos en tres familias (placa, cuero y tela), menos destellos sueltos en las espadas, ala mayor en el yelmo dorado y marcos Legendario y Divino diferenciados</li>
+          <li>Segunda revisión: las familias pasan a ser de clase (placas Knight, cuero Ranger, tela Priest); cuero y tela redibujados con siluetas propias</li>
         </ul>
       </div>
       <div class="entry">

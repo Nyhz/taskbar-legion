@@ -1,0 +1,290 @@
+<!--
+  Mock-up 2 — the Hero panel (paper doll) and the Stash.
+  A fragment: the lab page injects it (tools/assets/pipeline/lab_page.py). Drawn at the game's 1× pixel size and
+  shown through `zoom`, so every piece keeps whole pixels.
+
+  Rules of this pass (asked for by the user): signs instead of words, words only in tooltips; chrome drawn as pixel
+  art (nine-slices from tools/assets/pipeline/icon_sets/s95_chrome.py), not CSS boxes; two typefaces with a job
+  each — a blackletter for names, a pixel grotesque for numbers; gold only where it matters; no inset boxes, no
+  title bars, space instead of lines. These recipes are the design system to port to src/ui/kit.
+-->
+<style>
+.gm {                                   /* tokens straight from the "dusk" palette */
+  --k0: #0b0d17; --k1: #151a2b; --k2: #212a40; --k3: #303c55; --k4: #43506a; --k5: #5b6880; --k6: #77839a; --k7: #97a1b3; --k8: #bcc3cf; --k9: #e6e6e8;
+  --gold: #ebb94f; --gold-hi: #f8dc84; --gold-dim: #a96628; --gold-dk: #4f2b22;
+  --xp: #3f68a6; --xp-hi: #82b0da; --xp-dk: #2e4a88; --good: #86ab5a; --bad: #dc5f48;
+  --t0: #97a1b3; --t1: #86ab5a; --t2: #82b0da; --t3: #cba2dd; --t4: #ee9f72; --t5: #f08a62; --t6: #6fb9a6; --t7: #f8dc84; --t8: #ead2f0;
+  --f-name: "Jacquard 12", "Pixelify Sans", serif;      /* names of things: 12 px grid */
+  --f-title: "Jacquard 12", "Pixelify Sans", serif;     /* window titles: the same face at twice the size, the hero's pixel */
+  --f-num: "Jersey 10", "Pixelify Sans", monospace;     /* numbers and tooltip text: 10 px grid */
+  --f-big: "Jersey 20", "Pixelify Sans", monospace;     /* the one big number: 20 px grid */
+  zoom: 2;
+  font: 10px/10px var(--f-num);
+  color: var(--k8);
+  display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: flex-start;
+  image-rendering: pixelated;
+}
+@media (max-width: 760px) { .gm { zoom: 1; } }
+.gm * { box-sizing: border-box; }
+.gm img, .gm canvas { image-rendering: pixelated; display: block; }
+.gm p { margin: 0; }
+
+/* Window: one nine-slice, brass only on the corners. */
+.gm-win { position: relative; z-index: 1; border: 10px solid transparent; border-image: url(img/icons/ui_window.png) 10 fill / 10px / 0 stretch;
+  filter: drop-shadow(2px 2px 0 rgba(11, 13, 23, .55)); }
+.gm-in { margin: -3px; }
+.gm-close { position: absolute; right: -10px; top: -10px; width: 13px; height: 13px; }   /* takes the place of the corner fitting */
+.gm-close:hover { filter: brightness(1.25); }
+
+/* Titles: blackletter, gold. */
+.gm-title { font: 24px/22px var(--f-title); color: var(--gold-hi); text-shadow: 1px 1px 0 var(--k0); }
+.gm-rule { display: flex; align-items: center; gap: 1px; }
+.gm-rule i { flex: 1; height: 1px; background: var(--k3); }
+
+/* Tabs: bookmarks on the window's left edge, a sign each. */
+.gm-book { padding-left: 19px; }
+.gm-tabs { position: absolute; left: 0; top: 12px; display: grid; gap: 2px; }
+.gm-tab { position: relative; width: 22px; height: 22px; background: url(img/icons/ui_tab.png); padding: 3px 0 0 3px; }
+.gm-tab img { opacity: .55; }
+.gm-tab:hover img { opacity: 1; }
+.gm-tab.on { z-index: 2; background-image: url(img/icons/ui_tab_on.png); }
+.gm-tab.on img { opacity: 1; }
+
+/* Slot: the icon already carries its rarity frame (36×36). */
+.gm-slot { position: relative; width: 36px; height: 36px; }
+.gm-slot > img { width: 36px; height: 36px; }
+.gm-slot.empty > img.ghost { position: absolute; inset: 0; opacity: .16; filter: grayscale(1) brightness(1.6); clip-path: inset(2px); }
+.gm-slot.sel::after { content: ""; position: absolute; inset: -2px; pointer-events: none;
+  background:
+    linear-gradient(var(--gold-hi), var(--gold-hi)) 0 0 / 6px 1px, linear-gradient(var(--gold-hi), var(--gold-hi)) 0 0 / 1px 6px,
+    linear-gradient(var(--gold-hi), var(--gold-hi)) 100% 0 / 6px 1px, linear-gradient(var(--gold-hi), var(--gold-hi)) 100% 0 / 1px 6px,
+    linear-gradient(var(--gold-hi), var(--gold-hi)) 0 100% / 6px 1px, linear-gradient(var(--gold-hi), var(--gold-hi)) 0 100% / 1px 6px,
+    linear-gradient(var(--gold-hi), var(--gold-hi)) 100% 100% / 6px 1px, linear-gradient(var(--gold-hi), var(--gold-hi)) 100% 100% / 1px 6px;
+  background-repeat: no-repeat; }
+.gm-slot:hover > img:first-child { filter: brightness(1.18); }
+.gm-slot > b { position: absolute; right: 3px; bottom: 3px; font-weight: 400; color: var(--k9); text-shadow: 1px 0 0 var(--k0), -1px 0 0 var(--k0), 0 1px 0 var(--k0), 0 -1px 0 var(--k0); }
+.gm-slot > .up { position: absolute; left: 1px; top: 1px; width: 16px; height: 16px; }
+
+/* Bars: stepped corners, a lit top row, the number inside. */
+.gm-bar { position: relative; height: 11px; background: var(--k0);
+  clip-path: polygon(1px 0, calc(100% - 1px) 0, calc(100% - 1px) 1px, 100% 1px, 100% calc(100% - 1px), calc(100% - 1px) calc(100% - 1px), calc(100% - 1px) 100%, 1px 100%, 1px calc(100% - 1px), 0 calc(100% - 1px), 0 1px, 1px 1px); }
+.gm-bar > u { position: absolute; left: 1px; top: 1px; bottom: 1px; background: linear-gradient(var(--xp-hi) 0 1px, var(--xp) 1px 7px, var(--xp-dk) 7px); }
+.gm-bar > b { position: absolute; inset: 0; font-weight: 400; text-align: center; line-height: 11px; color: var(--k9); text-shadow: 1px 1px 0 var(--k0); }
+
+/* Hero panel. */
+.gm-hero { display: grid; grid-template-columns: 36px 100px 36px 50px; gap: 0 6px; }
+.gm-col { display: grid; gap: 2px; align-content: start; }
+.gm-mid { display: grid; align-content: start; justify-items: center; }
+.gm-who { display: flex; align-items: center; gap: 4px; height: 24px; margin-top: -2px; }
+.gm-doll { position: relative; width: 100px; height: 116px; margin-top: 4px; background: url(img/icons/ui_alcove.png); }
+.gm-doll .fig { position: absolute; inset: 6px 6px 1px; overflow: hidden; }
+.gm-doll canvas { position: absolute; left: -36px; top: -34px; width: 192px; height: 140px; }
+.gm-lvl { position: absolute; left: 50%; top: -3px; transform: translateX(-50%); z-index: 1; min-width: 19px; height: 14px; padding: 0 4px; text-align: center; line-height: 11px; color: var(--gold-dk); }
+.gm-lvl::before { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(var(--gold-hi) 0 1px, var(--gold) 1px 9px, var(--gold-dim) 9px);   /* a pennant; on a layer of its own so the tooltip is not clipped */
+  clip-path: polygon(1px 0, calc(100% - 1px) 0, calc(100% - 1px) 1px, 100% 1px, 100% calc(100% - 3px), 50% 100%, 0 calc(100% - 3px), 0 1px, 1px 1px); }
+.gm-line { display: grid; grid-template-columns: 16px 1fr; gap: 3px; align-items: center; width: 100px; margin-top: 5px; }
+.gm-power { display: flex; align-items: center; gap: 4px; margin-top: 5px; font: 20px/20px var(--f-big); color: var(--gold-hi); text-shadow: 1px 1px 0 var(--k0); }
+
+/* Stats: a sign and a number. What it is, and where it comes from, lives in the tooltip. */
+.gm-stats { display: grid; align-content: start; margin-left: 2px; }
+.gm-stat { position: relative; display: grid; grid-template-columns: 16px 1fr; gap: 3px; align-items: center; height: 18px; padding-right: 2px; }
+.gm-stat > b { font-weight: 400; text-align: right; color: var(--k9); }
+.gm-stat:hover { background: var(--k2); }
+.gm-stat.gap { margin-top: 8px; }
+.gm-stat > b.up { color: var(--good); }
+
+/* Tooltips: the only place where things are spelled out. */
+.gm-tip { width: 150px; border: 4px solid transparent; border-image: url(img/icons/ui_tip.png) 4 fill / 4px / 0 stretch; padding: 2px 3px 3px; color: var(--k7); text-align: left; font: 10px/10px var(--f-num);
+  filter: drop-shadow(2px 2px 0 rgba(11, 13, 23, .55)); }
+.gm-tip.mini { width: 116px; }
+.gm-tip.tag { width: auto; white-space: nowrap; }
+.gm-tip .nm { font: 12px/12px var(--f-name); padding-bottom: 3px; }
+.gm-tip .hd { color: var(--gold-hi); padding-bottom: 3px; }
+.gm-tip .sub { display: flex; align-items: center; gap: 2px; height: 16px; margin: -3px 0; }
+.gm-tip .sub .r { margin-left: auto; display: flex; align-items: center; color: var(--k9); }
+.gm-tip .gm-rule { margin: 4px 0 3px; }
+.gm-tip .aff { display: grid; grid-template-columns: 16px auto 1fr; gap: 3px; align-items: center; height: 15px; }
+.gm-tip .aff b, .gm-tip .cmp b, .gm-tip .ln b { font-weight: 400; color: var(--k9); }
+.gm-tip .aff.gem b { color: #f08a62; }
+.gm-tip .cmp { display: flex; align-items: center; gap: 1px; height: 16px; margin: 0 0 -3px -2px; }
+.gm-tip .cmp b { color: var(--good); }
+.gm-tip .lore { color: var(--k5); padding-top: 4px; }
+.gm-tip .ln { display: flex; justify-content: space-between; padding-top: 3px; }
+.gm-tip p + .ln { padding-top: 5px; }
+.t0 .nm { color: var(--t0); } .t1 .nm { color: var(--t1); } .t2 .nm { color: var(--t2); } .t3 .nm { color: var(--t3); } .t4 .nm { color: var(--t4); }
+.t5 .nm { color: var(--t5); } .t6 .nm { color: var(--t6); } .t7 .nm { color: var(--t7); } .t8 .nm { color: var(--t8); }
+.gm .tt { display: none; position: absolute; left: calc(100% + 5px); top: 0; z-index: 40; pointer-events: none; }
+.gm .tt.above { left: 0; top: auto; bottom: calc(100% + 4px); }
+.gm .tt.left { left: auto; right: calc(100% + 5px); }
+.gm .has:hover > .tt { display: block; }
+.gm-line, .gm-power, .gm-gold { position: relative; }
+.gm-grid .gm-slot:nth-child(6n+4) > .tt, .gm-grid .gm-slot:nth-child(6n+5) > .tt, .gm-grid .gm-slot:nth-child(6n) > .tt { left: auto; right: calc(100% + 5px); }
+.gm-book, .gm-side > * { position: relative; z-index: 1; }      /* the panel under the pointer comes to the front, tooltips and all */
+.gm-book:hover, .gm-side > *:hover { z-index: 9; }
+
+/* Stash. */
+.gm-top { display: flex; align-items: center; gap: 5px; height: 22px; margin-top: -2px; }
+.gm-top > span { color: var(--k6); padding-top: 5px; }
+.gm-filter { margin-left: auto; display: flex; gap: 1px; padding-right: 8px; }
+.gm-filter > div { position: relative; width: 18px; height: 20px; padding: 1px; }
+.gm-filter > div > img { opacity: .4; }
+.gm-filter > div:hover > img { opacity: .8; }
+.gm-filter > div.on { box-shadow: inset 0 -1px 0 var(--gold); }
+.gm-filter > div.on > img { opacity: 1; }
+.gm-grid { display: grid; grid-template-columns: repeat(6, 36px); gap: 2px; margin-top: 5px; }
+.gm-foot { display: flex; align-items: center; gap: 3px; margin-top: 6px; }
+.gm-btn { position: relative; width: 24px; height: 24px; border: 4px solid transparent; border-image: url(img/icons/ui_btn.png) 4 fill / 4px / 0 stretch; }
+.gm-btn > img { margin-top: -1px; }
+.gm-btn:hover { filter: brightness(1.15); }
+.gm-btn.gold { border-image-source: url(img/icons/ui_btn_gold.png); }
+.gm-btn.off { border-image-source: url(img/icons/ui_btn_off.png); }
+.gm-btn.off > img { opacity: .45; filter: grayscale(1); }
+.gm-btn > b { position: absolute; right: -6px; top: -7px; min-width: 9px; height: 9px; padding: 0 2px; font-weight: 400; line-height: 9px; text-align: center; color: var(--k9); background: #8f2433; box-shadow: 0 0 0 1px var(--k0); }
+.gm-gold { margin-left: auto; display: flex; align-items: center; gap: 2px; color: var(--gold-hi); }
+.gm-side { display: grid; gap: 10px; align-content: start; justify-items: start; }
+</style>
+
+<div class="gm" role="group" aria-label="Maqueta de la interfaz: panel de héroe del Knight con su equipo y estadísticas, un tooltip de objeto y el alijo.">
+  <div class="gm-book">
+    <div class="gm-tabs">
+      <div class="gm-tab on has"><img src="img/icons/tab_gear.png" alt="Equipo"><div class="gm-tip tag tt"><div class="hd" style="padding:0">Equipo</div></div></div>
+      <div class="gm-tab has"><img src="img/icons/tab_talents.png" alt="Talentos"><div class="gm-tip tag tt"><div class="hd" style="padding:0">Talentos</div></div></div>
+      <div class="gm-tab has"><img src="img/icons/tab_skills.png" alt="Habilidades"><div class="gm-tip tag tt"><div class="hd" style="padding:0">Habilidades</div></div></div>
+    </div>
+    <div class="gm-win">
+      <img class="gm-close" src="img/icons/ui_x.png" alt="Cerrar">
+      <div class="gm-in gm-hero">
+        <div class="gm-col">
+          <div class="gm-slot has"><img src="img/icons/helmet_plate_3.png" alt="Gran yelmo de acero">
+            <div class="gm-tip tt t3"><div class="nm">Gran yelmo de acero</div><div class="sub"><span>Yelmo</span><span class="r"><img src="img/icons/ui_power.png" alt="Poder">82</span><img src="img/icons/crest_knight.png" alt="Knight"></div><div class="gm-rule"><i></i><img src="img/icons/ui_rule.png" alt=""><i></i></div>
+              <div class="aff"><img src="img/icons/stat_armor.png" alt=""><b>+624</b><span>Armadura</span></div><div class="aff"><img src="img/icons/stat_health.png" alt=""><b>+3 180</b><span>Vida</span></div><div class="aff"><img src="img/icons/stat_block.png" alt=""><b>+4,2 %</b><span>Bloqueo</span></div></div></div>
+          <div class="gm-slot has"><img src="img/icons/chest_plate_4.png" alt="Coraza dorada alada">
+            <div class="gm-tip tt t5"><div class="nm">Coraza dorada alada</div><div class="sub"><span>Pechera</span><span class="r"><img src="img/icons/ui_power.png" alt="Poder">91</span><img src="img/icons/crest_knight.png" alt="Knight"></div><div class="gm-rule"><i></i><img src="img/icons/ui_rule.png" alt=""><i></i></div>
+              <div class="aff"><img src="img/icons/stat_armor.png" alt=""><b>+1 140</b><span>Armadura</span></div><div class="aff"><img src="img/icons/stat_magicResist.png" alt=""><b>+410</b><span>Resistencia mágica</span></div><div class="aff"><img src="img/icons/stat_health.png" alt=""><b>+5 020</b><span>Vida</span></div><div class="aff"><img src="img/icons/stat_damageReduction.png" alt=""><b>+3,1 %</b><span>Reducción de daño</span></div></div></div>
+          <div class="gm-slot has"><img src="img/icons/gloves_plate_2.png" alt="Guantelete articulado">
+            <div class="gm-tip tt t1"><div class="nm">Guantelete articulado</div><div class="sub"><span>Guantes</span><span class="r"><img src="img/icons/ui_power.png" alt="Poder">74</span><img src="img/icons/crest_knight.png" alt="Knight"></div><div class="gm-rule"><i></i><img src="img/icons/ui_rule.png" alt=""><i></i></div>
+              <div class="aff"><img src="img/icons/stat_attackSpeed.png" alt=""><b>+0,08</b><span>Velocidad de ataque</span></div><div class="aff"><img src="img/icons/stat_armor.png" alt=""><b>+212</b><span>Armadura</span></div></div></div>
+          <div class="gm-slot has"><img src="img/icons/legs_plate_3.png" alt="Arnés acanalado">
+            <div class="gm-tip tt t3"><div class="nm">Arnés acanalado</div><div class="sub"><span>Perneras</span><span class="r"><img src="img/icons/ui_power.png" alt="Poder">80</span><img src="img/icons/crest_knight.png" alt="Knight"></div><div class="gm-rule"><i></i><img src="img/icons/ui_rule.png" alt=""><i></i></div>
+              <div class="aff"><img src="img/icons/stat_magicResist.png" alt=""><b>+538</b><span>Resistencia mágica</span></div><div class="aff"><img src="img/icons/stat_health.png" alt=""><b>+2 960</b><span>Vida</span></div><div class="aff"><img src="img/icons/stat_hpRegen.png" alt=""><b>+84</b><span>Regeneración</span></div></div></div>
+          <div class="gm-slot has"><img src="img/icons/boots_plate_1.png" alt="Canillera de hierro">
+            <div class="gm-tip tt t0"><div class="nm">Canillera de hierro</div><div class="sub"><span>Botas</span><span class="r"><img src="img/icons/ui_power.png" alt="Poder">61</span><img src="img/icons/crest_knight.png" alt="Knight"></div><div class="gm-rule"><i></i><img src="img/icons/ui_rule.png" alt=""><i></i></div>
+              <div class="aff"><img src="img/icons/stat_armor.png" alt=""><b>+148</b><span>Armadura</span></div></div></div>
+        </div>
+
+        <div class="gm-mid">
+          <div class="gm-who"><img src="img/icons/crest_knight.png" alt=""><div class="gm-title">Knight</div></div>
+          <div class="gm-doll">
+            <div class="gm-lvl has">47<div class="gm-tip mini tt"><div class="hd">Nivel 47</div><p>Tope: 120. Cada nivel sube la vida y el daño base.</p></div></div>
+            <div class="fig"><canvas class="px anim" data-char="knight" data-anim="idle" width="96" height="70" role="img" aria-label="El Knight en reposo."></canvas></div>
+          </div>
+          <div class="gm-line has"><img src="img/icons/ui_xp.png" alt="Experiencia"><div class="gm-bar"><u style="width:62%"></u><b>62 %</b></div>
+            <div class="gm-tip mini tt above"><div class="hd">Experiencia</div><div class="ln" style="padding-top:0"><span>Para el nivel 48</span><b>184 300</b></div></div></div>
+          <div class="gm-power has"><img src="img/icons/ui_power.png" alt="Poder de equipo">1 284
+            <div class="gm-tip mini tt above"><div class="hd">Poder de equipo</div><p>Lo que vale todo lo que lleva puesto, en un número.</p></div></div>
+        </div>
+
+        <div class="gm-col">
+          <div class="gm-slot sel"><img src="img/icons/sword_3.png" alt="Hoja de caballero"></div>
+          <div class="gm-slot has"><img src="img/icons/shield_4.png" alt="Égida alada">
+            <div class="gm-tip tt t5"><div class="nm">Égida alada</div><div class="sub"><span>Escudo</span><span class="r"><img src="img/icons/ui_power.png" alt="Poder">90</span><img src="img/icons/crest_knight.png" alt="Knight"></div><div class="gm-rule"><i></i><img src="img/icons/ui_rule.png" alt=""><i></i></div>
+              <div class="aff"><img src="img/icons/stat_block.png" alt=""><b>+14,5 %</b><span>Bloqueo</span></div><div class="aff"><img src="img/icons/stat_armor.png" alt=""><b>+780</b><span>Armadura</span></div><div class="aff"><img src="img/icons/stat_critChance.png" alt=""><b>+3,8 %</b><span>Crítico</span></div></div></div>
+          <div class="gm-slot has"><img src="img/icons/ring_5.png" alt="Anillo de la Grieta">
+            <div class="gm-tip tt t8"><div class="nm">Anillo de la Grieta</div><div class="sub"><span>Anillo</span><span class="r"><img src="img/icons/ui_power.png" alt="Poder">104</span><img src="img/icons/ui_all.png" alt="Cualquier clase"></div><div class="gm-rule"><i></i><img src="img/icons/ui_rule.png" alt=""><i></i></div>
+              <div class="aff"><img src="img/icons/stat_critDamage.png" alt=""><b>+42 %</b><span>Daño crítico</span></div><div class="aff"><img src="img/icons/stat_multistrike.png" alt=""><b>+6,4 %</b><span>Golpe múltiple</span></div><div class="aff"><img src="img/icons/stat_health.png" alt=""><b>+4 400</b><span>Vida</span></div><div class="aff"><img src="img/icons/stat_lifesteal.png" alt=""><b>+2,2 %</b><span>Robo de vida</span></div></div></div>
+          <div class="gm-slot has"><img src="img/icons/amulet_2.png" alt="Medalla de bronce">
+            <div class="gm-tip tt t1"><div class="nm">Medalla de bronce</div><div class="sub"><span>Amuleto</span><span class="r"><img src="img/icons/ui_power.png" alt="Poder">70</span><img src="img/icons/ui_all.png" alt="Cualquier clase"></div><div class="gm-rule"><i></i><img src="img/icons/ui_rule.png" alt=""><i></i></div>
+              <div class="aff"><img src="img/icons/stat_health.png" alt=""><b>+1 920</b><span>Vida</span></div><div class="aff"><img src="img/icons/stat_attackDamage.png" alt=""><b>+96</b><span>Daño de ataque</span></div></div></div>
+          <div class="gm-slot empty has"><img src="img/icons/ui_well.png" alt="Abalorio: vacío"><img class="ghost" src="img/icons/trinket_1.png" alt="">
+            <div class="gm-tip tag tt"><div class="hd" style="padding:0">Abalorio</div></div></div>
+        </div>
+
+        <div class="gm-stats">
+          <div class="gm-stat has"><img src="img/icons/stat_attackDamage.png" alt="Daño de ataque"><b>1 842</b>
+            <div class="gm-tip mini tt"><div class="hd">Daño de ataque</div><p>Lo que quita cada golpe antes de la armadura del enemigo.</p><div class="ln"><span>Equipo</span><b>1 420</b></div><div class="ln"><span>Nivel</span><b>310</b></div><div class="ln"><span>Talentos</span><b>+6 %</b></div></div></div>
+          <div class="gm-stat has"><img src="img/icons/stat_attackSpeed.png" alt="Velocidad de ataque"><b>1,32</b>
+            <div class="gm-tip mini tt"><div class="hd">Velocidad de ataque</div><p>Golpes por segundo. Las habilidades salen al ritmo de los golpes.</p></div></div>
+          <div class="gm-stat has"><img src="img/icons/stat_critChance.png" alt="Probabilidad de crítico"><b>24,5 %</b>
+            <div class="gm-tip mini tt"><div class="hd">Crítico</div><p>Probabilidad de que un golpe sea crítico.</p></div></div>
+          <div class="gm-stat has"><img src="img/icons/stat_critDamage.png" alt="Daño crítico"><b class="up">182 %</b>
+            <div class="gm-tip mini tt"><div class="hd">Daño crítico</div><p>Cuánto pega un crítico respecto a un golpe normal.</p><div class="ln"><span>Base</span><b>150 %</b></div><div class="ln"><span>Equipo</span><b>+32 %</b></div></div></div>
+          <div class="gm-stat has"><img src="img/icons/stat_multistrike.png" alt="Golpe múltiple"><b>12 %</b>
+            <div class="gm-tip mini tt"><div class="hd">Golpe múltiple</div><p>Probabilidad de que el golpe caiga una segunda vez.</p></div></div>
+          <div class="gm-stat gap has"><img src="img/icons/stat_health.png" alt="Vida"><b>48 210</b>
+            <div class="gm-tip mini tt"><div class="hd">Vida</div><p>El daño que aguanta antes de caer.</p><div class="ln"><span>Equipo</span><b>29 400</b></div><div class="ln"><span>Nivel</span><b>18 810</b></div></div></div>
+          <div class="gm-stat has"><img src="img/icons/stat_armor.png" alt="Armadura"><b class="up">3 480</b>
+            <div class="gm-tip mini tt"><div class="hd">Armadura</div><p>Reduce el daño físico.</p><div class="ln"><span>Ahora mismo</span><b>−41 %</b></div></div></div>
+          <div class="gm-stat has"><img src="img/icons/stat_magicResist.png" alt="Resistencia mágica"><b>1 120</b>
+            <div class="gm-tip mini tt"><div class="hd">Resistencia mágica</div><p>Reduce el daño mágico.</p><div class="ln"><span>Ahora mismo</span><b>−19 %</b></div></div></div>
+          <div class="gm-stat has"><img src="img/icons/stat_block.png" alt="Bloqueo"><b>31 %</b>
+            <div class="gm-tip mini tt"><div class="hd">Bloqueo</div><p>Probabilidad de parar un golpe con el escudo.</p></div></div>
+          <div class="gm-stat has"><img src="img/icons/stat_damageReduction.png" alt="Reducción de daño"><b>18 %</b>
+            <div class="gm-tip mini tt"><div class="hd">Reducción de daño</div><p>Se resta de todo el daño, después de armadura y resistencia.</p></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="gm-side">
+    <div class="gm-tip t3">
+      <div class="nm">Hoja de caballero</div>
+      <div class="sub"><span>Espada</span><span class="r"><img src="img/icons/ui_power.png" alt="Poder">86</span><img src="img/icons/crest_knight.png" alt="Knight"></div>
+      <div class="gm-rule"><i></i><img src="img/icons/ui_rule.png" alt=""><i></i></div>
+      <div class="aff"><img src="img/icons/stat_attackDamage.png" alt=""><b>+412</b><span>Daño de ataque</span></div>
+      <div class="aff"><img src="img/icons/stat_critDamage.png" alt=""><b>+18,4 %</b><span>Daño crítico</span></div>
+      <div class="aff"><img src="img/icons/stat_armor.png" alt=""><b>+96</b><span>Armadura</span></div>
+      <div class="aff gem"><img src="img/icons/ui_gem.png" alt="Gema"><b>+38</b><span>Daño de ataque</span></div>
+      <div class="lore">«Forjada para un juramento que ya nadie recuerda.»</div>
+    </div>
+
+    <div class="gm-win">
+      <img class="gm-close" src="img/icons/ui_x.png" alt="Cerrar">
+      <div class="gm-in">
+        <div class="gm-top">
+          <div class="gm-title">Alijo</div><span>18 / 60</span>
+          <div class="gm-filter">
+            <div class="on has"><img src="img/icons/ui_all.png" alt="Todo"><div class="gm-tip tag tt above"><div class="hd" style="padding:0">Todo</div></div></div>
+            <div class="has"><img src="img/icons/crest_knight.png" alt="Knight"><div class="gm-tip tag tt above"><div class="hd" style="padding:0">Knight</div></div></div>
+            <div class="has"><img src="img/icons/crest_ranger.png" alt="Ranger"><div class="gm-tip tag tt above"><div class="hd" style="padding:0">Ranger</div></div></div>
+            <div class="has"><img src="img/icons/crest_priest.png" alt="Priest"><div class="gm-tip tag tt above"><div class="hd" style="padding:0">Priest</div></div></div>
+          </div>
+        </div>
+        <div class="gm-grid">
+          <div class="gm-slot has"><img src="img/icons/helmet_plate_4.png" alt="Yelmo alado"><img class="up" src="img/icons/ui_up.png" alt="Mejora">
+            <div class="gm-tip tt t5"><div class="nm">Yelmo alado</div><div class="sub"><span>Yelmo</span><span class="r"><img src="img/icons/ui_power.png" alt="Poder">93</span><img src="img/icons/crest_knight.png" alt="Knight"></div><div class="gm-rule"><i></i><img src="img/icons/ui_rule.png" alt=""><i></i></div>
+              <div class="aff"><img src="img/icons/stat_armor.png" alt=""><b>+802</b><span>Armadura</span></div><div class="aff"><img src="img/icons/stat_health.png" alt=""><b>+3 940</b><span>Vida</span></div><div class="aff"><img src="img/icons/stat_critChance.png" alt=""><b>+2,6 %</b><span>Crítico</span></div>
+              <div class="cmp"><img src="img/icons/ui_up.png" alt="Mejora"><b>+126</b><img src="img/icons/ui_power.png" alt="de poder"></div></div></div>
+          <div class="gm-slot has"><img src="img/icons/chest_cloth_3.png" alt="Casulla blanca"><div class="gm-tip tag tt t3"><div class="nm" style="padding:0">Casulla blanca</div></div></div>
+          <div class="gm-slot has"><img src="img/icons/bow_4.png" alt="Gran arco dorado"><div class="gm-tip tag tt t5"><div class="nm" style="padding:0">Gran arco dorado</div></div></div>
+          <div class="gm-slot has"><img src="img/icons/tome_5.png" alt="Tomo de la Grieta"><div class="gm-tip tag tt t8"><div class="nm" style="padding:0">Tomo de la Grieta</div></div></div>
+          <div class="gm-slot has"><img src="img/icons/boots_plate_3.png" alt="Escarpe acanalado"><img class="up" src="img/icons/ui_up.png" alt="Mejora"><div class="gm-tip tag tt t3"><div class="nm" style="padding:0">Escarpe acanalado</div></div></div>
+          <div class="gm-slot has"><img src="img/icons/wand_2.png" alt="Vara de acólito"><div class="gm-tip tag tt t1"><div class="nm" style="padding:0">Vara de acólito</div></div></div>
+          <div class="gm-slot has"><img src="img/icons/gem_ruby.png" alt="Rubí"><b>3</b><div class="gm-tip tag tt t2"><div class="nm" style="padding:0">Rubí</div></div></div>
+          <div class="gm-slot has"><img src="img/icons/gem_emerald.png" alt="Esmeralda"><b>2</b><div class="gm-tip tag tt t2"><div class="nm" style="padding:0">Esmeralda</div></div></div>
+          <div class="gm-slot has"><img src="img/icons/gem_diamond.png" alt="Diamante"><div class="gm-tip tag tt t2"><div class="nm" style="padding:0">Diamante</div></div></div>
+          <div class="gm-slot has"><img src="img/icons/quiver_3.png" alt="Carcaj repujado"><div class="gm-tip tag tt t3"><div class="nm" style="padding:0">Carcaj repujado</div></div></div>
+          <div class="gm-slot has"><img src="img/icons/legs_cloth_4.png" alt="Falda solar"><div class="gm-tip tag tt t5"><div class="nm" style="padding:0">Falda solar</div></div></div>
+          <div class="gm-slot has"><img src="img/icons/amulet_4.png" alt="Colgante solar"><div class="gm-tip tag tt t5"><div class="nm" style="padding:0">Colgante solar</div></div></div>
+          <div class="gm-slot has"><img src="img/icons/gloves_leather_4.png" alt="Guante de lobero"><div class="gm-tip tag tt t5"><div class="nm" style="padding:0">Guante de lobero</div></div></div>
+          <div class="gm-slot has"><img src="img/icons/shield_2.png" alt="Escudo de infante"><div class="gm-tip tag tt t1"><div class="nm" style="padding:0">Escudo de infante</div></div></div>
+          <div class="gm-slot has"><img src="img/icons/key_world.png" alt="Llave de jefe de mundo"><b>1</b><div class="gm-tip tag tt"><div class="hd" style="padding:0">Llave de jefe de mundo</div></div></div>
+          <div class="gm-slot"><img src="img/icons/ui_well.png" alt=""></div>
+          <div class="gm-slot"><img src="img/icons/ui_well.png" alt=""></div>
+          <div class="gm-slot"><img src="img/icons/ui_well.png" alt=""></div>
+          <div class="gm-slot"><img src="img/icons/ui_well.png" alt=""></div>
+          <div class="gm-slot"><img src="img/icons/ui_well.png" alt=""></div>
+          <div class="gm-slot"><img src="img/icons/ui_well.png" alt=""></div>
+          <div class="gm-slot"><img src="img/icons/ui_well.png" alt=""></div>
+          <div class="gm-slot"><img src="img/icons/ui_well.png" alt=""></div>
+          <div class="gm-slot"><img src="img/icons/ui_well.png" alt=""></div>
+        </div>
+        <div class="gm-foot">
+          <div class="gm-btn gold has"><img src="img/icons/btn_open.png" alt="Abrir cofres"><b>7</b><div class="gm-tip tag tt above"><div class="hd" style="padding:0">Abrir cofres</div></div></div>
+          <div class="gm-btn has"><img src="img/icons/btn_sort.png" alt="Ordenar"><div class="gm-tip tag tt above"><div class="hd" style="padding:0">Ordenar</div></div></div>
+          <div class="gm-btn off has"><img src="img/icons/btn_sell.png" alt="Vender"><div class="gm-tip mini tt above"><div class="hd">Vender</div><p>Marca objetos para venderlos.</p></div></div>
+          <div class="gm-gold has"><img src="img/icons/ui_gold.png" alt="Oro">12 480<div class="gm-tip tag tt above" style="left:auto;right:0"><div class="hd" style="padding:0">Oro</div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

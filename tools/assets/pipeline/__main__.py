@@ -17,11 +17,17 @@ def main(argv: list[str]) -> int:
         scene()
         return 0
     if cmd == "lab":
-        from .lab_page import main as lab
+        from .lab_page import main as lab, refresh_items
 
-        lab()
+        # `lab items` only refreshes the item icons on the page; plain `lab` rebuilds everything (minutes).
+        refresh_items() if argv[1:] == ["items"] else lab()
         return 0
-    print("commands: chars [names…], scene, lab")
+    if cmd == "icons":
+        from .icons import main as icons
+
+        icons(argv[1:] or None)
+        return 0
+    print("commands: chars [names…], scene, lab, icons")
     return 1
 
 

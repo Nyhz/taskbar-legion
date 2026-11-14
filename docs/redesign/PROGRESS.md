@@ -136,6 +136,7 @@ gameplay de Relica; todo el arte y el sonido, nuevos (se desechan los sprites de
 - [x] Knight, carrera (pedido: "va como demasiado apresurado, algo más natural"): iba a ~213 pasos/min; ahora
       `JOG = Gait(stride=1.22, lift=0.8, air=1.7)` a 14 fotogramas × 48 ms (~180 pasos/min). La zancada cubre
       ~31 px por ciclo frente a los 32 que avanza el grupo, así que el pie apoyado no resbala. Lab v27.
+- [x] Segundo commit de control: `501a7fe` "feat(redesign): battle-strip art for the ten worlds".
 - [ ] Opinión del usuario sobre la cuarta tanda. Flojo conocido: el Ranger (verde y marrón) es el héroe que
       peor se separa en los mundos 1, 2, 3 y 6; los ojos de 1 px apenas se ven; al coincidir relámpago y pulso
       la tira se aplana un instante; las franjas de bruma dejan escalones horizontales visibles en w02, w07 y
@@ -195,3 +196,79 @@ gameplay de Relica; todo el arte y el sonido, nuevos (se desechan los sprites de
 ## R9 — Integración y limpieza
 - [ ] Borrado de assets y código viejos.
 - [ ] Builds empaquetadas y release.
+
+## Objetos (2026-11-14)
+Decidido con el usuario: después de la tira van los iconos de objetos y luego la interfaz (paperdoll, paneles).
+Los iconos de habilidades y talentos esperan al rediseño de kits y árboles, que sigue sin hacer ni aprobar.
+- [x] `tools/assets/pipeline/icons.py` (`sh tools/assets/run.sh icons` → `out/icons/` + `manifest.json`): iconos
+      de 32 × 32 hechos con polígonos facetados sobre `Cel` (tono por orientación a la luz) y contorno; marcos de
+      rareza de 36 × 36 (`frame(tier)`), T8 iridiscente. La rareza no se redibuja.
+- [x] Prueba de estilo (lab v28, sección «Iconos de objetos», generada por `lab_page.items_section`;
+      `sh run.sh lab items` refresca solo esa región): 5 espadas y 5 yelmos por categoría, 9 marcos, 6 gemas con
+      talla propia, 3 cofres.
+- [x] Visto bueno del usuario al estilo ("el estilo tiene mi ok en general").
+- [x] Problema señalado: "los yelmos y otras armaduras, va a ser imposible hacer un diseño que encaje para las 3
+      clases… parecen de Knight todos. Pero eso supondría añadir a los objetos una clase requerida, ¿no?".
+      Propuesta (lab v29, pendiente de confirmar): TRES FAMILIAS de armadura derivadas del atributo base que el
+      juego ya reparte (docs/AFFIXES.md): placa = armadura pura, cuero = mitad y mitad, tela = resistencia
+      mágica pura. Sin requisito de clase ni cambio en la simulación; la UI elige el icono por
+      (ranura, familia, categoría). `icons.helmet(family, rank)`: 15 yelmos.
+- [x] Repaso de lo flojo: menos destellos sueltos en las espadas rúnica y de la Grieta, ala mayor en el yelmo
+      dorado, marco Legendario en coral y Divino en oro claro con esquinas reforzadas.
+- [x] El usuario RECHAZA derivar la familia del atributo base ("a lo mejor quiero que mi tank sea full
+      resistencia mágica y no quiero que parezca que lleva todo tela") y decide: **la armadura será de clase** —
+      Knight placas, Ranger cuero, Priest tela — y cada familia puede salir de armadura pura, mixta o
+      resistencia mágica pura. Las familias de iconos quedan, pero ligadas a la clase, no al atributo.
+- [x] Yelmos de cuero y tela rehechos (lab v30): "muchos yelmos de cuero y tela se parecen, y otros son un poco
+      raros". Regla de siluetas: placa = yelmos; cuero = gorros, sombreros, capuchas y pellejos; tela = tocados,
+      nunca capucha.
+- [ ] **CAMBIO DE REGLAS PENDIENTE (después de assets e interfaz, decidido por el usuario):** requisito de clase
+      en las cinco piezas de armadura. Toca `src/data/itemSlots.ts`, `src/sim/loot.ts` (familia/clase al generar),
+      el equipado, la migración de partidas guardadas (asignar familia a las piezas existentes) y
+      `docs/AFFIXES.md` / CLAUDE.md ("no equip-gate… bar the class lock"). Cada pieza que cae servirá a un héroe
+      de tres: revisar ritmo con `npm run probe`.
+- [x] Yelmos cerrados (lab v31): la capucha con antifaz pasa a "casco de explorador" ("cambia la capucha antifaz
+      un poco de modelo y listo") y el yelmo alado se rehace ("parece como una pluma detrás de un casco de
+      minero") como yelmo dorado cerrado con mirilla en T y alas en las sienes.
+- [x] Catálogo completo (lab v31): 159 iconos en 30 grupos. Cada lote es un módulo de
+      `tools/assets/pipeline/icon_sets/` con `build()` (`sh run.sh icons <lote>` construye solo ese lote):
+      `s10_chest`, `s20_gloves`, `s30_legs`, `s40_boots` (3 familias × 5 categorías), `s50_jewelry` (anillo,
+      amuleto, abalorio), `s60_arms_a` (escudo, arco, carcaj), `s70_arms_b` (vara, tomo, llave, monedas, cofres
+      abiertos), `s80_stats` (15 estadísticas de 16 px, sin marco).
+- [x] Guantes rehechos (lab v32): "los guanteletes son los 3 materiales bastante malos, los de placas parece que
+      tienen los dedos torcidos". `s20_gloves.py` reescrito con una sola función `hand()` (dorso, cuatro dedos
+      rectos, pulgar) y tres puños distintos: bocamanga acampanada, brazal, manga.
+- [x] Repaso de lo flojo: `icons.family_tint` da a la categoría 5 el material de su familia (placa acero oscuro,
+      cuero piel oscura, tela ciruela); arcos más gruesos; flechas de los carcajs separadas; escarpe alado
+      dorado con greba ancha; polainas de lobo sin cola; estadística de armadura como gran yelmo.
+- [x] Pulgares de los guantes (lab v33): "son un poco raros… como muy gordos". En `hand()` el pulgar pasa de un
+      bloque poligonal a un `limb` del grosor de un dedo, en diagonal desde la base de la palma.
+- [ ] Revisión del usuario del catálogo. Flojo conocido: las piezas de la Grieta se parecen entre familias; arcos
+      finos; plumas de los carcajs en un solo penacho; escarpe alado dorado; polainas de lobo; el puño de la
+      manopla oxidada; coraza de 16 px (estadística de armadura).
+- [ ] Pendiente: iconos de mascotas; gemas por nivel si se quiere distinguir T1–T8 más allá del marco.
+- [ ] Integrar en la UI del juego (sustituir `src/ui/icons.ts`, que hoy usa emoji).
+
+## Interfaz (2026-11-14)
+
+- [x] Maqueta 1 del panel de héroe y el alijo (`docs/redesign/mockups/hero_panel.html`): descartada sin publicar;
+      el usuario pidió que la interfaz "pierda ese toque AI generated genérico. Más iconitos pixel art, más textos
+      custom con fuentes bonitas, menos textos descriptivos upfront y más tooltips custom, menos visual clutter,
+      más claridad".
+- [x] Maqueta 2 (lab v34), con esas reglas:
+      - Signos en vez de palabras: `icon_sets/s90_ui.py` (emblemas de clase, pestañas, oro, experiencia, poder de
+        equipo, mejora, gema engastada, botones). Las palabras solo aparecen en los tooltips (CSS `:hover`).
+      - Marco en pixel art, no cajas CSS: `icon_sets/s95_chrome.py` (ventana nine-slice con cantoneras de latón,
+        tooltip, botones, pestañas-marcapáginas, casilla vacía, adorno de separador, tecla de cerrar que ocupa la
+        esquina superior derecha, nicho de piedra donde posa el héroe).
+      - Dos letras con un oficio cada una: «Jacquard 12» (gótica pixel) para nombres y títulos; «Jersey 10/20»
+        para números y texto de tooltip. «Jacquard 24» descartada: su A mayúscula se lee como una X ("Xlijo").
+      - Sin barras de título, sin cajas hundidas, sin rótulos: estadísticas como signo + número; el nivel es un
+        banderín sobre el arco del nicho; el oro vive en el alijo, no en el panel de héroe; la barra de
+        habilidades sale de la pestaña de equipo.
+- [ ] Validación del usuario de la maqueta 2 (estilo, gótica, densidad).
+- [ ] Después: llevar las recetas a `src/ui/kit` y rehacer los paneles uno a uno (HUD, héroe, alijo, tecnología,
+      mapa y dificultades, mascotas, cubo, opciones, título).
+- Flojo conocido de la maqueta 2: los títulos van al doble de tamaño que el resto del texto (píxel gordo, como el
+  héroe del nicho); el emblema de "todas las clases" es poco claro; no hay vista de comparación lado a lado;
+  solo se ha visto en capturas del navegador sin cabeza a 1280 px, no en móvil.
