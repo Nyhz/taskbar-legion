@@ -1,0 +1,88 @@
+{
+  "key": "w07",
+  "name_es": "Cavernas de cristal y hongos",
+  "name_en": "Caverns of Crystal and Fungus",
+  "backdrop_es": "Una caverna sin cielo, iluminada solo por lo que crece en ella. Al fondo, cámaras más profundas que se ven como pozos de resplandor verdemar con agujas y setas diminutas a contraluz; delante, la pared lejana: un techo y grandes columnas con arcos por los que asoma ese resplandor, con repisas de roca, cristales incrustados y raíces colgando por encima de los arcos, una cascada que cae en hebras dentro de uno de ellos, con su espuma y su nube de rocío, y el lago al pie, con las luces tendidas sobre el agua. En el plano medio, pilares, un techo de estalactitas e islas de roca con las setas luminosas gigantes y las formaciones de cristal, cada una iluminando la roca que la rodea; luego esporas a la deriva, un marco oscuro de estalactitas y estalagmitas con hilos de gusanos de luz, el camino de piedra pulida con liquen brillante en los bordes y, debajo, repisas de roca con cristales pequeños, vetas de luz y charcos. Detrás de los combatientes cuelga una bruma pareja, sin negros ni luces fuertes, para que las figuras se lean; las luces conservan todo su brillo por encima. Flotan esporas y motas de luz que caen despacio, y gotea agua del techo. En Torment la cueva está infectada: es la Plaga. La roca es de un ciruela oscuro, el lago parece vino y las cámaras del fondo brillan rojas como llagas; los cristales se han vuelto de un rosa crudo y están agrietados o muertos y blanqueados, las setas están hinchadas y supuran o grises y sin vida, y los hilos de luz son venas. Solo la Grieta, que parte el techo, y sus esquirlas conservan su violeta. Las últimas luces fallan a ratos, la cueva late con un pulso rosado, caen esporas espesas y se abren ojos en lo oscuro, arriba en los arcos y bajo las repisas.",
+  "foes": [
+    {
+      "key": "beetle",
+      "kind": "beast",
+      "name_es": "Escarabajo geoda",
+      "name_en": "Geode Beetle",
+      "role_es": "Bestia · seis patas",
+      "bullets_es": [
+        "Esqueleto propio de seis patas, del tamaño de un buey: caparazón de dos piezas, oscuro y brillante como el vino, del que revientan tres cristales de ámbar; cabeza acorazada con un ojo de brasa, mandíbulas en pinza y un cuerno largo y ahorquillado",
+        "Avanza pesado, moviendo las patas de tres en tres mientras el caparazón se mece; en reposo respira, los cristales laten y escarba la piedra con una pata",
+        "Carga: se echa atrás escarbando, baja la cabeza hasta apuntar con el cuerno, se lanza y lo arranca hacia arriba",
+        "Al morir le fallan las patas y el caparazón se parte por la costura: la luz sale por la grieta, las dos mitades se separan y los cristales se apagan"
+      ],
+      "anims_es": {
+        "idle": "Reposo",
+        "run": "Avanzar",
+        "attack": "Carga",
+        "hurt": "Golpe recibido",
+        "death": "Muerte"
+      }
+    },
+    {
+      "key": "shardling",
+      "kind": "melee",
+      "name_es": "Esquirlado",
+      "name_en": "Shardling",
+      "role_es": "Cuerpo a cuerpo · cristal vivo",
+      "bullets_es": [
+        "Una figura de placas de cuarzo rosa: cabeza facetada con una ranura de luz, un núcleo que arde en el pecho, piernas acabadas en punta y dos hojas largas en lugar de antebrazos; unas esquirlas sueltas flotan sobre su cabeza y le van a la zaga",
+        "Se mueve a golpes secos: la cabeza cambia de ángulo de un chasquido y corre sobre las puntas con las dos hojas barridas hacia atrás",
+        "Tijera: abre las hojas, una por detrás y otra por arriba, aguanta un instante y las cierra cruzadas con dos estelas",
+        "Al morir se agrieta en blanco de la cabeza a la cadera y estalla: los trozos vuelan, caen y quedan en el suelo, y el núcleo es lo último en apagarse"
+      ],
+      "anims_es": {
+        "idle": "Reposo",
+        "run": "Correr",
+        "attack": "Tijera",
+        "hurt": "Golpe recibido",
+        "death": "Muerte"
+      }
+    },
+    {
+      "key": "bat",
+      "kind": "ranged",
+      "name_es": "Murciélago lóbrego",
+      "name_en": "Gloom Bat",
+      "role_es": "A distancia · volador",
+      "bullets_es": [
+        "Esqueleto propio de vuelo: un cuerpo peludo de orejas enormes y ojos de brasa colgado entre dos alas de membrana roja que se abren en abanico y se ven de canto al pasar junto al cuerpo",
+        "No se posa nunca: se mantiene a unos veinticuatro píxeles del suelo, hundiéndose cuando sube las alas y elevándose con cada aletazo",
+        "Chillido: se echa atrás con las alas abiertas en uve, llena el pecho y lanza la cabeza al frente; el sonido sale en anillos que se ensanchan y se apagan",
+        "Al morir se le pliegan las alas, cae dando la vuelta, golpea la piedra de espaldas, rebota una vez y queda con las alas extendidas"
+      ],
+      "anims_es": {
+        "idle": "Cernirse",
+        "run": "Volar",
+        "attack": "Chillido",
+        "hurt": "Golpe recibido",
+        "death": "Muerte"
+      }
+    },
+    {
+      "key": "geode",
+      "kind": "boss",
+      "name_es": "Titán Geoda",
+      "name_en": "The Geode Titan",
+      "role_es": "Jefe de etapa",
+      "bullets_es": [
+        "Un titán de cueva con hechura de gran simio: anda sobre los nudillos, con las patas traseras cortas bajo un lomo largo, brazos como pilares, puños como peñascos y una cabeza pequeña y brutal, con colmillos, hundida entre los hombros. Sobre el lomo carga una joroba de roca oscura mayor que el resto de él, abierta como una geoda, con cristales largos como espadas; más cristales le revientan de hombros y antebrazos",
+        "Camina apoyando cada puño al contrario que la pierna; en reposo respira con todo el lomo y los cristales se encienden a cada inspiración",
+        "Rayo: se alza sobre las patas traseras, cae sobre los puños y se inclina hasta que la geoda apunta a la piedra que tiene delante; la cavidad se llena de luz hasta alumbrar la cueva y la suelta en un rayo que se clava en el suelo y hace brotar cristales",
+        "Al morir la geoda se sobrecarga y revienta, los cristales salen despedidos, y lo que queda cae de rodillas, luego sobre el pecho, y se apaga"
+      ],
+      "anims_es": {
+        "idle": "Reposo",
+        "run": "Avanzar",
+        "attack": "Rayo",
+        "hurt": "Golpe recibido",
+        "death": "Muerte"
+      }
+    }
+  ]
+}

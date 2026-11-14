@@ -1,0 +1,88 @@
+{
+  "key": "w04",
+  "name_es": "Cañones de Roca Roja",
+  "name_en": "Red Rock Canyons",
+  "backdrop_es": "Cañones de roca roja bajo un sol blanco y bajo, con el aire lleno de calima. Siete capas: cielo con nubes altas y finas encendidas por debajo y buitres girando en las térmicas; mesetas lejanas en dos planos casi disueltas en la bruma; cerros y agujas más cercanos con su cara en sombra y su falda de derrubios; polvo a la deriva y remolinos; las paredes del cañón, en grandes bloques escalonados de estratos, con un poblado excavado en un abrigo de la roca, un puesto de vigía con gallardetes, una ventana abierta en la piedra, una portada tallada, el arco, chimeneas de hadas, un puente de cuerda tendido delante del sol y un campamento de caravana con su hoguera; el camino polvoriento con rodadas, entre cactus, pitas, mojones y huesos, sobre una terraza más baja de tierra cuarteada donde asoma el costillar de algo enorme; y rocas, espinos y un árbol seco en primer plano. El polvo se posa en el fondo del cañón: de los hombros de los combatientes hacia abajo las paredes se hunden en él y se quedan en un solo valor medio, con un talud de derrubios entre bloque y bloque, para que quien pisa el camino se lea contra ellas. Atmósfera: motas que suben con el calor y algo de arenilla en el viento. En Torment es una tormenta de azufre: cielo pardo amarillento ahogado en polvo alrededor de un sol negro, la roca quemada hasta el ocre oscuro con los filos amarillo azufre y anegada en polvo amarillo por abajo, piedras flotando, el puente cortado, el poblado a oscuras y el campamento abandonado; solo la Grieta y sus cristales siguen siendo violetas. Atmósfera: el polvo corre de lado contra el grupo, por detrás y por delante de las figuras, caen rayos secos de un blanco amarillento sin lluvia y la luz falla a rachas.",
+  "foes": [
+    {
+      "key": "scorpion",
+      "kind": "beast",
+      "name_es": "Escorpión de las dunas",
+      "name_en": "Dune Scorpion",
+      "role_es": "Bestia · aguijón",
+      "bullets_es": [
+        "Esqueleto propio: cuerpo bajo de placas azul acero sobre ocho patas, dos pinzas grandes en brazos articulados y una cola de siete segmentos arqueada sobre el lomo, con un aguijón dorado",
+        "Corretea moviendo las patas de cuatro en cuatro mientras las pinzas chasquean por turnos y la cola se mece",
+        "Aguijonazo: se agacha con las pinzas abiertas, echa la cola atrás del todo y la descarga por encima de su cabeza para clavarla en el suelo, salpicando tierra y veneno",
+        "Al morir la cola da dos latigazos, las patas ceden y se abren, las pinzas caen abiertas y la cola se desploma sobre el cuerpo"
+      ],
+      "anims_es": {
+        "idle": "Reposo",
+        "run": "Corretear",
+        "attack": "Aguijonazo",
+        "hurt": "Golpe recibido",
+        "death": "Muerte"
+      }
+    },
+    {
+      "key": "raider",
+      "kind": "melee",
+      "name_es": "Saqueador del cañón",
+      "name_en": "Canyon Raider",
+      "role_es": "Cuerpo a cuerpo · dos hojas",
+      "bullets_es": [
+        "Un nómada envuelto en tela blanqueada por el sol: turbante que solo deja ver los ojos, velo y fajín azules, un pañuelo largo que ondea detrás y una hoja curva en cada mano",
+        "Espera agazapado y corre doblado por la cintura, con los dos brazos atrás y las hojas a rastras",
+        "Doble tajo: la hoja adelantada corta de través, él da un paso a fondo y la otra baja desde arriba en media luna",
+        "Al morir una hoja sale girando y cae clavada de punta en la tierra, la otra queda detrás; él cae de rodillas y se dobla hacia delante sobre ellas"
+      ],
+      "anims_es": {
+        "idle": "Reposo",
+        "run": "Correr",
+        "attack": "Doble tajo",
+        "hurt": "Golpe recibido",
+        "death": "Muerte"
+      }
+    },
+    {
+      "key": "vulture",
+      "kind": "ranged",
+      "name_es": "Buitre carroñero",
+      "name_en": "Carrion Harrier",
+      "role_es": "A distancia · volador",
+      "bullets_es": [
+        "Un buitre enorme que nunca se posa: esqueleto de vuelo propio, con cuerpo oscuro, gola de plumas claras, cuello pelado, pico ganchudo, ojo encendido y garras colgando",
+        "Se mantiene en el aire batiendo las alas (las puntas van retrasadas respecto al brazo), sube y baja con cada aletazo y gira la cabeza de un héroe a otro; para avanzar se estira plano con el cuello al frente",
+        "Bilis: alza las alas, se echa atrás en el aire con el cuello recogido y, al descargarlas, lanza la cabeza y escupe un proyectil verdoso que cae en arco",
+        "Al morir se pliega, cae dando una vuelta hacia atrás con las alas arrastradas hacia arriba, golpea el suelo boca arriba entre polvo y plumas, y la última ala baja despacio"
+      ],
+      "anims_es": {
+        "idle": "Cernerse",
+        "run": "Volar",
+        "attack": "Bilis",
+        "hurt": "Golpe recibido",
+        "death": "Muerte"
+      }
+    },
+    {
+      "key": "colossus",
+      "kind": "boss",
+      "name_es": "Coloso de arenisca",
+      "name_en": "Sandstone Colossus",
+      "role_es": "Jefe de etapa",
+      "bullets_es": [
+        "Un gigante tallado en la roca oscura del cañón: bloques cincelados de planos duros, con vetas rojas y grietas; una losa de hombro que le sobresale por detrás, la cabeza baja y adelantada, una máscara con dos ojos fríos bajo el ceño y una mandíbula pesada, antebrazos que se ensanchan en puños como peñascos y un glifo frío en el pecho y en cada puño",
+        "Camina a pisotones lentos que levantan polvo; en reposo los bloques se asientan, los glifos laten y unas esquirlas de piedra giran despacio a su alrededor",
+        "Mazazo: alza los dos puños sobre la cabeza mientras las esquirlas suben en remolino, aguanta y los hunde en el suelo con todo el cuerpo; la tierra se abre en una grieta de luz fría y tres dientes de roca brotan uno tras otro, cada uno más alto",
+        "Muere como una estatua: todas sus grietas se encienden, se apagan con los glifos, y se parte en dos por la cintura; la mitad de arriba se vence hacia delante y se estrella de bruces, y las piernas se quedan en pie"
+      ],
+      "anims_es": {
+        "idle": "Reposo",
+        "run": "Avanzar",
+        "attack": "Mazazo",
+        "hurt": "Golpe recibido",
+        "death": "Muerte"
+      }
+    }
+  ]
+}

@@ -1,0 +1,94 @@
+{
+  "key": "w10",
+  "name_es": "La Grieta",
+  "name_en": "The Rift",
+  "backdrop_es": "El mundo roto y suspendido en el vacío, en siete capas: un cielo de estrellas con un velo de gas violeta, nebulosas de corazón azul, rosado y verde mar, un sol negro con su corona y un espiral de polvo cayendo en él, y las grandes fracturas; a lo lejos, un pedazo de cada uno de los nueve mundos anteriores a la deriva sobre su trozo de tierra (el molino, el árbol viejo, la choza sobre pilotes con la lámpara aún encendida, el arco de roca, el tejado del monasterio, la columna hundida, la seta gigante, la chimenea de forja y la cúpula de mármol); islas de roca en estratos con cristales; polvo de estrellas; restos cercanos con columnas en pie; una calzada de losas talladas con una greca y sigilos que aún guardan luz, con huecos por los que se ven las estrellas; y cristal tallado en primer plano. Para que la pelea se lea, todo lo que queda detrás de las figuras se hunde en una bruma violeta uniforme, sin cristales brillantes, y el lado derecho del cielo —donde se alza el Deshacedor con su sol negro— es un velo liso, sin fracturas. Atmósfera: polvo de estrellas que sube despacio y un pulso violeta muy lento. En Torment, la última puerta, todo va más allá: el color se apaga hacia la tinta y el hueso, el cielo entero se ha roto como un cristal alrededor del sol negro, con grietas finas y paños desplazados, y siete fracturas arden en blanco. Atmósfera: las fracturas descargan en blanco y hacen temblar el suelo, el cielo parpadea entre descargas, el polvo y los escombros salen arrancados hacia arriba, se abren ojos violetas en el vacío bajo la calzada y en lo oscuro del cielo, y de vez en cuando la luz tartamudea.",
+  "foes": [
+    {
+      "key": "voidmaw",
+      "kind": "beast",
+      "name_es": "Fauces del Vacío",
+      "name_en": "Void Maw",
+      "role_es": "Bestia · flotante",
+      "bullets_es": [
+        "Un orbe de oscuridad deshilachada que es casi todo boca: colmillos pálidos arriba y abajo, un resplandor al fondo de la garganta, un ojo que arde y cuatro tentáculos colgando. Su borde va perfilado de luz fría",
+        "Esqueleto propio: no anda, flota. Sube y baja, se inclina hacia donde va, respira abriendo y cerrando las fauces, y los tentáculos son cadenas simuladas que lo siguen",
+        "Dentellada: se echa atrás y arriba con la boca de par en par, aguanta, se lanza y cierra las fauces de golpe con un chasquido de luz",
+        "Muere implosionando: tiembla, se hincha, gira sobre sí mismo encogiéndose hasta un punto que estalla, y sus dientes caen al suelo y ahí se quedan"
+      ],
+      "anims_es": {
+        "idle": "Reposo",
+        "run": "Flotar",
+        "attack": "Dentellada",
+        "hurt": "Golpe recibido",
+        "death": "Muerte"
+      }
+    },
+    {
+      "key": "echo",
+      "kind": "melee",
+      "name_es": "Eco de la Grieta",
+      "name_en": "Riftbound Echo",
+      "role_es": "Cuerpo a cuerpo · hueco con forma de caballero",
+      "bullets_es": [
+        "Lo que la Grieta conserva de un caballero: un agujero con su silueta. No tiene superficie, solo un doble borde de luz fría alrededor del violeta profundo de la Grieta, con estrellas que no se mueven con él; fracturas de luz le recorren la pierna, el brazo y la capa rota, la visera arde y empuña una hoja ancha de luz",
+        "No se mueve con fluidez: mantiene una pose y de pronto está en la siguiente, dejando su contorno atrás un instante. Corre en seis poses por zancada",
+        "Tajo: alza la hoja tras la cabeza y la deja ahí; un fotograma después el corte ya ha pasado y queda una media luna de luz colgando en el aire",
+        "Al morir se queda rígido, la luz de dentro sube hasta abrasar y se rompe en esquirlas que saltan, caen y quedan brillando en el suelo"
+      ],
+      "anims_es": {
+        "idle": "Reposo",
+        "run": "Correr",
+        "attack": "Tajo",
+        "hurt": "Golpe recibido",
+        "death": "Muerte"
+      }
+    },
+    {
+      "key": "weaver",
+      "kind": "ranged",
+      "name_es": "Tejedora de Estrellas",
+      "name_en": "Star Weaver",
+      "role_es": "Lanzador · cuatro brazos",
+      "bullets_es": [
+        "Alta, flaca y sin piernas: una máscara pálida de ojos huecos con la barbilla en punta, una tiara de agujas de luz, una túnica verde azulada que acaba en hilos sueltos por encima del suelo y cuatro brazos largos de dedos como agujas",
+        "Flota subiendo y bajando; el par de brazos de abajo no deja nunca de trabajar un hilo de luz entre las manos. Al avanzar se inclina y echa atrás los brazos de arriba",
+        "Aguja de estrella: las manos de arriba suben y se cierran sobre una estrella, la lleva tras la cabeza y la lanza como una aguja de luz",
+        "Al morir se le caen los brazos y se deshace de abajo arriba, hilo a hilo, hasta que solo queda la máscara, que cae sobre la maraña"
+      ],
+      "anims_es": {
+        "idle": "Reposo",
+        "run": "Deslizarse",
+        "attack": "Aguja de estrella",
+        "hurt": "Golpe recibido",
+        "death": "Muerte"
+      }
+    },
+    {
+      "key": "unmaker",
+      "kind": "boss",
+      "name_es": "El Deshacedor",
+      "name_en": "The Unmaker",
+      "role_es": "Jefe final · la puerta a las dificultades altas",
+      "bullets_es": [
+        "Una figura blanca, imposiblemente delgada y sin rostro, cuelga en el aire con los brazos algo abiertos y los pies en punta; su única facción es una costura negra vertical. Detrás de la cabeza arde un sol negro, más oscuro que el cielo, con una corona blanca que brilla más por el lado que mira a los héroes. La rodean seis hojas de espejo roto llenas de estrellas, tres a cada lado como las alas de un serafín. Mide unos 115 px, más de tres héroes.",
+        "Casi no se mueve y nada en él se detiene: flota, las hojas respiran, los rayos giran, piedras y un trozo de suelo orbitan a su alrededor; bajo él el suelo pierde el color y suben motas planas. Para avanzar se desliza erguido, con las hojas y las vendas quedándose atrás.",
+        "Deshacer: las hojas se pliegan y se abren de golpe en sol radiante, el sol negro se hincha mientras todo lo demás se oscurece y la costura se enciende; alza una mano, la deja caer hacia los héroes y cae un pilar de luz blanca que corre por el suelo, y el suelo se deshace en losas planas que suben en vez de caer.",
+        "Muerte en etapas: el sol negro se agrieta como un cristal y derrama luz; las hojas caen una a una y se hacen añicos; la costura lo parte de la cabeza a los pies y se deshace en hebras y luz que ascienden. Queda solo el aro agrietado de la corona, apagándose, sobre un campo de esquirlas."
+      ],
+      "anims_es": {
+        "idle": "Reposo",
+        "run": "Deslizarse",
+        "attack": "Deshacer",
+        "hurt": "Golpe recibido",
+        "death": "Muerte"
+      }
+    }
+  ],
+  "slots": [
+    536,
+    430,
+    386,
+    342
+  ]
+}

@@ -1,0 +1,90 @@
+{
+  "key": "w09",
+  "name_es": "Ciudadela entre las nubes",
+  "name_en": "Citadel among the Clouds",
+  "backdrop_es": "Amanecer sobre un mar de nubes, con una sola luz para todo: el sol bajo a la derecha. Siete capas: el cielo, del azul al melocotón, con el sol rompiendo sobre el horizonte, sus rayos largos y el borde lejano y dorado del mar de nubes; jirones altos y el mar de nubes con volumen, que se desplaza solo y pasa también por debajo de la pasarela; islas flotantes lejanas con agujas y cúpulas, un puente largo entre dos de ellas y nube que se derrama por sus bordes; la ciudadela, pálida y azulada por la distancia, con un campanario, la gran cúpula dorada, dos agujas unidas por un puente, una puerta triunfal y una torre escalonada sobre un banco de nubes; la terraza cercana, de mármol con un lado en luz cálida y otro en sombra fría: una columnata con estandartes, una estatua alada, un templete redondo de cúpula azul, cipreses, una puerta con un gran estandarte y un pebetero encendido; la pasarela de mármol con un pretil bajo y un filete de oro, sobre un puente con cornisa, greca dorada, ménsulas y arcos por los que se ve pasar la nube; y en primer plano tambores de columna, la cabeza de una estatua y jirones de nube. De la altura de las cabezas hacia abajo la ciudad queda en sombra y en la bruma azul de la mañana, con los pies perdidos en un banco de niebla: así la franja tras el combate es un tono medio y calmado, y la ciudad blanca y dorada asoma por encima. En el aire suben motas de luz y cae alguna pluma. En Torment la ciudad se ha podrido y todo vira a sepia y hollín: un sol negro con un aro ámbar apagado, un resplandor ámbar sucio bajo un cielo pardo casi negro, cúpulas y agujas rotas y negras de hollín, el oro vuelto verdín, los estandartes en jirones y el mar de nubes convertido en un humo pardo y gris que se traga la parte baja de la ciudad. El violeta queda solo para la Grieta: la fractura del cielo, los cristales y la luz de las grietas del pavimento. Cae ceniza y plumas chamuscadas, el sol negro oscurece la escena a pulsos lentos, dentro del humo relampaguea un ámbar sordo y de vez en cuando la luz falla.",
+  "foes": [
+    {
+      "key": "gryphon",
+      "kind": "beast",
+      "name_es": "Grifo de la Ciudadela",
+      "name_en": "Citadel Gryphon",
+      "role_es": "Bestia de guerra · alada, cuatro patas",
+      "bullets_es": [
+        "Una bestia de guerra de la ciudadela, de la alzada de un caballo: por delante águila —plumas pizarra, pecho hondo, pico ganchudo dorado bajo un medio yelmo dorado con penacho rojo, patas escamosas amarillas con garras— y por detrás león leonado, de cintura recogida, grupa fuerte y cola con borla; lleva una gualdrapa azul ribeteada de oro",
+        "Esqueleto propio, con alas construidas como las de un ave (brazo, antebrazo y mano, con primarias oscuras, secundarias azules y dos filas de coberteras) que se pliegan en una hoja sobre el lomo y se abren en un abanico ancho; avanza a saltos, con las garras cayendo juntas y las alas medio abiertas batiendo al compás",
+        "Zarpazo: se agacha, se alza sobre las patas traseras con las dos alas desplegadas, aguanta y cae con garras y pico por delante, dejando tres arañazos en el aire",
+        "Muere chillando con las alas en alto; le fallan las patas delanteras y cae sobre el pecho, sigue la grupa, apoya la cabeza en el mármol y el ala se le vence hacia atrás sobre el cuerpo mientras caen plumas sueltas"
+      ],
+      "anims_es": {
+        "idle": "Reposo",
+        "run": "Brincar",
+        "attack": "Zarpazo",
+        "hurt": "Golpe recibido",
+        "death": "Muerte"
+      }
+    },
+    {
+      "key": "templar",
+      "kind": "melee",
+      "name_es": "Templario del Cielo",
+      "name_en": "Sky Templar",
+      "role_es": "Cuerpo a cuerpo · armadura vacía",
+      "bullets_es": [
+        "Un guardián con yelmo alado y armadura dorada, tabardo azul largo, escudo alto con un sol y una alabarda; dentro no hay nadie, solo una luz fría tras la visera",
+        "No corre: marcha erguido, con el escudo al frente y la alabarda en alto como un estandarte; en reposo solo gira el yelmo",
+        "Tajo de alabarda: la echa atrás sobre el hombro, aguanta, da un paso y la descarga en un arco largo que saca esquirlas del mármol",
+        "Al morir la luz se apaga y la armadura se detiene: la alabarda cae hacia atrás, se hunde de rodillas con el escudo apoyado en el suelo y el yelmo vacío rueda por delante"
+      ],
+      "anims_es": {
+        "idle": "Reposo",
+        "run": "Marchar",
+        "attack": "Tajo de alabarda",
+        "hurt": "Golpe recibido",
+        "death": "Muerte"
+      }
+    },
+    {
+      "key": "cantor",
+      "kind": "ranged",
+      "name_es": "Cantor de la Tormenta",
+      "name_en": "Storm Cantor",
+      "role_es": "Lanzador · flota",
+      "bullets_es": [
+        "Un clérigo que ya no toca el suelo: capucha oscura sobre una máscara de oro, estola carmesí, una túnica que acaba en jirones simulados, un halo dorado sobre la cabeza y un incensario colgando de su cadena",
+        "Flota subiendo y bajando, con el halo siguiéndolo a destiempo; para avanzar se inclina y se desliza con la túnica ondeando detrás",
+        "Rayo: se eleva con una mano en alto hasta que el halo arde y saltan chispas, baja la mano de golpe y un rayo cae delante de él, con su bifurcación, el estallido en el suelo y la marca que deja",
+        "Al morir la tormenta lo suelta: queda colgando inerte, el halo se le resbala, cae y es solo un montón de túnica en el mármol, con el halo parándose a su lado"
+      ],
+      "anims_es": {
+        "idle": "Reposo",
+        "run": "Deslizarse",
+        "attack": "Rayo",
+        "hurt": "Golpe recibido",
+        "death": "Muerte"
+      }
+    },
+    {
+      "key": "archon",
+      "kind": "boss",
+      "name_es": "El Arconte",
+      "name_en": "The Archon",
+      "role_es": "Jefe de etapa",
+      "bullets_es": [
+        "La mayor estatua de la ciudadela, bajada de su pedestal: un gigante de mármol frío y en sombra con oro, de casi el doble de alto que un héroe, con dos grandes alas de plumas en capas que lo enmarcan, hombreras doradas y un disco solar de oro tras la cabeza",
+        "Por rostro, una máscara pálida y lisa partida por una grieta vertical en la que arde la luz, con los ojos cerrados y oro corriendo de ellos; su mandoble es una hoja de luz tan larga como un hombre",
+        "En reposo aguarda con la espada clavada y las dos manos en el pomo, las alas alzadas respirando despacio; camina lento y pesado con la espada en alto",
+        "Juicio: arranca la espada del suelo y la alza sobre la cabeza mientras las alas se abren de golpe y la hoja se enciende; aguanta, y la hunde en el suelo justo delante: brotan tres pilares de luz, uno tras otro",
+        "Muere despacio: la luz de la máscara se apaga, se endereza en su pose de estatua, las grietas se extienden desde la máscara por toda la piedra, un ala se parte y cae, y se desmorona desde la corona alrededor de su espada, que queda clavada y es lo último que se apaga",
+        "Tiene fotograma propio (152 × 114)"
+      ],
+      "anims_es": {
+        "idle": "Reposo",
+        "run": "Avanzar",
+        "attack": "Juicio",
+        "hurt": "Golpe recibido",
+        "death": "Muerte"
+      }
+    }
+  ]
+}

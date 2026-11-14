@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import math
 
-from ..rig import GROUND, Anim, Build, Cel, Chain, ChainSpec, Character, Gait, Pose, Pt, gait_legs, keyed
+from ..rig import GROUND, HURT_MS, HURT_TIMES, Anim, Build, Cel, Chain, ChainSpec, Character, Gait, Pose, Pt, gait_legs, keyed, stagger_keys
 
 BUILD = Build(root_x=40, thigh=6.4, shin=6.2, foot=4.6, hip_dx=1.5, spine=10.0, sh_near=3.6, sh_far=3.0, upper=6.0, fore=5.6, neck=1.0, head_dx=0.4,
               leg_scale=12.6 / 16.0)
@@ -224,7 +224,9 @@ def idle_pose(ph: float) -> Pose:
             "elbF": 40.0 + 4.0 * late, "sword": -40.0 - 2.5 * late, "head_dy": -0.3 * late}
 
 
-JOG = Gait(stride=0.9, give=1.15, lift=0.85, toe=0.9, run=True, air=1.6)
+# A steady armoured jog, not a sprint: long strides at about 180 steps a minute (the party moves at 48 px/s, and
+# a stride of 1.22 covers ~31 px per cycle, so the planted foot does not slide).
+JOG = Gait(stride=1.22, give=1.15, lift=0.8, toe=0.9, run=True, air=1.7)
 
 
 def run_pose(ph: float) -> Pose:
@@ -293,12 +295,13 @@ SHOUT_KEYS = [
     (1.00, k(), "io"),
 ]
 
-HURT_KEYS = [
-    (0.00, k(), "lin"),
-    (0.15, k(dx=-2.6, drop=1.7, lean=-10.0, head_dx=-1.2, head_dy=-0.4, armN=-12.0, elbN=56.0, sword=-66.0, armF=2.0, elbF=34.0, footF=(4.2, 1.0, 8.0)), "out3"),
-    (0.40, k(dx=-1.6, drop=2.3, lean=-4.0, head_dx=-0.4, armN=4.0, elbN=68.0, sword=-50.0, armF=12.0, elbF=38.0), "io"),
-    (1.00, k(), "io"),
-]
+# Hit: armoured and heavy, he gives little ground. The shield jerks up, the sword arm is thrown back, and he
+# comes back behind the shield.
+HURT_KEYS = stagger_keys(GUARD, push=3.2, bend=9.0, buckle=2.2, whip=12.0, over={
+    "impact": dict(armF=34.0, elbF=52.0, armN=4.0, elbN=66.0, sword=-52.0),
+    "reel": dict(armF=4.0, elbF=30.0, armN=-24.0, elbN=50.0, sword=-80.0),
+    "catch": dict(armF=28.0, elbF=48.0, armN=10.0, elbN=70.0, sword=-46.0),
+})
 
 # Defeat: the blow rocks him back two steps, he drops to one knee driving the sword point-down into the
 # ground to hold himself up, and sags over it with his head bowed. He stays there until he is revived.
@@ -320,7 +323,7 @@ STILL = lambda t: (-0.1, 0.0)  # noqa: E731
 
 ANIMS = {
     "idle": Anim("idle", idle_pose, [i / 12 for i in range(12)], [170] * 12, True, lambda t: (-0.3 + 0.2 * math.sin(math.tau * t), 0.0)),
-    "run": Anim("run", run_pose, [i / 12 for i in range(12)], [47] * 12, True, lambda t: (-1.7, 0.0)),
+    "run": Anim("run", run_pose, [i / 14 for i in range(14)], [48] * 14, True, lambda t: (-1.5, 0.0)),
     "attack": Anim("attack", keyed(ATTACK_KEYS), [0.0, 0.11, 0.22, 0.34, 0.42, 0.48, 0.54, 0.60, 0.74, 0.88, 1.0],
                    [80, 70, 80, 130, 35, 50, 90, 110, 100, 90, 130], False, STILL),
     "cleave": Anim("cleave", keyed(CLEAVE_KEYS), [0.0, 0.11, 0.22, 0.34, 0.42, 0.48, 0.53, 0.58, 0.72, 0.88, 1.0],
@@ -328,7 +331,7 @@ ANIMS = {
     "block": Anim("block", keyed(BLOCK_KEYS), [0.0, 0.09, 0.18, 0.34, 0.40, 0.48, 0.60, 0.8, 1.0], [50, 50, 90, 60, 50, 80, 90, 90, 100], False, STILL),
     "shout": Anim("shout", keyed(SHOUT_KEYS), [0.0, 0.12, 0.25, 0.34, 0.42, 0.5, 0.58, 0.66, 0.75, 0.87, 1.0],
                   [70, 70, 90, 50, 50, 80, 90, 90, 110, 90, 100], False, STILL),
-    "hurt": Anim("hurt", keyed(HURT_KEYS), [0.0, 0.08, 0.15, 0.4, 0.7, 1.0], [40, 50, 90, 80, 80, 80], False, STILL),
+    "hurt": Anim("hurt", keyed(HURT_KEYS), HURT_TIMES, HURT_MS, False, STILL),
     "death": Anim("death", keyed(DEATH_KEYS), [0.0, 0.04, 0.08, 0.15, 0.22, 0.29, 0.36, 0.43, 0.50, 0.56, 0.63, 0.70, 0.85, 1.0],
                   [50, 40, 70, 70, 80, 80, 90, 70, 60, 70, 90, 120, 160, 1200], False, STILL),
 }

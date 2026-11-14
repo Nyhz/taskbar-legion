@@ -1,0 +1,94 @@
+{
+  "key": "w08",
+  "name_es": "Tierras de ceniza y forjas",
+  "name_en": "Ash Lands and Forges",
+  "backdrop_es": "Un infierno industrial iluminado desde abajo. De atrás hacia delante: un cielo rojo con un sol apagado tras velos de calima y el horizonte al rojo; bancos de humo de panza plana que el fuego enciende por debajo; volcanes de laderas quebradas con la lava corriendo y encharcándose al pie, su penacho de humo y, delante, la silueta lejana de más fábricas; las forjas: dos altos hornos zunchados con la boca ardiendo, su montacargas y su tubería, grupos de chimeneas que humean, la gran rueda de los fuelles, una grúa con un cazo de hierro fundido colgando, naves de tejado en diente de sierra con las ventanas encendidas, tuberías sobre caballetes y montones de escoria; ceniza y ascuas en el aire; un río de lava con placas de costra flotando tras un ribazo de escoria y una fila de bolardos con cadena; el camino de ceniza prensada con planchas de hierro remachadas; y bajo él, ceniza con grietas por las que asoma el fuego, engranajes medio enterrados, yunques, lingotes aún calientes y cadenas. En primer plano pasan un yunque, una gran rueda dentada, escoria y un montón de cadena con su gancho, y de arriba cuelgan cadenas y un cazo. En el aire suben ascuas desde el río y cae un poco de ceniza, de verdad, no pintadas. La franja que queda justo detrás de los combatientes está velada por la calima: el pie de las fábricas se aclara y pierde brillo, y la mitad cercana del río es un resplandor rojo y plano, para que las figuras se lean. En Torment son las forjas frías: el fuego ha muerto. Todo es gris ceniza y negro de hierro bajo una tapa de humo negro; el sol es un disco negro con una corona fría, los volcanes están apagados, los hornos partidos de arriba abajo, las chimeneas rotas y sin humo, la rueda y la grúa caídas y las ventanas a oscuras; el río se ha encostrado y la ceniza lo cubre como nieve, igual que cada cornisa. Donde hubo fuego solo quedan costuras finas de una luz blanca y azul, fría y equivocada. Lo único violeta es la Grieta en el cielo y sus cristales. Cae una ceniza espesa y gris, relampaguea dentro del humo con un destello frío que deja las fábricas en negro, la luz tartamudea a ratos y las costuras frías laten despacio.",
+  "foes": [
+    {
+      "key": "salamander",
+      "kind": "beast",
+      "name_es": "Salamandra de magma",
+      "name_en": "Magma Salamander",
+      "role_es": "Bestia · reptil de lava",
+      "bullets_es": [
+        "Esqueleto propio: hombros, caderas y cabeza con cuernos dibujados a mano sobre un espinazo que se flexiona, cuatro patas abiertas con los codos en alto y una cola simulada; costra negra con el borde de arriba iluminado, una grieta de fuego en zigzag por todo el lomo, el vientre como una línea continua al rojo blanco, la garganta encendida y una cresta de púas que acaban en ascua. Su propio calor alumbra el suelo bajo la garganta y el vientre",
+        "Repta en diagonales con los hombros y las caderas meciéndose a contratiempo y la cabeza barriendo el suelo; suelta ascuas del lomo",
+        "Escupitajo: se recoge, se alza sobre las patas delanteras con la garganta hinchándose en blanco y lanza la cabeza hacia delante; un pegote de lava describe un arco y salpica donde cae",
+        "Al morir se retuerce, intenta levantarse y el fuego se le va apagando de la cola a la cabeza: queda convertida en una estatua de piedra gris que humea"
+      ],
+      "anims_es": {
+        "idle": "Reposo",
+        "run": "Reptar",
+        "attack": "Escupitajo de lava",
+        "hurt": "Golpe recibido",
+        "death": "Muerte"
+      }
+    },
+    {
+      "key": "smith",
+      "kind": "melee",
+      "name_es": "Bruto de la forja",
+      "name_en": "Forge Brute",
+      "role_es": "Cuerpo a cuerpo · mazo",
+      "bullets_es": [
+        "Un herrero enorme y ceniciento, con una máscara de hierro soldada y una luz fría en la rendija, un mandil de cuero quemado y un brazo que ya no es carne sino escoria: costra negra con el fuego en las grietas y en los nudillos",
+        "Anda balanceándose de un pie a otro con el mazo al hombro, que le rebota en cada paso; del brazo le gotean ascuas",
+        "Golpe de yunque: agarra el mazo con las dos manos, lo sube por encima de la cabeza, aguanta un instante y descarga todo el peso; el suelo suena y sale un abanico de chispas",
+        "Al morir el mazo se le escurre por detrás, se sienta de golpe donde estaba, se apoya un momento y se desploma hacia delante sobre las rodillas; el brazo y la luz de la máscara se apagan"
+      ],
+      "anims_es": {
+        "idle": "Reposo",
+        "run": "Avanzar",
+        "attack": "Golpe de yunque",
+        "hurt": "Golpe recibido",
+        "death": "Muerte"
+      }
+    },
+    {
+      "key": "slagimp",
+      "kind": "ranged",
+      "name_es": "Diablillo de escoria",
+      "name_en": "Slag Imp",
+      "role_es": "A distancia · cazo de escoria",
+      "bullets_es": [
+        "Un diablillo azul y nervudo que no llega a la cintura de un héroe: orejas grandes, dos cuernos, un ojo como un ascua, una boca demasiado ancha y una cola con punta de pala; lleva un cazo largo de hierro lleno de escoria fundida",
+        "Corretea doblado por la cintura con el cazo en alto y el brazo libre bombeando; en reposo no para quieto, se balancea sobre los talones y ladea la cabeza",
+        "Lanzamiento: se agacha echando el cazo muy atrás por encima del hombro y lo descarga de un latigazo; el pegote sube en un arco alto y revienta al caer",
+        "Al morir el golpe lo levanta del suelo y le hace dar una voltereta hacia atrás: cae de bruces y el cazo aterriza a su lado, con la escoria derramada apagándose"
+      ],
+      "anims_es": {
+        "idle": "Reposo",
+        "run": "Corretear",
+        "attack": "Lanzamiento de escoria",
+        "hurt": "Golpe recibido",
+        "death": "Muerte"
+      }
+    },
+    {
+      "key": "magmawyrm",
+      "kind": "boss",
+      "name_es": "Sierpe de la Fragua",
+      "name_en": "Forge Wyrm",
+      "role_es": "Jefe de etapa · la bestia encadenada bajo las forjas",
+      "bullets_es": [
+        "La sierpe que los herreros tenían encadenada para avivar sus hornos: no pisa el suelo, sale de él por una grieta entre las planchas de hierro donde hierve el metal fundido. Anillos de escoria negra y hierro forjado con costuras al rojo blanco, vientre de costra agrietada sobre magma, púas de hierro en el lomo, cuernos de hierro ennegrecido y una cabeza acorazada tan larga como un héroe, con cuatro ojos candentes y una garganta como la boca de un horno. Aún lleva el collar forjado, con tramos de cadena rota colgando. Mide unos 90 px.",
+        "Cuelga sobre el grupo mirándolo desde arriba: respira luz de fuego, la cabeza se mece como la de una serpiente, le gotea metal fundido de la barbilla y el vientre y las cadenas se balancean. Avanza arrastrando la colada por el suelo, que se abomba por delante y se enfría en una cicatriz por detrás.",
+        "Dentellada: se echa atrás y arriba, desencaja las mandíbulas y asoma una segunda boca, aguanta con el horno de la garganta rugiendo y descarga todo el cuello contra el suelo, que revienta: planchas por los aires y surtidores de lava.",
+        "Muere apagándose: la colada cría costra y el frío le sube por el cuello anillo a anillo, desde el suelo, hasta dejarlo de piedra gris en mitad del último rugido; los ojos se apagan uno a uno. Luego la piedra se agrieta por encima del collar, la cabeza se desprende y cae, y queda en pie una columna de escoria con el collar y su cadena."
+      ],
+      "anims_es": {
+        "idle": "Reposo",
+        "run": "Arrastrar la colada",
+        "attack": "Dentellada",
+        "hurt": "Golpe recibido",
+        "death": "Muerte"
+      }
+    }
+  ],
+  "slots": [
+    536,
+    426,
+    382,
+    338
+  ]
+}

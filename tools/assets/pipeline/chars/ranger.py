@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import math
 
-from ..rig import GROUND, Anim, Build, Cel, Chain, ChainSpec, Character, Gait, Pose, Pt, gait_legs, keyed
+from ..rig import GROUND, HURT_MS, HURT_TIMES, Anim, Build, Cel, Chain, ChainSpec, Character, Gait, Pose, Pt, gait_legs, keyed, stagger_keys
 
 BUILD = Build(root_x=40, thigh=6.8, shin=6.8, foot=4.2, hip_dx=1.0, spine=9.0, sh_near=2.8, sh_far=2.4, upper=5.9, fore=5.7, neck=1.0, head_dx=0.7,
               leg_scale=13.6 / 17.2)
@@ -238,12 +238,12 @@ QUICK_KEYS = [
     (1.00, k(), "io"),
 ]
 
-HURT_KEYS = [
-    (0.00, k(), "lin"),
-    (0.15, k(dx=-2.6, drop=1.6, lean=-10.0, head_dx=-1.2, head_dy=-0.4, armN=-34.0, elbN=40.0, armF=-4.0, elbF=40.0, bow=58.0, footF=(3.6, 1.0, 8.0)), "out3"),
-    (0.40, k(dx=-1.6, drop=2.2, lean=-4.0, head_dx=-0.4, armN=-18.0, elbN=30.0, armF=12.0, elbF=36.0, bow=68.0), "io"),
-    (1.00, k(), "io"),
-]
+# Hit: light on his feet, he is knocked furthest. The free arm flies up for balance, the bow arm is flung back.
+HURT_KEYS = stagger_keys(READY, push=5.0, bend=15.0, buckle=2.8, whip=24.0, over={
+    "impact": dict(armF=40.0, elbF=30.0, armN=-20.0, elbN=30.0, bow=66.0),
+    "reel": dict(armF=62.0, elbF=18.0, armN=-44.0, elbN=44.0, bow=50.0),
+    "catch": dict(armF=8.0, elbF=46.0, armN=-12.0, elbN=30.0, bow=82.0),
+})
 
 # Defeat: the blow lifts him off his feet and throws him onto his back; the bow spins out of his hand. He
 # ends flat, one knee up, an arm thrown past his head.
@@ -275,7 +275,7 @@ ANIMS = {
                    [90, 70, 70, 70, 80, 80, 90, 110, 140, 160, 50, 60, 80, 90, 120], False, STILL),
     "quick": Anim("quick", keyed(QUICK_KEYS), [0.0, 0.06, 0.12, 0.18, 0.24, 0.28, 0.34, 0.40, 0.46, 0.52, 0.56, 0.63, 0.70, 0.85, 1.0],
                   [60, 50, 50, 50, 60, 45, 50, 50, 50, 60, 45, 60, 70, 80, 100], False, STILL),
-    "hurt": Anim("hurt", keyed(HURT_KEYS), [0.0, 0.08, 0.15, 0.4, 0.7, 1.0], [40, 50, 90, 80, 80, 80], False, STILL),
+    "hurt": Anim("hurt", keyed(HURT_KEYS), HURT_TIMES, HURT_MS, False, STILL),
     "death": Anim("death", keyed(DEATH_KEYS), [0.0, 0.04, 0.08, 0.14, 0.20, 0.27, 0.34, 0.38, 0.42, 0.46, 0.50, 0.56, 0.62, 0.74, 1.0],
                   [50, 40, 70, 60, 70, 60, 60, 45, 50, 60, 80, 80, 90, 140, 1200], False, STILL),
 }

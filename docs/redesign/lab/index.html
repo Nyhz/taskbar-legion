@@ -60,12 +60,14 @@ section { display: grid; gap: 18px; }
 .hero { background: var(--panel); border: 1px solid var(--line); display: grid; grid-template-columns: minmax(0, 300px) minmax(0, 1fr); min-width: 0; }
 .hero .body { padding: 18px; display: grid; gap: 10px; align-content: start; border-right: 1px solid var(--line); min-width: 0; }
 .role { font: 500 12px/1 var(--f-mono); letter-spacing: .1em; text-transform: uppercase; }
-.role.tank { color: #82b0da; } .role.dps { color: #86ab5a; } .role.heal { color: var(--gold); }
+.role.tank { color: #82b0da; } .role.dps { color: #86ab5a; } .role.heal { color: var(--gold); } .role.foe { color: #dc5f48; }
 .hero ul { margin: 0; padding-left: 18px; color: var(--muted); font-size: 14px; display: grid; gap: 4px; }
 .clips { display: flex; flex-wrap: wrap; background: var(--stage); min-width: 0; }
-.clip { display: grid; justify-items: center; flex: 1 1 216px; }
-.clip img { width: 216px; max-width: 100%; height: auto; }
-.clip span { font: 500 11px/1 var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: #f8c48a; padding: 0 0 12px; }
+.clip { display: grid; justify-items: center; flex: 1 1 240px; }
+.clip canvas { width: 288px; max-width: 100%; height: auto; }
+.clip span { font: 500 11px/1 var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--clip-label, #f8c48a); padding: 0 0 12px; }
+.world-name { font: 500 12px/1 var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--gold); align-self: center; }
+button.link { background: none; border: 0; padding: 0; font: inherit; color: var(--gold); text-decoration: underline; cursor: pointer; }
 .how { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); }
 .how div { background: var(--panel); padding: 16px; display: grid; gap: 6px; align-content: start; }
 .how b { font: 700 17px/1.2 var(--f-display); color: var(--gold); }
@@ -92,8 +94,8 @@ section { display: grid; gap: 18px; }
     <h1>Laboratorio de arte</h1>
     <p class="muted">Aquí va apareciendo todo lo que se genera para el rediseño. Los personajes empiezan de cero: esqueletos nuevos y un motor de animación propio.</p>
     <div class="status">
-      <span class="chip on">Fase: personajes cerrados; siguiente, enemigos</span>
-      <span class="chip wait">Pendiente: decidir el siguiente paso</span>
+      <span class="chip on">Fase: Torment, atmósfera y contraste</span>
+      <span class="chip wait">Esperando tu revisión de la cuarta pasada</span>
       <span class="chip">Rama redesign/foundations</span>
       <span class="chip">Actualizado 14 nov 2026</span>
     </div>
@@ -101,11 +103,26 @@ section { display: grid; gap: 18px; }
 
   <section id="live">
     <div class="sec-head">
-      <span class="eyebrow">Mundo 1 · en movimiento</span>
+      <span class="eyebrow">Los diez mundos · en movimiento</span>
       <h2>La tira en vivo</h2>
-      <p class="muted">La tira del juego a su resolución real (600 × 160), dibujada en directo: el fondo se desplaza en siete capas de parallax y los tres héroes avanzan al trote, al mismo paso y cada uno con su zancada.</p>
+      <p class="muted">La tira del juego a su resolución real (600 × 160), dibujada en directo: el fondo se desplaza en siete capas de parallax y los tres héroes avanzan al trote. Elige mundo del 1 al 10; al dejar de correr aparecen enfrente sus cuatro enemigos. Cada mundo tiene ahora su clima en movimiento (lluvia, nieve, ascuas, esporas) y, en «Torment», su propia tonalidad y sus sustos: relámpagos con destello, ojos que se abren en la oscuridad, la luz que falla. Los relámpagos tardan unos segundos en caer.</p>
     </div>
     <div class="toolbar">
+      <div class="seg" role="group" aria-label="Mundo">
+<!-- worldsel:start -->
+        <button data-world="w01" title="Praderas doradas" aria-pressed="true">1</button>
+        <button data-world="w02" title="Bosque viejo de musgo" aria-pressed="false">2</button>
+        <button data-world="w03" title="Marismas de los Pilotes" aria-pressed="false">3</button>
+        <button data-world="w04" title="Cañones de Roca Roja" aria-pressed="false">4</button>
+        <button data-world="w05" title="Cumbres del Monasterio" aria-pressed="false">5</button>
+        <button data-world="w06" title="Costa de las Ruinas Hundidas" aria-pressed="false">6</button>
+        <button data-world="w07" title="Cavernas de cristal y hongos" aria-pressed="false">7</button>
+        <button data-world="w08" title="Tierras de ceniza y forjas" aria-pressed="false">8</button>
+        <button data-world="w09" title="Ciudadela entre las nubes" aria-pressed="false">9</button>
+        <button data-world="w10" title="La Grieta" aria-pressed="false">10</button>
+<!-- worldsel:end -->
+      </div>
+      <span id="world-name" class="world-name"></span>
       <div class="seg" role="group" aria-label="Acción">
         <button id="m-run" data-mode="run" aria-pressed="true">Correr</button>
         <button id="m-idle" data-mode="idle" aria-pressed="false">Reposo</button>
@@ -125,7 +142,7 @@ section { display: grid; gap: 18px; }
       </div>
     </div>
     <div class="viewport">
-      <canvas id="strip" class="px" width="600" height="160" role="img" aria-label="La tira del mundo 1 con la Priest, el Ranger y el Knight corriendo hacia la derecha ante un atardecer con molinos."></canvas>
+      <canvas id="strip" class="px" width="600" height="160" role="img" aria-label="La tira del juego: la Priest, el Ranger y el Knight ante el fondo del mundo elegido, con sus enemigos enfrente."></canvas>
     </div>
   </section>
 
@@ -149,14 +166,14 @@ section { display: grid; gap: 18px; }
           </ul>
         </div>
         <div class="clips">
-          <div class="clip"><img class="px" src="img/knight_idle.gif" width="216" height="204" alt="Knight: reposo."><span>Reposo</span></div>
-          <div class="clip"><img class="px" src="img/knight_run.gif" width="216" height="204" alt="Knight: correr."><span>Correr</span></div>
-          <div class="clip"><img class="px" src="img/knight_attack.gif" width="216" height="204" alt="Knight: tajo."><span>Tajo</span></div>
-          <div class="clip"><img class="px" src="img/knight_cleave.gif" width="216" height="204" alt="Knight: tajo ascendente."><span>Tajo ascendente</span></div>
-          <div class="clip"><img class="px" src="img/knight_block.gif" width="216" height="204" alt="Knight: bloqueo."><span>Bloqueo</span></div>
-          <div class="clip"><img class="px" src="img/knight_shout.gif" width="216" height="204" alt="Knight: grito de guerra."><span>Grito de guerra</span></div>
-          <div class="clip"><img class="px" src="img/knight_hurt.gif" width="216" height="204" alt="Knight: golpe recibido."><span>Golpe recibido</span></div>
-          <div class="clip"><img class="px" src="img/knight_death.gif" width="216" height="204" alt="Knight: muerte."><span>Muerte</span></div>
+          <div class="clip"><canvas class="px anim" data-char="knight" data-anim="idle" width="96" height="70" role="img" aria-label="Knight: reposo."></canvas><span>Reposo</span></div>
+          <div class="clip"><canvas class="px anim" data-char="knight" data-anim="run" width="96" height="70" role="img" aria-label="Knight: correr."></canvas><span>Correr</span></div>
+          <div class="clip"><canvas class="px anim" data-char="knight" data-anim="attack" width="96" height="70" role="img" aria-label="Knight: tajo."></canvas><span>Tajo</span></div>
+          <div class="clip"><canvas class="px anim" data-char="knight" data-anim="cleave" width="96" height="70" role="img" aria-label="Knight: tajo ascendente."></canvas><span>Tajo ascendente</span></div>
+          <div class="clip"><canvas class="px anim" data-char="knight" data-anim="block" width="96" height="70" role="img" aria-label="Knight: bloqueo."></canvas><span>Bloqueo</span></div>
+          <div class="clip"><canvas class="px anim" data-char="knight" data-anim="shout" width="96" height="70" role="img" aria-label="Knight: grito de guerra."></canvas><span>Grito de guerra</span></div>
+          <div class="clip"><canvas class="px anim" data-char="knight" data-anim="hurt" width="96" height="70" role="img" aria-label="Knight: golpe recibido."></canvas><span>Golpe recibido</span></div>
+          <div class="clip"><canvas class="px anim" data-char="knight" data-anim="death" width="96" height="70" role="img" aria-label="Knight: muerte."></canvas><span>Muerte</span></div>
         </div>
       </article>
       <article class="hero">
@@ -172,13 +189,13 @@ section { display: grid; gap: 18px; }
           </ul>
         </div>
         <div class="clips">
-          <div class="clip"><img class="px" src="img/ranger_idle.gif" width="216" height="204" alt="Ranger: reposo."><span>Reposo</span></div>
-          <div class="clip"><img class="px" src="img/ranger_run.gif" width="216" height="204" alt="Ranger: correr."><span>Correr</span></div>
-          <div class="clip"><img class="px" src="img/ranger_attack.gif" width="216" height="204" alt="Ranger: disparo apuntado."><span>Disparo apuntado</span></div>
-          <div class="clip"><img class="px" src="img/ranger_volley.gif" width="216" height="204" alt="Ranger: lluvia de flechas."><span>Lluvia de flechas</span></div>
-          <div class="clip"><img class="px" src="img/ranger_quick.gif" width="216" height="204" alt="Ranger: disparo rápido."><span>Disparo rápido</span></div>
-          <div class="clip"><img class="px" src="img/ranger_hurt.gif" width="216" height="204" alt="Ranger: golpe recibido."><span>Golpe recibido</span></div>
-          <div class="clip"><img class="px" src="img/ranger_death.gif" width="216" height="204" alt="Ranger: muerte."><span>Muerte</span></div>
+          <div class="clip"><canvas class="px anim" data-char="ranger" data-anim="idle" width="96" height="70" role="img" aria-label="Ranger: reposo."></canvas><span>Reposo</span></div>
+          <div class="clip"><canvas class="px anim" data-char="ranger" data-anim="run" width="96" height="70" role="img" aria-label="Ranger: correr."></canvas><span>Correr</span></div>
+          <div class="clip"><canvas class="px anim" data-char="ranger" data-anim="attack" width="96" height="70" role="img" aria-label="Ranger: disparo apuntado."></canvas><span>Disparo apuntado</span></div>
+          <div class="clip"><canvas class="px anim" data-char="ranger" data-anim="volley" width="96" height="70" role="img" aria-label="Ranger: lluvia de flechas."></canvas><span>Lluvia de flechas</span></div>
+          <div class="clip"><canvas class="px anim" data-char="ranger" data-anim="quick" width="96" height="70" role="img" aria-label="Ranger: disparo rápido."></canvas><span>Disparo rápido</span></div>
+          <div class="clip"><canvas class="px anim" data-char="ranger" data-anim="hurt" width="96" height="70" role="img" aria-label="Ranger: golpe recibido."></canvas><span>Golpe recibido</span></div>
+          <div class="clip"><canvas class="px anim" data-char="ranger" data-anim="death" width="96" height="70" role="img" aria-label="Ranger: muerte."></canvas><span>Muerte</span></div>
         </div>
       </article>
       <article class="hero">
@@ -195,16 +212,882 @@ section { display: grid; gap: 18px; }
           </ul>
         </div>
         <div class="clips">
-          <div class="clip"><img class="px" src="img/priest_idle.gif" width="216" height="204" alt="Priest: reposo."><span>Reposo</span></div>
-          <div class="clip"><img class="px" src="img/priest_run.gif" width="216" height="204" alt="Priest: correr."><span>Correr</span></div>
-          <div class="clip"><img class="px" src="img/priest_attack.gif" width="216" height="204" alt="Priest: castigo."><span>Castigo</span></div>
-          <div class="clip"><img class="px" src="img/priest_cast.gif" width="216" height="204" alt="Priest: curación."><span>Curación</span></div>
-          <div class="clip"><img class="px" src="img/priest_hurt.gif" width="216" height="204" alt="Priest: golpe recibido."><span>Golpe recibido</span></div>
-          <div class="clip"><img class="px" src="img/priest_death.gif" width="216" height="204" alt="Priest: muerte."><span>Muerte</span></div>
+          <div class="clip"><canvas class="px anim" data-char="priest" data-anim="idle" width="96" height="70" role="img" aria-label="Priest: reposo."></canvas><span>Reposo</span></div>
+          <div class="clip"><canvas class="px anim" data-char="priest" data-anim="run" width="96" height="70" role="img" aria-label="Priest: correr."></canvas><span>Correr</span></div>
+          <div class="clip"><canvas class="px anim" data-char="priest" data-anim="attack" width="96" height="70" role="img" aria-label="Priest: castigo."></canvas><span>Castigo</span></div>
+          <div class="clip"><canvas class="px anim" data-char="priest" data-anim="cast" width="96" height="70" role="img" aria-label="Priest: curación."></canvas><span>Curación</span></div>
+          <div class="clip"><canvas class="px anim" data-char="priest" data-anim="hurt" width="96" height="70" role="img" aria-label="Priest: golpe recibido."></canvas><span>Golpe recibido</span></div>
+          <div class="clip"><canvas class="px anim" data-char="priest" data-anim="death" width="96" height="70" role="img" aria-label="Priest: muerte."></canvas><span>Muerte</span></div>
         </div>
       </article>
     </div>
   </section>
+
+<!-- worlds:start -->
+  <section id="w01">
+    <div class="sec-head">
+      <span class="eyebrow">Mundo 1 · Praderas doradas</span>
+      <h2>Praderas doradas</h2>
+      <p class="muted">Praderas doradas al atardecer, en siete capas: cielo con el sol bajo y las primeras estrellas, bancos de nubes iluminados por debajo y bandadas de pájaros, una sierra pálida con un castillo y una loma con álamos, campos con setos, una aldea con su iglesia y un río con puente, la pradera con dos molinos distintos, una granja, huertos y ganado, y el camino de tierra con su cerca, trigo y amapolas; debajo, trébol, flores, piedras y un tronco caído. Los planos que quedan justo detrás de los combatientes van en tonos medios y con poco detalle para que las figuras se lean. Flota polen en la última luz. En Torment es la cosecha de sangre: cielo rojo sangre bajo un eclipse negro con corona roja, la tierra en pardos de sangre seca y negro, todas las luces apagadas, molinos y aldea rotos, y la Grieta, que sigue violeta, partiendo el cielo; el camino es una franja fría de pizarra. Un pulso rojo lento como un latido, ceniza y pétalos negros cayendo, relámpagos sordos dentro de las nubes y ojos que se abren en lo oscuro de los campos. <button class="link" data-goto="w01">Verlo en la tira en vivo</button></p>
+    </div>
+    <div class="heroes">
+      <article class="hero">
+        <div class="body">
+          <span class="role foe">Bruto · cuatro patas</span>
+          <h3>Jabalí cerdoso</h3>
+          <ul>
+            <li>Rehecho para que amenace: más corpulento, lomo erizado de púas carmesí, dos colmillos, una cicatriz y un ojo de brasa que brilla</li>
+            <li>En reposo escarba con la pezuña, resopla vapor y le tiemblan las púas</li>
+            <li>Galope de verdad: apoyos cortos y fuertes, fase de vuelo, el cuerpo cabecea adelante y atrás y levanta polvo</li>
+            <li>Embestida: se recoge con la cabeza baja, se lanza y sube los colmillos de golpe; al morir cae sobre la barriga</li>
+          </ul>
+        </div>
+        <div class="clips" style="background:#6a3559;--clip-label:#fde3b0">
+          <div class="clip"><canvas class="px anim" data-char="boar" data-anim="idle" width="96" height="70" style="width:288px" role="img" aria-label="Jabalí cerdoso: reposo."></canvas><span>Reposo</span></div>
+          <div class="clip"><canvas class="px anim" data-char="boar" data-anim="run" width="96" height="70" style="width:288px" role="img" aria-label="Jabalí cerdoso: galopar."></canvas><span>Galopar</span></div>
+          <div class="clip"><canvas class="px anim" data-char="boar" data-anim="attack" width="96" height="70" style="width:288px" role="img" aria-label="Jabalí cerdoso: embestida."></canvas><span>Embestida</span></div>
+          <div class="clip"><canvas class="px anim" data-char="boar" data-anim="hurt" width="96" height="70" style="width:288px" role="img" aria-label="Jabalí cerdoso: golpe recibido."></canvas><span>Golpe recibido</span></div>
+          <div class="clip"><canvas class="px anim" data-char="boar" data-anim="death" width="96" height="70" style="width:288px" role="img" aria-label="Jabalí cerdoso: muerte."></canvas><span>Muerte</span></div>
+        </div>
+      </article>
+      <article class="hero">
+        <div class="body">
+          <span class="role foe">Cuerpo a cuerpo · desgarbado</span>
+          <h3>Espantapájaros hueco</h3>
+          <ul>
+            <li>Saco por cabeza con ojos de brasa, sombrero de paja, abrigo relleno de paja y una guadaña</li>
+            <li>Anda como un títere mal atado: cojea, la cabeza le baila y el brazo libre le cuelga</li>
+            <li>Siega: alza la guadaña atrás y la descarga en un barrido largo</li>
+            <li>Al morir se desmorona: el sombrero sale volando, el cuerpo se pliega en un montón y la guadaña cae</li>
+          </ul>
+        </div>
+        <div class="clips" style="background:#6a3559;--clip-label:#fde3b0">
+          <div class="clip"><canvas class="px anim" data-char="scarecrow" data-anim="idle" width="96" height="70" style="width:288px" role="img" aria-label="Espantapájaros hueco: reposo."></canvas><span>Reposo</span></div>
+          <div class="clip"><canvas class="px anim" data-char="scarecrow" data-anim="run" width="96" height="70" style="width:288px" role="img" aria-label="Espantapájaros hueco: avanzar."></canvas><span>Avanzar</span></div>
+          <div class="clip"><canvas class="px anim" data-char="scarecrow" data-anim="attack" width="96" height="70" style="width:288px" role="img" aria-label="Espantapájaros hueco: siega."></canvas><span>Siega</span></div>
+          <div class="clip"><canvas class="px anim" data-char="scarecrow" data-anim="hurt" width="96" height="70" style="width:288px" role="img" aria-label="Espantapájaros hueco: golpe recibido."></canvas><span>Golpe recibido</span></div>
+          <div class="clip"><canvas class="px anim" data-char="scarecrow" data-anim="death" width="96" height="70" style="width:288px" role="img" aria-label="Espantapájaros hueco: muerte."></canvas><span>Muerte</span></div>
+        </div>
+      </article>
+      <article class="hero">
+        <div class="body">
+          <span class="role foe">A distancia · ballesta</span>
+          <h3>Furtivo plumacuervo</h3>
+          <ul>
+            <li>Sombrero de ala ancha con una pluma roja, la cara tapada con un pañuelo, abrigo largo y un manto de plumas de cuervo que es tela simulada</li>
+            <li>Avanza agazapado, con la ballesta a dos manos y mirando a los lados</li>
+            <li>Disparo: se la echa al hombro, apunta, suelta (el retroceso lo empuja atrás) y la apoya abajo para volver a montarla</li>
+            <li>Al morir sale despedido de espaldas y la ballesta se le escapa de las manos</li>
+          </ul>
+        </div>
+        <div class="clips" style="background:#6a3559;--clip-label:#fde3b0">
+          <div class="clip"><canvas class="px anim" data-char="poacher" data-anim="idle" width="96" height="70" style="width:288px" role="img" aria-label="Furtivo plumacuervo: reposo."></canvas><span>Reposo</span></div>
+          <div class="clip"><canvas class="px anim" data-char="poacher" data-anim="run" width="96" height="70" style="width:288px" role="img" aria-label="Furtivo plumacuervo: avanzar."></canvas><span>Avanzar</span></div>
+          <div class="clip"><canvas class="px anim" data-char="poacher" data-anim="attack" width="96" height="70" style="width:288px" role="img" aria-label="Furtivo plumacuervo: disparo."></canvas><span>Disparo</span></div>
+          <div class="clip"><canvas class="px anim" data-char="poacher" data-anim="hurt" width="96" height="70" style="width:288px" role="img" aria-label="Furtivo plumacuervo: golpe recibido."></canvas><span>Golpe recibido</span></div>
+          <div class="clip"><canvas class="px anim" data-char="poacher" data-anim="death" width="96" height="70" style="width:288px" role="img" aria-label="Furtivo plumacuervo: muerte."></canvas><span>Muerte</span></div>
+        </div>
+      </article>
+      <article class="hero">
+        <div class="body">
+          <span class="role foe">Jefe de etapa</span>
+          <h3>Rey de la Cosecha</h3>
+          <ul>
+            <li>Un espantapájaros gigante, vez y media un héroe: calabaza tallada que arde por dentro, corona torcida, costillar de mimbre con fuego, brazos de paja con garras de ramas, estacas por espinillas y una capa real hecha jirones</li>
+            <li>Camina lento y pesado, hundiéndose en cada paso; el fuego parpadea y suelta ascuas</li>
+            <li>Tajo de verdugo: alza la guadaña con las dos manos sobre la cabeza, aguanta un instante y la descarga con todo el cuerpo; la hoja se clava y el suelo se abre en una grieta de luz, con terrones y polvo</li>
+            <li>Al morir el fuego se apaga: suelta la guadaña, cae de rodillas y se queda vencido; la cabeza se desprende y rueda, y la corona detrás</li>
+            <li>Su fotograma es mayor que el de los demás (128 × 96); el motor ya admite figuras altas</li>
+          </ul>
+        </div>
+        <div class="clips" style="background:#6a3559;--clip-label:#fde3b0">
+          <div class="clip" style="flex-basis:384px"><canvas class="px anim" data-char="king" data-anim="idle" width="128" height="96" style="width:384px" role="img" aria-label="Rey de la Cosecha: reposo."></canvas><span>Reposo</span></div>
+          <div class="clip" style="flex-basis:384px"><canvas class="px anim" data-char="king" data-anim="run" width="128" height="96" style="width:384px" role="img" aria-label="Rey de la Cosecha: avanzar."></canvas><span>Avanzar</span></div>
+          <div class="clip" style="flex-basis:384px"><canvas class="px anim" data-char="king" data-anim="attack" width="128" height="96" style="width:384px" role="img" aria-label="Rey de la Cosecha: tajo de verdugo."></canvas><span>Tajo de verdugo</span></div>
+          <div class="clip" style="flex-basis:384px"><canvas class="px anim" data-char="king" data-anim="hurt" width="128" height="96" style="width:384px" role="img" aria-label="Rey de la Cosecha: golpe recibido."></canvas><span>Golpe recibido</span></div>
+          <div class="clip" style="flex-basis:384px"><canvas class="px anim" data-char="king" data-anim="death" width="128" height="96" style="width:384px" role="img" aria-label="Rey de la Cosecha: muerte."></canvas><span>Muerte</span></div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section id="w02">
+    <div class="sec-head">
+      <span class="eyebrow">Mundo 2 · Bosque viejo de musgo</span>
+      <h2>Bosque viejo de musgo</h2>
+      <p class="muted">Un bosque viejo a contraluz: cuanto más lejos está un tronco, más pálido se ve, y cada tronco tiene su lado en sombra, su media luz y un filo encendido hacia el resplandor. Siete capas: resplandor con haces de luz y pájaros lejanos; troncos lejanos con un arco en ruinas y ciervos pastando; troncos medios con ramas, hojas, un árbol caído y un árbol anciano con puerta y ventana encendida; niebla baja; los gigantes de cerca, con corteza, raíces, musgo, hongos de repisa, hiedra, un hueco con ojos, faroles de luciérnagas, telarañas, un dolmen con runas y ofrenda y una estatua encapuchada cubierta de musgo; el suelo, con el camino húmedo cruzado por raíces, un reguero que pasa bajo él, charcos de luz, un arroyo con piedras de paso, un tronco caído con setas, un corro de setas y flores; y helechos, hojas y telarañas en primer plano. Una niebla baja sube del suelo: de las rodillas de los árboles hacia abajo, los troncos se deshacen paso a paso en su verde azulado pálido, y eso deja en calma la franja que queda detrás de los combatientes. En Torment el bosque es podredumbre: bajo una oscuridad verdinegra, el resplandor dorado se vuelve un verde venenoso, los troncos son negros y húmedos y se hunden en una niebla gris hueso, los farolillos y los hongos brillan con un verde pálido equivocado, el agua es cieno y el camino, barro gris; solo la Grieta y sus cristales son violetas. Atmósfera: en Normal flotan motas de luz y caen algunas hojas; en Torment se abren ojos en la oscuridad entre los troncos (unos pequeños y verdes, y de tarde en tarde un par grande y rojo), caen esporas despacio y, muy de vez en cuando, toda la niebla se enciende por dentro con un destello verde sin rayo. <button class="link" data-goto="w02">Verlo en la tira en vivo</button></p>
+    </div>
+    <div class="heroes">
+      <article class="hero">
+        <div class="body">
+          <span class="role foe">Bestia · ocho patas</span>
+          <h3>Tejedora de espinas</h3>
+          <ul>
+            <li>Esqueleto propio: abdomen y cabeza dibujados a mano sobre ocho patas de dos huesos que se arquean por encima del cuerpo; cuerpo coral con un reloj de arena de hueso y sangre en el lomo, filo claro por arriba, patas anilladas y ojos encendidos, para que no se pierda sobre el camino oscuro</li>
+            <li>Corretea moviendo las patas de cuatro en cuatro, alternadas</li>
+            <li>Mordisco: se alza sobre las patas traseras con las delanteras en alto, aguanta y cae con los colmillos por delante, goteando veneno</li>
+            <li>Muere como mueren las arañas: el golpe la voltea, queda boca arriba y las patas se le encogen a tirones</li>
+          </ul>
+        </div>
+        <div class="clips" style="background:#3f7343;--clip-label:#fde3b0">
+          <div class="clip"><canvas class="px anim" data-char="spider" data-anim="idle" width="96" height="70" style="width:288px" role="img" aria-label="Tejedora de espinas: reposo."></canvas><span>Reposo</span></div>
+          <div class="clip"><canvas class="px anim" data-char="spider" data-anim="run" width="96" height="70" style="width:288px" role="img" aria-label="Tejedora de espinas: corretear."></canvas><span>Corretear</span></div>
+          <div class="clip"><canvas class="px anim" data-char="spider" data-anim="attack" width="96" height="70" style="width:288px" role="img" aria-label="Tejedora de espinas: mordisco."></canvas><span>Mordisco</span></div>
+          <div class="clip"><canvas class="px anim" data-char="spider" data-anim="hurt" width="96" height="70" style="width:288px" role="img" aria-label="Tejedora de espinas: golpe recibido."></canvas><span>Golpe recibido</span></div>
+          <div class="clip"><canvas class="px anim" data-char="spider" data-anim="death" width="96" height="70" style="width:288px" role="img" aria-label="Tejedora de espinas: muerte."></canvas><span>Muerte</span></div>
+        </div>
+      </article>
+      <article class="hero">
+        <div class="body">
+          <span class="role foe">Cuerpo a cuerpo · no muerto</span>
+          <h3>Aparecido musgoso</h3>
+          <ul>
+            <li>Un hombre de armas que el bosque se ha quedado: yelmo comido por el óxido con la flecha que lo mató aún clavada, una luz fría en la visera, mandíbula al aire, musgo en los hombros</li>
+            <li>Arrastra un mandoble oxidado con la punta en la tierra; anda torcido, con un hombro por delante</li>
+            <li>Desgarro: se encoge sobre la hoja y la arranca del suelo hacia delante y hacia arriba en un solo arco, levantando tierra</li>
+            <li>Muere de rodillas y luego de bruces; la luz del yelmo se apaga</li>
+          </ul>
+        </div>
+        <div class="clips" style="background:#3f7343;--clip-label:#fde3b0">
+          <div class="clip"><canvas class="px anim" data-char="revenant" data-anim="idle" width="96" height="70" style="width:288px" role="img" aria-label="Aparecido musgoso: reposo."></canvas><span>Reposo</span></div>
+          <div class="clip"><canvas class="px anim" data-char="revenant" data-anim="run" width="96" height="70" style="width:288px" role="img" aria-label="Aparecido musgoso: avanzar."></canvas><span>Avanzar</span></div>
+          <div class="clip"><canvas class="px anim" data-char="revenant" data-anim="attack" width="96" height="70" style="width:288px" role="img" aria-label="Aparecido musgoso: desgarro."></canvas><span>Desgarro</span></div>
+          <div class="clip"><canvas class="px anim" data-char="revenant" data-anim="hurt" width="96" height="70" style="width:288px" role="img" aria-label="Aparecido musgoso: golpe recibido."></canvas><span>Golpe recibido</span></div>
+          <div class="clip"><canvas class="px anim" data-char="revenant" data-anim="death" width="96" height="70" style="width:288px" role="img" aria-label="Aparecido musgoso: muerte."></canvas><span>Muerte</span></div>
+        </div>
+      </article>
+      <article class="hero">
+        <div class="body">
+          <span class="role foe">Lanzador · esporas</span>
+          <h3>Invocaesporas</h3>
+          <ul>
+            <li>Un ser rechoncho bajo un sombrero de seta roja tan ancho como alto es él: dos ojos pálidos en la sombra de las láminas, barba de liquen y un bastón de raíz con un bulbo luminoso</li>
+            <li>Anda balanceándose de un pie a otro, con el sombrero meciéndose a destiempo</li>
+            <li>Dardo de esporas: echa el bastón atrás mientras el bulbo se hincha, lo lanza al frente, el sombrero tose una nube y sale el proyectil</li>
+            <li>Al morir revienta en una última nube de esporas y cae de espaldas bajo el sombrero</li>
+          </ul>
+        </div>
+        <div class="clips" style="background:#3f7343;--clip-label:#fde3b0">
+          <div class="clip"><canvas class="px anim" data-char="sporecaller" data-anim="idle" width="96" height="70" style="width:288px" role="img" aria-label="Invocaesporas: reposo."></canvas><span>Reposo</span></div>
+          <div class="clip"><canvas class="px anim" data-char="sporecaller" data-anim="run" width="96" height="70" style="width:288px" role="img" aria-label="Invocaesporas: avanzar."></canvas><span>Avanzar</span></div>
+          <div class="clip"><canvas class="px anim" data-char="sporecaller" data-anim="attack" width="96" height="70" style="width:288px" role="img" aria-label="Invocaesporas: dardo de esporas."></canvas><span>Dardo de esporas</span></div>
+          <div class="clip"><canvas class="px anim" data-char="sporecaller" data-anim="hurt" width="96" height="70" style="width:288px" role="img" aria-label="Invocaesporas: golpe recibido."></canvas><span>Golpe recibido</span></div>
+          <div class="clip"><canvas class="px anim" data-char="sporecaller" data-anim="death" width="96" height="70" style="width:288px" role="img" aria-label="Invocaesporas: muerte."></canvas><span>Muerte</span></div>
+        </div>
+      </article>
+      <article class="hero">
+        <div class="body">
+          <span class="role foe">Jefe de etapa</span>
+          <h3>Guardián Astado</h3>
+          <ul>
+            <li>Lo que guarda el bosque: un gigante flaco de corteza con cráneo de ciervo, una cornamenta como una copa de ramas desnudas, luz fría en las cuencas, un manto de liquen gris y manos de ramas largas</li>
+            <li>No lleva arma. Camina despacio y ladea la cabeza como un búho</li>
+            <li>Oleada de raíces: alza los dos brazos, aguanta, y los hunde en la tierra; delante de él brotan tres raíces con espinas, una tras otra</li>
+            <li>No cae al morir: se endereza, levanta los brazos y se convierte en un árbol muerto más, mientras caen hojas</li>
+          </ul>
+        </div>
+        <div class="clips" style="background:#3f7343;--clip-label:#fde3b0">
+          <div class="clip" style="flex-basis:384px"><canvas class="px anim" data-char="warden" data-anim="idle" width="128" height="96" style="width:384px" role="img" aria-label="Guardián Astado: reposo."></canvas><span>Reposo</span></div>
+          <div class="clip" style="flex-basis:384px"><canvas class="px anim" data-char="warden" data-anim="run" width="128" height="96" style="width:384px" role="img" aria-label="Guardián Astado: avanzar."></canvas><span>Avanzar</span></div>
+          <div class="clip" style="flex-basis:384px"><canvas class="px anim" data-char="warden" data-anim="attack" width="128" height="96" style="width:384px" role="img" aria-label="Guardián Astado: oleada de raíces."></canvas><span>Oleada de raíces</span></div>
+          <div class="clip" style="flex-basis:384px"><canvas class="px anim" data-char="warden" data-anim="hurt" width="128" height="96" style="width:384px" role="img" aria-label="Guardián Astado: golpe recibido."></canvas><span>Golpe recibido</span></div>
+          <div class="clip" style="flex-basis:384px"><canvas class="px anim" data-char="warden" data-anim="death" width="128" height="96" style="width:384px" role="img" aria-label="Guardián Astado: muerte."></canvas><span>Muerte</span></div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section id="w03">
+    <div class="sec-head">
+      <span class="eyebrow">Mundo 3 · Marismas de los Pilotes</span>
+      <h2>Marismas de los Pilotes</h2>
+      <p class="muted">Marismas bajo la lluvia a la hora azul, en siete capas: cielo con la luna entre nubes de tormenta, la orilla lejana con manglares y una aldea reflejados en el agua, bancos de niebla, el poblado sobre pilotes (casas de tablas y paja, un santuario con farolillos, una atalaya, redes, barcas y pasarelas), cañaverales, la pasarela de tablones por la que camina el grupo y, delante, espadañas y hojas de loto. Detrás de los combatientes el poblado se hunde en la bruma desde los aleros hacia abajo, sus faroles arden bajos y una falda de niebla cubre el agua, para que las figuras se lean sobre una franja tranquila; los tejados y la atalaya conservan su filo por encima. La lluvia ya no está pintada: cae en directo sobre la tira, y las luciérnagas suben despacio desde los juncos. En Torment es «los Ahogados»: verde mar frío que se va al negro. El agua ha subido por encima de las pasarelas, los tejados están rotos, los juncos muertos, el horizonte tiene una palidez de cadáver y la luna es un ojo ciego; donde hubo faroles cuelgan fuegos fatuos. Solo la Grieta y sus cristales son violetas. Atmósfera de Torment: una tormenta con lluvia racheada, relámpagos con rayo que blanquean el cielo tras las figuras y sacuden la tira, y entre rayo y rayo fuegos fatuos que se abren como ojos sobre el agua negra. <button class="link" data-goto="w03">Verlo en la tira en vivo</button></p>
+    </div>
+    <div class="heroes">
+      <article class="hero">
+        <div class="body">
+          <span class="role foe">Bestia · saltador</span>
+          <h3>Sapo del cieno</h3>
+          <ul>
+            <li>Esqueleto propio: un cuerpo de sapo dibujado a mano sobre patas traseras plegadas y manos cortas, con espinas de hueso por el lomo, dos cuernos sobre un ojo rojo, dientes y sacos de veneno que brillan</li>
+            <li>No anda, salta: se agazapa, despega con las cuatro patas en el aire y aterriza pesado, salpicando</li>
+            <li>Latigazo de lengua: se echa atrás con el buche hinchado, abre la boca y la lengua sale un cuerpo entero de largo y vuelve en un parpadeo</li>
+            <li>Al morir le revientan los sacos del lomo uno tras otro, cada uno con una sacudida; se desploma sobre la barbilla y la lengua le rueda fuera</li>
+          </ul>
+        </div>
+        <div class="clips" style="background:#2e4a88;--clip-label:#fde3b0">
+          <div class="clip"><canvas class="px anim" data-char="toad" data-anim="idle" width="96" height="70" style="width:288px" role="img" aria-label="Sapo del cieno: reposo."></canvas><span>Reposo</span></div>
+          <div class="clip"><canvas class="px anim" data-char="toad" data-anim="run" width="96" height="70" style="width:288px" role="img" aria-label="Sapo del cieno: saltar."></canvas><span>Saltar</span></div>
+          <div class="clip"><canvas class="px anim" data-char="toad" data-anim="attack" width="96" height="70" style="width:288px" role="img" aria-label="Sapo del cieno: latigazo de lengua."></canvas><span>Latigazo de lengua</span></div>
+          <div class="clip"><canvas class="px anim" data-char="toad" data-anim="hurt" width="96" height="70" style="width:288px" role="img" aria-label="Sapo del cieno: golpe recibido."></canvas><span>Golpe recibido</span></div>
+          <div class="clip"><canvas class="px anim" data-char="toad" data-anim="death" width="96" height="70" style="width:288px" role="img" aria-label="Sapo del cieno: muerte."></canvas><span>Muerte</span></div>
+        </div>
+      </article>
+      <article class="hero">
+        <div class="body">
+          <span class="role foe">Cuerpo a cuerpo · no muerto</span>
+          <h3>Pescador ahogado</h3>
+          <ul>
+            <li>Un aldeano que la marisma se quedó: hinchado y gris, con un ojo todavía encendido, la mandíbula colgando, una túnica roja bajo una red de pesca y algas por pelo; le chorrea el agua</li>
+            <li>Arrastra los pies a pasos cortos, con el peso cayendo de un pie a otro y el bichero por delante</li>
+            <li>Enganchar y tirar: recoge el bichero en la cadera, se estira todo lo que da el palo, clava el garfio y lo arranca hacia atrás con todo su peso, salpicando</li>
+            <li>No cae al morir: se abre un charco bajo sus pies y se hunde en él de pie, con los brazos en alto hasta el final; solo queda el bichero sobre las tablas</li>
+          </ul>
+        </div>
+        <div class="clips" style="background:#2e4a88;--clip-label:#fde3b0">
+          <div class="clip"><canvas class="px anim" data-char="drowned" data-anim="idle" width="96" height="70" style="width:288px" role="img" aria-label="Pescador ahogado: reposo."></canvas><span>Reposo</span></div>
+          <div class="clip"><canvas class="px anim" data-char="drowned" data-anim="run" width="96" height="70" style="width:288px" role="img" aria-label="Pescador ahogado: avanzar."></canvas><span>Avanzar</span></div>
+          <div class="clip"><canvas class="px anim" data-char="drowned" data-anim="attack" width="96" height="70" style="width:288px" role="img" aria-label="Pescador ahogado: enganchar y tirar."></canvas><span>Enganchar y tirar</span></div>
+          <div class="clip"><canvas class="px anim" data-char="drowned" data-anim="hurt" width="96" height="70" style="width:288px" role="img" aria-label="Pescador ahogado: golpe recibido."></canvas><span>Golpe recibido</span></div>
+          <div class="clip"><canvas class="px anim" data-char="drowned" data-anim="death" width="96" height="70" style="width:288px" role="img" aria-label="Pescador ahogado: muerte."></canvas><span>Muerte</span></div>
+        </div>
+      </article>
+      <article class="hero">
+        <div class="body">
+          <span class="role foe">Lanzadora · fuegos fatuos</span>
+          <h3>Bruja de la ciénaga</h3>
+          <ul>
+            <li>Una vieja doblada bajo un chal color ciruela, toda capucha y nariz, con un ojo brillante y greñas grises; lleva una pértiga torcida más alta que ella, con un farol de luciérnagas colgando de una cadena</li>
+            <li>Renquea deprisa apoyándose en la pértiga, y el farol se balancea a cada paso</li>
+            <li>Fuego fatuo: alza el farol, le susurra mientras se hincha de luz y azota la pértiga hacia delante; la luz se suelta y sale a cazar, y el farol queda a oscuras hasta que prende otra</li>
+            <li>Al morir cae la pértiga, el farol se rompe contra el suelo y las luciérnagas salen en enjambre hacia arriba; ella intenta agarrarlas y se pliega sobre sus propios trapos</li>
+          </ul>
+        </div>
+        <div class="clips" style="background:#2e4a88;--clip-label:#fde3b0">
+          <div class="clip"><canvas class="px anim" data-char="bogwitch" data-anim="idle" width="96" height="70" style="width:288px" role="img" aria-label="Bruja de la ciénaga: reposo."></canvas><span>Reposo</span></div>
+          <div class="clip"><canvas class="px anim" data-char="bogwitch" data-anim="run" width="96" height="70" style="width:288px" role="img" aria-label="Bruja de la ciénaga: renquear."></canvas><span>Renquear</span></div>
+          <div class="clip"><canvas class="px anim" data-char="bogwitch" data-anim="attack" width="96" height="70" style="width:288px" role="img" aria-label="Bruja de la ciénaga: fuego fatuo."></canvas><span>Fuego fatuo</span></div>
+          <div class="clip"><canvas class="px anim" data-char="bogwitch" data-anim="hurt" width="96" height="70" style="width:288px" role="img" aria-label="Bruja de la ciénaga: golpe recibido."></canvas><span>Golpe recibido</span></div>
+          <div class="clip"><canvas class="px anim" data-char="bogwitch" data-anim="death" width="96" height="70" style="width:288px" role="img" aria-label="Bruja de la ciénaga: muerte."></canvas><span>Muerte</span></div>
+        </div>
+      </article>
+      <article class="hero">
+        <div class="body">
+          <span class="role foe">Jefe de etapa</span>
+          <h3>El Barquero</h3>
+          <ul>
+            <li>Alto y enjuto dentro de un sudario del color de la niebla. En el fondo de una capucha picuda, la cara de un ahogado: una calavera del color del agua, los dientes al aire, algas colgando de la barbilla y una moneda sobre cada ojo, como se paga a los muertos; del cinturón de soga le cuelgan los peajes cobrados.</li>
+            <li>Espera con el remo apoyado como un bastón y la mano libre tendida, cobrando el pasaje; camina clavando el remo como si el suelo fuera agua</li>
+            <li>Barrido de remo: lo lleva atrás con las dos manos y lo pasa bajo, por el agua y hacia arriba; donde pasó la pala se levanta una ola que rueda hacia delante por el suelo</li>
+            <li>Al morir se le caen las monedas de los ojos y con ellas se va la cara: dentro no había nadie. El sudario se desploma sobre sí mismo y queda tendido en pliegues como un trapo mojado, la capucha vacía rueda a un lado y el remo, que se había quedado de pie, cae solo.</li>
+          </ul>
+        </div>
+        <div class="clips" style="background:#2e4a88;--clip-label:#fde3b0">
+          <div class="clip" style="flex-basis:384px"><canvas class="px anim" data-char="ferryman" data-anim="idle" width="128" height="96" style="width:384px" role="img" aria-label="El Barquero: reposo."></canvas><span>Reposo</span></div>
+          <div class="clip" style="flex-basis:384px"><canvas class="px anim" data-char="ferryman" data-anim="run" width="128" height="96" style="width:384px" role="img" aria-label="El Barquero: avanzar."></canvas><span>Avanzar</span></div>
+          <div class="clip" style="flex-basis:384px"><canvas class="px anim" data-char="ferryman" data-anim="attack" width="128" height="96" style="width:384px" role="img" aria-label="El Barquero: barrido de remo."></canvas><span>Barrido de remo</span></div>
+          <div class="clip" style="flex-basis:384px"><canvas class="px anim" data-char="ferryman" data-anim="hurt" width="128" height="96" style="width:384px" role="img" aria-label="El Barquero: golpe recibido."></canvas><span>Golpe recibido</span></div>
+          <div class="clip" style="flex-basis:384px"><canvas class="px anim" data-char="ferryman" data-anim="death" width="128" height="96" style="width:384px" role="img" aria-label="El Barquero: muerte."></canvas><span>Muerte</span></div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section id="w04">
+    <div class="sec-head">
+      <span class="eyebrow">Mundo 4 · Cañones de Roca Roja</span>
+      <h2>Cañones de Roca Roja</h2>
+      <p class="muted">Cañones de roca roja bajo un sol blanco y bajo, con el aire lleno de calima. Siete capas: cielo con nubes altas y finas encendidas por debajo y buitres girando en las térmicas; mesetas lejanas en dos planos casi disueltas en la bruma; cerros y agujas más cercanos con su cara en sombra y su falda de derrubios; polvo a la deriva y remolinos; las paredes del cañón, en grandes bloques escalonados de estratos, con un poblado excavado en un abrigo de la roca, un puesto de vigía con gallardetes, una ventana abierta en la piedra, una portada tallada, el arco, chimeneas de hadas, un puente de cuerda tendido delante del sol y un campamento de caravana con su hoguera; el camino polvoriento con rodadas, entre cactus, pitas, mojones y huesos, sobre una terraza más baja de tierra cuarteada donde asoma el costillar de algo enorme; y rocas, espinos y un árbol seco en primer plano. El polvo se posa en el fondo del cañón: de los hombros de los combatientes hacia abajo las paredes se hunden en él y se quedan en un solo valor medio, con un talud de derrubios entre bloque y bloque, para que quien pisa el camino se lea contra ellas. Atmósfera: motas que suben con el calor y algo de arenilla en el viento. En Torment es una tormenta de azufre: cielo pardo amarillento ahogado en polvo alrededor de un sol negro, la roca quemada hasta el ocre oscuro con los filos amarillo azufre y anegada en polvo amarillo por abajo, piedras flotando, el puente cortado, el poblado a oscuras y el campamento abandonado; solo la Grieta y sus cristales siguen siendo violetas. Atmósfera: el polvo corre de lado contra el grupo, por detrás y por delante de las figuras, caen rayos secos de un blanco amarillento sin lluvia y la luz falla a rachas. <button class="link" data-goto="w04">Verlo en la tira en vivo</button></p>
+    </div>
+    <div class="heroes">
+      <article class="hero">
+        <div class="body">
+          <span class="role foe">Bestia · aguijón</span>
+          <h3>Escorpión de las dunas</h3>
+          <ul>
+            <li>Esqueleto propio: cuerpo bajo de placas azul acero sobre ocho patas, dos pinzas grandes en brazos articulados y una cola de siete segmentos arqueada sobre el lomo, con un aguijón dorado</li>
+            <li>Corretea moviendo las patas de cuatro en cuatro mientras las pinzas chasquean por turnos y la cola se mece</li>
+            <li>Aguijonazo: se agacha con las pinzas abiertas, echa la cola atrás del todo y la descarga por encima de su cabeza para clavarla en el suelo, salpicando tierra y veneno</li>
+            <li>Al morir la cola da dos latigazos, las patas ceden y se abren, las pinzas caen abiertas y la cola se desploma sobre el cuerpo</li>
+          </ul>
+        </div>
+        <div class="clips" style="background:#bb3a3a;--clip-label:#fde3b0">
+          <div class="clip"><canvas class="px anim" data-char="scorpion" data-anim="idle" width="96" height="70" style="width:288px" role="img" aria-label="Escorpión de las dunas: reposo."></canvas><span>Reposo</span></div>
+          <div class="clip"><canvas class="px anim" data-char="scorpion" data-anim="run" width="96" height="70" style="width:288px" role="img" aria-label="Escorpión de las dunas: corretear."></canvas><span>Corretear</span></div>
+          <div class="clip"><canvas class="px anim" data-char="scorpion" data-anim="attack" width="96" height="70" style="width:288px" role="img" aria-label="Escorpión de las dunas: aguijonazo."></canvas><span>Aguijonazo</span></div>
+          <div class="clip"><canvas class="px anim" data-char="scorpion" data-anim="hurt" width="96" height="70" style="width:288px" role="img" aria-label="Escorpión de las dunas: golpe recibido."></canvas><span>Golpe recibido</span></div>
+          <div class="clip"><canvas class="px anim" data-char="scorpion" data-anim="death" width="96" height="70" style="width:288px" role="img" aria-label="Escorpión de las dunas: muerte."></canvas><span>Muerte</span></div>
+        </div>
+      </article>
+      <article class="hero">
+        <div class="body">
+          <span class="role foe">Cuerpo a cuerpo · dos hojas</span>
+          <h3>Saqueador del cañón</h3>
+          <ul>
+            <li>Un nómada envuelto en tela blanqueada por el sol: turbante que solo deja ver los ojos, velo y fajín azules, un pañuelo largo que ondea detrás y una hoja curva en cada mano</li>
+            <li>Espera agazapado y corre doblado por la cintura, con los dos brazos atrás y las hojas a rastras</li>
+            <li>Doble tajo: la hoja adelantada corta de través, él da un paso a fondo y la otra baja desde arriba en media luna</li>
+            <li>Al morir una hoja sale girando y cae clavada de punta en la tierra, la otra queda detrás; él cae de rodillas y se dobla hacia delante sobre ellas</li>
+          </ul>
+        </div>
+        <div class="clips" style="background:#bb3a3a;--clip-label:#fde3b0">
+          <div class="clip"><canvas class="px anim" data-char="raider" data-anim="idle" width="96" height="70" style="width:288px" role="img" aria-label="Saqueador del cañón: reposo."></canvas><span>Reposo</span></div>
+          <div class="clip"><canvas class="px anim" data-char="raider" data-anim="run" width="96" height="70" style="width:288px" role="img" aria-label="Saqueador del cañón: correr."></canvas><span>Correr</span></div>
+          <div class="clip"><canvas class="px anim" data-char="raider" data-anim="attack" width="96" height="70" style="width:288px" role="img" aria-label="Saqueador del cañón: doble tajo."></canvas><span>Doble tajo</span></div>
+          <div class="clip"><canvas class="px anim" data-char="raider" data-anim="hurt" width="96" height="70" style="width:288px" role="img" aria-label="Saqueador del cañón: golpe recibido."></canvas><span>Golpe recibido</span></div>
+          <div class="clip"><canvas class="px anim" data-char="raider" data-anim="death" width="96" height="70" style="width:288px" role="img" aria-label="Saqueador del cañón: muerte."></canvas><span>Muerte</span></div>
+        </div>
+      </article>
+      <article class="hero">
+        <div class="body">
+          <span class="role foe">A distancia · volador</span>
+          <h3>Buitre carroñero</h3>
+          <ul>
+            <li>Un buitre enorme que nunca se posa: esqueleto de vuelo propio, con cuerpo oscuro, gola de plumas claras, cuello pelado, pico ganchudo, ojo encendido y garras colgando</li>
+            <li>Se mantiene en el aire batiendo las alas (las puntas van retrasadas respecto al brazo), sube y baja con cada aletazo y gira la cabeza de un héroe a otro; para avanzar se estira plano con el cuello al frente</li>
+            <li>Bilis: alza las alas, se echa atrás en el aire con el cuello recogido y, al descargarlas, lanza la cabeza y escupe un proyectil verdoso que cae en arco</li>
+            <li>Al morir se pliega, cae dando una vuelta hacia atrás con las alas arrastradas hacia arriba, golpea el suelo boca arriba entre polvo y plumas, y la última ala baja despacio</li>
+          </ul>
+        </div>
+        <div class="clips" style="background:#bb3a3a;--clip-label:#fde3b0">
+          <div class="clip"><canvas class="px anim" data-char="vulture" data-anim="idle" width="96" height="70" style="width:288px" role="img" aria-label="Buitre carroñero: cernerse."></canvas><span>Cernerse</span></div>
+          <div class="clip"><canvas class="px anim" data-char="vulture" data-anim="run" width="96" height="70" style="width:288px" role="img" aria-label="Buitre carroñero: volar."></canvas><span>Volar</span></div>
+          <div class="clip"><canvas class="px anim" data-char="vulture" data-anim="attack" width="96" height="70" style="width:288px" role="img" aria-label="Buitre carroñero: bilis."></canvas><span>Bilis</span></div>
+          <div class="clip"><canvas class="px anim" data-char="vulture" data-anim="hurt" width="96" height="70" style="width:288px" role="img" aria-label="Buitre carroñero: golpe recibido."></canvas><span>Golpe recibido</span></div>
+          <div class="clip"><canvas class="px anim" data-char="vulture" data-anim="death" width="96" height="70" style="width:288px" role="img" aria-label="Buitre carroñero: muerte."></canvas><span>Muerte</span></div>
+        </div>
+      </article>
+      <article class="hero">
+        <div class="body">
+          <span class="role foe">Jefe de etapa</span>
+          <h3>Coloso de arenisca</h3>
+          <ul>
+            <li>Un gigante tallado en la roca oscura del cañón: bloques cincelados de planos duros, con vetas rojas y grietas; una losa de hombro que le sobresale por detrás, la cabeza baja y adelantada, una máscara con dos ojos fríos bajo el ceño y una mandíbula pesada, antebrazos que se ensanchan en puños como peñascos y un glifo frío en el pecho y en cada puño</li>
+            <li>Camina a pisotones lentos que levantan polvo; en reposo los bloques se asientan, los glifos laten y unas esquirlas de piedra giran despacio a su alrededor</li>
+            <li>Mazazo: alza los dos puños sobre la cabeza mientras las esquirlas suben en remolino, aguanta y los hunde en el suelo con todo el cuerpo; la tierra se abre en una grieta de luz fría y tres dientes de roca brotan uno tras otro, cada uno más alto</li>
+            <li>Muere como una estatua: todas sus grietas se encienden, se apagan con los glifos, y se parte en dos por la cintura; la mitad de arriba se vence hacia delante y se estrella de bruces, y las piernas se quedan en pie</li>
+          </ul>
+        </div>
+        <div class="clips" style="background:#bb3a3a;--clip-label:#fde3b0">
+          <div class="clip" style="flex-basis:384px"><canvas class="px anim" data-char="colossus" data-anim="idle" width="128" height="96" style="width:384px" role="img" aria-label="Coloso de arenisca: reposo."></canvas><span>Reposo</span></div>
+          <div class="clip" style="flex-basis:384px"><canvas class="px anim" data-char="colossus" data-anim="run" width="128" height="96" style="width:384px" role="img" aria-label="Coloso de arenisca: avanzar."></canvas><span>Avanzar</span></div>
+          <div class="clip" style="flex-basis:384px"><canvas class="px anim" data-char="colossus" data-anim="attack" width="128" height="96" style="width:384px" role="img" aria-label="Coloso de arenisca: mazazo."></canvas><span>Mazazo</span></div>
+          <div class="clip" style="flex-basis:384px"><canvas class="px anim" data-char="colossus" data-anim="hurt" width="128" height="96" style="width:384px" role="img" aria-label="Coloso de arenisca: golpe recibido."></canvas><span>Golpe recibido</span></div>
+          <div class="clip" style="flex-basis:384px"><canvas class="px anim" data-char="colossus" data-anim="death" width="128" height="96" style="width:384px" role="img" aria-label="Coloso de arenisca: muerte."></canvas><span>Muerte</span></div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section id="w05">
+    <div class="sec-head">
+      <span class="eyebrow">Mundo 5 · Cumbres del Monasterio</span>
+      <h2>Cumbres del Monasterio</h2>
+      <p class="muted">Las cumbres nevadas de noche, bajo una aurora en cortinas: cielo con estrellas y luna, una cordillera lejana con niebla a sus pies, la cresta del monasterio (muros encalados, tejados con nieve, ventanas encendidas, una escalera que sube al risco), laderas con pinos y banderas de oración, el camino de losas con faroles de piedra y, debajo, ventisqueros con rocas, hierba helada y mojones. La nieve cae en tiempo real. La franja que queda detrás de los combatientes (el pie de la cordillera, las laderas y el talud) va en un azul medio para que se lean tanto las figuras claras como las oscuras. En Torment el mundo es una ventisca blanca: el color desaparece y solo quedan hueso y pizarra. El cielo es un vacío pálido con una luna negra y la ceniza de la aurora, la cordillera son fantasmas grises, el monasterio una ruina negra y los pinos, palos negros; lo único con color es el violeta de la Grieta y sus cristales. La ventisca cruza por delante y por detrás de las figuras, cae un rayo negro que oscurece el mundo un instante, y en el blanco se abren pares de ojos oscuros que miran y se cierran. <button class="link" data-goto="w05">Verlo en la tira en vivo</button></p>
+    </div>
+    <div class="heroes">
+      <article class="hero">
+        <div class="body">
+          <span class="role foe">Bestia · cuatro patas</span>
+          <h3>Lobo de escarcha</h3>
+          <ul>
+            <li>Un lobo flaco y oscuro, alto hasta el pecho de un hombre, con esquirlas de hielo atravesándole el lomo, las costillas marcadas, zarpas con escarcha y un ojo que arde en frío</li>
+            <li>Esqueleto propio: el cuerpo son dos mitades unidas por una bisagra en el lomo, así que el espinazo se arquea y se estira de verdad al galopar; mandíbula articulada y cola simulada</li>
+            <li>Salto: se agazapa sobre las patas delanteras con el lomo erizado, aguanta, cruza el aire estirado con la boca abierta, cae sobre la presa, la zarandea y recula</li>
+            <li>Muere con un último aullido: el hielo del lomo estalla y se tumba de costado, con las patas por delante y el ojo apagado</li>
+          </ul>
+        </div>
+        <div class="clips" style="background:#3f68a6;--clip-label:#fde3b0">
+          <div class="clip"><canvas class="px anim" data-char="frostwolf" data-anim="idle" width="96" height="70" style="width:288px" role="img" aria-label="Lobo de escarcha: reposo."></canvas><span>Reposo</span></div>
+          <div class="clip"><canvas class="px anim" data-char="frostwolf" data-anim="run" width="96" height="70" style="width:288px" role="img" aria-label="Lobo de escarcha: galopar."></canvas><span>Galopar</span></div>
+          <div class="clip"><canvas class="px anim" data-char="frostwolf" data-anim="attack" width="96" height="70" style="width:288px" role="img" aria-label="Lobo de escarcha: salto."></canvas><span>Salto</span></div>
+          <div class="clip"><canvas class="px anim" data-char="frostwolf" data-anim="hurt" width="96" height="70" style="width:288px" role="img" aria-label="Lobo de escarcha: golpe recibido."></canvas><span>Golpe recibido</span></div>
+          <div class="clip"><canvas class="px anim" data-char="frostwolf" data-anim="death" width="96" height="70" style="width:288px" role="img" aria-label="Lobo de escarcha: muerte."></canvas><span>Muerte</span></div>
+        </div>
+      </article>
+      <article class="hero">
+        <div class="body">
+          <span class="role foe">Cuerpo a cuerpo · guja</span>
+          <h3>Monje caído</h3>
+          <ul>
+            <li>Un monje guerrero al que el frío no soltó: piel gris, hielo en la cabeza rapada y en la barba, un ojo con luz fría, el hábito granate y la banda azafrán de su orden, y una guja más alta que él con una borla roja</li>
+            <li>Avanza agachado con la guja nivelada al frente, firme mientras el cuerpo trabaja debajo</li>
+            <li>Rueda y barrido: suelta una mano, hace girar la guja una vuelta entera como una rueda, la recoge tras el hombro y la descarga en un barrido largo hasta el suelo</li>
+            <li>Al morir la escarcha termina su trabajo: se queda rígido, se le escapa la guja, se congela entero y estalla en pedazos; queda un montón de hábito y la guja en el suelo</li>
+          </ul>
+        </div>
+        <div class="clips" style="background:#3f68a6;--clip-label:#fde3b0">
+          <div class="clip"><canvas class="px anim" data-char="monk" data-anim="idle" width="96" height="70" style="width:288px" role="img" aria-label="Monje caído: reposo."></canvas><span>Reposo</span></div>
+          <div class="clip"><canvas class="px anim" data-char="monk" data-anim="run" width="96" height="70" style="width:288px" role="img" aria-label="Monje caído: avanzar."></canvas><span>Avanzar</span></div>
+          <div class="clip"><canvas class="px anim" data-char="monk" data-anim="attack" width="96" height="70" style="width:288px" role="img" aria-label="Monje caído: rueda y barrido."></canvas><span>Rueda y barrido</span></div>
+          <div class="clip"><canvas class="px anim" data-char="monk" data-anim="hurt" width="96" height="70" style="width:288px" role="img" aria-label="Monje caído: golpe recibido."></canvas><span>Golpe recibido</span></div>
+          <div class="clip"><canvas class="px anim" data-char="monk" data-anim="death" width="96" height="70" style="width:288px" role="img" aria-label="Monje caído: muerte."></canvas><span>Muerte</span></div>
+        </div>
+      </article>
+      <article class="hero">
+        <div class="body">
+          <span class="role foe">Lanzador · flota</span>
+          <h3>Espectro de escarcha</h3>
+          <ul>
+            <li>Algo que murió en la nieve y sigue llevando el hábito: una capucha coronada de carámbanos alrededor de una cara que es solo un hueco con dos luces, manos largas de hueso y ninguna pierna; de la cintura para abajo la túnica se deshace en jirones que no tocan el suelo</li>
+            <li>Flota y cabecea en el aire, con dos esquirlas de hielo girando a su alrededor; al desplazarse se inclina y los jirones se le estiran detrás</li>
+            <li>Andanada: se eleva, alza las dos manos, tres esquirlas de hielo crecen sobre la capucha y las lanza hacia delante una tras otra</li>
+            <li>Al morir se le apagan las luces, algo pálido sale por lo alto de la capucha y la túnica, vacía, cae hecha un montón</li>
+          </ul>
+        </div>
+        <div class="clips" style="background:#3f68a6;--clip-label:#fde3b0">
+          <div class="clip"><canvas class="px anim" data-char="rimewraith" data-anim="idle" width="96" height="70" style="width:288px" role="img" aria-label="Espectro de escarcha: reposo."></canvas><span>Reposo</span></div>
+          <div class="clip"><canvas class="px anim" data-char="rimewraith" data-anim="run" width="96" height="70" style="width:288px" role="img" aria-label="Espectro de escarcha: deslizarse."></canvas><span>Deslizarse</span></div>
+          <div class="clip"><canvas class="px anim" data-char="rimewraith" data-anim="attack" width="96" height="70" style="width:288px" role="img" aria-label="Espectro de escarcha: andanada de hielo."></canvas><span>Andanada de hielo</span></div>
+          <div class="clip"><canvas class="px anim" data-char="rimewraith" data-anim="hurt" width="96" height="70" style="width:288px" role="img" aria-label="Espectro de escarcha: golpe recibido."></canvas><span>Golpe recibido</span></div>
+          <div class="clip"><canvas class="px anim" data-char="rimewraith" data-anim="death" width="96" height="70" style="width:288px" role="img" aria-label="Espectro de escarcha: muerte."></canvas><span>Muerte</span></div>
+        </div>
+      </article>
+      <article class="hero">
+        <div class="body">
+          <span class="role foe">Jefe de etapa</span>
+          <h3>El Portacampana</h3>
+          <ul>
+            <li>Un yeti que se llevó la campana del monasterio y carga con ella desde entonces: una mole encorvada de pelo blanco sucio, cara azul bajo un ceño pesado con dos ojos de brasa, colmillos, cuernos, carámbanos en los hombros y los brazos, una cuerda de oración roja cruzada al pecho y, en el puño, una campana de bronce</li>
+            <li>Camina pesado y la campana se balancea a destiempo, tirándole del brazo; resopla vaho</li>
+            <li>Tañido: balancea la campana hacia atrás, la sube con los dos brazos por encima de la cabeza y la estrella boca abajo contra el suelo; suena, y un anillo de sonido corre hacia delante con la escarcha brotando en púas a su paso</li>
+            <li>Muere bajo su propia campana: la alza una última vez, le fallan las rodillas y la campana le cae encima; solo asoman brazos y piernas</li>
+          </ul>
+        </div>
+        <div class="clips" style="background:#3f68a6;--clip-label:#fde3b0">
+          <div class="clip" style="flex-basis:384px"><canvas class="px anim" data-char="bellbearer" data-anim="idle" width="128" height="96" style="width:384px" role="img" aria-label="El Portacampana: reposo."></canvas><span>Reposo</span></div>
+          <div class="clip" style="flex-basis:384px"><canvas class="px anim" data-char="bellbearer" data-anim="run" width="128" height="96" style="width:384px" role="img" aria-label="El Portacampana: avanzar."></canvas><span>Avanzar</span></div>
+          <div class="clip" style="flex-basis:384px"><canvas class="px anim" data-char="bellbearer" data-anim="attack" width="128" height="96" style="width:384px" role="img" aria-label="El Portacampana: tañido."></canvas><span>Tañido</span></div>
+          <div class="clip" style="flex-basis:384px"><canvas class="px anim" data-char="bellbearer" data-anim="hurt" width="128" height="96" style="width:384px" role="img" aria-label="El Portacampana: golpe recibido."></canvas><span>Golpe recibido</span></div>
+          <div class="clip" style="flex-basis:384px"><canvas class="px anim" data-char="bellbearer" data-anim="death" width="128" height="96" style="width:384px" role="img" aria-label="El Portacampana: muerte."></canvas><span>Muerte</span></div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section id="w06">
+    <div class="sec-head">
+      <span class="eyebrow">Mundo 6 · Costa de las Ruinas Hundidas</span>
+      <h2>Costa de las Ruinas Hundidas</h2>
+      <p class="muted">Una ciudad ahogada bajo un cielo pesado, con un único claro en las nubes que derrama luz sobre el mar. Siete capas: el cielo, con bancos de nubes con volumen (cimas iluminadas, vientres oscuros), el claro con sus haces y el mar en perspectiva, con su oleaje y el camino de luz sobre el agua; la ciudad lejana en el horizonte, pálida: un acueducto con tramos caídos, un faro sin linterna y torres con su reflejo; la ciudad hundida: frentes de templo con su frontón, y la cabeza con yelmo y la mano de un coloso derribado asomando del agua; la bruma marina; las ruinas de la orilla, oscuras y cercanas: el gran arco, un muelle cuyas escaleras bajan al mar, una columna caída, pilares con algas y percebes, rompientes en cada pie y el agua somera entrando en tres líneas de espuma; la orilla: arena mojada, la calzada de losas gastadas por la que avanza el grupo y, debajo, la playa con la arena que refleja el cielo, charcas de marea, estrellas de mar, conchas, algas, las cuadernas de un naufragio, un ánfora y un yelmo de bronce; y en primer plano rocas con percebes, espuma y un capitel arrastrado por el mar. Toda la piedra recibe la luz del claro: iluminada arriba y a la izquierda, en sombra a la derecha. Detrás de los combatientes el mar se mantiene en un valor medio y oscuro, con las crestas apagadas, para que tanto las figuras claras como las oscuras se separen; lo brillante (la bruma, el claro, la ciudad lejana) queda por encima de sus cabezas. En el aire, un polvo fino de espuma que entra desde las rompientes. En Torment es el abismo, en azules y negros: un cielo de tormenta amoratado, un mar negro como la noche que brilla frío en las crestas y en el agua somera como si lo alumbraran desde abajo, las ruinas como dientes negros con sus pedazos flotando (el frontón sobre sus columnas, el casco del coloso sobre su cara, los dedos sobre la mano) y, mar adentro, los lomos de algo enorme asomando del agua con dos ojos pálidos vueltos hacia aquí. Solo la Grieta, sus cristales y su reflejo en el mar son violetas. Su atmósfera es una tormenta en el mar: relámpagos que caen al agua junto al horizonte con un destello frío y un temblor, lluvia racheada, una oscuridad lenta que sube y baja como una marejada y, de vez en cuando, ojos pálidos que se abren a lo lejos sobre el agua y se cierran. <button class="link" data-goto="w06">Verlo en la tira en vivo</button></p>
+    </div>
+    <div class="heroes">
+      <article class="hero">
+        <div class="body">
+          <span class="role foe">Bestia · de frente, pinza de martillo</span>
+          <h3>Cangrejo de marea</h3>
+          <ul>
+            <li>Esqueleto propio y visto de frente, como se reconoce a un cangrejo: caparazón ancho y abombado con púas y percebes, un tambor de columna hundida pegado al lomo con un jirón de alga, dos ojos brillantes en pedúnculos, ocho patas recogidas bajo el cuerpo con las rodillas altas en abanico (unos 55 px de pata a pata, para no pisar a su vecino), una pinza pequeña a un lado y, al otro, una pinza trituradora tan grande como el cuerpo, con dientes de sierra</li>
+            <li>Anda de lado, como los cangrejos: las patas de cada lado se mueven por pares alternos, el cuerpo se balancea de un lado a otro y lleva la pinza grande por delante; en reposo gira los ojos uno tras otro, chasquea la pinza dos veces, tantea la piedra con una pata y espumea</li>
+            <li>Martillo: se vuelca sobre las patas del lado contrario, iza la pinza recta hacia arriba, aguanta y la descarga contra la calzada; saltan columnas de agua a los lados de la pinza, esquirlas de piedra y un anillo de luz por el suelo</li>
+            <li>Muere bajo su propio peso: se alza con la pinza en alto, la pinza cae y queda tendida, las patas se le escurren hacia los dos lados, el caparazón se asienta en la piedra y se parte en dos mitades que se separan dejando ver el interior oscuro, el tambor rueda de su lomo y los ojos caen apagados</li>
+          </ul>
+        </div>
+        <div class="clips" style="background:#77839a;--clip-label:#1c1830">
+          <div class="clip"><canvas class="px anim" data-char="crab" data-anim="idle" width="96" height="70" style="width:288px" role="img" aria-label="Cangrejo de marea: reposo."></canvas><span>Reposo</span></div>
+          <div class="clip"><canvas class="px anim" data-char="crab" data-anim="run" width="96" height="70" style="width:288px" role="img" aria-label="Cangrejo de marea: andar de lado."></canvas><span>Andar de lado</span></div>
+          <div class="clip"><canvas class="px anim" data-char="crab" data-anim="attack" width="96" height="70" style="width:288px" role="img" aria-label="Cangrejo de marea: martillo."></canvas><span>Martillo</span></div>
+          <div class="clip"><canvas class="px anim" data-char="crab" data-anim="hurt" width="96" height="70" style="width:288px" role="img" aria-label="Cangrejo de marea: golpe recibido."></canvas><span>Golpe recibido</span></div>
+          <div class="clip"><canvas class="px anim" data-char="crab" data-anim="death" width="96" height="70" style="width:288px" role="img" aria-label="Cangrejo de marea: muerte."></canvas><span>Muerte</span></div>
+        </div>
+      </article>
+      <article class="hero">
+        <div class="body">
+          <span class="role foe">Cuerpo a cuerpo · escudo y tridente</span>
+          <h3>Legionario de percebes</h3>
+          <ul>
+            <li>Un hoplita que se hundió con la ciudad: yelmo de bronce con cimera roja y una luz fría en la abertura, coraza con cardenillo, grebas, un jirón de capa, un gran escudo redondo cubierto de percebes y un tridente</li>
+            <li>Avanza en marcha de falange, con el escudo alto y quieto y la cabeza baja tras el borde</li>
+            <li>Estocada: se recoge tras el escudo con el tridente muy atrás, aguanta, y entra con todo el cuerpo en un paso largo con el brazo estirado; mantiene el golpe antes de retirarse</li>
+            <li>Muere sobre su escudo: el tridente se le escapa hacia atrás, el escudo cae plano, él cae de rodillas y se dobla encima del bronce mientras la luz del yelmo se apaga</li>
+          </ul>
+        </div>
+        <div class="clips" style="background:#77839a;--clip-label:#1c1830">
+          <div class="clip"><canvas class="px anim" data-char="legionary" data-anim="idle" width="96" height="70" style="width:288px" role="img" aria-label="Legionario de percebes: reposo."></canvas><span>Reposo</span></div>
+          <div class="clip"><canvas class="px anim" data-char="legionary" data-anim="run" width="96" height="70" style="width:288px" role="img" aria-label="Legionario de percebes: avanzar."></canvas><span>Avanzar</span></div>
+          <div class="clip"><canvas class="px anim" data-char="legionary" data-anim="attack" width="96" height="70" style="width:288px" role="img" aria-label="Legionario de percebes: estocada."></canvas><span>Estocada</span></div>
+          <div class="clip"><canvas class="px anim" data-char="legionary" data-anim="hurt" width="96" height="70" style="width:288px" role="img" aria-label="Legionario de percebes: golpe recibido."></canvas><span>Golpe recibido</span></div>
+          <div class="clip"><canvas class="px anim" data-char="legionary" data-anim="death" width="96" height="70" style="width:288px" role="img" aria-label="Legionario de percebes: muerte."></canvas><span>Muerte</span></div>
+        </div>
+      </article>
+      <article class="hero">
+        <div class="body">
+          <span class="role foe">A distancia · canto</span>
+          <h3>Sirena</h3>
+          <ul>
+            <li>Nada de sirena de cuento: una cosa pálida de ahogada, flaca, con las costillas marcadas, cuencas huecas con una brasa dentro, aletas de espinas rojas tras la mandíbula, por la espalda y los antebrazos, garras largas y pelo como alga negra; la boca es una línea de dientes de aguja hasta que canta. De cadera para abajo, una cola de serpiente oscura y dura, con cresta de espinas y una aleta de púas en la punta</li>
+            <li>Se mece sobre el anillo de su cola como un alga en la corriente; para avanzar se vierte hacia delante sobre él, subiendo y bajando</li>
+            <li>Canto: se recoge con las manos en la garganta, luego se yergue todo lo que la cola da de sí, con los brazos abiertos y la cabeza atrás, la mandíbula se le desencaja en un agujero de media cabeza y sostiene la nota mientras salen anillos de sonido hacia delante</li>
+            <li>Al morir da un único chillido erguida; después la cola afloja y ella se hunde hacia delante por el suelo mientras la cola se le escurre detrás en dos curvas flojas, levanta la aleta una vez más y se queda quieta, con las cuencas apagadas</li>
+          </ul>
+        </div>
+        <div class="clips" style="background:#77839a;--clip-label:#1c1830">
+          <div class="clip"><canvas class="px anim" data-char="siren" data-anim="idle" width="96" height="70" style="width:288px" role="img" aria-label="Sirena: reposo."></canvas><span>Reposo</span></div>
+          <div class="clip"><canvas class="px anim" data-char="siren" data-anim="run" width="96" height="70" style="width:288px" role="img" aria-label="Sirena: reptar."></canvas><span>Reptar</span></div>
+          <div class="clip"><canvas class="px anim" data-char="siren" data-anim="attack" width="96" height="70" style="width:288px" role="img" aria-label="Sirena: canto."></canvas><span>Canto</span></div>
+          <div class="clip"><canvas class="px anim" data-char="siren" data-anim="hurt" width="96" height="70" style="width:288px" role="img" aria-label="Sirena: golpe recibido."></canvas><span>Golpe recibido</span></div>
+          <div class="clip"><canvas class="px anim" data-char="siren" data-anim="death" width="96" height="70" style="width:288px" role="img" aria-label="Sirena: muerte."></canvas><span>Muerte</span></div>
+        </div>
+      </article>
+      <article class="hero">
+        <div class="body">
+          <span class="role foe">Jefe de etapa</span>
+          <h3>El Almirante Ahogado</h3>
+          <ul>
+            <li>Un gigante de casi dos hombres de alto (unos 60 px): gran sombrero de picos ribeteado de oro viejo, la cabeza medio carne de ahogado y medio calavera con una cuenca que arde, una barba de tentáculos que no para quieta, casaca rojo sangre con charreteras de flecos, percebes en el pecho y una cadena cruzada, una pata de palo, una pinza de cangrejo donde tuvo la mano izquierda y, al extremo de una cadena, el ancla oxidada de su barco. Aún le chorrea el mar</li>
+            <li>Camina pesado y cojeando de la pata de palo; el ancla le sigue a tirones, arando el suelo, y la pinza se abre y se cierra</li>
+            <li>Ancla: coge la cadena con la mano y la pinza, levanta el ancla del suelo, la voltea por encima de la cabeza y la clava delante de él; se alza una torre de agua a los dos lados del ancla y una corona de gotas, y luego la recupera de un tirón por encima del hombro</li>
+            <li>Su muerte es el mar que se lo lleva: el ancla se hunde a través de la piedra como si fuera agua, la cadena se tensa, él tira, pierde, cae de espaldas con el brazo estirado hacia el agujero y el sombrero se aleja rodando</li>
+          </ul>
+        </div>
+        <div class="clips" style="background:#77839a;--clip-label:#1c1830">
+          <div class="clip" style="flex-basis:384px"><canvas class="px anim" data-char="admiral" data-anim="idle" width="128" height="108" style="width:384px" role="img" aria-label="El Almirante Ahogado: reposo."></canvas><span>Reposo</span></div>
+          <div class="clip" style="flex-basis:384px"><canvas class="px anim" data-char="admiral" data-anim="run" width="128" height="108" style="width:384px" role="img" aria-label="El Almirante Ahogado: avanzar."></canvas><span>Avanzar</span></div>
+          <div class="clip" style="flex-basis:384px"><canvas class="px anim" data-char="admiral" data-anim="attack" width="128" height="108" style="width:384px" role="img" aria-label="El Almirante Ahogado: ancla."></canvas><span>Ancla</span></div>
+          <div class="clip" style="flex-basis:384px"><canvas class="px anim" data-char="admiral" data-anim="hurt" width="128" height="108" style="width:384px" role="img" aria-label="El Almirante Ahogado: golpe recibido."></canvas><span>Golpe recibido</span></div>
+          <div class="clip" style="flex-basis:384px"><canvas class="px anim" data-char="admiral" data-anim="death" width="128" height="108" style="width:384px" role="img" aria-label="El Almirante Ahogado: muerte."></canvas><span>Muerte</span></div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section id="w07">
+    <div class="sec-head">
+      <span class="eyebrow">Mundo 7 · Cavernas de cristal y hongos</span>
+      <h2>Cavernas de cristal y hongos</h2>
+      <p class="muted">Una caverna sin cielo, iluminada solo por lo que crece en ella. Al fondo, cámaras más profundas que se ven como pozos de resplandor verdemar con agujas y setas diminutas a contraluz; delante, la pared lejana: un techo y grandes columnas con arcos por los que asoma ese resplandor, con repisas de roca, cristales incrustados y raíces colgando por encima de los arcos, una cascada que cae en hebras dentro de uno de ellos, con su espuma y su nube de rocío, y el lago al pie, con las luces tendidas sobre el agua. En el plano medio, pilares, un techo de estalactitas e islas de roca con las setas luminosas gigantes y las formaciones de cristal, cada una iluminando la roca que la rodea; luego esporas a la deriva, un marco oscuro de estalactitas y estalagmitas con hilos de gusanos de luz, el camino de piedra pulida con liquen brillante en los bordes y, debajo, repisas de roca con cristales pequeños, vetas de luz y charcos. Detrás de los combatientes cuelga una bruma pareja, sin negros ni luces fuertes, para que las figuras se lean; las luces conservan todo su brillo por encima. Flotan esporas y motas de luz que caen despacio, y gotea agua del techo. En Torment la cueva está infectada: es la Plaga. La roca es de un ciruela oscuro, el lago parece vino y las cámaras del fondo brillan rojas como llagas; los cristales se han vuelto de un rosa crudo y están agrietados o muertos y blanqueados, las setas están hinchadas y supuran o grises y sin vida, y los hilos de luz son venas. Solo la Grieta, que parte el techo, y sus esquirlas conservan su violeta. Las últimas luces fallan a ratos, la cueva late con un pulso rosado, caen esporas espesas y se abren ojos en lo oscuro, arriba en los arcos y bajo las repisas. <button class="link" data-goto="w07">Verlo en la tira en vivo</button></p>
+    </div>
+    <div class="heroes">
+      <article class="hero">
+        <div class="body">
+          <span class="role foe">Bestia · seis patas</span>
+          <h3>Escarabajo geoda</h3>
+          <ul>
+            <li>Esqueleto propio de seis patas, del tamaño de un buey: caparazón de dos piezas, oscuro y brillante como el vino, del que revientan tres cristales de ámbar; cabeza acorazada con un ojo de brasa, mandíbulas en pinza y un cuerno largo y ahorquillado</li>
+            <li>Avanza pesado, moviendo las patas de tres en tres mientras el caparazón se mece; en reposo respira, los cristales laten y escarba la piedra con una pata</li>
+            <li>Carga: se echa atrás escarbando, baja la cabeza hasta apuntar con el cuerno, se lanza y lo arranca hacia arriba</li>
+            <li>Al morir le fallan las patas y el caparazón se parte por la costura: la luz sale por la grieta, las dos mitades se separan y los cristales se apagan</li>
+          </ul>
+        </div>
+        <div class="clips" style="background:#161f4a;--clip-label:#fde3b0">
+          <div class="clip"><canvas class="px anim" data-char="beetle" data-anim="idle" width="96" height="70" style="width:288px" role="img" aria-label="Escarabajo geoda: reposo."></canvas><span>Reposo</span></div>
+          <div class="clip"><canvas class="px anim" data-char="beetle" data-anim="run" width="96" height="70" style="width:288px" role="img" aria-label="Escarabajo geoda: avanzar."></canvas><span>Avanzar</span></div>
+          <div class="clip"><canvas class="px anim" data-char="beetle" data-anim="attack" width="96" height="70" style="width:288px" role="img" aria-label="Escarabajo geoda: carga."></canvas><span>Carga</span></div>
+          <div class="clip"><canvas class="px anim" data-char="beetle" data-anim="hurt" width="96" height="70" style="width:288px" role="img" aria-label="Escarabajo geoda: golpe recibido."></canvas><span>Golpe recibido</span></div>
+          <div class="clip"><canvas class="px anim" data-char="beetle" data-anim="death" width="96" height="70" style="width:288px" role="img" aria-label="Escarabajo geoda: muerte."></canvas><span>Muerte</span></div>
+        </div>
+      </article>
+      <article class="hero">
+        <div class="body">
+          <span class="role foe">Cuerpo a cuerpo · cristal vivo</span>
+          <h3>Esquirlado</h3>
+          <ul>
+            <li>Una figura de placas de cuarzo rosa: cabeza facetada con una ranura de luz, un núcleo que arde en el pecho, piernas acabadas en punta y dos hojas largas en lugar de antebrazos; unas esquirlas sueltas flotan sobre su cabeza y le van a la zaga</li>
+            <li>Se mueve a golpes secos: la cabeza cambia de ángulo de un chasquido y corre sobre las puntas con las dos hojas barridas hacia atrás</li>
+            <li>Tijera: abre las hojas, una por detrás y otra por arriba, aguanta un instante y las cierra cruzadas con dos estelas</li>
+            <li>Al morir se agrieta en blanco de la cabeza a la cadera y estalla: los trozos vuelan, caen y quedan en el suelo, y el núcleo es lo último en apagarse</li>
+          </ul>
+        </div>
+        <div class="clips" style="background:#161f4a;--clip-label:#fde3b0">
+          <div class="clip"><canvas class="px anim" data-char="shardling" data-anim="idle" width="96" height="70" style="width:288px" role="img" aria-label="Esquirlado: reposo."></canvas><span>Reposo</span></div>
+          <div class="clip"><canvas class="px anim" data-char="shardling" data-anim="run" width="96" height="70" style="width:288px" role="img" aria-label="Esquirlado: correr."></canvas><span>Correr</span></div>
+          <div class="clip"><canvas class="px anim" data-char="shardling" data-anim="attack" width="96" height="70" style="width:288px" role="img" aria-label="Esquirlado: tijera."></canvas><span>Tijera</span></div>
+          <div class="clip"><canvas class="px anim" data-char="shardling" data-anim="hurt" width="96" height="70" style="width:288px" role="img" aria-label="Esquirlado: golpe recibido."></canvas><span>Golpe recibido</span></div>
+          <div class="clip"><canvas class="px anim" data-char="shardling" data-anim="death" width="96" height="70" style="width:288px" role="img" aria-label="Esquirlado: muerte."></canvas><span>Muerte</span></div>
+        </div>
+      </article>
+      <article class="hero">
+        <div class="body">
+          <span class="role foe">A distancia · volador</span>
+          <h3>Murciélago lóbrego</h3>
+          <ul>
+            <li>Esqueleto propio de vuelo: un cuerpo peludo de orejas enormes y ojos de brasa colgado entre dos alas de membrana roja que se abren en abanico y se ven de canto al pasar junto al cuerpo</li>
+            <li>No se posa nunca: se mantiene a unos veinticuatro píxeles del suelo, hundiéndose cuando sube las alas y elevándose con cada aletazo</li>
+            <li>Chillido: se echa atrás con las alas abiertas en uve, llena el pecho y lanza la cabeza al frente; el sonido sale en anillos que se ensanchan y se apagan</li>
+            <li>Al morir se le pliegan las alas, cae dando la vuelta, golpea la piedra de espaldas, rebota una vez y queda con las alas extendidas</li>
+          </ul>
+        </div>
+        <div class="clips" style="background:#161f4a;--clip-label:#fde3b0">
+          <div class="clip"><canvas class="px anim" data-char="bat" data-anim="idle" width="96" height="70" style="width:288px" role="img" aria-label="Murciélago lóbrego: cernirse."></canvas><span>Cernirse</span></div>
+          <div class="clip"><canvas class="px anim" data-char="bat" data-anim="run" width="96" height="70" style="width:288px" role="img" aria-label="Murciélago lóbrego: volar."></canvas><span>Volar</span></div>
+          <div class="clip"><canvas class="px anim" data-char="bat" data-anim="attack" width="96" height="70" style="width:288px" role="img" aria-label="Murciélago lóbrego: chillido."></canvas><span>Chillido</span></div>
+          <div class="clip"><canvas class="px anim" data-char="bat" data-anim="hurt" width="96" height="70" style="width:288px" role="img" aria-label="Murciélago lóbrego: golpe recibido."></canvas><span>Golpe recibido</span></div>
+          <div class="clip"><canvas class="px anim" data-char="bat" data-anim="death" width="96" height="70" style="width:288px" role="img" aria-label="Murciélago lóbrego: muerte."></canvas><span>Muerte</span></div>
+        </div>
+      </article>
+      <article class="hero">
+        <div class="body">
+          <span class="role foe">Jefe de etapa</span>
+          <h3>Titán Geoda</h3>
+          <ul>
+            <li>Un titán de cueva con hechura de gran simio: anda sobre los nudillos, con las patas traseras cortas bajo un lomo largo, brazos como pilares, puños como peñascos y una cabeza pequeña y brutal, con colmillos, hundida entre los hombros. Sobre el lomo carga una joroba de roca oscura mayor que el resto de él, abierta como una geoda, con cristales largos como espadas; más cristales le revientan de hombros y antebrazos</li>
+            <li>Camina apoyando cada puño al contrario que la pierna; en reposo respira con todo el lomo y los cristales se encienden a cada inspiración</li>
+            <li>Rayo: se alza sobre las patas traseras, cae sobre los puños y se inclina hasta que la geoda apunta a la piedra que tiene delante; la cavidad se llena de luz hasta alumbrar la cueva y la suelta en un rayo que se clava en el suelo y hace brotar cristales</li>
+            <li>Al morir la geoda se sobrecarga y revienta, los cristales salen despedidos, y lo que queda cae de rodillas, luego sobre el pecho, y se apaga</li>
+          </ul>
+        </div>
+        <div class="clips" style="background:#161f4a;--clip-label:#fde3b0">
+          <div class="clip" style="flex-basis:384px"><canvas class="px anim" data-char="geode" data-anim="idle" width="128" height="96" style="width:384px" role="img" aria-label="Titán Geoda: reposo."></canvas><span>Reposo</span></div>
+          <div class="clip" style="flex-basis:384px"><canvas class="px anim" data-char="geode" data-anim="run" width="128" height="96" style="width:384px" role="img" aria-label="Titán Geoda: avanzar."></canvas><span>Avanzar</span></div>
+          <div class="clip" style="flex-basis:384px"><canvas class="px anim" data-char="geode" data-anim="attack" width="128" height="96" style="width:384px" role="img" aria-label="Titán Geoda: rayo."></canvas><span>Rayo</span></div>
+          <div class="clip" style="flex-basis:384px"><canvas class="px anim" data-char="geode" data-anim="hurt" width="128" height="96" style="width:384px" role="img" aria-label="Titán Geoda: golpe recibido."></canvas><span>Golpe recibido</span></div>
+          <div class="clip" style="flex-basis:384px"><canvas class="px anim" data-char="geode" data-anim="death" width="128" height="96" style="width:384px" role="img" aria-label="Titán Geoda: muerte."></canvas><span>Muerte</span></div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section id="w08">
+    <div class="sec-head">
+      <span class="eyebrow">Mundo 8 · Tierras de ceniza y forjas</span>
+      <h2>Tierras de ceniza y forjas</h2>
+      <p class="muted">Un infierno industrial iluminado desde abajo. De atrás hacia delante: un cielo rojo con un sol apagado tras velos de calima y el horizonte al rojo; bancos de humo de panza plana que el fuego enciende por debajo; volcanes de laderas quebradas con la lava corriendo y encharcándose al pie, su penacho de humo y, delante, la silueta lejana de más fábricas; las forjas: dos altos hornos zunchados con la boca ardiendo, su montacargas y su tubería, grupos de chimeneas que humean, la gran rueda de los fuelles, una grúa con un cazo de hierro fundido colgando, naves de tejado en diente de sierra con las ventanas encendidas, tuberías sobre caballetes y montones de escoria; ceniza y ascuas en el aire; un río de lava con placas de costra flotando tras un ribazo de escoria y una fila de bolardos con cadena; el camino de ceniza prensada con planchas de hierro remachadas; y bajo él, ceniza con grietas por las que asoma el fuego, engranajes medio enterrados, yunques, lingotes aún calientes y cadenas. En primer plano pasan un yunque, una gran rueda dentada, escoria y un montón de cadena con su gancho, y de arriba cuelgan cadenas y un cazo. En el aire suben ascuas desde el río y cae un poco de ceniza, de verdad, no pintadas. La franja que queda justo detrás de los combatientes está velada por la calima: el pie de las fábricas se aclara y pierde brillo, y la mitad cercana del río es un resplandor rojo y plano, para que las figuras se lean. En Torment son las forjas frías: el fuego ha muerto. Todo es gris ceniza y negro de hierro bajo una tapa de humo negro; el sol es un disco negro con una corona fría, los volcanes están apagados, los hornos partidos de arriba abajo, las chimeneas rotas y sin humo, la rueda y la grúa caídas y las ventanas a oscuras; el río se ha encostrado y la ceniza lo cubre como nieve, igual que cada cornisa. Donde hubo fuego solo quedan costuras finas de una luz blanca y azul, fría y equivocada. Lo único violeta es la Grieta en el cielo y sus cristales. Cae una ceniza espesa y gris, relampaguea dentro del humo con un destello frío que deja las fábricas en negro, la luz tartamudea a ratos y las costuras frías laten despacio. <button class="link" data-goto="w08">Verlo en la tira en vivo</button></p>
+    </div>
+    <div class="heroes">
+      <article class="hero">
+        <div class="body">
+          <span class="role foe">Bestia · reptil de lava</span>
+          <h3>Salamandra de magma</h3>
+          <ul>
+            <li>Esqueleto propio: hombros, caderas y cabeza con cuernos dibujados a mano sobre un espinazo que se flexiona, cuatro patas abiertas con los codos en alto y una cola simulada; costra negra con el borde de arriba iluminado, una grieta de fuego en zigzag por todo el lomo, el vientre como una línea continua al rojo blanco, la garganta encendida y una cresta de púas que acaban en ascua. Su propio calor alumbra el suelo bajo la garganta y el vientre</li>
+            <li>Repta en diagonales con los hombros y las caderas meciéndose a contratiempo y la cabeza barriendo el suelo; suelta ascuas del lomo</li>
+            <li>Escupitajo: se recoge, se alza sobre las patas delanteras con la garganta hinchándose en blanco y lanza la cabeza hacia delante; un pegote de lava describe un arco y salpica donde cae</li>
+            <li>Al morir se retuerce, intenta levantarse y el fuego se le va apagando de la cola a la cabeza: queda convertida en una estatua de piedra gris que humea</li>
+          </ul>
+        </div>
+        <div class="clips" style="background:#63192e;--clip-label:#fde3b0">
+          <div class="clip"><canvas class="px anim" data-char="salamander" data-anim="idle" width="96" height="70" style="width:288px" role="img" aria-label="Salamandra de magma: reposo."></canvas><span>Reposo</span></div>
+          <div class="clip"><canvas class="px anim" data-char="salamander" data-anim="run" width="96" height="70" style="width:288px" role="img" aria-label="Salamandra de magma: reptar."></canvas><span>Reptar</span></div>
+          <div class="clip"><canvas class="px anim" data-char="salamander" data-anim="attack" width="96" height="70" style="width:288px" role="img" aria-label="Salamandra de magma: escupitajo de lava."></canvas><span>Escupitajo de lava</span></div>
+          <div class="clip"><canvas class="px anim" data-char="salamander" data-anim="hurt" width="96" height="70" style="width:288px" role="img" aria-label="Salamandra de magma: golpe recibido."></canvas><span>Golpe recibido</span></div>
+          <div class="clip"><canvas class="px anim" data-char="salamander" data-anim="death" width="96" height="70" style="width:288px" role="img" aria-label="Salamandra de magma: muerte."></canvas><span>Muerte</span></div>
+        </div>
+      </article>
+      <article class="hero">
+        <div class="body">
+          <span class="role foe">Cuerpo a cuerpo · mazo</span>
+          <h3>Bruto de la forja</h3>
+          <ul>
+            <li>Un herrero enorme y ceniciento, con una máscara de hierro soldada y una luz fría en la rendija, un mandil de cuero quemado y un brazo que ya no es carne sino escoria: costra negra con el fuego en las grietas y en los nudillos</li>
+            <li>Anda balanceándose de un pie a otro con el mazo al hombro, que le rebota en cada paso; del brazo le gotean ascuas</li>
+            <li>Golpe de yunque: agarra el mazo con las dos manos, lo sube por encima de la cabeza, aguanta un instante y descarga todo el peso; el suelo suena y sale un abanico de chispas</li>
+            <li>Al morir el mazo se le escurre por detrás, se sienta de golpe donde estaba, se apoya un momento y se desploma hacia delante sobre las rodillas; el brazo y la luz de la máscara se apagan</li>
+          </ul>
+        </div>
+        <div class="clips" style="background:#63192e;--clip-label:#fde3b0">
+          <div class="clip"><canvas class="px anim" data-char="smith" data-anim="idle" width="96" height="70" style="width:288px" role="img" aria-label="Bruto de la forja: reposo."></canvas><span>Reposo</span></div>
+          <div class="clip"><canvas class="px anim" data-char="smith" data-anim="run" width="96" height="70" style="width:288px" role="img" aria-label="Bruto de la forja: avanzar."></canvas><span>Avanzar</span></div>
+          <div class="clip"><canvas class="px anim" data-char="smith" data-anim="attack" width="96" height="70" style="width:288px" role="img" aria-label="Bruto de la forja: golpe de yunque."></canvas><span>Golpe de yunque</span></div>
+          <div class="clip"><canvas class="px anim" data-char="smith" data-anim="hurt" width="96" height="70" style="width:288px" role="img" aria-label="Bruto de la forja: golpe recibido."></canvas><span>Golpe recibido</span></div>
+          <div class="clip"><canvas class="px anim" data-char="smith" data-anim="death" width="96" height="70" style="width:288px" role="img" aria-label="Bruto de la forja: muerte."></canvas><span>Muerte</span></div>
+        </div>
+      </article>
+      <article class="hero">
+        <div class="body">
+          <span class="role foe">A distancia · cazo de escoria</span>
+          <h3>Diablillo de escoria</h3>
+          <ul>
+            <li>Un diablillo azul y nervudo que no llega a la cintura de un héroe: orejas grandes, dos cuernos, un ojo como un ascua, una boca demasiado ancha y una cola con punta de pala; lleva un cazo largo de hierro lleno de escoria fundida</li>
+            <li>Corretea doblado por la cintura con el cazo en alto y el brazo libre bombeando; en reposo no para quieto, se balancea sobre los talones y ladea la cabeza</li>
+            <li>Lanzamiento: se agacha echando el cazo muy atrás por encima del hombro y lo descarga de un latigazo; el pegote sube en un arco alto y revienta al caer</li>
+            <li>Al morir el golpe lo levanta del suelo y le hace dar una voltereta hacia atrás: cae de bruces y el cazo aterriza a su lado, con la escoria derramada apagándose</li>
+          </ul>
+        </div>
+        <div class="clips" style="background:#63192e;--clip-label:#fde3b0">
+          <div class="clip"><canvas class="px anim" data-char="slagimp" data-anim="idle" width="96" height="70" style="width:288px" role="img" aria-label="Diablillo de escoria: reposo."></canvas><span>Reposo</span></div>
+          <div class="clip"><canvas class="px anim" data-char="slagimp" data-anim="run" width="96" height="70" style="width:288px" role="img" aria-label="Diablillo de escoria: corretear."></canvas><span>Corretear</span></div>
+          <div class="clip"><canvas class="px anim" data-char="slagimp" data-anim="attack" width="96" height="70" style="width:288px" role="img" aria-label="Diablillo de escoria: lanzamiento de escoria."></canvas><span>Lanzamiento de escoria</span></div>
+          <div class="clip"><canvas class="px anim" data-char="slagimp" data-anim="hurt" width="96" height="70" style="width:288px" role="img" aria-label="Diablillo de escoria: golpe recibido."></canvas><span>Golpe recibido</span></div>
+          <div class="clip"><canvas class="px anim" data-char="slagimp" data-anim="death" width="96" height="70" style="width:288px" role="img" aria-label="Diablillo de escoria: muerte."></canvas><span>Muerte</span></div>
+        </div>
+      </article>
+      <article class="hero">
+        <div class="body">
+          <span class="role foe">Jefe de etapa · la bestia encadenada bajo las forjas</span>
+          <h3>Sierpe de la Fragua</h3>
+          <ul>
+            <li>La sierpe que los herreros tenían encadenada para avivar sus hornos: no pisa el suelo, sale de él por una grieta entre las planchas de hierro donde hierve el metal fundido. Anillos de escoria negra y hierro forjado con costuras al rojo blanco, vientre de costra agrietada sobre magma, púas de hierro en el lomo, cuernos de hierro ennegrecido y una cabeza acorazada tan larga como un héroe, con cuatro ojos candentes y una garganta como la boca de un horno. Aún lleva el collar forjado, con tramos de cadena rota colgando. Mide unos 90 px.</li>
+            <li>Cuelga sobre el grupo mirándolo desde arriba: respira luz de fuego, la cabeza se mece como la de una serpiente, le gotea metal fundido de la barbilla y el vientre y las cadenas se balancean. Avanza arrastrando la colada por el suelo, que se abomba por delante y se enfría en una cicatriz por detrás.</li>
+            <li>Dentellada: se echa atrás y arriba, desencaja las mandíbulas y asoma una segunda boca, aguanta con el horno de la garganta rugiendo y descarga todo el cuello contra el suelo, que revienta: planchas por los aires y surtidores de lava.</li>
+            <li>Muere apagándose: la colada cría costra y el frío le sube por el cuello anillo a anillo, desde el suelo, hasta dejarlo de piedra gris en mitad del último rugido; los ojos se apagan uno a uno. Luego la piedra se agrieta por encima del collar, la cabeza se desprende y cae, y queda en pie una columna de escoria con el collar y su cadena.</li>
+          </ul>
+        </div>
+        <div class="clips" style="background:#63192e;--clip-label:#fde3b0">
+          <div class="clip" style="flex-basis:528px"><canvas class="px anim" data-char="magmawyrm" data-anim="idle" width="176" height="114" style="width:528px" role="img" aria-label="Sierpe de la Fragua: reposo."></canvas><span>Reposo</span></div>
+          <div class="clip" style="flex-basis:528px"><canvas class="px anim" data-char="magmawyrm" data-anim="run" width="176" height="114" style="width:528px" role="img" aria-label="Sierpe de la Fragua: arrastrar la colada."></canvas><span>Arrastrar la colada</span></div>
+          <div class="clip" style="flex-basis:528px"><canvas class="px anim" data-char="magmawyrm" data-anim="attack" width="176" height="114" style="width:528px" role="img" aria-label="Sierpe de la Fragua: dentellada."></canvas><span>Dentellada</span></div>
+          <div class="clip" style="flex-basis:528px"><canvas class="px anim" data-char="magmawyrm" data-anim="hurt" width="176" height="114" style="width:528px" role="img" aria-label="Sierpe de la Fragua: golpe recibido."></canvas><span>Golpe recibido</span></div>
+          <div class="clip" style="flex-basis:528px"><canvas class="px anim" data-char="magmawyrm" data-anim="death" width="176" height="114" style="width:528px" role="img" aria-label="Sierpe de la Fragua: muerte."></canvas><span>Muerte</span></div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section id="w09">
+    <div class="sec-head">
+      <span class="eyebrow">Mundo 9 · Ciudadela entre las nubes</span>
+      <h2>Ciudadela entre las nubes</h2>
+      <p class="muted">Amanecer sobre un mar de nubes, con una sola luz para todo: el sol bajo a la derecha. Siete capas: el cielo, del azul al melocotón, con el sol rompiendo sobre el horizonte, sus rayos largos y el borde lejano y dorado del mar de nubes; jirones altos y el mar de nubes con volumen, que se desplaza solo y pasa también por debajo de la pasarela; islas flotantes lejanas con agujas y cúpulas, un puente largo entre dos de ellas y nube que se derrama por sus bordes; la ciudadela, pálida y azulada por la distancia, con un campanario, la gran cúpula dorada, dos agujas unidas por un puente, una puerta triunfal y una torre escalonada sobre un banco de nubes; la terraza cercana, de mármol con un lado en luz cálida y otro en sombra fría: una columnata con estandartes, una estatua alada, un templete redondo de cúpula azul, cipreses, una puerta con un gran estandarte y un pebetero encendido; la pasarela de mármol con un pretil bajo y un filete de oro, sobre un puente con cornisa, greca dorada, ménsulas y arcos por los que se ve pasar la nube; y en primer plano tambores de columna, la cabeza de una estatua y jirones de nube. De la altura de las cabezas hacia abajo la ciudad queda en sombra y en la bruma azul de la mañana, con los pies perdidos en un banco de niebla: así la franja tras el combate es un tono medio y calmado, y la ciudad blanca y dorada asoma por encima. En el aire suben motas de luz y cae alguna pluma. En Torment la ciudad se ha podrido y todo vira a sepia y hollín: un sol negro con un aro ámbar apagado, un resplandor ámbar sucio bajo un cielo pardo casi negro, cúpulas y agujas rotas y negras de hollín, el oro vuelto verdín, los estandartes en jirones y el mar de nubes convertido en un humo pardo y gris que se traga la parte baja de la ciudad. El violeta queda solo para la Grieta: la fractura del cielo, los cristales y la luz de las grietas del pavimento. Cae ceniza y plumas chamuscadas, el sol negro oscurece la escena a pulsos lentos, dentro del humo relampaguea un ámbar sordo y de vez en cuando la luz falla. <button class="link" data-goto="w09">Verlo en la tira en vivo</button></p>
+    </div>
+    <div class="heroes">
+      <article class="hero">
+        <div class="body">
+          <span class="role foe">Bestia de guerra · alada, cuatro patas</span>
+          <h3>Grifo de la Ciudadela</h3>
+          <ul>
+            <li>Una bestia de guerra de la ciudadela, de la alzada de un caballo: por delante águila —plumas pizarra, pecho hondo, pico ganchudo dorado bajo un medio yelmo dorado con penacho rojo, patas escamosas amarillas con garras— y por detrás león leonado, de cintura recogida, grupa fuerte y cola con borla; lleva una gualdrapa azul ribeteada de oro</li>
+            <li>Esqueleto propio, con alas construidas como las de un ave (brazo, antebrazo y mano, con primarias oscuras, secundarias azules y dos filas de coberteras) que se pliegan en una hoja sobre el lomo y se abren en un abanico ancho; avanza a saltos, con las garras cayendo juntas y las alas medio abiertas batiendo al compás</li>
+            <li>Zarpazo: se agacha, se alza sobre las patas traseras con las dos alas desplegadas, aguanta y cae con garras y pico por delante, dejando tres arañazos en el aire</li>
+            <li>Muere chillando con las alas en alto; le fallan las patas delanteras y cae sobre el pecho, sigue la grupa, apoya la cabeza en el mármol y el ala se le vence hacia atrás sobre el cuerpo mientras caen plumas sueltas</li>
+          </ul>
+        </div>
+        <div class="clips" style="background:#b09f91;--clip-label:#1c1830">
+          <div class="clip"><canvas class="px anim" data-char="gryphon" data-anim="idle" width="96" height="84" style="width:288px" role="img" aria-label="Grifo de la Ciudadela: reposo."></canvas><span>Reposo</span></div>
+          <div class="clip"><canvas class="px anim" data-char="gryphon" data-anim="run" width="96" height="84" style="width:288px" role="img" aria-label="Grifo de la Ciudadela: brincar."></canvas><span>Brincar</span></div>
+          <div class="clip"><canvas class="px anim" data-char="gryphon" data-anim="attack" width="96" height="84" style="width:288px" role="img" aria-label="Grifo de la Ciudadela: zarpazo."></canvas><span>Zarpazo</span></div>
+          <div class="clip"><canvas class="px anim" data-char="gryphon" data-anim="hurt" width="96" height="84" style="width:288px" role="img" aria-label="Grifo de la Ciudadela: golpe recibido."></canvas><span>Golpe recibido</span></div>
+          <div class="clip"><canvas class="px anim" data-char="gryphon" data-anim="death" width="96" height="84" style="width:288px" role="img" aria-label="Grifo de la Ciudadela: muerte."></canvas><span>Muerte</span></div>
+        </div>
+      </article>
+      <article class="hero">
+        <div class="body">
+          <span class="role foe">Cuerpo a cuerpo · armadura vacía</span>
+          <h3>Templario del Cielo</h3>
+          <ul>
+            <li>Un guardián con yelmo alado y armadura dorada, tabardo azul largo, escudo alto con un sol y una alabarda; dentro no hay nadie, solo una luz fría tras la visera</li>
+            <li>No corre: marcha erguido, con el escudo al frente y la alabarda en alto como un estandarte; en reposo solo gira el yelmo</li>
+            <li>Tajo de alabarda: la echa atrás sobre el hombro, aguanta, da un paso y la descarga en un arco largo que saca esquirlas del mármol</li>
+            <li>Al morir la luz se apaga y la armadura se detiene: la alabarda cae hacia atrás, se hunde de rodillas con el escudo apoyado en el suelo y el yelmo vacío rueda por delante</li>
+          </ul>
+        </div>
+        <div class="clips" style="background:#b09f91;--clip-label:#1c1830">
+          <div class="clip"><canvas class="px anim" data-char="templar" data-anim="idle" width="96" height="70" style="width:288px" role="img" aria-label="Templario del Cielo: reposo."></canvas><span>Reposo</span></div>
+          <div class="clip"><canvas class="px anim" data-char="templar" data-anim="run" width="96" height="70" style="width:288px" role="img" aria-label="Templario del Cielo: marchar."></canvas><span>Marchar</span></div>
+          <div class="clip"><canvas class="px anim" data-char="templar" data-anim="attack" width="96" height="70" style="width:288px" role="img" aria-label="Templario del Cielo: tajo de alabarda."></canvas><span>Tajo de alabarda</span></div>
+          <div class="clip"><canvas class="px anim" data-char="templar" data-anim="hurt" width="96" height="70" style="width:288px" role="img" aria-label="Templario del Cielo: golpe recibido."></canvas><span>Golpe recibido</span></div>
+          <div class="clip"><canvas class="px anim" data-char="templar" data-anim="death" width="96" height="70" style="width:288px" role="img" aria-label="Templario del Cielo: muerte."></canvas><span>Muerte</span></div>
+        </div>
+      </article>
+      <article class="hero">
+        <div class="body">
+          <span class="role foe">Lanzador · flota</span>
+          <h3>Cantor de la Tormenta</h3>
+          <ul>
+            <li>Un clérigo que ya no toca el suelo: capucha oscura sobre una máscara de oro, estola carmesí, una túnica que acaba en jirones simulados, un halo dorado sobre la cabeza y un incensario colgando de su cadena</li>
+            <li>Flota subiendo y bajando, con el halo siguiéndolo a destiempo; para avanzar se inclina y se desliza con la túnica ondeando detrás</li>
+            <li>Rayo: se eleva con una mano en alto hasta que el halo arde y saltan chispas, baja la mano de golpe y un rayo cae delante de él, con su bifurcación, el estallido en el suelo y la marca que deja</li>
+            <li>Al morir la tormenta lo suelta: queda colgando inerte, el halo se le resbala, cae y es solo un montón de túnica en el mármol, con el halo parándose a su lado</li>
+          </ul>
+        </div>
+        <div class="clips" style="background:#b09f91;--clip-label:#1c1830">
+          <div class="clip"><canvas class="px anim" data-char="cantor" data-anim="idle" width="96" height="70" style="width:288px" role="img" aria-label="Cantor de la Tormenta: reposo."></canvas><span>Reposo</span></div>
+          <div class="clip"><canvas class="px anim" data-char="cantor" data-anim="run" width="96" height="70" style="width:288px" role="img" aria-label="Cantor de la Tormenta: deslizarse."></canvas><span>Deslizarse</span></div>
+          <div class="clip"><canvas class="px anim" data-char="cantor" data-anim="attack" width="96" height="70" style="width:288px" role="img" aria-label="Cantor de la Tormenta: rayo."></canvas><span>Rayo</span></div>
+          <div class="clip"><canvas class="px anim" data-char="cantor" data-anim="hurt" width="96" height="70" style="width:288px" role="img" aria-label="Cantor de la Tormenta: golpe recibido."></canvas><span>Golpe recibido</span></div>
+          <div class="clip"><canvas class="px anim" data-char="cantor" data-anim="death" width="96" height="70" style="width:288px" role="img" aria-label="Cantor de la Tormenta: muerte."></canvas><span>Muerte</span></div>
+        </div>
+      </article>
+      <article class="hero">
+        <div class="body">
+          <span class="role foe">Jefe de etapa</span>
+          <h3>El Arconte</h3>
+          <ul>
+            <li>La mayor estatua de la ciudadela, bajada de su pedestal: un gigante de mármol frío y en sombra con oro, de casi el doble de alto que un héroe, con dos grandes alas de plumas en capas que lo enmarcan, hombreras doradas y un disco solar de oro tras la cabeza</li>
+            <li>Por rostro, una máscara pálida y lisa partida por una grieta vertical en la que arde la luz, con los ojos cerrados y oro corriendo de ellos; su mandoble es una hoja de luz tan larga como un hombre</li>
+            <li>En reposo aguarda con la espada clavada y las dos manos en el pomo, las alas alzadas respirando despacio; camina lento y pesado con la espada en alto</li>
+            <li>Juicio: arranca la espada del suelo y la alza sobre la cabeza mientras las alas se abren de golpe y la hoja se enciende; aguanta, y la hunde en el suelo justo delante: brotan tres pilares de luz, uno tras otro</li>
+            <li>Muere despacio: la luz de la máscara se apaga, se endereza en su pose de estatua, las grietas se extienden desde la máscara por toda la piedra, un ala se parte y cae, y se desmorona desde la corona alrededor de su espada, que queda clavada y es lo último que se apaga</li>
+            <li>Tiene fotograma propio (152 × 114)</li>
+          </ul>
+        </div>
+        <div class="clips" style="background:#b09f91;--clip-label:#1c1830">
+          <div class="clip" style="flex-basis:456px"><canvas class="px anim" data-char="archon" data-anim="idle" width="152" height="114" style="width:456px" role="img" aria-label="El Arconte: reposo."></canvas><span>Reposo</span></div>
+          <div class="clip" style="flex-basis:456px"><canvas class="px anim" data-char="archon" data-anim="run" width="152" height="114" style="width:456px" role="img" aria-label="El Arconte: avanzar."></canvas><span>Avanzar</span></div>
+          <div class="clip" style="flex-basis:456px"><canvas class="px anim" data-char="archon" data-anim="attack" width="152" height="114" style="width:456px" role="img" aria-label="El Arconte: juicio."></canvas><span>Juicio</span></div>
+          <div class="clip" style="flex-basis:456px"><canvas class="px anim" data-char="archon" data-anim="hurt" width="152" height="114" style="width:456px" role="img" aria-label="El Arconte: golpe recibido."></canvas><span>Golpe recibido</span></div>
+          <div class="clip" style="flex-basis:456px"><canvas class="px anim" data-char="archon" data-anim="death" width="152" height="114" style="width:456px" role="img" aria-label="El Arconte: muerte."></canvas><span>Muerte</span></div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section id="w10">
+    <div class="sec-head">
+      <span class="eyebrow">Mundo 10 · La Grieta</span>
+      <h2>La Grieta</h2>
+      <p class="muted">El mundo roto y suspendido en el vacío, en siete capas: un cielo de estrellas con un velo de gas violeta, nebulosas de corazón azul, rosado y verde mar, un sol negro con su corona y un espiral de polvo cayendo en él, y las grandes fracturas; a lo lejos, un pedazo de cada uno de los nueve mundos anteriores a la deriva sobre su trozo de tierra (el molino, el árbol viejo, la choza sobre pilotes con la lámpara aún encendida, el arco de roca, el tejado del monasterio, la columna hundida, la seta gigante, la chimenea de forja y la cúpula de mármol); islas de roca en estratos con cristales; polvo de estrellas; restos cercanos con columnas en pie; una calzada de losas talladas con una greca y sigilos que aún guardan luz, con huecos por los que se ven las estrellas; y cristal tallado en primer plano. Para que la pelea se lea, todo lo que queda detrás de las figuras se hunde en una bruma violeta uniforme, sin cristales brillantes, y el lado derecho del cielo —donde se alza el Deshacedor con su sol negro— es un velo liso, sin fracturas. Atmósfera: polvo de estrellas que sube despacio y un pulso violeta muy lento. En Torment, la última puerta, todo va más allá: el color se apaga hacia la tinta y el hueso, el cielo entero se ha roto como un cristal alrededor del sol negro, con grietas finas y paños desplazados, y siete fracturas arden en blanco. Atmósfera: las fracturas descargan en blanco y hacen temblar el suelo, el cielo parpadea entre descargas, el polvo y los escombros salen arrancados hacia arriba, se abren ojos violetas en el vacío bajo la calzada y en lo oscuro del cielo, y de vez en cuando la luz tartamudea. <button class="link" data-goto="w10">Verlo en la tira en vivo</button></p>
+    </div>
+    <div class="heroes">
+      <article class="hero">
+        <div class="body">
+          <span class="role foe">Bestia · flotante</span>
+          <h3>Fauces del Vacío</h3>
+          <ul>
+            <li>Un orbe de oscuridad deshilachada que es casi todo boca: colmillos pálidos arriba y abajo, un resplandor al fondo de la garganta, un ojo que arde y cuatro tentáculos colgando. Su borde va perfilado de luz fría</li>
+            <li>Esqueleto propio: no anda, flota. Sube y baja, se inclina hacia donde va, respira abriendo y cerrando las fauces, y los tentáculos son cadenas simuladas que lo siguen</li>
+            <li>Dentellada: se echa atrás y arriba con la boca de par en par, aguanta, se lanza y cierra las fauces de golpe con un chasquido de luz</li>
+            <li>Muere implosionando: tiembla, se hincha, gira sobre sí mismo encogiéndose hasta un punto que estalla, y sus dientes caen al suelo y ahí se quedan</li>
+          </ul>
+        </div>
+        <div class="clips" style="background:#371e62;--clip-label:#fde3b0">
+          <div class="clip"><canvas class="px anim" data-char="voidmaw" data-anim="idle" width="96" height="70" style="width:288px" role="img" aria-label="Fauces del Vacío: reposo."></canvas><span>Reposo</span></div>
+          <div class="clip"><canvas class="px anim" data-char="voidmaw" data-anim="run" width="96" height="70" style="width:288px" role="img" aria-label="Fauces del Vacío: flotar."></canvas><span>Flotar</span></div>
+          <div class="clip"><canvas class="px anim" data-char="voidmaw" data-anim="attack" width="96" height="70" style="width:288px" role="img" aria-label="Fauces del Vacío: dentellada."></canvas><span>Dentellada</span></div>
+          <div class="clip"><canvas class="px anim" data-char="voidmaw" data-anim="hurt" width="96" height="70" style="width:288px" role="img" aria-label="Fauces del Vacío: golpe recibido."></canvas><span>Golpe recibido</span></div>
+          <div class="clip"><canvas class="px anim" data-char="voidmaw" data-anim="death" width="96" height="70" style="width:288px" role="img" aria-label="Fauces del Vacío: muerte."></canvas><span>Muerte</span></div>
+        </div>
+      </article>
+      <article class="hero">
+        <div class="body">
+          <span class="role foe">Cuerpo a cuerpo · hueco con forma de caballero</span>
+          <h3>Eco de la Grieta</h3>
+          <ul>
+            <li>Lo que la Grieta conserva de un caballero: un agujero con su silueta. No tiene superficie, solo un doble borde de luz fría alrededor del violeta profundo de la Grieta, con estrellas que no se mueven con él; fracturas de luz le recorren la pierna, el brazo y la capa rota, la visera arde y empuña una hoja ancha de luz</li>
+            <li>No se mueve con fluidez: mantiene una pose y de pronto está en la siguiente, dejando su contorno atrás un instante. Corre en seis poses por zancada</li>
+            <li>Tajo: alza la hoja tras la cabeza y la deja ahí; un fotograma después el corte ya ha pasado y queda una media luna de luz colgando en el aire</li>
+            <li>Al morir se queda rígido, la luz de dentro sube hasta abrasar y se rompe en esquirlas que saltan, caen y quedan brillando en el suelo</li>
+          </ul>
+        </div>
+        <div class="clips" style="background:#371e62;--clip-label:#fde3b0">
+          <div class="clip"><canvas class="px anim" data-char="echo" data-anim="idle" width="96" height="70" style="width:288px" role="img" aria-label="Eco de la Grieta: reposo."></canvas><span>Reposo</span></div>
+          <div class="clip"><canvas class="px anim" data-char="echo" data-anim="run" width="96" height="70" style="width:288px" role="img" aria-label="Eco de la Grieta: correr."></canvas><span>Correr</span></div>
+          <div class="clip"><canvas class="px anim" data-char="echo" data-anim="attack" width="96" height="70" style="width:288px" role="img" aria-label="Eco de la Grieta: tajo."></canvas><span>Tajo</span></div>
+          <div class="clip"><canvas class="px anim" data-char="echo" data-anim="hurt" width="96" height="70" style="width:288px" role="img" aria-label="Eco de la Grieta: golpe recibido."></canvas><span>Golpe recibido</span></div>
+          <div class="clip"><canvas class="px anim" data-char="echo" data-anim="death" width="96" height="70" style="width:288px" role="img" aria-label="Eco de la Grieta: muerte."></canvas><span>Muerte</span></div>
+        </div>
+      </article>
+      <article class="hero">
+        <div class="body">
+          <span class="role foe">Lanzador · cuatro brazos</span>
+          <h3>Tejedora de Estrellas</h3>
+          <ul>
+            <li>Alta, flaca y sin piernas: una máscara pálida de ojos huecos con la barbilla en punta, una tiara de agujas de luz, una túnica verde azulada que acaba en hilos sueltos por encima del suelo y cuatro brazos largos de dedos como agujas</li>
+            <li>Flota subiendo y bajando; el par de brazos de abajo no deja nunca de trabajar un hilo de luz entre las manos. Al avanzar se inclina y echa atrás los brazos de arriba</li>
+            <li>Aguja de estrella: las manos de arriba suben y se cierran sobre una estrella, la lleva tras la cabeza y la lanza como una aguja de luz</li>
+            <li>Al morir se le caen los brazos y se deshace de abajo arriba, hilo a hilo, hasta que solo queda la máscara, que cae sobre la maraña</li>
+          </ul>
+        </div>
+        <div class="clips" style="background:#371e62;--clip-label:#fde3b0">
+          <div class="clip"><canvas class="px anim" data-char="weaver" data-anim="idle" width="96" height="70" style="width:288px" role="img" aria-label="Tejedora de Estrellas: reposo."></canvas><span>Reposo</span></div>
+          <div class="clip"><canvas class="px anim" data-char="weaver" data-anim="run" width="96" height="70" style="width:288px" role="img" aria-label="Tejedora de Estrellas: deslizarse."></canvas><span>Deslizarse</span></div>
+          <div class="clip"><canvas class="px anim" data-char="weaver" data-anim="attack" width="96" height="70" style="width:288px" role="img" aria-label="Tejedora de Estrellas: aguja de estrella."></canvas><span>Aguja de estrella</span></div>
+          <div class="clip"><canvas class="px anim" data-char="weaver" data-anim="hurt" width="96" height="70" style="width:288px" role="img" aria-label="Tejedora de Estrellas: golpe recibido."></canvas><span>Golpe recibido</span></div>
+          <div class="clip"><canvas class="px anim" data-char="weaver" data-anim="death" width="96" height="70" style="width:288px" role="img" aria-label="Tejedora de Estrellas: muerte."></canvas><span>Muerte</span></div>
+        </div>
+      </article>
+      <article class="hero">
+        <div class="body">
+          <span class="role foe">Jefe final · la puerta a las dificultades altas</span>
+          <h3>El Deshacedor</h3>
+          <ul>
+            <li>Una figura blanca, imposiblemente delgada y sin rostro, cuelga en el aire con los brazos algo abiertos y los pies en punta; su única facción es una costura negra vertical. Detrás de la cabeza arde un sol negro, más oscuro que el cielo, con una corona blanca que brilla más por el lado que mira a los héroes. La rodean seis hojas de espejo roto llenas de estrellas, tres a cada lado como las alas de un serafín. Mide unos 115 px, más de tres héroes.</li>
+            <li>Casi no se mueve y nada en él se detiene: flota, las hojas respiran, los rayos giran, piedras y un trozo de suelo orbitan a su alrededor; bajo él el suelo pierde el color y suben motas planas. Para avanzar se desliza erguido, con las hojas y las vendas quedándose atrás.</li>
+            <li>Deshacer: las hojas se pliegan y se abren de golpe en sol radiante, el sol negro se hincha mientras todo lo demás se oscurece y la costura se enciende; alza una mano, la deja caer hacia los héroes y cae un pilar de luz blanca que corre por el suelo, y el suelo se deshace en losas planas que suben en vez de caer.</li>
+            <li>Muerte en etapas: el sol negro se agrieta como un cristal y derrama luz; las hojas caen una a una y se hacen añicos; la costura lo parte de la cabeza a los pies y se deshace en hebras y luz que ascienden. Queda solo el aro agrietado de la corona, apagándose, sobre un campo de esquirlas.</li>
+          </ul>
+        </div>
+        <div class="clips" style="background:#371e62;--clip-label:#fde3b0">
+          <div class="clip" style="flex-basis:600px"><canvas class="px anim" data-char="unmaker" data-anim="idle" width="200" height="129" style="width:600px" role="img" aria-label="El Deshacedor: reposo."></canvas><span>Reposo</span></div>
+          <div class="clip" style="flex-basis:600px"><canvas class="px anim" data-char="unmaker" data-anim="run" width="200" height="129" style="width:600px" role="img" aria-label="El Deshacedor: deslizarse."></canvas><span>Deslizarse</span></div>
+          <div class="clip" style="flex-basis:600px"><canvas class="px anim" data-char="unmaker" data-anim="attack" width="200" height="129" style="width:600px" role="img" aria-label="El Deshacedor: deshacer."></canvas><span>Deshacer</span></div>
+          <div class="clip" style="flex-basis:600px"><canvas class="px anim" data-char="unmaker" data-anim="hurt" width="200" height="129" style="width:600px" role="img" aria-label="El Deshacedor: golpe recibido."></canvas><span>Golpe recibido</span></div>
+          <div class="clip" style="flex-basis:600px"><canvas class="px anim" data-char="unmaker" data-anim="death" width="200" height="129" style="width:600px" role="img" aria-label="El Deshacedor: muerte."></canvas><span>Muerte</span></div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+<!-- worlds:end -->
 
   <section id="how">
     <div class="sec-head">
@@ -225,11 +1108,10 @@ section { display: grid; gap: 18px; }
       <h2>Lo que necesito de ti</h2>
     </div>
     <div class="questions">
-      <div class="q"><b>Proporciones</b><span class="muted">Piernas un 20 % más cortas, cabezas más grandes y miembros algo más gruesos. ¿Así, o todavía más compactos?</span></div>
-      <div class="q"><b>Derrotas</b><span class="muted">Las tres están rehechas, cada una con su final. ¿Ya funcionan?</span></div>
-      <div class="q"><b>¿Falta alguna?</b><span class="muted">Por ejemplo una victoria, una esquiva o más habilidades por clase.</span></div>
-      <div class="q"><b>Diseños</b><span class="muted">Knight con yelmo cerrado y sobreveste azul, Ranger encapuchado, Priest sacerdotisa con cofia y melena rubia. ¿Te encajan?</span></div>
-      <div class="q"><b>Tamaño</b><span class="muted">Unos 35 px de alto en la tira. ¿Así, o los quieres más grandes?</span></div>
+      <div class="q"><b>Torment</b><span class="muted">Cada mundo tiene su tonalidad: sangre (1), podredumbre (2), ahogados (3), azufre (4), ventisca blanca (5), abismo (6), plaga (7), forjas frías (8), deslustre (9) y violeta extremo (10). ¿Alguno no te da miedo, o se parece demasiado a otro?</span></div>
+      <div class="q"><b>Efectos atmosféricos</b><span class="muted">Míralos en la tira con «Torment» y espera unos segundos. ¿Más frecuentes, más fuertes, más sutiles? El trueno como sonido llegará con la fase de audio.</span></div>
+      <div class="q"><b>Contraste</b><span class="muted">He calmado la franja que queda detrás de los combatientes en los diez mundos, en Normal y en Torment. Dime en qué mundo sigue perdiéndose alguien.</span></div>
+      <div class="q"><b>Sierpe de la Fragua</b><span class="muted">El candidato A convertido en fuego, como jefe del mundo 8. ¿Vale como sustituto del Señor del Horno?</span></div>
     </div>
   </section>
 
@@ -241,10 +1123,88 @@ section { display: grid; gap: 18px; }
     <div class="log">
       <div class="entry next">
         <time>Siguiente</time>
-        <h3>Enemigos e integración</h3>
+        <h3>Más enemigos e integración</h3>
         <ul>
-          <li>Enemigos del mundo 1 con el mismo motor</li>
+          <li>Corregir lo que salga de tu revisión de los diez mundos</li>
+          <li>Jefes de mundo y élites; gradaciones Hell, Inferno y Eternal</li>
           <li>Atlas y manifiesto para Pixi; la tira real del juego</li>
+        </ul>
+      </div>
+      <div class="entry">
+        <time>14 nov 2026</time>
+        <h3>Knight: carrera menos apresurada</h3>
+        <ul>
+          <li>Iba a ritmo de esprint, unos 213 pasos por minuto; ahora es un trote de unos 180, con zancada más larga y 14 fotogramas en lugar de 12</li>
+          <li>La zancada cubre lo que avanza el grupo, así que el pie apoyado ya no resbala</li>
+        </ul>
+      </div>
+      <div class="entry">
+        <time>14 nov 2026</time>
+        <h3>Cuarta pasada: jefe final elegido, Torment con carácter, atmósfera y contraste</h3>
+        <ul>
+          <li>El Deshacedor es el jefe del mundo 10; el Heraldo y los demás candidatos quedan apartados</li>
+          <li>Sierpe de la Fragua, jefe nuevo del mundo 8: el candidato A en versión de fuego, encadenada por los herreros</li>
+          <li>Torment con una tonalidad distinta en cada mundo; la Grieta y sus cristales siguen violetas, como invasor</li>
+          <li>Motor de atmósfera en la tira: relámpagos con destello y temblor, partículas, ojos en la oscuridad, pulso y parpadeo, declarados por cada fondo</li>
+          <li>Pasada de contraste en los diez mundos y ambas dificultades: franja calmada tras los combatientes y retoques de tono en cuatro criaturas</li>
+        </ul>
+      </div>
+      <div class="entry">
+        <time>14 nov 2026</time>
+        <h3>Tercera pasada: el resto de fondos, repaso de lo flojo y candidatos a jefe final</h3>
+        <ul>
+          <li>Fondos de los mundos 1, 2, 3, 4 y 10 subidos al nivel de detalle de los otros cinco</li>
+          <li>Cuatro candidatos a jefe final, cada uno con fotograma propio de 200 × 129 y un botón para verlo solo en la tira</li>
+          <li>Señor del Horno con concepto nuevo (rey herrero); Almirante, Titán Geoda y Arconte rehechos más grandes; Sirena, Escarabajo geoda y Barquero redibujados</li>
+          <li>Contraste: Tejedora de espinas, Salamandra y Eco aclarados; Cangrejo estrechado; cascada del mundo 7 y zona de forjas del 8 retocadas</li>
+          <li>Abiertos todos los «golpe recibido» que no se habían mirado: sin fallos</li>
+        </ul>
+      </div>
+      <div class="entry">
+        <time>14 nov 2026</time>
+        <h3>Segunda pasada: cinco fondos y cinco criaturas</h3>
+        <ul>
+          <li>Fondos de los mundos 5, 6, 7, 8 y 9 rehechos: más planos de profundidad, hitos grandes con luz y sombra, y la franja bajo el camino trabajada</li>
+          <li>Coloso de arenisca, Cangrejo de marea, Señor del Horno y Grifo de la Ciudadela redibujados desde cero</li>
+          <li>Heraldo de la Fractura rehecho como jefe final: fotograma propio de 160 × 126, una grieta con ojos, seis brazos y corona de esquirlas</li>
+        </ul>
+      </div>
+      <div class="entry">
+        <time>14 nov 2026</time>
+        <h3>Mundos 3 a 10</h3>
+        <ul>
+          <li>Ocho fondos nuevos en siete capas, Normal y Torment: marismas, cañones, cumbres, costa, cavernas, forjas, ciudadela y la Grieta</li>
+          <li>Treinta y dos criaturas nuevas; doce con esqueleto propio (sapo, escorpión, buitre, lobo, cangrejo, sirena, escarabajo, murciélago, salamandra, grifo, fauces y espectros que flotan)</li>
+          <li>Cada criatura se registra sola y cada mundo se describe en un fichero de datos; esta página se genera a partir de ellos</li>
+          <li>Las tarjetas ya no usan GIF: se dibujan desde un atlas por figura, igual que la tira</li>
+        </ul>
+      </div>
+      <div class="entry">
+        <time>14 nov 2026</time>
+        <h3>Mundo 2 y nueva reacción al daño</h3>
+        <ul>
+          <li>Fondo del Bosque viejo de musgo en siete capas, Normal y Torment</li>
+          <li>Tejedora de espinas (esqueleto nuevo de ocho patas), Aparecido musgoso, Invocaesporas y el jefe Guardián Astado</li>
+          <li>«Recibir daño» rehecho en los once modelos, con pies plantados, latigazo, paso atrás y recuperación; cada uno con su carácter</li>
+          <li>Destello de golpe: los tonos suben dos pasos en su rampa un fotograma y uno el siguiente; el contorno no cambia</li>
+        </ul>
+      </div>
+      <div class="entry">
+        <time>14 nov 2026</time>
+        <h3>Bestiario del mundo 1 completo: jabalí rehecho, furtivo y jefe</h3>
+        <ul>
+          <li>Jabalí: parecía un animal corriente y su carrera era estática; redibujado con púas, colmillos y ojo de brasa, y con un galope con fase de vuelo</li>
+          <li>Furtivo plumacuervo, el enemigo a distancia, con ballesta a dos manos</li>
+          <li>Rey de la Cosecha, el jefe de etapa: el motor admite ahora figuras más altas, cabezas que se desprenden y efectos de impacto en el suelo</li>
+        </ul>
+      </div>
+      <div class="entry">
+        <time>14 nov 2026</time>
+        <h3>Enemigos del mundo 1: espantapájaros y jabalí</h3>
+        <ul>
+          <li>Primer commit de control del rediseño</li>
+          <li>Espantapájaros hueco (humanoide) y Jabalí cerdoso (esqueleto nuevo de cuatro patas), con reposo, avance, ataque, golpe recibido y muerte</li>
+          <li>La tira en vivo los muestra enfrentados al grupo</li>
         </ul>
       </div>
       <div class="entry">
@@ -341,33 +1301,37 @@ section { display: grid; gap: 18px; }
 
 <script>
 (function () {
-  var ANIMS = {"knight": {"idle": {"ms": [170, 170, 170, 170, 170, 170, 170, 170, 170, 170, 170, 170], "loop": true}, "run": {"ms": [47, 47, 47, 47, 47, 47, 47, 47, 47, 47, 47, 47], "loop": true}, "attack": {"ms": [80, 70, 80, 130, 35, 50, 90, 110, 100, 90, 130], "loop": false}, "cleave": {"ms": [80, 70, 80, 120, 35, 50, 80, 110, 100, 90, 120], "loop": false}, "block": {"ms": [50, 50, 90, 60, 50, 80, 90, 90, 100], "loop": false}, "shout": {"ms": [70, 70, 90, 50, 50, 80, 90, 90, 110, 90, 100], "loop": false}, "hurt": {"ms": [40, 50, 90, 80, 80, 80], "loop": false}, "death": {"ms": [50, 40, 70, 70, 80, 80, 90, 70, 60, 70, 90, 120, 160, 1200], "loop": false}}, "ranger": {"idle": {"ms": [170, 170, 170, 170, 170, 170, 170, 170, 170, 170, 170, 170], "loop": true}, "run": {"ms": [59, 59, 59, 59, 59, 59, 59, 59, 59, 59, 59, 59], "loop": true}, "attack": {"ms": [90, 70, 70, 70, 80, 80, 90, 110, 140, 160, 50, 60, 80, 90, 120], "loop": false}, "volley": {"ms": [90, 70, 70, 70, 80, 80, 90, 110, 140, 160, 50, 60, 80, 90, 120], "loop": false}, "quick": {"ms": [60, 50, 50, 50, 60, 45, 50, 50, 50, 60, 45, 60, 70, 80, 100], "loop": false}, "hurt": {"ms": [40, 50, 90, 80, 80, 80], "loop": false}, "death": {"ms": [50, 40, 70, 60, 70, 60, 60, 45, 50, 60, 80, 80, 90, 140, 1200], "loop": false}}, "priest": {"idle": {"ms": [180, 180, 180, 180, 180, 180, 180, 180, 180, 180, 180, 180], "loop": true}, "run": {"ms": [42, 42, 42, 42, 42, 42, 42, 42, 42, 42, 42, 42], "loop": true}, "attack": {"ms": [80, 70, 90, 110, 40, 50, 80, 90, 70, 80, 90, 110], "loop": false}, "cast": {"ms": [100, 90, 110, 80, 80, 90, 110, 130, 70, 90, 90, 100, 100, 140], "loop": false}, "hurt": {"ms": [40, 50, 90, 80, 80, 80], "loop": false}, "death": {"ms": [50, 40, 70, 80, 90, 70, 60, 60, 80, 110, 160, 80, 60, 50, 60, 100, 1200], "loop": false}}};
-  var LAYERS = [["sky", 0], ["clouds", 0.05], ["far", 0.12], ["hills", 0.25], ["meadow", 0.45], ["ground", 1], ["fore", 1.35]];
-  var X = { priest: 196, ranger: 254, knight: 318 };
-  var SKILL = { knight: "cleave", ranger: "volley", priest: "cast" };
-  var FW = 96, FH = 70, ROOT = 40, SPEED = 48, GROUND = 64, PATH_Y = 123;
+  /* data:start */
+  var DATA = {"path_y":123,"figs":{"knight":{"w":96,"h":70,"ground":64.0,"root":40,"anims":{"idle":{"row":0,"n":12,"ms":[170,170,170,170,170,170,170,170,170,170,170,170],"loop":true},"run":{"row":1,"n":14,"ms":[48,48,48,48,48,48,48,48,48,48,48,48,48,48],"loop":true},"attack":{"row":2,"n":11,"ms":[80,70,80,130,35,50,90,110,100,90,130],"loop":false},"cleave":{"row":3,"n":11,"ms":[80,70,80,120,35,50,80,110,100,90,120],"loop":false},"block":{"row":4,"n":9,"ms":[50,50,90,60,50,80,90,90,100],"loop":false},"shout":{"row":5,"n":11,"ms":[70,70,90,50,50,80,90,90,110,90,100],"loop":false},"hurt":{"row":6,"n":9,"ms":[50,40,100,60,90,60,80,60,70],"loop":false},"death":{"row":7,"n":14,"ms":[50,40,70,70,80,80,90,70,60,70,90,120,160,1200],"loop":false}}},"ranger":{"w":96,"h":70,"ground":64.0,"root":40,"anims":{"idle":{"row":0,"n":12,"ms":[170,170,170,170,170,170,170,170,170,170,170,170],"loop":true},"run":{"row":1,"n":12,"ms":[59,59,59,59,59,59,59,59,59,59,59,59],"loop":true},"attack":{"row":2,"n":15,"ms":[90,70,70,70,80,80,90,110,140,160,50,60,80,90,120],"loop":false},"volley":{"row":3,"n":15,"ms":[90,70,70,70,80,80,90,110,140,160,50,60,80,90,120],"loop":false},"quick":{"row":4,"n":15,"ms":[60,50,50,50,60,45,50,50,50,60,45,60,70,80,100],"loop":false},"hurt":{"row":5,"n":9,"ms":[50,40,100,60,90,60,80,60,70],"loop":false},"death":{"row":6,"n":15,"ms":[50,40,70,60,70,60,60,45,50,60,80,80,90,140,1200],"loop":false}}},"priest":{"w":96,"h":70,"ground":64.0,"root":40,"anims":{"idle":{"row":0,"n":12,"ms":[180,180,180,180,180,180,180,180,180,180,180,180],"loop":true},"run":{"row":1,"n":12,"ms":[46,46,46,46,46,46,46,46,46,46,46,46],"loop":true},"attack":{"row":2,"n":12,"ms":[80,70,90,110,40,50,80,90,70,80,90,110],"loop":false},"cast":{"row":3,"n":14,"ms":[100,90,110,80,80,90,110,130,70,90,90,100,100,140],"loop":false},"hurt":{"row":4,"n":9,"ms":[50,40,100,60,90,60,80,60,70],"loop":false},"death":{"row":5,"n":17,"ms":[50,40,70,80,90,70,60,60,80,110,160,80,60,50,60,100,1200],"loop":false}}},"scarecrow":{"w":96,"h":70,"ground":64.0,"root":40,"anims":{"idle":{"row":0,"n":12,"ms":[190,190,190,190,190,190,190,190,190,190,190,190],"loop":true},"run":{"row":1,"n":12,"ms":[95,95,95,95,95,95,95,95,95,95,95,95],"loop":true},"attack":{"row":2,"n":12,"ms":[90,90,110,150,40,50,90,120,100,100,90,120],"loop":false},"hurt":{"row":3,"n":9,"ms":[50,40,100,60,90,60,80,60,70],"loop":false},"death":{"row":4,"n":13,"ms":[50,50,80,80,90,80,70,60,80,90,90,120,1200],"loop":false}}},"boar":{"w":96,"h":70,"ground":64.0,"root":40,"anims":{"idle":{"row":0,"n":12,"ms":[170,170,170,170,170,170,170,170,170,170,170,170],"loop":true},"run":{"row":1,"n":10,"ms":[62,62,62,62,62,62,62,62,62,62],"loop":true},"attack":{"row":2,"n":12,"ms":[80,90,110,150,40,50,90,130,100,90,90,110],"loop":false},"hurt":{"row":3,"n":9,"ms":[50,40,100,60,90,60,80,60,70],"loop":false},"death":{"row":4,"n":13,"ms":[50,50,80,80,90,80,70,60,80,90,90,120,1200],"loop":false}}},"poacher":{"w":96,"h":70,"ground":64.0,"root":40,"anims":{"idle":{"row":0,"n":12,"ms":[170,170,170,170,170,170,170,170,170,170,170,170],"loop":true},"run":{"row":1,"n":12,"ms":[80,80,80,80,80,80,80,80,80,80,80,80],"loop":true},"attack":{"row":2,"n":14,"ms":[80,70,90,110,150,50,70,90,90,130,100,100,90,110],"loop":false},"hurt":{"row":3,"n":9,"ms":[50,40,100,60,90,60,80,60,70],"loop":false},"death":{"row":4,"n":15,"ms":[50,40,70,60,70,60,60,45,50,60,80,80,90,140,1200],"loop":false}}},"king":{"w":128,"h":96,"ground":90.0,"root":52,"anims":{"idle":{"row":0,"n":12,"ms":[200,200,200,200,200,200,200,200,200,200,200,200],"loop":true},"run":{"row":1,"n":12,"ms":[115,115,115,115,115,115,115,115,115,115,115,115],"loop":true},"attack":{"row":2,"n":15,"ms":[90,90,100,110,150,130,40,50,70,80,120,110,100,90,110],"loop":false},"hurt":{"row":3,"n":9,"ms":[50,40,100,60,90,60,80,60,70],"loop":false},"death":{"row":4,"n":17,"ms":[60,50,90,80,90,80,90,70,70,60,70,60,70,70,90,160,1400],"loop":false}}},"spider":{"w":96,"h":70,"ground":64.0,"root":40,"anims":{"idle":{"row":0,"n":12,"ms":[150,150,150,150,150,150,150,150,150,150,150,150],"loop":true},"run":{"row":1,"n":12,"ms":[45,45,45,45,45,45,45,45,45,45,45,45],"loop":true},"attack":{"row":2,"n":12,"ms":[70,70,90,110,160,50,90,130,90,90,80,100],"loop":false},"hurt":{"row":3,"n":9,"ms":[50,40,100,60,90,60,80,60,70],"loop":false},"death":{"row":4,"n":14,"ms":[50,50,70,60,60,60,80,80,90,90,120,110,160,1200],"loop":false}}},"revenant":{"w":96,"h":70,"ground":64.0,"root":40,"anims":{"idle":{"row":0,"n":12,"ms":[190,190,190,190,190,190,190,190,190,190,190,190],"loop":true},"run":{"row":1,"n":12,"ms":[90,90,90,90,90,90,90,90,90,90,90,90],"loop":true},"attack":{"row":2,"n":12,"ms":[90,90,120,150,40,50,70,130,100,100,90,110],"loop":false},"hurt":{"row":3,"n":9,"ms":[50,40,100,60,90,60,80,60,70],"loop":false},"death":{"row":4,"n":14,"ms":[50,50,80,80,100,90,90,70,60,60,80,80,120,1200],"loop":false}}},"sporecaller":{"w":96,"h":70,"ground":64.0,"root":40,"anims":{"idle":{"row":0,"n":12,"ms":[170,170,170,170,170,170,170,170,170,170,170,170],"loop":true},"run":{"row":1,"n":12,"ms":[70,70,70,70,70,70,70,70,70,70,70,70],"loop":true},"attack":{"row":2,"n":13,"ms":[80,90,100,110,160,60,70,70,70,70,90,90,110],"loop":false},"hurt":{"row":3,"n":9,"ms":[50,40,100,60,90,60,80,60,70],"loop":false},"death":{"row":4,"n":14,"ms":[50,50,80,80,90,80,80,70,60,60,80,90,120,1200],"loop":false}}},"warden":{"w":128,"h":96,"ground":90.0,"root":52,"anims":{"idle":{"row":0,"n":12,"ms":[210,210,210,210,210,210,210,210,210,210,210,210],"loop":true},"run":{"row":1,"n":12,"ms":[120,120,120,120,120,120,120,120,120,120,120,120],"loop":true},"attack":{"row":2,"n":15,"ms":[90,100,110,120,180,50,70,80,80,90,120,90,90,90,110],"loop":false},"hurt":{"row":3,"n":9,"ms":[50,40,100,60,90,60,80,60,70],"loop":false},"death":{"row":4,"n":14,"ms":[60,50,90,90,110,110,110,120,120,120,120,140,200,1500],"loop":false}}},"admiral":{"w":128,"h":108,"ground":102.0,"root":52,"anims":{"idle":{"row":0,"n":12,"ms":[200,200,200,200,200,200,200,200,200,200,200,200],"loop":true},"run":{"row":1,"n":12,"ms":[125,125,125,125,125,125,125,125,125,125,125,125],"loop":true},"attack":{"row":2,"n":20,"ms":[90,100,130,80,100,60,70,40,40,60,70,80,90,130,80,70,60,60,60,120],"loop":false},"hurt":{"row":3,"n":9,"ms":[57,46,114,69,103,69,92,69,80],"loop":false},"death":{"row":4,"n":17,"ms":[60,50,90,90,120,110,140,90,110,50,60,60,80,90,110,160,1400],"loop":false}}},"archon":{"w":152,"h":114,"ground":108.0,"root":66,"anims":{"idle":{"row":0,"n":12,"ms":[210,210,210,210,210,210,210,210,210,210,210,210],"loop":true},"run":{"row":1,"n":12,"ms":[120,120,120,120,120,120,120,120,120,120,120,120],"loop":true},"attack":{"row":2,"n":17,"ms":[90,100,100,70,110,170,160,40,50,80,80,90,120,110,100,90,110],"loop":false},"hurt":{"row":3,"n":9,"ms":[60,48,120,72,108,72,96,72,84],"loop":false},"death":{"row":4,"n":27,"ms":[60,50,100,90,130,170,150,90,90,90,130,60,60,60,110,110,100,80,80,80,80,80,80,80,260,200,1500],"loop":false}}},"bat":{"w":96,"h":70,"ground":64.0,"root":40,"anims":{"idle":{"row":0,"n":10,"ms":[58,58,58,58,58,58,58,58,58,58],"loop":true},"run":{"row":1,"n":8,"ms":[46,46,46,46,46,46,46,46],"loop":true},"attack":{"row":2,"n":16,"ms":[50,50,60,60,90,110,170,50,60,60,60,60,60,80,80,70],"loop":false},"hurt":{"row":3,"n":9,"ms":[50,40,100,60,90,60,80,60,70],"loop":false},"death":{"row":4,"n":16,"ms":[50,40,70,60,70,70,70,50,60,60,70,70,90,110,130,1200],"loop":false}}},"beetle":{"w":96,"h":70,"ground":64.0,"root":40,"anims":{"idle":{"row":0,"n":12,"ms":[160,160,160,160,160,160,160,160,160,160,160,160],"loop":true},"run":{"row":1,"n":12,"ms":[75,75,75,75,75,75,75,75,75,75,75,75],"loop":true},"attack":{"row":2,"n":14,"ms":[80,90,110,110,160,40,40,60,100,130,90,90,80,100],"loop":false},"hurt":{"row":3,"n":9,"ms":[50,40,100,60,90,60,80,60,70],"loop":false},"death":{"row":4,"n":15,"ms":[50,50,80,70,90,80,100,70,60,70,90,100,120,200,1200],"loop":false}}},"bellbearer":{"w":128,"h":96,"ground":90.0,"root":52,"anims":{"idle":{"row":0,"n":12,"ms":[210,210,210,210,210,210,210,210,210,210,210,210],"loop":true},"run":{"row":1,"n":12,"ms":[125,125,125,125,125,125,125,125,125,125,125,125],"loop":true},"attack":{"row":2,"n":15,"ms":[90,100,110,110,150,140,45,60,90,80,80,110,100,90,110],"loop":false},"hurt":{"row":3,"n":9,"ms":[50,40,100,60,90,60,80,60,70],"loop":false},"death":{"row":4,"n":16,"ms":[60,50,90,100,130,130,160,80,80,60,60,80,90,100,140,1400],"loop":false}}},"bogwitch":{"w":96,"h":70,"ground":64.0,"root":40,"anims":{"idle":{"row":0,"n":12,"ms":[160,160,160,160,160,160,160,160,160,160,160,160],"loop":true},"run":{"row":1,"n":12,"ms":[65,65,65,65,65,65,65,65,65,65,65,65],"loop":true},"attack":{"row":2,"n":14,"ms":[80,90,100,120,170,50,60,70,70,70,70,90,90,110],"loop":false},"hurt":{"row":3,"n":9,"ms":[50,40,100,60,90,60,80,60,70],"loop":false},"death":{"row":4,"n":16,"ms":[50,50,80,80,80,60,90,90,100,80,80,70,80,100,140,1200],"loop":false}}},"cantor":{"w":96,"h":70,"ground":64.0,"root":40,"anims":{"idle":{"row":0,"n":12,"ms":[170,170,170,170,170,170,170,170,170,170,170,170],"loop":true},"run":{"row":1,"n":10,"ms":[90,90,90,90,90,90,90,90,90,90],"loop":true},"attack":{"row":2,"n":14,"ms":[80,90,100,120,190,50,50,60,60,60,60,70,90,110],"loop":false},"hurt":{"row":3,"n":9,"ms":[50,40,100,60,90,60,80,60,70],"loop":false},"death":{"row":4,"n":15,"ms":[50,50,90,100,150,100,110,60,60,50,70,90,100,130,1200],"loop":false}}},"colossus":{"w":128,"h":96,"ground":90.0,"root":52,"anims":{"idle":{"row":0,"n":12,"ms":[220,220,220,220,220,220,220,220,220,220,220,220],"loop":true},"run":{"row":1,"n":12,"ms":[130,130,130,130,130,130,130,130,130,130,130,130],"loop":true},"attack":{"row":2,"n":15,"ms":[100,100,110,130,200,50,80,80,80,80,110,90,90,90,110],"loop":false},"hurt":{"row":3,"n":9,"ms":[60,48,120,72,108,72,96,72,84],"loop":false},"death":{"row":4,"n":17,"ms":[60,60,100,90,130,110,150,180,60,70,60,60,90,100,120,160,1500],"loop":false}}},"crab":{"w":96,"h":70,"ground":64.0,"root":40,"anims":{"idle":{"row":0,"n":12,"ms":[150,150,150,150,150,150,150,150,150,150,150,150],"loop":true},"run":{"row":1,"n":12,"ms":[50,50,50,50,50,50,50,50,50,50,50,50],"loop":true},"attack":{"row":2,"n":15,"ms":[80,80,90,100,150,130,40,50,70,80,120,100,100,90,110],"loop":false},"hurt":{"row":3,"n":9,"ms":[50,40,100,60,90,60,80,60,70],"loop":false},"death":{"row":4,"n":15,"ms":[50,50,90,80,90,70,70,80,90,80,80,70,90,130,1200],"loop":false}}},"drowned":{"w":96,"h":70,"ground":64.0,"root":40,"anims":{"idle":{"row":0,"n":12,"ms":[180,180,180,180,180,180,180,180,180,180,180,180],"loop":true},"run":{"row":1,"n":12,"ms":[100,100,100,100,100,100,100,100,100,100,100,100],"loop":true},"attack":{"row":2,"n":14,"ms":[90,90,100,110,150,50,70,130,50,70,80,110,100,110],"loop":false},"hurt":{"row":3,"n":9,"ms":[50,40,100,60,90,60,80,60,70],"loop":false},"death":{"row":4,"n":13,"ms":[50,50,90,90,110,110,110,110,110,110,120,200,1200],"loop":false}}},"echo":{"w":96,"h":70,"ground":64.0,"root":40,"anims":{"idle":{"row":0,"n":12,"ms":[170,170,170,170,60,60,170,170,170,60,60,170],"loop":true},"run":{"row":1,"n":12,"ms":[47,47,47,47,47,47,47,47,47,47,47,47],"loop":true},"attack":{"row":2,"n":12,"ms":[90,80,90,110,170,50,80,80,80,110,90,120],"loop":false},"hurt":{"row":3,"n":9,"ms":[50,40,100,60,90,60,80,60,70],"loop":false},"death":{"row":4,"n":16,"ms":[50,50,80,80,110,110,150,50,50,60,60,60,70,80,110,1200],"loop":false}}},"ferryman":{"w":128,"h":96,"ground":90.0,"root":52,"anims":{"idle":{"row":0,"n":12,"ms":[210,210,210,210,210,210,210,210,210,210,210,210],"loop":true},"run":{"row":1,"n":12,"ms":[120,120,120,120,120,120,120,120,120,120,120,120],"loop":true},"attack":{"row":2,"n":16,"ms":[90,90,100,110,130,150,40,50,70,90,90,90,90,100,100,110],"loop":false},"hurt":{"row":3,"n":9,"ms":[60,48,120,72,108,72,96,72,84],"loop":false},"death":{"row":4,"n":21,"ms":[60,50,90,90,110,80,80,70,70,60,60,60,70,70,90,80,80,70,90,100,1400],"loop":false}}},"frostwolf":{"w":96,"h":70,"ground":64.0,"root":40,"anims":{"idle":{"row":0,"n":12,"ms":[160,160,160,160,160,160,160,160,160,160,160,160],"loop":true},"run":{"row":1,"n":10,"ms":[56,56,56,56,56,56,56,56,56,56],"loop":true},"attack":{"row":2,"n":13,"ms":[80,90,110,170,40,50,100,80,110,80,70,70,100],"loop":false},"hurt":{"row":3,"n":9,"ms":[50,40,100,60,90,60,80,60,70],"loop":false},"death":{"row":4,"n":14,"ms":[50,50,80,90,120,140,160,70,70,70,80,90,130,1200],"loop":false}}},"geode":{"w":128,"h":96,"ground":90.0,"root":56,"anims":{"idle":{"row":0,"n":12,"ms":[200,200,200,200,200,200,200,200,200,200,200,200],"loop":true},"run":{"row":1,"n":12,"ms":[115,115,115,115,115,115,115,115,115,115,115,115],"loop":true},"attack":{"row":2,"n":16,"ms":[90,100,140,60,90,110,170,50,70,70,70,90,90,100,90,110],"loop":false},"hurt":{"row":3,"n":9,"ms":[60,48,120,72,108,72,96,72,84],"loop":false},"death":{"row":4,"n":15,"ms":[60,50,90,90,140,70,60,70,80,80,90,100,130,180,1400],"loop":false}}},"gryphon":{"w":96,"h":84,"ground":78.0,"root":40,"anims":{"idle":{"row":0,"n":12,"ms":[160,160,160,160,160,160,160,160,160,160,160,160],"loop":true},"run":{"row":1,"n":10,"ms":[62,62,62,62,62,62,62,62,62,62],"loop":true},"attack":{"row":2,"n":14,"ms":[80,80,100,60,110,170,40,60,80,110,100,90,90,110],"loop":false},"hurt":{"row":3,"n":9,"ms":[50,40,100,60,90,60,80,60,70],"loop":false},"death":{"row":4,"n":15,"ms":[50,50,80,90,170,70,70,60,70,90,100,110,130,150,1200],"loop":false}}},"legionary":{"w":96,"h":70,"ground":64.0,"root":40,"anims":{"idle":{"row":0,"n":12,"ms":[180,180,180,180,180,180,180,180,180,180,180,180],"loop":true},"run":{"row":1,"n":12,"ms":[90,90,90,90,90,90,90,90,90,90,90,90],"loop":true},"attack":{"row":2,"n":12,"ms":[80,90,100,110,160,50,90,140,90,90,90,100],"loop":false},"hurt":{"row":3,"n":9,"ms":[50,40,100,60,90,60,80,60,70],"loop":false},"death":{"row":4,"n":13,"ms":[50,50,80,80,100,90,90,80,70,70,90,140,1200],"loop":false}}},"magmawyrm":{"w":176,"h":114,"ground":108.0,"root":60,"anims":{"idle":{"row":0,"n":16,"ms":[150,150,150,150,150,150,150,150,150,150,150,150,150,150,150,150],"loop":true},"run":{"row":1,"n":12,"ms":[110,110,110,110,110,110,110,110,110,110,110,110],"loop":true},"attack":{"row":2,"n":17,"ms":[100,100,110,110,130,170,220,45,60,80,90,100,120,110,110,110,120],"loop":false},"hurt":{"row":3,"n":9,"ms":[50,40,100,60,90,60,80,60,70],"loop":false},"death":{"row":4,"n":26,"ms":[60,70,80,90,80,100,80,100,100,120,130,150,160,170,170,180,260,320,60,60,60,60,70,90,140,1500],"loop":false}}},"monk":{"w":96,"h":70,"ground":64.0,"root":40,"anims":{"idle":{"row":0,"n":12,"ms":[180,180,180,180,180,180,180,180,180,180,180,180],"loop":true},"run":{"row":1,"n":12,"ms":[75,75,75,75,75,75,75,75,75,75,75,75],"loop":true},"attack":{"row":2,"n":16,"ms":[80,70,45,45,45,45,90,150,40,50,80,130,100,90,80,100],"loop":false},"hurt":{"row":3,"n":9,"ms":[50,40,100,60,90,60,80,60,70],"loop":false},"death":{"row":4,"n":15,"ms":[50,50,80,90,110,100,140,120,160,50,70,80,90,110,1200],"loop":false}}},"raider":{"w":96,"h":70,"ground":64.0,"root":40,"anims":{"idle":{"row":0,"n":12,"ms":[150,150,150,150,150,150,150,150,150,150,150,150],"loop":true},"run":{"row":1,"n":12,"ms":[50,50,50,50,50,50,50,50,50,50,50,50],"loop":true},"attack":{"row":2,"n":15,"ms":[70,80,110,40,50,60,60,90,40,60,130,90,90,80,100],"loop":false},"hurt":{"row":3,"n":9,"ms":[50,40,100,60,90,60,80,60,70],"loop":false},"death":{"row":4,"n":15,"ms":[50,40,70,70,80,70,80,60,60,50,70,60,80,120,1200],"loop":false}}},"rimewraith":{"w":96,"h":70,"ground":64.0,"root":40,"anims":{"idle":{"row":0,"n":12,"ms":[170,170,170,170,170,170,170,170,170,170,170,170],"loop":true},"run":{"row":1,"n":12,"ms":[90,90,90,90,90,90,90,90,90,90,90,90],"loop":true},"attack":{"row":2,"n":13,"ms":[80,90,100,110,170,60,70,70,70,70,90,90,110],"loop":false},"hurt":{"row":3,"n":9,"ms":[50,40,100,60,90,60,80,60,70],"loop":false},"death":{"row":4,"n":14,"ms":[50,50,90,100,120,120,130,80,70,60,80,90,120,1200],"loop":false}}},"salamander":{"w":96,"h":70,"ground":64.0,"root":40,"anims":{"idle":{"row":0,"n":12,"ms":[160,160,160,160,160,160,160,160,160,160,160,160],"loop":true},"run":{"row":1,"n":12,"ms":[58,58,58,58,58,58,58,58,58,58,58,58],"loop":true},"attack":{"row":2,"n":14,"ms":[80,80,90,100,130,120,50,60,60,60,60,70,90,100],"loop":false},"hurt":{"row":3,"n":9,"ms":[50,40,100,60,90,60,80,60,70],"loop":false},"death":{"row":4,"n":15,"ms":[50,50,80,80,100,90,110,90,100,100,120,120,140,200,1200],"loop":false}}},"scorpion":{"w":96,"h":70,"ground":64.0,"root":40,"anims":{"idle":{"row":0,"n":12,"ms":[140,140,140,140,140,140,140,140,140,140,140,140],"loop":true},"run":{"row":1,"n":12,"ms":[42,42,42,42,42,42,42,42,42,42,42,42],"loop":true},"attack":{"row":2,"n":14,"ms":[70,70,90,110,170,40,50,70,80,120,90,90,80,100],"loop":false},"hurt":{"row":3,"n":9,"ms":[50,40,100,60,90,60,80,60,70],"loop":false},"death":{"row":4,"n":16,"ms":[50,50,80,60,80,60,80,70,90,80,80,60,80,90,120,1200],"loop":false}}},"shardling":{"w":96,"h":70,"ground":64.0,"root":40,"anims":{"idle":{"row":0,"n":12,"ms":[150,150,150,150,150,150,150,150,150,150,150,150],"loop":true},"run":{"row":1,"n":12,"ms":[50,50,50,50,50,50,50,50,50,50,50,50],"loop":true},"attack":{"row":2,"n":13,"ms":[70,80,100,110,170,40,50,90,130,90,90,80,100],"loop":false},"hurt":{"row":3,"n":9,"ms":[50,40,100,60,90,60,80,60,70],"loop":false},"death":{"row":4,"n":15,"ms":[50,50,80,90,130,50,50,50,60,60,70,80,90,130,1200],"loop":false}}},"siren":{"w":96,"h":70,"ground":64.0,"root":40,"anims":{"idle":{"row":0,"n":12,"ms":[170,170,170,170,170,170,170,170,170,170,170,170],"loop":true},"run":{"row":1,"n":12,"ms":[80,80,80,80,80,80,80,80,80,80,80,80],"loop":true},"attack":{"row":2,"n":14,"ms":[80,90,110,150,60,70,70,70,70,70,90,90,90,110],"loop":false},"hurt":{"row":3,"n":9,"ms":[50,40,100,60,90,60,80,60,70],"loop":false},"death":{"row":4,"n":16,"ms":[50,50,90,100,160,80,90,80,70,60,80,100,120,90,120,1200],"loop":false}}},"slagimp":{"w":96,"h":70,"ground":64.0,"root":40,"anims":{"idle":{"row":0,"n":12,"ms":[120,120,120,120,120,120,120,120,120,120,120,120],"loop":true},"run":{"row":1,"n":10,"ms":[48,48,48,48,48,48,48,48,48,48],"loop":true},"attack":{"row":2,"n":14,"ms":[70,70,90,100,140,40,60,60,60,60,60,80,80,100],"loop":false},"hurt":{"row":3,"n":9,"ms":[50,40,100,60,90,60,80,60,70],"loop":false},"death":{"row":4,"n":15,"ms":[50,40,70,60,70,60,70,60,60,50,70,90,110,200,1200],"loop":false}}},"smith":{"w":96,"h":70,"ground":64.0,"root":40,"anims":{"idle":{"row":0,"n":12,"ms":[180,180,180,180,180,180,180,180,180,180,180,180],"loop":true},"run":{"row":1,"n":12,"ms":[100,100,100,100,100,100,100,100,100,100,100,100],"loop":true},"attack":{"row":2,"n":15,"ms":[90,90,100,110,150,130,40,50,70,80,120,110,100,90,110],"loop":false},"hurt":{"row":3,"n":9,"ms":[50,40,100,60,90,60,80,60,70],"loop":false},"death":{"row":4,"n":14,"ms":[50,50,90,80,90,70,70,80,100,160,120,130,160,1200],"loop":false}}},"templar":{"w":96,"h":70,"ground":64.0,"root":40,"anims":{"idle":{"row":0,"n":12,"ms":[190,190,190,190,190,190,190,190,190,190,190,190],"loop":true},"run":{"row":1,"n":12,"ms":[84,84,84,84,84,84,84,84,84,84,84,84],"loop":true},"attack":{"row":2,"n":13,"ms":[90,90,110,120,170,40,50,90,130,100,100,90,110],"loop":false},"hurt":{"row":3,"n":9,"ms":[50,40,100,60,90,60,80,60,70],"loop":false},"death":{"row":4,"n":16,"ms":[50,50,90,90,140,80,110,70,70,60,70,60,70,70,120,1200],"loop":false}}},"toad":{"w":96,"h":70,"ground":64.0,"root":40,"anims":{"idle":{"row":0,"n":12,"ms":[140,140,140,140,140,140,140,140,140,140,140,140],"loop":true},"run":{"row":1,"n":12,"ms":[60,60,60,60,60,60,60,60,60,60,60,60],"loop":true},"attack":{"row":2,"n":13,"ms":[80,80,90,100,160,40,60,110,50,50,90,100,110],"loop":false},"hurt":{"row":3,"n":9,"ms":[50,40,100,60,90,60,80,60,70],"loop":false},"death":{"row":4,"n":18,"ms":[50,50,70,60,90,60,70,60,70,60,70,60,90,80,100,100,140,1200],"loop":false}}},"unmaker":{"w":200,"h":129,"ground":123.0,"root":64,"anims":{"idle":{"row":0,"n":16,"ms":[150,150,150,150,150,150,150,150,150,150,150,150,150,150,150,150],"loop":true},"run":{"row":1,"n":12,"ms":[120,120,120,120,120,120,120,120,120,120,120,120],"loop":true},"attack":{"row":2,"n":21,"ms":[100,100,130,40,60,110,110,110,150,80,110,50,60,70,70,80,90,100,100,110,140],"loop":false},"hurt":{"row":3,"n":9,"ms":[50,40,100,60,90,60,80,60,70],"loop":false},"death":{"row":4,"n":25,"ms":[70,50,80,80,90,90,110,70,70,70,70,70,70,70,70,80,80,90,80,80,80,90,100,130,1500],"loop":false}}},"voidmaw":{"w":96,"h":70,"ground":64.0,"root":40,"anims":{"idle":{"row":0,"n":12,"ms":[140,140,140,140,140,140,140,140,140,140,140,140],"loop":true},"run":{"row":1,"n":10,"ms":[80,80,80,80,80,80,80,80,80,80],"loop":true},"attack":{"row":2,"n":12,"ms":[80,90,110,110,160,40,60,90,130,90,90,100],"loop":false},"hurt":{"row":3,"n":9,"ms":[50,40,100,60,90,60,80,60,70],"loop":false},"death":{"row":4,"n":16,"ms":[50,50,70,70,80,110,60,60,60,50,50,60,60,80,120,1200],"loop":false}}},"vulture":{"w":96,"h":70,"ground":64.0,"root":40,"anims":{"idle":{"row":0,"n":16,"ms":[52,52,52,52,52,52,52,52,52,52,52,52,52,52,52,52],"loop":true},"run":{"row":1,"n":10,"ms":[46,46,46,46,46,46,46,46,46,46],"loop":true},"attack":{"row":2,"n":14,"ms":[70,80,100,110,160,50,60,60,70,70,70,80,80,100],"loop":false},"hurt":{"row":3,"n":9,"ms":[50,40,100,60,90,60,80,60,70],"loop":false},"death":{"row":4,"n":17,"ms":[50,50,80,70,70,60,60,40,60,60,70,90,100,100,90,110,1200],"loop":false}}},"weaver":{"w":96,"h":70,"ground":64.0,"root":40,"anims":{"idle":{"row":0,"n":12,"ms":[150,150,150,150,150,150,150,150,150,150,150,150],"loop":true},"run":{"row":1,"n":12,"ms":[80,80,80,80,80,80,80,80,80,80,80,80],"loop":true},"attack":{"row":2,"n":13,"ms":[80,90,100,110,150,120,50,70,70,70,90,90,110],"loop":false},"hurt":{"row":3,"n":9,"ms":[50,40,100,60,90,60,80,60,70],"loop":false},"death":{"row":4,"n":15,"ms":[50,50,80,90,100,90,90,90,90,70,70,70,80,100,1200],"loop":false}}}},"worlds":[{"key":"w01","n":1,"name":"Praderas doradas","layers":[["sky",0.0],["clouds",0.05],["far",0.12],["hills",0.25],["meadow",0.45],["ground",1.0],["fore",1.35]],"cast":["king","poacher","scarecrow","boar"],"atmos":{"normal":[{"fx":"particles","count":22,"color":["#fff4c6","#f8f2e4"],"vx":7,"vy":-3,"sway":3,"alpha":0.5,"ymax":118}],"torment":[{"fx":"pulse","color":"#8f2433","period":2600,"alpha":0.14},{"fx":"particles","count":52,"color":["#8e7c74","#0b0d17","#6b5a59","#8f2433"],"vx":-13,"vy":25,"sway":4,"alpha":0.55},{"fx":"lightning","every":[4500,11000],"flash":"#f08a62","alpha":0.24},{"fx":"eyes","every":[2200,6000],"hold":1500,"color":"#f8dc84","zones":[[0,99,600,108],[0,134,600,154]],"max":3,"size":2,"gap":4}]}},{"key":"w02","n":2,"name":"Bosque viejo de musgo","layers":[["sky",0.0],["far",0.1],["mid",0.22],["mist",0.3],["near",0.5],["ground",1.0],["fore",1.35]],"cast":["warden","sporecaller","revenant","spider"],"atmos":{"normal":[{"fx":"particles","count":26,"color":["#fff4c6","#dde49c"],"vx":4,"vy":-6,"sway":4,"alpha":0.6,"ymax":110,"front":false},{"fx":"particles","count":9,"color":["#d08f34","#bb3a3a","#86ab5a"],"vx":-9,"vy":17,"sway":7,"size":2,"alpha":0.8,"ymax":124}],"torment":[{"fx":"eyes","every":[1400,4200],"hold":1500,"color":"#dde49c","zones":[[0,16,600,40],[0,40,600,66]],"max":4,"size":1,"gap":3},{"fx":"eyes","every":[9000,17000],"hold":2400,"color":"#f08a62","zones":[[20,24,580,58]],"max":1,"size":2,"gap":5},{"fx":"particles","count":46,"color":["#b3c873","#cfc1af","#86ab5a"],"vx":-3,"vy":9,"sway":5,"alpha":0.5,"ymax":126},{"fx":"lightning","every":[9000,19000],"flash":"#b3c873","alpha":0.3}]}},{"key":"w03","n":3,"name":"Marismas de los Pilotes","layers":[["sky",0.0],["far",0.1],["mist",0.2],["huts",0.4],["reeds",0.65],["ground",1.0],["fore",1.35]],"cast":["ferryman","bogwitch","drowned","toad"],"atmos":{"normal":[{"fx":"particles","count":80,"color":["#5a8bc2","#82b0da"],"vx":-48,"vy":250,"len":5,"alpha":0.5,"ymax":126},{"fx":"particles","count":16,"color":["#dde49c","#fff4c6"],"vx":4,"vy":-7,"sway":5,"alpha":0.9,"ymax":112,"front":false}],"torment":[{"fx":"particles","count":90,"color":["#45998f","#a6d8c2"],"vx":-120,"vy":310,"len":7,"alpha":0.45,"ymax":126},{"fx":"lightning","every":[3500,9000],"flash":"#d9f1e3","alpha":0.42,"bolt":"#fffaf0","x":[30,570],"y":[8,96],"shake":2},{"fx":"eyes","every":[1600,4200],"hold":1700,"color":"#d9f1e3","zones":[[0,100,600,110],[0,134,600,152]],"max":3,"size":1,"gap":3}]}},{"key":"w04","n":4,"name":"Cañones de Roca Roja","layers":[["sky",0.0],["far",0.08],["buttes",0.18],["mist",0.26],["walls",0.45],["ground",1.0],["fore",1.35]],"cast":["colossus","vulture","raider","scorpion"],"atmos":{"normal":[{"fx":"particles","count":22,"color":"#fff4c6","vx":7,"vy":-9,"sway":3,"alpha":0.4,"front":false},{"fx":"particles","count":16,"color":"#f8c48a","vx":-64,"vy":5,"len":3,"alpha":0.3,"ymax":126}],"torment":[{"fx":"particles","count":64,"color":["#a96628","#8c5e3e"],"vx":-260,"vy":20,"len":6,"alpha":0.5,"ymax":126,"front":false},{"fx":"particles","count":24,"color":["#d08f34","#ebb94f"],"vx":-350,"vy":26,"len":9,"alpha":0.4,"ymax":132},{"fx":"lightning","every":[3200,8500],"flash":"#f8dc84","alpha":0.38,"bolt":"#fff4c6","x":[30,570],"y":[0,88],"shake":1},{"fx":"flicker","every":[5000,11000],"dur":420,"color":"#1e1520","alpha":0.28}]}},{"key":"w05","n":5,"name":"Cumbres del Monasterio","layers":[["sky",0.0],["far",0.08],["ridge",0.2],["mist",0.3],["slopes",0.48],["ground",1.0],["fore",1.35]],"cast":["bellbearer","rimewraith","monk","frostwolf"],"atmos":{"normal":[{"fx":"particles","count":46,"color":["#f8f2e4","#b4d4ee"],"vx":-12,"vy":24,"sway":3,"alpha":0.6,"ymax":128},{"fx":"particles","count":30,"color":"#82b0da","vx":-7,"vy":15,"sway":2,"alpha":0.5,"ymax":116,"front":false}],"torment":[{"fx":"particles","count":70,"color":["#e6e6e8","#f8f2e4"],"vx":-160,"vy":52,"len":3,"alpha":0.5,"ymax":122,"front":false},{"fx":"particles","count":80,"color":["#fffaf0","#e6e6e8"],"vx":-250,"vy":76,"len":6,"alpha":0.5,"ymax":150},{"fx":"lightning","every":[3500,9000],"flash":"#212a40","alpha":0.38,"bolt":"#0b0d17","x":[40,560],"y":[0,84],"shake":1},{"fx":"eyes","every":[2200,6000],"hold":1700,"color":"#0b0d17","zones":[[0,30,600,78]],"max":3,"size":2,"gap":4}]}},{"key":"w06","n":6,"name":"Costa de las Ruinas Hundidas","layers":[["sky",0.0],["far",0.06],["mid",0.18],["mist",0.26],["near",0.5],["ground",1.0],["fore",1.35]],"cast":["admiral","siren","legionary","crab"],"atmos":{"normal":[{"fx":"particles","count":28,"color":["#a6d8c2","#e8ddca"],"vx":16,"vy":-4,"sway":2,"alpha":0.4,"ymax":112,"front":false}],"torment":[{"fx":"lightning","every":[3500,9000],"flash":"#b4d4ee","alpha":0.36,"bolt":"#fffaf0","x":[320,590],"y":[34,84],"shake":1},{"fx":"particles","count":80,"color":["#5a8bc2","#82b0da"],"vx":-80,"vy":250,"len":5,"alpha":0.38},{"fx":"eyes","every":[4000,9000],"hold":1700,"color":"#e1f0fb","zones":[[300,87,596,93],[4,87,150,93]],"max":2,"size":1,"gap":4},{"fx":"pulse","color":"#0b0d17","period":5400,"alpha":0.18}]}},{"key":"w07","n":7,"name":"Cavernas de cristal y hongos","layers":[["sky",0.0],["far",0.08],["mid",0.22],["mist",0.34],["near",0.5],["ground",1.0],["fore",1.35]],"cast":["geode","bat","shardling","beetle"],"atmos":{"normal":[{"fx":"particles","count":44,"color":["#a6d8c2","#b3c873","#45998f","#f8dc84"],"vx":-4,"vy":6,"sway":3,"alpha":0.6,"ymax":116,"front":false},{"fx":"particles","count":9,"color":["#d9f1e3","#dde49c"],"vx":-7,"vy":9,"sway":4,"alpha":0.5,"ymax":122},{"fx":"particles","count":7,"color":"#6fb9a6","vx":0,"vy":120,"len":2,"alpha":0.45,"ymax":118,"front":false}],"torment":[{"fx":"flicker","every":[3600,9000],"dur":520,"color":"#0b0d17","alpha":0.32},{"fx":"pulse","color":"#6a3559","period":4400,"alpha":0.15},{"fx":"particles","count":78,"color":["#da7b66","#93455f","#b09f91","#ee9f72"],"vx":-3,"vy":15,"sway":4,"alpha":0.5,"ymax":126},{"fx":"eyes","every":[1500,4200],"hold":1500,"color":"#f8c48a","zones":[[0,24,600,44]],"max":3,"size":1,"gap":3},{"fx":"eyes","every":[2600,7000],"hold":1900,"color":"#f8c48a","zones":[[0,142,600,154]],"max":2,"size":2,"gap":4}]}},{"key":"w08","n":8,"name":"Tierras de ceniza y forjas","layers":[["sky",0.0],["clouds",0.04],["far",0.1],["forges",0.28],["mist",0.6],["ground",1.0],["fore",1.35]],"cast":["magmawyrm","slagimp","smith","salamander"],"atmos":{"normal":[{"fx":"particles","count":34,"color":["#f8dc84","#ebb94f","#dc5f48"],"vx":7,"vy":-24,"sway":3,"alpha":0.85,"ymax":112,"front":false},{"fx":"particles","count":26,"color":["#b09f91","#6b5a59"],"vx":-9,"vy":13,"sway":4,"alpha":0.5}],"torment":[{"fx":"particles","count":84,"color":["#cfc1af","#8e7c74","#77839a"],"vx":-13,"vy":27,"sway":5,"alpha":0.55},{"fx":"lightning","every":[3800,9500],"flash":"#e1f0fb","alpha":0.32,"shake":1},{"fx":"flicker","every":[2800,7500],"dur":260,"color":"#0b0d17","alpha":0.28},{"fx":"pulse","color":"#2e4a88","period":4400,"alpha":0.1}]},"slots":[536,426,382,338]},{"key":"w09","n":9,"name":"Ciudadela entre las nubes","layers":[["sky",0.0],["clouds",0.04],["far",0.1],["citadel",0.22],["terrace",0.5],["ground",1.0],["fore",1.35]],"cast":["archon","cantor","templar","gryphon"],"atmos":{"normal":[{"fx":"particles","count":16,"color":["#fffaf0","#fff4c6"],"vx":-5,"vy":-3,"sway":3,"alpha":0.55,"ymax":112,"front":false},{"fx":"particles","count":5,"color":"#fffaf0","vx":-16,"vy":10,"sway":7,"len":2,"alpha":0.6,"ymax":122}],"torment":[{"fx":"particles","count":64,"color":["#151a2b","#cfc1af","#151a2b","#b09f91"],"vx":-12,"vy":24,"sway":4,"len":2,"alpha":0.55,"ymax":126},{"fx":"pulse","color":"#0b0d17","period":5600,"alpha":0.2},{"fx":"lightning","every":[3800,9500],"flash":"#d08f34","alpha":0.3},{"fx":"flicker","every":[7000,15000],"dur":240,"color":"#0b0d17","alpha":0.3}]}},{"key":"w10","n":10,"name":"La Grieta","layers":[["sky",0.0],["fragments",0.06],["islands",0.16],["mist",0.3],["near",0.5],["ground",1.0],["fore",1.35]],"cast":["unmaker","weaver","echo","voidmaw"],"atmos":{"normal":[{"fx":"particles","count":44,"color":["#cba2dd","#f8f2e4","#8556ad"],"vx":5,"vy":-13,"sway":2,"alpha":0.55,"ymax":126,"front":false},{"fx":"pulse","color":"#371e62","period":5600,"alpha":0.1}],"torment":[{"fx":"lightning","every":[2600,6400],"flash":"#f8f2e4","alpha":0.42,"bolt":"#fffaf0","x":[20,430],"y":[0,58],"shake":2},{"fx":"lightning","every":[1500,4200],"flash":"#97a1b3","alpha":0.14},{"fx":"particles","count":54,"color":["#f8f2e4","#77839a","#cfc1af"],"vx":9,"vy":-92,"len":3,"alpha":0.5,"ymax":126,"front":false},{"fx":"particles","count":14,"color":"#e8ddca","vx":12,"vy":-120,"len":4,"alpha":0.4,"ymax":150},{"fx":"eyes","every":[1400,3800],"hold":1300,"color":"#ead2f0","zones":[[0,136,600,152],[10,14,420,52]],"max":4,"size":2,"gap":4},{"fx":"flicker","every":[5200,11000],"dur":260,"color":"#0b0d17","alpha":0.3}]},"slots":[536,430,386,342]}],"candidates":[]};
+/* data:end */
+  // The party's places and, in front of it, the four slots a world's cast takes (boss, ranged, melee, beast).
+  var X = { priest: 176, ranger: 232, knight: 292 };
+  var SLOTS = [530, 462, 414, 366];
   var ORDER = ["priest", "ranger", "knight"];
+  var SKILL = { knight: "cleave", ranger: "volley", priest: "cast" };
+  var SPEED = 48, PATH_Y = DATA.path_y;
+  var worldBy = {};
+  DATA.worlds.forEach(function (w) { worldBy[w.key] = w; });
   var canvas = document.getElementById("strip");
   var ctx = canvas.getContext("2d");
   ctx.imageSmoothingEnabled = false;
-  var state = { mode: "run", grade: "normal", zoom: 2 };
+  var state = { world: DATA.worlds.length ? DATA.worlds[0].key : "", mode: "run", grade: "normal", zoom: 2 };
+  // A final-boss candidate shown alone in front of the party (world 10 only); null = the world's own cast.
+  var solo = null;
   var userZoom = false;
-  var img = {};
-  function load(key, src) {
-    return new Promise(function (res) {
+
+  // Images load when first needed: a world's backdrop when it is chosen, a figure's atlas when it is on screen.
+  var img = {}, asked = {};
+  function need(key) {
+    if (img[key]) return img[key];
+    if (!asked[key]) {
+      asked[key] = true;
       var i = new Image();
-      i.onload = function () { img[key] = i; res(); };
-      i.onerror = function () { res(); };
-      i.src = src;
-    });
+      i.onload = function () { img[key] = i; };
+      i.src = "img/" + key + ".png";
+    }
+    return null;
   }
-  var jobs = [];
-  ["normal", "torment"].forEach(function (g) {
-    LAYERS.forEach(function (l) { jobs.push(load(g + "_" + l[0], "img/" + g + "_" + l[0] + ".png")); });
-  });
-  ORDER.forEach(function (c) {
-    Object.keys(ANIMS[c]).forEach(function (a) { jobs.push(load(c + "_" + a, "img/" + c + "_" + a + ".png")); });
-  });
 
   function sum(d) { var t = 0; for (var i = 0; i < d.length; i++) t += d[i]; return t; }
   function frameOf(d, t) {
@@ -375,71 +1339,271 @@ section { display: grid; gap: 18px; }
     return d.length - 1;
   }
   function animFor(c) {
-    if (state.mode === "skill") return SKILL[c];
-    return state.mode;
+    var want = state.mode === "skill" ? (SKILL[c] || "attack") : state.mode;
+    return DATA.figs[c].anims[want] ? want : "idle";
+  }
+
+  // ---- Atmosphere: the weather and the omens of a world's grade, run in real time (data: each backdrop's ATMOSPHERE).
+  var fxClock = 0, fxState = {}, shakeUntil = 0, shakeAmp = 0;
+  function rnd(a, b) { return a + Math.random() * (b - a); }
+  function pxLine(x0, y0, x1, y1) {
+    x0 = Math.round(x0); y0 = Math.round(y0); x1 = Math.round(x1); y1 = Math.round(y1);
+    var dx = Math.abs(x1 - x0), dy = -Math.abs(y1 - y0), sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1, err = dx + dy, guard = 0;
+    while (guard++ < 900) {
+      ctx.fillRect(x0, y0, 1, 1);
+      if (x0 === x1 && y0 === y1) break;
+      var e2 = 2 * err;
+      if (e2 >= dy) { err += dy; x0 += sx; }
+      if (e2 <= dx) { err += dx; y0 += sy; }
+    }
+  }
+  function makeBolt(fx) {
+    var xr = fx.x || [40, 560], yr = fx.y || [0, 96], x = rnd(xr[0], xr[1]), y = yr[0], main = [[x, y]], forks = [];
+    while (y < yr[1]) {
+      y = Math.min(yr[1], y + rnd(5, 10));
+      x += rnd(-7, 7);
+      main.push([x, y]);
+      if (Math.random() < 0.22) {
+        var bx = x, by = y, dir = Math.random() < 0.5 ? -1 : 1, br = [[bx, by]];
+        for (var k = 0; k < 3; k++) { bx += dir * rnd(3, 8); by += rnd(3, 7); br.push([bx, by]); }
+        forks.push(br);
+      }
+    }
+    return { main: main, forks: forks };
+  }
+  // How bright a strike is, ms after it lands: a hard flash, a gap, a second flash that dies away.
+  function strike(t) {
+    if (t < 0) return 0;
+    if (t < 70) return 1;
+    if (t < 120) return 0.2;
+    if (t < 200) return 0.8;
+    if (t < 460) return 0.5 * (1 - (t - 200) / 260);
+    return 0;
+  }
+  function fxOf(key, make) { return fxState[key] || (fxState[key] = make()); }
+  function atmos(phase, dt) {
+    var w = worldBy[state.world], list = (w && w.atmos && w.atmos[state.grade]) || [];
+    list.forEach(function (fx, i) {
+      var key = state.world + ":" + state.grade + ":" + i, st, k;
+      if (fx.fx === "lightning") {
+        st = fxOf(key, function () { return { next: fxClock + rnd(600, fx.every[1]), at: -1e9, bolt: null }; });
+        if (phase === "sky") {
+          if (fxClock >= st.next) {
+            st.at = fxClock;
+            st.bolt = fx.bolt ? makeBolt(fx) : null;
+            st.next = fxClock + rnd(fx.every[0], fx.every[1]);
+            if (fx.shake) { shakeAmp = fx.shake; shakeUntil = fxClock + 220; }
+          }
+          var lit = strike(fxClock - st.at);
+          if (lit > 0.15 && st.bolt) {
+            ctx.fillStyle = fx.bolt;
+            [st.bolt.main].concat(st.bolt.forks).forEach(function (line) {
+              for (k = 1; k < line.length; k++) pxLine(line[k - 1][0], line[k - 1][1], line[k][0], line[k][1]);
+            });
+          }
+        } else if (phase === "back") {
+          var a = strike(fxClock - st.at) * fx.alpha;
+          if (a > 0.01) { ctx.globalAlpha = a; ctx.fillStyle = fx.flash; ctx.fillRect(0, 0, 600, 160); ctx.globalAlpha = 1; }
+        }
+      } else if (fx.fx === "particles") {
+        var ymax = fx.ymax || 128, front = fx.front !== false;
+        st = fxOf(key, function () {
+          var ps = [];
+          for (var n = 0; n < fx.count; n++) ps.push({ x: Math.random() * 600, y: Math.random() * ymax, ph: Math.random() * 6.28 });
+          return { ps: ps };
+        });
+        if (phase === "sky") {
+          st.ps.forEach(function (p) {
+            p.x += fx.vx * dt / 1000; p.y += fx.vy * dt / 1000;
+            if (p.y > ymax) { p.y -= ymax; p.x = Math.random() * 600; } else if (p.y < 0) { p.y += ymax; p.x = Math.random() * 600; }
+            if (p.x > 600) p.x -= 600; else if (p.x < 0) p.x += 600;
+          });
+        }
+        if ((phase === "front" && front) || (phase === "back" && !front)) {
+          var colors = typeof fx.color === "string" ? [fx.color] : fx.color, len = fx.len || 1, size = fx.size || 1;
+          var sp = Math.sqrt(fx.vx * fx.vx + fx.vy * fx.vy) || 1;
+          ctx.globalAlpha = fx.alpha === undefined ? 0.7 : fx.alpha;
+          st.ps.forEach(function (p, n) {
+            var x = p.x + (fx.sway ? Math.sin(fxClock / 600 + p.ph) * fx.sway : 0);
+            ctx.fillStyle = colors[n % colors.length];
+            if (len > 1) pxLine(x, p.y, x - fx.vx / sp * len, p.y - fx.vy / sp * len);
+            else ctx.fillRect(Math.round(x), Math.round(p.y), size, size);
+          });
+          ctx.globalAlpha = 1;
+        }
+      } else if (fx.fx === "eyes") {
+        st = fxOf(key, function () { return { next: fxClock + rnd(300, fx.every[1]), open: [] }; });
+        if (phase === "sky") {
+          st.open = st.open.filter(function (e) { return e.until > fxClock; });
+          if (fxClock >= st.next && st.open.length < (fx.max || 3)) {
+            var z = fx.zones[Math.floor(Math.random() * fx.zones.length)];
+            st.open.push({ x: Math.round(rnd(z[0], z[2])), y: Math.round(rnd(z[1], z[3])), born: fxClock, until: fxClock + fx.hold });
+            st.next = fxClock + rnd(fx.every[0], fx.every[1]);
+          }
+        } else if (phase === "back") {
+          var es = fx.size || 1, gap = fx.gap || 3;
+          ctx.fillStyle = fx.color;
+          st.open.forEach(function (e) {
+            var age = fxClock - e.born, left = e.until - fxClock, mid = Math.abs(age - fx.hold * 0.55);
+            if (age < 70 || left < 70 || mid < 50) return;  // opening, closing, one blink
+            ctx.fillRect(e.x, e.y, es, es);
+            ctx.fillRect(e.x + gap, e.y, es, es);
+          });
+        }
+      } else if (fx.fx === "pulse" && phase === "over") {
+        ctx.globalAlpha = fx.alpha * (0.5 - 0.5 * Math.cos(6.2832 * fxClock / fx.period));
+        ctx.fillStyle = fx.color;
+        ctx.fillRect(0, 0, 600, 160);
+        ctx.globalAlpha = 1;
+      } else if (fx.fx === "flicker") {
+        st = fxOf(key, function () { return { next: fxClock + rnd(500, fx.every[1]), until: 0 }; });
+        if (phase === "sky" && fxClock >= st.next) { st.until = fxClock + fx.dur; st.next = fxClock + rnd(fx.every[0], fx.every[1]); }
+        if (phase === "over" && fxClock < st.until && Math.floor(fxClock / 45) % 2 === 0) {
+          ctx.globalAlpha = fx.alpha; ctx.fillStyle = fx.color; ctx.fillRect(0, 0, 600, 160); ctx.globalAlpha = 1;
+        }
+      }
+    });
   }
 
   var scroll = 0, last = null, clock = 0;
-  function draw(now) {
+  function drawStrip(dt) {
+    var w = worldBy[state.world];
+    if (!w) return;
+    fxClock += dt;
+    if (state.mode === "run") scroll += SPEED * dt / 1000;
+    ctx.clearRect(0, 0, 600, 160);
+    ctx.save();
+    if (fxClock < shakeUntil) ctx.translate(Math.random() < 0.5 ? -shakeAmp : shakeAmp, 0);
+    var bg = need(state.world + "_" + state.grade);
+    function layer(i) {
+      var l = w.layers[i];
+      // Clouds and mist drift on their own, even when the party stands still.
+      var off = (l[0] === "clouds" || l[0] === "mist") ? (scroll * l[1] + clock * 0.002) : scroll * l[1];
+      off = Math.floor(off % 600);
+      ctx.drawImage(bg, 0, i * 160, 600, 160, -off, 0, 600, 160);
+      if (off > 0) ctx.drawImage(bg, 0, i * 160, 600, 160, 600 - off, 0, 600, 160);
+    }
+    var fore = -1, slots = w.slots || SLOTS;
+    w.layers.forEach(function (l, i) {
+      if (l[0] === "fore") { fore = i; } else if (bg) { layer(i); }
+      if (i === 0) atmos("sky", dt);
+    });
+    atmos("back", dt);
+    // Enemies face the party (drawn mirrored). While the party travels there is nobody in the way.
+    var foes = solo && DATA.figs[solo] ? [solo] : w.cast;
+    var cast = state.mode === "run" ? ORDER : ORDER.concat(foes);
+    cast.forEach(function (c, k) {
+      var slot = foes.indexOf(c), foe = slot >= 0, x = foe ? slots[slot] : X[c];
+      var d = DATA.figs[c], name = animFor(c), a = d.anims[name], f;
+      if (a.loop) {
+        f = frameOf(a.ms, clock % sum(a.ms));
+      } else {
+        // One-shots play, then the figure idles a moment before the next; each one starts a beat apart.
+        var total = sum(a.ms), idle = d.anims.idle, rest = name === "death" ? 0 : 900;
+        var tt = (clock + ((foe ? k + 1 : 2 - k) * 380)) % (total + rest);
+        if (tt < total) { f = frameOf(a.ms, tt); } else { a = idle; f = frameOf(idle.ms, (tt - total) % sum(idle.ms)); }
+      }
+      var sw = d.w > 96 ? 16 : 9;
+      ctx.fillStyle = "rgba(11,13,23,0.42)";
+      ctx.fillRect(x - sw, PATH_Y, sw * 2, 2);
+      ctx.fillRect(x - sw + 3, PATH_Y + 2, sw * 2 - 6, 1);
+      var sheet = need("f_" + c);
+      if (!sheet) return;
+      if (foe) {
+        ctx.save();
+        ctx.translate(x, 0);
+        ctx.scale(-1, 1);
+        ctx.drawImage(sheet, f * d.w, a.row * d.h, d.w, d.h, -d.root, PATH_Y - d.ground, d.w, d.h);
+        ctx.restore();
+      } else {
+        ctx.drawImage(sheet, f * d.w, a.row * d.h, d.w, d.h, x - d.root, PATH_Y - d.ground, d.w, d.h);
+      }
+    });
+    atmos("front", dt);
+    if (bg && fore >= 0) layer(fore);
+    atmos("over", dt);
+    ctx.restore();
+  }
+
+  // The animation clips of the cards: small canvases drawn from the same atlases, only while they are on screen.
+  var clips = [].slice.call(document.querySelectorAll("canvas.anim")).map(function (el) {
+    var c2 = el.getContext("2d");
+    c2.imageSmoothingEnabled = false;
+    return { el: el, ctx: c2, fig: DATA.figs[el.dataset.char], char: el.dataset.char, anim: el.dataset.anim, seen: false };
+  }).filter(function (c) { return c.fig && c.fig.anims[c.anim]; });
+  if ("IntersectionObserver" in window) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) { clips.forEach(function (c) { if (c.el === e.target) c.seen = e.isIntersecting; }); });
+    }, { rootMargin: "200px" });
+    clips.forEach(function (c) { io.observe(c.el); });
+  } else {
+    clips.forEach(function (c) { c.seen = true; });
+  }
+  function drawClips(now) {
+    clips.forEach(function (c) {
+      if (!c.seen) return;
+      var sheet = need("f_" + c.char);
+      if (!sheet) return;
+      var a = c.fig.anims[c.anim], total = sum(a.ms), hold = a.loop ? 0 : 700;
+      var t = now % (total + hold), f = t < total ? frameOf(a.ms, t) : a.n - 1;
+      c.ctx.clearRect(0, 0, c.fig.w, c.fig.h);
+      c.ctx.drawImage(sheet, f * c.fig.w, a.row * c.fig.h, c.fig.w, c.fig.h, 0, 0, c.fig.w, c.fig.h);
+    });
+  }
+
+  function frame(now) {
     if (last === null) last = now;
     var dt = Math.min(100, now - last);
     last = now;
     clock += dt;
-    if (state.mode === "run") scroll += SPEED * dt / 1000;
-    ctx.clearRect(0, 0, 600, 160);
-    LAYERS.forEach(function (l) {
-      if (l[0] === "fore") return;
-      var im = img[state.grade + "_" + l[0]];
-      if (!im) return;
-      var off = l[0] === "clouds" ? (scroll * l[1] + clock * 0.002) : scroll * l[1];
-      off = Math.floor(off % 600);
-      ctx.drawImage(im, -off, 0);
-      if (off > 0) ctx.drawImage(im, 600 - off, 0);
-    });
-    ORDER.forEach(function (c, k) {
-      var name = animFor(c), a = ANIMS[c][name], f;
-      if (a.loop) {
-        f = frameOf(a.ms, clock % sum(a.ms));
-      } else {
-        // One-shots play, then the hero idles a moment before the next; each class starts a beat apart.
-        var total = sum(a.ms), idle = ANIMS[c].idle, rest = name === "death" ? 0 : 900;
-        var tt = (clock + (2 - k) * 380) % (total + rest);
-        if (tt < total) { f = frameOf(a.ms, tt); } else { name = "idle"; f = frameOf(idle.ms, (tt - total) % sum(idle.ms)); }
-      }
-      var sheet = img[c + "_" + name];
-      ctx.fillStyle = "rgba(11,13,23,0.42)";
-      ctx.fillRect(X[c] - 9, PATH_Y, 18, 2);
-      ctx.fillRect(X[c] - 6, PATH_Y + 2, 12, 1);
-      if (sheet) ctx.drawImage(sheet, f * FW, 0, FW, FH, X[c] - ROOT, PATH_Y - GROUND, FW, FH);
-    });
-    var fore = img[state.grade + "_fore"];
-    if (fore) {
-      var fo = Math.floor((scroll * 1.35) % 600);
-      ctx.drawImage(fore, -fo, 0);
-      if (fo > 0) ctx.drawImage(fore, 600 - fo, 0);
-    }
-    requestAnimationFrame(draw);
+    drawStrip(dt);
+    drawClips(now);
+    requestAnimationFrame(frame);
   }
 
   function apply() {
     canvas.style.width = (600 * state.zoom) + "px";
     canvas.style.height = (160 * state.zoom) + "px";
-    ["mode", "grade", "zoom"].forEach(function (key) {
+    ["world", "mode", "grade", "zoom"].forEach(function (key) {
       document.querySelectorAll("[data-" + key + "]").forEach(function (b) {
         b.setAttribute("aria-pressed", String(String(b.dataset[key]) === String(state[key])));
       });
     });
+    var w = worldBy[state.world], label = document.getElementById("world-name");
+    if (w && label) label.textContent = "Mundo " + w.n + " · " + w.name + (solo ? " · candidato a jefe final, solo" : "");
   }
   function fit() {
     if (userZoom) return;
     state.zoom = Math.max(1, Math.min(3, Math.floor(canvas.parentElement.clientWidth / 600)));
     apply();
   }
+  document.querySelectorAll("[data-world]").forEach(function (b) { b.addEventListener("click", function () { state.world = b.dataset.world; solo = null; clock = 0; apply(); }); });
+  document.querySelectorAll("[data-boss]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      solo = b.dataset.boss;
+      state.world = "w10";
+      if (state.mode === "run") state.mode = "idle";
+      clock = 0;
+      apply();
+      document.getElementById("live").scrollIntoView({ behavior: "smooth" });
+    });
+  });
   document.querySelectorAll("[data-mode]").forEach(function (b) { b.addEventListener("click", function () { state.mode = b.dataset.mode; clock = 0; apply(); }); });
   document.querySelectorAll("[data-grade]").forEach(function (b) { b.addEventListener("click", function () { state.grade = b.dataset.grade; apply(); }); });
   document.querySelectorAll("[data-zoom]").forEach(function (b) { b.addEventListener("click", function () { userZoom = true; state.zoom = Number(b.dataset.zoom); apply(); }); });
+  // "See it on the live strip" on each world's section.
+  document.querySelectorAll("[data-goto]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      state.world = b.dataset.goto;
+      solo = null;
+      if (state.mode === "run") state.mode = "idle";
+      clock = 0;
+      apply();
+      document.getElementById("live").scrollIntoView({ behavior: "smooth" });
+    });
+  });
   window.addEventListener("resize", fit);
   fit();
-  Promise.all(jobs).then(function () { requestAnimationFrame(draw); });
+  requestAnimationFrame(frame);
 })();
 </script>

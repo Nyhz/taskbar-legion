@@ -1,0 +1,88 @@
+{
+  "key": "w05",
+  "name_es": "Cumbres del Monasterio",
+  "name_en": "Monastery Peaks",
+  "backdrop_es": "Las cumbres nevadas de noche, bajo una aurora en cortinas: cielo con estrellas y luna, una cordillera lejana con niebla a sus pies, la cresta del monasterio (muros encalados, tejados con nieve, ventanas encendidas, una escalera que sube al risco), laderas con pinos y banderas de oración, el camino de losas con faroles de piedra y, debajo, ventisqueros con rocas, hierba helada y mojones. La nieve cae en tiempo real. La franja que queda detrás de los combatientes (el pie de la cordillera, las laderas y el talud) va en un azul medio para que se lean tanto las figuras claras como las oscuras. En Torment el mundo es una ventisca blanca: el color desaparece y solo quedan hueso y pizarra. El cielo es un vacío pálido con una luna negra y la ceniza de la aurora, la cordillera son fantasmas grises, el monasterio una ruina negra y los pinos, palos negros; lo único con color es el violeta de la Grieta y sus cristales. La ventisca cruza por delante y por detrás de las figuras, cae un rayo negro que oscurece el mundo un instante, y en el blanco se abren pares de ojos oscuros que miran y se cierran.",
+  "foes": [
+    {
+      "key": "frostwolf",
+      "kind": "beast",
+      "name_es": "Lobo de escarcha",
+      "name_en": "Rime Wolf",
+      "role_es": "Bestia · cuatro patas",
+      "bullets_es": [
+        "Un lobo flaco y oscuro, alto hasta el pecho de un hombre, con esquirlas de hielo atravesándole el lomo, las costillas marcadas, zarpas con escarcha y un ojo que arde en frío",
+        "Esqueleto propio: el cuerpo son dos mitades unidas por una bisagra en el lomo, así que el espinazo se arquea y se estira de verdad al galopar; mandíbula articulada y cola simulada",
+        "Salto: se agazapa sobre las patas delanteras con el lomo erizado, aguanta, cruza el aire estirado con la boca abierta, cae sobre la presa, la zarandea y recula",
+        "Muere con un último aullido: el hielo del lomo estalla y se tumba de costado, con las patas por delante y el ojo apagado"
+      ],
+      "anims_es": {
+        "idle": "Reposo",
+        "run": "Galopar",
+        "attack": "Salto",
+        "hurt": "Golpe recibido",
+        "death": "Muerte"
+      }
+    },
+    {
+      "key": "monk",
+      "kind": "melee",
+      "name_es": "Monje caído",
+      "name_en": "Fallen Monk",
+      "role_es": "Cuerpo a cuerpo · guja",
+      "bullets_es": [
+        "Un monje guerrero al que el frío no soltó: piel gris, hielo en la cabeza rapada y en la barba, un ojo con luz fría, el hábito granate y la banda azafrán de su orden, y una guja más alta que él con una borla roja",
+        "Avanza agachado con la guja nivelada al frente, firme mientras el cuerpo trabaja debajo",
+        "Rueda y barrido: suelta una mano, hace girar la guja una vuelta entera como una rueda, la recoge tras el hombro y la descarga en un barrido largo hasta el suelo",
+        "Al morir la escarcha termina su trabajo: se queda rígido, se le escapa la guja, se congela entero y estalla en pedazos; queda un montón de hábito y la guja en el suelo"
+      ],
+      "anims_es": {
+        "idle": "Reposo",
+        "run": "Avanzar",
+        "attack": "Rueda y barrido",
+        "hurt": "Golpe recibido",
+        "death": "Muerte"
+      }
+    },
+    {
+      "key": "rimewraith",
+      "kind": "ranged",
+      "name_es": "Espectro de escarcha",
+      "name_en": "Rime Wraith",
+      "role_es": "Lanzador · flota",
+      "bullets_es": [
+        "Algo que murió en la nieve y sigue llevando el hábito: una capucha coronada de carámbanos alrededor de una cara que es solo un hueco con dos luces, manos largas de hueso y ninguna pierna; de la cintura para abajo la túnica se deshace en jirones que no tocan el suelo",
+        "Flota y cabecea en el aire, con dos esquirlas de hielo girando a su alrededor; al desplazarse se inclina y los jirones se le estiran detrás",
+        "Andanada: se eleva, alza las dos manos, tres esquirlas de hielo crecen sobre la capucha y las lanza hacia delante una tras otra",
+        "Al morir se le apagan las luces, algo pálido sale por lo alto de la capucha y la túnica, vacía, cae hecha un montón"
+      ],
+      "anims_es": {
+        "idle": "Reposo",
+        "run": "Deslizarse",
+        "attack": "Andanada de hielo",
+        "hurt": "Golpe recibido",
+        "death": "Muerte"
+      }
+    },
+    {
+      "key": "bellbearer",
+      "kind": "boss",
+      "name_es": "El Portacampana",
+      "name_en": "The Bell-Bearer",
+      "role_es": "Jefe de etapa",
+      "bullets_es": [
+        "Un yeti que se llevó la campana del monasterio y carga con ella desde entonces: una mole encorvada de pelo blanco sucio, cara azul bajo un ceño pesado con dos ojos de brasa, colmillos, cuernos, carámbanos en los hombros y los brazos, una cuerda de oración roja cruzada al pecho y, en el puño, una campana de bronce",
+        "Camina pesado y la campana se balancea a destiempo, tirándole del brazo; resopla vaho",
+        "Tañido: balancea la campana hacia atrás, la sube con los dos brazos por encima de la cabeza y la estrella boca abajo contra el suelo; suena, y un anillo de sonido corre hacia delante con la escarcha brotando en púas a su paso",
+        "Muere bajo su propia campana: la alza una última vez, le fallan las rodillas y la campana le cae encima; solo asoman brazos y piernas"
+      ],
+      "anims_es": {
+        "idle": "Reposo",
+        "run": "Avanzar",
+        "attack": "Tañido",
+        "hurt": "Golpe recibido",
+        "death": "Muerte"
+      }
+    }
+  ]
+}

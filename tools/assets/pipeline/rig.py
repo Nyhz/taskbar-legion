@@ -39,15 +39,16 @@ def tone_rgb(t: Tone) -> tuple[int, int, int]:
 
 # ----------------------------------------------------------------------------------------- canvas
 class Cel:
-    """One frame: a sparse grid of palette tones."""
+    """One frame: a sparse grid of palette tones. `top` adds rows above y = 0 (tall figures: the ground line
+    stays where it is for everyone and the frame grows upwards)."""
 
-    def __init__(self, w: int, h: int):
-        self.w, self.h = w, h
+    def __init__(self, w: int, h: int, top: int = 0):
+        self.w, self.h, self.top = w, h, top
         self.px: dict[tuple[int, int], Tone] = {}
 
     def put(self, x: float, y: float, t: Tone) -> None:
         xi, yi = int(math.floor(x)), int(math.floor(y))
-        if 0 <= xi < self.w and 0 <= yi < self.h:
+        if 0 <= xi < self.w and -self.top <= yi < self.h:
             self.px[(xi, yi)] = t
 
     def stamp(self, rows: Sequence[str], legend: dict[str, Tone], x: float, y: float, shear: float = 0.0) -> None:
@@ -103,6 +104,14 @@ class Cel:
             self.stamp(rows, legend, pivot[0] - pc, pivot[1] - len(rows))
         else:
             self.stamp_rot(rows, legend, pivot[0], pivot[1], pc + 0.5, float(len(rows)), deg)
+
+    def stamp_pivot(self, rows: Sequence[str], legend: dict[str, Tone], at: Pt, pc: float, pr: float, deg: float) -> None:
+        """A sprite hung on `at` by an arbitrary pivot (pc, pr in sprite pixels) and turned `deg` about it: a
+        head on a neck."""
+        if abs(deg) < 6.0:
+            self.stamp(rows, legend, at[0] - pc, at[1] - pr)
+        else:
+            self.stamp_rot(rows, legend, at[0], at[1], pc, pr, deg)
 
     def limb(self, a: Pt, b: Pt, w0: float, w1: float, ramp: str, idx: tuple[int, int, int], far: bool = False) -> None:
         """A tapered stroke from a to b, shaded dark / mid / light across its width with the lit side
@@ -188,17 +197,29 @@ class Cel:
             if skip and (x, y) in skip:
                 continue
             for n in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
-                if n not in self.px and 0 <= n[0] < self.w and 0 <= n[1] < self.h:
+                if n not in self.px and 0 <= n[0] < self.w and -self.top <= n[1] < self.h:
                     dark = (ramp if ramp != "light" else "ink", 0)
                     if n not in add or sum(tone_rgb(dark)) < sum(tone_rgb(add[n])):
                         add[n] = dark
         self.px.update(add)
 
+    def flash(self, level: float) -> None:
+        """The hit flash: every tone but the outline climbs its ramp (level 1 = two steps). A pale wash over
+        the figure for a frame or two, not a white-out."""
+        steps = int(round(level * 2))
+        if steps <= 0:
+            return
+        for xy, (ramp, i) in list(self.px.items()):
+            if ramp != "light" and i > 0:
+                self.px[xy] = (ramp, min(len(RAMPS[ramp]) - 1, i + steps))
+
     def image(self) -> Image.Image:
-        img = Image.new("RGBA", (self.w, self.h), (0, 0, 0, 0))
+        img = Image.new("RGBA", (self.w, self.h + self.top), (0, 0, 0, 0))
         p = img.load()
         for (x, y), t in self.px.items():
-            p[x, y] = (*tone_rgb(t), 255)
+            # Effects written straight into `px` (smears) can leave the frame; a negative index would wrap round.
+            if 0 <= x < self.w and -self.top <= y < self.h:
+                p[x, y + self.top] = (*tone_rgb(t), 255)
         return img
 
 
@@ -463,6 +484,94 @@ class ChainSpec:
     rest: Pt = (0.0, 1.0)
 
 
+# ----------------------------------------------------------------------------------------- helpers
+def loose(pose: Pose, name: str, held: Pt, root_x: float) -> Pt:
+    """Where a prop is: in the hand (`held`) until the pose lets it go (`<name>_free` 0→1), then on its own at
+    `<name>_at` = (x from root, height above the ground)."""
+    w = pose.get(name + "_free", 0.0)
+    if w <= 0.001:
+        return held
+    ax, ay = pose[name + "_at"]
+    return (held[0] + (root_x + ax - held[0]) * w, held[1] + (GROUND - ay - held[1]) * w)
+
+
+def swing_smear(cel: Cel, tips: Sequence[Pt], hubs: Sequence[Pt]) -> None:
+    """The trail of a swung blade: a crescent along the path its tip swept since the last frame (a hair wide at
+    the old end, half the reach at the new one), painted only where the figure is not."""
+    n = len(tips)
+    if n < 3:
+        return
+    body = set(cel.px)
+    inner = []
+    for i, (t, h) in enumerate(zip(tips, hubs)):
+        k = 0.52 * (i / (n - 1)) ** 0.7
+        inner.append((t[0] + (h[0] - t[0]) * k, t[1] + (h[1] - t[1]) * k))
+    for xy in cel.poly_mask(list(tips) + inner[::-1]):
+        if xy not in body:
+            cel.px[xy] = ("bone", 7)
+    rim = Cel(cel.w, cel.h, cel.top)
+    for p0, p1 in zip(tips[n // 3:], tips[n // 3 + 1:]):
+        rim.line(p0, p1, ("light", 0))
+    for xy, t in rim.px.items():
+        if xy not in body:
+            cel.px[xy] = t
+
+
+# ----------------------------------------------------------------------------------------- taking a hit
+#: Frame times and durations shared by every "hurt": the impact frame holds, the reel is fast, the recovery slower.
+HURT_TIMES = [0.07, 0.16, 0.26, 0.38, 0.50, 0.62, 0.74, 0.87, 1.0]
+HURT_MS = [50, 40, 100, 60, 90, 60, 80, 60, 70]
+
+
+def _mix(a, b, t: float):
+    return tuple(lerp(x, y, t) for x, y in zip(a, b)) if isinstance(b, tuple) else lerp(a, b, t)
+
+
+def stagger_keys(base: Pose, push: float = 4.0, bend: float = 13.0, buckle: float = 2.6, whip: float = 22.0,
+                 over: Optional[dict[str, Pose]] = None, finish: Optional[Callable[[Pose], Pose]] = None) -> list[tuple[float, Pose, str]]:
+    """A blow taken from the front by anything on two legs, keyed from its rest pose.
+
+    The parts react in order, not as a block: the chest is driven back first while the head lags and the chin
+    drops (impact, with the flash); then the body reels — the head whips back, the knees buckle, the rear foot
+    steps back to catch the weight while the front one rocks on its heel; the weight lands and the body swings
+    forward past its rest (catch); and it steps back up to where it stood. Feet are planted in the world: they
+    only move when lifted. `push` px of ground given, `bend` degrees of lean, `buckle` px the knees give,
+    `whip` degrees of head. `over` holds what the arms and props do per phase (impact, mid, reel, catch,
+    recover); a phase left out is blended from its neighbours.
+    """
+    over = dict(over or {})
+    over.setdefault("impact", {})
+    over.setdefault("reel", {})
+    over.setdefault("catch", {})
+    for name, a_, b_, t in (("mid", "impact", "reel", 0.55), ("recover", "catch", None, 0.6)):
+        blend = dict(over.get(name, {}))
+        src, dst = over[a_], (over[b_] if b_ else {})
+        for key_ in set(src) | set(dst):
+            if key_ not in blend:
+                blend[key_] = _mix(src.get(key_, base[key_]), dst.get(key_, base[key_]), t)
+        over[name] = blend
+    n0, f0 = base["footN"][0], base["footF"][0]
+    lean, drop, turn, hdx = base.get("lean", 0.0), base.get("drop", 0.0), base.get("head_rot", 0.0), base.get("head_dx", 0.0)
+
+    def key(name: str, dx: float, d_drop: float, d_lean: float, head: float, d_turn: float, flash: float, n_abs: float, f_abs: float,
+            n: Pt = (0.0, 0.0), f: Pt = (0.0, 0.0)) -> Pose:
+        pose = {**base, "dx": dx, "drop": drop + d_drop, "lean": lean + d_lean, "head_dx": hdx + head, "head_rot": turn + d_turn, "flash": flash,
+                "footN": (n_abs - dx, n[0], n[1]), "footF": (f_abs - dx, f[0], f[1]), **over.get(name, {})}
+        return finish(pose) if finish else pose
+
+    rest = {**base, "flash": 0.0}
+    rest = finish(rest) if finish else rest
+    return [
+        (0.00, rest, "lin"),
+        (0.07, key("impact", -0.8, 0.8, -bend * 0.6, 1.2, whip * 0.5, 1.0, n0, f0), "out3"),
+        (0.16, key("mid", -push * 0.6, buckle * 0.6, -bend * 0.9, 0.0, -whip * 0.5, 0.5, n0 - push * 0.6, f0, n=(2.4, -14.0), f=(0.0, 10.0)), "lin"),
+        (0.26, key("reel", -push, buckle, -bend, -1.2, -whip, 0.0, n0 - push - 1.0, f0, f=(0.0, 18.0)), "out"),
+        (0.50, key("catch", -push + 0.8, buckle * 1.25, bend * 0.4, 0.6, whip * 0.5, 0.0, n0 - push - 1.0, f0 - push * 0.55), "io"),
+        (0.74, key("recover", -push * 0.35, buckle * 0.5, bend * 0.15, 0.2, whip * 0.15, 0.0, n0 - push * 0.35, f0 - push * 0.15, n=(1.6, 8.0)), "io"),
+        (1.00, rest, "io"),
+    ]
+
+
 # ----------------------------------------------------------------------------------------- baking
 @dataclass
 class Anim:
@@ -478,6 +587,7 @@ class Character:
     build: Build
     W = 96
     H = 70
+    TOP = 0  # extra rows above the frame (bosses)
 
     def chains(self) -> dict[str, ChainSpec]:
         return {}
@@ -534,7 +644,8 @@ def bake(char: Character, anim: Anim, sub: int = 4, warm: int = 3) -> list[Image
             for u in range(0, 13):
                 pp = anim.pose_at(lerp(t0, anim.times[i], u / 12))
                 between.append((char.joints(pp), pp))
-        cel = Cel(char.W, char.H)
+        cel = Cel(char.W, char.H, char.TOP)
         char.draw(cel, Js[i], poses[i], {k: rec[k][i] for k in specs}, between)
+        cel.flash(poses[i].get("flash", 0.0))
         frames.append(cel.image())
     return frames

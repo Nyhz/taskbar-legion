@@ -16,7 +16,12 @@ def main(argv: list[str]) -> int:
 
         scene()
         return 0
-    print("commands: chars [knight ranger priest], scene")
+    if cmd == "lab":
+        from .lab_page import main as lab
+
+        lab()
+        return 0
+    print("commands: chars [names…], scene, lab")
     return 1
 
 

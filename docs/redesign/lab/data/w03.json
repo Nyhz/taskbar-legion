@@ -1,0 +1,88 @@
+{
+  "key": "w03",
+  "name_es": "Marismas de los Pilotes",
+  "name_en": "The Stilt Marshes",
+  "backdrop_es": "Marismas bajo la lluvia a la hora azul, en siete capas: cielo con la luna entre nubes de tormenta, la orilla lejana con manglares y una aldea reflejados en el agua, bancos de niebla, el poblado sobre pilotes (casas de tablas y paja, un santuario con farolillos, una atalaya, redes, barcas y pasarelas), cañaverales, la pasarela de tablones por la que camina el grupo y, delante, espadañas y hojas de loto. Detrás de los combatientes el poblado se hunde en la bruma desde los aleros hacia abajo, sus faroles arden bajos y una falda de niebla cubre el agua, para que las figuras se lean sobre una franja tranquila; los tejados y la atalaya conservan su filo por encima. La lluvia ya no está pintada: cae en directo sobre la tira, y las luciérnagas suben despacio desde los juncos. En Torment es «los Ahogados»: verde mar frío que se va al negro. El agua ha subido por encima de las pasarelas, los tejados están rotos, los juncos muertos, el horizonte tiene una palidez de cadáver y la luna es un ojo ciego; donde hubo faroles cuelgan fuegos fatuos. Solo la Grieta y sus cristales son violetas. Atmósfera de Torment: una tormenta con lluvia racheada, relámpagos con rayo que blanquean el cielo tras las figuras y sacuden la tira, y entre rayo y rayo fuegos fatuos que se abren como ojos sobre el agua negra.",
+  "foes": [
+    {
+      "key": "toad",
+      "kind": "beast",
+      "name_es": "Sapo del cieno",
+      "name_en": "Mire Toad",
+      "role_es": "Bestia · saltador",
+      "bullets_es": [
+        "Esqueleto propio: un cuerpo de sapo dibujado a mano sobre patas traseras plegadas y manos cortas, con espinas de hueso por el lomo, dos cuernos sobre un ojo rojo, dientes y sacos de veneno que brillan",
+        "No anda, salta: se agazapa, despega con las cuatro patas en el aire y aterriza pesado, salpicando",
+        "Latigazo de lengua: se echa atrás con el buche hinchado, abre la boca y la lengua sale un cuerpo entero de largo y vuelve en un parpadeo",
+        "Al morir le revientan los sacos del lomo uno tras otro, cada uno con una sacudida; se desploma sobre la barbilla y la lengua le rueda fuera"
+      ],
+      "anims_es": {
+        "idle": "Reposo",
+        "run": "Saltar",
+        "attack": "Latigazo de lengua",
+        "hurt": "Golpe recibido",
+        "death": "Muerte"
+      }
+    },
+    {
+      "key": "drowned",
+      "kind": "melee",
+      "name_es": "Pescador ahogado",
+      "name_en": "Drowned Fisher",
+      "role_es": "Cuerpo a cuerpo · no muerto",
+      "bullets_es": [
+        "Un aldeano que la marisma se quedó: hinchado y gris, con un ojo todavía encendido, la mandíbula colgando, una túnica roja bajo una red de pesca y algas por pelo; le chorrea el agua",
+        "Arrastra los pies a pasos cortos, con el peso cayendo de un pie a otro y el bichero por delante",
+        "Enganchar y tirar: recoge el bichero en la cadera, se estira todo lo que da el palo, clava el garfio y lo arranca hacia atrás con todo su peso, salpicando",
+        "No cae al morir: se abre un charco bajo sus pies y se hunde en él de pie, con los brazos en alto hasta el final; solo queda el bichero sobre las tablas"
+      ],
+      "anims_es": {
+        "idle": "Reposo",
+        "run": "Avanzar",
+        "attack": "Enganchar y tirar",
+        "hurt": "Golpe recibido",
+        "death": "Muerte"
+      }
+    },
+    {
+      "key": "bogwitch",
+      "kind": "ranged",
+      "name_es": "Bruja de la ciénaga",
+      "name_en": "Bog Witch",
+      "role_es": "Lanzadora · fuegos fatuos",
+      "bullets_es": [
+        "Una vieja doblada bajo un chal color ciruela, toda capucha y nariz, con un ojo brillante y greñas grises; lleva una pértiga torcida más alta que ella, con un farol de luciérnagas colgando de una cadena",
+        "Renquea deprisa apoyándose en la pértiga, y el farol se balancea a cada paso",
+        "Fuego fatuo: alza el farol, le susurra mientras se hincha de luz y azota la pértiga hacia delante; la luz se suelta y sale a cazar, y el farol queda a oscuras hasta que prende otra",
+        "Al morir cae la pértiga, el farol se rompe contra el suelo y las luciérnagas salen en enjambre hacia arriba; ella intenta agarrarlas y se pliega sobre sus propios trapos"
+      ],
+      "anims_es": {
+        "idle": "Reposo",
+        "run": "Renquear",
+        "attack": "Fuego fatuo",
+        "hurt": "Golpe recibido",
+        "death": "Muerte"
+      }
+    },
+    {
+      "key": "ferryman",
+      "kind": "boss",
+      "name_es": "El Barquero",
+      "name_en": "The Ferryman",
+      "role_es": "Jefe de etapa",
+      "bullets_es": [
+        "Alto y enjuto dentro de un sudario del color de la niebla. En el fondo de una capucha picuda, la cara de un ahogado: una calavera del color del agua, los dientes al aire, algas colgando de la barbilla y una moneda sobre cada ojo, como se paga a los muertos; del cinturón de soga le cuelgan los peajes cobrados.",
+        "Espera con el remo apoyado como un bastón y la mano libre tendida, cobrando el pasaje; camina clavando el remo como si el suelo fuera agua",
+        "Barrido de remo: lo lleva atrás con las dos manos y lo pasa bajo, por el agua y hacia arriba; donde pasó la pala se levanta una ola que rueda hacia delante por el suelo",
+        "Al morir se le caen las monedas de los ojos y con ellas se va la cara: dentro no había nadie. El sudario se desploma sobre sí mismo y queda tendido en pliegues como un trapo mojado, la capucha vacía rueda a un lado y el remo, que se había quedado de pie, cae solo."
+      ],
+      "anims_es": {
+        "idle": "Reposo",
+        "run": "Avanzar",
+        "attack": "Barrido de remo",
+        "hurt": "Golpe recibido",
+        "death": "Muerte"
+      }
+    }
+  ]
+}

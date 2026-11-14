@@ -1,0 +1,88 @@
+{
+  "key": "w02",
+  "name_es": "Bosque viejo de musgo",
+  "name_en": "Old Moss Forest",
+  "backdrop_es": "Un bosque viejo a contraluz: cuanto más lejos está un tronco, más pálido se ve, y cada tronco tiene su lado en sombra, su media luz y un filo encendido hacia el resplandor. Siete capas: resplandor con haces de luz y pájaros lejanos; troncos lejanos con un arco en ruinas y ciervos pastando; troncos medios con ramas, hojas, un árbol caído y un árbol anciano con puerta y ventana encendida; niebla baja; los gigantes de cerca, con corteza, raíces, musgo, hongos de repisa, hiedra, un hueco con ojos, faroles de luciérnagas, telarañas, un dolmen con runas y ofrenda y una estatua encapuchada cubierta de musgo; el suelo, con el camino húmedo cruzado por raíces, un reguero que pasa bajo él, charcos de luz, un arroyo con piedras de paso, un tronco caído con setas, un corro de setas y flores; y helechos, hojas y telarañas en primer plano. Una niebla baja sube del suelo: de las rodillas de los árboles hacia abajo, los troncos se deshacen paso a paso en su verde azulado pálido, y eso deja en calma la franja que queda detrás de los combatientes. En Torment el bosque es podredumbre: bajo una oscuridad verdinegra, el resplandor dorado se vuelve un verde venenoso, los troncos son negros y húmedos y se hunden en una niebla gris hueso, los farolillos y los hongos brillan con un verde pálido equivocado, el agua es cieno y el camino, barro gris; solo la Grieta y sus cristales son violetas. Atmósfera: en Normal flotan motas de luz y caen algunas hojas; en Torment se abren ojos en la oscuridad entre los troncos (unos pequeños y verdes, y de tarde en tarde un par grande y rojo), caen esporas despacio y, muy de vez en cuando, toda la niebla se enciende por dentro con un destello verde sin rayo.",
+  "foes": [
+    {
+      "key": "spider",
+      "kind": "beast",
+      "name_es": "Tejedora de espinas",
+      "name_en": "Thornweaver",
+      "role_es": "Bestia · ocho patas",
+      "bullets_es": [
+        "Esqueleto propio: abdomen y cabeza dibujados a mano sobre ocho patas de dos huesos que se arquean por encima del cuerpo; cuerpo coral con un reloj de arena de hueso y sangre en el lomo, filo claro por arriba, patas anilladas y ojos encendidos, para que no se pierda sobre el camino oscuro",
+        "Corretea moviendo las patas de cuatro en cuatro, alternadas",
+        "Mordisco: se alza sobre las patas traseras con las delanteras en alto, aguanta y cae con los colmillos por delante, goteando veneno",
+        "Muere como mueren las arañas: el golpe la voltea, queda boca arriba y las patas se le encogen a tirones"
+      ],
+      "anims_es": {
+        "idle": "Reposo",
+        "run": "Corretear",
+        "attack": "Mordisco",
+        "hurt": "Golpe recibido",
+        "death": "Muerte"
+      }
+    },
+    {
+      "key": "revenant",
+      "kind": "melee",
+      "name_es": "Aparecido musgoso",
+      "name_en": "Mossbound Revenant",
+      "role_es": "Cuerpo a cuerpo · no muerto",
+      "bullets_es": [
+        "Un hombre de armas que el bosque se ha quedado: yelmo comido por el óxido con la flecha que lo mató aún clavada, una luz fría en la visera, mandíbula al aire, musgo en los hombros",
+        "Arrastra un mandoble oxidado con la punta en la tierra; anda torcido, con un hombro por delante",
+        "Desgarro: se encoge sobre la hoja y la arranca del suelo hacia delante y hacia arriba en un solo arco, levantando tierra",
+        "Muere de rodillas y luego de bruces; la luz del yelmo se apaga"
+      ],
+      "anims_es": {
+        "idle": "Reposo",
+        "run": "Avanzar",
+        "attack": "Desgarro",
+        "hurt": "Golpe recibido",
+        "death": "Muerte"
+      }
+    },
+    {
+      "key": "sporecaller",
+      "kind": "ranged",
+      "name_es": "Invocaesporas",
+      "name_en": "Sporecaller",
+      "role_es": "Lanzador · esporas",
+      "bullets_es": [
+        "Un ser rechoncho bajo un sombrero de seta roja tan ancho como alto es él: dos ojos pálidos en la sombra de las láminas, barba de liquen y un bastón de raíz con un bulbo luminoso",
+        "Anda balanceándose de un pie a otro, con el sombrero meciéndose a destiempo",
+        "Dardo de esporas: echa el bastón atrás mientras el bulbo se hincha, lo lanza al frente, el sombrero tose una nube y sale el proyectil",
+        "Al morir revienta en una última nube de esporas y cae de espaldas bajo el sombrero"
+      ],
+      "anims_es": {
+        "idle": "Reposo",
+        "run": "Avanzar",
+        "attack": "Dardo de esporas",
+        "hurt": "Golpe recibido",
+        "death": "Muerte"
+      }
+    },
+    {
+      "key": "warden",
+      "kind": "boss",
+      "name_es": "Guardián Astado",
+      "name_en": "Antlered Warden",
+      "role_es": "Jefe de etapa",
+      "bullets_es": [
+        "Lo que guarda el bosque: un gigante flaco de corteza con cráneo de ciervo, una cornamenta como una copa de ramas desnudas, luz fría en las cuencas, un manto de liquen gris y manos de ramas largas",
+        "No lleva arma. Camina despacio y ladea la cabeza como un búho",
+        "Oleada de raíces: alza los dos brazos, aguanta, y los hunde en la tierra; delante de él brotan tres raíces con espinas, una tras otra",
+        "No cae al morir: se endereza, levanta los brazos y se convierte en un árbol muerto más, mientras caen hojas"
+      ],
+      "anims_es": {
+        "idle": "Reposo",
+        "run": "Avanzar",
+        "attack": "Oleada de raíces",
+        "hurt": "Golpe recibido",
+        "death": "Muerte"
+      }
+    }
+  ]
+}

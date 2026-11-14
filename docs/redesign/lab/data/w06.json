@@ -1,0 +1,88 @@
+{
+  "key": "w06",
+  "name_es": "Costa de las Ruinas Hundidas",
+  "name_en": "Coast of Sunken Ruins",
+  "backdrop_es": "Una ciudad ahogada bajo un cielo pesado, con un único claro en las nubes que derrama luz sobre el mar. Siete capas: el cielo, con bancos de nubes con volumen (cimas iluminadas, vientres oscuros), el claro con sus haces y el mar en perspectiva, con su oleaje y el camino de luz sobre el agua; la ciudad lejana en el horizonte, pálida: un acueducto con tramos caídos, un faro sin linterna y torres con su reflejo; la ciudad hundida: frentes de templo con su frontón, y la cabeza con yelmo y la mano de un coloso derribado asomando del agua; la bruma marina; las ruinas de la orilla, oscuras y cercanas: el gran arco, un muelle cuyas escaleras bajan al mar, una columna caída, pilares con algas y percebes, rompientes en cada pie y el agua somera entrando en tres líneas de espuma; la orilla: arena mojada, la calzada de losas gastadas por la que avanza el grupo y, debajo, la playa con la arena que refleja el cielo, charcas de marea, estrellas de mar, conchas, algas, las cuadernas de un naufragio, un ánfora y un yelmo de bronce; y en primer plano rocas con percebes, espuma y un capitel arrastrado por el mar. Toda la piedra recibe la luz del claro: iluminada arriba y a la izquierda, en sombra a la derecha. Detrás de los combatientes el mar se mantiene en un valor medio y oscuro, con las crestas apagadas, para que tanto las figuras claras como las oscuras se separen; lo brillante (la bruma, el claro, la ciudad lejana) queda por encima de sus cabezas. En el aire, un polvo fino de espuma que entra desde las rompientes. En Torment es el abismo, en azules y negros: un cielo de tormenta amoratado, un mar negro como la noche que brilla frío en las crestas y en el agua somera como si lo alumbraran desde abajo, las ruinas como dientes negros con sus pedazos flotando (el frontón sobre sus columnas, el casco del coloso sobre su cara, los dedos sobre la mano) y, mar adentro, los lomos de algo enorme asomando del agua con dos ojos pálidos vueltos hacia aquí. Solo la Grieta, sus cristales y su reflejo en el mar son violetas. Su atmósfera es una tormenta en el mar: relámpagos que caen al agua junto al horizonte con un destello frío y un temblor, lluvia racheada, una oscuridad lenta que sube y baja como una marejada y, de vez en cuando, ojos pálidos que se abren a lo lejos sobre el agua y se cierran.",
+  "foes": [
+    {
+      "key": "crab",
+      "kind": "beast",
+      "name_es": "Cangrejo de marea",
+      "name_en": "Tide Crab",
+      "role_es": "Bestia · de frente, pinza de martillo",
+      "bullets_es": [
+        "Esqueleto propio y visto de frente, como se reconoce a un cangrejo: caparazón ancho y abombado con púas y percebes, un tambor de columna hundida pegado al lomo con un jirón de alga, dos ojos brillantes en pedúnculos, ocho patas recogidas bajo el cuerpo con las rodillas altas en abanico (unos 55 px de pata a pata, para no pisar a su vecino), una pinza pequeña a un lado y, al otro, una pinza trituradora tan grande como el cuerpo, con dientes de sierra",
+        "Anda de lado, como los cangrejos: las patas de cada lado se mueven por pares alternos, el cuerpo se balancea de un lado a otro y lleva la pinza grande por delante; en reposo gira los ojos uno tras otro, chasquea la pinza dos veces, tantea la piedra con una pata y espumea",
+        "Martillo: se vuelca sobre las patas del lado contrario, iza la pinza recta hacia arriba, aguanta y la descarga contra la calzada; saltan columnas de agua a los lados de la pinza, esquirlas de piedra y un anillo de luz por el suelo",
+        "Muere bajo su propio peso: se alza con la pinza en alto, la pinza cae y queda tendida, las patas se le escurren hacia los dos lados, el caparazón se asienta en la piedra y se parte en dos mitades que se separan dejando ver el interior oscuro, el tambor rueda de su lomo y los ojos caen apagados"
+      ],
+      "anims_es": {
+        "idle": "Reposo",
+        "run": "Andar de lado",
+        "attack": "Martillo",
+        "hurt": "Golpe recibido",
+        "death": "Muerte"
+      }
+    },
+    {
+      "key": "legionary",
+      "kind": "melee",
+      "name_es": "Legionario de percebes",
+      "name_en": "Barnacled Legionary",
+      "role_es": "Cuerpo a cuerpo · escudo y tridente",
+      "bullets_es": [
+        "Un hoplita que se hundió con la ciudad: yelmo de bronce con cimera roja y una luz fría en la abertura, coraza con cardenillo, grebas, un jirón de capa, un gran escudo redondo cubierto de percebes y un tridente",
+        "Avanza en marcha de falange, con el escudo alto y quieto y la cabeza baja tras el borde",
+        "Estocada: se recoge tras el escudo con el tridente muy atrás, aguanta, y entra con todo el cuerpo en un paso largo con el brazo estirado; mantiene el golpe antes de retirarse",
+        "Muere sobre su escudo: el tridente se le escapa hacia atrás, el escudo cae plano, él cae de rodillas y se dobla encima del bronce mientras la luz del yelmo se apaga"
+      ],
+      "anims_es": {
+        "idle": "Reposo",
+        "run": "Avanzar",
+        "attack": "Estocada",
+        "hurt": "Golpe recibido",
+        "death": "Muerte"
+      }
+    },
+    {
+      "key": "siren",
+      "kind": "ranged",
+      "name_es": "Sirena",
+      "name_en": "Siren",
+      "role_es": "A distancia · canto",
+      "bullets_es": [
+        "Nada de sirena de cuento: una cosa pálida de ahogada, flaca, con las costillas marcadas, cuencas huecas con una brasa dentro, aletas de espinas rojas tras la mandíbula, por la espalda y los antebrazos, garras largas y pelo como alga negra; la boca es una línea de dientes de aguja hasta que canta. De cadera para abajo, una cola de serpiente oscura y dura, con cresta de espinas y una aleta de púas en la punta",
+        "Se mece sobre el anillo de su cola como un alga en la corriente; para avanzar se vierte hacia delante sobre él, subiendo y bajando",
+        "Canto: se recoge con las manos en la garganta, luego se yergue todo lo que la cola da de sí, con los brazos abiertos y la cabeza atrás, la mandíbula se le desencaja en un agujero de media cabeza y sostiene la nota mientras salen anillos de sonido hacia delante",
+        "Al morir da un único chillido erguida; después la cola afloja y ella se hunde hacia delante por el suelo mientras la cola se le escurre detrás en dos curvas flojas, levanta la aleta una vez más y se queda quieta, con las cuencas apagadas"
+      ],
+      "anims_es": {
+        "idle": "Reposo",
+        "run": "Reptar",
+        "attack": "Canto",
+        "hurt": "Golpe recibido",
+        "death": "Muerte"
+      }
+    },
+    {
+      "key": "admiral",
+      "kind": "boss",
+      "name_es": "El Almirante Ahogado",
+      "name_en": "The Drowned Admiral",
+      "role_es": "Jefe de etapa",
+      "bullets_es": [
+        "Un gigante de casi dos hombres de alto (unos 60 px): gran sombrero de picos ribeteado de oro viejo, la cabeza medio carne de ahogado y medio calavera con una cuenca que arde, una barba de tentáculos que no para quieta, casaca rojo sangre con charreteras de flecos, percebes en el pecho y una cadena cruzada, una pata de palo, una pinza de cangrejo donde tuvo la mano izquierda y, al extremo de una cadena, el ancla oxidada de su barco. Aún le chorrea el mar",
+        "Camina pesado y cojeando de la pata de palo; el ancla le sigue a tirones, arando el suelo, y la pinza se abre y se cierra",
+        "Ancla: coge la cadena con la mano y la pinza, levanta el ancla del suelo, la voltea por encima de la cabeza y la clava delante de él; se alza una torre de agua a los dos lados del ancla y una corona de gotas, y luego la recupera de un tirón por encima del hombro",
+        "Su muerte es el mar que se lo lleva: el ancla se hunde a través de la piedra como si fuera agua, la cadena se tensa, él tira, pierde, cae de espaldas con el brazo estirado hacia el agujero y el sombrero se aleja rodando"
+      ],
+      "anims_es": {
+        "idle": "Reposo",
+        "run": "Avanzar",
+        "attack": "Ancla",
+        "hurt": "Golpe recibido",
+        "death": "Muerte"
+      }
+    }
+  ]
+}

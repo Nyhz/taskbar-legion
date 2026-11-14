@@ -1,0 +1,89 @@
+{
+  "key": "w01",
+  "name_es": "Praderas doradas",
+  "name_en": "Golden Meadows",
+  "backdrop_es": "Praderas doradas al atardecer, en siete capas: cielo con el sol bajo y las primeras estrellas, bancos de nubes iluminados por debajo y bandadas de pájaros, una sierra pálida con un castillo y una loma con álamos, campos con setos, una aldea con su iglesia y un río con puente, la pradera con dos molinos distintos, una granja, huertos y ganado, y el camino de tierra con su cerca, trigo y amapolas; debajo, trébol, flores, piedras y un tronco caído. Los planos que quedan justo detrás de los combatientes van en tonos medios y con poco detalle para que las figuras se lean. Flota polen en la última luz. En Torment es la cosecha de sangre: cielo rojo sangre bajo un eclipse negro con corona roja, la tierra en pardos de sangre seca y negro, todas las luces apagadas, molinos y aldea rotos, y la Grieta, que sigue violeta, partiendo el cielo; el camino es una franja fría de pizarra. Un pulso rojo lento como un latido, ceniza y pétalos negros cayendo, relámpagos sordos dentro de las nubes y ojos que se abren en lo oscuro de los campos.",
+  "foes": [
+    {
+      "key": "boar",
+      "kind": "beast",
+      "name_es": "Jabalí cerdoso",
+      "name_en": "Bristleback Boar",
+      "role_es": "Bruto · cuatro patas",
+      "bullets_es": [
+        "Rehecho para que amenace: más corpulento, lomo erizado de púas carmesí, dos colmillos, una cicatriz y un ojo de brasa que brilla",
+        "En reposo escarba con la pezuña, resopla vapor y le tiemblan las púas",
+        "Galope de verdad: apoyos cortos y fuertes, fase de vuelo, el cuerpo cabecea adelante y atrás y levanta polvo",
+        "Embestida: se recoge con la cabeza baja, se lanza y sube los colmillos de golpe; al morir cae sobre la barriga"
+      ],
+      "anims_es": {
+        "idle": "Reposo",
+        "run": "Galopar",
+        "attack": "Embestida",
+        "hurt": "Golpe recibido",
+        "death": "Muerte"
+      }
+    },
+    {
+      "key": "scarecrow",
+      "kind": "melee",
+      "name_es": "Espantapájaros hueco",
+      "name_en": "Hollow Scarecrow",
+      "role_es": "Cuerpo a cuerpo · desgarbado",
+      "bullets_es": [
+        "Saco por cabeza con ojos de brasa, sombrero de paja, abrigo relleno de paja y una guadaña",
+        "Anda como un títere mal atado: cojea, la cabeza le baila y el brazo libre le cuelga",
+        "Siega: alza la guadaña atrás y la descarga en un barrido largo",
+        "Al morir se desmorona: el sombrero sale volando, el cuerpo se pliega en un montón y la guadaña cae"
+      ],
+      "anims_es": {
+        "idle": "Reposo",
+        "run": "Avanzar",
+        "attack": "Siega",
+        "hurt": "Golpe recibido",
+        "death": "Muerte"
+      }
+    },
+    {
+      "key": "poacher",
+      "kind": "ranged",
+      "name_es": "Furtivo plumacuervo",
+      "name_en": "Crowfeather Poacher",
+      "role_es": "A distancia · ballesta",
+      "bullets_es": [
+        "Sombrero de ala ancha con una pluma roja, la cara tapada con un pañuelo, abrigo largo y un manto de plumas de cuervo que es tela simulada",
+        "Avanza agazapado, con la ballesta a dos manos y mirando a los lados",
+        "Disparo: se la echa al hombro, apunta, suelta (el retroceso lo empuja atrás) y la apoya abajo para volver a montarla",
+        "Al morir sale despedido de espaldas y la ballesta se le escapa de las manos"
+      ],
+      "anims_es": {
+        "idle": "Reposo",
+        "run": "Avanzar",
+        "attack": "Disparo",
+        "hurt": "Golpe recibido",
+        "death": "Muerte"
+      }
+    },
+    {
+      "key": "king",
+      "kind": "boss",
+      "name_es": "Rey de la Cosecha",
+      "name_en": "Harvest King",
+      "role_es": "Jefe de etapa",
+      "bullets_es": [
+        "Un espantapájaros gigante, vez y media un héroe: calabaza tallada que arde por dentro, corona torcida, costillar de mimbre con fuego, brazos de paja con garras de ramas, estacas por espinillas y una capa real hecha jirones",
+        "Camina lento y pesado, hundiéndose en cada paso; el fuego parpadea y suelta ascuas",
+        "Tajo de verdugo: alza la guadaña con las dos manos sobre la cabeza, aguanta un instante y la descarga con todo el cuerpo; la hoja se clava y el suelo se abre en una grieta de luz, con terrones y polvo",
+        "Al morir el fuego se apaga: suelta la guadaña, cae de rodillas y se queda vencido; la cabeza se desprende y rueda, y la corona detrás",
+        "Su fotograma es mayor que el de los demás (128 × 96); el motor ya admite figuras altas"
+      ],
+      "anims_es": {
+        "idle": "Reposo",
+        "run": "Avanzar",
+        "attack": "Tajo de verdugo",
+        "hurt": "Golpe recibido",
+        "death": "Muerte"
+      }
+    }
+  ]
+}
