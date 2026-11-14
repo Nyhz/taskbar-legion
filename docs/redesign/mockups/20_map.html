@@ -1,0 +1,160 @@
+<!-- mock: Mapa y dificultades | Los diez mundos como miniaturas cortadas de su fondo real; los que aún no has pisado, en silueta de noche. Arriba, un signo por dificultad. Abajo, las etapas del mundo elegido y la puerta de su jefe. Enemigos, llaves y botín se explican al pasar el ratón; a la derecha, dos tooltips fijados de muestra. -->
+<style>
+/* Map panel. One thing first: where you are on the road and where you can go. */
+.gm-map { width: 292px; }
+.gm-map-top { display: flex; align-items: center; height: 22px; margin-top: -2px; }
+
+/* Difficulties: five signs. The lit one is underlined; the ones still shut are dull iron. */
+.gm-map-diffs { margin-left: auto; display: flex; gap: 2px; padding-right: 8px; }
+.gm-map-diffs > div { position: relative; width: 18px; height: 20px; padding: 1px; }
+.gm-map-diffs > div.on { box-shadow: inset 0 -1px 0 var(--gold); }
+.gm-map-diffs > div:hover > img:first-child { filter: brightness(1.2); }
+.gm-map-drop { display: flex; align-items: flex-end; gap: 1px; height: 18px; margin-top: 4px; padding-bottom: 1px; box-shadow: inset 0 -1px 0 var(--k3); }   /* how the drops spread over the nine rarities */
+.gm-map-drop > i { width: 10px; }
+.gm-map-drop > i:nth-child(1) { background: var(--t0); } .gm-map-drop > i:nth-child(2) { background: var(--t1); } .gm-map-drop > i:nth-child(3) { background: var(--t2); }
+.gm-map-drop > i:nth-child(4) { background: var(--t3); } .gm-map-drop > i:nth-child(5) { background: var(--t4); } .gm-map-drop > i:nth-child(6) { background: var(--t5); }
+.gm-map-drop > i:nth-child(7) { background: var(--t6); } .gm-map-drop > i:nth-child(8) { background: var(--t7); } .gm-map-drop > i:nth-child(9) { background: var(--t8); }
+
+/* Worlds: a thumbnail, its number, ten pips under it (the last one is the world boss). */
+.gm-map-worlds { display: grid; grid-template-columns: repeat(5, 56px); gap: 6px 3px; margin-top: 6px; }
+.gm-map-w { position: relative; width: 56px; }
+.gm-map-w > img:first-child { width: 56px; height: 40px; }
+.gm-map-w:hover > img:first-child { filter: brightness(1.15); }
+.gm-map-w > b { position: absolute; left: 3px; top: 3px; font-weight: 400; color: var(--k9); text-shadow: 1px 0 0 var(--k0), -1px 0 0 var(--k0), 0 1px 0 var(--k0), 0 -1px 0 var(--k0); }
+.gm-map-w.shut > b { color: var(--k5); }
+.gm-map-w > .lk { position: absolute; right: 3px; top: 3px; }
+.gm-map-w.sel::after { content: ""; position: absolute; left: -2px; top: -2px; width: 60px; height: 44px; pointer-events: none;
+  background:
+    linear-gradient(var(--gold-hi), var(--gold-hi)) 0 0 / 6px 1px, linear-gradient(var(--gold-hi), var(--gold-hi)) 0 0 / 1px 6px,
+    linear-gradient(var(--gold-hi), var(--gold-hi)) 100% 0 / 6px 1px, linear-gradient(var(--gold-hi), var(--gold-hi)) 100% 0 / 1px 6px,
+    linear-gradient(var(--gold-hi), var(--gold-hi)) 0 100% / 6px 1px, linear-gradient(var(--gold-hi), var(--gold-hi)) 0 100% / 1px 6px,
+    linear-gradient(var(--gold-hi), var(--gold-hi)) 100% 100% / 6px 1px, linear-gradient(var(--gold-hi), var(--gold-hi)) 100% 100% / 1px 6px;
+  background-repeat: no-repeat; }
+.gm-map-pips { display: flex; gap: 1px; margin-top: 2px; }
+.gm-map-pips > i { width: 4px; height: 3px; background: var(--k3); }
+.gm-map-pips > i.c { background: var(--k7); }
+.gm-map-pips > i.b { width: 11px; }
+.gm-map-pips > i.b.won { background: var(--gold); }
+.gm-map-pips > i.b.open { background: #bb3a3a; }
+.gm-map-w:nth-child(5n+4) > .tt, .gm-map-w:nth-child(5n) > .tt { left: auto; right: calc(100% + 5px); }
+
+/* The chosen world: its name, the way back to the frontier, nine stages and the boss's door. */
+.gm-map .gm-rule { margin: 6px 0 4px; }
+.gm-map-head { display: flex; align-items: center; height: 24px; }
+.gm-map-head > .nm { font: 12px/12px var(--f-name); color: var(--gold-hi); text-shadow: 1px 1px 0 var(--k0); }
+.gm-map-back { position: relative; margin-left: auto; display: flex; align-items: center; gap: 3px; color: var(--gold-hi); }
+.gm-map-road { display: flex; align-items: center; gap: 1px; height: 36px; margin-top: 12px; }
+.gm-map-node > span { display: block; height: 16px; margin-top: -1px; text-align: center; line-height: 16px; color: var(--k9); text-shadow: 1px 1px 0 var(--k0); }
+.gm-map-node.gold > span { color: var(--gold-dk); text-shadow: none; }
+.gm-map-node.off > span { color: var(--k5); }
+.gm-map-node > .pin { position: absolute; left: -4px; top: -19px; margin: 0; }
+.gm-map-link { width: 10px; height: 2px; margin: 0 1px; background: linear-gradient(90deg, var(--k4) 0 2px, transparent 2px 4px, var(--k4) 4px 6px, transparent 6px 8px, var(--k4) 8px 10px); }
+.gm-map-keys { position: relative; display: grid; justify-items: center; width: 20px; margin-left: 2px; color: var(--gold-hi); }
+.gm-map-row { display: flex; align-items: center; gap: 3px; height: 16px; }
+.gm-map-row > b { font-weight: 400; color: var(--k9); }
+.gm-map-row > img:last-child:not(:first-child) { margin-left: auto; padding-left: 4px; box-sizing: content-box; }
+.gm-map-wall .nm { color: #f08a62; }
+.gm-map-place { width: auto; white-space: nowrap; }      /* as wide as the name of the place */
+.gm-map-place .nm { color: var(--gold-hi); }
+</style>
+
+<div class="gm" role="group" aria-label="Maqueta del mapa: las cinco dificultades, los diez mundos con su progreso, las etapas del mundo elegido y la puerta de su jefe.">
+  <div class="gm-win">
+    <img class="gm-close" src="img/icons/ui_x.png" alt="Cerrar">
+    <div class="gm-in gm-map">
+      <div class="gm-map-top">
+        <div class="gm-title">Mapa</div>
+        <div class="gm-map-diffs">
+          <div class="has"><img src="img/icons/map_diff_normal.png" alt="Normal">
+            <div class="gm-tip mini tt"><div class="hd">Normal</div><p>El mundo tal cual. Completada.</p><div class="ln"><span>Botín</span><b style="color:var(--t4)">hasta T4</b></div><div class="gm-map-drop"><i style="height:16px"></i><i style="height:12px"></i><i style="height:8px"></i><i style="height:3px"></i><i style="height:1px"></i><i></i><i></i><i></i><i></i></div></div></div>
+          <div class="on has"><img src="img/icons/map_diff_hell.png" alt="Hell">
+            <div class="gm-tip mini tt"><div class="hd">Hell</div><p>Los mismos diez mundos con brasas en el aire. Todo pega más.</p><div class="ln"><span>Botín</span><b style="color:var(--t5)">hasta T5</b></div><div class="gm-map-drop"><i style="height:6px"></i><i style="height:12px"></i><i style="height:16px"></i><i style="height:10px"></i><i style="height:4px"></i><i style="height:1px"></i><i></i><i></i><i></i></div></div></div>
+          <div class="has"><img src="img/icons/map_diff_inferno_off.png" alt="Inferno, sin desbloquear">
+            <div class="gm-tip mini tt"><div class="hd">Inferno</div><p>Se abre al vencer al jefe de 10-10 en Hell.</p><div class="ln"><span>Botín</span><b style="color:var(--t6)">hasta T6</b></div><div class="gm-map-drop"><i style="height:4px"></i><i style="height:9px"></i><i style="height:14px"></i><i style="height:16px"></i><i style="height:9px"></i><i style="height:4px"></i><i style="height:1px"></i><i></i><i></i></div></div></div>
+          <div class="has"><img src="img/icons/map_diff_eternal_off.png" alt="Eternal, sin desbloquear">
+            <div class="gm-tip mini tt"><div class="hd">Eternal</div><p>Se abre al vencer al jefe de 10-10 en Inferno.</p><div class="ln"><span>Botín</span><b style="color:var(--t7)">hasta T7</b></div><div class="gm-map-drop"><i style="height:3px"></i><i style="height:7px"></i><i style="height:11px"></i><i style="height:16px"></i><i style="height:14px"></i><i style="height:9px"></i><i style="height:5px"></i><i style="height:1px"></i><i></i></div></div></div>
+          <div class="has"><img src="img/icons/map_diff_torment_off.png" alt="Torment, sin desbloquear">
+            <div class="gm-tip mini tt"><div class="hd">Torment</div><p>Se abre al vencer al jefe de 10-10 en Eternal.</p><div class="ln"><span>Botín</span><b style="color:var(--t8)">hasta T8</b></div><div class="gm-map-drop"><i></i><i style="height:4px"></i><i style="height:8px"></i><i style="height:13px"></i><i style="height:16px"></i><i style="height:12px"></i><i style="height:8px"></i><i style="height:5px"></i><i style="height:1px"></i></div></div></div>
+        </div>
+      </div>
+
+      <div class="gm-map-worlds">
+        <div class="gm-map-w has"><img src="img/icons/map_w01.png" alt="Praderas doradas"><b>1</b>
+          <div class="gm-map-pips"><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="b won"></i></div>
+          <div class="gm-tip mini tt gm-map-place"><div class="nm">Praderas doradas</div><div class="gm-map-row"><img src="img/icons/map_skull.png" alt="Jefe de mundo"><b>Rey de la Cosecha</b><img src="img/icons/map_check.png" alt="vencido"></div></div></div>
+        <div class="gm-map-w has"><img src="img/icons/map_w02.png" alt="Bosque viejo de musgo"><b>2</b>
+          <div class="gm-map-pips"><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="b won"></i></div>
+          <div class="gm-tip mini tt gm-map-place"><div class="nm">Bosque viejo de musgo</div><div class="gm-map-row"><img src="img/icons/map_skull.png" alt="Jefe de mundo"><b>Guardián Astado</b><img src="img/icons/map_check.png" alt="vencido"></div></div></div>
+        <div class="gm-map-w has"><img src="img/icons/map_w03.png" alt="Marismas de los Pilotes"><b>3</b>
+          <div class="gm-map-pips"><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="b won"></i></div>
+          <div class="gm-tip mini tt gm-map-place"><div class="nm">Marismas de los Pilotes</div><div class="gm-map-row"><img src="img/icons/map_skull.png" alt="Jefe de mundo"><b>El Barquero</b><img src="img/icons/map_check.png" alt="vencido"></div></div></div>
+        <div class="gm-map-w has"><img src="img/icons/map_w04.png" alt="Cañones de Roca Roja"><b>4</b>
+          <div class="gm-map-pips"><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="b won"></i></div>
+          <div class="gm-tip mini tt gm-map-place"><div class="nm">Cañones de Roca Roja</div><div class="gm-map-row"><img src="img/icons/map_skull.png" alt="Jefe de mundo"><b>Coloso de arenisca</b><img src="img/icons/map_check.png" alt="vencido"></div></div></div>
+        <div class="gm-map-w has"><img src="img/icons/map_w05.png" alt="Cumbres del Monasterio"><b>5</b>
+          <div class="gm-map-pips"><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="b won"></i></div>
+          <div class="gm-tip mini tt gm-map-place"><div class="nm">Cumbres del Monasterio</div><div class="gm-map-row"><img src="img/icons/map_skull.png" alt="Jefe de mundo"><b>El Portacampana</b><img src="img/icons/map_check.png" alt="vencido"></div></div></div>
+        <div class="gm-map-w sel has"><img src="img/icons/map_w06.png" alt="Costa de las Ruinas Hundidas"><b>6</b>
+          <div class="gm-map-pips"><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="b open"></i></div>
+          <div class="gm-tip mini tt gm-map-place"><div class="nm">Costa de las Ruinas Hundidas</div><div class="gm-map-row"><img src="img/icons/map_here.png" alt="El grupo está aquí"><b>6-4</b></div><div class="gm-map-row"><img src="img/icons/map_skull.png" alt="Jefe de mundo"><b>El Almirante Ahogado</b></div></div></div>
+        <div class="gm-map-w shut has"><img src="img/icons/map_w07_off.png" alt="Cavernas de cristal y hongos, sin alcanzar"><b>7</b><img class="lk" src="img/icons/map_lock_s.png" alt="">
+          <div class="gm-map-pips"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="b"></i></div>
+          <div class="gm-tip mini tt gm-map-place"><div class="nm">Cavernas de cristal y hongos</div><p>Se abre al vencer a El Almirante Ahogado.</p></div></div>
+        <div class="gm-map-w shut has"><img src="img/icons/map_w08_off.png" alt="Tierras de ceniza y forjas, sin alcanzar"><b>8</b><img class="lk" src="img/icons/map_lock_s.png" alt="">
+          <div class="gm-map-pips"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="b"></i></div>
+          <div class="gm-tip mini tt gm-map-place"><div class="nm">Tierras de ceniza y forjas</div><p>Aún lejos.</p></div></div>
+        <div class="gm-map-w shut has"><img src="img/icons/map_w09_off.png" alt="Ciudadela entre las nubes, sin alcanzar"><b>9</b><img class="lk" src="img/icons/map_lock_s.png" alt="">
+          <div class="gm-map-pips"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="b"></i></div>
+          <div class="gm-tip mini tt gm-map-place"><div class="nm">Ciudadela entre las nubes</div><p>Aún lejos.</p></div></div>
+        <div class="gm-map-w shut has"><img src="img/icons/map_w10_off.png" alt="La Grieta, sin alcanzar"><b>10</b><img class="lk" src="img/icons/map_lock_s.png" alt="">
+          <div class="gm-map-pips"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="b"></i></div>
+          <div class="gm-tip mini tt gm-map-place"><div class="nm">La Grieta</div><p>Aún lejos.</p></div></div>
+      </div>
+
+      <div class="gm-rule"><i></i><img src="img/icons/ui_rule.png" alt=""><i></i></div>
+
+      <div class="gm-map-head">
+        <div class="nm">Costa de las Ruinas Hundidas</div>
+        <div class="gm-map-back has"><div class="gm-btn"><img src="img/icons/map_front.png" alt="Volver a la frontera"></div>6-9
+          <div class="gm-tip mini tt above" style="left:auto;right:0"><div class="hd">Frontera · 6-9</div><p>Vuelve a donde avanza tu progreso. Al reabrir el juego siempre apareces aquí.</p></div></div>
+      </div>
+
+      <div class="gm-map-road">
+        <div class="gm-btn gm-map-node has"><span>1</span><div class="gm-tip mini tt above"><div class="hd">Etapa 6-1</div><div class="gm-map-row"><img src="img/icons/map_foe.png" alt="Nivel de los enemigos"><b>~61</b><span>Nivel</span></div><div class="gm-map-row"><img src="img/icons/stat_health.png" alt="Vida de los enemigos"><b>~1,02 M</b><span>Vida</span></div></div></div>
+        <div class="gm-btn gm-map-node has"><span>2</span><div class="gm-tip mini tt above"><div class="hd">Etapa 6-2</div><div class="gm-map-row"><img src="img/icons/map_foe.png" alt="Nivel de los enemigos"><b>~61</b><span>Nivel</span></div><div class="gm-map-row"><img src="img/icons/stat_health.png" alt="Vida de los enemigos"><b>~1,06 M</b><span>Vida</span></div></div></div>
+        <div class="gm-btn gm-map-node has"><span>3</span><div class="gm-tip mini tt above"><div class="hd">Etapa 6-3</div><div class="gm-map-row"><img src="img/icons/map_foe.png" alt="Nivel de los enemigos"><b>~62</b><span>Nivel</span></div><div class="gm-map-row"><img src="img/icons/stat_health.png" alt="Vida de los enemigos"><b>~1,11 M</b><span>Vida</span></div></div></div>
+        <div class="gm-btn gm-map-node has"><span>4</span><img class="pin" src="img/icons/map_here.png" alt="El grupo está aquí">
+          <div class="gm-tip mini tt above"><div class="hd">Etapa 6-4</div><div class="gm-map-row"><img src="img/icons/map_here.png" alt=""><span>El grupo está aquí</span></div><div class="gm-map-row"><img src="img/icons/map_foe.png" alt="Nivel de los enemigos"><b>~62</b><span>Nivel</span></div><div class="gm-map-row"><img src="img/icons/stat_health.png" alt="Vida de los enemigos"><b>~1,15 M</b><span>Vida</span></div></div></div>
+        <div class="gm-btn gm-map-node has"><span>5</span><div class="gm-tip mini tt above"><div class="hd">Etapa 6-5</div><div class="gm-map-row"><img src="img/icons/map_foe.png" alt="Nivel de los enemigos"><b>~62</b><span>Nivel</span></div><div class="gm-map-row"><img src="img/icons/stat_health.png" alt="Vida de los enemigos"><b>~1,20 M</b><span>Vida</span></div></div></div>
+        <div class="gm-btn gm-map-node has"><span>6</span><div class="gm-tip mini tt above"><div class="hd">Etapa 6-6</div><div class="gm-map-row"><img src="img/icons/map_foe.png" alt="Nivel de los enemigos"><b>~63</b><span>Nivel</span></div><div class="gm-map-row"><img src="img/icons/stat_health.png" alt="Vida de los enemigos"><b>~1,25 M</b><span>Vida</span></div></div></div>
+        <div class="gm-btn gm-map-node has"><span>7</span><div class="gm-tip mini tt above"><div class="hd">Etapa 6-7</div><div class="gm-map-row"><img src="img/icons/map_foe.png" alt="Nivel de los enemigos"><b>~63</b><span>Nivel</span></div><div class="gm-map-row"><img src="img/icons/stat_health.png" alt="Vida de los enemigos"><b>~1,30 M</b><span>Vida</span></div></div></div>
+        <div class="gm-btn gm-map-node has"><span>8</span><div class="gm-tip mini tt above"><div class="hd">Etapa 6-8</div><div class="gm-map-row"><img src="img/icons/map_foe.png" alt="Nivel de los enemigos"><b>~63</b><span>Nivel</span></div><div class="gm-map-row"><img src="img/icons/stat_health.png" alt="Vida de los enemigos"><b>~1,36 M</b><span>Vida</span></div></div></div>
+        <div class="gm-btn gm-map-node gold has"><span>9</span>
+          <div class="gm-tip mini tt above" style="left:auto;right:0"><div class="hd">Etapa 6-9 · frontera</div><div class="gm-map-row"><img src="img/icons/map_foe.png" alt="Nivel de los enemigos"><b>~64</b><span>Nivel</span></div><div class="gm-map-row"><img src="img/icons/stat_health.png" alt="Vida de los enemigos"><b>~1,41 M</b><span>Vida</span></div><p style="padding-top:3px">Sus jefes de etapa sueltan las llaves del jefe de mundo.</p></div></div>
+        <div class="gm-map-link"></div>
+        <div class="gm-slot sel has"><img src="img/icons/map_boss_w06.png" alt="El Almirante Ahogado, jefe de mundo">
+          <div class="gm-tip tt above gm-map-wall" style="left:auto;right:0"><div class="nm">El Almirante Ahogado</div><div class="sub"><span>Jefe de mundo · 6-10</span></div><div class="gm-rule"><i></i><img src="img/icons/ui_rule.png" alt=""><i></i></div>
+            <div class="aff"><img src="img/icons/map_foe.png" alt=""><b>~66</b><span>Nivel</span></div><div class="aff"><img src="img/icons/stat_health.png" alt=""><b>~412 M</b><span>Vida</span></div><div class="aff"><img src="img/icons/map_key.png" alt=""><b>1</b><span>Llave por intento</span></div><div class="lore">Un muro. Equípate antes de llamar a su puerta.</div></div></div>
+        <div class="gm-map-keys has"><img src="img/icons/map_key.png" alt="Llaves de jefe de mundo">2
+          <div class="gm-tip mini tt above" style="left:auto;right:0"><div class="hd">Llaves de 6-10</div><p>Cada intento gasta una, también si el grupo cae. Salen de los cofres de jefe de etapa de este mundo.</p></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="gm-side">
+    <div class="gm-tip gm-map-wall">
+      <div class="nm">El Almirante Ahogado</div>
+      <div class="sub"><span>Jefe de mundo · 6-10</span></div>
+      <div class="gm-rule"><i></i><img src="img/icons/ui_rule.png" alt=""><i></i></div>
+      <div class="aff"><img src="img/icons/map_foe.png" alt=""><b>~66</b><span>Nivel</span></div>
+      <div class="aff"><img src="img/icons/stat_health.png" alt=""><b>~412 M</b><span>Vida</span></div>
+      <div class="aff"><img src="img/icons/map_key.png" alt=""><b>1</b><span>Llave por intento</span></div>
+      <div class="lore">Un muro. Equípate antes de llamar a su puerta.</div>
+    </div>
+    <div class="gm-tip mini">
+      <div class="hd">Hell</div>
+      <p>Los mismos diez mundos con brasas en el aire. Todo pega más.</p>
+      <div class="ln"><span>Botín</span><b style="color:var(--t5)">hasta T5</b></div><div class="gm-map-drop"><i style="height:6px"></i><i style="height:12px"></i><i style="height:16px"></i><i style="height:10px"></i><i style="height:4px"></i><i style="height:1px"></i><i></i><i></i><i></i></div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,99 @@
+<!-- mock: Ajustes | Cada ajuste es un signo y su control: idioma, sonido (un interruptor y cuatro volúmenes), los dos tamaños y las teclas de la partida. Nada se explica a la vista; pasa el ratón por cada fila. A la derecha, la confirmación que sale antes de borrar la partida: el único sitio donde las teclas llevan palabra. -->
+<style>
+/* Options: one row per setting — its sign, then its control. */
+.gm-opt { width: 152px; }
+.gm-opt-rows { display: grid; gap: 2px; margin-top: 5px; }
+.gm-opt-row { position: relative; display: grid; grid-template-columns: 16px 1fr; gap: 6px; align-items: center; height: 20px; }
+.gm-opt-row.gap { margin-top: 7px; }
+.gm-opt-row > .tt { left: calc(100% + 12px); }
+
+/* A choice between a few: keys side by side, the chosen one lit. */
+.gm-opt-seg { display: flex; gap: 1px; }
+.gm-opt-seg > div { height: 20px; border: 4px solid transparent; border-image: url(img/icons/ui_btn_off.png) 4 fill / 4px / 0 stretch; padding: 0 5px; color: var(--k6); line-height: 11px; white-space: nowrap; }
+.gm-opt-seg > div.on { border-image-source: url(img/icons/ui_btn.png); color: var(--k9); }
+.gm-opt-seg > div:hover { filter: brightness(1.15); }
+.gm-opt-seg.names > div { font: 12px/11px var(--f-name); padding: 0 6px; }
+
+/* A volume: a sunk track, filled up to a steel handle, and its number. */
+.gm-opt-vol { display: grid; grid-template-columns: 110px 1fr; gap: 4px; align-items: center; }
+.gm-opt-vol > div { position: relative; height: 9px; }
+.gm-opt-vol > div::before { content: ""; position: absolute; left: 0; right: 0; top: 3px; height: 3px; background: var(--k0); box-shadow: 0 1px 0 var(--k2); }
+.gm-opt-vol > div > u { position: absolute; left: 0; top: 3px; height: 3px; background: linear-gradient(#6fb9a6 0 1px, #45998f 1px 2px, #2b7a7c 2px); }
+.gm-opt-vol > div > img { position: absolute; top: 0; margin-left: -3px; }
+.gm-opt-vol > b { font-weight: 400; text-align: right; color: var(--k7); }
+.gm-opt-vol.off > div > u { background: var(--k3); }
+.gm-opt-vol.off > b { color: var(--k5); }
+
+/* The save keys and the way out. */
+.gm-opt .gm-rule { margin: 8px 0 6px; }
+.gm-opt-foot { display: flex; align-items: center; gap: 3px; }
+.gm-opt-foot .gm-btn.danger { border-image-source: url(img/icons/opt_btn_danger.png); margin-left: 5px; }
+.gm-opt-foot .gm-btn.last { margin-left: auto; }
+.gm-opt-top { display: flex; align-items: baseline; gap: 5px; margin-top: -2px; }
+.gm-opt-top > span { color: var(--k5); }
+
+/* Confirmation: a small window that asks, and two keys that say what they do. */
+.gm-opt-ask { width: 166px; }
+.gm-opt-ask p { color: var(--k7); line-height: 11px; padding: 5px 0 8px; }
+.gm-opt-keys { display: flex; gap: 3px; justify-content: flex-end; }
+.gm-opt-key { height: 24px; border: 4px solid transparent; border-image: url(img/icons/ui_btn.png) 4 fill / 4px / 0 stretch; display: flex; align-items: center; gap: 2px; padding: 0 5px 1px 0; color: var(--k9); white-space: nowrap; }
+.gm-opt-key > img { margin-top: -1px; }
+.gm-opt-key.danger { border-image-source: url(img/icons/opt_btn_danger.png); }
+.gm-opt-key:hover { filter: brightness(1.15); }
+</style>
+
+<div class="gm" role="group" aria-label="Maqueta de la interfaz: panel de opciones con idioma, sonido, tamaños y teclas de la partida, y la ventana de confirmación de partida nueva.">
+  <div class="gm-win">
+    <img class="gm-close" src="img/icons/ui_x.png" alt="Cerrar">
+    <div class="gm-in gm-opt">
+      <div class="gm-opt-top"><div class="gm-title">Ajustes</div><span>v0.5.0</span></div>
+      <div class="gm-opt-rows">
+        <div class="gm-opt-row has"><img src="img/icons/opt_lang.png" alt="Idioma">
+          <div class="gm-opt-seg names"><div>English</div><div class="on">Español</div></div>
+          <div class="gm-tip mini tt"><div class="hd">Idioma</div><p>Todo el juego, en inglés o en español.</p></div></div>
+
+        <div class="gm-opt-row gap has"><img src="img/icons/opt_sound.png" alt="Sonido">
+          <div><img src="img/icons/opt_switch_on.png" alt="Encendido"></div>
+          <div class="gm-tip mini tt"><div class="hd">Sonido</div><p>Lo apaga o lo enciende todo de golpe.</p></div></div>
+        <div class="gm-opt-row has"><img src="img/icons/opt_music.png" alt="Música">
+          <div class="gm-opt-vol"><div><u style="width:77px"></u><img src="img/icons/opt_knob.png" alt="" style="left:77px"></div><b>70</b></div>
+          <div class="gm-tip mini tt"><div class="hd">Música</div><p>Un tema por mundo, hecho para sonar de fondo.</p></div></div>
+        <div class="gm-opt-row has"><img src="img/icons/opt_ambience.png" alt="Ambiente">
+          <div class="gm-opt-vol"><div><u style="width:55px"></u><img src="img/icons/opt_knob.png" alt="" style="left:55px"></div><b>50</b></div>
+          <div class="gm-tip mini tt"><div class="hd">Ambiente</div><p>El viento, la lluvia, el mar o las brasas de cada mundo.</p></div></div>
+        <div class="gm-opt-row has"><img src="img/icons/opt_effects.png" alt="Efectos">
+          <div class="gm-opt-vol"><div><u style="width:88px"></u><img src="img/icons/opt_knob.png" alt="" style="left:88px"></div><b>80</b></div>
+          <div class="gm-tip mini tt"><div class="hd">Efectos</div><p>Los golpes y las habilidades del combate.</p></div></div>
+        <div class="gm-opt-row has"><img src="img/icons/opt_click.png" alt="Interfaz">
+          <div class="gm-opt-vol"><div><u style="width:44px"></u><img src="img/icons/opt_knob.png" alt="" style="left:44px"></div><b>40</b></div>
+          <div class="gm-tip mini tt"><div class="hd">Interfaz</div><p>Los clics, los cofres y el botín.</p></div></div>
+
+        <div class="gm-opt-row gap has"><img src="img/icons/opt_menu_scale.png" alt="Tamaño de los menús">
+          <div class="gm-opt-seg"><div>75 %</div><div class="on">100 %</div></div>
+          <div class="gm-tip mini tt"><div class="hd">Tamaño de los menús</div><p>Los paneles que flotan sobre la tira. En pruebas.</p></div></div>
+        <div class="gm-opt-row has"><img src="img/icons/opt_game_scale.png" alt="Tamaño del juego">
+          <div class="gm-opt-seg"><div>75 %</div><div class="on">100 %</div><div>125 %</div></div>
+          <div class="gm-tip mini tt"><div class="hd">Tamaño del juego</div><p>La tira de combate y su barra. En pruebas.</p></div></div>
+      </div>
+
+      <div class="gm-rule"><i></i><img src="img/icons/ui_rule.png" alt=""><i></i></div>
+      <div class="gm-opt-foot">
+        <div class="gm-btn has"><img src="img/icons/opt_export.png" alt="Exportar partida"><div class="gm-tip mini tt above"><div class="hd">Exportar partida</div><p>Guarda una copia en un archivo.</p></div></div>
+        <div class="gm-btn has"><img src="img/icons/opt_import.png" alt="Importar partida"><div class="gm-tip mini tt above"><div class="hd">Importar partida</div><p>Sustituye tu progreso por el de un archivo.</p></div></div>
+        <div class="gm-btn danger has"><img src="img/icons/opt_new.png" alt="Partida nueva"><div class="gm-tip mini tt above"><div class="hd">Partida nueva</div><p>Borra todo el progreso. Antes pregunta.</p></div></div>
+        <div class="gm-btn last has"><img src="img/icons/opt_quit.png" alt="Salir"><div class="gm-tip mini tt above" style="left:auto;right:0"><div class="hd">Salir</div><p>Guarda y cierra el juego.</p></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="gm-win">
+    <div class="gm-in gm-opt-ask">
+      <div class="gm-title">¿Partida nueva?</div>
+      <p>Se borra todo: etapa, equipo, oro y tecnología. No se puede deshacer.</p>
+      <div class="gm-opt-keys">
+        <div class="gm-opt-key"><img src="img/icons/opt_back.png" alt="">Volver</div>
+        <div class="gm-opt-key danger"><img src="img/icons/opt_new.png" alt="">Borrar todo</div>
+      </div>
+    </div>
+  </div>
+</div>

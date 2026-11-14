@@ -1,0 +1,36 @@
+<!-- mock: Pantalla de título | El título vive en la misma tira de 600 × 160 que el juego: el mundo 1 al atardecer, los tres héroes donde luego pelean, el nombre como logotipo de píxel y una sola tecla dorada para entrar (dice «Empezar» si no hay partida). Opciones, sonido y salir son signos a su lado. -->
+<style>
+/* Title screen: the strip itself, 600×160, with the party standing where the game will pick them up. */
+.gm-ts { width: 600px; height: 160px; background: url(img/icons/title_backdrop.png); box-shadow: 0 0 0 1px var(--k0), 2px 2px 0 1px rgba(11, 13, 23, .55); }
+.gm-ts > canvas { position: absolute; top: 59px; width: 96px; height: 70px; }
+.gm-ts-fore { position: absolute; left: 0; top: 0; pointer-events: none; }
+.gm-ts-logo { position: absolute; left: 321px; top: 9px; }
+
+/* Everything that can be pressed sits in one row on the calm grass: three signs, then the one gold key. */
+.gm-ts-menu { position: absolute; right: 8px; bottom: 5px; display: flex; align-items: center; gap: 2px; }
+.gm-ts-play { position: relative; height: 24px; margin-left: 5px; border: 4px solid transparent; border-image: url(img/icons/ui_btn_gold.png) 4 fill / 4px / 0 stretch;
+  display: flex; align-items: center; gap: 1px; padding: 0 7px 1px 0; font: 12px/12px var(--f-name); color: var(--gold-dk); white-space: nowrap; }
+.gm-ts-play > img { margin-top: -1px; }
+.gm-ts-play:hover { filter: brightness(1.12); }
+.gm-ts-menu .tt.above { bottom: calc(100% + 5px); }
+.gm-ts-party { display: flex; align-items: center; gap: 2px; padding-top: 3px; color: var(--k9); }
+.gm-ts-party > img + img { margin-left: 4px; }
+</style>
+
+<div class="gm" role="group" aria-label="Maqueta de la pantalla de título: la tira del juego con el mundo 1 al atardecer, los tres héroes, el logotipo Taskbar Legion y la tecla para continuar.">
+  <div class="gm-ts">
+    <canvas class="px anim" data-char="priest" data-anim="idle" width="96" height="70" style="left:136px" role="img" aria-label="La Priest en reposo."></canvas>
+    <canvas class="px anim" data-char="ranger" data-anim="idle" width="96" height="70" style="left:192px" role="img" aria-label="El Ranger en reposo."></canvas>
+    <canvas class="px anim" data-char="knight" data-anim="idle" width="96" height="70" style="left:252px" role="img" aria-label="El Knight en reposo."></canvas>
+    <img class="gm-ts-fore" src="img/icons/title_fore.png" alt="">
+    <img class="gm-ts-logo" src="img/icons/title_logo.png" alt="Taskbar Legion">
+    <div class="gm-ts-menu">
+      <div class="gm-btn has"><img src="img/icons/opt_gear.png" alt="Opciones"><div class="gm-tip tag tt above"><div class="hd" style="padding:0">Opciones</div></div></div>
+      <div class="gm-btn has"><img src="img/icons/opt_sound.png" alt="Sonido"><div class="gm-tip tag tt above"><div class="hd" style="padding:0">Silenciar</div></div></div>
+      <div class="gm-btn has"><img src="img/icons/opt_quit.png" alt="Salir"><div class="gm-tip tag tt above"><div class="hd" style="padding:0">Salir</div></div></div>
+      <div class="gm-ts-play has"><img src="img/icons/title_play.png" alt="">Continuar
+        <div class="gm-tip mini tt above" style="left:auto;right:0"><div class="hd">Tu partida</div><div class="ln" style="padding-top:0"><span>Normal</span><b>3-7</b></div>
+          <div class="gm-ts-party"><img src="img/icons/crest_knight.png" alt="Knight">47<img src="img/icons/crest_ranger.png" alt="Ranger">45<img src="img/icons/crest_priest.png" alt="Priest">44</div></div></div>
+    </div>
+  </div>
+</div>

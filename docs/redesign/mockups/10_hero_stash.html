@@ -1,76 +1,5 @@
-<!--
-  Mock-up 2 — the Hero panel (paper doll) and the Stash.
-  A fragment: the lab page injects it (tools/assets/pipeline/lab_page.py). Drawn at the game's 1× pixel size and
-  shown through `zoom`, so every piece keeps whole pixels.
-
-  Rules of this pass (asked for by the user): signs instead of words, words only in tooltips; chrome drawn as pixel
-  art (nine-slices from tools/assets/pipeline/icon_sets/s95_chrome.py), not CSS boxes; two typefaces with a job
-  each — a blackletter for names, a pixel grotesque for numbers; gold only where it matters; no inset boxes, no
-  title bars, space instead of lines. These recipes are the design system to port to src/ui/kit.
--->
+<!-- mock: Panel de héroe y alijo | Signos en lugar de palabras, y las palabras solo en los tooltips (pasa el ratón por casillas, estadísticas, pestañas y botones). El Knight del nicho es su animación de reposo. -->
 <style>
-.gm {                                   /* tokens straight from the "dusk" palette */
-  --k0: #0b0d17; --k1: #151a2b; --k2: #212a40; --k3: #303c55; --k4: #43506a; --k5: #5b6880; --k6: #77839a; --k7: #97a1b3; --k8: #bcc3cf; --k9: #e6e6e8;
-  --gold: #ebb94f; --gold-hi: #f8dc84; --gold-dim: #a96628; --gold-dk: #4f2b22;
-  --xp: #3f68a6; --xp-hi: #82b0da; --xp-dk: #2e4a88; --good: #86ab5a; --bad: #dc5f48;
-  --t0: #97a1b3; --t1: #86ab5a; --t2: #82b0da; --t3: #cba2dd; --t4: #ee9f72; --t5: #f08a62; --t6: #6fb9a6; --t7: #f8dc84; --t8: #ead2f0;
-  --f-name: "Jacquard 12", "Pixelify Sans", serif;      /* names of things: 12 px grid */
-  --f-title: "Jacquard 12", "Pixelify Sans", serif;     /* window titles: the same face at twice the size, the hero's pixel */
-  --f-num: "Jersey 10", "Pixelify Sans", monospace;     /* numbers and tooltip text: 10 px grid */
-  --f-big: "Jersey 20", "Pixelify Sans", monospace;     /* the one big number: 20 px grid */
-  zoom: 2;
-  font: 10px/10px var(--f-num);
-  color: var(--k8);
-  display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: flex-start;
-  image-rendering: pixelated;
-}
-@media (max-width: 760px) { .gm { zoom: 1; } }
-.gm * { box-sizing: border-box; }
-.gm img, .gm canvas { image-rendering: pixelated; display: block; }
-.gm p { margin: 0; }
-
-/* Window: one nine-slice, brass only on the corners. */
-.gm-win { position: relative; z-index: 1; border: 10px solid transparent; border-image: url(img/icons/ui_window.png) 10 fill / 10px / 0 stretch;
-  filter: drop-shadow(2px 2px 0 rgba(11, 13, 23, .55)); }
-.gm-in { margin: -3px; }
-.gm-close { position: absolute; right: -10px; top: -10px; width: 13px; height: 13px; }   /* takes the place of the corner fitting */
-.gm-close:hover { filter: brightness(1.25); }
-
-/* Titles: blackletter, gold. */
-.gm-title { font: 24px/22px var(--f-title); color: var(--gold-hi); text-shadow: 1px 1px 0 var(--k0); }
-.gm-rule { display: flex; align-items: center; gap: 1px; }
-.gm-rule i { flex: 1; height: 1px; background: var(--k3); }
-
-/* Tabs: bookmarks on the window's left edge, a sign each. */
-.gm-book { padding-left: 19px; }
-.gm-tabs { position: absolute; left: 0; top: 12px; display: grid; gap: 2px; }
-.gm-tab { position: relative; width: 22px; height: 22px; background: url(img/icons/ui_tab.png); padding: 3px 0 0 3px; }
-.gm-tab img { opacity: .55; }
-.gm-tab:hover img { opacity: 1; }
-.gm-tab.on { z-index: 2; background-image: url(img/icons/ui_tab_on.png); }
-.gm-tab.on img { opacity: 1; }
-
-/* Slot: the icon already carries its rarity frame (36×36). */
-.gm-slot { position: relative; width: 36px; height: 36px; }
-.gm-slot > img { width: 36px; height: 36px; }
-.gm-slot.empty > img.ghost { position: absolute; inset: 0; opacity: .16; filter: grayscale(1) brightness(1.6); clip-path: inset(2px); }
-.gm-slot.sel::after { content: ""; position: absolute; inset: -2px; pointer-events: none;
-  background:
-    linear-gradient(var(--gold-hi), var(--gold-hi)) 0 0 / 6px 1px, linear-gradient(var(--gold-hi), var(--gold-hi)) 0 0 / 1px 6px,
-    linear-gradient(var(--gold-hi), var(--gold-hi)) 100% 0 / 6px 1px, linear-gradient(var(--gold-hi), var(--gold-hi)) 100% 0 / 1px 6px,
-    linear-gradient(var(--gold-hi), var(--gold-hi)) 0 100% / 6px 1px, linear-gradient(var(--gold-hi), var(--gold-hi)) 0 100% / 1px 6px,
-    linear-gradient(var(--gold-hi), var(--gold-hi)) 100% 100% / 6px 1px, linear-gradient(var(--gold-hi), var(--gold-hi)) 100% 100% / 1px 6px;
-  background-repeat: no-repeat; }
-.gm-slot:hover > img:first-child { filter: brightness(1.18); }
-.gm-slot > b { position: absolute; right: 3px; bottom: 3px; font-weight: 400; color: var(--k9); text-shadow: 1px 0 0 var(--k0), -1px 0 0 var(--k0), 0 1px 0 var(--k0), 0 -1px 0 var(--k0); }
-.gm-slot > .up { position: absolute; left: 1px; top: 1px; width: 16px; height: 16px; }
-
-/* Bars: stepped corners, a lit top row, the number inside. */
-.gm-bar { position: relative; height: 11px; background: var(--k0);
-  clip-path: polygon(1px 0, calc(100% - 1px) 0, calc(100% - 1px) 1px, 100% 1px, 100% calc(100% - 1px), calc(100% - 1px) calc(100% - 1px), calc(100% - 1px) 100%, 1px 100%, 1px calc(100% - 1px), 0 calc(100% - 1px), 0 1px, 1px 1px); }
-.gm-bar > u { position: absolute; left: 1px; top: 1px; bottom: 1px; background: linear-gradient(var(--xp-hi) 0 1px, var(--xp) 1px 7px, var(--xp-dk) 7px); }
-.gm-bar > b { position: absolute; inset: 0; font-weight: 400; text-align: center; line-height: 11px; color: var(--k9); text-shadow: 1px 1px 0 var(--k0); }
-
 /* Hero panel. */
 .gm-hero { display: grid; grid-template-columns: 36px 100px 36px 50px; gap: 0 6px; }
 .gm-col { display: grid; gap: 2px; align-content: start; }
@@ -85,43 +14,6 @@
 .gm-line { display: grid; grid-template-columns: 16px 1fr; gap: 3px; align-items: center; width: 100px; margin-top: 5px; }
 .gm-power { display: flex; align-items: center; gap: 4px; margin-top: 5px; font: 20px/20px var(--f-big); color: var(--gold-hi); text-shadow: 1px 1px 0 var(--k0); }
 
-/* Stats: a sign and a number. What it is, and where it comes from, lives in the tooltip. */
-.gm-stats { display: grid; align-content: start; margin-left: 2px; }
-.gm-stat { position: relative; display: grid; grid-template-columns: 16px 1fr; gap: 3px; align-items: center; height: 18px; padding-right: 2px; }
-.gm-stat > b { font-weight: 400; text-align: right; color: var(--k9); }
-.gm-stat:hover { background: var(--k2); }
-.gm-stat.gap { margin-top: 8px; }
-.gm-stat > b.up { color: var(--good); }
-
-/* Tooltips: the only place where things are spelled out. */
-.gm-tip { width: 150px; border: 4px solid transparent; border-image: url(img/icons/ui_tip.png) 4 fill / 4px / 0 stretch; padding: 2px 3px 3px; color: var(--k7); text-align: left; font: 10px/10px var(--f-num);
-  filter: drop-shadow(2px 2px 0 rgba(11, 13, 23, .55)); }
-.gm-tip.mini { width: 116px; }
-.gm-tip.tag { width: auto; white-space: nowrap; }
-.gm-tip .nm { font: 12px/12px var(--f-name); padding-bottom: 3px; }
-.gm-tip .hd { color: var(--gold-hi); padding-bottom: 3px; }
-.gm-tip .sub { display: flex; align-items: center; gap: 2px; height: 16px; margin: -3px 0; }
-.gm-tip .sub .r { margin-left: auto; display: flex; align-items: center; color: var(--k9); }
-.gm-tip .gm-rule { margin: 4px 0 3px; }
-.gm-tip .aff { display: grid; grid-template-columns: 16px auto 1fr; gap: 3px; align-items: center; height: 15px; }
-.gm-tip .aff b, .gm-tip .cmp b, .gm-tip .ln b { font-weight: 400; color: var(--k9); }
-.gm-tip .aff.gem b { color: #f08a62; }
-.gm-tip .cmp { display: flex; align-items: center; gap: 1px; height: 16px; margin: 0 0 -3px -2px; }
-.gm-tip .cmp b { color: var(--good); }
-.gm-tip .lore { color: var(--k5); padding-top: 4px; }
-.gm-tip .ln { display: flex; justify-content: space-between; padding-top: 3px; }
-.gm-tip p + .ln { padding-top: 5px; }
-.t0 .nm { color: var(--t0); } .t1 .nm { color: var(--t1); } .t2 .nm { color: var(--t2); } .t3 .nm { color: var(--t3); } .t4 .nm { color: var(--t4); }
-.t5 .nm { color: var(--t5); } .t6 .nm { color: var(--t6); } .t7 .nm { color: var(--t7); } .t8 .nm { color: var(--t8); }
-.gm .tt { display: none; position: absolute; left: calc(100% + 5px); top: 0; z-index: 40; pointer-events: none; }
-.gm .tt.above { left: 0; top: auto; bottom: calc(100% + 4px); }
-.gm .tt.left { left: auto; right: calc(100% + 5px); }
-.gm .has:hover > .tt { display: block; }
-.gm-line, .gm-power, .gm-gold { position: relative; }
-.gm-grid .gm-slot:nth-child(6n+4) > .tt, .gm-grid .gm-slot:nth-child(6n+5) > .tt, .gm-grid .gm-slot:nth-child(6n) > .tt { left: auto; right: calc(100% + 5px); }
-.gm-book, .gm-side > * { position: relative; z-index: 1; }      /* the panel under the pointer comes to the front, tooltips and all */
-.gm-book:hover, .gm-side > *:hover { z-index: 9; }
-
 /* Stash. */
 .gm-top { display: flex; align-items: center; gap: 5px; height: 22px; margin-top: -2px; }
 .gm-top > span { color: var(--k6); padding-top: 5px; }
@@ -133,15 +25,6 @@
 .gm-filter > div.on > img { opacity: 1; }
 .gm-grid { display: grid; grid-template-columns: repeat(6, 36px); gap: 2px; margin-top: 5px; }
 .gm-foot { display: flex; align-items: center; gap: 3px; margin-top: 6px; }
-.gm-btn { position: relative; width: 24px; height: 24px; border: 4px solid transparent; border-image: url(img/icons/ui_btn.png) 4 fill / 4px / 0 stretch; }
-.gm-btn > img { margin-top: -1px; }
-.gm-btn:hover { filter: brightness(1.15); }
-.gm-btn.gold { border-image-source: url(img/icons/ui_btn_gold.png); }
-.gm-btn.off { border-image-source: url(img/icons/ui_btn_off.png); }
-.gm-btn.off > img { opacity: .45; filter: grayscale(1); }
-.gm-btn > b { position: absolute; right: -6px; top: -7px; min-width: 9px; height: 9px; padding: 0 2px; font-weight: 400; line-height: 9px; text-align: center; color: var(--k9); background: #8f2433; box-shadow: 0 0 0 1px var(--k0); }
-.gm-gold { margin-left: auto; display: flex; align-items: center; gap: 2px; color: var(--gold-hi); }
-.gm-side { display: grid; gap: 10px; align-content: start; justify-items: start; }
 </style>
 
 <div class="gm" role="group" aria-label="Maqueta de la interfaz: panel de héroe del Knight con su equipo y estadísticas, un tooltip de objeto y el alijo.">

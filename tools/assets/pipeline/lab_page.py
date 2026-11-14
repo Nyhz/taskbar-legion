@@ -208,7 +208,7 @@ def items_section() -> tuple[str, dict[str, str]]:
     files: dict[str, str] = {}
     blocks = []
     order = ["tiers", "helmets", "chest", "gloves", "legs", "boots", "swords", "shield", "bow", "quiver", "wand", "tome",
-             "ring", "amulet", "trinket", "gems", "chests", "chests_open", "keys", "stats", "ui", "chrome"]
+             "ring", "amulet", "trinket", "gems", "chests", "chests_open", "keys", "stats", "ui", "hud", "chrome"]
 
     def rank(g: dict) -> int:
         key = g["key"]
@@ -222,12 +222,18 @@ def items_section() -> tuple[str, dict[str, str]]:
 
     for g in sorted(json.loads(manifest.read_text()), key=rank):
         cells = []
+        if g["key"].startswith("mock_"):  # pictures composed for the mock-ups, not part of the catalogue
+            continue
         for it in g["items"]:
-            files[f"img/icons/{it['file']}"] = str((ICONS / it["file"]).relative_to(ROOT))
             w, h = Image.open(ICONS / it["file"]).size
+            if w > 160:  # a whole scene: it belongs to a mock-up, not to the catalogue
+                continue
+            files[f"img/icons/{it['file']}"] = str((ICONS / it["file"]).relative_to(ROOT))
             k = 2 if w > 48 else 3 if w >= 32 else 4  # framed items at 3×; the small glyphs at 4×; big pieces at 2×
             cells.append(f'        <figure class="item"><img class="px" src="img/icons/{it["file"]}" width="{w * k}" height="{h * k}" '
                          f'style="width:{w * k}px;height:{h * k}px" alt="{esc(it["name"])}"><figcaption>{esc(it["name"])}</figcaption></figure>')
+        if not cells:
+            continue
         blocks.append(f'''      <div class="item-group">
         <h3>{esc(g["title"])}</h3>
         <p class="muted">{esc(g["note"])}</p>
@@ -250,21 +256,35 @@ MOCKUPS = ROOT / "docs" / "redesign" / "mockups"
 
 
 def mockups_section() -> tuple[str, dict[str, str]]:
-    """The interface mock-ups: every fragment of docs/redesign/mockups, in name order, with the icons they use."""
-    parts = [f.read_text() for f in sorted(MOCKUPS.glob("*.html"))]
+    """The interface mock-ups of docs/redesign/mockups, in name order: `00_kit.html` (the shared recipes, injected
+    once) and then one stage per panel. A panel fragment opens with `<!-- mock: Title | note -->`."""
+    parts = sorted(MOCKUPS.glob("*.html"))
     if not parts:
         return "", {}
-    body = "\n".join(parts)
-    files = {f"img/icons/{name}": str((ICONS / name).relative_to(ROOT)) for name in sorted(set(re.findall(r'img/icons/(\w+\.png)', body)))}
+    blocks, used = [], ""
+    for f in parts:
+        text = f.read_text()
+        used += text
+        head = re.match(r"<!-- mock: (.+?) \| (.+?) -->\n", text)
+        if not head:  # the kit: styles only
+            blocks.append(text)
+            continue
+        blocks.append(f'''    <div class="item-group" id="mock-{f.stem}">
+      <h3>{esc(head.group(1))}</h3>
+      <p class="muted">{esc(head.group(2))}</p>
+      <div class="mock-stage">
+{text[head.end():]}
+      </div>
+    </div>''')
+    files = {f"img/icons/{name}": str((ICONS / name).relative_to(ROOT)) for name in sorted(set(re.findall(r'img/icons/(\w+\.png)', used)))}
+    body = "\n".join(blocks)
     return f'''  <section id="ui">
     <div class="sec-head">
-      <span class="eyebrow">Interfaz · maqueta 2</span>
-      <h2>Panel de héroe y alijo</h2>
-      <p class="muted">Segunda maqueta, hecha para que deje de parecer una plantilla: signos en lugar de palabras, y las palabras solo en los tooltips (pasa el ratón por casillas, estadísticas, pestañas y botones). El marco es pixel art de verdad, con cantoneras de latón; los nombres van en gótica y los números en una pixel limpia. El Knight del nicho es su animación de reposo.</p>
+      <span class="eyebrow">Interfaz · maquetas</span>
+      <h2>La interfaz</h2>
+      <p class="muted">Maquetas de los paneles del juego, hechas con los iconos reales y dibujadas al tamaño de píxel del juego, ampliadas al doble. Las reglas: signos en lugar de palabras, y las palabras solo en los tooltips (pasa el ratón); el marco es pixel art de verdad, con cantoneras de latón; los nombres van en gótica y los números en una pixel limpia.</p>
     </div>
-    <div class="mock-stage">
 {body}
-    </div>
   </section>
 ''', files
 

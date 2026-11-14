@@ -101,8 +101,8 @@ button.link { background: none; border: 0; padding: 0; font: inherit; color: var
     <h1>Laboratorio de arte</h1>
     <p class="muted">Aquí va apareciendo todo lo que se genera para el rediseño. Los personajes empiezan de cero: esqueletos nuevos y un motor de animación propio.</p>
     <div class="status">
-      <span class="chip on">Fase: interfaz · maqueta 2</span>
-      <span class="chip wait">Esperando tu opinión sobre la maqueta de la interfaz</span>
+      <span class="chip on">Fase: interfaz · maquetas de todos los paneles</span>
+      <span class="chip wait">Esperando tu opinión sobre las maquetas de los paneles</span>
       <span class="chip">Rama redesign/foundations</span>
       <span class="chip">Actualizado 14 nov 2026</span>
     </div>
@@ -1099,20 +1099,20 @@ button.link { background: none; border: 0; padding: 0; font: inherit; color: var
 <!-- mockups:start -->
   <section id="ui">
     <div class="sec-head">
-      <span class="eyebrow">Interfaz · maqueta 2</span>
-      <h2>Panel de héroe y alijo</h2>
-      <p class="muted">Segunda maqueta, hecha para que deje de parecer una plantilla: signos en lugar de palabras, y las palabras solo en los tooltips (pasa el ratón por casillas, estadísticas, pestañas y botones). El marco es pixel art de verdad, con cantoneras de latón; los nombres van en gótica y los números en una pixel limpia. El Knight del nicho es su animación de reposo.</p>
+      <span class="eyebrow">Interfaz · maquetas</span>
+      <h2>La interfaz</h2>
+      <p class="muted">Maquetas de los paneles del juego, hechas con los iconos reales y dibujadas al tamaño de píxel del juego, ampliadas al doble. Las reglas: signos en lugar de palabras, y las palabras solo en los tooltips (pasa el ratón); el marco es pixel art de verdad, con cantoneras de latón; los nombres van en gótica y los números en una pixel limpia.</p>
     </div>
-    <div class="mock-stage">
 <!--
-  Mock-up 2 — the Hero panel (paper doll) and the Stash.
-  A fragment: the lab page injects it (tools/assets/pipeline/lab_page.py). Drawn at the game's 1× pixel size and
-  shown through `zoom`, so every piece keeps whole pixels.
+  The interface kit of the mock-ups: tokens, typefaces and the recipes every panel shares (window, close key, title,
+  rule, bookmark tabs, slot, bar, sign + number, tooltip, button). A fragment: the lab page injects it once, before
+  the panels (tools/assets/pipeline/lab_page.py). Everything is drawn at the game's 1× pixel size and shown
+  through `zoom`, so every piece keeps whole pixels. These recipes are the design system to port to src/ui/kit.
 
-  Rules of this pass (asked for by the user): signs instead of words, words only in tooltips; chrome drawn as pixel
-  art (nine-slices from tools/assets/pipeline/icon_sets/s95_chrome.py), not CSS boxes; two typefaces with a job
-  each — a blackletter for names, a pixel grotesque for numbers; gold only where it matters; no inset boxes, no
-  title bars, space instead of lines. These recipes are the design system to port to src/ui/kit.
+  Rules (asked for by the user): signs instead of words, words only in tooltips; chrome drawn as pixel art
+  (nine-slices from tools/assets/pipeline/icon_sets/s95_chrome.py), not CSS boxes; two typefaces with a job each —
+  a blackletter for names, a pixel grotesque for numbers; gold only where it matters; no inset boxes, no title
+  bars, space instead of lines.
 -->
 <style>
 .gm {                                   /* tokens straight from the "dusk" palette */
@@ -1177,20 +1177,6 @@ button.link { background: none; border: 0; padding: 0; font: inherit; color: var
 .gm-bar > u { position: absolute; left: 1px; top: 1px; bottom: 1px; background: linear-gradient(var(--xp-hi) 0 1px, var(--xp) 1px 7px, var(--xp-dk) 7px); }
 .gm-bar > b { position: absolute; inset: 0; font-weight: 400; text-align: center; line-height: 11px; color: var(--k9); text-shadow: 1px 1px 0 var(--k0); }
 
-/* Hero panel. */
-.gm-hero { display: grid; grid-template-columns: 36px 100px 36px 50px; gap: 0 6px; }
-.gm-col { display: grid; gap: 2px; align-content: start; }
-.gm-mid { display: grid; align-content: start; justify-items: center; }
-.gm-who { display: flex; align-items: center; gap: 4px; height: 24px; margin-top: -2px; }
-.gm-doll { position: relative; width: 100px; height: 116px; margin-top: 4px; background: url(img/icons/ui_alcove.png); }
-.gm-doll .fig { position: absolute; inset: 6px 6px 1px; overflow: hidden; }
-.gm-doll canvas { position: absolute; left: -36px; top: -34px; width: 192px; height: 140px; }
-.gm-lvl { position: absolute; left: 50%; top: -3px; transform: translateX(-50%); z-index: 1; min-width: 19px; height: 14px; padding: 0 4px; text-align: center; line-height: 11px; color: var(--gold-dk); }
-.gm-lvl::before { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(var(--gold-hi) 0 1px, var(--gold) 1px 9px, var(--gold-dim) 9px);   /* a pennant; on a layer of its own so the tooltip is not clipped */
-  clip-path: polygon(1px 0, calc(100% - 1px) 0, calc(100% - 1px) 1px, 100% 1px, 100% calc(100% - 3px), 50% 100%, 0 calc(100% - 3px), 0 1px, 1px 1px); }
-.gm-line { display: grid; grid-template-columns: 16px 1fr; gap: 3px; align-items: center; width: 100px; margin-top: 5px; }
-.gm-power { display: flex; align-items: center; gap: 4px; margin-top: 5px; font: 20px/20px var(--f-big); color: var(--gold-hi); text-shadow: 1px 1px 0 var(--k0); }
-
 /* Stats: a sign and a number. What it is, and where it comes from, lives in the tooltip. */
 .gm-stats { display: grid; align-content: start; margin-left: 2px; }
 .gm-stat { position: relative; display: grid; grid-template-columns: 16px 1fr; gap: 3px; align-items: center; height: 18px; padding-right: 2px; }
@@ -1225,8 +1211,180 @@ button.link { background: none; border: 0; padding: 0; font: inherit; color: var
 .gm .has:hover > .tt { display: block; }
 .gm-line, .gm-power, .gm-gold { position: relative; }
 .gm-grid .gm-slot:nth-child(6n+4) > .tt, .gm-grid .gm-slot:nth-child(6n+5) > .tt, .gm-grid .gm-slot:nth-child(6n) > .tt { left: auto; right: calc(100% + 5px); }
-.gm-book, .gm-side > * { position: relative; z-index: 1; }      /* the panel under the pointer comes to the front, tooltips and all */
-.gm-book:hover, .gm-side > *:hover { z-index: 9; }
+.gm > *, .gm-side > * { position: relative; z-index: 1; }      /* the panel under the pointer comes to the front, tooltips and all */
+.gm > *:hover, .gm-side > *:hover { z-index: 9; }
+
+/* Buttons: a sign on a raised key. Gold: the purse, wherever it shows. */
+.gm-btn { position: relative; width: 24px; height: 24px; border: 4px solid transparent; border-image: url(img/icons/ui_btn.png) 4 fill / 4px / 0 stretch; }
+.gm-btn > img { margin-top: -1px; }
+.gm-btn:hover { filter: brightness(1.15); }
+.gm-btn.gold { border-image-source: url(img/icons/ui_btn_gold.png); }
+.gm-btn.off { border-image-source: url(img/icons/ui_btn_off.png); }
+.gm-btn.off > img { opacity: .45; filter: grayscale(1); }
+.gm-btn > b { position: absolute; right: -6px; top: -7px; min-width: 9px; height: 9px; padding: 0 2px; font-weight: 400; line-height: 9px; text-align: center; color: var(--k9); background: #8f2433; box-shadow: 0 0 0 1px var(--k0); }
+.gm-gold { margin-left: auto; display: flex; align-items: center; gap: 2px; color: var(--gold-hi); }
+.gm-side { display: grid; gap: 10px; align-content: start; justify-items: start; }
+</style>
+
+    <div class="item-group" id="mock-05_hud">
+      <h3>HUD de la tira</h3>
+      <p class="muted">La barra que vive sobre la tira, en dos momentos: una oleada y un jefe de etapa. Los paneles se abren desde los signos de la izquierda; etapa, cofres (un cuadradito por hueco de almacén, encendido si hay cofre), llaves y oro se leen de un vistazo y se explican al pasar el ratón. Sobre la tira solo aparece lo que está pasando: daño, botín y, con un jefe delante, su nombre, su vida y el tiempo antes de que se enfurezca.</p>
+      <div class="mock-stage">
+<style>
+/* The HUD: a rail on top of the strip. Everything on it is a sign and, at most, a number. */
+.hud-gm { display: grid; gap: 14px; }
+.hud { position: relative; width: 600px; }
+.hud-rail { position: relative; z-index: 2; height: 22px; border-style: solid; border-width: 0 4px; border-image: url(img/icons/hud_rail.png) 0 4 fill / 0 4px / 0 stretch;
+  display: flex; align-items: center; padding: 0 2px; }
+.hud-key { position: relative; width: 19px; height: 22px; padding: 3px 0 0 2px; }
+.hud-key > img { opacity: .6; }
+.hud-key:hover > img, .hud-key.on > img { opacity: 1; }
+.hud-key.on::after { content: ""; position: absolute; left: 3px; right: 2px; bottom: 1px; height: 1px; background: var(--gold); }
+.hud-mid { flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px; }
+.hud-stage { position: relative; height: 12px; padding: 0 5px; line-height: 12px; color: var(--k0); background: linear-gradient(var(--k9) 0 1px, var(--k7) 1px 10px, var(--k5) 10px);
+  clip-path: polygon(1px 0, calc(100% - 1px) 0, calc(100% - 1px) 1px, 100% 1px, 100% calc(100% - 1px), calc(100% - 1px) calc(100% - 1px), calc(100% - 1px) 100%, 1px 100%, 1px calc(100% - 1px), 0 calc(100% - 1px), 0 1px, 1px 1px); }
+.hud-stage.hell { color: #fbb68a; background: linear-gradient(#dc5f48 0 1px, #8f2433 1px 10px, #63192e 10px); }
+.hud-where { position: relative; display: flex; align-items: center; gap: 4px; }
+.hud-prog { width: 132px; height: 9px; }
+.hud-prog > u { background: linear-gradient(#b3c873 0 1px, #5e8f4b 1px 5px, #3f7343 5px); }
+.hud-prog.boss > u { background: linear-gradient(#f08a62 0 1px, #bb3a3a 1px 5px, #8f2433 5px); }
+.hud-end { margin-left: -2px; opacity: .45; }
+.hud-end.on { opacity: 1; }
+.hud-res { position: relative; display: flex; align-items: center; gap: 1px; padding-right: 5px; color: var(--k9); }
+.hud-res.zero { color: var(--k5); }
+.hud-res.zero > img { opacity: .4; }
+.hud-res.full { color: var(--bad); }
+/* Chest storage: one square per slot, lit when it holds a chest; all red when there is no room left. */
+.hud-pips { display: grid; grid-template-rows: repeat(2, 3px); grid-auto-flow: column; grid-auto-columns: 3px; gap: 1px; margin-left: 2px; }
+.hud-pips > i { background: var(--k3); }
+.hud-pips.normal > i.on { background: #cb9a63; } .hud-pips.stage > i.on { background: #bcc3cf; } .hud-pips.world > i.on { background: #cba2dd; }
+.hud-res.full .hud-pips > i.on { background: var(--bad); }
+.hud-rail .gm-gold { margin-left: 2px; padding-right: 4px; }
+.hud .tt.below { left: 0; top: calc(100% + 3px); bottom: auto; }
+.hud .tt.below.r { left: auto; right: 0; }
+
+/* On the strip: only what is happening. Lettering sits straight on the art, outlined. */
+.hud-strip { position: relative; width: 600px; height: 160px; background: url(img/icons/hud_scene_wave.png); }
+.hud-strip.boss { background-image: url(img/icons/hud_scene_boss.png); }
+.hud-strip > * { position: absolute; }
+.hud-ink { text-shadow: 1px 0 0 var(--k0), -1px 0 0 var(--k0), 0 1px 0 var(--k0), 0 -1px 0 var(--k0), 1px 1px 0 var(--k0); }
+.hud-dmg { color: var(--k9); }
+.hud-dmg.crit { font: 20px/20px var(--f-big); color: var(--gold-hi); }
+.hud-dmg.heal { color: #b3c873; }
+.hud-loot { right: 28px; bottom: 6px; display: grid; gap: 1px; justify-items: end; font: 12px/12px var(--f-name); }
+.hud-loot > div:first-child { opacity: .55; }
+.hud-corner { right: 4px; bottom: 4px; width: 18px; height: 18px; padding: 1px; }
+.hud-corner > img { opacity: .5; }
+.hud-corner.on > img, .hud-corner:hover > img { opacity: 1; }
+.hud-badge { right: 5px; top: 5px; width: 16px; height: 16px; }
+.hud-foe { left: 180px; top: 5px; width: 240px; }
+.hud-foe-top { display: flex; align-items: center; gap: 3px; height: 16px; }
+.hud-foe-top > .nm { font: 12px/12px var(--f-name); color: var(--gold-hi); }
+.hud-clock { position: relative; margin-left: auto; display: flex; align-items: center; color: var(--k9); }
+.hud-life { height: 9px; }
+.hud-life > u { background: linear-gradient(#f08a62 0 1px, #bb3a3a 1px 5px, #8f2433 5px); }
+.hud-corner .tt { left: auto; right: 0; top: auto; bottom: calc(100% + 3px); }
+.hud-badge .tt { left: auto; right: 0; top: calc(100% + 3px); }
+</style>
+
+<div class="gm hud-gm" role="group" aria-label="Maqueta del HUD de la tira en dos momentos: una oleada en las Praderas doradas y un jefe de etapa.">
+  <div class="hud">
+    <div class="hud-rail">
+      <div class="hud-key on has"><img src="img/icons/hud_party.png" alt="Héroes"><div class="gm-tip tag tt below"><div class="hd" style="padding:0">Héroes</div></div></div>
+      <div class="hud-key has"><img src="img/icons/hud_stash.png" alt="Alijo"><div class="gm-tip tag tt below"><div class="hd" style="padding:0">Alijo</div></div></div>
+      <div class="hud-key has"><img src="img/icons/tab_talents.png" alt="Talentos"><div class="gm-tip tag tt below"><div class="hd" style="padding:0">Talentos</div></div></div>
+      <div class="hud-key has"><img src="img/icons/hud_tech.png" alt="Técnica"><div class="gm-tip tag tt below"><div class="hd" style="padding:0">Técnica</div></div></div>
+      <div class="hud-key has"><img src="img/icons/hud_cube.png" alt="Cubo"><div class="gm-tip tag tt below"><div class="hd" style="padding:0">Cubo</div></div></div>
+      <div class="hud-key has"><img src="img/icons/hud_map.png" alt="Mapa"><div class="gm-tip tag tt below"><div class="hd" style="padding:0">Mapa</div></div></div>
+      <div class="hud-key has"><img src="img/icons/hud_pets.png" alt="Mascotas"><div class="gm-tip tag tt below"><div class="hd" style="padding:0">Mascotas</div></div></div>
+
+      <div class="hud-mid">
+        <div class="hud-where has">
+          <img src="img/icons/map_diff_normal.png" alt="Normal"><div class="hud-stage">1-7</div>
+          <div class="gm-bar hud-prog"><u style="width:58%"></u></div>
+          <img class="hud-end" src="img/icons/hud_boss.png" alt="Jefe de etapa">
+          <div class="gm-tip mini tt below"><div class="nm" style="color:var(--gold-hi)">Praderas doradas</div><div class="ln" style="padding-top:0"><span>Normal</span><b>etapa 7 de 10</b></div><p style="padding-top:4px">Al llenarse la barra llega el jefe de la etapa.</p></div>
+        </div>
+      </div>
+
+      <div class="hud-res has"><img src="img/icons/hud_chest_normal.png" alt="Cofres comunes"><div class="hud-pips normal"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></div><div class="gm-tip mini tt below r"><div class="hd">Cofres comunes</div><div class="ln" style="padding-top:0"><span>Guardados</span><b>4 / 6</b></div><p style="padding-top:4px">Clic para abrirlos todos.</p></div></div>
+      <div class="hud-res full has"><img src="img/icons/hud_chest_stage.png" alt="Cofres de jefe de etapa"><div class="hud-pips stage"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div><div class="gm-tip mini tt below r"><div class="hd">Cofres de jefe de etapa</div><div class="ln" style="padding-top:0"><span>Guardados</span><b style="color:var(--bad)">4 / 4</b></div><p style="padding-top:4px">Lleno: los siguientes se pierden. Clic para abrirlos.</p></div></div>
+      <div class="hud-res zero has"><img src="img/icons/hud_chest_world.png" alt="Cofres de jefe de mundo"><div class="hud-pips world"><i></i><i></i><i></i><i></i></div><div class="gm-tip mini tt below r"><div class="hd">Cofres de jefe de mundo</div><div class="ln" style="padding-top:0"><span>Guardados</span><b>0 / 4</b></div></div></div>
+      <div class="hud-res has"><img src="img/icons/hud_key.png" alt="Llaves">2<div class="gm-tip mini tt below r"><div class="hd">Llaves del jefe de mundo</div><p>Cada intento contra el jefe 1-10 gasta una, también si caéis. Salen de los cofres de jefe de etapa de este mundo.</p></div></div>
+      <div class="gm-gold has"><img src="img/icons/ui_gold.png" alt="Oro">12 480<div class="gm-tip tag tt below r"><div class="hd" style="padding:0">Oro</div></div></div>
+      <div class="hud-key has"><img src="img/icons/hud_options.png" alt="Opciones"><div class="gm-tip tag tt below r"><div class="hd" style="padding:0">Opciones</div></div></div>
+    </div>
+    <div class="hud-strip">
+      <div class="hud-dmg heal hud-ink" style="left:281px;top:58px">+620</div>
+      <div class="hud-dmg hud-ink" style="left:320px;top:72px">1 842</div>
+      <div class="hud-dmg crit hud-ink" style="left:346px;top:50px">3 352</div>
+      <div class="hud-dmg hud-ink" style="left:462px;top:72px">964</div>
+      <div class="hud-loot hud-ink"><div style="color:var(--t2)">Rubí</div><div style="color:var(--t5)">Yelmo alado</div></div>
+      <div class="hud-corner has"><img src="img/icons/hud_retry.png" alt="Reintentar"><div class="gm-tip mini tt"><div class="hd">Reintentar · apagado</div><p>Si caéis, retrocedéis una etapa. Enciéndelo para quedaros y repetir.</p></div></div>
+    </div>
+  </div>
+
+  <div class="hud">
+    <div class="hud-rail">
+      <div class="hud-key has"><img src="img/icons/hud_party.png" alt="Héroes"><div class="gm-tip tag tt below"><div class="hd" style="padding:0">Héroes</div></div></div>
+      <div class="hud-key has"><img src="img/icons/hud_stash.png" alt="Alijo"><div class="gm-tip tag tt below"><div class="hd" style="padding:0">Alijo</div></div></div>
+      <div class="hud-key has"><img src="img/icons/tab_talents.png" alt="Talentos"><div class="gm-tip tag tt below"><div class="hd" style="padding:0">Talentos</div></div></div>
+      <div class="hud-key has"><img src="img/icons/hud_tech.png" alt="Técnica"><div class="gm-tip tag tt below"><div class="hd" style="padding:0">Técnica</div></div></div>
+      <div class="hud-key has"><img src="img/icons/hud_cube.png" alt="Cubo"><div class="gm-tip tag tt below"><div class="hd" style="padding:0">Cubo</div></div></div>
+      <div class="hud-key has"><img src="img/icons/hud_map.png" alt="Mapa"><div class="gm-tip tag tt below"><div class="hd" style="padding:0">Mapa</div></div></div>
+      <div class="hud-key has"><img src="img/icons/hud_pets.png" alt="Mascotas"><div class="gm-tip tag tt below"><div class="hd" style="padding:0">Mascotas</div></div></div>
+
+      <div class="hud-mid">
+        <div class="hud-where has">
+          <img src="img/icons/map_diff_hell.png" alt="Infierno"><div class="hud-stage hell">1-5</div>
+          <div class="gm-bar hud-prog boss"><u style="width:calc(100% - 2px)"></u></div>
+          <img class="hud-end on" src="img/icons/hud_boss.png" alt="Jefe de etapa">
+          <div class="gm-tip mini tt below"><div class="nm" style="color:var(--gold-hi)">Praderas doradas</div><div class="ln" style="padding-top:0"><span>Infierno</span><b>etapa 5 de 10</b></div><p style="padding-top:4px">El jefe de la etapa está delante.</p></div>
+        </div>
+      </div>
+
+      <div class="hud-res zero has"><img src="img/icons/hud_chest_normal.png" alt="Cofres comunes"><div class="hud-pips normal"><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="gm-tip mini tt below r"><div class="hd">Cofres comunes</div><div class="ln" style="padding-top:0"><span>Guardados</span><b>0 / 6</b></div></div></div>
+      <div class="hud-res has"><img src="img/icons/hud_chest_stage.png" alt="Cofres de jefe de etapa"><div class="hud-pips stage"><i class="on"></i><i></i><i></i><i></i></div><div class="gm-tip mini tt below r"><div class="hd">Cofres de jefe de etapa</div><div class="ln" style="padding-top:0"><span>Guardados</span><b>1 / 4</b></div><p style="padding-top:4px">Clic para abrirlos todos.</p></div></div>
+      <div class="hud-res zero has"><img src="img/icons/hud_chest_world.png" alt="Cofres de jefe de mundo"><div class="hud-pips world"><i></i><i></i><i></i><i></i></div><div class="gm-tip mini tt below r"><div class="hd">Cofres de jefe de mundo</div><div class="ln" style="padding-top:0"><span>Guardados</span><b>0 / 4</b></div></div></div>
+      <div class="hud-res zero has"><img src="img/icons/hud_key.png" alt="Llaves">0<div class="gm-tip mini tt below r"><div class="hd">Llaves del jefe de mundo</div><p>Cada intento contra el jefe 1-10 gasta una, también si caéis. Salen de los cofres de jefe de etapa de este mundo.</p></div></div>
+      <div class="gm-gold has"><img src="img/icons/ui_gold.png" alt="Oro">1,84 M<div class="gm-tip tag tt below r"><div class="hd" style="padding:0">Oro</div></div></div>
+      <div class="hud-key has"><img src="img/icons/hud_options.png" alt="Opciones"><div class="gm-tip tag tt below r"><div class="hd" style="padding:0">Opciones</div></div></div>
+    </div>
+    <div class="hud-strip boss">
+      <div class="hud-foe">
+        <div class="hud-foe-top hud-ink"><img src="img/icons/hud_boss.png" alt=""><div class="nm">Rey de la Cosecha</div>
+          <div class="hud-clock has"><img src="img/icons/hud_enrage.png" alt="Furia">0:18<div class="gm-tip mini tt below r" style="text-shadow:none"><div class="hd">Furia</div><p>Cuando el reloj se vacía, el jefe pega el doble cada cinco segundos.</p></div></div></div>
+        <div class="gm-bar hud-life"><u style="width:62%"></u></div>
+      </div>
+      <div class="hud-dmg hud-ink" style="left:362px;top:64px">2 106</div>
+      <div class="hud-dmg crit hud-ink" style="left:392px;top:46px">5 480</div>
+      <div class="hud-dmg heal hud-ink" style="left:279px;top:62px">+1 240</div>
+      <div class="hud-badge has"><img src="img/icons/hud_debuff.png" alt="Curación mermada"><div class="gm-tip mini tt"><div class="hd">Curación mermada</div><p>En Infierno el poder de curación rinde menos.</p></div></div>
+      <div class="hud-corner on has"><img src="img/icons/hud_retry.png" alt="Reintentar"><div class="gm-tip mini tt"><div class="hd">Reintentar · encendido</div><p>Si caéis, os quedáis en esta etapa y la repetís.</p></div></div>
+    </div>
+  </div>
+</div>
+
+      </div>
+    </div>
+    <div class="item-group" id="mock-10_hero_stash">
+      <h3>Panel de héroe y alijo</h3>
+      <p class="muted">Signos en lugar de palabras, y las palabras solo en los tooltips (pasa el ratón por casillas, estadísticas, pestañas y botones). El Knight del nicho es su animación de reposo.</p>
+      <div class="mock-stage">
+<style>
+/* Hero panel. */
+.gm-hero { display: grid; grid-template-columns: 36px 100px 36px 50px; gap: 0 6px; }
+.gm-col { display: grid; gap: 2px; align-content: start; }
+.gm-mid { display: grid; align-content: start; justify-items: center; }
+.gm-who { display: flex; align-items: center; gap: 4px; height: 24px; margin-top: -2px; }
+.gm-doll { position: relative; width: 100px; height: 116px; margin-top: 4px; background: url(img/icons/ui_alcove.png); }
+.gm-doll .fig { position: absolute; inset: 6px 6px 1px; overflow: hidden; }
+.gm-doll canvas { position: absolute; left: -36px; top: -34px; width: 192px; height: 140px; }
+.gm-lvl { position: absolute; left: 50%; top: -3px; transform: translateX(-50%); z-index: 1; min-width: 19px; height: 14px; padding: 0 4px; text-align: center; line-height: 11px; color: var(--gold-dk); }
+.gm-lvl::before { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(var(--gold-hi) 0 1px, var(--gold) 1px 9px, var(--gold-dim) 9px);   /* a pennant; on a layer of its own so the tooltip is not clipped */
+  clip-path: polygon(1px 0, calc(100% - 1px) 0, calc(100% - 1px) 1px, 100% 1px, 100% calc(100% - 3px), 50% 100%, 0 calc(100% - 3px), 0 1px, 1px 1px); }
+.gm-line { display: grid; grid-template-columns: 16px 1fr; gap: 3px; align-items: center; width: 100px; margin-top: 5px; }
+.gm-power { display: flex; align-items: center; gap: 4px; margin-top: 5px; font: 20px/20px var(--f-big); color: var(--gold-hi); text-shadow: 1px 1px 0 var(--k0); }
 
 /* Stash. */
 .gm-top { display: flex; align-items: center; gap: 5px; height: 22px; margin-top: -2px; }
@@ -1239,15 +1397,6 @@ button.link { background: none; border: 0; padding: 0; font: inherit; color: var
 .gm-filter > div.on > img { opacity: 1; }
 .gm-grid { display: grid; grid-template-columns: repeat(6, 36px); gap: 2px; margin-top: 5px; }
 .gm-foot { display: flex; align-items: center; gap: 3px; margin-top: 6px; }
-.gm-btn { position: relative; width: 24px; height: 24px; border: 4px solid transparent; border-image: url(img/icons/ui_btn.png) 4 fill / 4px / 0 stretch; }
-.gm-btn > img { margin-top: -1px; }
-.gm-btn:hover { filter: brightness(1.15); }
-.gm-btn.gold { border-image-source: url(img/icons/ui_btn_gold.png); }
-.gm-btn.off { border-image-source: url(img/icons/ui_btn_off.png); }
-.gm-btn.off > img { opacity: .45; filter: grayscale(1); }
-.gm-btn > b { position: absolute; right: -6px; top: -7px; min-width: 9px; height: 9px; padding: 0 2px; font-weight: 400; line-height: 9px; text-align: center; color: var(--k9); background: #8f2433; box-shadow: 0 0 0 1px var(--k0); }
-.gm-gold { margin-left: auto; display: flex; align-items: center; gap: 2px; color: var(--gold-hi); }
-.gm-side { display: grid; gap: 10px; align-content: start; justify-items: start; }
 </style>
 
 <div class="gm" role="group" aria-label="Maqueta de la interfaz: panel de héroe del Knight con su equipo y estadísticas, un tooltip de objeto y el alijo.">
@@ -1395,6 +1544,810 @@ button.link { background: none; border: 0; padding: 0; font: inherit; color: var
   </div>
 </div>
 
+      </div>
+    </div>
+    <div class="item-group" id="mock-15_talents">
+      <h3>Talentos</h3>
+      <p class="muted">La pestaña de talentos del panel de héroe, en horizontal como la tira: a la izquierda el tronco común y a la derecha las dos ramas de especialización, cada una con su definitiva al final. La barra de arriba son los puntos gastados, que van abriendo columnas. La forma del nodo dice qué es: placa cuadrada, habilidad; sello redondo, pasiva; placa verdemar, cambia una habilidad; octógono, definitiva. El contenido de las ramas es provisional: llega con el rediseño de los kits.</p>
+      <div class="mock-stage">
+<style>
+.tal-top { display: flex; align-items: center; gap: 4px; height: 24px; margin-top: -2px; }
+.tal-top .sp { flex: 1; }
+.tal-slots { position: relative; display: flex; align-items: center; gap: 2px; margin-right: 8px; }
+.tal-slots > u { width: 7px; height: 7px; background: var(--gold); box-shadow: inset 1px 1px 0 var(--gold-hi), inset -1px -1px 0 var(--gold-dim), 0 0 0 1px var(--k0); }
+.tal-free { position: relative; display: flex; align-items: center; gap: 2px; font: 20px/20px var(--f-big); color: var(--gold-hi); text-shadow: 1px 1px 0 var(--k0); margin-right: 6px; }
+.tal-undo { margin-right: 12px; }
+.tal-tree { position: relative; width: 330px; height: 146px; margin-top: 5px; }
+.tal-tree > * { position: absolute; }
+.tal-need { top: 0; color: var(--k5); }
+.tal-need.next { color: var(--k9); }
+.tal-bar { left: 0; top: 11px; width: 330px; height: 5px; background: var(--k0); }
+.tal-bar > u { position: absolute; left: 0; top: 1px; height: 3px; background: linear-gradient(var(--gold-hi) 0 1px, var(--gold) 1px 2px, var(--gold-dim) 2px); }
+.tal-bar > i { position: absolute; top: 0; width: 1px; height: 5px; background: var(--k3); }
+.tal-n { width: 24px; height: 24px; }
+.tal-n > img { position: absolute; }
+.tal-n.seal { width: 22px; height: 22px; }
+.tal-n.seal > .g { left: 3px; top: 3px; }
+.tal-n.plate > .g, .tal-n.mod > .g { left: 4px; top: 4px; }
+.tal-n.mod > .b { right: -2px; top: -2px; }
+.tal-n.ult { width: 30px; height: 30px; }
+.tal-n.ult > .g { left: 7px; top: 7px; }
+.tal-n.lock > img, .tal-n.lock > .tal-p { opacity: .38; }
+.tal-n:hover > .f { filter: brightness(1.5); }
+.tal-p { position: absolute; left: 50%; top: calc(100% + 1px); transform: translateX(-50%); display: flex; gap: 1px; }
+.tal-p > i { width: 3px; height: 2px; background: var(--k3); }
+.tal-p > i.on { background: var(--gold); }
+.tal-or.lock { opacity: .38; }
+.tal-fork { background: var(--k3); }
+.tal-fork.lit { background: var(--gold-dim); }
+.tal-gold { color: var(--gold-hi); } .tal-sea { color: #a6d8c2; } .tal-violet { color: var(--t3); }
+.tal-no { color: var(--bad); }
+.gm-tip .ln b.tal-up { color: var(--good); }
+.tal-tree .gm-tip p { line-height: 10px; }
+.gm .tt.up { top: auto; bottom: 0; }
+.gm .tt.tal-down { left: auto; right: 0; top: calc(100% + 3px); }
+</style>
+
+<div class="gm" role="group" aria-label="Maqueta de la pestaña de talentos del Knight: tronco común, dos ramas de especialización y sus definitivas.">
+  <div class="gm-book">
+    <div class="gm-tabs">
+      <div class="gm-tab has"><img src="img/icons/tab_gear.png" alt="Equipo"><div class="gm-tip tag tt"><div class="hd" style="padding:0">Equipo</div></div></div>
+      <div class="gm-tab on has"><img src="img/icons/tab_talents.png" alt="Talentos"><div class="gm-tip tag tt"><div class="hd" style="padding:0">Talentos</div></div></div>
+      <div class="gm-tab has"><img src="img/icons/tab_skills.png" alt="Habilidades"><div class="gm-tip tag tt"><div class="hd" style="padding:0">Habilidades</div></div></div>
+    </div>
+    <div class="gm-win">
+      <img class="gm-close" src="img/icons/ui_x.png" alt="Cerrar">
+      <div class="gm-in">
+        <div class="tal-top">
+          <img src="img/icons/crest_knight.png" alt=""><div class="gm-title">Knight</div>
+          <div class="sp"></div>
+          <div class="tal-slots has"><img src="img/icons/tab_skills.png" alt="Habilidades activas"><u></u><u></u>
+            <div class="gm-tip mini tt tal-down"><div class="hd">Habilidades activas</div><div class="ln" style="padding-top:0"><span>En uso</span><b>2 / 2</b></div><p style="padding-top:4px">Las habilidades con puntos son las que usa en combate. Solo caben dos.</p></div></div>
+          <div class="tal-free has"><img src="img/icons/tal_point.png" alt="Puntos de talento">3
+            <div class="gm-tip mini tt tal-down"><div class="hd">Puntos de talento</div><div class="ln" style="padding-top:0"><span>Por gastar</span><b>3</b></div><div class="ln"><span>Gastados</span><b>43</b></div><p style="padding-top:4px">Uno por nivel. Clic en un nodo para subirlo; clic derecho para bajarlo.</p></div></div>
+          <div class="gm-btn tal-undo has"><img src="img/icons/tal_respec.png" alt="Devolver puntos"><div class="gm-tip mini tt tal-down"><div class="hd">Devolver todos los puntos</div><p>Gratis. Los recuperas todos para repartirlos de nuevo.</p></div></div>
+        </div>
+        <div class="tal-tree">
+          <span class="tal-need next" style="left:176px">50</span><span class="tal-need" style="left:206px">60</span><span class="tal-need" style="left:236px">70</span><span class="tal-need" style="left:266px">80</span><span class="tal-need" style="left:300px">90</span>
+          <div class="tal-bar"><u style="width:155px"></u><i style="left:30px"></i><i style="left:60px"></i><i style="left:90px"></i><i style="left:146px"></i><i style="left:176px"></i><i style="left:206px"></i><i style="left:236px"></i><i style="left:266px"></i><i style="left:300px"></i></div>
+          <div class="tal-fork lit" style="left:115px;top:82px;width:4px;height:1px"></div>
+          <div class="tal-fork lit" style="left:118px;top:50px;width:1px;height:33px"></div>
+          <div class="tal-fork" style="left:118px;top:83px;width:1px;height:32px"></div>
+          <div class="tal-fork lit" style="left:118px;top:50px;width:4px;height:1px"></div>
+          <div class="tal-fork" style="left:118px;top:114px;width:4px;height:1px"></div>
+          <div class="tal-n seal tal-spec has" style="left:122px;top:39px"><img class="f" src="img/icons/tal_seal_on.png" alt=""><img class="g" src="img/icons/tal_bastion.png" alt="Bastión"><div class="gm-tip mini tt"><div class="nm tal-gold">Bastión</div><p>La rama que protege: aguanta más y cubre a los suyos.</p><div class="ln"><span>Puntos en la rama</span><b>3</b></div></div></div>
+          <div class="tal-n seal tal-spec has" style="left:122px;top:103px"><img class="f" src="img/icons/tal_seal_off.png" alt=""><img class="g" src="img/icons/tal_scourge.png" alt="Azote"><div class="gm-tip mini tt up"><div class="nm tal-gold">Azote</div><p>La rama que castiga: pega más y vive de lo que golpea.</p><div class="ln"><span>Puntos en la rama</span><b>0</b></div></div></div>
+          <div class="tal-n plate has" style="left:3px;top:22px"><img class="f" src="img/icons/tal_plate_on.png" alt=""><img class="g" src="img/icons/tal_stone_skin.png" alt="Piel de piedra"><div class="tal-p"><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i></div>
+          <div class="gm-tip tt"><div class="nm tal-gold">Piel de piedra</div><div class="sub"><span>Habilidad</span></div><p style="padding-top:3px">Endurece la piel: recibe menos daño durante 6 s.</p><div class="ln"><span>Rango</span><b>3 / 5</b></div><div class="ln"><span>Recarga</span><b>20 s</b></div><div class="ln"><span>Ahora</span><b>−30 %</b></div><div class="ln"><span>Siguiente</span><b class="tal-up">−35 %</b></div></div></div>
+          <div class="tal-n plate has" style="left:3px;top:52px"><img class="f" src="img/icons/tal_plate_max.png" alt=""><img class="g" src="img/icons/tal_cleave.png" alt="Tajo debilitante"><div class="tal-p"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div>
+          <div class="gm-tip tt"><div class="nm tal-gold">Tajo debilitante</div><div class="sub"><span>Habilidad</span></div><p style="padding-top:3px">Un barrido a todos los enemigos cuerpo a cuerpo, que además merma el daño que hacen.</p><div class="ln"><span>Rango</span><b>5 / 5</b></div><div class="ln"><span>Recarga</span><b>12 s</b></div><div class="ln"><span>Ahora</span><b>200 %</b></div></div></div>
+          <div class="tal-n seal has" style="left:4px;top:87px"><img class="f" src="img/icons/tal_seal_max.png" alt=""><img class="g" src="img/icons/stat_health.png" alt="Vida"><div class="tal-p"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div>
+          <div class="gm-tip mini tt up"><div class="hd">Vida</div><p>+2 % de vida por rango.</p><div class="ln"><span>Rango</span><b>5 / 5</b></div><div class="ln"><span>Ahora</span><b>+10 %</b></div></div></div>
+          <div class="tal-n seal has" style="left:4px;top:117px"><img class="f" src="img/icons/tal_seal_max.png" alt=""><img class="g" src="img/icons/stat_armor.png" alt="Armadura"><div class="tal-p"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div>
+          <div class="gm-tip mini tt up"><div class="hd">Armadura</div><p>+2,5 % de armadura por rango.</p><div class="ln"><span>Rango</span><b>5 / 5</b></div><div class="ln"><span>Ahora</span><b>+12,5 %</b></div></div></div>
+          <div class="tal-n plate lock has" style="left:33px;top:37px"><img class="f" src="img/icons/tal_plate_off.png" alt=""><img class="g" src="img/icons/tal_bulwark.png" alt="Baluarte"><div class="tal-p"><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i></div>
+          <div class="gm-tip tt"><div class="nm tal-gold">Baluarte</div><div class="sub"><span>Habilidad</span></div><p style="padding-top:3px">Un escudo que absorbe parte de su vida máxima durante 8 s.</p><div class="ln"><span>Rango</span><b>0 / 5</b></div><div class="ln"><span>Recarga</span><b>24 s</b></div><div class="ln"><span>Rango 1</span><b class="tal-up">30 %</b></div><div class="ln"><span class="tal-no">Ya lleva 2 habilidades. Devuelve los puntos de una para aprender otra.</span></div></div></div>
+          <div class="tal-n seal has" style="left:34px;top:87px"><img class="f" src="img/icons/tal_seal_max.png" alt=""><img class="g" src="img/icons/stat_health.png" alt="Vida"><div class="tal-p"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div>
+          <div class="gm-tip mini tt up"><div class="hd">Vida</div><p>+2 % de vida por rango.</p><div class="ln"><span>Rango</span><b>5 / 5</b></div><div class="ln"><span>Ahora</span><b>+10 %</b></div></div></div>
+          <div class="tal-n seal has" style="left:34px;top:117px"><img class="f" src="img/icons/tal_seal_on.png" alt=""><img class="g" src="img/icons/stat_block.png" alt="Bloqueo"><div class="tal-p"><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i></div>
+          <div class="gm-tip mini tt up"><div class="hd">Bloqueo</div><p>+2 de bloqueo por rango.</p><div class="ln"><span>Rango</span><b>3 / 5</b></div><div class="ln"><span>Ahora</span><b>+6 %</b></div></div></div>
+          <div class="tal-n plate lock has" style="left:63px;top:37px"><img class="f" src="img/icons/tal_plate_off.png" alt=""><img class="g" src="img/icons/tal_battle_cry.png" alt="Grito de guerra"><div class="tal-p"><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i></div>
+          <div class="gm-tip tt"><div class="nm tal-gold">Grito de guerra</div><div class="sub"><span>Habilidad</span></div><p style="padding-top:3px">Sube el daño de ataque y el crítico de todo el grupo durante 8 s.</p><div class="ln"><span>Rango</span><b>0 / 5</b></div><div class="ln"><span>Recarga</span><b>24 s</b></div><div class="ln"><span>Rango 1</span><b class="tal-up">+15 %</b></div><div class="ln"><span class="tal-no">Ya lleva 2 habilidades. Devuelve los puntos de una para aprender otra.</span></div></div></div>
+          <div class="tal-n seal has" style="left:64px;top:87px"><img class="f" src="img/icons/tal_seal_max.png" alt=""><img class="g" src="img/icons/stat_armor.png" alt="Armadura"><div class="tal-p"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div>
+          <div class="gm-tip mini tt up"><div class="hd">Armadura</div><p>+2,5 % de armadura por rango.</p><div class="ln"><span>Rango</span><b>5 / 5</b></div><div class="ln"><span>Ahora</span><b>+12,5 %</b></div></div></div>
+          <div class="tal-n seal has" style="left:64px;top:117px"><img class="f" src="img/icons/tal_seal_on.png" alt=""><img class="g" src="img/icons/stat_magicResist.png" alt="Resistencia mágica"><div class="tal-p"><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i><i class=""></i></div>
+          <div class="gm-tip mini tt up"><div class="hd">Resistencia mágica</div><p>+2,5 % de resistencia mágica por rango.</p><div class="ln"><span>Rango</span><b>2 / 5</b></div><div class="ln"><span>Ahora</span><b>+5 %</b></div></div></div>
+          <div class="tal-n plate lock has" style="left:93px;top:37px"><img class="f" src="img/icons/tal_plate_off.png" alt=""><img class="g" src="img/icons/tal_bloodlust.png" alt="Sed de sangre"><div class="tal-p"><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i></div>
+          <div class="gm-tip tt"><div class="nm tal-gold">Sed de sangre</div><div class="sub"><span>Habilidad</span></div><p style="padding-top:3px">Golpea más deprisa y roba vida con cada golpe.</p><div class="ln"><span>Rango</span><b>0 / 5</b></div><div class="ln"><span>Recarga</span><b>24 s</b></div><div class="ln"><span>Rango 1</span><b class="tal-up">+24 %</b></div><div class="ln"><span class="tal-no">Ya lleva 2 habilidades. Devuelve los puntos de una para aprender otra.</span></div></div></div>
+          <div class="tal-n seal has" style="left:94px;top:87px"><img class="f" src="img/icons/tal_seal_on.png" alt=""><img class="g" src="img/icons/stat_health.png" alt="Vida"><div class="tal-p"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i></div>
+          <div class="gm-tip mini tt up"><div class="hd">Vida</div><p>+2 % de vida por rango.</p><div class="ln"><span>Rango</span><b>4 / 5</b></div><div class="ln"><span>Ahora</span><b>+8 %</b></div></div></div>
+          <div class="tal-n seal has" style="left:94px;top:117px"><img class="f" src="img/icons/tal_seal_on.png" alt=""><img class="g" src="img/icons/stat_block.png" alt="Bloqueo"><div class="tal-p"><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i></div>
+          <div class="gm-tip mini tt up"><div class="hd">Bloqueo</div><p>+2 de bloqueo por rango.</p><div class="ln"><span>Rango</span><b>3 / 5</b></div><div class="ln"><span>Ahora</span><b>+6 %</b></div></div></div>
+          <div class="tal-n seal has" style="left:150px;top:23px"><img class="f" src="img/icons/tal_seal_on.png" alt=""><img class="g" src="img/icons/stat_health.png" alt="Vida"><div class="tal-p"><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i></div>
+          <div class="gm-tip mini tt"><div class="hd">Vida</div><p>+2 % de vida por rango.</p><div class="ln"><span>Rango</span><b>3 / 5</b></div><div class="ln"><span>Ahora</span><b>+6 %</b></div></div></div>
+          <div class="tal-n seal has" style="left:150px;top:53px"><img class="f" src="img/icons/tal_seal_off.png" alt=""><img class="g" src="img/icons/stat_block.png" alt="Bloqueo"><div class="tal-p"><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i></div>
+          <div class="gm-tip mini tt"><div class="hd">Bloqueo</div><p>+2 de bloqueo por rango.</p><div class="ln"><span>Rango</span><b>0 / 5</b></div></div></div>
+          <div class="tal-n mod lock has" style="left:179px;top:22px"><img class="f" src="img/icons/tal_mod_off.png" alt=""><img class="g" src="img/icons/tal_stone_skin.png" alt="Piel compartida"><img class="b" src="img/icons/tal_plus.png" alt="">
+          <div class="gm-tip tt"><div class="nm tal-sea">Piel compartida</div><div class="sub"><span>Cambia Piel de piedra</span></div><p style="padding-top:3px">Piel de piedra protege también al aliado con menos vida.</p><div class="ln"><span>Elige una de las dos</span></div><div class="ln"><span class="tal-no">Se abre con 50 puntos gastados</span></div></div></div>
+          <img class="tal-or lock" src="img/icons/tal_either.png" alt="o" style="left:188px;top:47px">
+          <div class="tal-n mod lock has" style="left:179px;top:52px"><img class="f" src="img/icons/tal_mod_off.png" alt=""><img class="g" src="img/icons/tal_stone_skin.png" alt="Piel de espinas"><img class="b" src="img/icons/tal_plus.png" alt="">
+          <div class="gm-tip tt"><div class="nm tal-sea">Piel de espinas</div><div class="sub"><span>Cambia Piel de piedra</span></div><p style="padding-top:3px">Mientras dura Piel de piedra, devuelve parte del daño que recibe.</p><div class="ln"><span>Elige una de las dos</span></div><div class="ln"><span class="tal-no">Se abre con 50 puntos gastados</span></div></div></div>
+          <div class="tal-n seal lock has" style="left:210px;top:23px"><img class="f" src="img/icons/tal_seal_off.png" alt=""><img class="g" src="img/icons/stat_armor.png" alt="Armadura"><div class="tal-p"><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i></div>
+          <div class="gm-tip mini tt left"><div class="hd">Armadura</div><p>+2,5 % de armadura por rango.</p><div class="ln"><span>Rango</span><b>0 / 5</b></div><div class="ln"><span class="tal-no">Se abre con 60 puntos gastados</span></div></div></div>
+          <div class="tal-n seal lock has" style="left:210px;top:53px"><img class="f" src="img/icons/tal_seal_off.png" alt=""><img class="g" src="img/icons/stat_magicResist.png" alt="Resistencia mágica"><div class="tal-p"><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i></div>
+          <div class="gm-tip mini tt left"><div class="hd">Resistencia mágica</div><p>+2,5 % de resistencia mágica por rango.</p><div class="ln"><span>Rango</span><b>0 / 5</b></div><div class="ln"><span class="tal-no">Se abre con 60 puntos gastados</span></div></div></div>
+          <div class="tal-n mod lock has" style="left:239px;top:22px"><img class="f" src="img/icons/tal_mod_off.png" alt=""><img class="g" src="img/icons/tal_bulwark.png" alt="Baluarte que sana"><img class="b" src="img/icons/tal_plus.png" alt="">
+          <div class="gm-tip tt left"><div class="nm tal-sea">Baluarte que sana</div><div class="sub"><span>Cambia Baluarte</span></div><p style="padding-top:3px">Al romperse o acabarse, el escudo de Baluarte cura al grupo.</p><div class="ln"><span class="tal-no">Se abre con 70 puntos gastados</span></div></div></div>
+          <div class="tal-n seal lock has" style="left:240px;top:53px"><img class="f" src="img/icons/tal_seal_off.png" alt=""><img class="g" src="img/icons/stat_damageReduction.png" alt="Reducción de daño"><div class="tal-p"><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i></div>
+          <div class="gm-tip mini tt left"><div class="hd">Reducción de daño</div><p>+1 de reducción de daño por rango.</p><div class="ln"><span>Rango</span><b>0 / 5</b></div><div class="ln"><span class="tal-no">Se abre con 70 puntos gastados</span></div></div></div>
+          <div class="tal-n seal lock has" style="left:270px;top:23px"><img class="f" src="img/icons/tal_seal_off.png" alt=""><img class="g" src="img/icons/stat_health.png" alt="Vida"><div class="tal-p"><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i></div>
+          <div class="gm-tip mini tt left"><div class="hd">Vida</div><p>+2 % de vida por rango.</p><div class="ln"><span>Rango</span><b>0 / 5</b></div><div class="ln"><span class="tal-no">Se abre con 80 puntos gastados</span></div></div></div>
+          <div class="tal-n seal lock has" style="left:270px;top:53px"><img class="f" src="img/icons/tal_seal_off.png" alt=""><img class="g" src="img/icons/stat_block.png" alt="Bloqueo"><div class="tal-p"><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i></div>
+          <div class="gm-tip mini tt left"><div class="hd">Bloqueo</div><p>+2 de bloqueo por rango.</p><div class="ln"><span>Rango</span><b>0 / 5</b></div><div class="ln"><span class="tal-no">Se abre con 80 puntos gastados</span></div></div></div>
+          <div class="tal-n ult lock has" style="left:300px;top:34px"><img class="f" src="img/icons/tal_ult_off.png" alt=""><img class="g" src="img/icons/tal_crown.png" alt="Muralla viva">
+          <div class="gm-tip tt left"><div class="nm tal-violet">Muralla viva</div><div class="sub"><span>Definitiva</span></div><p style="padding-top:3px">Cuando un aliado va a caer, el Knight recibe el golpe en su lugar.</p><div class="ln"><span class="tal-no">Se abre con 90 puntos gastados, al menos 30 en esta rama</span></div></div></div>
+          <div class="tal-n seal has" style="left:150px;top:87px"><img class="f" src="img/icons/tal_seal_off.png" alt=""><img class="g" src="img/icons/stat_attackDamage.png" alt="Daño de ataque"><div class="tal-p"><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i></div>
+          <div class="gm-tip mini tt up"><div class="hd">Daño de ataque</div><p>+3 % de daño de ataque por rango.</p><div class="ln"><span>Rango</span><b>0 / 5</b></div></div></div>
+          <div class="tal-n seal has" style="left:150px;top:117px"><img class="f" src="img/icons/tal_seal_off.png" alt=""><img class="g" src="img/icons/stat_critChance.png" alt="Crítico"><div class="tal-p"><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i></div>
+          <div class="gm-tip mini tt up"><div class="hd">Crítico</div><p>+2 de probabilidad de crítico por rango.</p><div class="ln"><span>Rango</span><b>0 / 5</b></div></div></div>
+          <div class="tal-n mod lock has" style="left:179px;top:86px"><img class="f" src="img/icons/tal_mod_off.png" alt=""><img class="g" src="img/icons/tal_cleave.png" alt="Tajo sangrante"><img class="b" src="img/icons/tal_plus.png" alt="">
+          <div class="gm-tip tt up"><div class="nm tal-sea">Tajo sangrante</div><div class="sub"><span>Cambia Tajo debilitante</span></div><p style="padding-top:3px">Tajo debilitante deja a los enemigos sangrando.</p><div class="ln"><span>Elige una de las dos</span></div><div class="ln"><span class="tal-no">Se abre con 50 puntos gastados</span></div></div></div>
+          <img class="tal-or lock" src="img/icons/tal_either.png" alt="o" style="left:188px;top:111px">
+          <div class="tal-n mod lock has" style="left:179px;top:116px"><img class="f" src="img/icons/tal_mod_off.png" alt=""><img class="g" src="img/icons/tal_cleave.png" alt="Tajo amplio"><img class="b" src="img/icons/tal_plus.png" alt="">
+          <div class="gm-tip tt up"><div class="nm tal-sea">Tajo amplio</div><div class="sub"><span>Cambia Tajo debilitante</span></div><p style="padding-top:3px">Tajo debilitante alcanza también a la segunda fila.</p><div class="ln"><span>Elige una de las dos</span></div><div class="ln"><span class="tal-no">Se abre con 50 puntos gastados</span></div></div></div>
+          <div class="tal-n seal lock has" style="left:210px;top:87px"><img class="f" src="img/icons/tal_seal_off.png" alt=""><img class="g" src="img/icons/stat_attackSpeed.png" alt="Velocidad de ataque"><div class="tal-p"><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i></div>
+          <div class="gm-tip mini tt left up"><div class="hd">Velocidad de ataque</div><p>+1,5 % de velocidad de ataque por rango.</p><div class="ln"><span>Rango</span><b>0 / 5</b></div><div class="ln"><span class="tal-no">Se abre con 60 puntos gastados</span></div></div></div>
+          <div class="tal-n seal lock has" style="left:210px;top:117px"><img class="f" src="img/icons/tal_seal_off.png" alt=""><img class="g" src="img/icons/stat_lifesteal.png" alt="Robo de vida"><div class="tal-p"><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i></div>
+          <div class="gm-tip mini tt left up"><div class="hd">Robo de vida</div><p>+1 de robo de vida por rango.</p><div class="ln"><span>Rango</span><b>0 / 5</b></div><div class="ln"><span class="tal-no">Se abre con 60 puntos gastados</span></div></div></div>
+          <div class="tal-n mod lock has" style="left:239px;top:86px"><img class="f" src="img/icons/tal_mod_off.png" alt=""><img class="g" src="img/icons/tal_bloodlust.png" alt="Sed sin fin"><img class="b" src="img/icons/tal_plus.png" alt="">
+          <div class="gm-tip tt left up"><div class="nm tal-sea">Sed sin fin</div><div class="sub"><span>Cambia Sed de sangre</span></div><p style="padding-top:3px">Cada enemigo que cae alarga Sed de sangre.</p><div class="ln"><span class="tal-no">Se abre con 70 puntos gastados</span></div></div></div>
+          <div class="tal-n seal lock has" style="left:240px;top:117px"><img class="f" src="img/icons/tal_seal_off.png" alt=""><img class="g" src="img/icons/stat_critDamage.png" alt="Daño crítico"><div class="tal-p"><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i></div>
+          <div class="gm-tip mini tt left up"><div class="hd">Daño crítico</div><p>+4 de daño crítico por rango.</p><div class="ln"><span>Rango</span><b>0 / 5</b></div><div class="ln"><span class="tal-no">Se abre con 70 puntos gastados</span></div></div></div>
+          <div class="tal-n seal lock has" style="left:270px;top:87px"><img class="f" src="img/icons/tal_seal_off.png" alt=""><img class="g" src="img/icons/stat_attackDamage.png" alt="Daño de ataque"><div class="tal-p"><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i></div>
+          <div class="gm-tip mini tt left up"><div class="hd">Daño de ataque</div><p>+3 % de daño de ataque por rango.</p><div class="ln"><span>Rango</span><b>0 / 5</b></div><div class="ln"><span class="tal-no">Se abre con 80 puntos gastados</span></div></div></div>
+          <div class="tal-n seal lock has" style="left:270px;top:117px"><img class="f" src="img/icons/tal_seal_off.png" alt=""><img class="g" src="img/icons/stat_multistrike.png" alt="Golpe múltiple"><div class="tal-p"><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i></div>
+          <div class="gm-tip mini tt left up"><div class="hd">Golpe múltiple</div><p>+1,5 de golpe múltiple por rango.</p><div class="ln"><span>Rango</span><b>0 / 5</b></div><div class="ln"><span class="tal-no">Se abre con 80 puntos gastados</span></div></div></div>
+          <div class="tal-n ult lock has" style="left:300px;top:98px"><img class="f" src="img/icons/tal_ult_off.png" alt=""><img class="g" src="img/icons/tal_crown.png" alt="Juicio de hierro">
+          <div class="gm-tip tt left up"><div class="nm tal-violet">Juicio de hierro</div><div class="sub"><span>Definitiva</span></div><p style="padding-top:3px">Cada cierto número de golpes, el siguiente pega a todos los enemigos.</p><div class="ln"><span class="tal-no">Se abre con 90 puntos gastados, al menos 30 en esta rama</span></div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="gm-side">
+    <div class="gm-tip"><div class="nm tal-gold">Piel de piedra</div><div class="sub"><span>Habilidad</span></div><p style="padding-top:3px">Endurece la piel: recibe menos daño durante 6 s.</p>
+      <div class="ln" style="padding-top:5px"><span>Rango</span><b>3 / 5</b></div><div class="ln"><span>Recarga</span><b>20 s</b></div><div class="ln"><span>Ahora</span><b>−30 %</b></div><div class="ln"><span>Siguiente</span><b class="tal-up">−35 %</b></div></div>
+    <div class="gm-tip"><div class="nm tal-sea">Piel compartida</div><div class="sub"><span>Cambia Piel de piedra</span></div><p style="padding-top:3px">Piel de piedra protege también al aliado con menos vida.</p>
+      <div class="ln" style="padding-top:5px"><span>Elige una de las dos</span></div><div class="ln"><span class="tal-no">Se abre con 50 puntos gastados</span></div></div>
+  </div>
+</div>
+
+      </div>
+    </div>
+    <div class="item-group" id="mock-20_map">
+      <h3>Mapa y dificultades</h3>
+      <p class="muted">Los diez mundos como miniaturas cortadas de su fondo real; los que aún no has pisado, en silueta de noche. Arriba, un signo por dificultad. Abajo, las etapas del mundo elegido y la puerta de su jefe. Enemigos, llaves y botín se explican al pasar el ratón; a la derecha, dos tooltips fijados de muestra.</p>
+      <div class="mock-stage">
+<style>
+/* Map panel. One thing first: where you are on the road and where you can go. */
+.gm-map { width: 292px; }
+.gm-map-top { display: flex; align-items: center; height: 22px; margin-top: -2px; }
+
+/* Difficulties: five signs. The lit one is underlined; the ones still shut are dull iron. */
+.gm-map-diffs { margin-left: auto; display: flex; gap: 2px; padding-right: 8px; }
+.gm-map-diffs > div { position: relative; width: 18px; height: 20px; padding: 1px; }
+.gm-map-diffs > div.on { box-shadow: inset 0 -1px 0 var(--gold); }
+.gm-map-diffs > div:hover > img:first-child { filter: brightness(1.2); }
+.gm-map-drop { display: flex; align-items: flex-end; gap: 1px; height: 18px; margin-top: 4px; padding-bottom: 1px; box-shadow: inset 0 -1px 0 var(--k3); }   /* how the drops spread over the nine rarities */
+.gm-map-drop > i { width: 10px; }
+.gm-map-drop > i:nth-child(1) { background: var(--t0); } .gm-map-drop > i:nth-child(2) { background: var(--t1); } .gm-map-drop > i:nth-child(3) { background: var(--t2); }
+.gm-map-drop > i:nth-child(4) { background: var(--t3); } .gm-map-drop > i:nth-child(5) { background: var(--t4); } .gm-map-drop > i:nth-child(6) { background: var(--t5); }
+.gm-map-drop > i:nth-child(7) { background: var(--t6); } .gm-map-drop > i:nth-child(8) { background: var(--t7); } .gm-map-drop > i:nth-child(9) { background: var(--t8); }
+
+/* Worlds: a thumbnail, its number, ten pips under it (the last one is the world boss). */
+.gm-map-worlds { display: grid; grid-template-columns: repeat(5, 56px); gap: 6px 3px; margin-top: 6px; }
+.gm-map-w { position: relative; width: 56px; }
+.gm-map-w > img:first-child { width: 56px; height: 40px; }
+.gm-map-w:hover > img:first-child { filter: brightness(1.15); }
+.gm-map-w > b { position: absolute; left: 3px; top: 3px; font-weight: 400; color: var(--k9); text-shadow: 1px 0 0 var(--k0), -1px 0 0 var(--k0), 0 1px 0 var(--k0), 0 -1px 0 var(--k0); }
+.gm-map-w.shut > b { color: var(--k5); }
+.gm-map-w > .lk { position: absolute; right: 3px; top: 3px; }
+.gm-map-w.sel::after { content: ""; position: absolute; left: -2px; top: -2px; width: 60px; height: 44px; pointer-events: none;
+  background:
+    linear-gradient(var(--gold-hi), var(--gold-hi)) 0 0 / 6px 1px, linear-gradient(var(--gold-hi), var(--gold-hi)) 0 0 / 1px 6px,
+    linear-gradient(var(--gold-hi), var(--gold-hi)) 100% 0 / 6px 1px, linear-gradient(var(--gold-hi), var(--gold-hi)) 100% 0 / 1px 6px,
+    linear-gradient(var(--gold-hi), var(--gold-hi)) 0 100% / 6px 1px, linear-gradient(var(--gold-hi), var(--gold-hi)) 0 100% / 1px 6px,
+    linear-gradient(var(--gold-hi), var(--gold-hi)) 100% 100% / 6px 1px, linear-gradient(var(--gold-hi), var(--gold-hi)) 100% 100% / 1px 6px;
+  background-repeat: no-repeat; }
+.gm-map-pips { display: flex; gap: 1px; margin-top: 2px; }
+.gm-map-pips > i { width: 4px; height: 3px; background: var(--k3); }
+.gm-map-pips > i.c { background: var(--k7); }
+.gm-map-pips > i.b { width: 11px; }
+.gm-map-pips > i.b.won { background: var(--gold); }
+.gm-map-pips > i.b.open { background: #bb3a3a; }
+.gm-map-w:nth-child(5n+4) > .tt, .gm-map-w:nth-child(5n) > .tt { left: auto; right: calc(100% + 5px); }
+
+/* The chosen world: its name, the way back to the frontier, nine stages and the boss's door. */
+.gm-map .gm-rule { margin: 6px 0 4px; }
+.gm-map-head { display: flex; align-items: center; height: 24px; }
+.gm-map-head > .nm { font: 12px/12px var(--f-name); color: var(--gold-hi); text-shadow: 1px 1px 0 var(--k0); }
+.gm-map-back { position: relative; margin-left: auto; display: flex; align-items: center; gap: 3px; color: var(--gold-hi); }
+.gm-map-road { display: flex; align-items: center; gap: 1px; height: 36px; margin-top: 12px; }
+.gm-map-node > span { display: block; height: 16px; margin-top: -1px; text-align: center; line-height: 16px; color: var(--k9); text-shadow: 1px 1px 0 var(--k0); }
+.gm-map-node.gold > span { color: var(--gold-dk); text-shadow: none; }
+.gm-map-node.off > span { color: var(--k5); }
+.gm-map-node > .pin { position: absolute; left: -4px; top: -19px; margin: 0; }
+.gm-map-link { width: 10px; height: 2px; margin: 0 1px; background: linear-gradient(90deg, var(--k4) 0 2px, transparent 2px 4px, var(--k4) 4px 6px, transparent 6px 8px, var(--k4) 8px 10px); }
+.gm-map-keys { position: relative; display: grid; justify-items: center; width: 20px; margin-left: 2px; color: var(--gold-hi); }
+.gm-map-row { display: flex; align-items: center; gap: 3px; height: 16px; }
+.gm-map-row > b { font-weight: 400; color: var(--k9); }
+.gm-map-row > img:last-child:not(:first-child) { margin-left: auto; padding-left: 4px; box-sizing: content-box; }
+.gm-map-wall .nm { color: #f08a62; }
+.gm-map-place { width: auto; white-space: nowrap; }      /* as wide as the name of the place */
+.gm-map-place .nm { color: var(--gold-hi); }
+</style>
+
+<div class="gm" role="group" aria-label="Maqueta del mapa: las cinco dificultades, los diez mundos con su progreso, las etapas del mundo elegido y la puerta de su jefe.">
+  <div class="gm-win">
+    <img class="gm-close" src="img/icons/ui_x.png" alt="Cerrar">
+    <div class="gm-in gm-map">
+      <div class="gm-map-top">
+        <div class="gm-title">Mapa</div>
+        <div class="gm-map-diffs">
+          <div class="has"><img src="img/icons/map_diff_normal.png" alt="Normal">
+            <div class="gm-tip mini tt"><div class="hd">Normal</div><p>El mundo tal cual. Completada.</p><div class="ln"><span>Botín</span><b style="color:var(--t4)">hasta T4</b></div><div class="gm-map-drop"><i style="height:16px"></i><i style="height:12px"></i><i style="height:8px"></i><i style="height:3px"></i><i style="height:1px"></i><i></i><i></i><i></i><i></i></div></div></div>
+          <div class="on has"><img src="img/icons/map_diff_hell.png" alt="Hell">
+            <div class="gm-tip mini tt"><div class="hd">Hell</div><p>Los mismos diez mundos con brasas en el aire. Todo pega más.</p><div class="ln"><span>Botín</span><b style="color:var(--t5)">hasta T5</b></div><div class="gm-map-drop"><i style="height:6px"></i><i style="height:12px"></i><i style="height:16px"></i><i style="height:10px"></i><i style="height:4px"></i><i style="height:1px"></i><i></i><i></i><i></i></div></div></div>
+          <div class="has"><img src="img/icons/map_diff_inferno_off.png" alt="Inferno, sin desbloquear">
+            <div class="gm-tip mini tt"><div class="hd">Inferno</div><p>Se abre al vencer al jefe de 10-10 en Hell.</p><div class="ln"><span>Botín</span><b style="color:var(--t6)">hasta T6</b></div><div class="gm-map-drop"><i style="height:4px"></i><i style="height:9px"></i><i style="height:14px"></i><i style="height:16px"></i><i style="height:9px"></i><i style="height:4px"></i><i style="height:1px"></i><i></i><i></i></div></div></div>
+          <div class="has"><img src="img/icons/map_diff_eternal_off.png" alt="Eternal, sin desbloquear">
+            <div class="gm-tip mini tt"><div class="hd">Eternal</div><p>Se abre al vencer al jefe de 10-10 en Inferno.</p><div class="ln"><span>Botín</span><b style="color:var(--t7)">hasta T7</b></div><div class="gm-map-drop"><i style="height:3px"></i><i style="height:7px"></i><i style="height:11px"></i><i style="height:16px"></i><i style="height:14px"></i><i style="height:9px"></i><i style="height:5px"></i><i style="height:1px"></i><i></i></div></div></div>
+          <div class="has"><img src="img/icons/map_diff_torment_off.png" alt="Torment, sin desbloquear">
+            <div class="gm-tip mini tt"><div class="hd">Torment</div><p>Se abre al vencer al jefe de 10-10 en Eternal.</p><div class="ln"><span>Botín</span><b style="color:var(--t8)">hasta T8</b></div><div class="gm-map-drop"><i></i><i style="height:4px"></i><i style="height:8px"></i><i style="height:13px"></i><i style="height:16px"></i><i style="height:12px"></i><i style="height:8px"></i><i style="height:5px"></i><i style="height:1px"></i></div></div></div>
+        </div>
+      </div>
+
+      <div class="gm-map-worlds">
+        <div class="gm-map-w has"><img src="img/icons/map_w01.png" alt="Praderas doradas"><b>1</b>
+          <div class="gm-map-pips"><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="b won"></i></div>
+          <div class="gm-tip mini tt gm-map-place"><div class="nm">Praderas doradas</div><div class="gm-map-row"><img src="img/icons/map_skull.png" alt="Jefe de mundo"><b>Rey de la Cosecha</b><img src="img/icons/map_check.png" alt="vencido"></div></div></div>
+        <div class="gm-map-w has"><img src="img/icons/map_w02.png" alt="Bosque viejo de musgo"><b>2</b>
+          <div class="gm-map-pips"><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="b won"></i></div>
+          <div class="gm-tip mini tt gm-map-place"><div class="nm">Bosque viejo de musgo</div><div class="gm-map-row"><img src="img/icons/map_skull.png" alt="Jefe de mundo"><b>Guardián Astado</b><img src="img/icons/map_check.png" alt="vencido"></div></div></div>
+        <div class="gm-map-w has"><img src="img/icons/map_w03.png" alt="Marismas de los Pilotes"><b>3</b>
+          <div class="gm-map-pips"><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="b won"></i></div>
+          <div class="gm-tip mini tt gm-map-place"><div class="nm">Marismas de los Pilotes</div><div class="gm-map-row"><img src="img/icons/map_skull.png" alt="Jefe de mundo"><b>El Barquero</b><img src="img/icons/map_check.png" alt="vencido"></div></div></div>
+        <div class="gm-map-w has"><img src="img/icons/map_w04.png" alt="Cañones de Roca Roja"><b>4</b>
+          <div class="gm-map-pips"><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="b won"></i></div>
+          <div class="gm-tip mini tt gm-map-place"><div class="nm">Cañones de Roca Roja</div><div class="gm-map-row"><img src="img/icons/map_skull.png" alt="Jefe de mundo"><b>Coloso de arenisca</b><img src="img/icons/map_check.png" alt="vencido"></div></div></div>
+        <div class="gm-map-w has"><img src="img/icons/map_w05.png" alt="Cumbres del Monasterio"><b>5</b>
+          <div class="gm-map-pips"><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="b won"></i></div>
+          <div class="gm-tip mini tt gm-map-place"><div class="nm">Cumbres del Monasterio</div><div class="gm-map-row"><img src="img/icons/map_skull.png" alt="Jefe de mundo"><b>El Portacampana</b><img src="img/icons/map_check.png" alt="vencido"></div></div></div>
+        <div class="gm-map-w sel has"><img src="img/icons/map_w06.png" alt="Costa de las Ruinas Hundidas"><b>6</b>
+          <div class="gm-map-pips"><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="b open"></i></div>
+          <div class="gm-tip mini tt gm-map-place"><div class="nm">Costa de las Ruinas Hundidas</div><div class="gm-map-row"><img src="img/icons/map_here.png" alt="El grupo está aquí"><b>6-4</b></div><div class="gm-map-row"><img src="img/icons/map_skull.png" alt="Jefe de mundo"><b>El Almirante Ahogado</b></div></div></div>
+        <div class="gm-map-w shut has"><img src="img/icons/map_w07_off.png" alt="Cavernas de cristal y hongos, sin alcanzar"><b>7</b><img class="lk" src="img/icons/map_lock_s.png" alt="">
+          <div class="gm-map-pips"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="b"></i></div>
+          <div class="gm-tip mini tt gm-map-place"><div class="nm">Cavernas de cristal y hongos</div><p>Se abre al vencer a El Almirante Ahogado.</p></div></div>
+        <div class="gm-map-w shut has"><img src="img/icons/map_w08_off.png" alt="Tierras de ceniza y forjas, sin alcanzar"><b>8</b><img class="lk" src="img/icons/map_lock_s.png" alt="">
+          <div class="gm-map-pips"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="b"></i></div>
+          <div class="gm-tip mini tt gm-map-place"><div class="nm">Tierras de ceniza y forjas</div><p>Aún lejos.</p></div></div>
+        <div class="gm-map-w shut has"><img src="img/icons/map_w09_off.png" alt="Ciudadela entre las nubes, sin alcanzar"><b>9</b><img class="lk" src="img/icons/map_lock_s.png" alt="">
+          <div class="gm-map-pips"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="b"></i></div>
+          <div class="gm-tip mini tt gm-map-place"><div class="nm">Ciudadela entre las nubes</div><p>Aún lejos.</p></div></div>
+        <div class="gm-map-w shut has"><img src="img/icons/map_w10_off.png" alt="La Grieta, sin alcanzar"><b>10</b><img class="lk" src="img/icons/map_lock_s.png" alt="">
+          <div class="gm-map-pips"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="b"></i></div>
+          <div class="gm-tip mini tt gm-map-place"><div class="nm">La Grieta</div><p>Aún lejos.</p></div></div>
+      </div>
+
+      <div class="gm-rule"><i></i><img src="img/icons/ui_rule.png" alt=""><i></i></div>
+
+      <div class="gm-map-head">
+        <div class="nm">Costa de las Ruinas Hundidas</div>
+        <div class="gm-map-back has"><div class="gm-btn"><img src="img/icons/map_front.png" alt="Volver a la frontera"></div>6-9
+          <div class="gm-tip mini tt above" style="left:auto;right:0"><div class="hd">Frontera · 6-9</div><p>Vuelve a donde avanza tu progreso. Al reabrir el juego siempre apareces aquí.</p></div></div>
+      </div>
+
+      <div class="gm-map-road">
+        <div class="gm-btn gm-map-node has"><span>1</span><div class="gm-tip mini tt above"><div class="hd">Etapa 6-1</div><div class="gm-map-row"><img src="img/icons/map_foe.png" alt="Nivel de los enemigos"><b>~61</b><span>Nivel</span></div><div class="gm-map-row"><img src="img/icons/stat_health.png" alt="Vida de los enemigos"><b>~1,02 M</b><span>Vida</span></div></div></div>
+        <div class="gm-btn gm-map-node has"><span>2</span><div class="gm-tip mini tt above"><div class="hd">Etapa 6-2</div><div class="gm-map-row"><img src="img/icons/map_foe.png" alt="Nivel de los enemigos"><b>~61</b><span>Nivel</span></div><div class="gm-map-row"><img src="img/icons/stat_health.png" alt="Vida de los enemigos"><b>~1,06 M</b><span>Vida</span></div></div></div>
+        <div class="gm-btn gm-map-node has"><span>3</span><div class="gm-tip mini tt above"><div class="hd">Etapa 6-3</div><div class="gm-map-row"><img src="img/icons/map_foe.png" alt="Nivel de los enemigos"><b>~62</b><span>Nivel</span></div><div class="gm-map-row"><img src="img/icons/stat_health.png" alt="Vida de los enemigos"><b>~1,11 M</b><span>Vida</span></div></div></div>
+        <div class="gm-btn gm-map-node has"><span>4</span><img class="pin" src="img/icons/map_here.png" alt="El grupo está aquí">
+          <div class="gm-tip mini tt above"><div class="hd">Etapa 6-4</div><div class="gm-map-row"><img src="img/icons/map_here.png" alt=""><span>El grupo está aquí</span></div><div class="gm-map-row"><img src="img/icons/map_foe.png" alt="Nivel de los enemigos"><b>~62</b><span>Nivel</span></div><div class="gm-map-row"><img src="img/icons/stat_health.png" alt="Vida de los enemigos"><b>~1,15 M</b><span>Vida</span></div></div></div>
+        <div class="gm-btn gm-map-node has"><span>5</span><div class="gm-tip mini tt above"><div class="hd">Etapa 6-5</div><div class="gm-map-row"><img src="img/icons/map_foe.png" alt="Nivel de los enemigos"><b>~62</b><span>Nivel</span></div><div class="gm-map-row"><img src="img/icons/stat_health.png" alt="Vida de los enemigos"><b>~1,20 M</b><span>Vida</span></div></div></div>
+        <div class="gm-btn gm-map-node has"><span>6</span><div class="gm-tip mini tt above"><div class="hd">Etapa 6-6</div><div class="gm-map-row"><img src="img/icons/map_foe.png" alt="Nivel de los enemigos"><b>~63</b><span>Nivel</span></div><div class="gm-map-row"><img src="img/icons/stat_health.png" alt="Vida de los enemigos"><b>~1,25 M</b><span>Vida</span></div></div></div>
+        <div class="gm-btn gm-map-node has"><span>7</span><div class="gm-tip mini tt above"><div class="hd">Etapa 6-7</div><div class="gm-map-row"><img src="img/icons/map_foe.png" alt="Nivel de los enemigos"><b>~63</b><span>Nivel</span></div><div class="gm-map-row"><img src="img/icons/stat_health.png" alt="Vida de los enemigos"><b>~1,30 M</b><span>Vida</span></div></div></div>
+        <div class="gm-btn gm-map-node has"><span>8</span><div class="gm-tip mini tt above"><div class="hd">Etapa 6-8</div><div class="gm-map-row"><img src="img/icons/map_foe.png" alt="Nivel de los enemigos"><b>~63</b><span>Nivel</span></div><div class="gm-map-row"><img src="img/icons/stat_health.png" alt="Vida de los enemigos"><b>~1,36 M</b><span>Vida</span></div></div></div>
+        <div class="gm-btn gm-map-node gold has"><span>9</span>
+          <div class="gm-tip mini tt above" style="left:auto;right:0"><div class="hd">Etapa 6-9 · frontera</div><div class="gm-map-row"><img src="img/icons/map_foe.png" alt="Nivel de los enemigos"><b>~64</b><span>Nivel</span></div><div class="gm-map-row"><img src="img/icons/stat_health.png" alt="Vida de los enemigos"><b>~1,41 M</b><span>Vida</span></div><p style="padding-top:3px">Sus jefes de etapa sueltan las llaves del jefe de mundo.</p></div></div>
+        <div class="gm-map-link"></div>
+        <div class="gm-slot sel has"><img src="img/icons/map_boss_w06.png" alt="El Almirante Ahogado, jefe de mundo">
+          <div class="gm-tip tt above gm-map-wall" style="left:auto;right:0"><div class="nm">El Almirante Ahogado</div><div class="sub"><span>Jefe de mundo · 6-10</span></div><div class="gm-rule"><i></i><img src="img/icons/ui_rule.png" alt=""><i></i></div>
+            <div class="aff"><img src="img/icons/map_foe.png" alt=""><b>~66</b><span>Nivel</span></div><div class="aff"><img src="img/icons/stat_health.png" alt=""><b>~412 M</b><span>Vida</span></div><div class="aff"><img src="img/icons/map_key.png" alt=""><b>1</b><span>Llave por intento</span></div><div class="lore">Un muro. Equípate antes de llamar a su puerta.</div></div></div>
+        <div class="gm-map-keys has"><img src="img/icons/map_key.png" alt="Llaves de jefe de mundo">2
+          <div class="gm-tip mini tt above" style="left:auto;right:0"><div class="hd">Llaves de 6-10</div><p>Cada intento gasta una, también si el grupo cae. Salen de los cofres de jefe de etapa de este mundo.</p></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="gm-side">
+    <div class="gm-tip gm-map-wall">
+      <div class="nm">El Almirante Ahogado</div>
+      <div class="sub"><span>Jefe de mundo · 6-10</span></div>
+      <div class="gm-rule"><i></i><img src="img/icons/ui_rule.png" alt=""><i></i></div>
+      <div class="aff"><img src="img/icons/map_foe.png" alt=""><b>~66</b><span>Nivel</span></div>
+      <div class="aff"><img src="img/icons/stat_health.png" alt=""><b>~412 M</b><span>Vida</span></div>
+      <div class="aff"><img src="img/icons/map_key.png" alt=""><b>1</b><span>Llave por intento</span></div>
+      <div class="lore">Un muro. Equípate antes de llamar a su puerta.</div>
+    </div>
+    <div class="gm-tip mini">
+      <div class="hd">Hell</div>
+      <p>Los mismos diez mundos con brasas en el aire. Todo pega más.</p>
+      <div class="ln"><span>Botín</span><b style="color:var(--t5)">hasta T5</b></div><div class="gm-map-drop"><i style="height:6px"></i><i style="height:12px"></i><i style="height:16px"></i><i style="height:10px"></i><i style="height:4px"></i><i style="height:1px"></i><i></i><i></i><i></i></div>
+    </div>
+  </div>
+</div>
+
+      </div>
+    </div>
+    <div class="item-group" id="mock-30_tech">
+      <h3>Mejoras (tecnología)</h3>
+      <p class="muted">Las doce mejoras a la vista, sin pestañas ni tarjetas: un signo sobre un sello redondo, lo que ya da y lo que cuesta el siguiente rango. La tecla se apaga si no llega el oro. El nombre, la explicación, el rango y el salto de efecto están en el tooltip.</p>
+      <div class="mock-stage">
+<style>
+/* Tech panel. Round seals (an upgrade is never an item: items are square), a number, a price key. */
+.gm-tech-top { display: flex; align-items: center; height: 22px; margin-top: -2px; }
+.gm-tech-purse { position: relative; margin-left: auto; padding-right: 9px; display: flex; align-items: center; gap: 3px; font: 20px/20px var(--f-big); color: var(--gold-hi); text-shadow: 1px 1px 0 var(--k0); }
+.gm-tech-grid { display: grid; grid-template-columns: repeat(2, auto); gap: 10px 14px; margin-top: 8px; }
+.gm-tech-group { display: grid; grid-template-columns: 16px repeat(3, 48px); gap: 0 4px; align-items: start; }
+.gm-tech-mark { position: relative; width: 16px; height: 16px; margin-top: 9px; }
+.gm-tech-mark > img { opacity: .55; }
+.gm-tech-mark:hover > img { opacity: 1; }
+.gm-tech-node { position: relative; width: 48px; display: grid; justify-items: center; }
+.gm-tech-seal { width: 34px; height: 34px; padding: 5px; background: url(img/icons/tech_seal_on.png); }
+.gm-tech-node.off .gm-tech-seal { background-image: url(img/icons/tech_seal_off.png); }
+.gm-tech-node.off .gm-tech-seal > img { opacity: .5; filter: grayscale(1); }
+.gm-tech-node.max .gm-tech-seal { background-image: url(img/icons/tech_seal_max.png); }
+.gm-tech-node:hover .gm-tech-seal { filter: brightness(1.18); }
+.gm-tech-node > b { font-weight: 400; height: 10px; margin-top: 3px; color: var(--k9); }
+.gm-tech-node.off > b { color: var(--k5); }
+.gm-tech-buy { margin-top: 3px; width: 46px; height: 16px; border: 4px solid transparent; border-image: url(img/icons/ui_btn.png) 4 fill / 4px / 0 stretch; text-align: center; line-height: 7px; color: var(--gold-hi); text-shadow: 1px 1px 0 var(--k0); }
+.gm-tech-buy.no { border-image-source: url(img/icons/ui_btn_off.png); color: var(--k5); text-shadow: none; }
+.gm-tech-node:hover .gm-tech-buy:not(.no) { filter: brightness(1.2); }
+.gm-tech-done { margin-top: 3px; }
+.gm-tech-grid .nm { color: var(--gold-hi); }
+.gm-tech-grid .ln b.up { color: var(--good); }
+.gm-tech-grid .ln b.cost { color: var(--gold-hi); }
+.gm-tech-grid .ln b.short { color: var(--bad); }
+</style>
+
+<div class="gm" role="group" aria-label="Maqueta del panel de tecnología: doce mejoras no combativas en cuatro grupos, con su efecto actual y el coste en oro del siguiente rango.">
+  <div class="gm-win">
+    <img class="gm-close" src="img/icons/ui_x.png" alt="Cerrar">
+    <div class="gm-in">
+      <div class="gm-tech-top">
+        <div class="gm-title">Mejoras</div>
+        <div class="gm-tech-purse has"><img src="img/icons/ui_gold.png" alt="Oro">61 400<div class="gm-tip tag tt above" style="left:auto;right:0"><div class="hd" style="padding:0">Oro</div></div></div>
+      </div>
+      <div class="gm-tech-grid">
+        <div class="gm-tech-group">
+          <div class="gm-tech-mark has"><img src="img/icons/tech_cat_economy.png" alt="Economía"><div class="gm-tip tag tt above"><div class="hd" style="padding:0">Economía</div></div></div>
+          <div class="gm-tech-node has"><div class="gm-tech-seal"><img src="img/icons/tech_eco_gold.png" alt="Mercadeo"></div><b>+35 %</b><div class="gm-tech-buy">5 906</div>
+            <div class="gm-tip tt"><div class="nm">Mercadeo</div><p>Más oro por cada enemigo abatido.</p><div class="gm-rule"><i></i><img src="img/icons/ui_rule.png" alt=""><i></i></div><div class="ln"><span>Rango</span><b>14</b></div><div class="ln"><span>Ahora</span><b>+35 %</b></div><div class="ln"><span>Siguiente</span><b class="up">+37,5 %</b></div><div class="ln"><span>Coste</span><b class="cost">5 906</b></div><div class="lore">Cada rango cuesta ×1,3 más.</div></div></div>
+          <div class="gm-tech-node has"><div class="gm-tech-seal"><img src="img/icons/tech_eco_xp.png" alt="Erudición"></div><b>+27,5 %</b><div class="gm-tech-buy">2 688</div>
+            <div class="gm-tip tt"><div class="nm">Erudición</div><p>Más experiencia por cada enemigo abatido.</p><div class="gm-rule"><i></i><img src="img/icons/ui_rule.png" alt=""><i></i></div><div class="ln"><span>Rango</span><b>11</b></div><div class="ln"><span>Ahora</span><b>+27,5 %</b></div><div class="ln"><span>Siguiente</span><b class="up">+30 %</b></div><div class="ln"><span>Coste</span><b class="cost">2 688</b></div><div class="lore">Cada rango cuesta ×1,3 más.</div></div></div>
+          <div class="gm-tech-node has"><div class="gm-tech-seal"><img src="img/icons/tech_eco_offline.png" alt="Expedición"></div><b>62,5 %</b><div class="gm-tech-buy">24,8 K</div>
+            <div class="gm-tip tt"><div class="nm">Expedición</div><p>Lo que rinde la partida mientras no juegas. Sin mejoras, la mitad que jugando.</p><div class="gm-rule"><i></i><img src="img/icons/ui_rule.png" alt=""><i></i></div><div class="ln"><span>Rango</span><b>5 / 20</b></div><div class="ln"><span>Ahora</span><b>62,5 %</b></div><div class="ln"><span>Siguiente</span><b class="up">65 %</b></div><div class="ln"><span>Coste</span><b class="cost">24 761</b></div><div class="lore">Cada rango cuesta ×1,9 más.</div></div></div>
+        </div>
+        <div class="gm-tech-group">
+          <div class="gm-tech-mark has"><img src="img/icons/tech_cat_utility.png" alt="Utilidad"><div class="gm-tip tag tt above"><div class="hd" style="padding:0">Utilidad</div></div></div>
+          <div class="gm-tech-node has"><div class="gm-tech-seal"><img src="img/icons/tech_auto_open.png" alt="Apertura automática"></div><b>9:45</b><div class="gm-tech-buy no">124,7 K</div>
+            <div class="gm-tip tt left"><div class="nm">Apertura automática</div><p>Abre sola un cofre cada cierto tiempo. De base, cada 15 minutos.</p><div class="gm-rule"><i></i><img src="img/icons/ui_rule.png" alt=""><i></i></div><div class="ln"><span>Rango</span><b>7 / 12</b></div><div class="ln"><span>Ahora</span><b>9:45</b></div><div class="ln"><span>Siguiente</span><b class="up">9:00</b></div><div class="ln"><span>Coste</span><b class="short">124 718</b></div><div class="ln"><span>Te faltan</span><b class="short">63 318</b></div><div class="lore">Cada rango cuesta ×2,2 más.</div></div></div>
+          <div class="gm-tech-node has max"><div class="gm-tech-seal"><img src="img/icons/tech_party_size.png" alt="Reclutamiento"></div><b>3</b><img class="gm-tech-done" src="img/icons/tech_done.png" alt="Completa">
+            <div class="gm-tip tt left"><div class="nm">Reclutamiento</div><p>Héroes que luchan a la vez.</p><div class="gm-rule"><i></i><img src="img/icons/ui_rule.png" alt=""><i></i></div><div class="ln"><span>Rango</span><b>2 / 2</b></div><div class="ln"><span>Ahora</span><b>3</b></div><div class="lore">Completa.</div></div></div>
+          <div class="gm-tech-node has off"><div class="gm-tech-seal"><img src="img/icons/tech_synth_luck.png" alt="Fortuna del transmutador"></div><b>5 %</b><div class="gm-tech-buy">50 K</div>
+            <div class="gm-tip tt left"><div class="nm">Fortuna del transmutador</div><p>Probabilidad de que una síntesis del Cubo suba dos rarezas de golpe.</p><div class="gm-rule"><i></i><img src="img/icons/ui_rule.png" alt=""><i></i></div><div class="ln"><span>Rango</span><b>0 / 20</b></div><div class="ln"><span>Ahora</span><b>5 %</b></div><div class="ln"><span>Siguiente</span><b class="up">5,25 %</b></div><div class="ln"><span>Coste</span><b class="cost">50 000</b></div><div class="lore">Cada rango cuesta ×2,0 más.</div></div></div>
+        </div>
+        <div class="gm-tech-group">
+          <div class="gm-tech-mark has"><img src="img/icons/tech_cat_drops.png" alt="Cofres · botín"><div class="gm-tip tag tt above"><div class="hd" style="padding:0">Cofres · botín</div></div></div>
+          <div class="gm-tech-node has"><div class="gm-tech-seal"><img src="img/icons/tech_chest_drop_normal.png" alt="Botín común"></div><b>+2,25 %</b><div class="gm-tech-buy">3 723</div>
+            <div class="gm-tip tt"><div class="nm">Botín común</div><p>Más probabilidad de que un enemigo suelte un cofre común.</p><div class="gm-rule"><i></i><img src="img/icons/ui_rule.png" alt=""><i></i></div><div class="ln"><span>Rango</span><b>9</b></div><div class="ln"><span>Ahora</span><b>+2,25 %</b></div><div class="ln"><span>Siguiente</span><b class="up">+2,5 %</b></div><div class="ln"><span>Coste</span><b class="cost">3 723</b></div><div class="lore">Cada rango cuesta ×1,35 más.</div></div></div>
+          <div class="gm-tech-node has"><div class="gm-tech-seal"><img src="img/icons/tech_chest_drop_stage.png" alt="Despojos de jefe"></div><b>+3,5 %</b><div class="gm-tech-buy">2 452</div>
+            <div class="gm-tip tt"><div class="nm">Despojos de jefe</div><p>Más probabilidad de que un jefe de etapa suelte su cofre.</p><div class="gm-rule"><i></i><img src="img/icons/ui_rule.png" alt=""><i></i></div><div class="ln"><span>Rango</span><b>7</b></div><div class="ln"><span>Ahora</span><b>+3,5 %</b></div><div class="ln"><span>Siguiente</span><b class="up">+4 %</b></div><div class="ln"><span>Coste</span><b class="cost">2 452</b></div><div class="lore">Cada rango cuesta ×1,35 más.</div></div></div>
+          <div class="gm-tech-node has"><div class="gm-tech-seal"><img src="img/icons/tech_chest_gem.png" alt="Ojo de gemas"></div><b>+32,5 %</b><div class="gm-tech-buy no">77,8 K</div>
+            <div class="gm-tip tt"><div class="nm">Ojo de gemas</div><p>Más probabilidad de que un cofre traiga, además, una gema.</p><div class="gm-rule"><i></i><img src="img/icons/ui_rule.png" alt=""><i></i></div><div class="ln"><span>Rango</span><b>13</b></div><div class="ln"><span>Ahora</span><b>+32,5 %</b></div><div class="ln"><span>Siguiente</span><b class="up">+35 %</b></div><div class="ln"><span>Coste</span><b class="short">77 848</b></div><div class="ln"><span>Te faltan</span><b class="short">16 448</b></div><div class="lore">Cada rango cuesta ×1,5 más.</div></div></div>
+        </div>
+        <div class="gm-tech-group">
+          <div class="gm-tech-mark has"><img src="img/icons/tech_cat_storage.png" alt="Cofres · almacén"><div class="gm-tip tag tt above"><div class="hd" style="padding:0">Cofres · almacén</div></div></div>
+          <div class="gm-tech-node has"><div class="gm-tech-seal"><img src="img/icons/tech_store_normal.png" alt="Almacén"></div><b>11</b><div class="gm-tech-buy">38,4 K</div>
+            <div class="gm-tip tt left"><div class="nm">Almacén</div><p>Cofres comunes que puedes guardar sin abrir.</p><div class="gm-rule"><i></i><img src="img/icons/ui_rule.png" alt=""><i></i></div><div class="ln"><span>Rango</span><b>5 / 6</b></div><div class="ln"><span>Ahora</span><b>11</b></div><div class="ln"><span>Siguiente</span><b class="up">12</b></div><div class="ln"><span>Coste</span><b class="cost">38 400</b></div><div class="lore">Cada rango cuesta ×2,0 más.</div></div></div>
+          <div class="gm-tech-node has max"><div class="gm-tech-seal"><img src="img/icons/tech_store_stage.png" alt="Cámara"></div><b>8</b><img class="gm-tech-done" src="img/icons/tech_done.png" alt="Completa">
+            <div class="gm-tip tt left"><div class="nm">Cámara</div><p>Cofres de jefe de etapa que puedes guardar sin abrir.</p><div class="gm-rule"><i></i><img src="img/icons/ui_rule.png" alt=""><i></i></div><div class="ln"><span>Rango</span><b>4 / 4</b></div><div class="ln"><span>Ahora</span><b>8</b></div><div class="lore">Completa.</div></div></div>
+          <div class="gm-tech-node has"><div class="gm-tech-seal"><img src="img/icons/tech_store_zone.png" alt="Relicario"></div><b>6</b><div class="gm-tech-buy">8 000</div>
+            <div class="gm-tip tt left"><div class="nm">Relicario</div><p>Cofres de jefe de mundo que puedes guardar sin abrir.</p><div class="gm-rule"><i></i><img src="img/icons/ui_rule.png" alt=""><i></i></div><div class="ln"><span>Rango</span><b>2 / 4</b></div><div class="ln"><span>Ahora</span><b>6</b></div><div class="ln"><span>Siguiente</span><b class="up">7</b></div><div class="ln"><span>Coste</span><b class="cost">8 000</b></div><div class="lore">Cada rango cuesta ×2,0 más.</div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+      </div>
+    </div>
+    <div class="item-group" id="mock-40_pets">
+      <h3>Mascotas</h3>
+      <p class="muted">Seis mascotas rarísimas. La elegida posa en el nicho y acompaña al grupo; las que ya tienes muestran lo que dan (suman todas, la lleves o no) y las que faltan son solo su sombra. Pasa el ratón por cada una.</p>
+      <div class="mock-stage">
+<style>
+/* Pets: the companion in the niche, the collection on plinths beside it. */
+.gm-pet-top { display: flex; align-items: center; gap: 5px; height: 22px; margin-top: -2px; }
+.gm-pet-top > span { margin-left: auto; padding: 5px 8px 0 0; display: flex; align-items: center; gap: 2px; color: var(--k6); }
+.gm-pet-top > span > img { margin-top: -5px; }
+.gm-pet-body { display: grid; grid-template-columns: 100px auto; gap: 0 10px; margin-top: 5px; }
+.gm-pet-niche { position: relative; width: 100px; height: 116px; background: url(img/icons/ui_alcove.png); }
+.gm-pet-niche > img { position: absolute; left: 14px; top: 35px; width: 72px; height: 72px; }
+.gm-pet-name { grid-column: 1; margin-top: 5px; text-align: center; font: 12px/12px var(--f-name); color: var(--gold-hi); text-shadow: 1px 1px 0 var(--k0); }
+.gm-pet-shelf { display: grid; grid-template-columns: repeat(3, 42px); gap: 2px 3px; align-content: start; }
+.gm-pet { position: relative; width: 42px; height: 57px; }
+.gm-pet > .pl { position: absolute; left: 3px; top: 32px; width: 36px; height: 9px; }
+.gm-pet > .pt { position: absolute; left: 3px; top: 0; width: 36px; height: 36px; }
+.gm-pet:hover > .pt { filter: brightness(1.18); }
+.gm-pet > .val { position: absolute; left: -2px; right: -2px; top: 41px; height: 16px; display: flex; align-items: center; justify-content: center; gap: 1px; color: var(--k9); white-space: nowrap; }
+.gm-pet.none > .val { color: var(--k4); }
+.gm-pet-shelf > .gm-pet:nth-child(3n) > .tt { left: auto; right: calc(100% + 5px); }
+.gm-pet-top > .has { position: relative; }
+</style>
+
+<div class="gm" role="group" aria-label="Maqueta del panel de mascotas: el acompañante en su nicho, la colección de seis mascotas y el tooltip de una de ellas.">
+  <div class="gm-win">
+    <img class="gm-close" src="img/icons/ui_x.png" alt="Cerrar">
+    <div class="gm-in">
+      <div class="gm-pet-top">
+        <div class="gm-title">Mascotas</div>
+        <span class="has"><img src="img/icons/pet_sign_paw.png" alt="Encontradas">3 / 6
+          <div class="gm-tip mini tt"><div class="hd">Tres de seis</div><p>Caen muy rara vez al matar: una de cada 50 000 bajas, o una de cada 10 000 jefes.</p></div></span>
+      </div>
+      <div class="gm-pet-body">
+        <div class="gm-pet-niche has">
+          <img src="img/icons/pet_lucky_cat.png" alt="Gato de la suerte, tu acompañante">
+          <div class="gm-tip mini tt"><div class="hd">Acompañante</div><p>Sigue al grupo por la tira. Es solo compañía: todas tus mascotas dan lo suyo, la lleves o no.</p></div>
+        </div>
+        <div class="gm-pet-shelf">
+          <div class="gm-pet none has"><img class="pl" src="img/icons/pet_plinth.png" alt=""><img class="pt" src="img/icons/pet_coin_sprite_dark.png" alt="Mascota sin descubrir"><div class="val">?</div>
+            <div class="gm-tip mini tt"><div class="hd">Sin descubrir</div><p>Algo espera aquí. Sabrás qué da cuando caiga.</p></div></div>
+          <div class="gm-pet has"><img class="pl" src="img/icons/pet_plinth.png" alt=""><img class="pt" src="img/icons/pet_scholar_owl.png" alt="Búho erudito"><div class="val"><img src="img/icons/ui_xp.png" alt="Experiencia">+15 %</div>
+            <div class="gm-tip mini tt t7"><div class="nm">Búho erudito</div><div class="aff"><img src="img/icons/ui_xp.png" alt=""><b>+15 %</b><span>Experiencia</span></div><div class="lore">«Ya lo había leído.»</div></div></div>
+          <div class="gm-pet none has"><img class="pl" src="img/icons/pet_plinth.png" alt=""><img class="pt" src="img/icons/pet_pack_mule_dark.png" alt="Mascota sin descubrir"><div class="val">?</div>
+            <div class="gm-tip mini tt"><div class="hd">Sin descubrir</div><p>Algo espera aquí. Sabrás qué da cuando caiga.</p></div></div>
+          <div class="gm-pet has"><img class="pl" src="img/icons/pet_plinth_on.png" alt=""><img class="pt" src="img/icons/pet_lucky_cat.png" alt="Gato de la suerte"><div class="val"><img src="img/icons/pet_sign_chest.png" alt="Cofres">+12 %</div>
+            <div class="gm-tip mini tt t7"><div class="nm">Gato de la suerte</div><div class="aff"><img src="img/icons/pet_sign_chest.png" alt=""><b>+12 %</b><span>Cofres al matar</span></div><div class="lore">«Saluda a todos los cofres. Alguno contesta.»</div></div></div>
+          <div class="gm-pet has"><img class="pl" src="img/icons/pet_plinth.png" alt=""><img class="pt" src="img/icons/pet_time_imp.png" alt="Diablillo del tiempo"><div class="val"><img src="img/icons/pet_sign_timer.png" alt="Apertura automática">−90 s</div>
+            <div class="gm-tip mini tt t7"><div class="nm">Diablillo del tiempo</div><div class="aff"><img src="img/icons/pet_sign_timer.png" alt=""><b>−90 s</b><span>Apertura sola</span></div><p>Los cofres se abren solos antes.</p></div></div>
+          <div class="gm-pet none has"><img class="pl" src="img/icons/pet_plinth.png" alt=""><img class="pt" src="img/icons/pet_hoarder_dark.png" alt="Mascota sin descubrir"><div class="val">?</div>
+            <div class="gm-tip mini tt"><div class="hd">Sin descubrir</div><p>Algo espera aquí. Sabrás qué da cuando caiga.</p></div></div>
+        </div>
+        <div class="gm-pet-name">Gato de la suerte</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="gm-side">
+    <div class="gm-tip mini t7">
+      <div class="nm">Gato de la suerte</div>
+      <div class="aff"><img src="img/icons/pet_sign_chest.png" alt=""><b>+12 %</b><span>Cofres al matar</span></div>
+      <div class="lore">«Saluda a todos los cofres. Alguno contesta.»</div>
+    </div>
+  </div>
+</div>
+
+      </div>
+    </div>
+    <div class="item-group" id="mock-50_cube">
+      <h3>El Cubo</h3>
+      <p class="muted">Tres recetas, cada una en su pestaña con nombre: sintetizar (nueve piezas de una rareza dan una de la siguiente), fundir (piezas en oro) y transfigurar (cambiar un afijo pagando con gemas). Cada ventana dice, de arriba abajo, qué receta es, qué hace, qué hay cargado y qué tecla lo ejecuta. Aquí sí hay palabras cortas: las recetas son demasiado abstractas para un signo. Se muestran cuatro momentos.</p>
+      <div class="mock-stage">
+<style>
+/* The Cube. Three recipes; each window says, top to bottom: which recipe (worded tabs), what it does (one
+   equation line), what is loaded (the Cube's face and a count), and the one key that does it (its verb on it).
+   This panel uses short words where a sign cannot carry the meaning: the recipes are abstract. */
+.gm-cube-gm { display: grid; grid-template-columns: repeat(2, max-content); gap: 12px 14px; align-items: start; }
+.gm-cube-state { display: grid; gap: 4px; justify-items: start; }
+.gm-cube-gm .gm-tip:not(.tag) { white-space: normal; text-shadow: none; }      /* tooltips hang from one-line elements: let them wrap */
+.gm-cube-cap { color: var(--k6); padding-left: 3px; }                       /* caption of the mock-up state, outside the window */
+.gm-cube-w { width: 226px; }
+.gm-cube-top { display: flex; align-items: center; height: 22px; margin-top: -2px; }
+/* Recipe tabs: a sign and its name; the one you are in is lit. */
+.gm-cube-tabs { display: flex; gap: 1px; margin-top: 4px; }
+.gm-cube-tabs > div { position: relative; height: 22px; border: 4px solid transparent; border-image: url(img/icons/ui_btn_off.png) 4 fill / 4px / 0 stretch; display: flex; align-items: center; gap: 2px; padding: 0 3px 1px 0; color: var(--k6); white-space: nowrap; }
+.gm-cube-tabs > div > img { margin: -1px 0 0 -3px; opacity: .5; }
+.gm-cube-tabs > div.on { border-image-source: url(img/icons/ui_btn.png); color: var(--gold-hi); }
+.gm-cube-tabs > div.on > img, .gm-cube-tabs > div:hover > img { opacity: 1; }
+.gm-cube-tabs .tt { left: 0; top: calc(100% + 3px); bottom: auto; }
+/* The recipe as an equation, with what is loaded. */
+.gm-cube-eq { display: flex; align-items: center; gap: 3px; height: 16px; margin-top: 7px; color: var(--k9); white-space: nowrap; }
+.gm-cube-eq > .aside { position: relative; margin-left: auto; display: flex; align-items: center; gap: 1px; color: var(--k6); }
+.gm-cube-eq > .dim { color: var(--k6); }
+.gm-cube-main { display: flex; align-items: center; gap: 5px; margin-top: 4px; }
+.gm-cube-face { position: relative; flex: none; width: 126px; height: 132px; background: url(img/icons/cube_face.png); }
+.gm-cube-face > .gm-slot { position: absolute; }
+.gm-cube-face > .gm-slot > b.g { right: 2px; bottom: 2px; color: var(--gold-hi); }
+.gm-cube-out { flex: 1; display: grid; justify-items: center; gap: 3px; }
+.gm-cube-sum { position: relative; display: flex; align-items: center; gap: 2px; font: 20px/20px var(--f-big); color: var(--gold-hi); text-shadow: 1px 1px 0 var(--k0); }
+/* Keys with their verb on them; labelled tick boxes. */
+.gm-cube-row { display: flex; align-items: center; gap: 4px; margin-top: 5px; }
+.gm-cube-count { position: relative; width: 30px; color: var(--k7); }
+.gm-cube-count.full { color: var(--good); }
+.gm-cube-key { position: relative; height: 20px; border: 4px solid transparent; border-image: url(img/icons/ui_btn.png) 4 fill / 4px / 0 stretch; padding: 0 5px; line-height: 11px; color: var(--k9); white-space: nowrap; }
+.gm-cube-key:hover { filter: brightness(1.15); }
+.gm-cube-key.gold { border-image-source: url(img/icons/ui_btn_gold.png); color: var(--gold-dk); }
+.gm-cube-key.off { border-image-source: url(img/icons/ui_btn_off.png); color: var(--k5); }
+.gm-cube-key.r { margin-left: auto; }
+.gm-cube-key.r > .tt.above { left: auto; right: 0; }
+.gm-cube-tog { position: relative; display: flex; align-items: center; gap: 4px; height: 16px; margin-top: 5px; color: var(--k8); }
+.gm-cube-tog > .cog { position: relative; margin-left: 2px; }
+.gm-cube-tog > .cog > img { opacity: .6; }
+.gm-cube-tog > .cog:hover > img { opacity: 1; }
+.gm-cube-tog > .n { color: var(--k6); }
+.gm-cube-filt { display: flex; align-items: center; gap: 4px; height: 13px; color: var(--k8); }
+/* The bag under the Cube: click a piece to load it. */
+.gm-cube-bagcap { display: flex; align-items: center; gap: 3px; margin-top: 7px; color: var(--k6); }
+.gm-cube-bagcap > i { flex: 1; height: 1px; margin-left: 2px; background: var(--k3); }
+.gm-cube-bag { display: grid; grid-template-columns: repeat(6, 36px); gap: 2px; margin-top: 3px; }
+.gm-cube-bag > .no > img:first-child { opacity: .28; }
+.gm-cube-bag > .gm-slot:nth-child(6n+4) > .tt, .gm-cube-bag > .gm-slot:nth-child(6n+5) > .tt, .gm-cube-bag > .gm-slot:nth-child(6n) > .tt { left: auto; right: calc(100% + 5px); }
+/* Transfigure: three numbered steps, then the roll to keep or not. */
+.gm-cube-step { display: flex; align-items: center; gap: 4px; margin-top: 8px; color: var(--k7); }
+.gm-cube-step > u { text-decoration: none; width: 11px; height: 11px; line-height: 11px; text-align: center; color: var(--gold-dk); background: linear-gradient(var(--gold-hi) 0 1px, var(--gold) 1px 9px, var(--gold-dim) 9px); clip-path: polygon(1px 0, calc(100% - 1px) 0, calc(100% - 1px) 1px, 100% 1px, 100% calc(100% - 1px), calc(100% - 1px) calc(100% - 1px), calc(100% - 1px) 100%, 1px 100%, 1px calc(100% - 1px), 0 calc(100% - 1px), 0 1px, 1px 1px); }
+.gm-cube-piece { display: flex; align-items: center; gap: 6px; margin: 4px 0 0 2px; }
+.gm-cube-piece > .nm { font: 12px/12px var(--f-name); }
+.gm-cube-affs { display: grid; margin-top: 3px; }
+.gm-cube-aff { position: relative; display: grid; grid-template-columns: 16px auto 1fr; gap: 3px; align-items: center; height: 18px; padding: 0 4px; color: var(--k7); }
+.gm-cube-aff > b { font-weight: 400; color: var(--k9); }
+.gm-cube-aff:hover { background: var(--k2); }
+.gm-cube-aff.on { background: var(--k2); box-shadow: inset 2px 0 0 var(--gold); color: var(--k9); }
+.gm-cube-pays { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; margin-top: 4px; }
+.gm-cube-pay { position: relative; border: 4px solid transparent; border-image: url(img/icons/ui_btn_off.png) 4 fill / 4px / 0 stretch; padding: 0 1px 1px; display: grid; gap: 3px; color: var(--k6); white-space: nowrap; }
+.gm-cube-pay > div:not(.gm-tip) { display: flex; align-items: center; gap: 3px; height: 10px; }
+.gm-cube-pay > .have { color: var(--bad); padding-left: 12px; }
+.gm-cube-pay.on { border-image-source: url(img/icons/ui_btn.png); color: var(--k9); }
+.gm-cube-pay.on > .have { color: #b3c873; }
+.gm-cube-cmp { display: grid; margin-top: 8px; }
+.gm-cube-cmp > div { position: relative; display: grid; grid-template-columns: 38px 16px auto 1fr; gap: 3px; align-items: center; height: 20px; padding: 0 4px; color: var(--k6); }
+.gm-cube-cmp > div > b { font-weight: 400; color: var(--k7); }
+.gm-cube-cmp > .new { background: var(--k2); box-shadow: inset 2px 0 0 var(--gold); color: var(--k8); }
+.gm-cube-cmp > .new > b { color: var(--gold-hi); }
+.gm-cube-cmp > div > .lb { color: var(--k6); }
+.gm-cube-cmp > .new > .lb { color: var(--k9); }
+.gm-cube-cmp > .new > .st { display: flex; align-items: center; gap: 2px; }
+</style>
+
+<div class="gm gm-cube-gm" role="group" aria-label="Maqueta del Cubo en cuatro momentos: sintetizar nueve piezas épicas, fundir piezas en oro, transfigurar un afijo y elegir entre el afijo nuevo y el de antes.">
+  <div class="gm-cube-state">
+    <div class="gm-cube-cap">Sintetizar</div>
+    <div class="gm-win">
+      <img class="gm-close" src="img/icons/ui_x.png" alt="Cerrar">
+      <div class="gm-in gm-cube-w">
+        <div class="gm-cube-top"><div class="gm-title">Cubo</div></div>
+        <div class="gm-cube-tabs"><div class="on has"><img src="img/icons/cube2_synth.png" alt="">Sintetizar<div class="gm-tip mini tt"><div class="hd">Sintetizar</div><p>Nueve piezas, o nueve gemas, de la misma rareza dan una de la rareza siguiente.</p></div></div><div class="has"><img src="img/icons/cube2_melt.png" alt="">Fundir<div class="gm-tip mini tt"><div class="hd">Fundir</div><p>Convierte piezas en oro. Cuanta más rareza y más nivel, más oro.</p></div></div><div class="has"><img src="img/icons/cube2_swap.png" alt="">Transfigurar<div class="gm-tip mini tt"><div class="hd">Transfigurar</div><p>Cambia un afijo de una pieza por otro distinto. Se paga con gemas y cada pieza solo admite un cambio.</p></div></div></div>
+        <div class="gm-cube-eq">9 <img src="img/icons/cube_pip_3.png" alt=""><span style="color:var(--t3)">épicas</span><img src="img/icons/cube_arrow.png" alt="dan">1 <img src="img/icons/cube_pip_4.png" alt=""><span style="color:var(--t4)">legendaria</span>
+          <div class="aside has"><img src="img/icons/cube_lucky.png" alt="Suerte">5 %<div class="gm-tip mini tt left"><div class="hd">Golpe de suerte</div><p>Una de cada veinte veces la pieza sale dos rarezas por encima en vez de una.</p></div></div></div>
+        <div class="gm-cube-main">
+          <div class="gm-cube-face"><div class="gm-slot has" style="left:7px;top:13px"><img src="img/icons/sword_3.png" alt="Hoja de caballero"><div class="gm-tip tag tt t3"><div class="nm" style="padding:0">Hoja de caballero</div></div></div><div class="gm-slot " style="left:45px;top:13px"><img src="img/icons/helmet_leather_3.png" alt=""></div><div class="gm-slot " style="left:83px;top:13px"><img src="img/icons/chest_cloth_3.png" alt=""></div><div class="gm-slot " style="left:7px;top:51px"><img src="img/icons/boots_leather_3.png" alt=""></div><div class="gm-slot " style="left:45px;top:51px"><img src="img/icons/quiver_3.png" alt=""></div><div class="gm-slot " style="left:83px;top:51px"><img src="img/icons/legs_cloth_3.png" alt=""></div><div class="gm-slot " style="left:7px;top:89px"><img src="img/icons/tome_3.png" alt=""></div><div class="gm-slot " style="left:45px;top:89px"><img src="img/icons/shield_3.png" alt=""></div><div class="gm-slot " style="left:83px;top:89px"><img src="img/icons/bow_3.png" alt=""></div></div>
+          <img src="img/icons/cube_arrow.png" alt="dan">
+          <div class="gm-cube-out"><div class="gm-slot has"><img src="img/icons/cube_result_4.png" alt="Una pieza legendaria"><div class="gm-tip mini tt left t4"><div class="nm">Una pieza legendaria</div><p>Sale al azar. Su nivel es el de la pieza de en medio de las nueve.</p></div></div></div>
+        </div>
+        <div class="gm-cube-row">
+          <div class="gm-cube-count full has">9 / 9<div class="gm-tip mini tt above"><div class="hd">Cubo lleno</div><p>Nueve piezas de la misma rareza: listo para sintetizar. Pulsa una pieza del Cubo para sacarla.</p></div></div>
+          <div class="gm-cube-key has">Rellenar<div class="gm-tip mini tt above"><div class="hd">Rellenar</div><p>Mete de golpe nueve piezas del grupo de rareza más numeroso.</p></div></div>
+          <div class="gm-cube-key gold r has">Sintetizar<div class="gm-tip mini tt above"><div class="hd">Sintetizar</div><p>Gasta las nueve piezas épicas y te da una legendaria.</p></div></div>
+        </div>
+        <div class="gm-cube-tog has"><img src="img/icons/cube2_tick_on.png" alt="Sí">Usar también el alijo<div class="gm-tip mini tt above"><div class="hd">Usar también el alijo</div><p>Marcado: abajo ves las piezas de la bolsa y las del alijo, y Rellenar coge de las dos.</p></div></div>
+        <div class="gm-cube-bagcap has" style="position:relative"><img src="img/icons/hud_stash.png" alt="">Bolsa y alijo<i></i><div class="gm-tip mini tt above"><div class="hd">Bolsa y alijo</div><p>Pulsa una pieza para meterla en el Cubo. Las apagadas no encajan con lo que ya hay dentro.</p></div></div><div class="gm-cube-bag"><div class="gm-slot has"><img src="img/icons/ring_3.png" alt="Sello grabado"><div class="gm-tip tag tt t3"><div class="nm" style="padding:0">Sello grabado</div></div></div><div class="gm-slot "><img src="img/icons/amulet_3.png" alt=""></div><div class="gm-slot "><img src="img/icons/gloves_plate_3.png" alt=""></div><div class="gm-slot no has"><img src="img/icons/bow_4.png" alt="Gran arco dorado"><div class="gm-tip mini tt t5"><div class="nm">Gran arco dorado</div><p>Es de otra rareza: en esta tanda solo entran épicas.</p></div></div><div class="gm-slot no"><img src="img/icons/helmet_leather_2.png" alt=""></div><div class="gm-slot no has"><img src="img/icons/gem_ruby.png" alt="Rubí"><b>3</b><div class="gm-tip mini tt t2"><div class="nm">Rubí</div><p>Las gemas se sintetizan entre ellas: nueve gemas, no gemas con piezas.</p></div></div><div class="gm-slot no"><img src="img/icons/sword_1.png" alt=""></div><div class="gm-slot no"><img src="img/icons/chest_plate_5.png" alt=""></div><div class="gm-slot "><img src="img/icons/ui_well.png" alt=""></div><div class="gm-slot "><img src="img/icons/ui_well.png" alt=""></div><div class="gm-slot "><img src="img/icons/ui_well.png" alt=""></div><div class="gm-slot "><img src="img/icons/ui_well.png" alt=""></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="gm-cube-state">
+    <div class="gm-cube-cap">Fundir</div>
+    <div class="gm-win">
+      <img class="gm-close" src="img/icons/ui_x.png" alt="Cerrar">
+      <div class="gm-in gm-cube-w">
+        <div class="gm-cube-top"><div class="gm-title">Cubo</div></div>
+        <div class="gm-cube-tabs"><div class=""><img src="img/icons/cube2_synth.png" alt="">Sintetizar</div><div class="on "><img src="img/icons/cube2_melt.png" alt="">Fundir</div><div class=""><img src="img/icons/cube2_swap.png" alt="">Transfigurar</div></div>
+        <div class="gm-cube-eq">piezas<img src="img/icons/cube_arrow.png" alt="dan"><img src="img/icons/ui_gold.png" alt=""><span style="color:var(--gold-hi)">oro</span><span class="dim">· más rareza, más oro</span></div>
+        <div class="gm-cube-main">
+          <div class="gm-cube-face"><div class="gm-slot has" style="left:7px;top:13px"><img src="img/icons/sword_1.png" alt="Espada mellada"><b class="g">8</b><div class="gm-tip mini tt t0"><div class="nm">Espada mellada</div><div class="ln" style="padding-top:0"><span>Al fundirla</span><b>8</b></div></div></div><div class="gm-slot " style="left:45px;top:13px"><img src="img/icons/boots_cloth_1.png" alt=""><b class="g">16</b></div><div class="gm-slot " style="left:83px;top:13px"><img src="img/icons/helmet_leather_2.png" alt=""><b class="g">106</b></div><div class="gm-slot " style="left:7px;top:51px"><img src="img/icons/wand_1.png" alt=""><b class="g">24</b></div><div class="gm-slot " style="left:45px;top:51px"><img src="img/icons/gloves_cloth_1.png" alt=""><b class="g">32</b></div><div class="gm-slot " style="left:83px;top:51px"><img src="img/icons/ui_well.png" alt=""></div><div class="gm-slot " style="left:7px;top:89px"><img src="img/icons/ui_well.png" alt=""></div><div class="gm-slot " style="left:45px;top:89px"><img src="img/icons/ui_well.png" alt=""></div><div class="gm-slot " style="left:83px;top:89px"><img src="img/icons/ui_well.png" alt=""></div></div>
+          <img src="img/icons/cube_arrow.png" alt="dan">
+          <div class="gm-cube-out"><div class="gm-cube-sum has"><img src="img/icons/ui_gold.png" alt="Oro">186<div class="gm-tip mini tt left"><div class="hd">Oro al fundir</div><p>La suma de lo que vale cada pieza que hay en el Cubo.</p></div></div></div>
+        </div>
+        <div class="gm-cube-row">
+          <div class="gm-cube-count has">5 / 9<div class="gm-tip mini tt above"><div class="hd">Piezas en el Cubo</div><p>Caben nueve por tanda. Basta una para fundir.</p></div></div>
+          <div class="gm-cube-key has">Rellenar<div class="gm-tip mini tt above"><div class="hd">Rellenar</div><p>Mete las nueve piezas que menos valen: primero la chatarra.</p></div></div>
+          <div class="gm-cube-key gold r has">Fundir<div class="gm-tip mini tt above"><div class="hd">Fundir</div><p>Destruye las cinco piezas del Cubo y te da 186 de oro.</p></div></div>
+        </div>
+        <div class="gm-cube-tog has"><img src="img/icons/cube2_tick_on.png" alt="Sí">Fundir al caer<span class="n">· 2 rarezas</span>
+          <div class="cog has"><img src="img/icons/hud_options.png" alt="Elegir rarezas"><div class="gm-tip mini tt above"><div class="hd">Se funden solas</div><div class="gm-cube-filt"><img src="img/icons/cube2_tick_on.png" alt="Sí"><img src="img/icons/cube_pip_0.png" alt="">Normal</div><div class="gm-cube-filt"><img src="img/icons/cube2_tick_on.png" alt="Sí"><img src="img/icons/cube_pip_1.png" alt="">Infrecuente</div><div class="gm-cube-filt"><img src="img/icons/cube2_tick_off.png" alt="No"><img src="img/icons/cube_pip_2.png" alt="">Raro</div><div class="gm-cube-filt"><img src="img/icons/cube2_tick_off.png" alt="No"><img src="img/icons/cube_pip_3.png" alt="">Épico</div><div class="gm-cube-filt"><img src="img/icons/cube2_tick_off.png" alt="No"><img src="img/icons/cube_pip_4.png" alt="">Legendario</div><div class="gm-cube-filt"><img src="img/icons/cube2_tick_off.png" alt="No"><img src="img/icons/cube_pip_5.png" alt="">Mítico</div><div class="gm-cube-filt"><img src="img/icons/cube2_tick_off.png" alt="No"><img src="img/icons/cube_pip_6.png" alt="">Ancestral</div><div class="gm-cube-filt"><img src="img/icons/cube2_tick_off.png" alt="No"><img src="img/icons/cube_pip_7.png" alt="">Divino</div><div class="gm-cube-filt"><img src="img/icons/cube2_tick_off.png" alt="No"><img src="img/icons/cube_pip_8.png" alt="">Primordial</div></div></div>
+          <div class="gm-tip mini tt above"><div class="hd">Fundir al caer</div><p>Marcado: lo que salga de un cofre con una de las rarezas elegidas se convierte en oro en el acto. La rueda elige las rarezas.</p></div></div>
+        <div class="gm-cube-bagcap has" style="position:relative"><img src="img/icons/hud_stash.png" alt="">Bolsa<i></i><div class="gm-tip mini tt above"><div class="hd">Bolsa</div><p>Pulsa una pieza para meterla en el Cubo. El número es el oro que da al fundirla.</p></div></div><div class="gm-cube-bag"><div class="gm-slot "><img src="img/icons/helmet_leather_1.png" alt=""></div><div class="gm-slot "><img src="img/icons/sword_2.png" alt=""><b class="g">64</b></div><div class="gm-slot "><img src="img/icons/legs_leather_2.png" alt=""><b class="g">71</b></div><div class="gm-slot has"><img src="img/icons/ring_3.png" alt="Sello grabado"><b class="g">420</b><div class="gm-tip tag tt t3"><div class="nm" style="padding:0">Sello grabado</div></div></div><div class="gm-slot "><img src="img/icons/bow_4.png" alt=""><b class="g">2,1 K</b></div><div class="gm-slot "><img src="img/icons/chest_plate_5.png" alt=""><b class="g">9,6 K</b></div><div class="gm-slot "><img src="img/icons/ui_well.png" alt=""></div><div class="gm-slot "><img src="img/icons/ui_well.png" alt=""></div><div class="gm-slot "><img src="img/icons/ui_well.png" alt=""></div><div class="gm-slot "><img src="img/icons/ui_well.png" alt=""></div><div class="gm-slot "><img src="img/icons/ui_well.png" alt=""></div><div class="gm-slot "><img src="img/icons/ui_well.png" alt=""></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="gm-cube-state">
+    <div class="gm-cube-cap">Transfigurar · 1, 2, 3</div>
+    <div class="gm-win">
+      <img class="gm-close" src="img/icons/ui_x.png" alt="Cerrar">
+      <div class="gm-in gm-cube-w">
+        <div class="gm-cube-top"><div class="gm-title">Cubo</div></div>
+        <div class="gm-cube-tabs"><div class=""><img src="img/icons/cube2_synth.png" alt="">Sintetizar</div><div class=""><img src="img/icons/cube2_melt.png" alt="">Fundir</div><div class="on "><img src="img/icons/cube2_swap.png" alt="">Transfigurar</div></div>
+        <div class="gm-cube-eq">un afijo<img src="img/icons/cube_arrow.png" alt="pasa a">otro distinto
+          <div class="aside has"><img src="img/icons/ui_gem.png" alt="">cuesta gemas<div class="gm-tip mini tt left"><div class="hd">Se paga con gemas</div><p>Una gema de la rareza de la pieza, o dos de la rareza anterior. Del color que sea.</p></div></div></div>
+        <div class="gm-cube-step"><u>1</u>La pieza</div>
+        <div class="gm-cube-piece"><div class="gm-slot sel has"><img src="img/icons/legs_plate_3.png" alt="Arnés acanalado"><div class="gm-tip mini tt t3"><div class="nm">Arnés acanalado</div><p>Una pieza solo se transfigura una vez.</p></div></div><div class="nm" style="color:var(--t3)">Arnés acanalado</div></div>
+        <div class="gm-cube-step"><u>2</u>El afijo que cambias</div>
+        <div class="gm-cube-affs">
+          <div class="gm-cube-aff"><img src="img/icons/stat_magicResist.png" alt=""><b>+538</b><span>Resistencia mágica</span></div>
+          <div class="gm-cube-aff on has"><img src="img/icons/stat_health.png" alt=""><b>+2 960</b><span>Vida</span><div class="gm-tip mini tt"><div class="hd">Vida</div><p>Este es el afijo que se pierde. El nuevo sale al azar entre los que la pieza no tiene.</p></div></div>
+          <div class="gm-cube-aff"><img src="img/icons/stat_hpRegen.png" alt=""><b>+84</b><span>Regeneración</span></div>
+        </div>
+        <div class="gm-cube-step"><u>3</u>El pago</div>
+        <div class="gm-cube-pays">
+          <div class="gm-cube-pay has"><div><img src="img/icons/cube_pip_3.png" alt="">1 gema épica</div><div class="have">tienes 0</div><div class="gm-tip mini tt above"><div class="hd">Una gema épica</div><p>De la rareza de la pieza, del color que sea. No tienes ninguna.</p></div></div>
+          <div class="gm-cube-pay on has"><div><img src="img/icons/cube_pip_2.png" alt="">2 gemas raras</div><div class="have">tienes 5</div><div class="gm-tip mini tt above"><div class="hd">Dos gemas raras</div><p>Una rareza por debajo de la pieza, del color que sea. Tienes cinco.</p></div></div>
+        </div>
+        <div class="gm-cube-row"><div class="gm-cube-key gold r has">Transfigurar<div class="gm-tip mini tt above"><div class="hd">Transfigurar</div><p>Gasta dos gemas raras y tira un afijo nuevo en lugar de Vida. Después eliges si te lo quedas.</p></div></div></div>
+        <div class="gm-cube-bagcap has" style="position:relative"><img src="img/icons/hud_stash.png" alt="">Bolsa<i></i><div class="gm-tip mini tt above"><div class="hd">Bolsa</div><p>Pulsa la pieza que quieres cambiar. Las apagadas ya se transfiguraron una vez.</p></div></div><div class="gm-cube-bag"><div class="gm-slot sel"><img src="img/icons/legs_plate_3.png" alt="Arnés acanalado"></div><div class="gm-slot "><img src="img/icons/helmet_plate_3.png" alt=""></div><div class="gm-slot "><img src="img/icons/shield_4.png" alt=""></div><div class="gm-slot no has"><img src="img/icons/ring_5.png" alt="Anillo de la Grieta"><div class="gm-tip mini tt t8"><div class="nm">Anillo de la Grieta</div><p>Ya se transfiguró una vez: no admite otro cambio.</p></div></div><div class="gm-slot "><img src="img/icons/amulet_2.png" alt=""></div><div class="gm-slot "><img src="img/icons/gloves_plate_2.png" alt=""></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="gm-cube-state">
+    <div class="gm-cube-cap">Transfigurar · elegir el resultado</div>
+    <div class="gm-win">
+      <img class="gm-close" src="img/icons/ui_x.png" alt="Cerrar">
+      <div class="gm-in gm-cube-w">
+        <div class="gm-cube-top"><div class="gm-title">Cubo</div></div>
+        <div class="gm-cube-tabs"><div class=""><img src="img/icons/cube2_synth.png" alt="">Sintetizar</div><div class=""><img src="img/icons/cube2_melt.png" alt="">Fundir</div><div class="on "><img src="img/icons/cube2_swap.png" alt="">Transfigurar</div></div>
+        <div class="gm-cube-eq">un afijo<img src="img/icons/cube_arrow.png" alt="pasa a">otro distinto
+          <div class="aside has"><img src="img/icons/ui_gem.png" alt="">cuesta gemas<div class="gm-tip mini tt left"><div class="hd">Se paga con gemas</div><p>Una gema de la rareza de la pieza, o dos de la rareza anterior. Del color que sea.</p></div></div></div>
+        <div class="gm-cube-piece"><div class="gm-slot sel has"><img src="img/icons/legs_plate_3.png" alt="Arnés acanalado"><div class="gm-tip mini tt t3"><div class="nm">Arnés acanalado</div><p>Una pieza solo se transfigura una vez.</p></div></div><div class="nm" style="color:var(--t3)">Arnés acanalado</div></div>
+        <div class="gm-cube-cmp">
+          <div><span class="lb">Antes</span><img src="img/icons/stat_health.png" alt=""><b>+2 960</b><span>Vida</span></div>
+          <div class="new has"><span class="lb">Ahora</span><img src="img/icons/stat_critChance.png" alt=""><b>+3,1 %</b><span class="st">Crítico<img src="img/icons/cube_star.png" alt="Tirada perfecta"></span><div class="gm-tip mini tt"><div class="hd">Tirada perfecta</div><p>Ha salido el valor más alto posible para este afijo.</p></div></div>
+        </div>
+        <div class="gm-cube-row" style="margin-top:8px">
+          <div class="gm-cube-key has">Quedarme el de antes<div class="gm-tip mini tt above"><div class="hd">Quedarme el de antes</div><p>La pieza sigue como estaba. Las gemas ya se han gastado.</p></div></div>
+          <div class="gm-cube-key gold r has">Quedarme el nuevo<div class="gm-tip mini tt above"><div class="hd">Quedarme el nuevo</div><p>Vida desaparece y la pieza se queda con Crítico +3,1 %.</p></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+      </div>
+    </div>
+    <div class="item-group" id="mock-60_options">
+      <h3>Ajustes</h3>
+      <p class="muted">Cada ajuste es un signo y su control: idioma, sonido (un interruptor y cuatro volúmenes), los dos tamaños y las teclas de la partida. Nada se explica a la vista; pasa el ratón por cada fila. A la derecha, la confirmación que sale antes de borrar la partida: el único sitio donde las teclas llevan palabra.</p>
+      <div class="mock-stage">
+<style>
+/* Options: one row per setting — its sign, then its control. */
+.gm-opt { width: 152px; }
+.gm-opt-rows { display: grid; gap: 2px; margin-top: 5px; }
+.gm-opt-row { position: relative; display: grid; grid-template-columns: 16px 1fr; gap: 6px; align-items: center; height: 20px; }
+.gm-opt-row.gap { margin-top: 7px; }
+.gm-opt-row > .tt { left: calc(100% + 12px); }
+
+/* A choice between a few: keys side by side, the chosen one lit. */
+.gm-opt-seg { display: flex; gap: 1px; }
+.gm-opt-seg > div { height: 20px; border: 4px solid transparent; border-image: url(img/icons/ui_btn_off.png) 4 fill / 4px / 0 stretch; padding: 0 5px; color: var(--k6); line-height: 11px; white-space: nowrap; }
+.gm-opt-seg > div.on { border-image-source: url(img/icons/ui_btn.png); color: var(--k9); }
+.gm-opt-seg > div:hover { filter: brightness(1.15); }
+.gm-opt-seg.names > div { font: 12px/11px var(--f-name); padding: 0 6px; }
+
+/* A volume: a sunk track, filled up to a steel handle, and its number. */
+.gm-opt-vol { display: grid; grid-template-columns: 110px 1fr; gap: 4px; align-items: center; }
+.gm-opt-vol > div { position: relative; height: 9px; }
+.gm-opt-vol > div::before { content: ""; position: absolute; left: 0; right: 0; top: 3px; height: 3px; background: var(--k0); box-shadow: 0 1px 0 var(--k2); }
+.gm-opt-vol > div > u { position: absolute; left: 0; top: 3px; height: 3px; background: linear-gradient(#6fb9a6 0 1px, #45998f 1px 2px, #2b7a7c 2px); }
+.gm-opt-vol > div > img { position: absolute; top: 0; margin-left: -3px; }
+.gm-opt-vol > b { font-weight: 400; text-align: right; color: var(--k7); }
+.gm-opt-vol.off > div > u { background: var(--k3); }
+.gm-opt-vol.off > b { color: var(--k5); }
+
+/* The save keys and the way out. */
+.gm-opt .gm-rule { margin: 8px 0 6px; }
+.gm-opt-foot { display: flex; align-items: center; gap: 3px; }
+.gm-opt-foot .gm-btn.danger { border-image-source: url(img/icons/opt_btn_danger.png); margin-left: 5px; }
+.gm-opt-foot .gm-btn.last { margin-left: auto; }
+.gm-opt-top { display: flex; align-items: baseline; gap: 5px; margin-top: -2px; }
+.gm-opt-top > span { color: var(--k5); }
+
+/* Confirmation: a small window that asks, and two keys that say what they do. */
+.gm-opt-ask { width: 166px; }
+.gm-opt-ask p { color: var(--k7); line-height: 11px; padding: 5px 0 8px; }
+.gm-opt-keys { display: flex; gap: 3px; justify-content: flex-end; }
+.gm-opt-key { height: 24px; border: 4px solid transparent; border-image: url(img/icons/ui_btn.png) 4 fill / 4px / 0 stretch; display: flex; align-items: center; gap: 2px; padding: 0 5px 1px 0; color: var(--k9); white-space: nowrap; }
+.gm-opt-key > img { margin-top: -1px; }
+.gm-opt-key.danger { border-image-source: url(img/icons/opt_btn_danger.png); }
+.gm-opt-key:hover { filter: brightness(1.15); }
+</style>
+
+<div class="gm" role="group" aria-label="Maqueta de la interfaz: panel de opciones con idioma, sonido, tamaños y teclas de la partida, y la ventana de confirmación de partida nueva.">
+  <div class="gm-win">
+    <img class="gm-close" src="img/icons/ui_x.png" alt="Cerrar">
+    <div class="gm-in gm-opt">
+      <div class="gm-opt-top"><div class="gm-title">Ajustes</div><span>v0.5.0</span></div>
+      <div class="gm-opt-rows">
+        <div class="gm-opt-row has"><img src="img/icons/opt_lang.png" alt="Idioma">
+          <div class="gm-opt-seg names"><div>English</div><div class="on">Español</div></div>
+          <div class="gm-tip mini tt"><div class="hd">Idioma</div><p>Todo el juego, en inglés o en español.</p></div></div>
+
+        <div class="gm-opt-row gap has"><img src="img/icons/opt_sound.png" alt="Sonido">
+          <div><img src="img/icons/opt_switch_on.png" alt="Encendido"></div>
+          <div class="gm-tip mini tt"><div class="hd">Sonido</div><p>Lo apaga o lo enciende todo de golpe.</p></div></div>
+        <div class="gm-opt-row has"><img src="img/icons/opt_music.png" alt="Música">
+          <div class="gm-opt-vol"><div><u style="width:77px"></u><img src="img/icons/opt_knob.png" alt="" style="left:77px"></div><b>70</b></div>
+          <div class="gm-tip mini tt"><div class="hd">Música</div><p>Un tema por mundo, hecho para sonar de fondo.</p></div></div>
+        <div class="gm-opt-row has"><img src="img/icons/opt_ambience.png" alt="Ambiente">
+          <div class="gm-opt-vol"><div><u style="width:55px"></u><img src="img/icons/opt_knob.png" alt="" style="left:55px"></div><b>50</b></div>
+          <div class="gm-tip mini tt"><div class="hd">Ambiente</div><p>El viento, la lluvia, el mar o las brasas de cada mundo.</p></div></div>
+        <div class="gm-opt-row has"><img src="img/icons/opt_effects.png" alt="Efectos">
+          <div class="gm-opt-vol"><div><u style="width:88px"></u><img src="img/icons/opt_knob.png" alt="" style="left:88px"></div><b>80</b></div>
+          <div class="gm-tip mini tt"><div class="hd">Efectos</div><p>Los golpes y las habilidades del combate.</p></div></div>
+        <div class="gm-opt-row has"><img src="img/icons/opt_click.png" alt="Interfaz">
+          <div class="gm-opt-vol"><div><u style="width:44px"></u><img src="img/icons/opt_knob.png" alt="" style="left:44px"></div><b>40</b></div>
+          <div class="gm-tip mini tt"><div class="hd">Interfaz</div><p>Los clics, los cofres y el botín.</p></div></div>
+
+        <div class="gm-opt-row gap has"><img src="img/icons/opt_menu_scale.png" alt="Tamaño de los menús">
+          <div class="gm-opt-seg"><div>75 %</div><div class="on">100 %</div></div>
+          <div class="gm-tip mini tt"><div class="hd">Tamaño de los menús</div><p>Los paneles que flotan sobre la tira. En pruebas.</p></div></div>
+        <div class="gm-opt-row has"><img src="img/icons/opt_game_scale.png" alt="Tamaño del juego">
+          <div class="gm-opt-seg"><div>75 %</div><div class="on">100 %</div><div>125 %</div></div>
+          <div class="gm-tip mini tt"><div class="hd">Tamaño del juego</div><p>La tira de combate y su barra. En pruebas.</p></div></div>
+      </div>
+
+      <div class="gm-rule"><i></i><img src="img/icons/ui_rule.png" alt=""><i></i></div>
+      <div class="gm-opt-foot">
+        <div class="gm-btn has"><img src="img/icons/opt_export.png" alt="Exportar partida"><div class="gm-tip mini tt above"><div class="hd">Exportar partida</div><p>Guarda una copia en un archivo.</p></div></div>
+        <div class="gm-btn has"><img src="img/icons/opt_import.png" alt="Importar partida"><div class="gm-tip mini tt above"><div class="hd">Importar partida</div><p>Sustituye tu progreso por el de un archivo.</p></div></div>
+        <div class="gm-btn danger has"><img src="img/icons/opt_new.png" alt="Partida nueva"><div class="gm-tip mini tt above"><div class="hd">Partida nueva</div><p>Borra todo el progreso. Antes pregunta.</p></div></div>
+        <div class="gm-btn last has"><img src="img/icons/opt_quit.png" alt="Salir"><div class="gm-tip mini tt above" style="left:auto;right:0"><div class="hd">Salir</div><p>Guarda y cierra el juego.</p></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="gm-win">
+    <div class="gm-in gm-opt-ask">
+      <div class="gm-title">¿Partida nueva?</div>
+      <p>Se borra todo: etapa, equipo, oro y tecnología. No se puede deshacer.</p>
+      <div class="gm-opt-keys">
+        <div class="gm-opt-key"><img src="img/icons/opt_back.png" alt="">Volver</div>
+        <div class="gm-opt-key danger"><img src="img/icons/opt_new.png" alt="">Borrar todo</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+      </div>
+    </div>
+    <div class="item-group" id="mock-70_title">
+      <h3>Pantalla de título</h3>
+      <p class="muted">El título vive en la misma tira de 600 × 160 que el juego: el mundo 1 al atardecer, los tres héroes donde luego pelean, el nombre como logotipo de píxel y una sola tecla dorada para entrar (dice «Empezar» si no hay partida). Opciones, sonido y salir son signos a su lado.</p>
+      <div class="mock-stage">
+<style>
+/* Title screen: the strip itself, 600×160, with the party standing where the game will pick them up. */
+.gm-ts { width: 600px; height: 160px; background: url(img/icons/title_backdrop.png); box-shadow: 0 0 0 1px var(--k0), 2px 2px 0 1px rgba(11, 13, 23, .55); }
+.gm-ts > canvas { position: absolute; top: 59px; width: 96px; height: 70px; }
+.gm-ts-fore { position: absolute; left: 0; top: 0; pointer-events: none; }
+.gm-ts-logo { position: absolute; left: 321px; top: 9px; }
+
+/* Everything that can be pressed sits in one row on the calm grass: three signs, then the one gold key. */
+.gm-ts-menu { position: absolute; right: 8px; bottom: 5px; display: flex; align-items: center; gap: 2px; }
+.gm-ts-play { position: relative; height: 24px; margin-left: 5px; border: 4px solid transparent; border-image: url(img/icons/ui_btn_gold.png) 4 fill / 4px / 0 stretch;
+  display: flex; align-items: center; gap: 1px; padding: 0 7px 1px 0; font: 12px/12px var(--f-name); color: var(--gold-dk); white-space: nowrap; }
+.gm-ts-play > img { margin-top: -1px; }
+.gm-ts-play:hover { filter: brightness(1.12); }
+.gm-ts-menu .tt.above { bottom: calc(100% + 5px); }
+.gm-ts-party { display: flex; align-items: center; gap: 2px; padding-top: 3px; color: var(--k9); }
+.gm-ts-party > img + img { margin-left: 4px; }
+</style>
+
+<div class="gm" role="group" aria-label="Maqueta de la pantalla de título: la tira del juego con el mundo 1 al atardecer, los tres héroes, el logotipo Taskbar Legion y la tecla para continuar.">
+  <div class="gm-ts">
+    <canvas class="px anim" data-char="priest" data-anim="idle" width="96" height="70" style="left:136px" role="img" aria-label="La Priest en reposo."></canvas>
+    <canvas class="px anim" data-char="ranger" data-anim="idle" width="96" height="70" style="left:192px" role="img" aria-label="El Ranger en reposo."></canvas>
+    <canvas class="px anim" data-char="knight" data-anim="idle" width="96" height="70" style="left:252px" role="img" aria-label="El Knight en reposo."></canvas>
+    <img class="gm-ts-fore" src="img/icons/title_fore.png" alt="">
+    <img class="gm-ts-logo" src="img/icons/title_logo.png" alt="Taskbar Legion">
+    <div class="gm-ts-menu">
+      <div class="gm-btn has"><img src="img/icons/opt_gear.png" alt="Opciones"><div class="gm-tip tag tt above"><div class="hd" style="padding:0">Opciones</div></div></div>
+      <div class="gm-btn has"><img src="img/icons/opt_sound.png" alt="Sonido"><div class="gm-tip tag tt above"><div class="hd" style="padding:0">Silenciar</div></div></div>
+      <div class="gm-btn has"><img src="img/icons/opt_quit.png" alt="Salir"><div class="gm-tip tag tt above"><div class="hd" style="padding:0">Salir</div></div></div>
+      <div class="gm-ts-play has"><img src="img/icons/title_play.png" alt="">Continuar
+        <div class="gm-tip mini tt above" style="left:auto;right:0"><div class="hd">Tu partida</div><div class="ln" style="padding-top:0"><span>Normal</span><b>3-7</b></div>
+          <div class="gm-ts-party"><img src="img/icons/crest_knight.png" alt="Knight">47<img src="img/icons/crest_ranger.png" alt="Ranger">45<img src="img/icons/crest_priest.png" alt="Priest">44</div></div></div>
+    </div>
+  </div>
+</div>
+
+      </div>
     </div>
   </section>
 
@@ -1767,6 +2720,28 @@ button.link { background: none; border: 0; padding: 0; font: inherit; color: var
         </div>
       </div>
       <div class="item-group">
+        <h3>Signos del HUD</h3>
+        <p class="muted">Lo que la barra sobre la tira dice sin palabras: los paneles, los cofres, la llave, el jefe.</p>
+        <div class="items">
+        <figure class="item"><img class="px" src="img/icons/hud_party.png" width="64" height="64" style="width:64px;height:64px" alt="Héroes"><figcaption>Héroes</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/hud_stash.png" width="64" height="64" style="width:64px;height:64px" alt="Alijo"><figcaption>Alijo</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/hud_tech.png" width="64" height="64" style="width:64px;height:64px" alt="Técnica"><figcaption>Técnica</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/hud_cube.png" width="64" height="64" style="width:64px;height:64px" alt="Cubo"><figcaption>Cubo</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/hud_map.png" width="64" height="64" style="width:64px;height:64px" alt="Mapa"><figcaption>Mapa</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/hud_pets.png" width="64" height="64" style="width:64px;height:64px" alt="Mascotas"><figcaption>Mascotas</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/hud_options.png" width="64" height="64" style="width:64px;height:64px" alt="Opciones"><figcaption>Opciones</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/hud_boss.png" width="64" height="64" style="width:64px;height:64px" alt="Jefe"><figcaption>Jefe</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/hud_chest_normal.png" width="64" height="64" style="width:64px;height:64px" alt="Cofre común"><figcaption>Cofre común</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/hud_chest_stage.png" width="64" height="64" style="width:64px;height:64px" alt="Cofre de jefe de etapa"><figcaption>Cofre de jefe de etapa</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/hud_chest_world.png" width="64" height="64" style="width:64px;height:64px" alt="Cofre de jefe de mundo"><figcaption>Cofre de jefe de mundo</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/hud_key.png" width="64" height="64" style="width:64px;height:64px" alt="Llave de jefe de mundo"><figcaption>Llave de jefe de mundo</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/hud_retry.png" width="64" height="64" style="width:64px;height:64px" alt="Reintentar"><figcaption>Reintentar</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/hud_debuff.png" width="64" height="64" style="width:64px;height:64px" alt="Curación mermada"><figcaption>Curación mermada</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/hud_enrage.png" width="64" height="64" style="width:64px;height:64px" alt="Furia del jefe"><figcaption>Furia del jefe</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/hud_rail.png" width="48" height="88" style="width:48px;height:88px" alt="Barra del HUD"><figcaption>Barra del HUD</figcaption></figure>
+        </div>
+      </div>
+      <div class="item-group">
         <h3>Piezas del marco</h3>
         <p class="muted">El marco de la interfaz dibujado en pixel art: ventana, tooltip, botones, pestañas y casilla vacía se estiran por sus bordes (nine-slice); el nicho es donde posa el héroe en su panel.</p>
         <div class="items">
@@ -1781,6 +2756,261 @@ button.link { background: none; border: 0; padding: 0; font: inherit; color: var
         <figure class="item"><img class="px" src="img/icons/ui_rule.png" width="36" height="20" style="width:36px;height:20px" alt="Adorno de separador"><figcaption>Adorno de separador</figcaption></figure>
         <figure class="item"><img class="px" src="img/icons/ui_x.png" width="52" height="52" style="width:52px;height:52px" alt="Cerrar"><figcaption>Cerrar</figcaption></figure>
         <figure class="item"><img class="px" src="img/icons/ui_alcove.png" width="200" height="232" style="width:200px;height:232px" alt="Nicho del héroe"><figcaption>Nicho del héroe</figcaption></figure>
+        </div>
+      </div>
+      <div class="item-group">
+        <h3>Mapa · signos</h3>
+        <p class="muted">Un signo por dificultad (y su versión apagada), y los del viaje: dónde está el grupo, la frontera, llaves, jefes y candados.</p>
+        <div class="items">
+        <figure class="item"><img class="px" src="img/icons/map_diff_normal.png" width="64" height="64" style="width:64px;height:64px" alt="Normal"><figcaption>Normal</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/map_diff_hell.png" width="64" height="64" style="width:64px;height:64px" alt="Hell"><figcaption>Hell</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/map_diff_inferno.png" width="64" height="64" style="width:64px;height:64px" alt="Inferno"><figcaption>Inferno</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/map_diff_eternal.png" width="64" height="64" style="width:64px;height:64px" alt="Eternal"><figcaption>Eternal</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/map_diff_torment.png" width="64" height="64" style="width:64px;height:64px" alt="Torment"><figcaption>Torment</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/map_here.png" width="64" height="64" style="width:64px;height:64px" alt="El grupo está aquí"><figcaption>El grupo está aquí</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/map_front.png" width="64" height="64" style="width:64px;height:64px" alt="Frontera"><figcaption>Frontera</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/map_key.png" width="64" height="64" style="width:64px;height:64px" alt="Llave de jefe de mundo"><figcaption>Llave de jefe de mundo</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/map_skull.png" width="64" height="64" style="width:64px;height:64px" alt="Jefe"><figcaption>Jefe</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/map_check.png" width="64" height="64" style="width:64px;height:64px" alt="Vencido"><figcaption>Vencido</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/map_lock.png" width="64" height="64" style="width:64px;height:64px" alt="Sin alcanzar"><figcaption>Sin alcanzar</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/map_foe.png" width="64" height="64" style="width:64px;height:64px" alt="Fuerza de los enemigos"><figcaption>Fuerza de los enemigos</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/map_diff_normal_off.png" width="64" height="64" style="width:64px;height:64px" alt="Normal · sin desbloquear"><figcaption>Normal · sin desbloquear</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/map_diff_hell_off.png" width="64" height="64" style="width:64px;height:64px" alt="Hell · sin desbloquear"><figcaption>Hell · sin desbloquear</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/map_diff_inferno_off.png" width="64" height="64" style="width:64px;height:64px" alt="Inferno · sin desbloquear"><figcaption>Inferno · sin desbloquear</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/map_diff_eternal_off.png" width="64" height="64" style="width:64px;height:64px" alt="Eternal · sin desbloquear"><figcaption>Eternal · sin desbloquear</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/map_diff_torment_off.png" width="64" height="64" style="width:64px;height:64px" alt="Torment · sin desbloquear"><figcaption>Torment · sin desbloquear</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/map_lock_s.png" width="32" height="36" style="width:32px;height:36px" alt="Candado pequeño"><figcaption>Candado pequeño</figcaption></figure>
+        </div>
+      </div>
+      <div class="item-group">
+        <h3>Mapa · los diez mundos</h3>
+        <p class="muted">Miniaturas de 56 × 40 cortadas del fondo real de cada mundo, a su mismo tamaño de píxel.</p>
+        <div class="items">
+        <figure class="item"><img class="px" src="img/icons/map_w01.png" width="112" height="80" style="width:112px;height:80px" alt="Praderas doradas"><figcaption>Praderas doradas</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/map_w02.png" width="112" height="80" style="width:112px;height:80px" alt="Bosque viejo de musgo"><figcaption>Bosque viejo de musgo</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/map_w03.png" width="112" height="80" style="width:112px;height:80px" alt="Marismas de los Pilotes"><figcaption>Marismas de los Pilotes</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/map_w04.png" width="112" height="80" style="width:112px;height:80px" alt="Cañones de Roca Roja"><figcaption>Cañones de Roca Roja</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/map_w05.png" width="112" height="80" style="width:112px;height:80px" alt="Cumbres del Monasterio"><figcaption>Cumbres del Monasterio</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/map_w06.png" width="112" height="80" style="width:112px;height:80px" alt="Costa de las Ruinas Hundidas"><figcaption>Costa de las Ruinas Hundidas</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/map_w07.png" width="112" height="80" style="width:112px;height:80px" alt="Cavernas de cristal y hongos"><figcaption>Cavernas de cristal y hongos</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/map_w08.png" width="112" height="80" style="width:112px;height:80px" alt="Tierras de ceniza y forjas"><figcaption>Tierras de ceniza y forjas</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/map_w09.png" width="112" height="80" style="width:112px;height:80px" alt="Ciudadela entre las nubes"><figcaption>Ciudadela entre las nubes</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/map_w10.png" width="112" height="80" style="width:112px;height:80px" alt="La Grieta"><figcaption>La Grieta</figcaption></figure>
+        </div>
+      </div>
+      <div class="item-group">
+        <h3>Mapa · mundos sin alcanzar</h3>
+        <p class="muted">La misma miniatura como silueta de noche: se adivina qué viene, sin enseñarlo.</p>
+        <div class="items">
+        <figure class="item"><img class="px" src="img/icons/map_w01_off.png" width="112" height="80" style="width:112px;height:80px" alt="Praderas doradas · sin alcanzar"><figcaption>Praderas doradas · sin alcanzar</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/map_w02_off.png" width="112" height="80" style="width:112px;height:80px" alt="Bosque viejo de musgo · sin alcanzar"><figcaption>Bosque viejo de musgo · sin alcanzar</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/map_w03_off.png" width="112" height="80" style="width:112px;height:80px" alt="Marismas de los Pilotes · sin alcanzar"><figcaption>Marismas de los Pilotes · sin alcanzar</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/map_w04_off.png" width="112" height="80" style="width:112px;height:80px" alt="Cañones de Roca Roja · sin alcanzar"><figcaption>Cañones de Roca Roja · sin alcanzar</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/map_w05_off.png" width="112" height="80" style="width:112px;height:80px" alt="Cumbres del Monasterio · sin alcanzar"><figcaption>Cumbres del Monasterio · sin alcanzar</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/map_w06_off.png" width="112" height="80" style="width:112px;height:80px" alt="Costa de las Ruinas Hundidas · sin alcanzar"><figcaption>Costa de las Ruinas Hundidas · sin alcanzar</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/map_w07_off.png" width="112" height="80" style="width:112px;height:80px" alt="Cavernas de cristal y hongos · sin alcanzar"><figcaption>Cavernas de cristal y hongos · sin alcanzar</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/map_w08_off.png" width="112" height="80" style="width:112px;height:80px" alt="Tierras de ceniza y forjas · sin alcanzar"><figcaption>Tierras de ceniza y forjas · sin alcanzar</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/map_w09_off.png" width="112" height="80" style="width:112px;height:80px" alt="Ciudadela entre las nubes · sin alcanzar"><figcaption>Ciudadela entre las nubes · sin alcanzar</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/map_w10_off.png" width="112" height="80" style="width:112px;height:80px" alt="La Grieta · sin alcanzar"><figcaption>La Grieta · sin alcanzar</figcaption></figure>
+        </div>
+      </div>
+      <div class="item-group">
+        <h3>Mapa · jefes de mundo</h3>
+        <p class="muted">La puerta de cada jefe de mundo, con su cara cortada de su animación de reposo.</p>
+        <div class="items">
+        <figure class="item"><img class="px" src="img/icons/map_boss_w01.png" width="108" height="108" style="width:108px;height:108px" alt="Rey de la Cosecha"><figcaption>Rey de la Cosecha</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/map_boss_w02.png" width="108" height="108" style="width:108px;height:108px" alt="Guardián Astado"><figcaption>Guardián Astado</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/map_boss_w03.png" width="108" height="108" style="width:108px;height:108px" alt="El Barquero"><figcaption>El Barquero</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/map_boss_w04.png" width="108" height="108" style="width:108px;height:108px" alt="Coloso de arenisca"><figcaption>Coloso de arenisca</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/map_boss_w05.png" width="108" height="108" style="width:108px;height:108px" alt="El Portacampana"><figcaption>El Portacampana</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/map_boss_w06.png" width="108" height="108" style="width:108px;height:108px" alt="El Almirante Ahogado"><figcaption>El Almirante Ahogado</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/map_boss_w07.png" width="108" height="108" style="width:108px;height:108px" alt="Titán Geoda"><figcaption>Titán Geoda</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/map_boss_w08.png" width="108" height="108" style="width:108px;height:108px" alt="Sierpe de la Fragua"><figcaption>Sierpe de la Fragua</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/map_boss_w09.png" width="108" height="108" style="width:108px;height:108px" alt="El Arconte"><figcaption>El Arconte</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/map_boss_w10.png" width="108" height="108" style="width:108px;height:108px" alt="El Deshacedor"><figcaption>El Deshacedor</figcaption></figure>
+        </div>
+      </div>
+      <div class="item-group">
+        <h3>Tecnología · un signo por mejora</h3>
+        <p class="muted">Signos de 24 × 24 de las doce mejoras. Los cofres se leen igual en todas: bajo una chispa, su probabilidad de caer; dos apilados, su hueco de almacén.</p>
+        <div class="items">
+        <figure class="item"><img class="px" src="img/icons/tech_eco_gold.png" width="96" height="96" style="width:96px;height:96px" alt="Mercadeo · oro por enemigo"><figcaption>Mercadeo · oro por enemigo</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/tech_eco_xp.png" width="96" height="96" style="width:96px;height:96px" alt="Erudición · experiencia por enemigo"><figcaption>Erudición · experiencia por enemigo</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/tech_eco_offline.png" width="96" height="96" style="width:96px;height:96px" alt="Expedición · botín fuera del juego"><figcaption>Expedición · botín fuera del juego</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/tech_chest_drop_normal.png" width="96" height="96" style="width:96px;height:96px" alt="Botín común · cofres comunes"><figcaption>Botín común · cofres comunes</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/tech_chest_drop_stage.png" width="96" height="96" style="width:96px;height:96px" alt="Despojos de jefe · cofres de jefe de etapa"><figcaption>Despojos de jefe · cofres de jefe de etapa</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/tech_chest_gem.png" width="96" height="96" style="width:96px;height:96px" alt="Ojo de gemas · gemas en los cofres"><figcaption>Ojo de gemas · gemas en los cofres</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/tech_store_normal.png" width="96" height="96" style="width:96px;height:96px" alt="Almacén · hueco de cofres comunes"><figcaption>Almacén · hueco de cofres comunes</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/tech_store_stage.png" width="96" height="96" style="width:96px;height:96px" alt="Cámara · hueco de cofres de jefe de etapa"><figcaption>Cámara · hueco de cofres de jefe de etapa</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/tech_store_zone.png" width="96" height="96" style="width:96px;height:96px" alt="Relicario · hueco de cofres de jefe de mundo"><figcaption>Relicario · hueco de cofres de jefe de mundo</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/tech_auto_open.png" width="96" height="96" style="width:96px;height:96px" alt="Apertura automática"><figcaption>Apertura automática</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/tech_party_size.png" width="96" height="96" style="width:96px;height:96px" alt="Reclutamiento · un héroe más"><figcaption>Reclutamiento · un héroe más</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/tech_synth_luck.png" width="96" height="96" style="width:96px;height:96px" alt="Fortuna del transmutador · tirada de suerte del Cubo"><figcaption>Fortuna del transmutador · tirada de suerte del Cubo</figcaption></figure>
+        </div>
+      </div>
+      <div class="item-group">
+        <h3>Tecnología · sellos y marcas</h3>
+        <p class="muted">El sello redondo donde va cada mejora (sin comprar, comprada, completa), las marcas de los cuatro grupos y la de «completa».</p>
+        <div class="items">
+        <figure class="item"><img class="px" src="img/icons/tech_seal_off.png" width="102" height="102" style="width:102px;height:102px" alt="Sello · sin comprar"><figcaption>Sello · sin comprar</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/tech_seal_on.png" width="102" height="102" style="width:102px;height:102px" alt="Sello · comprada"><figcaption>Sello · comprada</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/tech_seal_max.png" width="102" height="102" style="width:102px;height:102px" alt="Sello · completa"><figcaption>Sello · completa</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/tech_cat_economy.png" width="64" height="64" style="width:64px;height:64px" alt="Economía"><figcaption>Economía</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/tech_cat_utility.png" width="64" height="64" style="width:64px;height:64px" alt="Utilidad"><figcaption>Utilidad</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/tech_cat_drops.png" width="64" height="64" style="width:64px;height:64px" alt="Cofres · botín"><figcaption>Cofres · botín</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/tech_cat_storage.png" width="64" height="64" style="width:64px;height:64px" alt="Cofres · almacén"><figcaption>Cofres · almacén</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/tech_done.png" width="64" height="64" style="width:64px;height:64px" alt="Completa"><figcaption>Completa</figcaption></figure>
+        </div>
+      </div>
+      <div class="item-group">
+        <h3>Mascotas</h3>
+        <p class="muted">Las seis mascotas, del tamaño de una casilla. Dan su bonificación solo por tenerlas; la elegida acompaña al grupo.</p>
+        <div class="items">
+        <figure class="item"><img class="px" src="img/icons/pet_coin_sprite.png" width="108" height="108" style="width:108px;height:108px" alt="Duende de la moneda"><figcaption>Duende de la moneda</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/pet_scholar_owl.png" width="108" height="108" style="width:108px;height:108px" alt="Búho erudito"><figcaption>Búho erudito</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/pet_pack_mule.png" width="108" height="108" style="width:108px;height:108px" alt="Mula de carga"><figcaption>Mula de carga</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/pet_lucky_cat.png" width="108" height="108" style="width:108px;height:108px" alt="Gato de la suerte"><figcaption>Gato de la suerte</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/pet_time_imp.png" width="108" height="108" style="width:108px;height:108px" alt="Diablillo del tiempo"><figcaption>Diablillo del tiempo</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/pet_hoarder.png" width="108" height="108" style="width:108px;height:108px" alt="Acaparador"><figcaption>Acaparador</figcaption></figure>
+        </div>
+      </div>
+      <div class="item-group">
+        <h3>Mascotas sin descubrir</h3>
+        <p class="muted">La misma figura en sombra: sabes que existe, no cuál es.</p>
+        <div class="items">
+        <figure class="item"><img class="px" src="img/icons/pet_coin_sprite_dark.png" width="108" height="108" style="width:108px;height:108px" alt="Duende de la moneda (sin descubrir)"><figcaption>Duende de la moneda (sin descubrir)</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/pet_scholar_owl_dark.png" width="108" height="108" style="width:108px;height:108px" alt="Búho erudito (sin descubrir)"><figcaption>Búho erudito (sin descubrir)</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/pet_pack_mule_dark.png" width="108" height="108" style="width:108px;height:108px" alt="Mula de carga (sin descubrir)"><figcaption>Mula de carga (sin descubrir)</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/pet_lucky_cat_dark.png" width="108" height="108" style="width:108px;height:108px" alt="Gato de la suerte (sin descubrir)"><figcaption>Gato de la suerte (sin descubrir)</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/pet_time_imp_dark.png" width="108" height="108" style="width:108px;height:108px" alt="Diablillo del tiempo (sin descubrir)"><figcaption>Diablillo del tiempo (sin descubrir)</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/pet_hoarder_dark.png" width="108" height="108" style="width:108px;height:108px" alt="Acaparador (sin descubrir)"><figcaption>Acaparador (sin descubrir)</figcaption></figure>
+        </div>
+      </div>
+      <div class="item-group">
+        <h3>Signos de las mascotas</h3>
+        <p class="muted">Lo que da cada mascota, en un signo de 16 × 16, y la peana donde posan.</p>
+        <div class="items">
+        <figure class="item"><img class="px" src="img/icons/pet_sign_chest.png" width="64" height="64" style="width:64px;height:64px" alt="Más cofres"><figcaption>Más cofres</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/pet_sign_store.png" width="64" height="64" style="width:64px;height:64px" alt="Hueco para cofres comunes"><figcaption>Hueco para cofres comunes</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/pet_sign_store_boss.png" width="64" height="64" style="width:64px;height:64px" alt="Hueco para cofres de jefe"><figcaption>Hueco para cofres de jefe</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/pet_sign_timer.png" width="64" height="64" style="width:64px;height:64px" alt="Apertura automática"><figcaption>Apertura automática</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/pet_sign_paw.png" width="64" height="64" style="width:64px;height:64px" alt="Acompañante"><figcaption>Acompañante</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/pet_plinth.png" width="108" height="27" style="width:108px;height:27px" alt="Peana"><figcaption>Peana</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/pet_plinth_on.png" width="108" height="27" style="width:108px;height:27px" alt="Peana del acompañante"><figcaption>Peana del acompañante</figcaption></figure>
+        </div>
+      </div>
+      <div class="item-group">
+        <h3>Signos del Cubo</h3>
+        <p class="muted">Las tres recetas (sintetizar, alquimia, transfigurar), sus teclas y sus avisos.</p>
+        <div class="items">
+        <figure class="item"><img class="px" src="img/icons/cube_tab_synth.png" width="64" height="64" style="width:64px;height:64px" alt="Sintetizar"><figcaption>Sintetizar</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/cube_tab_alchemy.png" width="64" height="64" style="width:64px;height:64px" alt="Alquimia"><figcaption>Alquimia</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/cube_tab_transfig.png" width="64" height="64" style="width:64px;height:64px" alt="Transfigurar"><figcaption>Transfigurar</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/cube_arrow.png" width="64" height="64" style="width:64px;height:64px" alt="Da"><figcaption>Da</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/cube_plus.png" width="64" height="64" style="width:64px;height:64px" alt="Y"><figcaption>Y</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/cube_go.png" width="64" height="64" style="width:64px;height:64px" alt="Obrar"><figcaption>Obrar</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/cube_fill.png" width="64" height="64" style="width:64px;height:64px" alt="Llenar solo"><figcaption>Llenar solo</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/cube_from_stash.png" width="64" height="64" style="width:64px;height:64px" alt="Usar también el alijo"><figcaption>Usar también el alijo</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/cube_lucky.png" width="64" height="64" style="width:64px;height:64px" alt="Síntesis afortunada"><figcaption>Síntesis afortunada</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/cube_keep.png" width="64" height="64" style="width:64px;height:64px" alt="Quedarse lo nuevo"><figcaption>Quedarse lo nuevo</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/cube_revert.png" width="64" height="64" style="width:64px;height:64px" alt="Quedarse lo de antes"><figcaption>Quedarse lo de antes</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/cube_star.png" width="64" height="64" style="width:64px;height:64px" alt="Tirada perfecta"><figcaption>Tirada perfecta</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/cube_auto.png" width="64" height="64" style="width:64px;height:64px" alt="Fundir al caer"><figcaption>Fundir al caer</figcaption></figure>
+        </div>
+      </div>
+      <div class="item-group">
+        <h3>Rarezas en pequeño</h3>
+        <p class="muted">Un cuadradito por rareza, para pagos y filtros.</p>
+        <div class="items">
+        <figure class="item"><img class="px" src="img/icons/cube_pip_0.png" width="36" height="36" style="width:36px;height:36px" alt="T0"><figcaption>T0</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/cube_pip_1.png" width="36" height="36" style="width:36px;height:36px" alt="T1"><figcaption>T1</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/cube_pip_2.png" width="36" height="36" style="width:36px;height:36px" alt="T2"><figcaption>T2</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/cube_pip_3.png" width="36" height="36" style="width:36px;height:36px" alt="T3"><figcaption>T3</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/cube_pip_4.png" width="36" height="36" style="width:36px;height:36px" alt="T4"><figcaption>T4</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/cube_pip_5.png" width="36" height="36" style="width:36px;height:36px" alt="T5"><figcaption>T5</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/cube_pip_6.png" width="36" height="36" style="width:36px;height:36px" alt="T6"><figcaption>T6</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/cube_pip_7.png" width="36" height="36" style="width:36px;height:36px" alt="T7"><figcaption>T7</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/cube_pip_8.png" width="36" height="36" style="width:36px;height:36px" alt="T8"><figcaption>T8</figcaption></figure>
+        </div>
+      </div>
+      <div class="item-group">
+        <h3>Piezas del Cubo</h3>
+        <p class="muted">La cara del Cubo con sus nueve huecos y la casilla del resultado, con el marco de la rareza que saldrá.</p>
+        <div class="items">
+        <figure class="item"><img class="px" src="img/icons/cube_face.png" width="252" height="264" style="width:252px;height:264px" alt="El Cubo"><figcaption>El Cubo</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/cube_result_4.png" width="108" height="108" style="width:108px;height:108px" alt="Resultado T4"><figcaption>Resultado T4</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/cube_result_5.png" width="108" height="108" style="width:108px;height:108px" alt="Resultado T5"><figcaption>Resultado T5</figcaption></figure>
+        </div>
+      </div>
+      <div class="item-group">
+        <h3>Opciones · signos y controles</h3>
+        <p class="muted">Un signo por ajuste (idioma, los cuatro volúmenes, los dos tamaños, las teclas de la partida) y las piezas de sus controles: tirador, interruptor y tecla de peligro.</p>
+        <div class="items">
+        <figure class="item"><img class="px" src="img/icons/opt_lang.png" width="64" height="64" style="width:64px;height:64px" alt="Idioma"><figcaption>Idioma</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/opt_sound.png" width="64" height="64" style="width:64px;height:64px" alt="Sonido"><figcaption>Sonido</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/opt_mute.png" width="64" height="64" style="width:64px;height:64px" alt="Silencio"><figcaption>Silencio</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/opt_music.png" width="64" height="64" style="width:64px;height:64px" alt="Música"><figcaption>Música</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/opt_ambience.png" width="64" height="64" style="width:64px;height:64px" alt="Ambiente"><figcaption>Ambiente</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/opt_effects.png" width="64" height="64" style="width:64px;height:64px" alt="Efectos"><figcaption>Efectos</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/opt_click.png" width="64" height="64" style="width:64px;height:64px" alt="Interfaz"><figcaption>Interfaz</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/opt_menu_scale.png" width="64" height="64" style="width:64px;height:64px" alt="Tamaño de los menús"><figcaption>Tamaño de los menús</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/opt_game_scale.png" width="64" height="64" style="width:64px;height:64px" alt="Tamaño del juego"><figcaption>Tamaño del juego</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/opt_export.png" width="64" height="64" style="width:64px;height:64px" alt="Exportar partida"><figcaption>Exportar partida</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/opt_import.png" width="64" height="64" style="width:64px;height:64px" alt="Importar partida"><figcaption>Importar partida</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/opt_new.png" width="64" height="64" style="width:64px;height:64px" alt="Partida nueva"><figcaption>Partida nueva</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/opt_quit.png" width="64" height="64" style="width:64px;height:64px" alt="Salir"><figcaption>Salir</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/opt_back.png" width="64" height="64" style="width:64px;height:64px" alt="Volver"><figcaption>Volver</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/opt_gear.png" width="64" height="64" style="width:64px;height:64px" alt="Opciones"><figcaption>Opciones</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/title_play.png" width="64" height="64" style="width:64px;height:64px" alt="Jugar"><figcaption>Jugar</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/opt_knob.png" width="28" height="36" style="width:28px;height:36px" alt="Tirador"><figcaption>Tirador</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/opt_switch_on.png" width="88" height="44" style="width:88px;height:44px" alt="Interruptor encendido"><figcaption>Interruptor encendido</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/opt_switch_off.png" width="88" height="44" style="width:88px;height:44px" alt="Interruptor apagado"><figcaption>Interruptor apagado</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/opt_btn_danger.png" width="56" height="52" style="width:56px;height:52px" alt="Tecla de peligro"><figcaption>Tecla de peligro</figcaption></figure>
+        </div>
+      </div>
+      <div class="item-group">
+        <h3>El Cubo · signos de receta</h3>
+        <p class="muted">Los signos que acompañan al nombre de cada receta en su pestaña, y la casilla de los interruptores con rótulo.</p>
+        <div class="items">
+        <figure class="item"><img class="px" src="img/icons/cube2_synth.png" width="64" height="64" style="width:64px;height:64px" alt="Sintetizar"><figcaption>Sintetizar</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/cube2_melt.png" width="64" height="64" style="width:64px;height:64px" alt="Fundir"><figcaption>Fundir</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/cube2_swap.png" width="64" height="64" style="width:64px;height:64px" alt="Transfigurar"><figcaption>Transfigurar</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/cube2_tick_on.png" width="44" height="44" style="width:44px;height:44px" alt="Casilla marcada"><figcaption>Casilla marcada</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/cube2_tick_off.png" width="44" height="44" style="width:44px;height:44px" alt="Casilla sin marcar"><figcaption>Casilla sin marcar</figcaption></figure>
+        </div>
+      </div>
+      <div class="item-group">
+        <h3>Talentos · signos</h3>
+        <p class="muted">Las cinco habilidades del Knight (provisionales: los iconos definitivos llegan con el rediseño de los kits), sus dos especializaciones, el punto de talento y la definitiva.</p>
+        <div class="items">
+        <figure class="item"><img class="px" src="img/icons/tal_stone_skin.png" width="64" height="64" style="width:64px;height:64px" alt="Piel de piedra"><figcaption>Piel de piedra</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/tal_cleave.png" width="64" height="64" style="width:64px;height:64px" alt="Tajo debilitante"><figcaption>Tajo debilitante</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/tal_bulwark.png" width="64" height="64" style="width:64px;height:64px" alt="Baluarte"><figcaption>Baluarte</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/tal_battle_cry.png" width="64" height="64" style="width:64px;height:64px" alt="Grito de guerra"><figcaption>Grito de guerra</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/tal_bloodlust.png" width="64" height="64" style="width:64px;height:64px" alt="Sed de sangre"><figcaption>Sed de sangre</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/tal_bastion.png" width="64" height="64" style="width:64px;height:64px" alt="Bastión"><figcaption>Bastión</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/tal_scourge.png" width="64" height="64" style="width:64px;height:64px" alt="Azote"><figcaption>Azote</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/tal_point.png" width="64" height="64" style="width:64px;height:64px" alt="Punto de talento"><figcaption>Punto de talento</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/tal_crown.png" width="64" height="64" style="width:64px;height:64px" alt="Definitiva"><figcaption>Definitiva</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/tal_respec.png" width="64" height="64" style="width:64px;height:64px" alt="Devolver puntos"><figcaption>Devolver puntos</figcaption></figure>
+        </div>
+      </div>
+      <div class="item-group">
+        <h3>Talentos · marcos de nodo</h3>
+        <p class="muted">La forma dice qué es el nodo: sello redondo, pasiva; placa cuadrada, habilidad; placa verdemar de esquinas cortadas, modificador; octógono, definitiva.</p>
+        <div class="items">
+        <figure class="item"><img class="px" src="img/icons/tal_seal_off.png" width="88" height="88" style="width:88px;height:88px" alt="Pasiva sin puntos"><figcaption>Pasiva sin puntos</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/tal_seal_on.png" width="88" height="88" style="width:88px;height:88px" alt="Pasiva con puntos"><figcaption>Pasiva con puntos</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/tal_seal_max.png" width="88" height="88" style="width:88px;height:88px" alt="Pasiva completa"><figcaption>Pasiva completa</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/tal_plate_off.png" width="96" height="96" style="width:96px;height:96px" alt="Habilidad sin aprender"><figcaption>Habilidad sin aprender</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/tal_plate_on.png" width="96" height="96" style="width:96px;height:96px" alt="Habilidad aprendida"><figcaption>Habilidad aprendida</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/tal_plate_max.png" width="96" height="96" style="width:96px;height:96px" alt="Habilidad completa"><figcaption>Habilidad completa</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/tal_mod_off.png" width="96" height="96" style="width:96px;height:96px" alt="Modificador sin tomar"><figcaption>Modificador sin tomar</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/tal_mod_on.png" width="96" height="96" style="width:96px;height:96px" alt="Modificador tomado"><figcaption>Modificador tomado</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/tal_ult_off.png" width="120" height="120" style="width:120px;height:120px" alt="Definitiva sin alcanzar"><figcaption>Definitiva sin alcanzar</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/tal_ult_on.png" width="120" height="120" style="width:120px;height:120px" alt="Definitiva"><figcaption>Definitiva</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/tal_either.png" width="20" height="20" style="width:20px;height:20px" alt="Elige una"><figcaption>Elige una</figcaption></figure>
+        <figure class="item"><img class="px" src="img/icons/tal_plus.png" width="28" height="28" style="width:28px;height:28px" alt="Cambia una habilidad"><figcaption>Cambia una habilidad</figcaption></figure>
         </div>
       </div>
   </section>
@@ -1805,7 +3035,7 @@ button.link { background: none; border: 0; padding: 0; font: inherit; color: var
       <h2>Lo que necesito de ti</h2>
     </div>
     <div class="questions">
-      <div class="q"><b>Interfaz</b><span class="muted">Maqueta 2 del panel de héroe y el alijo: signos en vez de palabras, tooltips al pasar el ratón, marco en pixel art con cantoneras de latón, nombres en gótica. ¿Va por aquí el estilo? ¿La gótica se lee bien o prefieres otra letra para los nombres?</span></div>
+      <div class="q"><b>Interfaz</b><span class="muted">Los cofres del HUD enseñan ahora su almacén: un cuadradito por hueco, encendido si hay cofre y todos en rojo cuando no cabe ninguno más. ¿El Cubo se entiende ahora? ¿Te convence el árbol de talentos en horizontal, con tronco común y dos ramas?</span></div>
       <div class="q"><b>Guantes</b><span class="muted">Rehechos los quince con una sola mano bien construida: dorso a la vista, cuatro dedos rectos y el pulgar a un lado. Placa con dedos articulados y bocamanga acampanada, cuero sobre brazal, tela fina con la manga cayendo. ¿Ahora sí?</span></div>
       <div class="q"><b>Piezas de la Grieta</b><span class="muted">Cada familia conserva ahora su material en la quinta categoría: acero oscuro la placa, piel oscura el cuero y un tejido ciruela la tela. ¿Se distinguen?</span></div>
       <div class="q"><b>Resto del repaso</b><span class="muted">Arcos más gruesos, flechas de los carcajs separadas, escarpe alado dorado con la greba más ancha, polainas de lobo sin la cola y la estadística de armadura como un gran yelmo. Dime qué más desentona.</span></div>

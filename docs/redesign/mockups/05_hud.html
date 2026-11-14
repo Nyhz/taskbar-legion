@@ -1,0 +1,135 @@
+<!-- mock: HUD de la tira | La barra que vive sobre la tira, en dos momentos: una oleada y un jefe de etapa. Los paneles se abren desde los signos de la izquierda; etapa, cofres (un cuadradito por hueco de almacén, encendido si hay cofre), llaves y oro se leen de un vistazo y se explican al pasar el ratón. Sobre la tira solo aparece lo que está pasando: daño, botín y, con un jefe delante, su nombre, su vida y el tiempo antes de que se enfurezca. -->
+<style>
+/* The HUD: a rail on top of the strip. Everything on it is a sign and, at most, a number. */
+.hud-gm { display: grid; gap: 14px; }
+.hud { position: relative; width: 600px; }
+.hud-rail { position: relative; z-index: 2; height: 22px; border-style: solid; border-width: 0 4px; border-image: url(img/icons/hud_rail.png) 0 4 fill / 0 4px / 0 stretch;
+  display: flex; align-items: center; padding: 0 2px; }
+.hud-key { position: relative; width: 19px; height: 22px; padding: 3px 0 0 2px; }
+.hud-key > img { opacity: .6; }
+.hud-key:hover > img, .hud-key.on > img { opacity: 1; }
+.hud-key.on::after { content: ""; position: absolute; left: 3px; right: 2px; bottom: 1px; height: 1px; background: var(--gold); }
+.hud-mid { flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px; }
+.hud-stage { position: relative; height: 12px; padding: 0 5px; line-height: 12px; color: var(--k0); background: linear-gradient(var(--k9) 0 1px, var(--k7) 1px 10px, var(--k5) 10px);
+  clip-path: polygon(1px 0, calc(100% - 1px) 0, calc(100% - 1px) 1px, 100% 1px, 100% calc(100% - 1px), calc(100% - 1px) calc(100% - 1px), calc(100% - 1px) 100%, 1px 100%, 1px calc(100% - 1px), 0 calc(100% - 1px), 0 1px, 1px 1px); }
+.hud-stage.hell { color: #fbb68a; background: linear-gradient(#dc5f48 0 1px, #8f2433 1px 10px, #63192e 10px); }
+.hud-where { position: relative; display: flex; align-items: center; gap: 4px; }
+.hud-prog { width: 132px; height: 9px; }
+.hud-prog > u { background: linear-gradient(#b3c873 0 1px, #5e8f4b 1px 5px, #3f7343 5px); }
+.hud-prog.boss > u { background: linear-gradient(#f08a62 0 1px, #bb3a3a 1px 5px, #8f2433 5px); }
+.hud-end { margin-left: -2px; opacity: .45; }
+.hud-end.on { opacity: 1; }
+.hud-res { position: relative; display: flex; align-items: center; gap: 1px; padding-right: 5px; color: var(--k9); }
+.hud-res.zero { color: var(--k5); }
+.hud-res.zero > img { opacity: .4; }
+.hud-res.full { color: var(--bad); }
+/* Chest storage: one square per slot, lit when it holds a chest; all red when there is no room left. */
+.hud-pips { display: grid; grid-template-rows: repeat(2, 3px); grid-auto-flow: column; grid-auto-columns: 3px; gap: 1px; margin-left: 2px; }
+.hud-pips > i { background: var(--k3); }
+.hud-pips.normal > i.on { background: #cb9a63; } .hud-pips.stage > i.on { background: #bcc3cf; } .hud-pips.world > i.on { background: #cba2dd; }
+.hud-res.full .hud-pips > i.on { background: var(--bad); }
+.hud-rail .gm-gold { margin-left: 2px; padding-right: 4px; }
+.hud .tt.below { left: 0; top: calc(100% + 3px); bottom: auto; }
+.hud .tt.below.r { left: auto; right: 0; }
+
+/* On the strip: only what is happening. Lettering sits straight on the art, outlined. */
+.hud-strip { position: relative; width: 600px; height: 160px; background: url(img/icons/hud_scene_wave.png); }
+.hud-strip.boss { background-image: url(img/icons/hud_scene_boss.png); }
+.hud-strip > * { position: absolute; }
+.hud-ink { text-shadow: 1px 0 0 var(--k0), -1px 0 0 var(--k0), 0 1px 0 var(--k0), 0 -1px 0 var(--k0), 1px 1px 0 var(--k0); }
+.hud-dmg { color: var(--k9); }
+.hud-dmg.crit { font: 20px/20px var(--f-big); color: var(--gold-hi); }
+.hud-dmg.heal { color: #b3c873; }
+.hud-loot { right: 28px; bottom: 6px; display: grid; gap: 1px; justify-items: end; font: 12px/12px var(--f-name); }
+.hud-loot > div:first-child { opacity: .55; }
+.hud-corner { right: 4px; bottom: 4px; width: 18px; height: 18px; padding: 1px; }
+.hud-corner > img { opacity: .5; }
+.hud-corner.on > img, .hud-corner:hover > img { opacity: 1; }
+.hud-badge { right: 5px; top: 5px; width: 16px; height: 16px; }
+.hud-foe { left: 180px; top: 5px; width: 240px; }
+.hud-foe-top { display: flex; align-items: center; gap: 3px; height: 16px; }
+.hud-foe-top > .nm { font: 12px/12px var(--f-name); color: var(--gold-hi); }
+.hud-clock { position: relative; margin-left: auto; display: flex; align-items: center; color: var(--k9); }
+.hud-life { height: 9px; }
+.hud-life > u { background: linear-gradient(#f08a62 0 1px, #bb3a3a 1px 5px, #8f2433 5px); }
+.hud-corner .tt { left: auto; right: 0; top: auto; bottom: calc(100% + 3px); }
+.hud-badge .tt { left: auto; right: 0; top: calc(100% + 3px); }
+</style>
+
+<div class="gm hud-gm" role="group" aria-label="Maqueta del HUD de la tira en dos momentos: una oleada en las Praderas doradas y un jefe de etapa.">
+  <div class="hud">
+    <div class="hud-rail">
+      <div class="hud-key on has"><img src="img/icons/hud_party.png" alt="Héroes"><div class="gm-tip tag tt below"><div class="hd" style="padding:0">Héroes</div></div></div>
+      <div class="hud-key has"><img src="img/icons/hud_stash.png" alt="Alijo"><div class="gm-tip tag tt below"><div class="hd" style="padding:0">Alijo</div></div></div>
+      <div class="hud-key has"><img src="img/icons/tab_talents.png" alt="Talentos"><div class="gm-tip tag tt below"><div class="hd" style="padding:0">Talentos</div></div></div>
+      <div class="hud-key has"><img src="img/icons/hud_tech.png" alt="Técnica"><div class="gm-tip tag tt below"><div class="hd" style="padding:0">Técnica</div></div></div>
+      <div class="hud-key has"><img src="img/icons/hud_cube.png" alt="Cubo"><div class="gm-tip tag tt below"><div class="hd" style="padding:0">Cubo</div></div></div>
+      <div class="hud-key has"><img src="img/icons/hud_map.png" alt="Mapa"><div class="gm-tip tag tt below"><div class="hd" style="padding:0">Mapa</div></div></div>
+      <div class="hud-key has"><img src="img/icons/hud_pets.png" alt="Mascotas"><div class="gm-tip tag tt below"><div class="hd" style="padding:0">Mascotas</div></div></div>
+
+      <div class="hud-mid">
+        <div class="hud-where has">
+          <img src="img/icons/map_diff_normal.png" alt="Normal"><div class="hud-stage">1-7</div>
+          <div class="gm-bar hud-prog"><u style="width:58%"></u></div>
+          <img class="hud-end" src="img/icons/hud_boss.png" alt="Jefe de etapa">
+          <div class="gm-tip mini tt below"><div class="nm" style="color:var(--gold-hi)">Praderas doradas</div><div class="ln" style="padding-top:0"><span>Normal</span><b>etapa 7 de 10</b></div><p style="padding-top:4px">Al llenarse la barra llega el jefe de la etapa.</p></div>
+        </div>
+      </div>
+
+      <div class="hud-res has"><img src="img/icons/hud_chest_normal.png" alt="Cofres comunes"><div class="hud-pips normal"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></div><div class="gm-tip mini tt below r"><div class="hd">Cofres comunes</div><div class="ln" style="padding-top:0"><span>Guardados</span><b>4 / 6</b></div><p style="padding-top:4px">Clic para abrirlos todos.</p></div></div>
+      <div class="hud-res full has"><img src="img/icons/hud_chest_stage.png" alt="Cofres de jefe de etapa"><div class="hud-pips stage"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div><div class="gm-tip mini tt below r"><div class="hd">Cofres de jefe de etapa</div><div class="ln" style="padding-top:0"><span>Guardados</span><b style="color:var(--bad)">4 / 4</b></div><p style="padding-top:4px">Lleno: los siguientes se pierden. Clic para abrirlos.</p></div></div>
+      <div class="hud-res zero has"><img src="img/icons/hud_chest_world.png" alt="Cofres de jefe de mundo"><div class="hud-pips world"><i></i><i></i><i></i><i></i></div><div class="gm-tip mini tt below r"><div class="hd">Cofres de jefe de mundo</div><div class="ln" style="padding-top:0"><span>Guardados</span><b>0 / 4</b></div></div></div>
+      <div class="hud-res has"><img src="img/icons/hud_key.png" alt="Llaves">2<div class="gm-tip mini tt below r"><div class="hd">Llaves del jefe de mundo</div><p>Cada intento contra el jefe 1-10 gasta una, también si caéis. Salen de los cofres de jefe de etapa de este mundo.</p></div></div>
+      <div class="gm-gold has"><img src="img/icons/ui_gold.png" alt="Oro">12 480<div class="gm-tip tag tt below r"><div class="hd" style="padding:0">Oro</div></div></div>
+      <div class="hud-key has"><img src="img/icons/hud_options.png" alt="Opciones"><div class="gm-tip tag tt below r"><div class="hd" style="padding:0">Opciones</div></div></div>
+    </div>
+    <div class="hud-strip">
+      <div class="hud-dmg heal hud-ink" style="left:281px;top:58px">+620</div>
+      <div class="hud-dmg hud-ink" style="left:320px;top:72px">1 842</div>
+      <div class="hud-dmg crit hud-ink" style="left:346px;top:50px">3 352</div>
+      <div class="hud-dmg hud-ink" style="left:462px;top:72px">964</div>
+      <div class="hud-loot hud-ink"><div style="color:var(--t2)">Rubí</div><div style="color:var(--t5)">Yelmo alado</div></div>
+      <div class="hud-corner has"><img src="img/icons/hud_retry.png" alt="Reintentar"><div class="gm-tip mini tt"><div class="hd">Reintentar · apagado</div><p>Si caéis, retrocedéis una etapa. Enciéndelo para quedaros y repetir.</p></div></div>
+    </div>
+  </div>
+
+  <div class="hud">
+    <div class="hud-rail">
+      <div class="hud-key has"><img src="img/icons/hud_party.png" alt="Héroes"><div class="gm-tip tag tt below"><div class="hd" style="padding:0">Héroes</div></div></div>
+      <div class="hud-key has"><img src="img/icons/hud_stash.png" alt="Alijo"><div class="gm-tip tag tt below"><div class="hd" style="padding:0">Alijo</div></div></div>
+      <div class="hud-key has"><img src="img/icons/tab_talents.png" alt="Talentos"><div class="gm-tip tag tt below"><div class="hd" style="padding:0">Talentos</div></div></div>
+      <div class="hud-key has"><img src="img/icons/hud_tech.png" alt="Técnica"><div class="gm-tip tag tt below"><div class="hd" style="padding:0">Técnica</div></div></div>
+      <div class="hud-key has"><img src="img/icons/hud_cube.png" alt="Cubo"><div class="gm-tip tag tt below"><div class="hd" style="padding:0">Cubo</div></div></div>
+      <div class="hud-key has"><img src="img/icons/hud_map.png" alt="Mapa"><div class="gm-tip tag tt below"><div class="hd" style="padding:0">Mapa</div></div></div>
+      <div class="hud-key has"><img src="img/icons/hud_pets.png" alt="Mascotas"><div class="gm-tip tag tt below"><div class="hd" style="padding:0">Mascotas</div></div></div>
+
+      <div class="hud-mid">
+        <div class="hud-where has">
+          <img src="img/icons/map_diff_hell.png" alt="Infierno"><div class="hud-stage hell">1-5</div>
+          <div class="gm-bar hud-prog boss"><u style="width:calc(100% - 2px)"></u></div>
+          <img class="hud-end on" src="img/icons/hud_boss.png" alt="Jefe de etapa">
+          <div class="gm-tip mini tt below"><div class="nm" style="color:var(--gold-hi)">Praderas doradas</div><div class="ln" style="padding-top:0"><span>Infierno</span><b>etapa 5 de 10</b></div><p style="padding-top:4px">El jefe de la etapa está delante.</p></div>
+        </div>
+      </div>
+
+      <div class="hud-res zero has"><img src="img/icons/hud_chest_normal.png" alt="Cofres comunes"><div class="hud-pips normal"><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="gm-tip mini tt below r"><div class="hd">Cofres comunes</div><div class="ln" style="padding-top:0"><span>Guardados</span><b>0 / 6</b></div></div></div>
+      <div class="hud-res has"><img src="img/icons/hud_chest_stage.png" alt="Cofres de jefe de etapa"><div class="hud-pips stage"><i class="on"></i><i></i><i></i><i></i></div><div class="gm-tip mini tt below r"><div class="hd">Cofres de jefe de etapa</div><div class="ln" style="padding-top:0"><span>Guardados</span><b>1 / 4</b></div><p style="padding-top:4px">Clic para abrirlos todos.</p></div></div>
+      <div class="hud-res zero has"><img src="img/icons/hud_chest_world.png" alt="Cofres de jefe de mundo"><div class="hud-pips world"><i></i><i></i><i></i><i></i></div><div class="gm-tip mini tt below r"><div class="hd">Cofres de jefe de mundo</div><div class="ln" style="padding-top:0"><span>Guardados</span><b>0 / 4</b></div></div></div>
+      <div class="hud-res zero has"><img src="img/icons/hud_key.png" alt="Llaves">0<div class="gm-tip mini tt below r"><div class="hd">Llaves del jefe de mundo</div><p>Cada intento contra el jefe 1-10 gasta una, también si caéis. Salen de los cofres de jefe de etapa de este mundo.</p></div></div>
+      <div class="gm-gold has"><img src="img/icons/ui_gold.png" alt="Oro">1,84 M<div class="gm-tip tag tt below r"><div class="hd" style="padding:0">Oro</div></div></div>
+      <div class="hud-key has"><img src="img/icons/hud_options.png" alt="Opciones"><div class="gm-tip tag tt below r"><div class="hd" style="padding:0">Opciones</div></div></div>
+    </div>
+    <div class="hud-strip boss">
+      <div class="hud-foe">
+        <div class="hud-foe-top hud-ink"><img src="img/icons/hud_boss.png" alt=""><div class="nm">Rey de la Cosecha</div>
+          <div class="hud-clock has"><img src="img/icons/hud_enrage.png" alt="Furia">0:18<div class="gm-tip mini tt below r" style="text-shadow:none"><div class="hd">Furia</div><p>Cuando el reloj se vacía, el jefe pega el doble cada cinco segundos.</p></div></div></div>
+        <div class="gm-bar hud-life"><u style="width:62%"></u></div>
+      </div>
+      <div class="hud-dmg hud-ink" style="left:362px;top:64px">2 106</div>
+      <div class="hud-dmg crit hud-ink" style="left:392px;top:46px">5 480</div>
+      <div class="hud-dmg heal hud-ink" style="left:279px;top:62px">+1 240</div>
+      <div class="hud-badge has"><img src="img/icons/hud_debuff.png" alt="Curación mermada"><div class="gm-tip mini tt"><div class="hd">Curación mermada</div><p>En Infierno el poder de curación rinde menos.</p></div></div>
+      <div class="hud-corner on has"><img src="img/icons/hud_retry.png" alt="Reintentar"><div class="gm-tip mini tt"><div class="hd">Reintentar · encendido</div><p>Si caéis, os quedáis en esta etapa y la repetís.</p></div></div>
+    </div>
+  </div>
+</div>

@@ -266,7 +266,46 @@ Los iconos de habilidades y talentos esperan al rediseño de kits y árboles, qu
       - Sin barras de título, sin cajas hundidas, sin rótulos: estadísticas como signo + número; el nivel es un
         banderín sobre el arco del nicho; el oro vive en el alijo, no en el panel de héroe; la barra de
         habilidades sale de la pestaña de equipo.
-- [ ] Validación del usuario de la maqueta 2 (estilo, gótica, densidad).
+- [x] Validación del usuario de la maqueta 2: "la direccion del estilo es perfecta si". Commit `8645777`.
+- [x] Maquetas del resto de paneles (lab v35), cada una en su fragmento de `docs/redesign/mockups/` sobre el kit
+      compartido `00_kit.html` (la página del lab monta un escenario por fragmento; `<!-- mock: Título | nota -->`):
+      - `05_hud.html` + `icon_sets/s96_hud.py`: la barra sobre la tira en dos momentos (oleada, jefe de etapa).
+        Lanzadores de paneles como signos, etapa + barra + calavera, cofres, llaves, oro; sobre la tira solo daño,
+        botín, y con jefe su nombre, vida y reloj de furia. Los cofres se abren desde la barra (sustituye a los
+        popups sobre la tira) — cambio de presentación a confirmar.
+      - `20_map.html` + `s91_map.py`: miniaturas de los diez mundos cortadas del fondo real, cinco signos de
+        dificultad, etapas del mundo elegido y la puerta de su jefe. Muestra los mundos no pisados como siluetas
+        (hoy el juego los oculta).
+      - `30_tech.html` + `s92_tech.py`: las doce mejoras reales como sellos con signo, valor y tecla de precio.
+      - `40_pets.html`, `50_cube.html` + `s93_pets_cube.py`: seis mascotas en repisa (las que faltan, en silueta);
+        el Cubo con sus tres recetas reales como marcapáginas.
+      - `60_options.html`, `70_title.html` + `s94_options.py`: ajustes como signo + control (idioma y volúmenes
+        vienen de REDESIGN.md, no existen hoy); título sobre la propia tira con logo dibujado.
+- [x] Primera revisión del usuario (lab v35): "la UI del cubo me parece francamente confusa y no veo la de
+      talentos".
+      - Cubo rehecho (lab v36, `50_cube.html` + `icon_sets/s97_cube.py`): en este panel la claridad manda sobre
+        "signos en vez de palabras". Pestañas con signo + palabra, una línea que escribe la receta como ecuación,
+        recuento de lo cargado, teclas con su verbo, casillas con rótulo, Transfigurar en tres pasos numerados y
+        su resultado como momento aparte; cuatro momentos rotulados en el lab.
+      - Talentos (lab v36, `15_talents.html` + `icon_sets/s98_talents.py`): pestaña del panel de héroe en
+        horizontal. Tronco común (las cinco habilidades y pasivas reales del Knight) y dos ramas de
+        especialización con nodos «elige una», modificadores de habilidad y una definitiva por rama, como pide
+        REDESIGN §5. Barra de puntos gastados que abre columnas; la forma del nodo dice qué es. Nombres y efectos
+        de las ramas (Bastión, Azote) son PROVISIONALES hasta `CLASSES.md`; los signos de habilidad también.
+- [ ] Revisión del usuario del Cubo rehecho y de talentos.
+- [x] Letra: en «Jacquard 12» las mayúsculas T, O, U, V e I se confunden ("Talentos" → "Valentos"). DECIDIDO por
+      el usuario (2026-11-15): se quedan como están ("OK a que las dejes como estan"). No se dibuja fuente propia.
+- [x] Cambios respecto al juego actual, confirmados por el usuario (2026-11-15):
+      1. Los cofres se abren desde el HUD (sin popups sobre la tira), PERO el HUD debe enseñar cuántos caben:
+         hecho en lab v37 con un cuadradito por hueco de almacén (encendido si hay cofre; todos rojos si está lleno).
+      2. El mapa enseña los mundos no pisados como siluetas con candado: ok.
+      3. Ajustes con idioma y cuatro volúmenes + silencio: ok.
+- [ ] Consolidar en el kit las reglas que los paneles escribieron en local: tecla ancha con signo y palabra,
+      tecla de peligro, opciones segmentadas, deslizador, interruptor, lámpara de "encendido", fila de título con
+      algo a la derecha, corchetes de selección para cualquier tamaño, pips de rareza (`cube_pip_*` → `ui_pip_*`),
+      fila de tooltip signo + texto, tooltip de ancho automático con varias líneas.
+- Sin maquetar todavía: pestaña de habilidades, tarjeta de resultado
+  del Cubo, resumen de ausencia, elección de engaste, variante "Empezar" del título.
 - [ ] Después: llevar las recetas a `src/ui/kit` y rehacer los paneles uno a uno (HUD, héroe, alijo, tecnología,
       mapa y dificultades, mascotas, cubo, opciones, título).
 - Flojo conocido de la maqueta 2: los títulos van al doble de tamaño que el resto del texto (píxel gordo, como el

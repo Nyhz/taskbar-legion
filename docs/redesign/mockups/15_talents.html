@@ -1,0 +1,152 @@
+<!-- mock: Talentos | La pestaña de talentos del panel de héroe, en horizontal como la tira: a la izquierda el tronco común y a la derecha las dos ramas de especialización, cada una con su definitiva al final. La barra de arriba son los puntos gastados, que van abriendo columnas. La forma del nodo dice qué es: placa cuadrada, habilidad; sello redondo, pasiva; placa verdemar, cambia una habilidad; octógono, definitiva. El contenido de las ramas es provisional: llega con el rediseño de los kits. -->
+<style>
+.tal-top { display: flex; align-items: center; gap: 4px; height: 24px; margin-top: -2px; }
+.tal-top .sp { flex: 1; }
+.tal-slots { position: relative; display: flex; align-items: center; gap: 2px; margin-right: 8px; }
+.tal-slots > u { width: 7px; height: 7px; background: var(--gold); box-shadow: inset 1px 1px 0 var(--gold-hi), inset -1px -1px 0 var(--gold-dim), 0 0 0 1px var(--k0); }
+.tal-free { position: relative; display: flex; align-items: center; gap: 2px; font: 20px/20px var(--f-big); color: var(--gold-hi); text-shadow: 1px 1px 0 var(--k0); margin-right: 6px; }
+.tal-undo { margin-right: 12px; }
+.tal-tree { position: relative; width: 330px; height: 146px; margin-top: 5px; }
+.tal-tree > * { position: absolute; }
+.tal-need { top: 0; color: var(--k5); }
+.tal-need.next { color: var(--k9); }
+.tal-bar { left: 0; top: 11px; width: 330px; height: 5px; background: var(--k0); }
+.tal-bar > u { position: absolute; left: 0; top: 1px; height: 3px; background: linear-gradient(var(--gold-hi) 0 1px, var(--gold) 1px 2px, var(--gold-dim) 2px); }
+.tal-bar > i { position: absolute; top: 0; width: 1px; height: 5px; background: var(--k3); }
+.tal-n { width: 24px; height: 24px; }
+.tal-n > img { position: absolute; }
+.tal-n.seal { width: 22px; height: 22px; }
+.tal-n.seal > .g { left: 3px; top: 3px; }
+.tal-n.plate > .g, .tal-n.mod > .g { left: 4px; top: 4px; }
+.tal-n.mod > .b { right: -2px; top: -2px; }
+.tal-n.ult { width: 30px; height: 30px; }
+.tal-n.ult > .g { left: 7px; top: 7px; }
+.tal-n.lock > img, .tal-n.lock > .tal-p { opacity: .38; }
+.tal-n:hover > .f { filter: brightness(1.5); }
+.tal-p { position: absolute; left: 50%; top: calc(100% + 1px); transform: translateX(-50%); display: flex; gap: 1px; }
+.tal-p > i { width: 3px; height: 2px; background: var(--k3); }
+.tal-p > i.on { background: var(--gold); }
+.tal-or.lock { opacity: .38; }
+.tal-fork { background: var(--k3); }
+.tal-fork.lit { background: var(--gold-dim); }
+.tal-gold { color: var(--gold-hi); } .tal-sea { color: #a6d8c2; } .tal-violet { color: var(--t3); }
+.tal-no { color: var(--bad); }
+.gm-tip .ln b.tal-up { color: var(--good); }
+.tal-tree .gm-tip p { line-height: 10px; }
+.gm .tt.up { top: auto; bottom: 0; }
+.gm .tt.tal-down { left: auto; right: 0; top: calc(100% + 3px); }
+</style>
+
+<div class="gm" role="group" aria-label="Maqueta de la pestaña de talentos del Knight: tronco común, dos ramas de especialización y sus definitivas.">
+  <div class="gm-book">
+    <div class="gm-tabs">
+      <div class="gm-tab has"><img src="img/icons/tab_gear.png" alt="Equipo"><div class="gm-tip tag tt"><div class="hd" style="padding:0">Equipo</div></div></div>
+      <div class="gm-tab on has"><img src="img/icons/tab_talents.png" alt="Talentos"><div class="gm-tip tag tt"><div class="hd" style="padding:0">Talentos</div></div></div>
+      <div class="gm-tab has"><img src="img/icons/tab_skills.png" alt="Habilidades"><div class="gm-tip tag tt"><div class="hd" style="padding:0">Habilidades</div></div></div>
+    </div>
+    <div class="gm-win">
+      <img class="gm-close" src="img/icons/ui_x.png" alt="Cerrar">
+      <div class="gm-in">
+        <div class="tal-top">
+          <img src="img/icons/crest_knight.png" alt=""><div class="gm-title">Knight</div>
+          <div class="sp"></div>
+          <div class="tal-slots has"><img src="img/icons/tab_skills.png" alt="Habilidades activas"><u></u><u></u>
+            <div class="gm-tip mini tt tal-down"><div class="hd">Habilidades activas</div><div class="ln" style="padding-top:0"><span>En uso</span><b>2 / 2</b></div><p style="padding-top:4px">Las habilidades con puntos son las que usa en combate. Solo caben dos.</p></div></div>
+          <div class="tal-free has"><img src="img/icons/tal_point.png" alt="Puntos de talento">3
+            <div class="gm-tip mini tt tal-down"><div class="hd">Puntos de talento</div><div class="ln" style="padding-top:0"><span>Por gastar</span><b>3</b></div><div class="ln"><span>Gastados</span><b>43</b></div><p style="padding-top:4px">Uno por nivel. Clic en un nodo para subirlo; clic derecho para bajarlo.</p></div></div>
+          <div class="gm-btn tal-undo has"><img src="img/icons/tal_respec.png" alt="Devolver puntos"><div class="gm-tip mini tt tal-down"><div class="hd">Devolver todos los puntos</div><p>Gratis. Los recuperas todos para repartirlos de nuevo.</p></div></div>
+        </div>
+        <div class="tal-tree">
+          <span class="tal-need next" style="left:176px">50</span><span class="tal-need" style="left:206px">60</span><span class="tal-need" style="left:236px">70</span><span class="tal-need" style="left:266px">80</span><span class="tal-need" style="left:300px">90</span>
+          <div class="tal-bar"><u style="width:155px"></u><i style="left:30px"></i><i style="left:60px"></i><i style="left:90px"></i><i style="left:146px"></i><i style="left:176px"></i><i style="left:206px"></i><i style="left:236px"></i><i style="left:266px"></i><i style="left:300px"></i></div>
+          <div class="tal-fork lit" style="left:115px;top:82px;width:4px;height:1px"></div>
+          <div class="tal-fork lit" style="left:118px;top:50px;width:1px;height:33px"></div>
+          <div class="tal-fork" style="left:118px;top:83px;width:1px;height:32px"></div>
+          <div class="tal-fork lit" style="left:118px;top:50px;width:4px;height:1px"></div>
+          <div class="tal-fork" style="left:118px;top:114px;width:4px;height:1px"></div>
+          <div class="tal-n seal tal-spec has" style="left:122px;top:39px"><img class="f" src="img/icons/tal_seal_on.png" alt=""><img class="g" src="img/icons/tal_bastion.png" alt="Bastión"><div class="gm-tip mini tt"><div class="nm tal-gold">Bastión</div><p>La rama que protege: aguanta más y cubre a los suyos.</p><div class="ln"><span>Puntos en la rama</span><b>3</b></div></div></div>
+          <div class="tal-n seal tal-spec has" style="left:122px;top:103px"><img class="f" src="img/icons/tal_seal_off.png" alt=""><img class="g" src="img/icons/tal_scourge.png" alt="Azote"><div class="gm-tip mini tt up"><div class="nm tal-gold">Azote</div><p>La rama que castiga: pega más y vive de lo que golpea.</p><div class="ln"><span>Puntos en la rama</span><b>0</b></div></div></div>
+          <div class="tal-n plate has" style="left:3px;top:22px"><img class="f" src="img/icons/tal_plate_on.png" alt=""><img class="g" src="img/icons/tal_stone_skin.png" alt="Piel de piedra"><div class="tal-p"><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i></div>
+          <div class="gm-tip tt"><div class="nm tal-gold">Piel de piedra</div><div class="sub"><span>Habilidad</span></div><p style="padding-top:3px">Endurece la piel: recibe menos daño durante 6 s.</p><div class="ln"><span>Rango</span><b>3 / 5</b></div><div class="ln"><span>Recarga</span><b>20 s</b></div><div class="ln"><span>Ahora</span><b>−30 %</b></div><div class="ln"><span>Siguiente</span><b class="tal-up">−35 %</b></div></div></div>
+          <div class="tal-n plate has" style="left:3px;top:52px"><img class="f" src="img/icons/tal_plate_max.png" alt=""><img class="g" src="img/icons/tal_cleave.png" alt="Tajo debilitante"><div class="tal-p"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div>
+          <div class="gm-tip tt"><div class="nm tal-gold">Tajo debilitante</div><div class="sub"><span>Habilidad</span></div><p style="padding-top:3px">Un barrido a todos los enemigos cuerpo a cuerpo, que además merma el daño que hacen.</p><div class="ln"><span>Rango</span><b>5 / 5</b></div><div class="ln"><span>Recarga</span><b>12 s</b></div><div class="ln"><span>Ahora</span><b>200 %</b></div></div></div>
+          <div class="tal-n seal has" style="left:4px;top:87px"><img class="f" src="img/icons/tal_seal_max.png" alt=""><img class="g" src="img/icons/stat_health.png" alt="Vida"><div class="tal-p"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div>
+          <div class="gm-tip mini tt up"><div class="hd">Vida</div><p>+2 % de vida por rango.</p><div class="ln"><span>Rango</span><b>5 / 5</b></div><div class="ln"><span>Ahora</span><b>+10 %</b></div></div></div>
+          <div class="tal-n seal has" style="left:4px;top:117px"><img class="f" src="img/icons/tal_seal_max.png" alt=""><img class="g" src="img/icons/stat_armor.png" alt="Armadura"><div class="tal-p"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div>
+          <div class="gm-tip mini tt up"><div class="hd">Armadura</div><p>+2,5 % de armadura por rango.</p><div class="ln"><span>Rango</span><b>5 / 5</b></div><div class="ln"><span>Ahora</span><b>+12,5 %</b></div></div></div>
+          <div class="tal-n plate lock has" style="left:33px;top:37px"><img class="f" src="img/icons/tal_plate_off.png" alt=""><img class="g" src="img/icons/tal_bulwark.png" alt="Baluarte"><div class="tal-p"><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i></div>
+          <div class="gm-tip tt"><div class="nm tal-gold">Baluarte</div><div class="sub"><span>Habilidad</span></div><p style="padding-top:3px">Un escudo que absorbe parte de su vida máxima durante 8 s.</p><div class="ln"><span>Rango</span><b>0 / 5</b></div><div class="ln"><span>Recarga</span><b>24 s</b></div><div class="ln"><span>Rango 1</span><b class="tal-up">30 %</b></div><div class="ln"><span class="tal-no">Ya lleva 2 habilidades. Devuelve los puntos de una para aprender otra.</span></div></div></div>
+          <div class="tal-n seal has" style="left:34px;top:87px"><img class="f" src="img/icons/tal_seal_max.png" alt=""><img class="g" src="img/icons/stat_health.png" alt="Vida"><div class="tal-p"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div>
+          <div class="gm-tip mini tt up"><div class="hd">Vida</div><p>+2 % de vida por rango.</p><div class="ln"><span>Rango</span><b>5 / 5</b></div><div class="ln"><span>Ahora</span><b>+10 %</b></div></div></div>
+          <div class="tal-n seal has" style="left:34px;top:117px"><img class="f" src="img/icons/tal_seal_on.png" alt=""><img class="g" src="img/icons/stat_block.png" alt="Bloqueo"><div class="tal-p"><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i></div>
+          <div class="gm-tip mini tt up"><div class="hd">Bloqueo</div><p>+2 de bloqueo por rango.</p><div class="ln"><span>Rango</span><b>3 / 5</b></div><div class="ln"><span>Ahora</span><b>+6 %</b></div></div></div>
+          <div class="tal-n plate lock has" style="left:63px;top:37px"><img class="f" src="img/icons/tal_plate_off.png" alt=""><img class="g" src="img/icons/tal_battle_cry.png" alt="Grito de guerra"><div class="tal-p"><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i></div>
+          <div class="gm-tip tt"><div class="nm tal-gold">Grito de guerra</div><div class="sub"><span>Habilidad</span></div><p style="padding-top:3px">Sube el daño de ataque y el crítico de todo el grupo durante 8 s.</p><div class="ln"><span>Rango</span><b>0 / 5</b></div><div class="ln"><span>Recarga</span><b>24 s</b></div><div class="ln"><span>Rango 1</span><b class="tal-up">+15 %</b></div><div class="ln"><span class="tal-no">Ya lleva 2 habilidades. Devuelve los puntos de una para aprender otra.</span></div></div></div>
+          <div class="tal-n seal has" style="left:64px;top:87px"><img class="f" src="img/icons/tal_seal_max.png" alt=""><img class="g" src="img/icons/stat_armor.png" alt="Armadura"><div class="tal-p"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div>
+          <div class="gm-tip mini tt up"><div class="hd">Armadura</div><p>+2,5 % de armadura por rango.</p><div class="ln"><span>Rango</span><b>5 / 5</b></div><div class="ln"><span>Ahora</span><b>+12,5 %</b></div></div></div>
+          <div class="tal-n seal has" style="left:64px;top:117px"><img class="f" src="img/icons/tal_seal_on.png" alt=""><img class="g" src="img/icons/stat_magicResist.png" alt="Resistencia mágica"><div class="tal-p"><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i><i class=""></i></div>
+          <div class="gm-tip mini tt up"><div class="hd">Resistencia mágica</div><p>+2,5 % de resistencia mágica por rango.</p><div class="ln"><span>Rango</span><b>2 / 5</b></div><div class="ln"><span>Ahora</span><b>+5 %</b></div></div></div>
+          <div class="tal-n plate lock has" style="left:93px;top:37px"><img class="f" src="img/icons/tal_plate_off.png" alt=""><img class="g" src="img/icons/tal_bloodlust.png" alt="Sed de sangre"><div class="tal-p"><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i></div>
+          <div class="gm-tip tt"><div class="nm tal-gold">Sed de sangre</div><div class="sub"><span>Habilidad</span></div><p style="padding-top:3px">Golpea más deprisa y roba vida con cada golpe.</p><div class="ln"><span>Rango</span><b>0 / 5</b></div><div class="ln"><span>Recarga</span><b>24 s</b></div><div class="ln"><span>Rango 1</span><b class="tal-up">+24 %</b></div><div class="ln"><span class="tal-no">Ya lleva 2 habilidades. Devuelve los puntos de una para aprender otra.</span></div></div></div>
+          <div class="tal-n seal has" style="left:94px;top:87px"><img class="f" src="img/icons/tal_seal_on.png" alt=""><img class="g" src="img/icons/stat_health.png" alt="Vida"><div class="tal-p"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i></div>
+          <div class="gm-tip mini tt up"><div class="hd">Vida</div><p>+2 % de vida por rango.</p><div class="ln"><span>Rango</span><b>4 / 5</b></div><div class="ln"><span>Ahora</span><b>+8 %</b></div></div></div>
+          <div class="tal-n seal has" style="left:94px;top:117px"><img class="f" src="img/icons/tal_seal_on.png" alt=""><img class="g" src="img/icons/stat_block.png" alt="Bloqueo"><div class="tal-p"><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i></div>
+          <div class="gm-tip mini tt up"><div class="hd">Bloqueo</div><p>+2 de bloqueo por rango.</p><div class="ln"><span>Rango</span><b>3 / 5</b></div><div class="ln"><span>Ahora</span><b>+6 %</b></div></div></div>
+          <div class="tal-n seal has" style="left:150px;top:23px"><img class="f" src="img/icons/tal_seal_on.png" alt=""><img class="g" src="img/icons/stat_health.png" alt="Vida"><div class="tal-p"><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i></div>
+          <div class="gm-tip mini tt"><div class="hd">Vida</div><p>+2 % de vida por rango.</p><div class="ln"><span>Rango</span><b>3 / 5</b></div><div class="ln"><span>Ahora</span><b>+6 %</b></div></div></div>
+          <div class="tal-n seal has" style="left:150px;top:53px"><img class="f" src="img/icons/tal_seal_off.png" alt=""><img class="g" src="img/icons/stat_block.png" alt="Bloqueo"><div class="tal-p"><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i></div>
+          <div class="gm-tip mini tt"><div class="hd">Bloqueo</div><p>+2 de bloqueo por rango.</p><div class="ln"><span>Rango</span><b>0 / 5</b></div></div></div>
+          <div class="tal-n mod lock has" style="left:179px;top:22px"><img class="f" src="img/icons/tal_mod_off.png" alt=""><img class="g" src="img/icons/tal_stone_skin.png" alt="Piel compartida"><img class="b" src="img/icons/tal_plus.png" alt="">
+          <div class="gm-tip tt"><div class="nm tal-sea">Piel compartida</div><div class="sub"><span>Cambia Piel de piedra</span></div><p style="padding-top:3px">Piel de piedra protege también al aliado con menos vida.</p><div class="ln"><span>Elige una de las dos</span></div><div class="ln"><span class="tal-no">Se abre con 50 puntos gastados</span></div></div></div>
+          <img class="tal-or lock" src="img/icons/tal_either.png" alt="o" style="left:188px;top:47px">
+          <div class="tal-n mod lock has" style="left:179px;top:52px"><img class="f" src="img/icons/tal_mod_off.png" alt=""><img class="g" src="img/icons/tal_stone_skin.png" alt="Piel de espinas"><img class="b" src="img/icons/tal_plus.png" alt="">
+          <div class="gm-tip tt"><div class="nm tal-sea">Piel de espinas</div><div class="sub"><span>Cambia Piel de piedra</span></div><p style="padding-top:3px">Mientras dura Piel de piedra, devuelve parte del daño que recibe.</p><div class="ln"><span>Elige una de las dos</span></div><div class="ln"><span class="tal-no">Se abre con 50 puntos gastados</span></div></div></div>
+          <div class="tal-n seal lock has" style="left:210px;top:23px"><img class="f" src="img/icons/tal_seal_off.png" alt=""><img class="g" src="img/icons/stat_armor.png" alt="Armadura"><div class="tal-p"><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i></div>
+          <div class="gm-tip mini tt left"><div class="hd">Armadura</div><p>+2,5 % de armadura por rango.</p><div class="ln"><span>Rango</span><b>0 / 5</b></div><div class="ln"><span class="tal-no">Se abre con 60 puntos gastados</span></div></div></div>
+          <div class="tal-n seal lock has" style="left:210px;top:53px"><img class="f" src="img/icons/tal_seal_off.png" alt=""><img class="g" src="img/icons/stat_magicResist.png" alt="Resistencia mágica"><div class="tal-p"><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i></div>
+          <div class="gm-tip mini tt left"><div class="hd">Resistencia mágica</div><p>+2,5 % de resistencia mágica por rango.</p><div class="ln"><span>Rango</span><b>0 / 5</b></div><div class="ln"><span class="tal-no">Se abre con 60 puntos gastados</span></div></div></div>
+          <div class="tal-n mod lock has" style="left:239px;top:22px"><img class="f" src="img/icons/tal_mod_off.png" alt=""><img class="g" src="img/icons/tal_bulwark.png" alt="Baluarte que sana"><img class="b" src="img/icons/tal_plus.png" alt="">
+          <div class="gm-tip tt left"><div class="nm tal-sea">Baluarte que sana</div><div class="sub"><span>Cambia Baluarte</span></div><p style="padding-top:3px">Al romperse o acabarse, el escudo de Baluarte cura al grupo.</p><div class="ln"><span class="tal-no">Se abre con 70 puntos gastados</span></div></div></div>
+          <div class="tal-n seal lock has" style="left:240px;top:53px"><img class="f" src="img/icons/tal_seal_off.png" alt=""><img class="g" src="img/icons/stat_damageReduction.png" alt="Reducción de daño"><div class="tal-p"><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i></div>
+          <div class="gm-tip mini tt left"><div class="hd">Reducción de daño</div><p>+1 de reducción de daño por rango.</p><div class="ln"><span>Rango</span><b>0 / 5</b></div><div class="ln"><span class="tal-no">Se abre con 70 puntos gastados</span></div></div></div>
+          <div class="tal-n seal lock has" style="left:270px;top:23px"><img class="f" src="img/icons/tal_seal_off.png" alt=""><img class="g" src="img/icons/stat_health.png" alt="Vida"><div class="tal-p"><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i></div>
+          <div class="gm-tip mini tt left"><div class="hd">Vida</div><p>+2 % de vida por rango.</p><div class="ln"><span>Rango</span><b>0 / 5</b></div><div class="ln"><span class="tal-no">Se abre con 80 puntos gastados</span></div></div></div>
+          <div class="tal-n seal lock has" style="left:270px;top:53px"><img class="f" src="img/icons/tal_seal_off.png" alt=""><img class="g" src="img/icons/stat_block.png" alt="Bloqueo"><div class="tal-p"><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i></div>
+          <div class="gm-tip mini tt left"><div class="hd">Bloqueo</div><p>+2 de bloqueo por rango.</p><div class="ln"><span>Rango</span><b>0 / 5</b></div><div class="ln"><span class="tal-no">Se abre con 80 puntos gastados</span></div></div></div>
+          <div class="tal-n ult lock has" style="left:300px;top:34px"><img class="f" src="img/icons/tal_ult_off.png" alt=""><img class="g" src="img/icons/tal_crown.png" alt="Muralla viva">
+          <div class="gm-tip tt left"><div class="nm tal-violet">Muralla viva</div><div class="sub"><span>Definitiva</span></div><p style="padding-top:3px">Cuando un aliado va a caer, el Knight recibe el golpe en su lugar.</p><div class="ln"><span class="tal-no">Se abre con 90 puntos gastados, al menos 30 en esta rama</span></div></div></div>
+          <div class="tal-n seal has" style="left:150px;top:87px"><img class="f" src="img/icons/tal_seal_off.png" alt=""><img class="g" src="img/icons/stat_attackDamage.png" alt="Daño de ataque"><div class="tal-p"><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i></div>
+          <div class="gm-tip mini tt up"><div class="hd">Daño de ataque</div><p>+3 % de daño de ataque por rango.</p><div class="ln"><span>Rango</span><b>0 / 5</b></div></div></div>
+          <div class="tal-n seal has" style="left:150px;top:117px"><img class="f" src="img/icons/tal_seal_off.png" alt=""><img class="g" src="img/icons/stat_critChance.png" alt="Crítico"><div class="tal-p"><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i></div>
+          <div class="gm-tip mini tt up"><div class="hd">Crítico</div><p>+2 de probabilidad de crítico por rango.</p><div class="ln"><span>Rango</span><b>0 / 5</b></div></div></div>
+          <div class="tal-n mod lock has" style="left:179px;top:86px"><img class="f" src="img/icons/tal_mod_off.png" alt=""><img class="g" src="img/icons/tal_cleave.png" alt="Tajo sangrante"><img class="b" src="img/icons/tal_plus.png" alt="">
+          <div class="gm-tip tt up"><div class="nm tal-sea">Tajo sangrante</div><div class="sub"><span>Cambia Tajo debilitante</span></div><p style="padding-top:3px">Tajo debilitante deja a los enemigos sangrando.</p><div class="ln"><span>Elige una de las dos</span></div><div class="ln"><span class="tal-no">Se abre con 50 puntos gastados</span></div></div></div>
+          <img class="tal-or lock" src="img/icons/tal_either.png" alt="o" style="left:188px;top:111px">
+          <div class="tal-n mod lock has" style="left:179px;top:116px"><img class="f" src="img/icons/tal_mod_off.png" alt=""><img class="g" src="img/icons/tal_cleave.png" alt="Tajo amplio"><img class="b" src="img/icons/tal_plus.png" alt="">
+          <div class="gm-tip tt up"><div class="nm tal-sea">Tajo amplio</div><div class="sub"><span>Cambia Tajo debilitante</span></div><p style="padding-top:3px">Tajo debilitante alcanza también a la segunda fila.</p><div class="ln"><span>Elige una de las dos</span></div><div class="ln"><span class="tal-no">Se abre con 50 puntos gastados</span></div></div></div>
+          <div class="tal-n seal lock has" style="left:210px;top:87px"><img class="f" src="img/icons/tal_seal_off.png" alt=""><img class="g" src="img/icons/stat_attackSpeed.png" alt="Velocidad de ataque"><div class="tal-p"><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i></div>
+          <div class="gm-tip mini tt left up"><div class="hd">Velocidad de ataque</div><p>+1,5 % de velocidad de ataque por rango.</p><div class="ln"><span>Rango</span><b>0 / 5</b></div><div class="ln"><span class="tal-no">Se abre con 60 puntos gastados</span></div></div></div>
+          <div class="tal-n seal lock has" style="left:210px;top:117px"><img class="f" src="img/icons/tal_seal_off.png" alt=""><img class="g" src="img/icons/stat_lifesteal.png" alt="Robo de vida"><div class="tal-p"><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i></div>
+          <div class="gm-tip mini tt left up"><div class="hd">Robo de vida</div><p>+1 de robo de vida por rango.</p><div class="ln"><span>Rango</span><b>0 / 5</b></div><div class="ln"><span class="tal-no">Se abre con 60 puntos gastados</span></div></div></div>
+          <div class="tal-n mod lock has" style="left:239px;top:86px"><img class="f" src="img/icons/tal_mod_off.png" alt=""><img class="g" src="img/icons/tal_bloodlust.png" alt="Sed sin fin"><img class="b" src="img/icons/tal_plus.png" alt="">
+          <div class="gm-tip tt left up"><div class="nm tal-sea">Sed sin fin</div><div class="sub"><span>Cambia Sed de sangre</span></div><p style="padding-top:3px">Cada enemigo que cae alarga Sed de sangre.</p><div class="ln"><span class="tal-no">Se abre con 70 puntos gastados</span></div></div></div>
+          <div class="tal-n seal lock has" style="left:240px;top:117px"><img class="f" src="img/icons/tal_seal_off.png" alt=""><img class="g" src="img/icons/stat_critDamage.png" alt="Daño crítico"><div class="tal-p"><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i></div>
+          <div class="gm-tip mini tt left up"><div class="hd">Daño crítico</div><p>+4 de daño crítico por rango.</p><div class="ln"><span>Rango</span><b>0 / 5</b></div><div class="ln"><span class="tal-no">Se abre con 70 puntos gastados</span></div></div></div>
+          <div class="tal-n seal lock has" style="left:270px;top:87px"><img class="f" src="img/icons/tal_seal_off.png" alt=""><img class="g" src="img/icons/stat_attackDamage.png" alt="Daño de ataque"><div class="tal-p"><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i></div>
+          <div class="gm-tip mini tt left up"><div class="hd">Daño de ataque</div><p>+3 % de daño de ataque por rango.</p><div class="ln"><span>Rango</span><b>0 / 5</b></div><div class="ln"><span class="tal-no">Se abre con 80 puntos gastados</span></div></div></div>
+          <div class="tal-n seal lock has" style="left:270px;top:117px"><img class="f" src="img/icons/tal_seal_off.png" alt=""><img class="g" src="img/icons/stat_multistrike.png" alt="Golpe múltiple"><div class="tal-p"><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i></div>
+          <div class="gm-tip mini tt left up"><div class="hd">Golpe múltiple</div><p>+1,5 de golpe múltiple por rango.</p><div class="ln"><span>Rango</span><b>0 / 5</b></div><div class="ln"><span class="tal-no">Se abre con 80 puntos gastados</span></div></div></div>
+          <div class="tal-n ult lock has" style="left:300px;top:98px"><img class="f" src="img/icons/tal_ult_off.png" alt=""><img class="g" src="img/icons/tal_crown.png" alt="Juicio de hierro">
+          <div class="gm-tip tt left up"><div class="nm tal-violet">Juicio de hierro</div><div class="sub"><span>Definitiva</span></div><p style="padding-top:3px">Cada cierto número de golpes, el siguiente pega a todos los enemigos.</p><div class="ln"><span class="tal-no">Se abre con 90 puntos gastados, al menos 30 en esta rama</span></div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="gm-side">
+    <div class="gm-tip"><div class="nm tal-gold">Piel de piedra</div><div class="sub"><span>Habilidad</span></div><p style="padding-top:3px">Endurece la piel: recibe menos daño durante 6 s.</p>
+      <div class="ln" style="padding-top:5px"><span>Rango</span><b>3 / 5</b></div><div class="ln"><span>Recarga</span><b>20 s</b></div><div class="ln"><span>Ahora</span><b>−30 %</b></div><div class="ln"><span>Siguiente</span><b class="tal-up">−35 %</b></div></div>
+    <div class="gm-tip"><div class="nm tal-sea">Piel compartida</div><div class="sub"><span>Cambia Piel de piedra</span></div><p style="padding-top:3px">Piel de piedra protege también al aliado con menos vida.</p>
+      <div class="ln" style="padding-top:5px"><span>Elige una de las dos</span></div><div class="ln"><span class="tal-no">Se abre con 50 puntos gastados</span></div></div>
+  </div>
+</div>

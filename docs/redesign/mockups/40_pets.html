@@ -1,0 +1,62 @@
+<!-- mock: Mascotas | Seis mascotas rarísimas. La elegida posa en el nicho y acompaña al grupo; las que ya tienes muestran lo que dan (suman todas, la lleves o no) y las que faltan son solo su sombra. Pasa el ratón por cada una. -->
+<style>
+/* Pets: the companion in the niche, the collection on plinths beside it. */
+.gm-pet-top { display: flex; align-items: center; gap: 5px; height: 22px; margin-top: -2px; }
+.gm-pet-top > span { margin-left: auto; padding: 5px 8px 0 0; display: flex; align-items: center; gap: 2px; color: var(--k6); }
+.gm-pet-top > span > img { margin-top: -5px; }
+.gm-pet-body { display: grid; grid-template-columns: 100px auto; gap: 0 10px; margin-top: 5px; }
+.gm-pet-niche { position: relative; width: 100px; height: 116px; background: url(img/icons/ui_alcove.png); }
+.gm-pet-niche > img { position: absolute; left: 14px; top: 35px; width: 72px; height: 72px; }
+.gm-pet-name { grid-column: 1; margin-top: 5px; text-align: center; font: 12px/12px var(--f-name); color: var(--gold-hi); text-shadow: 1px 1px 0 var(--k0); }
+.gm-pet-shelf { display: grid; grid-template-columns: repeat(3, 42px); gap: 2px 3px; align-content: start; }
+.gm-pet { position: relative; width: 42px; height: 57px; }
+.gm-pet > .pl { position: absolute; left: 3px; top: 32px; width: 36px; height: 9px; }
+.gm-pet > .pt { position: absolute; left: 3px; top: 0; width: 36px; height: 36px; }
+.gm-pet:hover > .pt { filter: brightness(1.18); }
+.gm-pet > .val { position: absolute; left: -2px; right: -2px; top: 41px; height: 16px; display: flex; align-items: center; justify-content: center; gap: 1px; color: var(--k9); white-space: nowrap; }
+.gm-pet.none > .val { color: var(--k4); }
+.gm-pet-shelf > .gm-pet:nth-child(3n) > .tt { left: auto; right: calc(100% + 5px); }
+.gm-pet-top > .has { position: relative; }
+</style>
+
+<div class="gm" role="group" aria-label="Maqueta del panel de mascotas: el acompañante en su nicho, la colección de seis mascotas y el tooltip de una de ellas.">
+  <div class="gm-win">
+    <img class="gm-close" src="img/icons/ui_x.png" alt="Cerrar">
+    <div class="gm-in">
+      <div class="gm-pet-top">
+        <div class="gm-title">Mascotas</div>
+        <span class="has"><img src="img/icons/pet_sign_paw.png" alt="Encontradas">3 / 6
+          <div class="gm-tip mini tt"><div class="hd">Tres de seis</div><p>Caen muy rara vez al matar: una de cada 50 000 bajas, o una de cada 10 000 jefes.</p></div></span>
+      </div>
+      <div class="gm-pet-body">
+        <div class="gm-pet-niche has">
+          <img src="img/icons/pet_lucky_cat.png" alt="Gato de la suerte, tu acompañante">
+          <div class="gm-tip mini tt"><div class="hd">Acompañante</div><p>Sigue al grupo por la tira. Es solo compañía: todas tus mascotas dan lo suyo, la lleves o no.</p></div>
+        </div>
+        <div class="gm-pet-shelf">
+          <div class="gm-pet none has"><img class="pl" src="img/icons/pet_plinth.png" alt=""><img class="pt" src="img/icons/pet_coin_sprite_dark.png" alt="Mascota sin descubrir"><div class="val">?</div>
+            <div class="gm-tip mini tt"><div class="hd">Sin descubrir</div><p>Algo espera aquí. Sabrás qué da cuando caiga.</p></div></div>
+          <div class="gm-pet has"><img class="pl" src="img/icons/pet_plinth.png" alt=""><img class="pt" src="img/icons/pet_scholar_owl.png" alt="Búho erudito"><div class="val"><img src="img/icons/ui_xp.png" alt="Experiencia">+15 %</div>
+            <div class="gm-tip mini tt t7"><div class="nm">Búho erudito</div><div class="aff"><img src="img/icons/ui_xp.png" alt=""><b>+15 %</b><span>Experiencia</span></div><div class="lore">«Ya lo había leído.»</div></div></div>
+          <div class="gm-pet none has"><img class="pl" src="img/icons/pet_plinth.png" alt=""><img class="pt" src="img/icons/pet_pack_mule_dark.png" alt="Mascota sin descubrir"><div class="val">?</div>
+            <div class="gm-tip mini tt"><div class="hd">Sin descubrir</div><p>Algo espera aquí. Sabrás qué da cuando caiga.</p></div></div>
+          <div class="gm-pet has"><img class="pl" src="img/icons/pet_plinth_on.png" alt=""><img class="pt" src="img/icons/pet_lucky_cat.png" alt="Gato de la suerte"><div class="val"><img src="img/icons/pet_sign_chest.png" alt="Cofres">+12 %</div>
+            <div class="gm-tip mini tt t7"><div class="nm">Gato de la suerte</div><div class="aff"><img src="img/icons/pet_sign_chest.png" alt=""><b>+12 %</b><span>Cofres al matar</span></div><div class="lore">«Saluda a todos los cofres. Alguno contesta.»</div></div></div>
+          <div class="gm-pet has"><img class="pl" src="img/icons/pet_plinth.png" alt=""><img class="pt" src="img/icons/pet_time_imp.png" alt="Diablillo del tiempo"><div class="val"><img src="img/icons/pet_sign_timer.png" alt="Apertura automática">−90 s</div>
+            <div class="gm-tip mini tt t7"><div class="nm">Diablillo del tiempo</div><div class="aff"><img src="img/icons/pet_sign_timer.png" alt=""><b>−90 s</b><span>Apertura sola</span></div><p>Los cofres se abren solos antes.</p></div></div>
+          <div class="gm-pet none has"><img class="pl" src="img/icons/pet_plinth.png" alt=""><img class="pt" src="img/icons/pet_hoarder_dark.png" alt="Mascota sin descubrir"><div class="val">?</div>
+            <div class="gm-tip mini tt"><div class="hd">Sin descubrir</div><p>Algo espera aquí. Sabrás qué da cuando caiga.</p></div></div>
+        </div>
+        <div class="gm-pet-name">Gato de la suerte</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="gm-side">
+    <div class="gm-tip mini t7">
+      <div class="nm">Gato de la suerte</div>
+      <div class="aff"><img src="img/icons/pet_sign_chest.png" alt=""><b>+12 %</b><span>Cofres al matar</span></div>
+      <div class="lore">«Saluda a todos los cofres. Alguno contesta.»</div>
+    </div>
+  </div>
+</div>

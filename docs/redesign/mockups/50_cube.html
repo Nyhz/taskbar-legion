@@ -1,0 +1,175 @@
+<!-- mock: El Cubo | Tres recetas, cada una en su pestaña con nombre: sintetizar (nueve piezas de una rareza dan una de la siguiente), fundir (piezas en oro) y transfigurar (cambiar un afijo pagando con gemas). Cada ventana dice, de arriba abajo, qué receta es, qué hace, qué hay cargado y qué tecla lo ejecuta. Aquí sí hay palabras cortas: las recetas son demasiado abstractas para un signo. Se muestran cuatro momentos. -->
+<style>
+/* The Cube. Three recipes; each window says, top to bottom: which recipe (worded tabs), what it does (one
+   equation line), what is loaded (the Cube's face and a count), and the one key that does it (its verb on it).
+   This panel uses short words where a sign cannot carry the meaning: the recipes are abstract. */
+.gm-cube-gm { display: grid; grid-template-columns: repeat(2, max-content); gap: 12px 14px; align-items: start; }
+.gm-cube-state { display: grid; gap: 4px; justify-items: start; }
+.gm-cube-gm .gm-tip:not(.tag) { white-space: normal; text-shadow: none; }      /* tooltips hang from one-line elements: let them wrap */
+.gm-cube-cap { color: var(--k6); padding-left: 3px; }                       /* caption of the mock-up state, outside the window */
+.gm-cube-w { width: 226px; }
+.gm-cube-top { display: flex; align-items: center; height: 22px; margin-top: -2px; }
+/* Recipe tabs: a sign and its name; the one you are in is lit. */
+.gm-cube-tabs { display: flex; gap: 1px; margin-top: 4px; }
+.gm-cube-tabs > div { position: relative; height: 22px; border: 4px solid transparent; border-image: url(img/icons/ui_btn_off.png) 4 fill / 4px / 0 stretch; display: flex; align-items: center; gap: 2px; padding: 0 3px 1px 0; color: var(--k6); white-space: nowrap; }
+.gm-cube-tabs > div > img { margin: -1px 0 0 -3px; opacity: .5; }
+.gm-cube-tabs > div.on { border-image-source: url(img/icons/ui_btn.png); color: var(--gold-hi); }
+.gm-cube-tabs > div.on > img, .gm-cube-tabs > div:hover > img { opacity: 1; }
+.gm-cube-tabs .tt { left: 0; top: calc(100% + 3px); bottom: auto; }
+/* The recipe as an equation, with what is loaded. */
+.gm-cube-eq { display: flex; align-items: center; gap: 3px; height: 16px; margin-top: 7px; color: var(--k9); white-space: nowrap; }
+.gm-cube-eq > .aside { position: relative; margin-left: auto; display: flex; align-items: center; gap: 1px; color: var(--k6); }
+.gm-cube-eq > .dim { color: var(--k6); }
+.gm-cube-main { display: flex; align-items: center; gap: 5px; margin-top: 4px; }
+.gm-cube-face { position: relative; flex: none; width: 126px; height: 132px; background: url(img/icons/cube_face.png); }
+.gm-cube-face > .gm-slot { position: absolute; }
+.gm-cube-face > .gm-slot > b.g { right: 2px; bottom: 2px; color: var(--gold-hi); }
+.gm-cube-out { flex: 1; display: grid; justify-items: center; gap: 3px; }
+.gm-cube-sum { position: relative; display: flex; align-items: center; gap: 2px; font: 20px/20px var(--f-big); color: var(--gold-hi); text-shadow: 1px 1px 0 var(--k0); }
+/* Keys with their verb on them; labelled tick boxes. */
+.gm-cube-row { display: flex; align-items: center; gap: 4px; margin-top: 5px; }
+.gm-cube-count { position: relative; width: 30px; color: var(--k7); }
+.gm-cube-count.full { color: var(--good); }
+.gm-cube-key { position: relative; height: 20px; border: 4px solid transparent; border-image: url(img/icons/ui_btn.png) 4 fill / 4px / 0 stretch; padding: 0 5px; line-height: 11px; color: var(--k9); white-space: nowrap; }
+.gm-cube-key:hover { filter: brightness(1.15); }
+.gm-cube-key.gold { border-image-source: url(img/icons/ui_btn_gold.png); color: var(--gold-dk); }
+.gm-cube-key.off { border-image-source: url(img/icons/ui_btn_off.png); color: var(--k5); }
+.gm-cube-key.r { margin-left: auto; }
+.gm-cube-key.r > .tt.above { left: auto; right: 0; }
+.gm-cube-tog { position: relative; display: flex; align-items: center; gap: 4px; height: 16px; margin-top: 5px; color: var(--k8); }
+.gm-cube-tog > .cog { position: relative; margin-left: 2px; }
+.gm-cube-tog > .cog > img { opacity: .6; }
+.gm-cube-tog > .cog:hover > img { opacity: 1; }
+.gm-cube-tog > .n { color: var(--k6); }
+.gm-cube-filt { display: flex; align-items: center; gap: 4px; height: 13px; color: var(--k8); }
+/* The bag under the Cube: click a piece to load it. */
+.gm-cube-bagcap { display: flex; align-items: center; gap: 3px; margin-top: 7px; color: var(--k6); }
+.gm-cube-bagcap > i { flex: 1; height: 1px; margin-left: 2px; background: var(--k3); }
+.gm-cube-bag { display: grid; grid-template-columns: repeat(6, 36px); gap: 2px; margin-top: 3px; }
+.gm-cube-bag > .no > img:first-child { opacity: .28; }
+.gm-cube-bag > .gm-slot:nth-child(6n+4) > .tt, .gm-cube-bag > .gm-slot:nth-child(6n+5) > .tt, .gm-cube-bag > .gm-slot:nth-child(6n) > .tt { left: auto; right: calc(100% + 5px); }
+/* Transfigure: three numbered steps, then the roll to keep or not. */
+.gm-cube-step { display: flex; align-items: center; gap: 4px; margin-top: 8px; color: var(--k7); }
+.gm-cube-step > u { text-decoration: none; width: 11px; height: 11px; line-height: 11px; text-align: center; color: var(--gold-dk); background: linear-gradient(var(--gold-hi) 0 1px, var(--gold) 1px 9px, var(--gold-dim) 9px); clip-path: polygon(1px 0, calc(100% - 1px) 0, calc(100% - 1px) 1px, 100% 1px, 100% calc(100% - 1px), calc(100% - 1px) calc(100% - 1px), calc(100% - 1px) 100%, 1px 100%, 1px calc(100% - 1px), 0 calc(100% - 1px), 0 1px, 1px 1px); }
+.gm-cube-piece { display: flex; align-items: center; gap: 6px; margin: 4px 0 0 2px; }
+.gm-cube-piece > .nm { font: 12px/12px var(--f-name); }
+.gm-cube-affs { display: grid; margin-top: 3px; }
+.gm-cube-aff { position: relative; display: grid; grid-template-columns: 16px auto 1fr; gap: 3px; align-items: center; height: 18px; padding: 0 4px; color: var(--k7); }
+.gm-cube-aff > b { font-weight: 400; color: var(--k9); }
+.gm-cube-aff:hover { background: var(--k2); }
+.gm-cube-aff.on { background: var(--k2); box-shadow: inset 2px 0 0 var(--gold); color: var(--k9); }
+.gm-cube-pays { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; margin-top: 4px; }
+.gm-cube-pay { position: relative; border: 4px solid transparent; border-image: url(img/icons/ui_btn_off.png) 4 fill / 4px / 0 stretch; padding: 0 1px 1px; display: grid; gap: 3px; color: var(--k6); white-space: nowrap; }
+.gm-cube-pay > div:not(.gm-tip) { display: flex; align-items: center; gap: 3px; height: 10px; }
+.gm-cube-pay > .have { color: var(--bad); padding-left: 12px; }
+.gm-cube-pay.on { border-image-source: url(img/icons/ui_btn.png); color: var(--k9); }
+.gm-cube-pay.on > .have { color: #b3c873; }
+.gm-cube-cmp { display: grid; margin-top: 8px; }
+.gm-cube-cmp > div { position: relative; display: grid; grid-template-columns: 38px 16px auto 1fr; gap: 3px; align-items: center; height: 20px; padding: 0 4px; color: var(--k6); }
+.gm-cube-cmp > div > b { font-weight: 400; color: var(--k7); }
+.gm-cube-cmp > .new { background: var(--k2); box-shadow: inset 2px 0 0 var(--gold); color: var(--k8); }
+.gm-cube-cmp > .new > b { color: var(--gold-hi); }
+.gm-cube-cmp > div > .lb { color: var(--k6); }
+.gm-cube-cmp > .new > .lb { color: var(--k9); }
+.gm-cube-cmp > .new > .st { display: flex; align-items: center; gap: 2px; }
+</style>
+
+<div class="gm gm-cube-gm" role="group" aria-label="Maqueta del Cubo en cuatro momentos: sintetizar nueve piezas épicas, fundir piezas en oro, transfigurar un afijo y elegir entre el afijo nuevo y el de antes.">
+  <div class="gm-cube-state">
+    <div class="gm-cube-cap">Sintetizar</div>
+    <div class="gm-win">
+      <img class="gm-close" src="img/icons/ui_x.png" alt="Cerrar">
+      <div class="gm-in gm-cube-w">
+        <div class="gm-cube-top"><div class="gm-title">Cubo</div></div>
+        <div class="gm-cube-tabs"><div class="on has"><img src="img/icons/cube2_synth.png" alt="">Sintetizar<div class="gm-tip mini tt"><div class="hd">Sintetizar</div><p>Nueve piezas, o nueve gemas, de la misma rareza dan una de la rareza siguiente.</p></div></div><div class="has"><img src="img/icons/cube2_melt.png" alt="">Fundir<div class="gm-tip mini tt"><div class="hd">Fundir</div><p>Convierte piezas en oro. Cuanta más rareza y más nivel, más oro.</p></div></div><div class="has"><img src="img/icons/cube2_swap.png" alt="">Transfigurar<div class="gm-tip mini tt"><div class="hd">Transfigurar</div><p>Cambia un afijo de una pieza por otro distinto. Se paga con gemas y cada pieza solo admite un cambio.</p></div></div></div>
+        <div class="gm-cube-eq">9 <img src="img/icons/cube_pip_3.png" alt=""><span style="color:var(--t3)">épicas</span><img src="img/icons/cube_arrow.png" alt="dan">1 <img src="img/icons/cube_pip_4.png" alt=""><span style="color:var(--t4)">legendaria</span>
+          <div class="aside has"><img src="img/icons/cube_lucky.png" alt="Suerte">5 %<div class="gm-tip mini tt left"><div class="hd">Golpe de suerte</div><p>Una de cada veinte veces la pieza sale dos rarezas por encima en vez de una.</p></div></div></div>
+        <div class="gm-cube-main">
+          <div class="gm-cube-face"><div class="gm-slot has" style="left:7px;top:13px"><img src="img/icons/sword_3.png" alt="Hoja de caballero"><div class="gm-tip tag tt t3"><div class="nm" style="padding:0">Hoja de caballero</div></div></div><div class="gm-slot " style="left:45px;top:13px"><img src="img/icons/helmet_leather_3.png" alt=""></div><div class="gm-slot " style="left:83px;top:13px"><img src="img/icons/chest_cloth_3.png" alt=""></div><div class="gm-slot " style="left:7px;top:51px"><img src="img/icons/boots_leather_3.png" alt=""></div><div class="gm-slot " style="left:45px;top:51px"><img src="img/icons/quiver_3.png" alt=""></div><div class="gm-slot " style="left:83px;top:51px"><img src="img/icons/legs_cloth_3.png" alt=""></div><div class="gm-slot " style="left:7px;top:89px"><img src="img/icons/tome_3.png" alt=""></div><div class="gm-slot " style="left:45px;top:89px"><img src="img/icons/shield_3.png" alt=""></div><div class="gm-slot " style="left:83px;top:89px"><img src="img/icons/bow_3.png" alt=""></div></div>
+          <img src="img/icons/cube_arrow.png" alt="dan">
+          <div class="gm-cube-out"><div class="gm-slot has"><img src="img/icons/cube_result_4.png" alt="Una pieza legendaria"><div class="gm-tip mini tt left t4"><div class="nm">Una pieza legendaria</div><p>Sale al azar. Su nivel es el de la pieza de en medio de las nueve.</p></div></div></div>
+        </div>
+        <div class="gm-cube-row">
+          <div class="gm-cube-count full has">9 / 9<div class="gm-tip mini tt above"><div class="hd">Cubo lleno</div><p>Nueve piezas de la misma rareza: listo para sintetizar. Pulsa una pieza del Cubo para sacarla.</p></div></div>
+          <div class="gm-cube-key has">Rellenar<div class="gm-tip mini tt above"><div class="hd">Rellenar</div><p>Mete de golpe nueve piezas del grupo de rareza más numeroso.</p></div></div>
+          <div class="gm-cube-key gold r has">Sintetizar<div class="gm-tip mini tt above"><div class="hd">Sintetizar</div><p>Gasta las nueve piezas épicas y te da una legendaria.</p></div></div>
+        </div>
+        <div class="gm-cube-tog has"><img src="img/icons/cube2_tick_on.png" alt="Sí">Usar también el alijo<div class="gm-tip mini tt above"><div class="hd">Usar también el alijo</div><p>Marcado: abajo ves las piezas de la bolsa y las del alijo, y Rellenar coge de las dos.</p></div></div>
+        <div class="gm-cube-bagcap has" style="position:relative"><img src="img/icons/hud_stash.png" alt="">Bolsa y alijo<i></i><div class="gm-tip mini tt above"><div class="hd">Bolsa y alijo</div><p>Pulsa una pieza para meterla en el Cubo. Las apagadas no encajan con lo que ya hay dentro.</p></div></div><div class="gm-cube-bag"><div class="gm-slot has"><img src="img/icons/ring_3.png" alt="Sello grabado"><div class="gm-tip tag tt t3"><div class="nm" style="padding:0">Sello grabado</div></div></div><div class="gm-slot "><img src="img/icons/amulet_3.png" alt=""></div><div class="gm-slot "><img src="img/icons/gloves_plate_3.png" alt=""></div><div class="gm-slot no has"><img src="img/icons/bow_4.png" alt="Gran arco dorado"><div class="gm-tip mini tt t5"><div class="nm">Gran arco dorado</div><p>Es de otra rareza: en esta tanda solo entran épicas.</p></div></div><div class="gm-slot no"><img src="img/icons/helmet_leather_2.png" alt=""></div><div class="gm-slot no has"><img src="img/icons/gem_ruby.png" alt="Rubí"><b>3</b><div class="gm-tip mini tt t2"><div class="nm">Rubí</div><p>Las gemas se sintetizan entre ellas: nueve gemas, no gemas con piezas.</p></div></div><div class="gm-slot no"><img src="img/icons/sword_1.png" alt=""></div><div class="gm-slot no"><img src="img/icons/chest_plate_5.png" alt=""></div><div class="gm-slot "><img src="img/icons/ui_well.png" alt=""></div><div class="gm-slot "><img src="img/icons/ui_well.png" alt=""></div><div class="gm-slot "><img src="img/icons/ui_well.png" alt=""></div><div class="gm-slot "><img src="img/icons/ui_well.png" alt=""></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="gm-cube-state">
+    <div class="gm-cube-cap">Fundir</div>
+    <div class="gm-win">
+      <img class="gm-close" src="img/icons/ui_x.png" alt="Cerrar">
+      <div class="gm-in gm-cube-w">
+        <div class="gm-cube-top"><div class="gm-title">Cubo</div></div>
+        <div class="gm-cube-tabs"><div class=""><img src="img/icons/cube2_synth.png" alt="">Sintetizar</div><div class="on "><img src="img/icons/cube2_melt.png" alt="">Fundir</div><div class=""><img src="img/icons/cube2_swap.png" alt="">Transfigurar</div></div>
+        <div class="gm-cube-eq">piezas<img src="img/icons/cube_arrow.png" alt="dan"><img src="img/icons/ui_gold.png" alt=""><span style="color:var(--gold-hi)">oro</span><span class="dim">· más rareza, más oro</span></div>
+        <div class="gm-cube-main">
+          <div class="gm-cube-face"><div class="gm-slot has" style="left:7px;top:13px"><img src="img/icons/sword_1.png" alt="Espada mellada"><b class="g">8</b><div class="gm-tip mini tt t0"><div class="nm">Espada mellada</div><div class="ln" style="padding-top:0"><span>Al fundirla</span><b>8</b></div></div></div><div class="gm-slot " style="left:45px;top:13px"><img src="img/icons/boots_cloth_1.png" alt=""><b class="g">16</b></div><div class="gm-slot " style="left:83px;top:13px"><img src="img/icons/helmet_leather_2.png" alt=""><b class="g">106</b></div><div class="gm-slot " style="left:7px;top:51px"><img src="img/icons/wand_1.png" alt=""><b class="g">24</b></div><div class="gm-slot " style="left:45px;top:51px"><img src="img/icons/gloves_cloth_1.png" alt=""><b class="g">32</b></div><div class="gm-slot " style="left:83px;top:51px"><img src="img/icons/ui_well.png" alt=""></div><div class="gm-slot " style="left:7px;top:89px"><img src="img/icons/ui_well.png" alt=""></div><div class="gm-slot " style="left:45px;top:89px"><img src="img/icons/ui_well.png" alt=""></div><div class="gm-slot " style="left:83px;top:89px"><img src="img/icons/ui_well.png" alt=""></div></div>
+          <img src="img/icons/cube_arrow.png" alt="dan">
+          <div class="gm-cube-out"><div class="gm-cube-sum has"><img src="img/icons/ui_gold.png" alt="Oro">186<div class="gm-tip mini tt left"><div class="hd">Oro al fundir</div><p>La suma de lo que vale cada pieza que hay en el Cubo.</p></div></div></div>
+        </div>
+        <div class="gm-cube-row">
+          <div class="gm-cube-count has">5 / 9<div class="gm-tip mini tt above"><div class="hd">Piezas en el Cubo</div><p>Caben nueve por tanda. Basta una para fundir.</p></div></div>
+          <div class="gm-cube-key has">Rellenar<div class="gm-tip mini tt above"><div class="hd">Rellenar</div><p>Mete las nueve piezas que menos valen: primero la chatarra.</p></div></div>
+          <div class="gm-cube-key gold r has">Fundir<div class="gm-tip mini tt above"><div class="hd">Fundir</div><p>Destruye las cinco piezas del Cubo y te da 186 de oro.</p></div></div>
+        </div>
+        <div class="gm-cube-tog has"><img src="img/icons/cube2_tick_on.png" alt="Sí">Fundir al caer<span class="n">· 2 rarezas</span>
+          <div class="cog has"><img src="img/icons/hud_options.png" alt="Elegir rarezas"><div class="gm-tip mini tt above"><div class="hd">Se funden solas</div><div class="gm-cube-filt"><img src="img/icons/cube2_tick_on.png" alt="Sí"><img src="img/icons/cube_pip_0.png" alt="">Normal</div><div class="gm-cube-filt"><img src="img/icons/cube2_tick_on.png" alt="Sí"><img src="img/icons/cube_pip_1.png" alt="">Infrecuente</div><div class="gm-cube-filt"><img src="img/icons/cube2_tick_off.png" alt="No"><img src="img/icons/cube_pip_2.png" alt="">Raro</div><div class="gm-cube-filt"><img src="img/icons/cube2_tick_off.png" alt="No"><img src="img/icons/cube_pip_3.png" alt="">Épico</div><div class="gm-cube-filt"><img src="img/icons/cube2_tick_off.png" alt="No"><img src="img/icons/cube_pip_4.png" alt="">Legendario</div><div class="gm-cube-filt"><img src="img/icons/cube2_tick_off.png" alt="No"><img src="img/icons/cube_pip_5.png" alt="">Mítico</div><div class="gm-cube-filt"><img src="img/icons/cube2_tick_off.png" alt="No"><img src="img/icons/cube_pip_6.png" alt="">Ancestral</div><div class="gm-cube-filt"><img src="img/icons/cube2_tick_off.png" alt="No"><img src="img/icons/cube_pip_7.png" alt="">Divino</div><div class="gm-cube-filt"><img src="img/icons/cube2_tick_off.png" alt="No"><img src="img/icons/cube_pip_8.png" alt="">Primordial</div></div></div>
+          <div class="gm-tip mini tt above"><div class="hd">Fundir al caer</div><p>Marcado: lo que salga de un cofre con una de las rarezas elegidas se convierte en oro en el acto. La rueda elige las rarezas.</p></div></div>
+        <div class="gm-cube-bagcap has" style="position:relative"><img src="img/icons/hud_stash.png" alt="">Bolsa<i></i><div class="gm-tip mini tt above"><div class="hd">Bolsa</div><p>Pulsa una pieza para meterla en el Cubo. El número es el oro que da al fundirla.</p></div></div><div class="gm-cube-bag"><div class="gm-slot "><img src="img/icons/helmet_leather_1.png" alt=""></div><div class="gm-slot "><img src="img/icons/sword_2.png" alt=""><b class="g">64</b></div><div class="gm-slot "><img src="img/icons/legs_leather_2.png" alt=""><b class="g">71</b></div><div class="gm-slot has"><img src="img/icons/ring_3.png" alt="Sello grabado"><b class="g">420</b><div class="gm-tip tag tt t3"><div class="nm" style="padding:0">Sello grabado</div></div></div><div class="gm-slot "><img src="img/icons/bow_4.png" alt=""><b class="g">2,1 K</b></div><div class="gm-slot "><img src="img/icons/chest_plate_5.png" alt=""><b class="g">9,6 K</b></div><div class="gm-slot "><img src="img/icons/ui_well.png" alt=""></div><div class="gm-slot "><img src="img/icons/ui_well.png" alt=""></div><div class="gm-slot "><img src="img/icons/ui_well.png" alt=""></div><div class="gm-slot "><img src="img/icons/ui_well.png" alt=""></div><div class="gm-slot "><img src="img/icons/ui_well.png" alt=""></div><div class="gm-slot "><img src="img/icons/ui_well.png" alt=""></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="gm-cube-state">
+    <div class="gm-cube-cap">Transfigurar · 1, 2, 3</div>
+    <div class="gm-win">
+      <img class="gm-close" src="img/icons/ui_x.png" alt="Cerrar">
+      <div class="gm-in gm-cube-w">
+        <div class="gm-cube-top"><div class="gm-title">Cubo</div></div>
+        <div class="gm-cube-tabs"><div class=""><img src="img/icons/cube2_synth.png" alt="">Sintetizar</div><div class=""><img src="img/icons/cube2_melt.png" alt="">Fundir</div><div class="on "><img src="img/icons/cube2_swap.png" alt="">Transfigurar</div></div>
+        <div class="gm-cube-eq">un afijo<img src="img/icons/cube_arrow.png" alt="pasa a">otro distinto
+          <div class="aside has"><img src="img/icons/ui_gem.png" alt="">cuesta gemas<div class="gm-tip mini tt left"><div class="hd">Se paga con gemas</div><p>Una gema de la rareza de la pieza, o dos de la rareza anterior. Del color que sea.</p></div></div></div>
+        <div class="gm-cube-step"><u>1</u>La pieza</div>
+        <div class="gm-cube-piece"><div class="gm-slot sel has"><img src="img/icons/legs_plate_3.png" alt="Arnés acanalado"><div class="gm-tip mini tt t3"><div class="nm">Arnés acanalado</div><p>Una pieza solo se transfigura una vez.</p></div></div><div class="nm" style="color:var(--t3)">Arnés acanalado</div></div>
+        <div class="gm-cube-step"><u>2</u>El afijo que cambias</div>
+        <div class="gm-cube-affs">
+          <div class="gm-cube-aff"><img src="img/icons/stat_magicResist.png" alt=""><b>+538</b><span>Resistencia mágica</span></div>
+          <div class="gm-cube-aff on has"><img src="img/icons/stat_health.png" alt=""><b>+2 960</b><span>Vida</span><div class="gm-tip mini tt"><div class="hd">Vida</div><p>Este es el afijo que se pierde. El nuevo sale al azar entre los que la pieza no tiene.</p></div></div>
+          <div class="gm-cube-aff"><img src="img/icons/stat_hpRegen.png" alt=""><b>+84</b><span>Regeneración</span></div>
+        </div>
+        <div class="gm-cube-step"><u>3</u>El pago</div>
+        <div class="gm-cube-pays">
+          <div class="gm-cube-pay has"><div><img src="img/icons/cube_pip_3.png" alt="">1 gema épica</div><div class="have">tienes 0</div><div class="gm-tip mini tt above"><div class="hd">Una gema épica</div><p>De la rareza de la pieza, del color que sea. No tienes ninguna.</p></div></div>
+          <div class="gm-cube-pay on has"><div><img src="img/icons/cube_pip_2.png" alt="">2 gemas raras</div><div class="have">tienes 5</div><div class="gm-tip mini tt above"><div class="hd">Dos gemas raras</div><p>Una rareza por debajo de la pieza, del color que sea. Tienes cinco.</p></div></div>
+        </div>
+        <div class="gm-cube-row"><div class="gm-cube-key gold r has">Transfigurar<div class="gm-tip mini tt above"><div class="hd">Transfigurar</div><p>Gasta dos gemas raras y tira un afijo nuevo en lugar de Vida. Después eliges si te lo quedas.</p></div></div></div>
+        <div class="gm-cube-bagcap has" style="position:relative"><img src="img/icons/hud_stash.png" alt="">Bolsa<i></i><div class="gm-tip mini tt above"><div class="hd">Bolsa</div><p>Pulsa la pieza que quieres cambiar. Las apagadas ya se transfiguraron una vez.</p></div></div><div class="gm-cube-bag"><div class="gm-slot sel"><img src="img/icons/legs_plate_3.png" alt="Arnés acanalado"></div><div class="gm-slot "><img src="img/icons/helmet_plate_3.png" alt=""></div><div class="gm-slot "><img src="img/icons/shield_4.png" alt=""></div><div class="gm-slot no has"><img src="img/icons/ring_5.png" alt="Anillo de la Grieta"><div class="gm-tip mini tt t8"><div class="nm">Anillo de la Grieta</div><p>Ya se transfiguró una vez: no admite otro cambio.</p></div></div><div class="gm-slot "><img src="img/icons/amulet_2.png" alt=""></div><div class="gm-slot "><img src="img/icons/gloves_plate_2.png" alt=""></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="gm-cube-state">
+    <div class="gm-cube-cap">Transfigurar · elegir el resultado</div>
+    <div class="gm-win">
+      <img class="gm-close" src="img/icons/ui_x.png" alt="Cerrar">
+      <div class="gm-in gm-cube-w">
+        <div class="gm-cube-top"><div class="gm-title">Cubo</div></div>
+        <div class="gm-cube-tabs"><div class=""><img src="img/icons/cube2_synth.png" alt="">Sintetizar</div><div class=""><img src="img/icons/cube2_melt.png" alt="">Fundir</div><div class="on "><img src="img/icons/cube2_swap.png" alt="">Transfigurar</div></div>
+        <div class="gm-cube-eq">un afijo<img src="img/icons/cube_arrow.png" alt="pasa a">otro distinto
+          <div class="aside has"><img src="img/icons/ui_gem.png" alt="">cuesta gemas<div class="gm-tip mini tt left"><div class="hd">Se paga con gemas</div><p>Una gema de la rareza de la pieza, o dos de la rareza anterior. Del color que sea.</p></div></div></div>
+        <div class="gm-cube-piece"><div class="gm-slot sel has"><img src="img/icons/legs_plate_3.png" alt="Arnés acanalado"><div class="gm-tip mini tt t3"><div class="nm">Arnés acanalado</div><p>Una pieza solo se transfigura una vez.</p></div></div><div class="nm" style="color:var(--t3)">Arnés acanalado</div></div>
+        <div class="gm-cube-cmp">
+          <div><span class="lb">Antes</span><img src="img/icons/stat_health.png" alt=""><b>+2 960</b><span>Vida</span></div>
+          <div class="new has"><span class="lb">Ahora</span><img src="img/icons/stat_critChance.png" alt=""><b>+3,1 %</b><span class="st">Crítico<img src="img/icons/cube_star.png" alt="Tirada perfecta"></span><div class="gm-tip mini tt"><div class="hd">Tirada perfecta</div><p>Ha salido el valor más alto posible para este afijo.</p></div></div>
+        </div>
+        <div class="gm-cube-row" style="margin-top:8px">
+          <div class="gm-cube-key has">Quedarme el de antes<div class="gm-tip mini tt above"><div class="hd">Quedarme el de antes</div><p>La pieza sigue como estaba. Las gemas ya se han gastado.</p></div></div>
+          <div class="gm-cube-key gold r has">Quedarme el nuevo<div class="gm-tip mini tt above"><div class="hd">Quedarme el nuevo</div><p>Vida desaparece y la pieza se queda con Crítico +3,1 %.</p></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

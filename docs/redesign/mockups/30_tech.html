@@ -1,0 +1,77 @@
+<!-- mock: Mejoras (tecnología) | Las doce mejoras a la vista, sin pestañas ni tarjetas: un signo sobre un sello redondo, lo que ya da y lo que cuesta el siguiente rango. La tecla se apaga si no llega el oro. El nombre, la explicación, el rango y el salto de efecto están en el tooltip. -->
+<style>
+/* Tech panel. Round seals (an upgrade is never an item: items are square), a number, a price key. */
+.gm-tech-top { display: flex; align-items: center; height: 22px; margin-top: -2px; }
+.gm-tech-purse { position: relative; margin-left: auto; padding-right: 9px; display: flex; align-items: center; gap: 3px; font: 20px/20px var(--f-big); color: var(--gold-hi); text-shadow: 1px 1px 0 var(--k0); }
+.gm-tech-grid { display: grid; grid-template-columns: repeat(2, auto); gap: 10px 14px; margin-top: 8px; }
+.gm-tech-group { display: grid; grid-template-columns: 16px repeat(3, 48px); gap: 0 4px; align-items: start; }
+.gm-tech-mark { position: relative; width: 16px; height: 16px; margin-top: 9px; }
+.gm-tech-mark > img { opacity: .55; }
+.gm-tech-mark:hover > img { opacity: 1; }
+.gm-tech-node { position: relative; width: 48px; display: grid; justify-items: center; }
+.gm-tech-seal { width: 34px; height: 34px; padding: 5px; background: url(img/icons/tech_seal_on.png); }
+.gm-tech-node.off .gm-tech-seal { background-image: url(img/icons/tech_seal_off.png); }
+.gm-tech-node.off .gm-tech-seal > img { opacity: .5; filter: grayscale(1); }
+.gm-tech-node.max .gm-tech-seal { background-image: url(img/icons/tech_seal_max.png); }
+.gm-tech-node:hover .gm-tech-seal { filter: brightness(1.18); }
+.gm-tech-node > b { font-weight: 400; height: 10px; margin-top: 3px; color: var(--k9); }
+.gm-tech-node.off > b { color: var(--k5); }
+.gm-tech-buy { margin-top: 3px; width: 46px; height: 16px; border: 4px solid transparent; border-image: url(img/icons/ui_btn.png) 4 fill / 4px / 0 stretch; text-align: center; line-height: 7px; color: var(--gold-hi); text-shadow: 1px 1px 0 var(--k0); }
+.gm-tech-buy.no { border-image-source: url(img/icons/ui_btn_off.png); color: var(--k5); text-shadow: none; }
+.gm-tech-node:hover .gm-tech-buy:not(.no) { filter: brightness(1.2); }
+.gm-tech-done { margin-top: 3px; }
+.gm-tech-grid .nm { color: var(--gold-hi); }
+.gm-tech-grid .ln b.up { color: var(--good); }
+.gm-tech-grid .ln b.cost { color: var(--gold-hi); }
+.gm-tech-grid .ln b.short { color: var(--bad); }
+</style>
+
+<div class="gm" role="group" aria-label="Maqueta del panel de tecnología: doce mejoras no combativas en cuatro grupos, con su efecto actual y el coste en oro del siguiente rango.">
+  <div class="gm-win">
+    <img class="gm-close" src="img/icons/ui_x.png" alt="Cerrar">
+    <div class="gm-in">
+      <div class="gm-tech-top">
+        <div class="gm-title">Mejoras</div>
+        <div class="gm-tech-purse has"><img src="img/icons/ui_gold.png" alt="Oro">61 400<div class="gm-tip tag tt above" style="left:auto;right:0"><div class="hd" style="padding:0">Oro</div></div></div>
+      </div>
+      <div class="gm-tech-grid">
+        <div class="gm-tech-group">
+          <div class="gm-tech-mark has"><img src="img/icons/tech_cat_economy.png" alt="Economía"><div class="gm-tip tag tt above"><div class="hd" style="padding:0">Economía</div></div></div>
+          <div class="gm-tech-node has"><div class="gm-tech-seal"><img src="img/icons/tech_eco_gold.png" alt="Mercadeo"></div><b>+35 %</b><div class="gm-tech-buy">5 906</div>
+            <div class="gm-tip tt"><div class="nm">Mercadeo</div><p>Más oro por cada enemigo abatido.</p><div class="gm-rule"><i></i><img src="img/icons/ui_rule.png" alt=""><i></i></div><div class="ln"><span>Rango</span><b>14</b></div><div class="ln"><span>Ahora</span><b>+35 %</b></div><div class="ln"><span>Siguiente</span><b class="up">+37,5 %</b></div><div class="ln"><span>Coste</span><b class="cost">5 906</b></div><div class="lore">Cada rango cuesta ×1,3 más.</div></div></div>
+          <div class="gm-tech-node has"><div class="gm-tech-seal"><img src="img/icons/tech_eco_xp.png" alt="Erudición"></div><b>+27,5 %</b><div class="gm-tech-buy">2 688</div>
+            <div class="gm-tip tt"><div class="nm">Erudición</div><p>Más experiencia por cada enemigo abatido.</p><div class="gm-rule"><i></i><img src="img/icons/ui_rule.png" alt=""><i></i></div><div class="ln"><span>Rango</span><b>11</b></div><div class="ln"><span>Ahora</span><b>+27,5 %</b></div><div class="ln"><span>Siguiente</span><b class="up">+30 %</b></div><div class="ln"><span>Coste</span><b class="cost">2 688</b></div><div class="lore">Cada rango cuesta ×1,3 más.</div></div></div>
+          <div class="gm-tech-node has"><div class="gm-tech-seal"><img src="img/icons/tech_eco_offline.png" alt="Expedición"></div><b>62,5 %</b><div class="gm-tech-buy">24,8 K</div>
+            <div class="gm-tip tt"><div class="nm">Expedición</div><p>Lo que rinde la partida mientras no juegas. Sin mejoras, la mitad que jugando.</p><div class="gm-rule"><i></i><img src="img/icons/ui_rule.png" alt=""><i></i></div><div class="ln"><span>Rango</span><b>5 / 20</b></div><div class="ln"><span>Ahora</span><b>62,5 %</b></div><div class="ln"><span>Siguiente</span><b class="up">65 %</b></div><div class="ln"><span>Coste</span><b class="cost">24 761</b></div><div class="lore">Cada rango cuesta ×1,9 más.</div></div></div>
+        </div>
+        <div class="gm-tech-group">
+          <div class="gm-tech-mark has"><img src="img/icons/tech_cat_utility.png" alt="Utilidad"><div class="gm-tip tag tt above"><div class="hd" style="padding:0">Utilidad</div></div></div>
+          <div class="gm-tech-node has"><div class="gm-tech-seal"><img src="img/icons/tech_auto_open.png" alt="Apertura automática"></div><b>9:45</b><div class="gm-tech-buy no">124,7 K</div>
+            <div class="gm-tip tt left"><div class="nm">Apertura automática</div><p>Abre sola un cofre cada cierto tiempo. De base, cada 15 minutos.</p><div class="gm-rule"><i></i><img src="img/icons/ui_rule.png" alt=""><i></i></div><div class="ln"><span>Rango</span><b>7 / 12</b></div><div class="ln"><span>Ahora</span><b>9:45</b></div><div class="ln"><span>Siguiente</span><b class="up">9:00</b></div><div class="ln"><span>Coste</span><b class="short">124 718</b></div><div class="ln"><span>Te faltan</span><b class="short">63 318</b></div><div class="lore">Cada rango cuesta ×2,2 más.</div></div></div>
+          <div class="gm-tech-node has max"><div class="gm-tech-seal"><img src="img/icons/tech_party_size.png" alt="Reclutamiento"></div><b>3</b><img class="gm-tech-done" src="img/icons/tech_done.png" alt="Completa">
+            <div class="gm-tip tt left"><div class="nm">Reclutamiento</div><p>Héroes que luchan a la vez.</p><div class="gm-rule"><i></i><img src="img/icons/ui_rule.png" alt=""><i></i></div><div class="ln"><span>Rango</span><b>2 / 2</b></div><div class="ln"><span>Ahora</span><b>3</b></div><div class="lore">Completa.</div></div></div>
+          <div class="gm-tech-node has off"><div class="gm-tech-seal"><img src="img/icons/tech_synth_luck.png" alt="Fortuna del transmutador"></div><b>5 %</b><div class="gm-tech-buy">50 K</div>
+            <div class="gm-tip tt left"><div class="nm">Fortuna del transmutador</div><p>Probabilidad de que una síntesis del Cubo suba dos rarezas de golpe.</p><div class="gm-rule"><i></i><img src="img/icons/ui_rule.png" alt=""><i></i></div><div class="ln"><span>Rango</span><b>0 / 20</b></div><div class="ln"><span>Ahora</span><b>5 %</b></div><div class="ln"><span>Siguiente</span><b class="up">5,25 %</b></div><div class="ln"><span>Coste</span><b class="cost">50 000</b></div><div class="lore">Cada rango cuesta ×2,0 más.</div></div></div>
+        </div>
+        <div class="gm-tech-group">
+          <div class="gm-tech-mark has"><img src="img/icons/tech_cat_drops.png" alt="Cofres · botín"><div class="gm-tip tag tt above"><div class="hd" style="padding:0">Cofres · botín</div></div></div>
+          <div class="gm-tech-node has"><div class="gm-tech-seal"><img src="img/icons/tech_chest_drop_normal.png" alt="Botín común"></div><b>+2,25 %</b><div class="gm-tech-buy">3 723</div>
+            <div class="gm-tip tt"><div class="nm">Botín común</div><p>Más probabilidad de que un enemigo suelte un cofre común.</p><div class="gm-rule"><i></i><img src="img/icons/ui_rule.png" alt=""><i></i></div><div class="ln"><span>Rango</span><b>9</b></div><div class="ln"><span>Ahora</span><b>+2,25 %</b></div><div class="ln"><span>Siguiente</span><b class="up">+2,5 %</b></div><div class="ln"><span>Coste</span><b class="cost">3 723</b></div><div class="lore">Cada rango cuesta ×1,35 más.</div></div></div>
+          <div class="gm-tech-node has"><div class="gm-tech-seal"><img src="img/icons/tech_chest_drop_stage.png" alt="Despojos de jefe"></div><b>+3,5 %</b><div class="gm-tech-buy">2 452</div>
+            <div class="gm-tip tt"><div class="nm">Despojos de jefe</div><p>Más probabilidad de que un jefe de etapa suelte su cofre.</p><div class="gm-rule"><i></i><img src="img/icons/ui_rule.png" alt=""><i></i></div><div class="ln"><span>Rango</span><b>7</b></div><div class="ln"><span>Ahora</span><b>+3,5 %</b></div><div class="ln"><span>Siguiente</span><b class="up">+4 %</b></div><div class="ln"><span>Coste</span><b class="cost">2 452</b></div><div class="lore">Cada rango cuesta ×1,35 más.</div></div></div>
+          <div class="gm-tech-node has"><div class="gm-tech-seal"><img src="img/icons/tech_chest_gem.png" alt="Ojo de gemas"></div><b>+32,5 %</b><div class="gm-tech-buy no">77,8 K</div>
+            <div class="gm-tip tt"><div class="nm">Ojo de gemas</div><p>Más probabilidad de que un cofre traiga, además, una gema.</p><div class="gm-rule"><i></i><img src="img/icons/ui_rule.png" alt=""><i></i></div><div class="ln"><span>Rango</span><b>13</b></div><div class="ln"><span>Ahora</span><b>+32,5 %</b></div><div class="ln"><span>Siguiente</span><b class="up">+35 %</b></div><div class="ln"><span>Coste</span><b class="short">77 848</b></div><div class="ln"><span>Te faltan</span><b class="short">16 448</b></div><div class="lore">Cada rango cuesta ×1,5 más.</div></div></div>
+        </div>
+        <div class="gm-tech-group">
+          <div class="gm-tech-mark has"><img src="img/icons/tech_cat_storage.png" alt="Cofres · almacén"><div class="gm-tip tag tt above"><div class="hd" style="padding:0">Cofres · almacén</div></div></div>
+          <div class="gm-tech-node has"><div class="gm-tech-seal"><img src="img/icons/tech_store_normal.png" alt="Almacén"></div><b>11</b><div class="gm-tech-buy">38,4 K</div>
+            <div class="gm-tip tt left"><div class="nm">Almacén</div><p>Cofres comunes que puedes guardar sin abrir.</p><div class="gm-rule"><i></i><img src="img/icons/ui_rule.png" alt=""><i></i></div><div class="ln"><span>Rango</span><b>5 / 6</b></div><div class="ln"><span>Ahora</span><b>11</b></div><div class="ln"><span>Siguiente</span><b class="up">12</b></div><div class="ln"><span>Coste</span><b class="cost">38 400</b></div><div class="lore">Cada rango cuesta ×2,0 más.</div></div></div>
+          <div class="gm-tech-node has max"><div class="gm-tech-seal"><img src="img/icons/tech_store_stage.png" alt="Cámara"></div><b>8</b><img class="gm-tech-done" src="img/icons/tech_done.png" alt="Completa">
+            <div class="gm-tip tt left"><div class="nm">Cámara</div><p>Cofres de jefe de etapa que puedes guardar sin abrir.</p><div class="gm-rule"><i></i><img src="img/icons/ui_rule.png" alt=""><i></i></div><div class="ln"><span>Rango</span><b>4 / 4</b></div><div class="ln"><span>Ahora</span><b>8</b></div><div class="lore">Completa.</div></div></div>
+          <div class="gm-tech-node has"><div class="gm-tech-seal"><img src="img/icons/tech_store_zone.png" alt="Relicario"></div><b>6</b><div class="gm-tech-buy">8 000</div>
+            <div class="gm-tip tt left"><div class="nm">Relicario</div><p>Cofres de jefe de mundo que puedes guardar sin abrir.</p><div class="gm-rule"><i></i><img src="img/icons/ui_rule.png" alt=""><i></i></div><div class="ln"><span>Rango</span><b>2 / 4</b></div><div class="ln"><span>Ahora</span><b>6</b></div><div class="ln"><span>Siguiente</span><b class="up">7</b></div><div class="ln"><span>Coste</span><b class="cost">8 000</b></div><div class="lore">Cada rango cuesta ×2,0 más.</div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
