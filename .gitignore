@@ -12,3 +12,8 @@ coverage
 # Local agent tooling / working memory — not part of the project source
 .agents/
 /memory/
+
+# Asset pipeline: Python venv and review output (generated, never committed)
+tools/assets/.venv/
+tools/assets/out/
+__pycache__/

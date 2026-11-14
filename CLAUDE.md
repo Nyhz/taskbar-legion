@@ -3,6 +3,14 @@
 > **You are building v1: the complete single-player game, in the browser, 100% offline.**
 > No Tauri, no online/server, no transparency, no click-through. Those are v1.5 / v2 and are **out of scope**.
 
+> **★ REDESIGN IN PROGRESS (since 2026-11-14).** The current work is the full redesign of content and
+> presentation in `docs/redesign/` (REDESIGN.md → PLAN.md → PROGRESS.md; written in Spanish). Start at the
+> first unchecked item of `docs/redesign/PROGRESS.md`, not the v1 `docs/PLAN.md` (v1 is complete). Those
+> docs **supersede `docs/ART.md`, `docs/TALENTS.md` and SPEC's presentation sections**; sim/scaling/balance
+> docs stay authoritative unless a redesign doc explicitly overrides them. The asset pipeline is ported
+> (machinery only) from `~/dev/coop-game/tools/assets` — never its palette, fonts, art or class kits. All
+> player-facing text ships in English and Spanish (Spain).
+
 This file is your operating manual. Read it fully, then read `docs/PLAN.md` and start at the first
 unchecked phase in `docs/PROGRESS.md`. The full design is in `SPEC.md`; the `docs/` folder distills it into
 actionable rules.

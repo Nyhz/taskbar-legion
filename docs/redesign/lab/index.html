@@ -1,0 +1,445 @@
+<title>Taskbar Legion Lab</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a single review column in the game's own "dusk" palette — dark by design, because pixel art is judged on the dark strip it will live on. */
+:root {
+  --ground: #151a2b;
+  --panel: #1c2236;
+  --panel-2: #212a40;
+  --line: #303c55;
+  --text: #e6e6e8;
+  --muted: #97a1b3;
+  --peach: #ee9f72;
+  --gold: #ebb94f;
+  --rift: #a879c6;
+  --stage: #6a3559;
+  --f-display: "Pixelify Sans", "Courier New", monospace;
+  --f-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--ground);
+  color: var(--text);
+  font: 15px/1.6 var(--f-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 32px 64px;
+}
+.wrap { max-width: 1240px; margin: 0 auto; display: grid; gap: 56px; }
+.px { image-rendering: pixelated; image-rendering: crisp-edges; display: block; }
+h1, h2, h3 { font-family: var(--f-display); font-weight: 700; text-wrap: balance; margin: 0; letter-spacing: .01em; }
+h1 { font-size: clamp(30px, 5vw, 46px); line-height: 1.05; }
+h2 { font-size: 24px; }
+h3 { font-size: 19px; }
+p { margin: 0; max-width: 68ch; }
+.eyebrow { font: 500 12px/1 var(--f-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--peach); }
+.muted { color: var(--muted); }
+.mono { font-family: var(--f-mono); font-size: 13px; }
+header.top { display: grid; gap: 14px; }
+.status { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { font: 500 12px/1 var(--f-mono); padding: 7px 10px; border: 1px solid var(--line); background: var(--panel); color: var(--muted); }
+.chip.on { color: #1a1208; background: var(--gold); border-color: var(--gold); }
+.chip.wait { color: var(--peach); border-color: var(--peach); }
+section { display: grid; gap: 18px; }
+.sec-head { display: grid; gap: 6px; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.seg { display: inline-flex; border: 1px solid var(--line); }
+.seg button { font: 500 13px/1 var(--f-mono); color: var(--muted); background: var(--panel); border: 0; padding: 9px 14px; cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--panel-2); color: var(--text); box-shadow: inset 0 -2px 0 var(--peach); }
+.seg button.rift[aria-pressed="true"] { box-shadow: inset 0 -2px 0 var(--rift); }
+.seg button:focus-visible { outline: 2px solid var(--peach); outline-offset: -2px; }
+.viewport { overflow-x: auto; border: 1px solid var(--line); background: #0b0d17; }
+.viewport canvas { margin: 0 auto; }
+.heroes { display: grid; gap: 16px; }
+.hero { background: var(--panel); border: 1px solid var(--line); display: grid; grid-template-columns: minmax(0, 300px) minmax(0, 1fr); min-width: 0; }
+.hero .body { padding: 18px; display: grid; gap: 10px; align-content: start; border-right: 1px solid var(--line); min-width: 0; }
+.role { font: 500 12px/1 var(--f-mono); letter-spacing: .1em; text-transform: uppercase; }
+.role.tank { color: #82b0da; } .role.dps { color: #86ab5a; } .role.heal { color: var(--gold); }
+.hero ul { margin: 0; padding-left: 18px; color: var(--muted); font-size: 14px; display: grid; gap: 4px; }
+.clips { display: flex; flex-wrap: wrap; background: var(--stage); min-width: 0; }
+.clip { display: grid; justify-items: center; flex: 1 1 216px; }
+.clip img { width: 216px; max-width: 100%; height: auto; }
+.clip span { font: 500 11px/1 var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: #f8c48a; padding: 0 0 12px; }
+.how { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); }
+.how div { background: var(--panel); padding: 16px; display: grid; gap: 6px; align-content: start; }
+.how b { font: 700 17px/1.2 var(--f-display); color: var(--gold); }
+.how span { font-size: 14px; color: var(--muted); }
+.questions { display: grid; gap: 12px; counter-reset: q; }
+.q { background: var(--panel); border: 1px solid var(--line); padding: 14px 16px 14px 52px; position: relative; }
+.q::before { counter-increment: q; content: counter(q); position: absolute; left: 16px; top: 12px; font: 700 22px/1 var(--f-display); color: var(--peach); }
+.q b { display: block; margin-bottom: 2px; }
+.log { display: grid; border-left: 2px solid var(--line); }
+.entry { padding: 0 0 22px 20px; position: relative; display: grid; gap: 6px; }
+.entry::before { content: ""; position: absolute; left: -6px; top: 6px; width: 10px; height: 10px; background: var(--ground); border: 2px solid var(--peach); }
+.entry.next::before { border-color: var(--muted); border-style: dashed; }
+.entry time { font: 12px/1 var(--f-mono); color: var(--muted); }
+.entry ul { margin: 0; padding-left: 18px; color: var(--muted); font-size: 14px; display: grid; gap: 3px; }
+@media (max-width: 760px) {
+  .hero { grid-template-columns: 1fr; }
+  .hero .body { border-right: 0; border-bottom: 1px solid var(--line); }
+}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <span class="eyebrow">Taskbar Legion · rediseño</span>
+    <h1>Laboratorio de arte</h1>
+    <p class="muted">Aquí va apareciendo todo lo que se genera para el rediseño. Los personajes empiezan de cero: esqueletos nuevos y un motor de animación propio.</p>
+    <div class="status">
+      <span class="chip on">Fase: personajes cerrados; siguiente, enemigos</span>
+      <span class="chip wait">Pendiente: decidir el siguiente paso</span>
+      <span class="chip">Rama redesign/foundations</span>
+      <span class="chip">Actualizado 14 nov 2026</span>
+    </div>
+  </header>
+
+  <section id="live">
+    <div class="sec-head">
+      <span class="eyebrow">Mundo 1 · en movimiento</span>
+      <h2>La tira en vivo</h2>
+      <p class="muted">La tira del juego a su resolución real (600 × 160), dibujada en directo: el fondo se desplaza en siete capas de parallax y los tres héroes avanzan al trote, al mismo paso y cada uno con su zancada.</p>
+    </div>
+    <div class="toolbar">
+      <div class="seg" role="group" aria-label="Acción">
+        <button id="m-run" data-mode="run" aria-pressed="true">Correr</button>
+        <button id="m-idle" data-mode="idle" aria-pressed="false">Reposo</button>
+        <button id="m-attack" data-mode="attack" aria-pressed="false">Atacar</button>
+        <button id="m-skill" data-mode="skill" aria-pressed="false">Habilidad</button>
+        <button id="m-hurt" data-mode="hurt" aria-pressed="false">Golpe</button>
+        <button id="m-death" data-mode="death" aria-pressed="false">Muerte</button>
+      </div>
+      <div class="seg" role="group" aria-label="Dificultad">
+        <button id="g-normal" data-grade="normal" aria-pressed="true">Normal</button>
+        <button id="g-torment" class="rift" data-grade="torment" aria-pressed="false">Torment</button>
+      </div>
+      <div class="seg" role="group" aria-label="Zoom">
+        <button id="z1" data-zoom="1" aria-pressed="false">1×</button>
+        <button id="z2" data-zoom="2" aria-pressed="true">2×</button>
+        <button id="z3" data-zoom="3" aria-pressed="false">3×</button>
+      </div>
+    </div>
+    <div class="viewport">
+      <canvas id="strip" class="px" width="600" height="160" role="img" aria-label="La tira del mundo 1 con la Priest, el Ranger y el Knight corriendo hacia la derecha ante un atardecer con molinos."></canvas>
+    </div>
+  </section>
+
+  <section id="heroes">
+    <div class="sec-head">
+      <span class="eyebrow">Tres esqueletos, tres formas de moverse</span>
+      <h2>Héroes</h2>
+      <p class="muted">Diseño fijo, sin armaduras modulares. Unos 34 px de alto y proporciones compactas: piernas cortas (el 40 % de la altura) y cabeza grande. Cabezas, torsos y equipo están dibujados a mano; brazos, piernas y telas los mueve el motor.</p>
+    </div>
+    <div class="heroes">
+      <article class="hero">
+        <div class="body">
+          <span class="role tank">Tanque · pesado y deliberado</span>
+          <h3>Knight</h3>
+          <ul>
+            <li>Esqueleto robusto, de hombros anchos</li>
+            <li>Trota erguido, con la espada al frente en guardia y el escudo recogido</li>
+            <li>Ataque nuevo: carga el peso atrás y arma la espada sobre el hombro, se lanza en una estocada larga y descarga un tajo en media luna, aguanta el impacto y vuelve a la guardia</li>
+            <li>Tajo ascendente, bloqueo con el escudo (le hacen retroceder un paso) y grito de guerra</li>
+            <li>Derrota: retrocede dos pasos, cae sobre una rodilla clavando la espada en el suelo y queda vencido sobre ella, con la cabeza baja</li>
+          </ul>
+        </div>
+        <div class="clips">
+          <div class="clip"><img class="px" src="img/knight_idle.gif" width="216" height="204" alt="Knight: reposo."><span>Reposo</span></div>
+          <div class="clip"><img class="px" src="img/knight_run.gif" width="216" height="204" alt="Knight: correr."><span>Correr</span></div>
+          <div class="clip"><img class="px" src="img/knight_attack.gif" width="216" height="204" alt="Knight: tajo."><span>Tajo</span></div>
+          <div class="clip"><img class="px" src="img/knight_cleave.gif" width="216" height="204" alt="Knight: tajo ascendente."><span>Tajo ascendente</span></div>
+          <div class="clip"><img class="px" src="img/knight_block.gif" width="216" height="204" alt="Knight: bloqueo."><span>Bloqueo</span></div>
+          <div class="clip"><img class="px" src="img/knight_shout.gif" width="216" height="204" alt="Knight: grito de guerra."><span>Grito de guerra</span></div>
+          <div class="clip"><img class="px" src="img/knight_hurt.gif" width="216" height="204" alt="Knight: golpe recibido."><span>Golpe recibido</span></div>
+          <div class="clip"><img class="px" src="img/knight_death.gif" width="216" height="204" alt="Knight: muerte."><span>Muerte</span></div>
+        </div>
+      </article>
+      <article class="hero">
+        <div class="body">
+          <span class="role dps">Daño · ligero y rápido</span>
+          <h3>Ranger</h3>
+          <ul>
+            <li>Esqueleto esbelto, de piernas largas</li>
+            <li>Corre con zancada larga, el brazo libre bombeando y el arco bajo y firme</li>
+            <li>Ataque: alza el arco, monta la flecha, tensa echando el codo atrás y abriendo el pecho, apunta, suelta (la cuerda rebota y la mano sale despedida) y recupera</li>
+            <li>Lluvia de flechas apuntando al cielo y disparo rápido de dos flechas</li>
+            <li>Derrota: el golpe lo levanta del suelo y cae de espaldas; el arco sale volando y queda tumbado con una rodilla en alto</li>
+          </ul>
+        </div>
+        <div class="clips">
+          <div class="clip"><img class="px" src="img/ranger_idle.gif" width="216" height="204" alt="Ranger: reposo."><span>Reposo</span></div>
+          <div class="clip"><img class="px" src="img/ranger_run.gif" width="216" height="204" alt="Ranger: correr."><span>Correr</span></div>
+          <div class="clip"><img class="px" src="img/ranger_attack.gif" width="216" height="204" alt="Ranger: disparo apuntado."><span>Disparo apuntado</span></div>
+          <div class="clip"><img class="px" src="img/ranger_volley.gif" width="216" height="204" alt="Ranger: lluvia de flechas."><span>Lluvia de flechas</span></div>
+          <div class="clip"><img class="px" src="img/ranger_quick.gif" width="216" height="204" alt="Ranger: disparo rápido."><span>Disparo rápido</span></div>
+          <div class="clip"><img class="px" src="img/ranger_hurt.gif" width="216" height="204" alt="Ranger: golpe recibido."><span>Golpe recibido</span></div>
+          <div class="clip"><img class="px" src="img/ranger_death.gif" width="216" height="204" alt="Ranger: muerte."><span>Muerte</span></div>
+        </div>
+      </article>
+      <article class="hero">
+        <div class="body">
+          <span class="role heal">Sanadora · serena</span>
+          <h3>Priest</h3>
+          <ul>
+            <li>Sacerdotisa de silueta de reloj de arena: escote, pecho marcado, cintura ceñida con un fajín y caderas de las que nace la falda</li>
+            <li>Melena rubia larga hasta la cadera, con un mechón sobre el hombro y una cofia pequeña; es una tela simulada que ondea al correr</li>
+            <li>Corre con el bastón en alto, el libro en la otra mano y un contoneo de caderas</li>
+            <li>Curación: se recoge, se alza de puntillas con el bastón en alto y el farol estalla en luz; la túnica se levanta</li>
+            <li>Castigo: lanza el farol al frente con un rayo de luz</li>
+            <li>Derrota: se le cae el libro, se agarra al bastón y resbala por él hasta las rodillas; luego se desploma hacia delante y el farol se apaga</li>
+          </ul>
+        </div>
+        <div class="clips">
+          <div class="clip"><img class="px" src="img/priest_idle.gif" width="216" height="204" alt="Priest: reposo."><span>Reposo</span></div>
+          <div class="clip"><img class="px" src="img/priest_run.gif" width="216" height="204" alt="Priest: correr."><span>Correr</span></div>
+          <div class="clip"><img class="px" src="img/priest_attack.gif" width="216" height="204" alt="Priest: castigo."><span>Castigo</span></div>
+          <div class="clip"><img class="px" src="img/priest_cast.gif" width="216" height="204" alt="Priest: curación."><span>Curación</span></div>
+          <div class="clip"><img class="px" src="img/priest_hurt.gif" width="216" height="204" alt="Priest: golpe recibido."><span>Golpe recibido</span></div>
+          <div class="clip"><img class="px" src="img/priest_death.gif" width="216" height="204" alt="Priest: muerte."><span>Muerte</span></div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section id="how">
+    <div class="sec-head">
+      <span class="eyebrow">Por qué ya no anda como un robot</span>
+      <h2>Cómo se mueven</h2>
+    </div>
+    <div class="how">
+      <div><b>Carrera real</b><span>Cadera, rodilla y tobillo siguen las curvas de un trote humano, con su fase de vuelo: los dos pies en el aire entre zancada y zancada.</span></div>
+      <div><b>El peso manda</b><span>La pelvis sube y baja porque descansa en el pie que apoya; el talón pisa, la planta rueda y la punta empuja.</span></div>
+      <div><b>Arcos y ritmo</b><span>Las acciones se definen en ángulos de articulación, así que los miembros giran en arco, con anticipación, golpe rápido y asentamiento.</span></div>
+      <div><b>Telas con física</b><span>Capa, penacho, bufanda, túnica y farol son simulaciones: se retrasan, se pasan y se asientan sin que nadie los dibuje.</span></div>
+    </div>
+  </section>
+
+  <section id="questions">
+    <div class="sec-head">
+      <span class="eyebrow">Para decidir</span>
+      <h2>Lo que necesito de ti</h2>
+    </div>
+    <div class="questions">
+      <div class="q"><b>Proporciones</b><span class="muted">Piernas un 20 % más cortas, cabezas más grandes y miembros algo más gruesos. ¿Así, o todavía más compactos?</span></div>
+      <div class="q"><b>Derrotas</b><span class="muted">Las tres están rehechas, cada una con su final. ¿Ya funcionan?</span></div>
+      <div class="q"><b>¿Falta alguna?</b><span class="muted">Por ejemplo una victoria, una esquiva o más habilidades por clase.</span></div>
+      <div class="q"><b>Diseños</b><span class="muted">Knight con yelmo cerrado y sobreveste azul, Ranger encapuchado, Priest sacerdotisa con cofia y melena rubia. ¿Te encajan?</span></div>
+      <div class="q"><b>Tamaño</b><span class="muted">Unos 35 px de alto en la tira. ¿Así, o los quieres más grandes?</span></div>
+    </div>
+  </section>
+
+  <section id="log">
+    <div class="sec-head">
+      <span class="eyebrow">Registro</span>
+      <h2>Avance</h2>
+    </div>
+    <div class="log">
+      <div class="entry next">
+        <time>Siguiente</time>
+        <h3>Enemigos e integración</h3>
+        <ul>
+          <li>Enemigos del mundo 1 con el mismo motor</li>
+          <li>Atlas y manifiesto para Pixi; la tira real del juego</li>
+        </ul>
+      </div>
+      <div class="entry">
+        <time>14 nov 2026</time>
+        <h3>Caras: dos ojos, descartado; tres opciones a elegir</h3>
+        <ul>
+          <li>La cara de dos ojos miraba a cámara con el cuerpo de lado y parecía una careta: retirada</li>
+          <li>Vuelve la cara anterior (A); de las tres opciones propuestas, el usuario elige la A</li>
+        </ul>
+      </div>
+      <div class="entry">
+        <time>14 nov 2026</time>
+        <h3>Sacerdotisa, segunda versión</h3>
+        <ul>
+          <li>Más femenina: torso redibujado en reloj de arena, hombros más estrechos, caderas más anchas</li>
+          <li>Melena más larga, ancha y clara, con un mechón por delante; cofia más pequeña</li>
+          <li>El libro baja al costado para no tapar el torso</li>
+        </ul>
+      </div>
+      <div class="entry">
+        <time>14 nov 2026</time>
+        <h3>La Priest, sacerdotisa</h3>
+        <ul>
+          <li>Cabeza redibujada: cofia blanca con banda turquesa y melena rubia; sin barba</li>
+          <li>La melena es una cadena simulada, como la capa del Knight</li>
+        </ul>
+      </div>
+      <div class="entry">
+        <time>14 nov 2026</time>
+        <h3>Proporciones más compactas</h3>
+        <ul>
+          <li>Eran larguiruchos: piernas casi la mitad de la altura y cabeza pequeña</li>
+          <li>Piernas un 20 % más cortas, cabezas redibujadas más grandes, brazos algo más cortos, miembros un poco más gruesos</li>
+          <li>Todas las animaciones se reescalan con el esqueleto; el trote, resincronizado</li>
+        </ul>
+      </div>
+      <div class="entry">
+        <time>14 nov 2026</time>
+        <h3>Derrotas rehechas</h3>
+        <ul>
+          <li>Knight: cae sobre una rodilla con la espada clavada. Ranger: sale despedido y cae de espaldas, el arco vuela. Priest: resbala por el bastón hasta las rodillas y se desploma</li>
+          <li>El motor ya permite manos agarradas a un punto fijo, objetos que se sueltan y caen, y un giro de piezas más limpio</li>
+        </ul>
+      </div>
+      <div class="entry">
+        <time>14 nov 2026</time>
+        <h3>Juego completo de animaciones</h3>
+        <ul>
+          <li>Knight: tajo ascendente, bloqueo, grito de guerra, golpe recibido y muerte</li>
+          <li>Ranger: lluvia de flechas, disparo rápido, golpe recibido y muerte</li>
+          <li>Priest: castigo (ataque), curación, golpe recibido y muerte</li>
+          <li>El motor ya gira torso y cabeza de verdad para caídas y cuerpos tumbados</li>
+        </ul>
+      </div>
+      <div class="entry">
+        <time>14 nov 2026</time>
+        <h3>Trote, postura y ataque del Knight</h3>
+        <ul>
+          <li>El andar pasa a ser un trote con fase de vuelo, rodilla que se recoge y brazos que bombean</li>
+          <li>Los tres, más erguidos: menos inclinación, cuello visible y capas que no hacen joroba</li>
+          <li>Knight: espada al frente en guardia, y ataque rehecho con una espada mayor y una media luna limpia</li>
+        </ul>
+      </div>
+      <div class="entry">
+        <time>14 nov 2026</time>
+        <h3>Personajes desde cero, con motor de animación</h3>
+        <ul>
+          <li>Borrado todo el trabajo anterior de personajes</li>
+          <li>Motor nuevo (<span class="mono">tools/assets/pipeline/rig.py</span>): esqueleto con cinemática, curvas de marcha, poses por ángulos con ritmo y telas simuladas</li>
+          <li>Knight, Ranger y Priest, cada uno con su esqueleto y con reposo, andar y ataque propios</li>
+          <li>Tira en vivo con parallax en esta página</li>
+        </ul>
+      </div>
+      <div class="entry">
+        <time>14 nov 2026</time>
+        <h3>Intentos anteriores (descartados)</h3>
+        <ul>
+          <li>Figuras generadas con formas, de perfil y en tres cuartos: parecían Relica</li>
+          <li>Dibujo a mano de 54 px y de 36 px, y versión al estilo de Sanctum Pixel: planos, o con un andar de robot</li>
+          <li>Equipo modular: aparcado; los diseños son fijos</li>
+        </ul>
+      </div>
+      <div class="entry">
+        <time>14 nov 2026</time>
+        <h3>Plan y fondo</h3>
+        <ul>
+          <li>REDESIGN.md, PLAN.md y PROGRESS.md en <span class="mono">docs/redesign/</span></li>
+          <li>Paleta «dusk» y fondo del mundo 1 en 7 capas, Normal y Torment, con el tramado rebajado</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+(function () {
+  var ANIMS = {"knight": {"idle": {"ms": [170, 170, 170, 170, 170, 170, 170, 170, 170, 170, 170, 170], "loop": true}, "run": {"ms": [47, 47, 47, 47, 47, 47, 47, 47, 47, 47, 47, 47], "loop": true}, "attack": {"ms": [80, 70, 80, 130, 35, 50, 90, 110, 100, 90, 130], "loop": false}, "cleave": {"ms": [80, 70, 80, 120, 35, 50, 80, 110, 100, 90, 120], "loop": false}, "block": {"ms": [50, 50, 90, 60, 50, 80, 90, 90, 100], "loop": false}, "shout": {"ms": [70, 70, 90, 50, 50, 80, 90, 90, 110, 90, 100], "loop": false}, "hurt": {"ms": [40, 50, 90, 80, 80, 80], "loop": false}, "death": {"ms": [50, 40, 70, 70, 80, 80, 90, 70, 60, 70, 90, 120, 160, 1200], "loop": false}}, "ranger": {"idle": {"ms": [170, 170, 170, 170, 170, 170, 170, 170, 170, 170, 170, 170], "loop": true}, "run": {"ms": [59, 59, 59, 59, 59, 59, 59, 59, 59, 59, 59, 59], "loop": true}, "attack": {"ms": [90, 70, 70, 70, 80, 80, 90, 110, 140, 160, 50, 60, 80, 90, 120], "loop": false}, "volley": {"ms": [90, 70, 70, 70, 80, 80, 90, 110, 140, 160, 50, 60, 80, 90, 120], "loop": false}, "quick": {"ms": [60, 50, 50, 50, 60, 45, 50, 50, 50, 60, 45, 60, 70, 80, 100], "loop": false}, "hurt": {"ms": [40, 50, 90, 80, 80, 80], "loop": false}, "death": {"ms": [50, 40, 70, 60, 70, 60, 60, 45, 50, 60, 80, 80, 90, 140, 1200], "loop": false}}, "priest": {"idle": {"ms": [180, 180, 180, 180, 180, 180, 180, 180, 180, 180, 180, 180], "loop": true}, "run": {"ms": [42, 42, 42, 42, 42, 42, 42, 42, 42, 42, 42, 42], "loop": true}, "attack": {"ms": [80, 70, 90, 110, 40, 50, 80, 90, 70, 80, 90, 110], "loop": false}, "cast": {"ms": [100, 90, 110, 80, 80, 90, 110, 130, 70, 90, 90, 100, 100, 140], "loop": false}, "hurt": {"ms": [40, 50, 90, 80, 80, 80], "loop": false}, "death": {"ms": [50, 40, 70, 80, 90, 70, 60, 60, 80, 110, 160, 80, 60, 50, 60, 100, 1200], "loop": false}}};
+  var LAYERS = [["sky", 0], ["clouds", 0.05], ["far", 0.12], ["hills", 0.25], ["meadow", 0.45], ["ground", 1], ["fore", 1.35]];
+  var X = { priest: 196, ranger: 254, knight: 318 };
+  var SKILL = { knight: "cleave", ranger: "volley", priest: "cast" };
+  var FW = 96, FH = 70, ROOT = 40, SPEED = 48, GROUND = 64, PATH_Y = 123;
+  var ORDER = ["priest", "ranger", "knight"];
+  var canvas = document.getElementById("strip");
+  var ctx = canvas.getContext("2d");
+  ctx.imageSmoothingEnabled = false;
+  var state = { mode: "run", grade: "normal", zoom: 2 };
+  var userZoom = false;
+  var img = {};
+  function load(key, src) {
+    return new Promise(function (res) {
+      var i = new Image();
+      i.onload = function () { img[key] = i; res(); };
+      i.onerror = function () { res(); };
+      i.src = src;
+    });
+  }
+  var jobs = [];
+  ["normal", "torment"].forEach(function (g) {
+    LAYERS.forEach(function (l) { jobs.push(load(g + "_" + l[0], "img/" + g + "_" + l[0] + ".png")); });
+  });
+  ORDER.forEach(function (c) {
+    Object.keys(ANIMS[c]).forEach(function (a) { jobs.push(load(c + "_" + a, "img/" + c + "_" + a + ".png")); });
+  });
+
+  function sum(d) { var t = 0; for (var i = 0; i < d.length; i++) t += d[i]; return t; }
+  function frameOf(d, t) {
+    for (var i = 0; i < d.length; i++) { if (t < d[i]) return i; t -= d[i]; }
+    return d.length - 1;
+  }
+  function animFor(c) {
+    if (state.mode === "skill") return SKILL[c];
+    return state.mode;
+  }
+
+  var scroll = 0, last = null, clock = 0;
+  function draw(now) {
+    if (last === null) last = now;
+    var dt = Math.min(100, now - last);
+    last = now;
+    clock += dt;
+    if (state.mode === "run") scroll += SPEED * dt / 1000;
+    ctx.clearRect(0, 0, 600, 160);
+    LAYERS.forEach(function (l) {
+      if (l[0] === "fore") return;
+      var im = img[state.grade + "_" + l[0]];
+      if (!im) return;
+      var off = l[0] === "clouds" ? (scroll * l[1] + clock * 0.002) : scroll * l[1];
+      off = Math.floor(off % 600);
+      ctx.drawImage(im, -off, 0);
+      if (off > 0) ctx.drawImage(im, 600 - off, 0);
+    });
+    ORDER.forEach(function (c, k) {
+      var name = animFor(c), a = ANIMS[c][name], f;
+      if (a.loop) {
+        f = frameOf(a.ms, clock % sum(a.ms));
+      } else {
+        // One-shots play, then the hero idles a moment before the next; each class starts a beat apart.
+        var total = sum(a.ms), idle = ANIMS[c].idle, rest = name === "death" ? 0 : 900;
+        var tt = (clock + (2 - k) * 380) % (total + rest);
+        if (tt < total) { f = frameOf(a.ms, tt); } else { name = "idle"; f = frameOf(idle.ms, (tt - total) % sum(idle.ms)); }
+      }
+      var sheet = img[c + "_" + name];
+      ctx.fillStyle = "rgba(11,13,23,0.42)";
+      ctx.fillRect(X[c] - 9, PATH_Y, 18, 2);
+      ctx.fillRect(X[c] - 6, PATH_Y + 2, 12, 1);
+      if (sheet) ctx.drawImage(sheet, f * FW, 0, FW, FH, X[c] - ROOT, PATH_Y - GROUND, FW, FH);
+    });
+    var fore = img[state.grade + "_fore"];
+    if (fore) {
+      var fo = Math.floor((scroll * 1.35) % 600);
+      ctx.drawImage(fore, -fo, 0);
+      if (fo > 0) ctx.drawImage(fore, 600 - fo, 0);
+    }
+    requestAnimationFrame(draw);
+  }
+
+  function apply() {
+    canvas.style.width = (600 * state.zoom) + "px";
+    canvas.style.height = (160 * state.zoom) + "px";
+    ["mode", "grade", "zoom"].forEach(function (key) {
+      document.querySelectorAll("[data-" + key + "]").forEach(function (b) {
+        b.setAttribute("aria-pressed", String(String(b.dataset[key]) === String(state[key])));
+      });
+    });
+  }
+  function fit() {
+    if (userZoom) return;
+    state.zoom = Math.max(1, Math.min(3, Math.floor(canvas.parentElement.clientWidth / 600)));
+    apply();
+  }
+  document.querySelectorAll("[data-mode]").forEach(function (b) { b.addEventListener("click", function () { state.mode = b.dataset.mode; clock = 0; apply(); }); });
+  document.querySelectorAll("[data-grade]").forEach(function (b) { b.addEventListener("click", function () { state.grade = b.dataset.grade; apply(); }); });
+  document.querySelectorAll("[data-zoom]").forEach(function (b) { b.addEventListener("click", function () { userZoom = true; state.zoom = Number(b.dataset.zoom); apply(); }); });
+  window.addEventListener("resize", fit);
+  fit();
+  Promise.all(jobs).then(function () { requestAnimationFrame(draw); });
+})();
+</script>
