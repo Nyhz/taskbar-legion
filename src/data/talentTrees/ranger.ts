@@ -34,7 +34,7 @@ export const RANGER_TREE: ClassTreeSpec = {
         [
           modifier('ranger_mod_heartseeker', 'Heartseeker', 'Aimed Shot always crits.', 'ranger_aimedshot',
             { patch: { power: { alwaysCrit: true } } }),
-          modifier('ranger_mod_focused_fire', 'Focused Fire', 'Rapid Fire also gives +20 crit damage.', 'ranger_fast_fire',
+          modifier('ranger_mod_focused_fire', 'Focused Fire', 'Rapid Fire also gives +20% crit damage.', 'ranger_fast_fire',
             { patch: { addApplies: [{ effectKey: 'buff_focused_fire' }] } }),
         ],
         [stat('ranger_marksman_t7_critDamage', 'critDamage', 4), stat('ranger_marksman_t7_attackDamage', 'attackDamage', 3)],

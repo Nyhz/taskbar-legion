@@ -620,3 +620,23 @@ conservadora, marcada como provisional; si salta el límite de uso, dejar anotad
       - Sin ver: tooltips bajo puntero real en captura (solo 2 de 8 intentos), reglas del Ranger y la Priest por la
         tienda (solo abiertos y leídos), Réplica y varias definitivas en la tira, nada en Tauri. Las auras de grupo
         no salen aún en las cifras del héroe ni de la hoja. Queda sin uso `TARGET_LABEL` en `data/abilities.ts`.
+- [x] **Cierre de flecos tras la noche (2026-11-15, mañana)** — hecho en copias aisladas y reunido en la rama
+      `wip/integration`; entra en `redesign/foundations` cuando el usuario termine de probar.
+      - Clases: las reglas del árbol comprobadas para las tres clases en el juego y en tests
+        (`test/state/talentsAllClasses.test.ts`); cambiar de clase devuelve los puntos; el saneado de partidas
+        viejas recupera una habilidad recortada si otra cae después. Las cifras del héroe, la hoja, los tooltips
+        y la comparación de la bolsa salen de `sim/partyStats.ts`, lo mismo que usa el motor (`game/engine.ts`
+        ya no tiene copia propia), con las auras de grupo y quién las da en el tooltip de la hoja.
+      - Tira: los jefes anchos se dibujan detrás de su punto de contacto (`figureData` + test `frontSetback`);
+        el número de daño de una habilidad corta espera a su golpe (`render/delayed.ts`); Enfurecimiento detrás
+        del cuerpo; destello de golpe más breve; la retícula de la Marca sigue a su portador. Vistos por primera
+        vez: Réplica, flecha explosiva, Campo de muerte, Marca sobre jefe, Última resistencia, rayos/ojos/pulso
+        de Tormento, aviso de "sin llave".
+      - Kit: `Pager`, `Segment`, `Switch`, `SlimKey`, `Veil`, `Node` de rol, `tk-big`, `tk-niche` pasan al kit
+        y los paneles los usan; `global.css` de 275 a 100 líneas; fuera `tierStyle.ts`, `TARGET_LABEL`,
+        `frostPool`. Test nuevo `test/ui/styleSheets.test.ts` (clases sin uso, hojas sin importar). Capturas de
+        antes y después idénticas (36 de 36 escenas; en la ventana del héroe solo cambia el fotograma del idle).
+      - Flojo: el ataque del Wyrm lanza la cabeza sobre el Knight; clips largos (arco, conjuro) muestran el número
+        al lanzar; Vigilia no sale en la hoja; el paginador de la bolsa con el `Pager` del kit no se ha visto en
+        captura (solo hay una página en la partida de prueba); los velos y el diálogo de engarce, comparados por
+        estilo calculado, no en captura.

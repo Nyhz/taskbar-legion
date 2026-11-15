@@ -140,8 +140,8 @@
     "es": "Fuego concentrado"
   },
   "ranger_mod_focused_fire.desc": {
-    "en": "Rapid Fire also gives +20 crit damage.",
-    "es": "Fuego rápido da además +20 de daño crítico."
+    "en": "Rapid Fire also gives +20% crit damage.",
+    "es": "Fuego rápido da además +20 % de daño crítico."
   },
   "ranger_mod_scorched_earth.name": {
     "en": "Scorched Earth",

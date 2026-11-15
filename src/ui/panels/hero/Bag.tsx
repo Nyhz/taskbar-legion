@@ -10,7 +10,7 @@ import { SLOT_KEYS, slotFamily, type SlotKey } from '@/data/itemSlots';
 import { INVENTORY_BASE, INVENTORY_MAX_SLOTS, inventorySlotCost } from '@/data/inventory';
 import { slotLabel, useT } from '@/i18n';
 import { useContextMenu } from '@/ui/components/ContextMenu';
-import { Chip, Head, Sign, Slot, SlotGrid, Tip, TipLine, TipTag, TipText, TipTitle, TipWarn } from '@/ui/kit';
+import { Chip, Head, Pager, Sign, Slot, SlotGrid, Tip, TipLine, TipTag, TipText, TipTitle, TipWarn } from '@/ui/kit';
 import { usePanelSpace } from '../panelSpace';
 import { BAG_COLS, bagRows } from './heroLayout';
 import { ItemCell } from '@/ui/panels/items/ItemCell';
@@ -161,20 +161,14 @@ export function Bag({
         </span>
         <div className="end">
           {pages > 1 && (
-            <div className="tk-hero-pages">
-              {Array.from({ length: pages }, (_, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  className={i === shown ? 'on' : undefined}
-                  aria-label={t('hero.bagPage', { n: i + 1 })}
-                  aria-pressed={i === shown}
-                  onClick={() => setPage(i)}
-                >
-                  {i + 1}
-                </button>
-              ))}
-            </div>
+            <Pager
+              className="tk-hero-pages"
+              page={shown + 1}
+              pages={pages}
+              listed={pages}
+              onPage={(n) => setPage(n - 1)}
+              pageLabel={(n) => t('hero.bagPage', { n })}
+            />
           )}
           <Chip
             sign="btn_sort"

@@ -6,7 +6,7 @@
 /* The doll block, 128 tall: five slots, the hero in the niche, five slots, the side block. */
 .tk-hero-doll { display: grid; grid-template-columns: 24px 100px 24px 1fr; gap: 0 4px; height: 128px; }
 .tk-hero-col { display: grid; gap: 2px; align-content: start; }
-.tk-hero-niche { position: relative; width: 100px; height: 116px; margin-top: 8px; background: url('../../../assets/ui/ui_alcove.png'); }
+.tk-hero-niche { margin-top: 8px; } /* the kit's niche (tk-niche) */
 .tk-hero-fig { position: absolute; left: 6px; right: 6px; top: 6px; bottom: 15px; overflow: hidden; display: flex; align-items: flex-end; justify-content: center; }
 .tk-hero-lvl { position: absolute; left: 50%; top: -3px; transform: translateX(-50%); z-index: 1; min-width: 19px; height: 14px; padding: 0 4px; text-align: center; line-height: 11px; color: var(--gold-dk); }
 .tk-hero-lvl::before { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(var(--gold-hi) 0 1px, var(--gold) 1px 9px, var(--gold-dim) 9px); /* a pennant, on its own layer so the tooltip is not clipped */
@@ -20,7 +20,7 @@
 /* The kit row, 30 tall: the ultimate and the two abilities, the average item level, the two presets. */
 .tk-hero-kit { display: flex; align-items: center; gap: 4px; height: 30px; margin-top: 4px; }
 .tk-hero-kit > .tk-node.ult { margin-right: 2px; }
-.tk-hero-power { position: relative; display: flex; align-items: center; gap: 4px; margin: 0 auto; font: 20px/20px var(--f-big); color: var(--gold-hi); text-shadow: 1px 1px 0 var(--k0); }
+.tk-hero-power { position: relative; display: flex; align-items: center; gap: 4px; margin: 0 auto; } /* lettering: tk-big */
 .tk-hero-power .tk-tip { text-shadow: none; }
 .tk-hero-pre { display: flex; gap: 3px; }
 .tk-hero-pre > .empty > img { opacity: .4; }
@@ -30,9 +30,7 @@
 .tk-hero-bag > .tk-head { height: 18px; margin-top: 0; }
 .tk-hero-bag > .tk-head > .end { padding-right: 0; }
 .tk-hero-bag .tk-grid { margin-top: 3px; }
-.tk-hero-pages { display: flex; align-items: center; gap: 3px; margin-right: 4px; color: var(--k6); }
-.tk-hero-pages > button { min-width: 9px; height: 12px; line-height: 12px; text-align: center; }
-.tk-hero-pages > button.on { color: var(--gold-hi); box-shadow: inset 0 -1px 0 var(--gold); }
+.tk-hero-pages { margin-right: 4px; } /* the kit's Pager, set off from the keys after it */
 
 /* Drop zones: the one under the pointer lights up while it would take what is in the hand. */
 .tk-hero-drop { position: relative; }

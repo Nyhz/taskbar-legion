@@ -47,7 +47,7 @@ export function PaperDoll({
   return (
     <div className="tk-hero-doll">
       <div className="tk-hero-col">{LEFT_SLOTS.map((key) => slot(key, 'right'))}</div>
-      <div className="tk-hero-niche">
+      <div className="tk-niche tk-hero-niche">
         <div className="tk-hero-lvl has">
           {hero.level}
           <Tip side="right">

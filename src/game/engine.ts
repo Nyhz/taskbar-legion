@@ -1,5 +1,6 @@
 import { Simulation, createWorld, TICK_MS, type TickContext } from '@/sim/Simulation';
-import { buildHeroCombatant, refreshHeroLoadout, partyAuraMods, heroAbilities, MAX_ACTIVE_ABILITIES, type HeroConfig } from '@/sim/loadout';
+import { buildHeroCombatant, refreshHeroLoadout } from '@/sim/loadout';
+import { heroConfig, partyCombatMods } from '@/sim/partyStats';
 import { getBonuses, type Bonuses } from '@/sim/bonuses';
 import { openType, autoOpenIntervalMs } from '@/sim/chests';
 import { countFilled } from '@/sim/slots';
@@ -12,7 +13,6 @@ import { CHEST_CONFIG, type ChestType } from '@/data/chests';
 import { worldOf, stageInWorld } from '@/data/stageScaling';
 import { HERO_SPACING } from '@/data/field';
 import { useStore } from '@/state/store';
-import type { HeroState } from '@/persistence/saveSchema';
 import { t } from '@/i18n';
 import { KIT_TOKENS } from '@/ui/kit/tokens';
 import { encodeLootLine } from '@/ui/loot/lootLine';
@@ -38,8 +38,8 @@ export class GameEngine {
     // forward instead of replaying); each open derives its rng from (seed, drawIndex).
     this.lootDraws = st.lootDrawCount;
     this.bonuses = getBonuses(st.techRanks, st.ownedPets);
-    const combatMods = [...this.bonuses.combatMods, ...partyAuraMods(st.roster.map(toConfig))];
-    const heroes = st.roster.map((h) => buildHeroCombatant(toConfig(h), combatMods));
+    const combatMods = partyCombatMods(st.roster, this.bonuses.combatMods); // the same mods the interface shows (sim/partyStats)
+    const heroes = st.roster.map((h) => buildHeroCombatant(heroConfig(h), combatMods));
     const world = createWorld(st.seed, heroes);
     // Resume from a loaded save: restore stage + chest stacks.
     world.globalStageIndex = Math.max(1, st.resumeStage);
@@ -190,13 +190,13 @@ export class GameEngine {
     if (st.configEpoch === this.appliedEpoch) return;
     this.appliedEpoch = st.configEpoch;
     this.bonuses = getBonuses(st.techRanks, st.ownedPets);
-    const combatMods = [...this.bonuses.combatMods, ...partyAuraMods(st.roster.map(toConfig))];
+    const combatMods = partyCombatMods(st.roster, this.bonuses.combatMods); // the same mods the interface shows (sim/partyStats)
     const world = this.sim.world;
     const byId = new Map(world.heroes.map((h) => [h.id, h]));
     world.heroes = st.roster.map((h, i) => {
       const existing = byId.get(h.id);
       if (existing !== undefined) {
-        refreshHeroLoadout(existing, toConfig(h), combatMods);
+        refreshHeroLoadout(existing, heroConfig(h), combatMods);
         // Rescue a hero that's stranded far behind the party (e.g. recruited before
         // this fix) — snap it back into formation rather than make it walk the map.
         if (existing.alive && existing.x < world.partyX - 300) existing.x = world.partyX;
@@ -206,7 +206,7 @@ export class GameEngine {
       // (partyX - i·HERO_SPACING), not onto the lead anchor — so it materialises in place
       // (the render layer plays the respawn teleport-in) instead of stacking on the tank
       // and walking back into line.
-      const fresh = buildHeroCombatant(toConfig(h), combatMods);
+      const fresh = buildHeroCombatant(heroConfig(h), combatMods);
       fresh.x = world.partyX - i * HERO_SPACING;
       return fresh;
     });
@@ -238,12 +238,4 @@ export class GameEngine {
       zoneKeysHeld: useStore.getState().zoneKeysFor(w.globalStageIndex),
     });
   }
-}
-
-function toConfig(h: HeroState): HeroConfig {
-  // The hero's ranked ability nodes ARE its active loadout — there's no separate selection.
-  // Derive the active keys straight from the ranked pool (capped at MAX_ACTIVE_ABILITIES,
-  // which the talent-tree gate enforces; sliced here too so legacy saves can't exceed it).
-  const activeAbilities = heroAbilities(h.classKey, h.talents).slice(0, MAX_ACTIVE_ABILITIES).map((a) => a.def.key);
-  return { id: h.id, classKey: h.classKey, level: h.level, equipment: h.equipment, talents: h.talents, activeAbilities };
 }

@@ -21,7 +21,7 @@ export function ItemLevel({ heroId }: { heroId: string }): React.JSX.Element | n
   const avg = averageItemLevel(hero.equipment);
   const quality = gearQuality(avg, stage);
   return (
-    <div className="tk-hero-power has">
+    <div className="tk-big tk-hero-power has">
       <Sign name="ui_power" alt={t('hero.itemLevel')} />
       {avg.toFixed(1)}
       <Sign name={QUALITY_SIGN[quality]} />
