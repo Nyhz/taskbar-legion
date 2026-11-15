@@ -53,7 +53,8 @@ export function Bag({
   // Under the doll: eleven cells across (the window's width) and as many rows as fit above the strip.
   const { availArtHeight } = usePanelSpace();
   const COLS = BAG_COLS;
-  const PAGE = COLS * bagRows(availArtHeight);
+  const ROWS = bagRows(availArtHeight);
+  const PAGE = COLS * ROWS;
 
   const equipped = hero?.equipment ?? {};
   const filled = countFilled(inventory);
@@ -153,7 +154,9 @@ export function Bag({
   };
 
   return (
-    <div className="tk-hero-bag">
+    // With pages, every page is as tall as a full one: a short last page would shrink the window and pull the
+    // page keys from under the pointer.
+    <div className="tk-hero-bag" style={{ '--rows': pages > 1 ? ROWS : 0 } as React.CSSProperties}>
       <Head>
         <Sign name="bag_pack" alt={t('hero.bag')} />
         <span className={full ? 'note bad' : 'note'} style={{ paddingTop: 1 }}>

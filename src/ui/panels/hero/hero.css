@@ -29,7 +29,7 @@
 .tk-hero-bag { margin-top: 4px; }
 .tk-hero-bag > .tk-head { height: 18px; margin-top: 0; }
 .tk-hero-bag > .tk-head > .end { padding-right: 0; }
-.tk-hero-bag .tk-grid { margin-top: 3px; }
+.tk-hero-bag .tk-grid { margin-top: 3px; min-height: calc(var(--rows, 0) * 26px - 2px); align-content: start; }
 .tk-hero-pages { margin-right: 4px; } /* the kit's Pager, set off from the keys after it */
 
 /* Drop zones: the one under the pointer lights up while it would take what is in the hand. */
