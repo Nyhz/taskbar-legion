@@ -36,7 +36,8 @@ how it's drawn or stored. Everything else follows from protecting that boundary.
   Zustand, or anything DOM/browser-specific.
 - `state/` imports: `sim/`, `data/`, `persistence/`. It's the bridge: it calls the sim and stores results.
 - `game/` (Pixi) imports: `state/`, `sim/` (read-only), `data/`. It renders; it never owns game logic.
-- `ui/` (React) imports: `state/`, `sim/` (read-only selectors), `data/`. It renders + dispatches intents.
+- `ui/` (React) imports: `state/`, `sim/` (read-only selectors), `data/`, `i18n/`. It renders + dispatches intents.
+- `i18n/` imports: `data/` and React only. `game/` and `ui/` ask it for every visible word.
 - `persistence/` imports: `data/`, `sim/` (types), the save schema. It serializes `state` ↔ `SaveV1`.
 - `platform/` : runtime/OS adapters, all gated behind `isTauri()` and dynamically importing `@tauri-apps/*`
   so the dev bundle + tests stay Tauri-free. Holds `storage.ts` (save backend), `desktopOverlay.ts`
@@ -62,10 +63,38 @@ error tells you `sim/` can't import React/Pixi/state — **the fix is to restruc
 | `sim/` | World state + all game rules as pure functions of state + seeded RNG. | Import render/UI/state/Pixi/React; use `Math.random`/`Date.now`. |
 | `state/` | Zustand store mirroring `SaveV1`; calls sim, applies results immutably. | Contain combat/loot math (that's `sim/`). |
 | `game/` | Pixi `Application`, sprites, the render loop, camera, floating text. | Mutate sim state; hold authoritative numbers. |
-| `ui/` | React panels, HUD, components, tooltips, the icon-bar launcher. | Hold game logic; compute balance numbers. |
+| `ui/` | React panels, HUD, components, tooltips, the interface kit (`ui/kit`). | Hold game logic; compute balance numbers. |
 | `persistence/` | `SaveV1` schema, serialize/deserialize, IndexedDB, migrations. | Know about rendering. |
 | `platform/` | v1: `surfaces.ts` interactive-region registry (tag only). | Build hit-test/click-through/transparency in v1. |
 | `app/` | Top-level layout (`App`, `PanelLayer`) and wiring/bootstrap. | Hold domain logic. |
+| `i18n/` | The interface's texts in English and Spanish, and the accessors that translate names coming from `data/`. | Import `game/`, `ui/`, `state/`, `app/`, `sim/`, Pixi or Zustand (lint-enforced). |
+
+### Since the redesign (2026-11)
+
+The redesign (`docs/redesign/`) rebuilt presentation on top of the same boundary. Where things live now:
+
+- **`ui/kit/`** — the interface kit: `KitRoot`, `Window`, `Bookmarks`, `Slot`, `Key`, the `Tip` family, `Sign`,
+  `art(name)`… with the `tk-` CSS prefix and the bundled pixel fonts. Every panel is built from it; a dev
+  gallery lives at `/#kit`. Interface art is exported by the asset pipeline into `src/assets/ui`.
+- **`ui/panels/`** — the hero window (fixed, centred) and the wings glued to its edges, one per side
+  (`app/PanelLayer.tsx`, `app/kitPanels.tsx`, `state/slices/uiSlice.ts`). Sizes are art pixels in
+  `ui/panels/panelLayout.ts`; `state/pixelScale.ts` picks a whole-pixel scale per screen (`TARGET_SCREENS`).
+  Layout maths lives in pure `*Layout.ts` modules so tests never import React.
+- **`i18n/`** — catalogues `i18n/{en,es}/<namespace>.ts` (keys used literally in code; tests fail on unused or
+  missing keys) and `i18n/names.ts` for names that come from data, through the dictionaries of
+  `data/i18n/es/*.json`. `data/` keeps writing English. `sim/` never words a sentence: it returns facts
+  (`sim/talentFacts.ts`, `sim/abilityFacts.ts`) and the interface writes them (`docs/redesign/I18N.md`).
+- **`game/render/`** — the strip draws the pipeline's art: layered backdrops with atmosphere
+  (`StripBackdrop`, `StripAtmosphere`, data in `src/assets/strip/backdrops.json`), figures from atlases
+  (`FigureBody`, `figureClip`, `heroClips`, `src/assets/strip/figs/`), creatures chosen per world from
+  `data/worlds.ts`. Lettering inside the strip uses the kit's fonts (`kitFont.ts`) and i18n.
+- **Classes** — talent trees are data (`data/talentSpec.ts`, `data/talentTrees/*`), their rules are
+  `sim/talentRules.ts` (`canSpend` returns the reason a point is refused; the store and the interface both
+  ask it), ability modifiers are patches (`sim/abilityPatch.ts`), reactive talents are generic triggers
+  (`sim/triggers.ts`). Old saves load through `persistence/sanitizeHero.ts`.
+- **`tools/assets/`** — the asset pipeline (Python/Pillow; `sh tools/assets/run.sh <cmd>`): `icons`,
+  `export-ui`, `export-strip`, `export-figs`, `lab`. Its `out/` folder is git-ignored; what the game uses is
+  exported into `src/assets/`.
 
 ## Data flow examples
 

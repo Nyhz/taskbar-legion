@@ -111,6 +111,30 @@ Every phase ends with a visual gate (PLAN.md). To verify:
    if a headless browser (Playwright/Puppeteer) is available, script a screenshot to `scripts/`.
 4. Note the result in `PROGRESS.md`.
 
+### Scripted captures (`scripts/shot-app.mjs`)
+
+Drives the running dev server in headless Chromium and writes a PNG. Console errors and page exceptions are
+printed, so a capture run is also a smoke test.
+
+```sh
+npx vite --port 5199 --strictPort &        # restart it before a batch: hot reload breaks scripted steps
+node scripts/shot-app.mjs out.png --url http://localhost:5199/ --size 1512x918 --scale 2 --wait 6000 \
+  --step "[...document.querySelectorAll('button')].find(b=>/Start|Continue/.test(b.textContent))?.click(); 'ok'" \
+  --step "$(cat scripts/dev-seed.js)" \
+  --step "import('/src/i18n/index.ts').then(m => m.setLanguage('es'))" \
+  --step "(() => { const s = window.__tlStore.getState(); s.openPanel('party'); s.openPanel('stash'); return 'ok'; })()" \
+  --pause 2000 [--clip x,y,w,h]
+```
+
+- Each `--step` is JavaScript evaluated in the page, in order, with `--pause` ms after each; `mouse:move:x,y`,
+  `mouse:click:x,y` and `mouse:right:x,y` drive a real pointer (CSS px).
+- `window.__tlStore` is the live store (dev only); the engine is
+  `import('/src/game/engineRef.ts').then(m => m.getEngine())` (`e.sim.world`). `scripts/dev-seed.js` seeds a
+  two-hero party with gear, a bag and a stash.
+- The four target screens as headless viewports: `1512x918 --scale 2` (MacBook Pro), `1920x1016`, `1280x656`,
+  `2560x1376` (each minus the OS chrome). Run it from bash: zsh does not word-split `$var`.
+- Tooltips under a scripted pointer do not always make it into the frame; read their text from the page instead.
+
 ## A good habit: a sim smoke harness
 
 Add `scripts/sim-smoke.ts` (or a `describe('smoke')` test) that runs the Simulation for ~100 stages and

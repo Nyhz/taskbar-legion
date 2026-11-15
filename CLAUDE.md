@@ -117,7 +117,14 @@ docs/
   TESTING.md             ← test strategy, the mandatory test list, how to screenshot
   ART.md                 ← the procedural pixel-art approach (no external assets) + palette
   BALANCE.md             ← every `tune` value resolved into concrete starting numbers
-src/                     ← the game (structure mirrors SPEC §2; see ARCHITECTURE.md)
+  redesign/              ← THE CURRENT WORK (Spanish): REDESIGN.md → PLAN.md → PROGRESS.md (living log),
+                           CLASSES.md (class redesign), I18N.md (languages + glossary), mockups/, lab/
+src/                     ← the game (structure mirrors SPEC §2; see ARCHITECTURE.md § "Since the redesign")
+  ui/kit/                ← the interface kit every panel is built from (`tk-` prefix; gallery at /#kit)
+  i18n/                  ← texts in English and Spanish; names from data via data/i18n/es/*.json
+  assets/ui, assets/strip← art exported by the pipeline (never hand-edited)
+tools/assets/            ← the asset pipeline (Python/Pillow): `sh tools/assets/run.sh icons|export-ui|export-strip|export-figs|lab`
+scripts/shot-app.mjs     ← headless capture of the running game (see docs/TESTING.md); scripts/dev-seed.js seeds a party
 test/                    ← vitest specs (sim/ first; never import Pixi/React)
 ```
 
@@ -158,7 +165,11 @@ mid-build unless a decision is irreversible or contradicts the spec.
 - Pure functions in `sim/`. Immutable updates in `state/` (Zustand slices). Side effects live at the edges.
 - One concept per file. Soft cap ~200 lines; if a file sprawls, split it.
 - Name by domain (`generateItem`, `aggregateStats`, `tierBias`), not by pattern (`Helper`, `Manager`).
-- All UI strings in English. Pixel-art aesthetic; `image-rendering: pixelated` everywhere.
+- Every player-facing word goes through `@/i18n` in English AND Spanish (Spain) — never a literal string in a
+  component or in the strip; `sim/` returns facts, the interface words them. Pixel-art aesthetic;
+  `image-rendering: pixelated` everywhere; signs over words, words in tooltips.
+- The game must fit 1280×720, 1920×1080, 2560×1440 and the MacBook Pro M4 at a whole-pixel scale
+  (`src/state/pixelScale.ts`); panel sizes are art pixels in `src/ui/panels/panelLayout.ts`.
 
 ---
 
