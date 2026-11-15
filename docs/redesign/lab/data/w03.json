@@ -83,6 +83,26 @@
         "hurt": "Golpe recibido",
         "death": "Muerte"
       }
+    },
+    {
+      "key": "drownedmoon",
+      "kind": "worldboss",
+      "name_es": "La Luna Ahogada",
+      "name_en": "The Drowned Moon",
+      "role_es": "Jefe de mundo",
+      "bullets_es": [
+        "Una medusa pálida del ancho de una casa, colgada sobre la pasarela como la luna caída: campana gris con mares lunares y una luz verde fría dentro",
+        "De su cortina de cintas cuelgan ahogados del tamaño de un héroe (un pescador, un soldado, una mujer por un tobillo); del borde, un tallo sostiene un farolillo como los del pueblo: así pesca",
+        "Ataque: se alza y vuelve la parte de abajo hacia la presa; es una boca, tres anillos de colmillos alrededor de una garganta que brilla, carga y escupe un rayo sobre las tablas",
+        "Muerte: se abre una última vez, se rasga, el agua se le escapa y se hunde en una lámina sobre las tablas mientras suben nueve luces; el farolillo queda encendido sobre el montón y es lo último en apagarse"
+      ],
+      "anims_es": {
+        "idle": "Reposo",
+        "run": "Avanzar",
+        "attack": "Rayo",
+        "hurt": "Golpe recibido",
+        "death": "Muerte"
+      }
     }
   ]
 }

@@ -84,6 +84,29 @@
         "hurt": "Golpe recibido",
         "death": "Muerte"
       }
+    },
+    {
+      "key": "crowmother",
+      "kind": "worldboss",
+      "name_es": "La Madre de los Cuervos",
+      "name_en": "The Crowmother",
+      "role_es": "Jefe de mundo",
+      "bullets_es": [
+        "Aquello para lo que se levantaron los espantapájaros: un ave carroñera tan alta como la tira, erguida como una reina con manto. Plumas negras con brillo azul, dos patas escamosas con garras pálidas, un collar de púas blancas y, por única cara, una calavera de pájaro con un pico tan largo como un héroe y un ascua en la cuenca. Lleva una corona de hojas de hoz y la rodean unos pocos cuervos",
+        "Lo que esconde: el envés de sus alas está lleno de ojos. En reposo se abre alguno entre las plumas; cuando las despliega se abren todos",
+        "Anda como una garza: el cuerpo se mece sobre las patas mientras la cabeza se queda quieta y luego salta hacia delante",
+        "Picotazo: se agacha, echa la cabeza atrás y abre las dos alas con todos los ojos abiertos; aguanta un instante y descarga el pico como una piqueta sobre quien tenga a los pies, con todo el cuerpo. El suelo revienta en tierra, plumas y cuervos que salen disparados por el camino",
+        "Al recibir un golpe la cabeza le da un latigazo, las alas saltan a medio abrir y vuelan plumas",
+        "Muerte: grita con la cabeza atrás, el ascua se apaga y el cuerpo deja de serlo: son cuervos que se van en todas direcciones mientras el manto se hunde. La calavera cae sobre el montón de plumas y un cuervo vuelve a posarse en ella",
+        "Fotograma propio de 248 × 129; de pie mide unos 115 px"
+      ],
+      "anims_es": {
+        "idle": "Reposo",
+        "run": "Acechar",
+        "attack": "Picotazo",
+        "hurt": "Golpe recibido",
+        "death": "Muerte"
+      }
     }
   ]
 }

@@ -83,6 +83,26 @@
         "hurt": "Golpe recibido",
         "death": "Muerte"
       }
+    },
+    {
+      "key": "abbot",
+      "kind": "worldboss",
+      "name_es": "El Abad Dorado",
+      "name_en": "The Gilded Abbot",
+      "role_es": "Jefe de mundo",
+      "bullets_es": [
+        "El santo del monasterio que se sentó a morir y no murió: un gigante en loto que flota un palmo sobre el camino, dorado como una estatua de templo, con el pan de oro desprendiéndose de un cadáver seco",
+        "Máscara de calavera de oro con un punto de fuego en cada cuenca, gorro amarillo puntiagudo, una aureola dorada detrás de la cabeza, un rosario de calaveras y banderas de oración; una mano alzada con la palma abierta, la otra con las uñas en el suelo",
+        "Ataque: la aureola prende, se echa atrás con la mano en alto y cae hacia delante tras la palma; un muro de nieve, un destello y un anillo de luz dorada revientan a lo largo del camino",
+        "Muerte: el fuego se apaga, la aureola se rompe, cae al camino y se sienta; el oro lo abandona en motas mientras cara y brazos se vuelven cuero oscuro, y la nieve se posa sobre él"
+      ],
+      "anims_es": {
+        "idle": "Reposo",
+        "run": "Avanzar",
+        "attack": "Palma",
+        "hurt": "Golpe recibido",
+        "death": "Muerte"
+      }
     }
   ]
 }

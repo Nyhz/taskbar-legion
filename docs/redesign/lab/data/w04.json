@@ -83,6 +83,26 @@
         "hurt": "Golpe recibido",
         "death": "Muerte"
       }
+    },
+    {
+      "key": "scapegoat",
+      "kind": "worldboss",
+      "name_es": "El Chivo Expiatorio",
+      "name_en": "The Scapegoat",
+      "role_es": "Jefe de mundo",
+      "bullets_es": [
+        "La bestia que la gente del cañón cargó con sus pecados y echó al desierto, de vuelta con el tamaño de una casa: un carnero jorobado bajo un manto de lana sucia con el bajo teñido de rojo y huellas de manos rojas",
+        "Cara negra y larga con una fila de dientes planos, cuatro cuernos, un ojo frío de pupila rajada y tres estacas con banderolas clavadas en el lomo; bajo el manto camina también sobre dos manos pálidas",
+        "Ataque: se sienta sobre los cuartos traseros, se alza y el manto se abre por el vientre sobre una oscuridad de la que salen brazos largos y fríos hacia la presa; cae con las dos pezuñas delanteras",
+        "Muerte: medio se alza con un balido, las huellas rojas se despegan del manto como motas que se enfrían, los brazos se aflojan, se arrodilla, hunde la cabeza y se tumba: un montículo pálido con cuernos y estacas en pie"
+      ],
+      "anims_es": {
+        "idle": "Reposo",
+        "run": "Avanzar",
+        "attack": "Embestida",
+        "hurt": "Golpe recibido",
+        "death": "Muerte"
+      }
     }
   ]
 }

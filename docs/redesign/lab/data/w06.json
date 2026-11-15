@@ -83,6 +83,26 @@
         "hurt": "Golpe recibido",
         "death": "Muerte"
       }
+    },
+    {
+      "key": "ninthwave",
+      "kind": "worldboss",
+      "name_es": "La Novena Ola",
+      "name_en": "The Ninth Wave",
+      "role_es": "Jefe de mundo",
+      "bullets_es": [
+        "El mar que ahogó la ciudad, salido a tierra: una sola ola azul profundo, tan alta como la tira, que nunca rompe, con la espuma arañando su labio",
+        "No tiene cara, así que lleva el yelmo corintio de mármol del coloso, con dos luces frías al fondo de los ojos, y las dos manos rotas de la estatua sobre brazos de agua: una plantada en las losas, otra en garra sobre la presa",
+        "Ataque: la ola se alza con la garra en alto, se queda suspendida y cae con la palma de mármol plana sobre las losas y un muro de espuma",
+        "Muerte: baja la marea. Las luces se apagan, la ola se hunde y el yelmo rueda hasta quedar en pie sobre las losas, con una mano a cada lado, un charco y la línea de la marea"
+      ],
+      "anims_es": {
+        "idle": "Reposo",
+        "run": "Avanzar",
+        "attack": "Palmada",
+        "hurt": "Golpe recibido",
+        "death": "Muerte"
+      }
     }
   ]
 }

@@ -655,3 +655,393 @@ conservadora, marcada como provisional; si salta el límite de uso, dejar anotad
         bolsa (80 huecos), el menú de una gema y el diálogo de engarce con su velo.
       - Pendiente: en 2560×1440 el máximo es ×2; un ajuste guardado se rebaja si la ventana encoge y no vuelve
         a subir solo.
+- [x] **Mascotas: rangos con objetivo propio y caídas mucho más raras (2026-11-15)** — decisiones del usuario:
+      todas las mascotas que tienes dan su bonus a la vez y TODAS progresan; elegir acompañante es solo visual;
+      se encuentran al azar y deben ser de final de juego («que sea normal llegar a Infierno con 1 o con 0»).
+      - Rangos (`src/data/pets.ts`, reglas en `src/sim/pets.ts`): una mascota se encuentra en rango 1 con una
+        quinta parte de lo que daba y llega a lo de antes en su último rango. Duende +3/6/9/12/15 % oro; Búho
+        +3/6/9/12/15 % experiencia; Gato +3/5/7/9/12 % cofres; Diablillo −30/45/60/75/90 s; Mula +1/+2/+3 huecos
+        (3 rangos, uno más que antes); Acaparador +1/+2 (2 rangos, uno más que antes).
+      - Objetivos, contados desde que se encuentra cada una: oro ganado (Duende), experiencia ganada por héroe
+        (Búho), cofres comunes abiertos (Mula), cofres encontrados (Gato), tiempo de juego (Diablillo), jefes
+        vencidos (Acaparador). En ausencia solo avanzan oro y experiencia (es lo único que da la ausencia). El
+        motor los cuenta (`game/engine.ts` → `store.notePetFacts`); la sim solo añade hechos a `pending`
+        (`bossKills`, `chestsFound`, `kills`). Al subir de rango sale una línea dorada sobre la tira.
+      - Caídas: 1 entre 1.000.000 por baja y 1 entre 5.000 por jefe, por mascota. Medido con el probe (2 semillas,
+        ANTES del reajuste de ritmo): bajas / jefes acumulados al acabar Normal 132.000 / 430, Infierno
+        269.000 / 790, Averno 638.000 / 1.680, Eterno 1.536.000 / 3.770 → mascotas esperadas 0,66 / 1,24 / 2,46 /
+        4,20 (la mitad de los jugadores acaba Normal sin ninguna; las seis, en Tormento). El probe imprime ahora
+        esas cuentas (`scripts/sim-progression.ts`).
+      - `getBonuses(techRanks, petRanks)` lee el rango de cada mascota; la partida guarda `pets.progress`
+        (las partidas viejas cargan en rango 1; `persistence/sanitizePets.ts` descarta claves desconocidas).
+      - Ala de mascotas: rango en muescas sobre el pedestal, bonus actual, y en el tooltip el objetivo con su
+        progreso y lo que da el rango siguiente; bajo el nombre de la acompañante, sus muescas y la barra hacia
+        el siguiente rango. Una mascota sin encontrar enseña lo que daría en rango 1, sin porcentaje de caída.
+      - Aviso de MASCOTA NUEVA (`ui/overlay/PetFoundNotice.tsx`): placa con marco dorado sobre la tira, la
+        criatura al doble, su nombre en gótica y lo que da en rango 1; dura 9 s o se cierra con un clic; no
+        bloquea nada fuera de la placa. Lo levanta el store (`addPet` → `petFound`).
+      - PROVISIONAL: todos los números (rangos, metas, caídas) hasta el reajuste de ritmo; las metas están
+        puestas para que el último rango sean 2–3 semanas de juego a ritmo de mitad/final de partida.
+      - Flojo / sin ver: la mascota aún no aparece en la tira (trabajo aparte); el aviso y la línea de subida de
+        rango no tienen sonido; con el tech de apertura automática al máximo el Diablillo no aporta nada (el
+        suelo de 6 min ya existía); el aviso no se ha visto en Tauri.
+- [ ] **Efectos nuevos de habilidades — piloto (2026-11-15, tarde)** — pedido del usuario: efectos «totalmente nuevos,
+      visibles, brillantes y reconocibles» para TODAS las habilidades, movimientos propios para lanzarlas y varios
+      ataques básicos alternando al azar. Hecho el piloto: maquinaria + todo el Knight + Fuego rápido del Ranger.
+      Sin commit; en el laboratorio, sección «Habilidades: efectos nuevos» (`docs/redesign/lab/img/fx/`).
+      - Maquinaria: los efectos son pixel art del pipeline (`tools/assets/pipeline/fx/*.py`, `export-fx` →
+        `src/assets/strip/fx/fx.png` + `fx.json` + pieles `skin_<héroe>_<piel>.png`), a escala 1:1 como las
+        figuras. `render/abilityFx.ts` (puro) dice, por habilidad, los efectos del lanzamiento y del golpe, y por
+        efecto, lo que LLEVA PUESTO quien lo tiene; `render/BodyFx.ts` lo pinta alrededor de la figura;
+        `render/fxData.ts` / `fxTextures.ts` cargan el atlas. Regla de apilado: un aspecto por HUECO (piel, suelo,
+        detrás, al lado, delante, a los pies, sobre el cuerpo, sobre la cabeza); si dos efectos quieren el mismo,
+        gana la prioridad y luego el más reciente. En cuerpos grandes los debufos se repiten, no se escalan.
+        Tests: `test/game/abilityFx.test.ts` (toda habilidad tiene aspecto o está en `PENDING_ABILITIES`; todo
+        efecto nombrado existe en el atlas).
+      - Knight: Piel de piedra (piel `stone` + roca que sube y se rompe), Tajo debilitante (media luna, tajo,
+        gotas violetas + espada rota en el enemigo, grilletes con Tajo incapacitante), Baluarte (escudo torre de
+        luz delante), Grito de guerra (anillo de fuego + hoguera a los pies de cada aliado), Sed de sangre
+        (llamarada roja detrás), Mantener la línea (estandarte plantado + muralla baja delante de cada aliado),
+        Réplica (chispa + lanza de luz), Última resistencia (piel `gold` + sol girando). Clips nuevos: `attack2`
+        (estocada), `attack3` (golpe de escudo), `harden`, `plant`, `roar`, `riposte`.
+      - Ranger: Fuego rápido (clip `haste`, remolino de viento, dardos de aire mientras dura).
+      - Ataque básico: `heroClips.attackClips` / `pickAttackClip` — cualquiera menos el que acaba de sonar; el
+        adelanto del golpe usa el tiempo del clip elegido (`AttackLead.setWindup`).
+      - Quitado para lo cubierto: escudos y flechas de categoría, burbuja amarilla de Última resistencia, anillo
+        de color al lanzar, ondas de Grito de guerra y Mantener la línea. El signo de píxel sobre el héroe se queda.
+      - Flojo / pendiente: el resto del Ranger y la Priest (lista en `PENDING_ABILITIES`); la roca de Piel de
+        piedra parece un montón más que placas; los anillos del suelo se quedan finos al final; la llamarada de
+        Sed de sangre pierde contraste sobre fondos rojos (mundo 4); las pieles no llevan el destello de golpe
+        propio (se tiñen de rojo como antes); los textos flotantes viejos (BLOCKED, INVULNERABLE, la «U») siguen
+        en monoespaciada; «Baluarte reparador», «Portaestandarte» y «Venganza» no tienen efecto propio (los dos
+        últimos usan el estandarte y los debufos comunes); nada visto en la app empaquetada (las pieles y el atlas
+        se cargan igual que el resto del arte, con `?url`).
+- [x] **Diablillo del tiempo: mecánica nueva (2026-11-15, decisión del usuario)** — el tope de ausencia base baja
+      de 12 h a 8 h (`sim/offline.OFFLINE_CAP_MS`) y el Diablillo suma +2 / +4 / +6 / +8 / +10 h por rango, hasta
+      18 h (`PetBonus` `awayHours` → `bonuses.awayCapBonusMs`, `offlineCapMs`). Ya no toca la apertura automática.
+      Su objetivo sigue siendo el tiempo jugado (10 h · 40 h · 100 h · 250 h, cifras del usuario). El aviso de ausencia dice el tope real.
+      Caída por baja normal: 1 entre 1.500.000 por mascota (antes 1 entre 1.000.000), por decisión del usuario.
+- [x] **La retaguardia recibe daño (2026-11-15, decisión del usuario)** — regla nueva de la simulación; detalle y
+      cifras en `docs/DIFFICULTY.md` §5b (sustituye al «solo pega al tanque» de la SPEC y al «muro de puras
+      estadísticas» de los jefes de mundo).
+      - Hecho: (1) los tiradores apuntan atrás — el 25 % de los disparos básicos del arquero va a un héroe de
+        detrás al azar (`EnemyKind.backShotChance`) y su tiro cargado, ahora «Arcing Shot», siempre
+        (`AbilityTarget` `backEnemy`); (2) golpes en área — el Golpe brutal del bruto y un ataque AVISADO por jefe
+        («Ground Slam» en jefes de etapa, «Shockwave» en jefes de mundo, en todas las dificultades) dan de lleno
+        al de delante y reducido a los demás (`splashCoeff` + `WHOLE_PARTY`). Mientras el jefe carga el golpe
+        (1,5 s, con su barra) no ataca (`holdsAttack`), y el golpe lleva la furia solo sobre el de delante: el
+        tanque recibe lo mismo que antes. Cada golpe lo mitiga quien lo recibe (armadura, reducción de daño,
+        escudos, invulnerabilidad), así que Vanguardia y demás auras cuentan. Un Knight solo se comporta igual
+        que antes (ni siquiera cambia la secuencia de azar).
+      - Cifras (`npx vite-node scripts/measure-backline.ts`: grupos de la sonda, simulación real, regla nueva y
+        vieja sobre los mismos grupos): detrás del tanque cae el 25–31 % del daño de las oleadas desde el primer
+        grupo completo hasta Averno; 14–35 % en jefes de etapa; 17–26 % en jefes de mundo antes de la furia. El
+        golpe más duro a un héroe de atrás: 3–9 % de su vida en oleadas. Sin muertes de retaguardia añadidas ni
+        cambio en tiempos de limpieza o victorias de muro sobre los mismos grupos. Inicio de partida (Knight solo
+        y desnudo) igual que antes.
+      - Provisional: todas las cifras (entran en el reajuste de ritmo). En Eterno la parte de la retaguardia sube
+        al 38–44 % (la mitigación del Knight crece más que la de los otros). Sonda de 2 semillas antes → después
+        (días de juego activo para acabar): Normal 1,2 → 1,3; Infierno 2,3 → 2,3; Averno 4,7 → 5,2; Eterno
+        8,7 → 14,5 (el muro 40-10, que es de los que dependen de una pieza y oscilan de una tirada a otra: sobre
+        los mismos grupos la regla no cambia las victorias); Tormento sigue atascado como antes.
+      - Presentación que falta (no se ha tocado la tira): la flecha que va a la retaguardia vuela recta a través
+        del Knight (debería ir por alto); el golpe en área de bruto y jefes no tiene efecto propio (se ven la
+        barra de lanzamiento, el golpe del jefe y los números sobre cada héroe); los héroes de atrás no tienen
+        gesto propio al recibir la onda. Los nombres de las habilidades enemigas no salen en pantalla (no hay
+        entrada en el diccionario español).
+- [x] **La pelea del jefe de mundo, bien presentada (2026-11-15, tarde)** — pedido del usuario tras aprobar a la
+      Madre de los Cuervos: «más tiempo de transición para que se pueda disfrutar de su caída… que se vea el nombre».
+      - **La caída se ve.** Al morir un jefe de mundo la simulación abre un compás de 5,2 s (`world.bossDown`,
+        `data/field.BOSS_DOWN_MS`, activado por `TickContext.animateBossDown`, que solo pone el juego en vivo: las
+        sondas y los tests lo omiten y no cambian). Sin combate ni azar: el grupo se queda quieto, el jefe hace su
+        muerte entera EN SU MUNDO y se queda tendido; en los últimos 0,5 s la tira funde a negro
+        (`render/bossDown.ts`) y el viaje al mundo siguiente arranca ya en negro, sin que el fondo salte bajo los
+        pies. La victoria se apunta en el golpe mortal (recompensas y `maxClearedStage`): cerrar el juego a mitad
+        del compás no pierde nada. Un test compara el compás con la muerte más larga de las figuras de jefe
+        (`test/game/bossDown.test.ts`; la Sierpe, 4,46 s). Los jefes de etapa no tienen compás (`stageBoss: 0`):
+        su muerte no se cortaba — el cadáver sigue cayendo detrás mientras el grupo avanza en el mismo mundo.
+      - **El nombre.** La línea del jefe muestra su nombre (`creatureName`): el del jefe de mundo propio si el
+        mundo lo tiene, y si no el del jefe de etapa. El rango lo dice el signo: calavera (jefe de etapa) o
+        corona dorada y nombre en oro (jefe de mundo). Lógica pura en `ui/hud/bossPlate.ts`.
+      - **Nada tapa al jefe.** La placa deja la tira y pasa al riel del HUD (`ui/hud/HudBoss.tsx`): con un jefe
+        delante, el centro del riel es su línea — signo, nombre, vida y reloj de furia — en lugar de la barra de
+        progreso. El jefe ya no lleva barra propia (una barra, no dos). Se queda durante el compás, vacía.
+      - **De paso:** un jefe ya no lanza la bola de fuego genérica aunque su daño sea mágico (solo presentación);
+        un ataque dibujado más largo que el intervalo entre golpes (el Rey: 1440 ms frente a 1250) se reproduce
+        lo justo más rápido para que se vea su recuperación (`attackLead.fitRate` / `setPace`); el destello de
+        golpe de un jefe aclara la figura hacia el blanco 110 ms (un tinte no hace nada sobre negro).
+      - **Sin arreglar:** `frontSetback` calcula con el alcance del enemigo (80/110) pero el Knight se acerca a
+        50 px de su raíz; corregirlo con la caja entera de la figura retranquearía 44 px a la Madre (su pico pasa
+        por encima del Knight a propósito). Hace falta exportar el frente de la figura A LA ALTURA DEL HÉROE
+        desde el pipeline (`figs.json`). Sin ver: Tauri; el Unmaker como jefe de mundo; la variante de re-limpieza.
+- [x] **Efectos del Ranger entero, Fuego rápido rehecho y el tajo del Knight corregido (2026-11-15, tarde)** —
+      veredicto del usuario sobre el piloto: «La estocada me gusta. El golpe con escudo también. La animación de
+      autoattack que hace como un arco de arriba a abajo, no me gusta, acaba con la espada como torcida hacia abajo…
+      Pero las animaciones están muy bien sí. La de rapid fire es algo rara».
+      - **Knight, `attack`** (`chars/knight.py`, solo ese clip): el brazo se quedaba horizontal y la hoja caía sola
+        desde la muñeca (28–40° de quiebro). Ahora el brazo entero acompaña el tajo — hoja, muñeca y antebrazo en
+        una línea — y termina bajo, la punta a un palmo del suelo; luego vuelve a la guardia. Misma duración y
+        mismo fotograma de golpe.
+      - **Fuego rápido, tercera versión (la del usuario).** Las propuestas A (el carcaj arde) y B (tres flechas en la
+        cuerda) se rechazaron al verlas en la app («es como un fuego a la espalda… no tiene ningún sentido») y se
+        han quitado del juego, con sus flechas de oro / fantasma y `RAPID_FIRE_CHOICE`. Él eligió: «unas flechitas
+        verdes subiendo hacia arriba pero más custom». Ahora: flechas verdes de tres tamaños (centro claro, borde
+        verde oscuro) que suben de los pies a por encima de la cabeza en ráfagas rápidas, la mayoría por detrás y
+        dos por delante a los lados (`tempo_up`, `tempo_up_front`), y al lanzarlo las mismas salen disparadas del
+        suelo (`tempo_burst`, con el clip `haste`). Sus flechas vuelan como la flecha normal.
+        `export-fx` ya no falla si otra tarea tiene clips sin exportar: las pieles siguen a `figs.json`.
+        Calmado tras verlo el usuario («son muchas y van muy rápido»): 4 flechas a la vez (3 detrás, 1 delante; eran
+        8), cada una sube en 1,0–1,3 s a ritmo constante (antes 0,25–0,5 s en ráfagas), se quedan bajo la barra de
+        vida, verde más saturado; el estallido al lanzar baja de 7 a 5 flechas.
+      - **El resto del Ranger** (`fx/ranger.py`, 30 efectos): Tiro certero (la luz se junta en la punta, flecha
+        pesada blanca, atraviesa), Lluvia de flechas (abanico al soltar y flechas que caen y se clavan por toda la
+        oleada), Flecha explosiva (flecha ardiendo y explosión donde cae; «Tierra quemada» deja ardiendo),
+        Abrojos (sembrados por lo bajo, quedan en el suelo; el enemigo sangra), Punto débil (la piel se abre en una
+        estrella ámbar que late), Frasco de brea (lanzado por alto, salpicadura y brea ardiendo por el suelo;
+        piernas embreadas), Marca del cazador (señala; una mira carmesí y oro se cierra sobre el jefe y gira en su
+        cuerpo), Campo de muerte (cepo de zarzas en los pies de la oleada). La flecha básica es ya del pipeline.
+      - **Clips nuevos del Ranger** (`chars/ranger.py`): `attack2` (rodilla en tierra) y `attack3` (salto atrás)
+        alternan al azar con el de siempre; `aimed`, `lob`, `sow`, `point` y `haste` rehecho.
+      - **Maquinaria** (`render/abilityFx.ts`): una habilidad puede decir qué dispara (`shot`: una flecha propia,
+        en arco si es un frasco, con un efecto donde cae), si el disparo va UNA vez a la oleada (`shotTo`) y qué
+        esparce por la banda de la oleada (`band`: suelo o aire); una clase tiene su flecha (`CLASS_SHOT`) y un
+        efecto sobre el tirador puede cambiarla mientras dura (`EFFECT_SHOTS`); ranura nueva `mark` (centro del
+        cuerpo) y `up` (altura sobre el cuerpo). `Projectiles.spawnLook` vuela un efecto del atlas; `GameStrip`
+        tiene una capa de efectos sobre los luchadores (`fxAir`) y `playWaveLook` / `playBand`.
+      - **Quitado:** la lluvia de flechas, los pinchos, el charco de brea, la retícula y su vuelo (todo `Graphics`),
+        el estallido de la hoja vieja de bola de fuego (`getFireballFrames` y su carga), la categoría `mark` de
+        `effectAuras`, `markPoint`/`headPoint`, y los efectos `gust` / `tempo_streaks` del piloto.
+      - **Detalles:** un efecto duradero puede esperar a lo que lo pone (`delayMs`: el enemigo no arde antes de
+        que caiga la flecha) y tener un dibujo mayor para cuerpos grandes (`big`: la mira en un jefe).
+      - **Visto en el juego** (1512×918 ×2 y una pasada a 1280×656 ×1; mundos 1, 4, 5 y 10 de Tormento): todas
+        las habilidades, los tres ataques básicos del Ranger, el tajo nuevo del Knight, la marca sobre la Madre de
+        los Cuervos, Fuego rápido. Laboratorio: bloque «Habilidades: efectos nuevos».
+      - **Flojo / sin ver:** el salto atrás del Ranger se despega poco del suelo; el abanico de la andanada es un
+        manojo apretado; los abrojos al vuelo son pocos puntos grises; la brea es casi invisible sobre fondos
+        oscuros sin sus llamas; «Corazón certero», «Fuego concentrado», «Herida abierta», «Abrojos de púas»,
+        «Brea ardiente» y «Marca implacable» no tienen aspecto propio (cambian números o duración); el salto de
+        la marca a otro enemigo no se ha visto; nada en la app empaquetada. Los enemigos a distancia siguen con
+        la flecha antigua. Falta la Priest.
+- [x] **Prueba de concepto de héroes chibi (2026-11-15)** — hecha y DESCARTADA por el usuario: deberían ser más anime y dejan de tener sentido con el fondo y los enemigos actuales. Arte aparcado en `tools/assets/out/_discarded/chibi/`; el bloque del laboratorio queda vacío.
+- [x] **Caer, volver y élites (2026-11-15, tarde)** — cuatro peticiones del usuario sobre la tira; laboratorio:
+      sección «Caer, volver y élites» (bloque `flow:start`/`flow:end`, imágenes en `lab/img/flow/`).
+      - **Derrota escalonada.** Los tiempos viven en `data/field.ts` (`WIPE_*`): caídos 2,4 s → fundido 0,5 s →
+        negro con la frase sola 2,2 s (su propio fundido de 0,3 s) → vuelta desde el negro 0,5 s, ya en la etapa
+        a la que se retrocede → cartel 1,8 s → llegada 1,3 s; 8,7 s en total (antes 4 s). La simulación revive
+        al grupo en `WIPE_ARRIVE_AT_MS` (no al final) y el combate vuelve en `WIPE_TOTAL_MS`; las sondas siguen
+        sin animación. `render/wipeBeat.ts` dice qué se pinta en cada momento; el cartel de etapa espera a que la
+        tira vuelva (`game/stageSign.ts` → `hud.stageSignHeld` → `ui/overlay/stageSign.ts`), también al viajar a
+        otro mundo, y tras una derrota sale siempre (aunque Reintentar deje al grupo en la misma etapa).
+      - **Reaparición.** Fuera los anillos y haces de `Graphics` (`tpRing`, `setTeleport`, `spawnIn`). Dos ideas
+        dibujadas en `pipeline/fx/flow.py`: A, la columna de luz (puesta), y B, sello de clase y brasas
+        (`render/arrival.ts`, `ARRIVAL_CHOICE`). El héroe aparece al rojo blanco (`FigureBody.setWhite`, el mismo
+        filtro que el destello de golpe) y recupera sus colores. Sirve para la vuelta tras una derrota (uno cada
+        0,22 s, de delante atrás), para un héroe que revive en combate, para un recluta y para llegar a otro
+        mundo; al viajar, la misma columna se lleva al grupo (`HeroSprite.depart`).
+      - **Flecha de avanzar.** `ui/overlay/NextStageKey.tsx`, sobre el signo de Reintentar: aparece solo si la
+        etapa siguiente ya está abierta (`mapLayout.nextOpenStage`: la regla del mapa; nunca hacia un jefe de
+        mundo) y viaja con `requestTravel`. Signo nuevo `hud_next` (`icon_sets/s9e_hud_next.py`); textos
+        `hud.nextStage` / `hud.nextStageHelp` en los dos idiomas.
+      - **Élites.** Fuera el anillo blanco. Fuego fantasma pálido detrás del cuerpo (`elite_aura_s/_m/_l`: un
+        dibujo por altura, repetido a lo ancho en una bestia), corona en el extremo de la barra (`elite_crest`),
+        marco de la barra en verde frío, y figura a ×1,25 (`render/eliteLook.ts`). «Más grandes»: se comparó ×1,
+        ×1,25 y ×1,5 en las tres pantallas (`lab/img/flow/elite_options.png`); ×1,25 se lee bien a ×3 y ×2 y
+        queda algo basto a ×1; ×1,5 compite con los jefes de etapa.
+      - **Élites, segunda vuelta** (el usuario: «la marca de enemigo de élite tampoco se nota mucho»). Del verde
+        frío se pasa a violeta con blanco y la marca va en la figura: borde de 2 px en la silueta
+        (`render/figureMask.ts` saca las siluetas blancas del atlas en un canvas, sin filtros; copias teñidas
+        detrás de la figura), fuego que sube por encima del grupo, motas delante (`elite_sparks`), barra de
+        30 × 5 con marco violeta y corona dorada encima, zIndex por delante de los enemigos comunes
+        (`ENEMY_Z`) y un fogonazo al entrar (`elite_arrive`).
+      - **Puerta del jefe de mundo.** El portal viejo (remolino rojo de `Graphics`, 15 px hundido bajo el camino)
+        se sustituye por una puerta en pixel art de 90 px, de pie sobre el camino (`render/PortalSprite.ts`,
+        `render/portalLook.ts`; arte `portal_shut/_open/_hot/_enter` en `fx/flow.py`): encadenada sin llave,
+        despierta con llave (grieta carmesí y dos ojos en lo oscuro), más abierta bajo el puntero, y un fogonazo
+        al entrar. Una fila de signos encima (jefe · llave · cuántas). El clic sigue siendo de Pixi sobre el dibujo.
+      - `pipeline/fx/__init__.all_fx()` descubre ahora sola los módulos de efectos (cualquier `fx/*.py` con una
+        lista `FX`).
+      - Tests nuevos: `test/game/{wipeBeat,arrival,eliteLook,stageSignHeld}.test.ts`, `test/ui/stageSign.test.ts`,
+        más casos en `test/ui/mapLayout.test.ts` y `test/sim/respawn.test.ts`.
+      - Flojo o sin ver: la llegada no tiene pose propia (el héroe aparece en reposo; no se pueden añadir clips
+        ahora); la nube de polvo de la columna es pequeña; la idea B es tenue sobre fondos claros; el cartel y la
+        llegada sí se solapan al viajar de mundo (solo la derrota los separa); el fuego de un élite se amontona
+        cuando varios enemigos comparten sitio (el apilado es de la simulación); nada visto en Tauri (el blanco
+        del héroe es un filtro); el recluta se capturó pero no se revisó de cerca; sin sonido.
+- [x] **Efectos de la Priest entera, ataques de los enemigos y palabras flotantes (2026-11-15, noche)** — cierra el
+      trabajo de efectos de habilidades sobre la maquinaria del piloto; laboratorio: grupos nuevos dentro del bloque
+      `fx` (entre `fx:priest:start` y `fx:priest:end`; los escribe `scratchpad/pr/lab_block.py` — hay que volver a
+      ejecutarlo si se reescribe el bloque entero). `PENDING_ABILITIES` queda vacío.
+      - **Familias de la Priest** (`pipeline/fx/priest.py`, 27 efectos): una CURA es luz menta, blanda (cintas,
+        pétalos, una flor sobre el curado); un ESCUDO es cristal azul, recto; el PODER es amarillo; la IRA es blanca
+        y dorada desde arriba (Castigo, Nova) y carmesí y oro (Furia de batalla).
+      - **Habilidades.** Sanar (`mend_gift` → `mend_wind` → `mend_petals`; `heal_bloom` en cualquier cura, con el
+        número, al llegar el gesto a su fotograma de salida). Escudo sagrado: el mismo `fx_shield` que el Baluarte,
+        con aspecto propio por quién lo pone (`otherOnly`): `ward_raise` → `ward_front` (solo líneas finas, un único
+        hueco `front`) → `ward_break`; `fx_ward` es `ward_veil`. Nova sagrada: `nova_flash`, `nova_ring` y columnas
+        `nova_shaft` que recorren la oleada en orden (`BandLook.sweepMs`), `nova_hit`. Castigo: `smite_strike` en el
+        suelo del enemigo (`hitSpot: 'ground'`). Santuario: `sanctuary_ring` + `sanctuary_glow`. Aura de represalia:
+        al ser pasiva no deja efecto en la simulación, así que la tira fabrica uno de pega por héroe
+        (`AURA_PREFIX`, `HeroSprite.setPartyAuras`): `retribution_seal` bajo ella, `retribution_tread` bajo los
+        aliados, ambos con prioridad −1. Furia de batalla: `zeal_wave`, alas `zeal_wings` solo en ella.
+      - **Infusión de poder, rehecha tras verla el usuario** («muy invasivo… tapa completamente el efecto de rapid
+        fire»): ya no es un manto detrás del cuerpo sino un BORDE. Concepto nuevo en la maquinaria: `LastingLook.rim`
+        → una hoja con la misma disposición que la figura que solo contiene, fotograma a fotograma, una línea de luz
+        pegada a su silueta (`export_fx.RIMS`, `skin_<héroe>_infused.png` / `_roused.png`; 3 px en la cabeza, 2 en
+        el cuerpo, 1 en las piernas, y puntos de luz a los pies). `FigureBody.setRim` la dibuja DETRÁS de la figura
+        y la hace respirar; no ocupa ningún hueco, así que convive con Fuego rápido, Sed de sangre, Piel de piedra y
+        Último aliento (test en `priestFx.test.ts`). Más tres motas lentas en un hueco nuevo, `around`, que comparte
+        con los pétalos de la cura (así la cura ya no le quita el sitio al brillo de Piel de piedra). Con el mismo
+        criterio: los aliados de Furia de batalla llevan el borde `roused` y no alas; el escudo perdió su mitad
+        trasera (ocupaba `beside`, el sitio del estandarte del Knight); el sello de la represalia es un solo aro.
+      - **Movimientos nuevos de la Priest** (`chars/priest.py`, exportados con `export-figs`): `attack2` (página),
+        `attack3` (golpe de báculo), `mend`, `ward`, `infuse`, `nova`, `smite`, `exalt`; `cast` queda para
+        Santuario. Todos con un fotograma de salida limpio (`impactMs`). El rayo dibujado dentro de su ataque se ha
+        quitado: ahora es un proyectil (`light_bolt` / `light_page`, vuelo recto, `light_hit`).
+      - **Enemigos** (`pipeline/fx/enemy.py`, `render/enemyFx.ts`, `render/BlowFx.ts`): flecha y proyectil propios
+        (`foe_arrow`, `foe_arrow_arc` con 9 inclinaciones, `foe_bolt`, `foe_hit`); un disparo a un héroe de detrás
+        va en arco por encima del de delante (`shotGoesOver`). Golpes de área (`AREA_BLOWS`): aviso de grietas que
+        crece durante el lanzamiento y se pone al rojo en el último tercio, una ola que recorre el suelo (colmillos
+        `slam_spike`, frente `shock_front` con estela) y un respingo `jolt` bajo cada héroe, con el número cuando la
+        ola le llega. Frenesí (`frenzy_burst`, `frenzy_fire`) y Herida mortal (`mortal_rend`, `mortal_wound`) pasan
+        a la tabla de aspectos.
+      - **Palabras flotantes**: BLOCKED → `block_spark`; INVULNERABLE → `invuln_glance`, como mucho uno cada 450 ms
+        por héroe; MULTI! → `multi_sign`; la «U» del Knight → moneda `ult_ready` / `ult_spent`. Los números usan
+        Jersey 10 / Jersey 20 como fuentes de mapa de bits instaladas una vez (`FloatingText.ts`); la cuenta de
+        reaparición, la letra del kit. Textos `floatInvulnerable`, `floatMulti`, `floatBlocked` borrados.
+      - **Quitado**: `render/WorldFx.ts`, `render/characterFrames.ts`, `assets/characters/priest/effects/*.png`,
+        `assets/characters/ranger/projectiles/arrow.png`; de `GameStrip`, `spawnAoeFx`, `loadEffectTextures` y
+        `HOLY_STRIKE_SCALE`; de `HeroSprite`, el destello de cura, el remolino de furia, el suelo sagrado y las
+        cruces; de `EnemySprite`, el aura de frenesí; de `Projectiles.ts`, las tres reservas de proyectiles viejos;
+        de `effectAuras.ts` y `fx.ts`, sus casos especiales.
+      - Tests: `test/game/priestFx.test.ts` y `enemyFx.test.ts` nuevos; cambios en `abilityFx`, `castSign` y
+        `heroClips`.
+      - Flojo o sin ver: Brutal Smash no tiene aviso (no tiene tiempo de lanzamiento en la simulación); el borde
+        de Infusión es discreto a ×1 y sobre el cielo claro del mundo 1 (se ve, no deslumbra); con Infusión y Furia
+        a la vez solo se ve el borde carmesí (más las motas amarillas); Santuario y Grito de guerra comparten el
+        hueco `ground` (gana el más reciente); el segundo y tercer ataque básico se distinguen sobre todo por el
+        gesto, no por el proyectil; la Infusión sobre el Knight se capturó metiendo el efecto a mano (en el juego
+        solo le llega con Infusión gemela o sin DPS); nada visto en la app de Tauri (las fuentes de mapa de bits y
+        las hojas de borde son nuevas ahí); sin sonido.
+- [x] **El HUD sobre los personajes (2026-11-15, tarde)** — petición del usuario: «falta claridad… con todo el arte
+      nuevo me resulta raro dejar esto así». Sustituye las barras finas, los puntitos de efectos y de recargas y la
+      escalera de barras enemigas (todo `Graphics` de la versión anterior) por una familia en pixel art:
+      `tools/assets/pipeline/icon_sets/s9f_striphud.py` → `src/assets/ui/hud_s_*` (carcasas, rellenos de 1 px que
+      el juego estira, fichas de 9×9, 30 signos de 7×7, cifras). Reglas y números en `src/game/render/stripHud.ts`
+      (puro, con tests `test/game/stripHud.test.ts`); dibujan `LifeBar`, `ChipRow`, `HeroHud`.
+      - Héroe: barra con carcasa (verde; roja y latiendo con ≤ 35 %; el tramo recién perdido; el escudo como tramo
+        azul tras la vida; caído → cuenta azul con reloj de arena y segundos en cifras de píxel, y su HUD ya no se
+        apaga con el cuerpo). Fila de fichas de efectos sobre la barra (signo de la habilidad, marco dorado/rojo,
+        sombra que baja con el tiempo, parpadeo al acabar, tope 3 con «+N»). Fichas de sus dos habilidades a los
+        pies (lista / recargando / cargando a golpes) y la moneda del Knight en la misma fila.
+      - Enemigos: el común enseña su barra solo herido y se apaga a los 2,6 s sin golpes; las barras se apilan por
+        su caja real y la que no cabe no sale (`stackBars`); el élite siempre, con marco violeta y corona; la barra
+        de lanzamiento de los jefes es de la misma familia.
+      - Alternativas a una constante (`stripHud.ts`): `HERO_BAR_STYLE = 'notched'` (muescas en cuartos),
+        `HERO_COOLDOWNS = 'plate' | 'none'` (fichas apiladas junto a la barra, o sin fichas en la tira),
+        `FOE_BARS = 'always'`. Laboratorio: bloque `hud2`.
+      - Quitado: `hpBg/hpBar/pips/cdPips/respawnLabel` de `HeroSprite`, las barras `Graphics` de `EnemySprite`,
+        `drawShieldBar` y `SHIELD_BAR_YELLOW` de `effectAuras`, `ELITE_BAR*` de `eliteLook`.
+      - Flojo / sin ver: a ×1 una ficha mide 9 px de pantalla (se lee marco y forma, no detalle); las fichas de los
+        pies pisan el borde del camino en algunos mundos; con dos élites en el mismo punto sus barras tapan las de
+        los comunes; los ultimates del Ranger y la Priest no tienen ficha (solo la moneda del Knight); los
+        perjuicios sobre enemigos no llevan fila (solo su efecto en el cuerpo); nada probado en Tauri; visto en
+        los mundos 1, 3, 5, 9 y 10 Tormento a ×2 y en el 3 a ×1.
+- [x] **Reajuste de ritmo, punto de control 1 (2026-11-15)** — informe para el usuario, cambio por cambio:
+      `docs/redesign/PACING_REPORT.md`. Sin commit.
+      - Sonda fiel al juego de hoy: llaves (cada intento gasta una, salen de cofres de jefe de etapa), cofres
+        esperados en vez de la muestra de una etapa, 8 h de ausencia, gasto inmediato del oro, combates del muro con
+        semilla propia; ejecuciones reanudables (`newProbeRun` / `advanceProbe`).
+      - Enemigos ANCLADOS (`DIFFICULTY.md` §6b): un enemigo normal aguanta 2,5 golpes del que más pega con el
+        equipo completo del mundo anterior, un élite ×4,5, un jefe de etapa 7,5 s. Tablas medidas por punto
+        (`GRUNT_HP_TUNE`, `STAGE_BOSS_HP_TUNE`, `TRASH_DMG_TUNE`); fuera `gearTrack`, `bossHpRamp`, `HP0` y la curva
+        de jefes de etapa. `test/sim/anchors.test.ts` + `test/sim/probe/anchorReference.ts` los fijan.
+      - Muros recalculados (`WORLD_WALL_MULT`, 0,23 → 39,5) por bisección sobre las horas reales, llaves
+        incluidas; objetivos por mundo en `test/sim/probe/targets.ts` (Normal 75 h, Infierno 112, Averno 146, Eterno
+        180, Tormento 215). Curva de experiencia estirada (nivel ~108 al terminar). Reclutar más barato
+        (600/1.200 + 300 por clase). Arranque: daño enemigo desde el 28 %.
+      - Medido en ocho partidas: las ocho terminan, 79–106 días a 8 h (mediana 89). Etapas de 3½–4 min (X-1) a
+        9–12 min (X-9). Jefe del mundo 1 entre 1 y 7 h (mediana 2,9).
+      - Herramientas: `scripts/tune-pacing.ts` (afinador), `scripts/measure-anchors.ts` (anclajes a lo largo del
+        juego), `npm run probe` (ahora con objetivo por mundo; `PROBE_STOP`, `PROBE_TRACE`, `PROBE_SEED_FROM`).
+      - Pendiente de decisión del usuario (sección 9 del informe): la llave (su espera, 4–8 h, pesa más que el
+        muro), Normal en ~75 h en vez de 36, los intentos fallidos de Tormento, la dispersión de Eterno (172 h frente
+        a 280 h en partidas nuevas), volver a medir las mascotas con las bajas nuevas. Si cambia el poder de los
+        héroes hay que volver a pasar el afinador.
+      - Segunda pasada (respuestas del usuario): las recargas se quedan A LOS PIES y centradas — todo lo de un héroe
+        comparte un eje por clase (`HERO_HUD_CX`: Knight 5, Ranger 3, Priest 3 px desde la raíz, medido en sus
+        figuras) y cada pieza mide un número impar de píxeles (barra 27, filas de 9/17/25); la DEFINITIVA de los tres
+        héroes es la tercera ficha de la fila (`ultimateChip`: lista / gastada; la moneda del Knight y su arte
+        `ult_ready`/`ult_spent` desaparecen); Infusión de poder es AMARILLA en la ficha y en su signo de 16 px
+        (`abil_power_infusion`, `s9b_abilities.py`). Barras enemigas: solo heridas, decidido (fuera `FOE_BARS` y la
+        variante «placa»/«ninguna» de las recargas; queda `HERO_BAR_STYLE = 'notched'`).
+        Sin ver: la ficha de una definitiva recién gastada del Knight en captura (solo en test); nada en Tauri.
+
+## Combate, segunda ola — ACORDADO con el usuario el 2026-11-15 (pendiente de hacer)
+
+Orden: (1) el reajuste de ritmo cierra su ronda 2; (2) A y B; (3) C y D; (4) se vuelve a pasar el afinador
+(`scripts/tune-pacing.ts`), porque 2 y 3 cambian la fuerza del grupo y de los jefes. Los nombres son provisionales.
+Descartado por el usuario: interrumpir a los jefes, combinaciones entre héroes («de momento»), recurso propio por
+clase («de momento»), órdenes configurables por habilidad, tercera habilidad, segunda definitiva (las tres
+definitivas se quedan como están), afijos en élites («de momento»).
+
+- [ ] **A · Habilidades que reaccionan** (un buen comportamiento por defecto para cada habilidad y definitiva, sin
+      ajustes). Regla: se usa siempre que sea útil y, si está pasando algo concreto, lo aprovecha — nunca se queda
+      guardada para algo que quizá no llegue. Hold the Line: cuando el grupo recibe daño; con un jefe preparando su
+      golpe en área y la habilidad lista, espera a que caiga (cada 10 s). Holy Shield: al aliado que más daño está
+      recibiendo, no siempre al tanque. Mend: prioriza a quien acaba de recibir un golpe fuerte. Revisar el resto
+      una a una. **Cada habilidad lleva en su tooltip una línea «Cuándo se lanza»** (EN + ES).
+- [ ] **B · Pasivos de efecto** (cinco rangos; la cifra es por rango). Cada clase cambia cinco nodos de «+X %» por
+      estos (de 20 a 15 nodos de estadística):
+      - Knight (todos defensivos): fila 1 **Guardián** (se lleva un 4 % del daño dirigido a la retaguardia) ·
+        Bastion 7 **Cerrar filas** (los aliados reciben 2 % menos de los golpes en área) · Bastion 9 **Amparo**
+        (cuando un aliado baja del 50 %, ese aliado recibe 3 % menos de daño 6 s) · Scourge 7 **Piel curtida** (cada
+        golpe BLOQUEADO reduce 1 % el daño de los siguientes, hasta 5 acumulaciones; se pierde entera al recibir 5
+        golpes seguidos sin bloquear) · Scourge 9 **Aguante** (los golpes de más del 15 % de su vida se reducen 3 %).
+      - Ranger (todos ofensivos): fila 1 **Primera sangre** (+6 % al primer disparo a cada enemigo) · Marksman 7
+        **Cazatiradores** (+4 % a enemigos a distancia) · Marksman 9 **Perforar armadura** (ignora 4 % de la
+        armadura) · Stalker 7 **Atravesar** (si un disparo mata, 10 % del daño sobrante pasa al de detrás) ·
+        Stalker 9 **Ensañamiento** (+3 % a enemigos que sangran, arden o están ralentizados).
+      - Priest: fila 1 **Rebosar** (la cura sobrante es escudo, hasta 1 % de la vida) · Devotion 7 **Manto** (el
+        aliado con menos vida recibe 2 % menos de daño) · Devotion 9 **Reanimar** (los caídos reaparecen 6 % antes)
+        · Zeal 7 **Luz hiriente** (+6 % a sus ataques y habilidades de daño) · Zeal 9 **Condena** (los enemigos
+        golpeados por sus habilidades de daño reciben +2 % de daño de todo el grupo 4 s).
+      - **Retribution Aura** deja de ser habilidad: pasa a pasivo de efecto en la fila 4 de la Priest. Su hueco de
+        habilidad es **Purificar** (nueva): quita los efectos dañinos de un aliado y lo cura un poco.
+- [ ] **C · Afijos de jefe.** Jefes de etapa: ninguno en Normal, uno desde Infierno, dos en Eterno y Tormento, al
+      azar. Jefes de mundo: su mecánica propia siempre, y además un afijo desde Averno y dos en Tormento. Signos
+      junto al nombre en la barra superior, con tooltip. **Acorazado** (coraza = 10 % de su vida; 30 % menos de daño
+      mientras la tiene; los críticos la rompen el doble de rápido; vuelve a los 15 s) · **Vampírico** (se cura 3 %
+      con cada golpe que acierta sin ser bloqueado) · **Enfurecido** (+5 % de velocidad de ataque cada 5 s,
+      acumulable) · **Sísmico** (golpe en área cada 6 s en vez de 10) · **Venenoso** (veneno acumulable ×5, 1 % de la
+      vida por segundo cada uno; se va tras 4 s sin golpes) · **Certero** (cada 8 s un ataque al héroe con menos
+      armadura — CADA JEFE con su propio efecto: un cuervo en picado, un rayo, una cuenta del rosario…) · **Herida
+      mortal** (su golpe fuerte reduce 25 % la curación del tanque 8 s; ya existía).
+- [ ] **D · Mecánica propia de cada jefe de mundo** (pelea de 60 s: se repite 3–4 veces; suave en Normal, aprieta
+      por dificultad). Madre de los Cuervos — **Bandada**: cada 15 s tres cuervos a la retaguardia; poca vida, se
+      van solos a los 8 s. Señora del Muérdago — **Raíces**: cada 15 s enreda al héroe que más daño hace; no ataca
+      5 s. Luna Ahogada — **Rayo en cadena**: cada 12 s cae sobre un héroe al azar y salta a los demás. Chivo
+      Expiatorio — **Culpa**: marca a un héroe; 8 s recibiendo parte del daño que el grupo hace al jefe (puede ser
+      dura: ajustar al verla). Abad Dorado — **Silencio dorado**: cada 20 s, 6 s con las recargas de los héroes
+      detenidas. Novena Ola — **Resaca**: cada 12 s una ola daña a los tres y los arrastra atrás; no atacan hasta
+      volver. Ángel Destructor — **Esporas**: el grupo acumula daño por segundo; se limpia con una cura directa. El
+      Temple — **Hoja al rojo**: cada 15 s un área de fuego bajo los TRES héroes, daño poco a poco 6 s. El
+      Veredicto — **Balanza**: cada 15 s iguala la vida de los tres a la del que MENOS tiene (en %; puede ser dura).
+      El Deshacedor — **Espejos**: cada 10 s refleja la última habilidad del grupo: si era de daño la lanza contra
+      los héroes; si era cura o buffo, se lo pone a sí mismo.
+- Furia: 60 s; matar al jefe de mundo justo a los 60 s = grupo equipado al 80–90 % del nivel de la zona; con menos
+  hay que aguantar unos segundos de furia (la rampa debe permitirlo). Ya pasado al reajuste de ritmo (ronda 2).
+
+### Reajuste de ritmo — ronda 2, punto de control 2 (2026-11-15, sin commit)
+
+- Decisiones del usuario aplicadas: llave 25 % (Normal 100 %: desviación mía, pendiente de su visto bueno), reparto
+  4 · 40 · 120 · 230 · 325 h, furia a 60 s (rampa: el daño se duplica cada 2 s), oleadas por dificultad
+  8 · 12 · 16 · 20 · 20, reclutas más baratos, curva de experiencia más barata.
+- Estado: Normal 3,4 h e Infierno 42 h afinados; Averno 121 h afinado sin validar; **Eterno y Tormento en grueso**
+  (la pasada se cortó a propósito: la segunda ola de combate obliga a re-afinar).
+- Nuevo: «equipado al X % de la zona» como medida (`test/sim/probe/zoneGear.ts`, `scripts/measure-gear-percent.ts`,
+  `PROBE_GEAR=1 npm run probe`); `scripts/measure-gear-gate.ts` (equipo congelado);
+  `scripts/tune-pacing-apply.py` y `…-apply-walls.py` escriben las tablas del afinador.
+- Pendiente para la pasada final (tras la segunda ola): pasada completa del afinador, validación con ocho partidas,
+  mascotas, curva de equipo viejo y su test ligero, poner al día DIFFICULTY §6b–§8 y el informe entero.
+  Decisiones abiertas del usuario: `docs/redesign/PACING_REPORT.md`, R.9.
+

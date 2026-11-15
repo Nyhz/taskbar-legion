@@ -83,6 +83,26 @@
         "hurt": "Golpe recibido",
         "death": "Muerte"
       }
+    },
+    {
+      "key": "quench",
+      "kind": "worldboss",
+      "name_es": "El Temple",
+      "name_en": "The Quench",
+      "role_es": "Jefe de mundo",
+      "bullets_es": [
+        "Aquello en lo que se templaron todas las espadas de las Tierras de Ceniza: un gigante arrodillado al que los herreros clavaron sus hojas al rojo blanco y que ardió de dentro afuera",
+        "Un coloso de ceniza pálida y agrietada, con un horno asomando por un agujero del pecho y las espadas de la forja en pie en su espalda como cruces de cementerio; sin cara, solo una ceja, un ojo sellado que llora fuego y una boca que se abre sobre él",
+        "Ataque: se arranca el mandoble del corazón, lo arma sobre el hombro con la boca ardiendo, descarga el tajo sobre el camino y vuelve a clavárselo en el pecho",
+        "Muerte: se alza con una última lengua de fuego, el resplandor se le va de las grietas, se inclina y la ceniza se suelta: queda un montón con las espadas en pie y un hilo de humo"
+      ],
+      "anims_es": {
+        "idle": "Reposo",
+        "run": "Avanzar",
+        "attack": "Tajo del corazón",
+        "hurt": "Golpe recibido",
+        "death": "Muerte"
+      }
     }
   ],
   "slots": [

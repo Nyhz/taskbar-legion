@@ -24,10 +24,15 @@ they win. The standing overrides are:
   bar the class lock — weapons/off-hands by type AND armour by family: Knight plate, Ranger leather, Priest
   cloth; jewelry is free). **Level is hard-capped at 120** (cheap-early/steep-tail XP curve). **Tier multipliers
   widened** (T8 = 9×) so drops feel impactful and gate the deep walls. The **walls are the W-10 world bosses**,
-  HP per-world via the hand-tuned `WORLD_WALL_MULT` table, to be tuned for **~3 months to Torment 10-10 at 8 h of play a day** (the probe's assumption since
-  2026-11-15; the retune happens once the redesign's content is in place). Normal
-  chests **2%**/kill; gem is EXTRA; keys come from stage-boss chests. `WAVES_PER_STAGE = 20`. Naked party walls
-  by world 2. Validated by `npm run probe`.
+  HP per-world via the `WORLD_WALL_MULT` table, tuned for **~3 months to Torment 10-10 at 8 h of play a day**
+  (retuned 2026-11-15: `scripts/tune-pacing.ts`, targets in `test/sim/probe/targets.ts`). **Enemy toughness is
+  ANCHORED** (DIFFICULTY.md §6b): a normal enemy takes 2–3 hits of the on-gear party's hardest hitter, a stage
+  boss 5–10 s — measured tables (`GRUNT_HP_TUNE`, `STAGE_BOSS_HP_TUNE`, `TRASH_DMG_TUNE`), re-tuned whenever
+  hero power changes. Drops follow the **per-world rarity ladder** (§4); common chests **0.2%**/kill (about one
+  every five to ten minutes); gem is EXTRA; a world-boss **key** is in one stage-boss chest in four (every one
+  in Normal) and every attempt costs one. **Waves per stage grow with the difficulty** (`WAVES_BY_DIFFICULTY`:
+  8 in Normal → 20 in Eternal/Torment): Normal is a 3–4 hour stroll, each difficulty after it clearly longer and
+  more demanding of gear (≈ 4 / 40 / 120 / 230 / 325 h). Validated by `npm run probe`.
 - **`docs/DIFFICULTY.md` supersedes SPEC §4.6 / §5.3 scaling** — gear power and difficulty are *gear-checked
   and progressive* across the finite 5-difficulty ladder, not the SPEC's linear example (linear would make the
   game impossible by ~stage 10). Flat stats scale `Φ^1.0`, percent stats are bounded. Tier drop-rate is
@@ -44,6 +49,9 @@ they win. The standing overrides are:
   UI only. `researchPoints` is reserved/unused in v1 (BALANCE.md / DATA_MODEL.md).
 - **Gems are tiered T1–T8 (overrides SPEC §4.5's single-stat gem).** Higher tier = more affixes; gems are
   instances with their own origin; tier drop-rate scales with stage like items (DATA_MODEL + BALANCE).
+- **The back line takes damage (2026-11-15; `docs/DIFFICULTY.md` §5b overrides SPEC's tank-only targeting).**
+  Shooters send a share of their shots behind the front hero and area blows (the brute's Smash, every boss's
+  telegraphed slam) splash the whole party — tuned to ~25–30 % of a wave's damage landing behind the tank.
 - **Only 3 classes ship — Knight · Ranger · Priest (overrides SPEC §4.7's 5-class roster).** Mage and Rogue
   were removed so ALL tuning happens against the canonical tank·dps·healer trio (one fixed party comp = easier
   to balance). New classes get added later with comparable stat curves + skill damage. `CLASS_KEYS` in

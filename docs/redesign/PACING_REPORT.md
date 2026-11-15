@@ -1,0 +1,766 @@
+# Informe del reajuste de ritmo (2026-11-15)
+
+> **Léeme primero: Ronda 2 — punto de control 2 (cerrado a medias a propósito).** La sección «Ronda 2» de abajo es
+> el estado de hoy. Todo lo que viene después de ella (secciones 0–11 y apéndice) es el **punto de control 1** y sus
+> cifras de duración, llave, reclutas y niveles **ya no valen**; lo que sí sigue valiendo de allí es cómo se anclan
+> los enemigos (2.1–2.5), la sonda (8) y lo que consideré y no cambié (10).
+> Normal e Infierno están afinados con tus decisiones de la ronda 2. **Averno está afinado pero sin validar; Eterno
+> y Tormento están en grueso.** No se pule más ahora porque la segunda ola de combate (pasivas, reglas reactivas,
+> afijos y mecánicas de jefe) obliga a volver a pasar el afinador de todas formas.
+
+# Ronda 2
+
+## R.0 En diez líneas
+
+- **Normal se pasa en unas 3½ horas**: cada mundo dura de 20 a 30 minutos y su jefe cae con la primera llave.
+- **Infierno dura unas 42 horas** (objetivo 40): cada mundo de 3 a 6½ horas, de 2 a 4 intentos por muro.
+- **Averno: unas 121 horas** (objetivo 120) en las cuatro partidas con que se afinó; sin validar en otras.
+- **Eterno y Tormento: en grueso.** La última pasada completa daba 240 y 325 horas (objetivos 230 y 325) y un juego
+  entero de 651 a 894 horas (objetivo 720), pero con una furia algo más blanda que la que queda puesta.
+- **Furia a los 60 s** en jefes de mundo y de etapa; pasada la ventana el daño del jefe **se duplica cada 2 s**
+  (antes ventana de 30 s y cada 5 s). El jugador medio mata su muro con el reloj del jefe entre 65 y 75 s: aguanta
+  de 5 a 15 s de furia.
+- **«Equipado al X % de la zona» ya es una medida**, no una impresión (R.5). En Normal el muro pide un 10 % de lo
+  que da la zona; a mitad de Infierno un 85 %; al final de Infierno, un 105 %. La exigencia sube sola con la
+  dificultad, que es lo que pediste.
+- **Un hallazgo que cambia cómo leer tu regla del 80–90 %**: en este juego **no existe «el equipo completo de la
+  zona»**. Abrir más cofres del mismo mundo sigue subiendo el daño sin techo a la vista (R.5). La regla necesita
+  que elijas qué es el 100 %; te propongo uno.
+- **Me he apartado de una decisión tuya**: en Normal cada cofre de jefe de etapa trae llave (dijiste 25 %). Sin eso
+  Normal no baja de unas 15 horas (R.2).
+- **No está hecho**: mascotas, curva completa de «equipo viejo», validación con ocho partidas, y poner al día el
+  resto de este informe y `docs/DIFFICULTY.md` §6b–§8.
+- Sin commit. Typecheck, lint y tests en verde.
+
+## R.1 Lo que decidiste y qué he hecho con cada cosa
+
+| Tu decisión | Estado |
+|---|---|
+| Cofre de jefe de etapa al 25 % y llave al 25 % | Hecho de Infierno en adelante: una llave cada ~16 jefes de etapa. **En Normal, 100 %** (cambio mío, R.2). |
+| Normal en 3–4 h; cada dificultad más larga y más exigente; ~3 meses en total | Reparto que he usado como objetivo: **4 · 40 · 120 · 230 · 325 h**. Normal e Infierno, conseguido; el resto, R.3. |
+| Intentos fallidos en los muros tardíos: «está bien así» | Sin tocar. Con la llave más barata salen más intentos por muro (cada uno cuesta menos espera). |
+| Apertura automática 30 → 12 min | Sin tocar. |
+| Mascotas: volver a medir con las bajas nuevas | **Pendiente.** Se mata bastante menos en Normal (dura 3½ h, no 75): hay que recalcular al final, con el juego ya afinado. |
+| Golpes por enemigo: orientativo; que no sea «faceroll»; el requisito de equipo debe notarse más cuanto más lejos | Anclajes como guía (2,5 golpes, 7,5 s de jefe de etapa). El requisito de equipo se mide en R.5 y R.6. |
+| Furia a 60 s; matar a los 60 s = equipado al 80–90 % de la zona; con menos, aguantar unos segundos de furia | Ventana y rampa puestas. Definición y medida del porcentaje, hechas. **Los muros siguen afinados por horas, no por ese porcentaje** (R.5 explica por qué y qué falta decidir). |
+
+## R.2 Lo que ha cambiado desde el punto de control 1
+
+| Qué | Punto de control 1 | Ahora | Dónde |
+|---|---|---|---|
+| Llave en el cofre de jefe de etapa | 10 % | **25 %; en Normal 100 %** | `data/chests.ts` `STAGE_KEY_DROP_CHANCE`, `…_BY_DIFFICULTY` |
+| Oleadas por etapa | 20 siempre | **8 · 12 · 16 · 20 · 20** según dificultad | `data/stageScaling.ts` `WAVES_BY_DIFFICULTY` |
+| Ventana de furia (jefe de mundo y de etapa) | 30 s | **60 s** | `ZONE_ENRAGE_MS`, `STAGE_ENRAGE_MS` |
+| Rampa de furia (el daño se duplica cada…) | 5 s | **2 s** | `BOSS_ENRAGE_RAMP_MS` |
+| Muros de Normal | con muro desde el mundo 4 | **sin muro: caen con la primera llave** | `WORLD_WALL_MULT` (mundos 1–10) |
+| Muros de Infierno a Tormento | para 75–215 h por dificultad | para 40–325 h por dificultad, con la furia nueva | `WORLD_WALL_MULT` |
+| Vida de enemigos y jefes de etapa, daño de enemigos | tablas del punto 1 | vueltas a medir con las reglas nuevas | `GRUNT_HP_TUNE`, `STAGE_BOSS_HP_TUNE`, `TRASH_DMG_TUNE` |
+| Reclutar | casillas 600 / 1.200, clase 300 | **casillas 300 / 600, clase 150** | `data/techTree.ts`, `data/classes.ts` |
+| Curva de experiencia | términos medios ×1,2 y cola de 50 M | más barata: exponente medio 1,05 y cola de 2 M | `XP_MID_EXP`, `XP_TAIL` |
+| Intento fallido en la sonda | cuesta 60 s | cuesta 80 s (el combate ya dura 60 más la furia) | `test/sim/probe/loop.ts` |
+
+**Por qué las oleadas por dificultad.** Con 20 oleadas una etapa de Normal dura de 4 a 12 minutos; cien etapas son
+más de diez horas sin contar jefes. Con 8 oleadas, una etapa X-1 de Normal dura 1¼ minutos y una X-9 unos 3. Es
+también una forma directa de que cada dificultad «pese» más que la anterior.
+
+**Por qué la llave al 100 % en Normal (mi desviación).** Al 25 %, una llave son unos 16 jefes de etapa. En Normal
+eso es casi una hora de espera por mundo: diez mundos, diez horas solo en llaves. Con «Normal en 3–4 h» no cabe.
+Con una llave en cada cofre, nueve de cada diez jugadores llegan al jefe con la suya. Si prefieres el 25 % también
+en Normal, Normal se va a unas 12–15 h.
+
+**Por qué reclutar más barato.** Normal entero dura lo que antes duraba el primer mundo: con los precios del punto
+1, la Priest llegaba cuando ya se había pasado un cuarto de la dificultad.
+
+## R.3 Duración: hacia dónde va
+
+Horas de juego por mundo, media de cuatro partidas simuladas (las mismas con que se afinó: todavía **no** hay
+validación con partidas distintas).
+
+| Dificultad | Objetivo | Medido | Cada mundo | Estado |
+|---|---|---|---|---|
+| Normal | 4 h | **3,4 h** | 0,3–0,5 h | Afinado |
+| Infierno | 40 h | **42 h** | 2,8 · 3,2 · 3,3 · 3,1 · 4,5 · 4,5 · 3,4 · 5,1 · 6,7 · 5,2 | Afinado |
+| Averno | 120 h | **121 h** | 9,0 · 10,9 · 9,4 · 12,9 · 11,9 · 13,7 · 11,7 · 12,8 · 13,5 · 15,3 | Afinado, sin validar |
+| Eterno | 230 h | ~240 h en la última pasada completa | 17,6 · 17,9 · 19,5 · 18,6 · 25,1 · 22,2 · 29,3 · 29,1 · … | **En grueso** |
+| Tormento | 325 h | ~325 h en la última pasada completa | 27 → 40 | **En grueso** |
+
+«En grueso» quiere decir: la pasada con la rampa de furia a 2 s se cortó en Eterno 9 para cerrar este punto de
+control. Los nueve primeros muros de Eterno son de esa pasada; **Eterno 10 y todo Tormento vienen de la pasada
+anterior, hecha con la rampa a 3 s**, y con la rampa a 2 s quedan algo más duros de lo que deberían (quizá un
+5–10 % de vida de más, que en horas puede ser bastante: R.8).
+
+Nivel del grupo al acabar cada dificultad: **20 · 48 · 73 · ~97 · ~120** (el tope llega en los últimos mundos de
+Tormento).
+
+### Qué hace largo un mundo ahora
+
+| | Normal | Infierno | Averno |
+|---|---|---|---|
+| Etapa X-1 | 1¼ min | 2–2½ min | 3 min |
+| Etapa X-9 | 2½–3½ min | 5–9 min | 7–9 min |
+| Pasar las nueve etapas | 20 min | 35 min | 45 min |
+| Espera media de una llave | ninguna (la trae cada cofre) | 1½–2½ h | 2–2½ h (hasta 4) |
+| Intentos por muro (media) | 1 | 2–4 | 4–8 |
+| Golpes por enemigo normal | 2–3 (banda de la guía) | 2,2–3,3 | 2,3–2,8 |
+| Jefe de etapa | 6–9 s | 7–8½ s | 7–8½ s |
+
+En Infierno y Averno el tiempo de un mundo es, sobre todo, **llaves por intentos**: cada intento fallido cuesta
+otras dos horas de X-9, que son también las horas en que el grupo se equipa.
+
+### La primera hora (partida nueva, una simulación)
+
+| Minuto | Qué pasa |
+|---|---|
+| 2½ | El Knight solo supera 1-1 (nivel 4). |
+| 5 | Supera 1-2 (nivel 5). |
+| 8 | Supera 1-3 y **recluta al Ranger**. |
+| 10–12 | 1-4 y 1-5 (niveles 8 y 6). |
+| 18 | 1-6 tras una derrota; **recluta a la Priest**. |
+| 20–26 | 1-7, 1-8, 1-9 (grupo de nivel 10/10/8). |
+| 26 | **Jefe del mundo 1 con la primera llave**: 62 s de combate, la vida del grupo baja al 43 %. |
+| 29–42 | Mundo 2, una etapa cada minuto y medio. Su jefe cae en 25 s. |
+| 60 | Entrando en el mundo 4. |
+
+El jefe del mundo 1 es el único de Normal que dura su minuto entero; los demás caen en 15–25 s (R.4).
+
+## R.4 Los muros a 60 s
+
+- **Regla**: el jefe pega lo que pone durante 60 s; después su daño se duplica cada 2 s (×6 a los 5 s, ×32 a los
+  10 s).
+- **Cómo queda el combate del jugador medio** (reloj del jefe en el momento de matarlo, mediana de cuatro
+  partidas):
+
+| Tramo | Reloj del jefe al morir | Furia aguantada |
+|---|---|---|
+| Normal, mundo 1 | 62 s | 2 s |
+| Normal, mundos 2–10 | 16–46 s | ninguna: no hay muro |
+| Infierno, mundos 1–2 | 24–26 s | ninguna |
+| Infierno, mundos 3–10 | 65–74 s | 5–14 s |
+| Averno | 68–76 s | 8–16 s |
+| Eterno (lo afinado) | 73–75 s | 13–15 s |
+
+- **Por qué el jugador medio no mata «justo a los 60»**: la sonda intenta el muro en cuanto tiene llave, así que su
+  primera victoria es, por definición, la del grupo más flojo que puede con él: uno que necesita unos segundos de
+  furia. El grupo que mata a los 60 s justos es un 10–20 % más fuerte que ese.
+- **Cuánta furia aguanta un grupo**: con la rampa a 3 s los grupos de Infierno caían a los 13–17 s de furia y los
+  de Tormento aguantaban 18–26 s (daño ×60 a ×400): demasiado para «unos segundos». Por eso la he dejado en 2 s:
+  unos 10 s en Infierno y hasta 15 en lo profundo. **El tanque aguanta cada vez más furia cuanto más avanza el
+  juego**: el daño del muro (`ZONE_BOSS_DMG_MULT`, una sola cifra para todo el juego) se queda corto frente a la
+  defensa de Eterno y Tormento. No lo he tocado: es justo donde entrarán las mecánicas y afijos de jefe.
+
+## R.5 «Equipado al X % de la zona»: la definición y lo que mide
+
+**Definición** (`test/sim/probe/zoneGear.ts`, con tests):
+
+> porcentaje de equipo de un grupo en un mundo = daño que ese grupo le hace al jefe de ese mundo en sus 60 s
+> ÷ daño que le hacen **los mismos héroes** (mismo nivel y talentos) vestidos con **el equipo de la zona**.
+
+**El equipo de la zona** = esos héroes desnudos, vestidos con lo mejor de **240 cofres de jefe de etapa de ese
+mundo** (unas siete piezas candidatas por casilla), gemas puestas, con la misma regla de equiparse que usa la
+sonda. Se promedia sobre cinco tiradas distintas de esos cofres.
+
+Con esa medida, un muro cuya vida sea el 85 % del daño del equipo de la zona muere a los 60 s justos ante un grupo
+al 85 %. Así se puede escribir tu regla en un número por muro.
+
+**Lo medido** (tres partidas; hecho con la rampa a 3 s, los muros de Normal e Infierno son prácticamente los de
+ahora):
+
+| Mundo | Nivel | Reloj del jefe al morir | % de equipo del grupo al matarlo | El muro pide (mata a los 60 s justos) |
+|---|---|---|---|---|
+| Normal 1 | 10 | 61 s | 2 % | 11 % |
+| Normal 2–10 | 12–21 | 15–42 s | 11–23 % | 8–13 % |
+| Infierno 1 | 30 | 21 s | 45 % | 18 % |
+| Infierno 2 | 31 | 30 s | 49 % | 27 % |
+| Infierno 3 | 33 | 59 s | 58 % | 59 % |
+| Infierno 4 | 36 | 67 s | 61 % | 68 % |
+| Infierno 5 | 37 | 67 s | 74 % | 86 % |
+| Infierno 6 | 38 | 70 s | 63 % | 75 % |
+| Infierno 7 | 41 | 67 s | 69 % | 84 % |
+| Infierno 8 | 42 | 74 s | 64 % | 86 % |
+| Infierno 9 | 42 | 74 s | 80 % | 105 % |
+| Infierno 10 | 47 | 74 s | 82 % | 103 % |
+| Averno 1–4 | 50–58 | 69–76 s | 81–88 % | 103–107 % |
+
+**El mismo muro contra el mismo jugador con equipo más viejo** (tres partidas; «mata» = cuántas de las tres):
+
+| Muro | El grupo | % de equipo | Mata | Reloj al matar | Si no mata, cae a los |
+|---|---|---|---|---|---|
+| **Normal 5-10** (pide 9 %) | con el equipo de la zona | 106 % | 3/3 | 5 s | — |
+| | tal como lo mató | 15 % | 3/3 | 17 s | — |
+| | como estaba 1 mundo antes | 10 % | 2/3 | 18 s | 40 s |
+| | 2 mundos antes | 5 % | 0/3 | — | 30 s |
+| **Infierno 5-10** (pide 86 %) | con el equipo de la zona | 94 % | 3/3 | 53 s | — |
+| | tal como lo mató | 74 % | 3/3 | 69 s | — |
+| | 1 mundo antes | 67 % | 1/3 | 69 s | 73 s |
+| | 2 mundos antes | 46 % | 0/3 | — | 71 s |
+| | 4 mundos antes | 17 % | 0/3 | — | 45 s |
+| **Infierno 9-10** (pide 105 %) | con el equipo de la zona | 103 % | 3/3 | 60 s | — |
+| | tal como lo mató | 80 % | 2/3 | 73 s | 76 s |
+| | 1 mundo antes | 68 % | 0/3 | — | 77 s |
+| | 4 mundos antes | 51 % | 0/3 | — | 73 s |
+| | 8 mundos antes | 9 % | 0/3 | — | 34 s |
+
+Lectura: en Infierno 9-10, con el equipo de la zona se mata a los 60 s justos; con un 80 % se mata aguantando 13 s
+de furia; con un 68 % ya no. **Es la forma de tu regla, pero desplazada**: hoy «matar a los 60 s» equivale al
+100 % de esta referencia, no al 80–90 %.
+
+**El hallazgo: no hay «equipo completo de la zona».** Daño del equipo de la zona según de cuántos cofres se elige
+(relativo a 240):
+
+| Cofres | 33 | 60 | 120 | 240 | 400 | 600 | 1.000 | 2.000 |
+|---|---|---|---|---|---|---|---|---|
+| Infierno 5 | 0,32 | 0,55 | 0,72 | 1 | 1,19 | 1,32 | 1,58 | 2,16 |
+| Averno 5 | 0,23 | 0,45 | 0,71 | 1 | 1,26 | 1,51 | 1,96 | 2,74 |
+| Tormento 5 | 0,15 | 0,36 | 0,56 | 1 | 1,50 | 1,72 | 2,42 | 3,01 |
+
+Cada vez que se duplican los cofres, el daño sube un 30–50 %, y a los 2.000 cofres sigue subiendo: las rarezas
+altas son tan escasas y pesan tanto que siempre queda una pieza mejor por salir. Además, de un mundo al siguiente
+el equipo de la misma rareza solo mejora un 3–5 %: lo que hace fuerte a un grupo es la rareza acumulada de
+**varios** mundos, no tener piezas del mundo en que está. Por eso «el 100 % de la zona» hay que elegirlo:
+
+- Con **240 cofres** como 100 %, los muros de Infierno tardío y Averno piden un 103–107 %.
+- Con unos **400 cofres** (una docena de candidatas por casilla) pedirían en torno al **85 %**, que es tu regla, y
+  el jugador medio los mataría con un 65–70 % aguantando unos 10–13 s de furia.
+
+Es la misma dificultad con otra vara de medir; lo que cambia es qué número ves. **Necesito que elijas la vara**
+(R.9) antes de la pasada final, porque el afinador puede fijar la vida de cada muro directamente como «85 % del
+equipo de la zona» en vez de por horas — pero entonces las horas de cada mundo pasan a depender del botín, y habría
+que ajustarlas con otra palanca (oleadas por etapa, por ejemplo).
+
+## R.6 Equipo viejo: lo que hay medido
+
+Solo lo de la tabla anterior y una prueba corta en Normal (una partida, equipo congelado: sube de nivel y abre
+cofres, pero no se pone nada nuevo):
+
+- Congelado al acabar el mundo 3 de Normal: pasa un mundo más y se queda en 5-10 (9 intentos perdidos).
+- Congelado al acabar el mundo 6: termina Normal y se queda en Infierno 1-10.
+
+La curva completa por dificultad (`scripts/measure-gear-gate.ts`) **no está pasada**: tiene sentido medirla con el
+juego ya afinado. Lo que sí se ve ya: en Normal un grupo dos mundos por detrás deja de poder; en Infierno 5, uno
+solo. El test ligero de que la curva no se invierte tampoco está escrito.
+
+## R.7 Lo que NO está afinado, dicho claro
+
+1. **Eterno y Tormento**: muros en grueso (R.3). No fiarse de sus horas.
+2. **Averno**: afinado con cuatro partidas, sin comprobar en otras cuatro.
+3. **Ninguna validación con ocho partidas** de la ronda 2. Las cifras de R.3 son de las partidas de afinado.
+4. **Mascotas**: probabilidades sin recalcular; siguen las del punto 1 (calculadas para un Normal de 75 h).
+5. **Objetivos de las mascotas** (rangos): igual.
+6. **El resto de este informe** (secciones 0–11 y apéndice) y `docs/DIFFICULTY.md` §6b, §7 y §8: cifras del punto
+   de control 1.
+7. **El daño de los muros** frente a la defensa de Eterno y Tormento (R.4).
+8. **Normal se pasa con muy poco equipo**: en los dos primeros muros el grupo lleva unas 5 casillas de 33, y en
+   todo Normal no pasa del 23 % de lo que da la zona. Es la consecuencia directa de «Normal en 3–4 h» con cofres
+   al 0,2 % y 25 %: en 3½ h caen unos 30 objetos. El equipo empieza de verdad en Infierno. Si no lo quieres así,
+   la palanca es que en Normal el jefe de etapa suelte cofre más a menudo.
+
+## R.8 Lo que hará falta tras la segunda ola de combate
+
+| Paso | Con qué | Cuánto tarda |
+|---|---|---|
+| 1. Pasada completa (anclajes y muros) | `TUNE_SEEDS=4 npx vite-node scripts/tune-pacing.ts > salida.txt` | 1½–2 h |
+| 2. Escribir las tablas | `python3 scripts/tune-pacing-apply.py salida.txt` (suaviza y escribe `stageScaling.ts` y la referencia de los tests) | segundos |
+| 3. Solo muros, si se toca la furia o el daño de jefe | `TUNE_KEEP=1 TUNE_SEEDS=4 npx vite-node scripts/tune-pacing.ts`, luego `python3 scripts/tune-pacing-apply-walls.py salida.txt` | 30 min |
+| 4. Validar | `PROBE_SEEDS=4 npm run probe` y `PROBE_SEEDS=4 PROBE_SEED_FROM=5 npm run probe` (con `PROBE_GEAR=1` añade el % de equipo en cada muro) | 10–20 min cada una |
+| 5. Medidores | `scripts/measure-anchors.ts` (golpes, segundos, minutos por etapa), `scripts/measure-gear-percent.ts` (R.5), `scripts/measure-gear-gate.ts` (R.6) | 5–15 min cada uno |
+| 6. Mascotas, documentos, este informe | a mano, con las cifras del paso 4 | — |
+
+**Palancas, cada una por separado:**
+
+| Palanca | Qué mueve | Dónde |
+|---|---|---|
+| Vida del muro | cuánto equipo pide; las horas del mundo | `WORLD_WALL_MULT` |
+| Daño del muro | si el tanque y la Priest aguantan los 60 s | `ZONE_BOSS_DMG_MULT` |
+| Ventana y rampa de furia | cuánto dura el combate; cuántos segundos de margen tiene el que va justo | `ZONE_ENRAGE_MS`, `BOSS_ENRAGE_RAMP_MS` |
+| Oleadas por etapa | minutos por etapa y, con ello, horas por llave | `WAVES_BY_DIFFICULTY` |
+| Llave | espera entre intentos | `STAGE_KEY_DROP_CHANCE_BY_DIFFICULTY` |
+| Vida de enemigos y jefes de etapa | golpes y segundos (guía: 2–3 golpes, 5–10 s) | `GRUNT_HP_TUNE`, `STAGE_BOSS_HP_TUNE` |
+| Daño de enemigos normales | si el grupo que llega limpia la etapa sin caer | `TRASH_DMG_TUNE` |
+
+Aviso que sigue en pie: la respuesta es muy sensible. Un muro un 3–5 % más duro puede duplicar las horas de un
+mundo. Nunca afinar mirando un mundo o una partida.
+
+## R.9 Lo que tienes que decidir
+
+1. **La llave en Normal**: 100 % (como está, Normal 3½ h) o tu 25 % (Normal 12–15 h).
+2. **Qué es el 100 % de la zona** (R.5): lo mejor de 240 cofres del mundo (los muros piden ~105 %) o de unos 400
+   (pedirían ~85 %, tu regla). O dime otra idea de «nivel de la zona» — por ejemplo, por casillas con piezas del
+   mundo — sabiendo que entre mundos vecinos el equipo apenas cambia un 3–5 %.
+3. **Muros por horas o por porcentaje**: hoy cada muro se fija para que el mundo dure su objetivo y el porcentaje
+   es lo que sale. Se puede hacer al revés (R.5), ajustando luego las horas con las oleadas.
+4. **La rampa de furia**: 2 s (como está: 5–15 s de margen), 1,5 s (más seco: 5–10 s) o 3 s (15–25 s en lo
+   profundo).
+5. **Normal casi sin equipo** (R.7, punto 8): dejarlo o subir el cofre de jefe de etapa en Normal.
+
+---
+
+# Punto de control 1 (cifras anteriores a la ronda 2)
+
+Para que apruebes o rechaces **punto por punto**. Cada cambio dice qué había, qué hay, dónde vive, por qué y qué
+hace jugando. Nada está en un commit. Todo lo medido sale de la sonda (`npm run probe`: el «jugador medio»,
+grupo Knight · Ranger · Priest, 8 h de juego al día, partida nueva con un Knight desnudo) y de dos medidores
+nuevos; los números completos van en el apéndice.
+
+## 0. En diez líneas
+
+- **Duración**: el juego entero queda **entre 79 y 106 días a 8 h diarias** en ocho partidas simuladas (mediana
+  89 días, unas 710 h de juego); las ocho terminan y ninguna se atasca. Objetivo: ~90 días, ~720 h. Antes del
+  reajuste, con tus cambios de botín de hoy ya puestos, las dos partidas simuladas se quedaban atascadas para
+  siempre en Averno 1-10.
+- **Esto es el punto de control 1**: lo que sigue fuera de objetivo (sección 9) queda para una segunda pasada,
+  cuando lo hayas leído y jugado.
+- **Enemigos anclados a tus cifras**: un enemigo normal aguanta **2,5 golpes** del héroe que más pega con el
+  equipo del mundo anterior (banda 2–3), un élite **unos 11**, un jefe de etapa **7,5 s** (banda 5–10) contra el
+  grupo entero. En todos los mundos de todas las dificultades. Antes, un grupo con equipo honrado del mundo 1
+  mataba un enemigo de 2-9 con **0,46 golpes** y a su jefe en **3,6 s**.
+- **Ritmo de etapa**: una etapa X-1 dura unos **3½–4 minutos** y una X-9 unos **9–12**, a cualquier
+  profundidad. Antes: 2 y 3½ minutos, y con tu equipo actual, cuatro etapas en cinco minutos.
+- **Primeras horas**: 1-1 a los 5 minutos, Ranger a los 17, Priest a los 40, 1-9 a la hora. El jefe del mundo 1
+  cayó entre 1,1 y 7,3 horas en cuatro partidas (mediana 2,9), según cuándo sale la primera llave.
+- **Qué hace largo un mundo**: el paso por sus nueve etapas (una hora), **la espera de la llave** (unas 42
+  repeticiones de X-9: de 4 a 8 horas por llave) y los intentos fallidos contra el muro (de 1 a 2 en Normal,
+  hasta 7–8 en algunos mundos de Eterno y Tormento).
+- **Lo que he tocado**: vida de los enemigos por rango (tablas medidas), daño de los enemigos normales, los muros,
+  la curva de experiencia, el precio de reclutar y el arranque. **No he tocado** clases, talentos, habilidades,
+  objetos, cofres, llaves ni la escalera de rareza: tus decisiones de hoy siguen como las dejaste.
+- **Lo que tienes que decidir** está en la sección 9. Lo principal: la llave. Con 1 llave cada ~40 jefes de
+  etapa, la llave pesa más en la duración de cada mundo que el propio jefe.
+
+## 1. Cómo se ha medido
+
+| Herramienta | Qué hace |
+|---|---|
+| `npm run probe` | La sonda de siempre, ahora fiel a las reglas de hoy (sección 8). Informa de horas por dificultad y por mundo, al lado del objetivo. |
+| `npx vite-node scripts/measure-anchors.ts` | Recorre el juego con el grupo de la sonda y mide, al llegar a cada mundo y ante su muro: golpes por enemigo (por clase), segundos del jefe de etapa y minutos por etapa. |
+| `npx vite-node scripts/tune-pacing.ts` | El afinador. Una pasada por los 50 mundos: fija la vida de enemigos y jefes de etapa contra el grupo que llega con el equipo del mundo anterior y luego el muro por bisección sobre las horas que tardan de verdad las partidas simuladas, llaves incluidas. Imprime las tablas; no escribe nada. |
+| `test/sim/anchors.test.ts` | Fija los anclajes: si alguien cambia las tablas y un enemigo sale de sus 2–3 golpes o un jefe de sus 5–10 s, falla. |
+
+Aviso sobre el ruido: el poder de un grupo se estanca cuando ya ha recogido el equipo de un mundo, así que un
+muro un 3 % más duro puede duplicar las horas de ese mundo, y la llave es una lotería (una de cada cinco partidas
+llega al jefe con llave; una con mala suerte espera el triple de la media). Un mundo suelto en una partida suelta
+oscila entre media hora y cincuenta. **Solo significan algo los totales por dificultad y sobre varias partidas.**
+
+## 2. Enemigos
+
+### 2.1 Vida de los enemigos normales — anclada a 2–3 golpes  ·  *cambio grande*
+
+- **Antes**: una fórmula (`HP0 · Φ · gearTrack`) que intentaba adivinar cuánto equipo llevaría el jugador. Con el
+  botín de hoy quedaba muy por debajo: en Normal el Ranger mataba de un golpe con dos o tres veces la vida del
+  enemigo de sobra (0,3–0,5 golpes) y el Knight en 1–1,5.
+- **Ahora**: una tabla, `GRUNT_HP_TUNE` (`src/data/stageScaling.ts`), con la vida del enemigo normal en cada
+  punto: las nueve etapas del mundo 1 una a una y luego un valor por mundo. Cada valor es **2,5 golpes básicos del
+  héroe que más pega** en un grupo «con equipo del nivel».
+- **Qué es «equipo del nivel»**: el grupo tal como llega a ese mundo **después de seis horas más farmeando la
+  última etapa del mundo anterior**, es decir, con todas las casillas llenas de piezas de ese mundo. Es justo tu
+  caso de hoy (equipo del mundo 1 farmeando 2-9). Quien llegue con menos (por ejemplo, con una llave temprana y
+  media armadura vacía) necesitará más golpes; nadie llega matando de uno.
+- **Por qué «el que más pega»**: el golpe del Ranger es tres veces el del Knight en Normal y de cinco a ocho veces
+  más adelante (el equipo ofensivo va al que hace daño y el defensivo al tanque). Si anclara a la media, el Ranger
+  seguiría matando de un golpe. Con este anclaje el Ranger necesita 2–3 golpes, el Knight 8–15 y la Priest más.
+- **Dentro de un mundo la vida no cambia**; sube de golpe al entrar en el siguiente. El grupo crece mientras
+  farmea ante el muro, no durante la hora que tarda en pasar las nueve etapas; lo que crece dentro del mundo es
+  el tamaño de las oleadas (5 enemigos en X-1, 22 en X-9, como antes).
+- **El salto del mundo 1 al 2**: la vida se multiplica por diez (de 116 a 1.260). Cada pieza de equipo añade
+  daño plano y un héroe pasa de 2 casillas llenas a 11 en sus primeras horas: su golpe se multiplica por diez
+  (de 46 a 504). No es un error de la tabla: es lo que pesa el equipo al principio.
+- **En juego**: enemigo normal de 2-9 contra equipo honrado del mundo 1: **0,46 → 2,5 golpes**. Arquero 2 golpes,
+  bruto 4½.
+- **Medido con el grupo que llega de verdad** (que suele traer menos que el «equipo del nivel»): en el mundo 2
+  necesita 7 golpes al entrar y 4½ en 2-9 (aún le faltan casillas); en el mundo 3, 3; **del mundo 4 en adelante,
+  entre 2,1 y 3,3 golpes** en todas las mediciones. El Knight necesita 7–23 golpes y la Priest 15–45: el que mata
+  es el Ranger.
+
+### 2.2 Élites  ·  *cambio pequeño*
+
+- **Antes → ahora**: `ELITE_HP_MULT` 5 → **4,5** (`stageScaling.ts`). Como la vida base ya está anclada, un élite
+  aguanta **unos 11 golpes** del que más pega (tu banda: 10–12). Antes eran 5 × «un golpe» = caían casi igual de
+  rápido que un normal; por eso «no aguantaban».
+- Su daño (×5) y su probabilidad (8 %) no cambian.
+
+### 2.3 Arquero  ·  *cambio pequeño*
+
+- **Antes → ahora**: su vida era 0,65 × la del enemigo normal; ahora **0,8 ×** (`src/data/enemies.ts`), para que
+  también aguante 2 golpes y no 1,6.
+
+### 2.4 Jefes de etapa — anclados a 5–10 s  ·  *cambio grande*
+
+- **Antes**: fórmula propia (`STAGE_BOSS_C · Φ^1,85 · bossHpRamp`). Medido con el grupo de la sonda: 4–6 s en
+  Normal, 8–13 s en Infierno, 12–15 s en Averno. Con equipo honrado del mundo 1, el jefe de 2-9 caía en 3,6 s.
+- **Ahora**: tabla `STAGE_BOSS_HP_TUNE` (mismos puntos que la de enemigos): la vida que el grupo con equipo del
+  nivel tarda **7,5 s** en quitar (entre 6 y 9,5 s en los 58 puntos). Con el grupo que llega de verdad: 18–22 s
+  en el mundo 2, 11 s en el 3 y **entre 6,4 y 9,2 s del mundo 4 en adelante**.
+- No he tocado su daño ni su golpe en área.
+
+### 2.5 Daño de los enemigos normales  ·  *cambio medio, consecuencia del 2.1*
+
+- **Por qué**: enemigos que viven cinco veces más pegan cinco veces más tiempo. Con el daño de antes, cualquier
+  grupo caía en la primera oleada de 2-9.
+- **Ahora**: tabla `TRASH_DMG_TUNE` (una fracción del daño de la fórmula; solo enemigos normales y élites, no
+  jefes). En cada punto, el mayor daño con el que el grupo **que llega de verdad** (no el reforzado) limpia la
+  etapa más dura del punto **sin caer**, con un margen del 10 %. Nunca por encima de la fórmula. Valores: 1,0 en
+  las cuatro primeras etapas, 0,56–0,75 en el resto del mundo 1, **0,27–0,5 en los mundos 2 a 6** (el grupo aún
+  está llenando casillas), 0,68–1,0 en Infierno y Averno, y **1,0 desde mediados de Eterno**.
+- Se permite que una partida de cada cuatro falle la comprobación: el jugador que encontró llave enseguida llega
+  casi desnudo al mundo siguiente, y ajustar el daño a ese caso dejaría inofensivos a los enemigos de todos los
+  demás.
+- **El arranque**: el daño enemigo empieza en el **28 %** (antes 65 %) y no es completo hasta la etapa **60**
+  (antes la 12): `EARLY_DMG_FLOOR`, `EARLY_DMG_RAMP_END`.
+
+### 2.6 Muros (jefes de mundo)  ·  *reajuste completo*
+
+- **Antes**: `WORLD_WALL_MULT` de 1,18 (mundo 1) a 100 (mundo 50), ajustada para el botín antiguo. Con el botín de
+  hoy: muros triviales hasta Averno y un muro infranqueable en Averno 1-10.
+- **Ahora**: la misma tabla, recalculada mundo a mundo. De **0,23** (mundo 1) a unos **2** al final de Normal e
+  Infierno, **4,3** al final de Averno, **13,5** al final de Eterno y **39,5** en Tormento 10-10.
+- **Cómo se fija cada muro**: se simulan cuatro partidas ante ese muro con las llaves y los intentos reales, y se
+  busca por bisección la vida con la que el mundo dura, de media, su objetivo.
+- **Los tres primeros mundos no tienen muro propiamente dicho**: su jefe cae con la primera llave (en 7–30 s).
+  Ahí los grupos son muy desiguales (media armadura vacía) y un muro más alto castigaría justo al que encontró
+  llave pronto. Desde el mundo 4 el jefe ya puede costar más de una llave.
+- **Intentos por mundo** (media de cuatro partidas): Normal 1–2, Infierno 1–3, Averno 1–4, Eterno 1–7, Tormento
+  2–8. En total, unos 14 intentos en Normal, 16 en Infierno, 23 en Averno, 36 en Eterno y 55 en Tormento.
+- Cada muro es más duro que el anterior (hay un test).
+- Sus habilidades (onda en área, furia, herida mortal) no cambian.
+
+### 2.7 Lo que ha desaparecido
+
+`HP0`, `gearTrack` y sus constantes, `STAGE_BOSS_C`, `STAGE_BOSS_EXP`, `bossHpRamp` y sus constantes: las fórmulas
+que las tablas sustituyen. `Φ` sigue rigiendo el daño enemigo, la mitigación, el oro, la experiencia y el nivel
+de objeto.
+
+### 2.8 Velocidades (cambio tuyo de hoy, medido aquí)
+
+`WALK_SPEED` 150 → 110, enemigos 100/80 → 50/40, `SPAWN_AHEAD` 240 → 280. Todo lo de este informe está medido con
+esos valores. Efecto: una etapa X-1 pasa de ~3 min a ~3½–4.
+
+## 3. Clases y talentos
+
+**No he cambiado nada.** Lo que miré:
+
+- **¿Hay una clase desviada?** El golpe básico del Ranger es 3–8 veces el del Knight. Es la diferencia entre el que
+  hace daño y el tanque, y viene sobre todo del reparto del equipo (piezas ofensivas a uno, defensivas al otro), no
+  de los números de la clase. No lo he tocado; por eso el anclaje es «el que más pega».
+- **El nivel casi no pesa en el daño**: un héroe de nivel 120 sin equipo pega 345; con equipo, 90.000. El poder
+  son los objetos, como estaba decidido. La curva de experiencia (sección 6) no arregla ni estropea el combate; solo
+  reparte los puntos de talento a lo largo del juego.
+
+## 4. Objetos y botín
+
+**No he cambiado nada.** La escalera de rareza por mundo queda como la decidiste. Dos consecuencias medidas:
+
+- Con ella y un cofre cada varios minutos, un grupo tarda **las tres o cuatro primeras horas en llenar sus 33
+  casillas**; de ahí el salto de vida entre el mundo 1 y el 2 (2.1) y que los mundos 2–6 sean los de daño enemigo
+  más bajo (2.5).
+- El primer objeto de la rareza nueva de cada dificultad tarda: es un 0,2 % en su segundo mundo.
+
+## 5. Cofres y llaves
+
+**No he cambiado nada**: cofre común 0,2 % por baja, cofre de jefe de etapa 25 %, llave en 1 de cada 10 de esos
+cofres, apertura automática cada 30 min. Lo que sale al medirlo:
+
+- **Cofres comunes**: con enemigos que aguantan 2–3 golpes se mata más despacio que cuando calculé «uno cada 5
+  minutos». Ahora cae **uno cada 11 minutos en Normal** (2.700 bajas por hora) y uno cada 6–7 en Tormento (4.700).
+  El almacén de 6 tarda una hora en llenarse en Normal.
+- **Llaves**: una cada ~42 jefes de etapa. El juego deja al grupo repitiendo X-9, y una X-9 dura 10–11 minutos
+  (5–6 en el mundo 1): **de 4 a 8 horas de farmeo por llave** (unas 3½ en el mundo 1). El primer intento también
+  la necesita. Es, con diferencia, lo que más pesa en la duración de cada mundo (sección 9).
+
+## 6. Experiencia y oro
+
+### 6.1 Curva de experiencia  ·  *cambio medio*
+
+- **Antes**: `0,7 · N^3,5`. El grupo llegaba al nivel 72 al acabar Normal y al tope (120) en Averno: los niveles
+  dejaban de existir en la segunda mitad del juego.
+- **Ahora**: `0,7 · N^3,5 · (1 + (N/30)^1,2) + 50 M · (N/120)^20` (`totalExpToReach`). Igual de barata al
+  principio (nivel 10: 2.800; nivel 20: 40.000), varias veces más cara en medio (×2,9 en el 50, ×4,6 en el 88) y
+  con una cola dura para los últimos niveles.
+- **En juego**: nivel ~52 al acabar Normal, ~68 Infierno, ~82 Averno, ~96 Eterno, **~108 al terminar el juego**.
+  El 120 queda para después de Tormento 10-10.
+
+### 6.2 Precio de reclutar  ·  *cambio pequeño*
+
+- **Antes → ahora**: casilla de grupo 1.000 / 2.500 → **600 / 1.200** (`techTree.ts`, `party_size`); desbloquear
+  clase 500 → **300** (`classes.ts`). Total: Ranger 900 de oro, Priest 1.500 más.
+- **Por qué**: con cofres escasos la primera hora es de un Knight solo demasiado tiempo. Antes el Ranger llegaba a
+  los 40–50 minutos y la Priest pasada la hora y media.
+- **En juego**: Ranger a los **17 minutos**, Priest a los **40**.
+
+El oro por baja y la experiencia por baja no cambian.
+
+## 7. Motor de combate y mejoras
+
+- **Motor**: un solo cambio, mecánico: los enemigos normales leen su daño de la tabla nueva (`sim/stages.ts`).
+  Ninguna regla de combate cambia. La regla de hoy del daño a la retaguardia sigue igual.
+- **Mejoras**: solo el precio de `party_size` (6.2).
+
+## 8. La sonda (el «jugador medio»), para que mida el juego de hoy
+
+Sin esto las cifras no valían: la sonda no sabía de llaves.
+
+| Qué | Antes | Ahora |
+|---|---|---|
+| Llaves | No existían: intentaba el muro gratis cada vez que mejoraba | Cada intento gasta una llave, el primero también; salen de los cofres de jefe de etapa con la tirada real; sin llave, repite X-9. Con llave, intenta. |
+| Combates contra el muro | Siempre la misma semilla: un grupo en el límite perdía siempre | Cada intento es un combate distinto |
+| Cofres | Extrapolaba los que cayeron en UNA etapa medida (con 0,2 % caen 0 o 1) | El número esperado: bajas × probabilidad real |
+| Cofres recogidos | 50 % de los comunes | 90 % (ya no se desborda el almacén) y 95 % de los de jefe |
+| Ausencia | 12 h al día | 16 h fuera, de las que el juego cuenta su tope (8 h) |
+| Gasto de oro | Una vez al día | En cuanto alcanza; y ahorra para reclutar antes de comprar otra cosa |
+| Primeras etapas de jefe | No daban cofre de jefe | Lo dan |
+
+## 9. Lo que tienes que decidir
+
+1. **La llave.** Con tu 10 %, la espera de una llave (4–8 h) es más larga que casi cualquier otra cosa del mundo
+   en que estás, y el primer intento también la pide. Efectos: cuatro de cada cinco jugadores llegan al jefe sin
+   llave y se quedan horas repitiendo X-9; un intento fallido cuesta otras 4–8 h; un jugador astuto farmeará X-1
+   (cuatro veces más jefes por hora) en vez de X-9. Opciones: (a) dejarlo — es lo que he afinado; (b) una llave
+   garantizada al superar X-9 por primera vez; (c) subir la probabilidad y endurecer los muros a cambio.
+2. **Normal dura unas 72–78 h**, no las 36 del reparto que te propuse. No puede bajar de ahí con enemigos de
+   2–3 golpes y la llave al 10 %: cada mundo son una hora de etapas más la espera de la llave. Reparto que
+   propongo: Normal 10 %, Infierno 15 %, Averno 20 %, Eterno 25 %, Tormento 30 %.
+3. **Intentos fallidos en Eterno y Tormento**: hasta 7–8 en algunos mundos, cada uno con su llave (36 y 55 en
+   total). Si te parece demasiado castigo,
+   la palanca es que los enemigos de Eterno y Tormento aguanten 3 golpes en vez de 2,5 (la llave tarda más, hacen
+   falta menos intentos).
+4. **El mundo 1 y la suerte**: quien encuentra pronto un arma o una llave va muy por delante de la tabla durante
+   esa hora. Solo se arreglaría dando un arma inicial a cada héroe; no lo he hecho.
+5. **Eterno es el tramo menos fiable**: 172 h en las partidas con que se afinó y 280 h en cuatro nuevas (objetivo
+   180). Sus muros están cerca del techo de lo que da el equipo y una partida con mala suerte se queda 50 h en un
+   mundo. Para una segunda pasada: afinar con más partidas o bajar un poco esos diez muros.
+6. **Mascotas**: sus probabilidades se fijaron sobre el número de bajas de esta mañana. Ahora se mata más despacio
+   y el juego dura más: hay que volver a medirlas (al acabar Normal son unas 200.000 bajas —antes 132.000—, al acabar Eterno 1,5–1,65 millones —antes 1,54—,
+   y el juego completo 2,3–2,5 millones de bajas y unos 5.200–5.700 jefes).
+
+## 10. Lo que consideré y no cambié
+
+- Dar un arma inicial a cada héroe (punto 9.4).
+- Garantizar la primera llave (punto 9.1): la descartaste hoy.
+- Bajar el poder plano de los objetos al principio para suavizar el salto del mundo 1 al 2.
+- Nerfear el Ranger para acercar su golpe al del Knight (sección 3).
+- Hacer que los enemigos normales crezcan dentro de un mundo (los dejé planos: 2.1).
+- Tocar el oro por baja o los precios de las mejoras: el oro sigue siendo escaso, como querías.
+- Tocar los tamaños de oleada (5 → 22 por etapa) o las 20 oleadas por etapa.
+
+## 11. Estado
+
+- Sin commit. Typecheck y lint limpios; tests: 86 archivos, 723 pasan, 1 omitido.
+- Documentos actualizados: `docs/DIFFICULTY.md` (§4 escalera, §6b anclajes, §7 niveles, §8 ritmo, §9 llaves),
+  `docs/BALANCE.md`, `CLAUDE.md`, `docs/redesign/PROGRESS.md`.
+- Si cambia el poder de los héroes (clases, objetos, talentos), hay que volver a pasar
+  `scripts/tune-pacing.ts`: los anclajes se miden, no se deducen.
+
+---
+
+# Apéndice — tablas de la sonda
+
+## A. Duración por dificultad
+
+Horas activas de cada dificultad (mediana de cuatro partidas) frente a su objetivo.
+
+| Dificultad | Objetivo | Partidas 1–4 (con las que se afinó) | Partidas 5–8 (nuevas) |
+|---|---|---|---|
+| Normal | 75 h | 76 h | 72 h |
+| Infierno | 112 h | 108 h | 112 h |
+| Averno | 146 h | 152 h | 128 h |
+| Eterno | 180 h | 172 h | 280 h |
+| Tormento | 215 h | 169 h | 169 h |
+| **Total (mediana)** | **728 h** | **677 h** | **761 h** |
+
+Días de calendario a 8 h diarias, partida a partida: 99 · 83 · 87 · 83 (partidas 1–4) y 91 · 79 · 106 · 100 (partidas 5–8). Las ocho terminan; ningún mundo retiene a nadie 30 días.
+
+Eterno es lo más disperso: en las partidas nuevas tarda 100 h más que en las que sirvieron para afinar.
+
+## B. Mundo a mundo (partidas 1–4)
+
+Horas activas en el mundo (media y mediana), espera de la primera llave, horas sin llave ante el muro, intentos (media), nivel y rareza más alta equipada al vencer al jefe, y rango de horas entre partidas.
+
+| mundo | dificultad | objetivo h | horas (media) | horas (mediana) | primera llave h | sin llave h | intentos | nivel | rareza | rango de horas |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | normal | 3.0 | 3.6 | 2.9 | 2.0 | 2.0 | 1.0 | 22 | T2 | (1.1-7.3, n=4) |
+| 2 | normal | 6.6 | 4.4 | 5.4 | 3.1 | 3.1 | 1.0 | 26 | T2 | (0.8-6.2, n=4) |
+| 3 | normal | 6.9 | 5.8 | 5.2 | 4.4 | 4.4 | 1.0 | 32 | T3 | (2.5-10.3, n=4) |
+| 4 | normal | 7.3 | 5.8 | 5.7 | 2.0 | 4.7 | 2.0 | 35 | T4 | (1.1-10.7, n=4) |
+| 5 | normal | 7.6 | 6.3 | 5.9 | 2.1 | 4.9 | 1.5 | 40 | T4 | (0.9-12.6, n=4) |
+| 6 | normal | 8.0 | 3.2 | 2.9 | 0.9 | 2.0 | 1.3 | 40 | T4 | (1.0-6.0, n=4) |
+| 7 | normal | 8.3 | 15.5 | 14.9 | 8.0 | 13.8 | 2.0 | 46 | T4 | (10.7-21.3, n=4) |
+| 8 | normal | 8.6 | 8.5 | 7.7 | 0.0 | 6.7 | 2.0 | 48 | T4 | (0.9-17.7, n=4) |
+| 9 | normal | 9.0 | 14.6 | 12.8 | 11.8 | 11.8 | 1.0 | 51 | T4 | (10.5-22.3, n=4) |
+| 10 | normal | 9.3 | 4.2 | 4.0 | 3.0 | 3.0 | 1.0 | 52 | T4 | (0.9-7.8, n=4) |
+| 11 | hell | 9.7 | 10.2 | 6.7 | 5.6 | 5.6 | 1.0 | 53 | T4 | (1.1-26.1, n=4) |
+| 12 | hell | 10.0 | 18.8 | 21.7 | 11.4 | 20.7 | 1.3 | 56 | T4 | (6.0-25.8, n=4) |
+| 13 | hell | 10.4 | 15.3 | 16.0 | 15.1 | 15.1 | 1.0 | 58 | T4 | (1.1-28.0, n=4) |
+| 14 | hell | 10.7 | 10.2 | 9.2 | 8.2 | 8.2 | 1.3 | 59 | T4 | (2.5-20.0, n=4) |
+| 15 | hell | 11.0 | 6.0 | 6.3 | 2.2 | 5.4 | 1.5 | 60 | T5 | (0.8-10.6, n=4) |
+| 16 | hell | 11.4 | 11.9 | 10.7 | 3.9 | 9.8 | 2.5 | 62 | T5 | (8.7-17.5, n=4) |
+| 17 | hell | 11.7 | 9.5 | 5.4 | 0.0 | 4.5 | 1.5 | 64 | T5 | (0.8-26.5, n=4) |
+| 18 | hell | 12.1 | 10.3 | 1.4 | 0.0 | 0.5 | 1.3 | 65 | T5 | (0.9-37.5, n=4) |
+| 19 | hell | 12.4 | 11.3 | 10.7 | 0.5 | 9.7 | 1.8 | 66 | T5 | (0.9-23.1, n=4) |
+| 20 | hell | 12.8 | 8.8 | 8.7 | 2.1 | 7.8 | 2.8 | 68 | T5 | (0.9-17.1, n=4) |
+| 21 | inferno | 13.1 | 21.9 | 13.9 | 1.4 | 13.0 | 2.5 | 70 | T5 | (0.8-58.8, n=4) |
+| 22 | inferno | 13.4 | 10.3 | 5.8 | 5.0 | 5.0 | 1.8 | 72 | T5 | (1.8-27.7, n=4) |
+| 23 | inferno | 13.8 | 9.5 | 7.6 | 3.1 | 6.8 | 1.3 | 72 | T5 | (0.9-22.0, n=4) |
+| 24 | inferno | 14.1 | 11.4 | 3.0 | 1.7 | 2.3 | 3.0 | 73 | T5 | (1.3-38.3, n=4) |
+| 25 | inferno | 14.5 | 18.9 | 17.3 | 10.3 | 16.2 | 2.0 | 76 | T6 | (6.8-34.2, n=4) |
+| 26 | inferno | 14.8 | 11.2 | 9.9 | 2.3 | 9.0 | 2.0 | 77 | T6 | (2.2-22.5, n=4) |
+| 27 | inferno | 15.1 | 11.8 | 7.2 | 3.6 | 6.3 | 2.0 | 77 | T6 | (0.8-32.1, n=4) |
+| 28 | inferno | 15.5 | 11.4 | 11.1 | 0.0 | 10.2 | 2.3 | 79 | T6 | (0.9-22.5, n=4) |
+| 29 | inferno | 15.8 | 24.8 | 27.5 | 6.9 | 26.6 | 3.8 | 81 | T6 | (13.5-30.6, n=4) |
+| 30 | inferno | 16.2 | 12.6 | 12.0 | 5.9 | 11.2 | 2.3 | 82 | T6 | (4.0-22.5, n=4) |
+| 31 | eternal | 16.5 | 10.9 | 11.2 | 4.4 | 10.3 | 2.8 | 83 | T6 | (4.5-16.5, n=4) |
+| 32 | eternal | 16.8 | 11.1 | 11.0 | 7.3 | 10.2 | 2.3 | 84 | T6 | (7.4-15.0, n=4) |
+| 33 | eternal | 17.2 | 13.0 | 7.9 | 2.0 | 7.1 | 2.3 | 85 | T7 | (1.7-34.5, n=4) |
+| 34 | eternal | 17.5 | 5.6 | 6.1 | 3.4 | 5.4 | 1.5 | 86 | T7 | (1.0-9.3, n=4) |
+| 35 | eternal | 17.9 | 33.0 | 30.0 | 3.8 | 29.0 | 7.3 | 88 | T7 | (18.8-53.3, n=4) |
+| 36 | eternal | 18.2 | 32.7 | 29.7 | 5.3 | 28.9 | 5.3 | 91 | T7 | (6.5-65.0, n=4) |
+| 37 | eternal | 18.6 | 21.4 | 19.5 | 2.8 | 18.7 | 4.0 | 93 | T7 | (2.7-44.0, n=4) |
+| 38 | eternal | 18.9 | 13.8 | 10.5 | 3.1 | 9.7 | 2.3 | 93 | T7 | (5.5-28.5, n=4) |
+| 39 | eternal | 19.2 | 29.4 | 38.0 | 1.3 | 37.1 | 6.5 | 95 | T7 | (0.7-40.7, n=4) |
+| 40 | eternal | 19.6 | 11.5 | 10.2 | 6.2 | 9.4 | 1.3 | 96 | T7 | (2.2-23.5, n=4) |
+| 41 | torment | 19.9 | 33.3 | 36.7 | 0.3 | 36.0 | 5.0 | 98 | T7 | (12.4-47.5, n=4) |
+| 42 | torment | 20.3 | 4.5 | 2.9 | 1.8 | 2.3 | 1.5 | 98 | T7 | (2.1-10.0, n=4) |
+| 43 | torment | 20.6 | 8.3 | 4.5 | 1.8 | 3.9 | 2.8 | 100 | T8 | (0.6-23.5, n=4) |
+| 44 | torment | 20.9 | 28.0 | 22.6 | 3.1 | 22.0 | 7.8 | 102 | T8 | (15.8-51.0, n=4) |
+| 45 | torment | 21.3 | 21.6 | 22.0 | 1.3 | 21.3 | 6.0 | 103 | T8 | (17.5-25.0, n=4) |
+| 46 | torment | 21.6 | 11.8 | 15.3 | 0.0 | 14.6 | 5.3 | 104 | T8 | (0.5-16.0, n=4) |
+| 47 | torment | 22.0 | 23.4 | 23.0 | 2.3 | 22.3 | 8.3 | 105 | T8 | (7.0-40.5, n=4) |
+| 48 | torment | 22.3 | 24.0 | 19.3 | 1.3 | 18.6 | 6.0 | 107 | T8 | (0.6-57.0, n=4) |
+| 49 | torment | 22.7 | 23.9 | 14.3 | 1.3 | 13.7 | 7.8 | 107 | T8 | (4.4-62.5, n=4) |
+| 50 | torment | 23.0 | 12.0 | 11.9 | 2.2 | 11.3 | 4.3 | 108 | T8 | (5.6-18.5, n=4) |
+
+## C. Lo que produce el juego (acumulado al acabar cada dificultad, mediana de las partidas 1–4)
+
+| dificultad | bajas | jefes | oro | experiencia por héroe | cofres encontrados | cofres comunes abiertos |
+|---|---|---|---|---|---|---|
+| Normal | 199,198 | 506 | 1,187,510 | 1,411,324 | 588 | 401 |
+| Hell | 497,784 | 1,212 | 3,971,631 | 4,194,124 | 1,474 | 1,014 |
+| Inferno | 880,522 | 2,109 | 9,469,108 | 9,140,732 | 2,612 | 1,807 |
+| Eternal | 1,461,503 | 3,432 | 20,447,719 | 17,909,281 | 4,341 | 3,017 |
+| Torment | 2,257,706 | 5,200 | 40,063,772 | 32,862,671 | 6,711 | 4,684 |
+
+## D. Anclajes a lo largo del juego (grupo real de la sonda, mediana de dos partidas)
+
+Al llegar a cada mundo (x-1) y ante su muro (x-9): nivel, golpes del que más pega por enemigo normal, golpes por clase (Knight / Ranger / Priest), segundos del jefe de etapa, vida mínima del grupo durante ese jefe, segundos que dura la etapa y derrotas en ella.
+
+| mundo | etapa | nivel | golpes | Knight/Ranger/Priest | jefe s | vida mín. % | etapa s | derrotas |
+|---|---|---|---|---|---|---|---|---|
+| 1 | x-9 | 13 | 1.04 | 1.8/1.7/5.4 | 5.7 | 95 | 329 | 0 |
+| 2 | x-1 | 21.5 | 6.96 | 12.8/7.0/33.9 | 22.4 | 87 | 395 | 0 |
+| 2 | x-9 | 22.5 | 4.38 | 12.0/4.4/32.2 | 18.1 | 84 | 986 | 0 |
+| 3 | x-1 | 26 | 3.14 | 11.6/3.1/20.5 | 11.3 | 90 | 248 | 0 |
+| 3 | x-9 | 28 | 3.05 | 9.7/3.0/18.9 | 10.7 | 86 | 734 | 0 |
+| 4 | x-1 | 32 | 2.76 | 9.4/2.8/19.6 | 7.7 | 94 | 246 | 0 |
+| 4 | x-9 | 32 | 2.61 | 9.7/2.6/19.2 | 7.5 | 93 | 695 | 0 |
+| 5 | x-1 | 34.5 | 3.26 | 10.6/3.3/14.9 | 8.8 | 93 | 251 | 0 |
+| 5 | x-9 | 34.5 | 3.03 | 6.3/3.0/14.9 | 8.5 | 92 | 602 | 0 |
+| 6 | x-1 | 39.5 | 2.66 | 7.1/2.7/18.8 | 8.4 | 94 | 215 | 0 |
+| 6 | x-9 | 39.5 | 2.70 | 6.9/2.7/18.0 | 8.4 | 93 | 626 | 0 |
+| 7 | x-1 | 40 | 3.27 | 8.1/3.3/18.8 | 9.2 | 93 | 252 | 0 |
+| 7 | x-9 | 40 | 3.06 | 8.5/3.1/19.4 | 9.2 | 92 | 689 | 0 |
+| 8 | x-1 | 45 | 3.17 | 8.0/3.2/15.0 | 8.2 | 94 | 226 | 0 |
+| 8 | x-9 | 45.5 | 2.77 | 7.8/2.8/14.6 | 8.2 | 94 | 601 | 0 |
+| 9 | x-1 | 48.5 | 2.87 | 10.3/2.9/18.2 | 7.7 | 96 | 228 | 0 |
+| 9 | x-9 | 48.5 | 2.64 | 9.1/2.6/22.7 | 7.5 | 95 | 632 | 0 |
+| 10 | x-1 | 51.5 | 2.61 | 11.0/2.6/24.4 | 7.8 | 96 | 217 | 0 |
+| 10 | x-9 | 51.5 | 2.64 | 10.4/2.6/24.0 | 7.6 | 96 | 634 | 0 |
+| 11 | x-1 | 52 | 3.11 | 12.6/3.1/27.8 | 8.3 | 93 | 246 | 0 |
+| 11 | x-9 | 52.5 | 2.90 | 10.9/2.9/27.4 | 8.0 | 94 | 1002 | 0.5 |
+| 12 | x-1 | 55 | 3.19 | 12.0/3.2/30.6 | 7.5 | 95 | 239 | 0 |
+| 12 | x-9 | 55 | 2.85 | 12.0/2.8/30.4 | 7.5 | 94 | 709 | 0 |
+| 13 | x-1 | 57 | 2.88 | 12.1/2.9/20.3 | 7.6 | 93 | 235 | 0 |
+| 13 | x-9 | 57 | 2.62 | 11.5/2.6/17.6 | 7.6 | 93 | 642 | 0 |
+| 14 | x-1 | 60 | 2.63 | 11.4/2.6/19.5 | 7.0 | 95 | 199 | 0 |
+| 14 | x-9 | 60.5 | 2.56 | 11.6/2.6/19.6 | 6.8 | 95 | 589 | 0 |
+| 15 | x-1 | 62.5 | 2.44 | 14.8/2.4/18.7 | 7.1 | 95 | 200 | 0 |
+| 15 | x-9 | 62.5 | 2.29 | 14.8/2.3/18.8 | 7.1 | 95 | 582 | 0 |
+| 16 | x-1 | 63 | 2.55 | 14.8/2.6/20.9 | 7.2 | 96 | 213 | 0 |
+| 16 | x-9 | 63 | 2.37 | 14.7/2.4/18.6 | 7.2 | 95 | 538 | 0 |
+| 17 | x-1 | 64 | 2.31 | 13.6/2.3/19.1 | 6.5 | 95 | 207 | 0 |
+| 17 | x-9 | 64 | 2.30 | 13.9/2.3/19.3 | 6.5 | 95 | 559 | 0 |
+| 18 | x-1 | 64 | 2.58 | 14.6/2.6/21.3 | 6.7 | 95 | 206 | 0 |
+| 18 | x-9 | 64.5 | 2.34 | 14.9/2.3/20.9 | 6.7 | 95 | 646 | 0 |
+| 19 | x-1 | 64.5 | 2.97 | 16.4/3.0/25.0 | 7.3 | 94 | 223 | 0 |
+| 19 | x-9 | 64.5 | 2.77 | 15.9/2.8/23.3 | 7.3 | 94 | 667 | 0 |
+| 20 | x-1 | 67 | 2.52 | 14.4/2.5/17.4 | 6.7 | 96 | 219 | 0 |
+| 20 | x-9 | 67 | 2.40 | 16.0/2.4/17.2 | 6.6 | 96 | 584 | 0 |
+| 21 | x-1 | 68 | 2.63 | 13.0/2.6/17.2 | 6.5 | 95 | 206 | 0 |
+| 21 | x-9 | 68 | 2.35 | 13.1/2.4/18.0 | 6.4 | 94 | 527 | 0 |
+| 22 | x-1 | 68 | 2.58 | 14.0/2.6/19.3 | 7.0 | 94 | 199 | 0 |
+| 22 | x-9 | 68.5 | 2.56 | 13.8/2.6/19.0 | 7.0 | 94 | 544 | 0 |
+| 23 | x-1 | 70.5 | 2.37 | 10.8/2.4/21.6 | 7.0 | 94 | 196 | 0 |
+| 23 | x-9 | 70.5 | 2.44 | 10.5/2.4/19.5 | 7.0 | 94 | 531 | 0 |
+| 24 | x-1 | 72.5 | 2.22 | 12.1/2.2/23.2 | 6.8 | 94 | 199 | 0 |
+| 24 | x-9 | 72.5 | 2.20 | 11.7/2.2/23.3 | 6.8 | 93 | 535 | 0 |
+| 25 | x-1 | 72.5 | 2.44 | 14.2/2.4/27.5 | 7.5 | 93 | 201 | 0 |
+| 25 | x-9 | 73 | 2.28 | 13.0/2.3/27.6 | 7.5 | 92 | 1054 | 1 |
+| 26 | x-1 | 74 | 2.69 | 15.8/2.7/32.2 | 7.3 | 95 | 207 | 0 |
+| 26 | x-9 | 74 | 2.68 | 15.2/2.7/30.2 | 7.3 | 95 | 572 | 0 |
+| 27 | x-1 | 75 | 2.45 | 17.7/2.5/35.2 | 7.6 | 94 | 208 | 0 |
+| 27 | x-9 | 75 | 2.63 | 17.6/2.6/32.7 | 7.5 | 93 | 586 | 0 |
+| 28 | x-1 | 76.5 | 2.48 | 17.7/2.5/45.4 | 7.5 | 94 | 211 | 0 |
+| 28 | x-9 | 76.5 | 2.58 | 17.3/2.6/44.0 | 7.5 | 94 | 565 | 0 |
+| 29 | x-1 | 77.5 | 2.32 | 18.7/2.3/43.1 | 8.1 | 92 | 199 | 0 |
+| 29 | x-9 | 78 | 2.45 | 18.0/2.4/44.6 | 8.1 | 92 | 773 | 0.5 |
+| 30 | x-1 | 79.5 | 2.48 | 20.3/2.5/31.8 | 9.1 | 91 | 195 | 0 |
+| 30 | x-9 | 79.5 | 2.11 | 18.0/2.1/30.0 | 9.0 | 91 | 528 | 0 |
+| 31 | x-1 | 80.5 | 2.33 | 23.6/2.3/27.2 | 9.1 | 88 | 202 | 0 |
+| 31 | x-9 | 80.5 | 2.24 | 18.5/2.2/24.4 | 8.8 | 88 | 518 | 0 |
+| 32 | x-1 | 81.5 | 2.55 | 22.2/2.5/22.1 | 7.7 | 91 | 187 | 0 |
+| 32 | x-9 | 81.5 | 2.15 | 20.3/2.1/21.2 | 7.3 | 91 | 716 | 0.5 |
+| 33 | x-1 | 82.5 | 2.17 | 19.9/2.2/26.2 | 7.3 | 92 | 189 | 0 |
+| 33 | x-9 | 83 | 2.34 | 17.9/2.3/24.0 | 7.1 | 92 | 490 | 0 |
+| 34 | x-1 | 83 | 2.53 | 18.5/2.5/29.3 | 7.8 | 92 | 181 | 0 |
+| 34 | x-9 | 83 | 2.21 | 20.9/2.2/27.9 | 7.8 | 91 | 1024 | 1.5 |
+| 35 | x-1 | 83.5 | 2.54 | 22.1/2.5/26.7 | 8.4 | 90 | 197 | 0 |
+| 35 | x-9 | 84 | 2.64 | 20.8/2.6/22.7 | 8.6 | 89 | X | 6.5 |
+| 36 | x-1 | 87.5 | 2.48 | 19.1/2.5/25.4 | 8.1 | 94 | 185 | 0 |
+| 36 | x-9 | 87.5 | 2.41 | 19.8/2.4/24.6 | 8.1 | 93 | 464 | 0 |
+| 37 | x-1 | 90 | 2.33 | 22.6/2.3/27.8 | 7.5 | 94 | 181 | 0 |
+| 37 | x-9 | 90 | 2.47 | 20.6/2.5/29.2 | 7.5 | 94 | 465 | 0 |
+| 38 | x-1 | 91.5 | 3.09 | 18.2/3.1/32.2 | 7.9 | 95 | 196 | 0 |
+| 38 | x-9 | 91.5 | 2.83 | 19.2/2.8/28.6 | 7.9 | 95 | 474 | 0 |
+| 39 | x-1 | 92 | 2.57 | 21.0/2.6/25.6 | 7.2 | 96 | 183 | 0 |
+| 39 | x-9 | 92.5 | 2.46 | 23.3/2.5/28.7 | 7.2 | 95 | 461 | 0 |
+| 40 | x-1 | 94 | 2.45 | 23.7/2.4/27.3 | 6.7 | 95 | 183 | 0 |
+| 40 | x-9 | 94 | 2.41 | 25.6/2.4/27.2 | 6.7 | 95 | 458 | 0 |
+| 41 | x-1 | 94.5 | 2.33 | 25.0/2.3/25.0 | 7.3 | 94 | 183 | 0 |
+| 41 | x-9 | 94.5 | 2.50 | 26.1/2.5/28.6 | 7.3 | 93 | 443 | 0 |
+| 42 | x-1 | 97.5 | 2.54 | 20.2/2.5/14.3 | 6.5 | 95 | 170 | 0 |
+| 42 | x-9 | 97.5 | 1.94 | 19.6/1.9/15.1 | 6.5 | 94 | 352 | 0 |
+| 43 | x-1 | 97.5 | 2.50 | 25.7/2.5/17.9 | 6.7 | 94 | 175 | 0 |
+| 43 | x-9 | 98 | 2.42 | 21.5/2.4/17.5 | 6.7 | 94 | 365 | 0 |
+| 44 | x-1 | 98.5 | 2.63 | 19.1/2.6/20.7 | 7.5 | 93 | 174 | 0 |
+| 44 | x-9 | 98.5 | 2.50 | 15.4/2.5/16.4 | 7.5 | 93 | 371 | 0 |
+| 45 | x-1 | 100.5 | 3.12 | 20.6/3.1/13.0 | 7.8 | 94 | 172 | 0 |
+| 45 | x-9 | 100.5 | 2.37 | 18.3/2.4/12.5 | 7.8 | 94 | 357 | 0 |
+| 46 | x-1 | 102 | 2.70 | 19.2/2.7/6.8 | 8.0 | 95 | 164 | 0 |
+| 46 | x-9 | 102 | 2.45 | 16.2/2.4/7.1 | 8.0 | 95 | 306 | 0 |
+| 47 | x-1 | 103 | 2.84 | 21.5/2.8/10.1 | 8.1 | 96 | 164 | 0 |
+| 47 | x-9 | 103 | 2.56 | 18.8/2.6/9.3 | 8.1 | 95 | 326 | 0 |
+| 48 | x-1 | 105.5 | 2.79 | 20.6/2.8/11.0 | 7.8 | 95 | 165 | 0 |
+| 48 | x-9 | 105.5 | 2.68 | 20.9/2.7/10.2 | 7.8 | 95 | 315 | 0 |
+| 49 | x-1 | 108 | 2.93 | 15.9/2.9/9.8 | 8.2 | 96 | 168 | 0 |
+| 49 | x-9 | 108 | 2.97 | 16.3/3.0/9.9 | 8.2 | 96 | 310 | 0 |
+| 50 | x-1 | 109.5 | 2.59 | 17.5/2.6/9.9 | 7.8 | 96 | 166 | 0 |
+| 50 | x-9 | 109.5 | 2.60 | 14.5/2.6/10.3 | 7.7 | 96 | 309 | 0 |
+
+## E. Las dos primeras horas de una partida nueva (partida 2)
+
+| Minuto | Qué pasa |
+|---|---|
+| 5 | Cae 1-1 (Knight solo, nivel 6) |
+| 11 | 1-2 |
+| 17 | 1-3 y llega el **Ranger** |
+| 23 | 1-4 |
+| 29 | 1-5 (primera pieza poco común) |
+| 40 | 1-6, con una derrota por el camino, y llega la **Priest** |
+| 46 · 53 · 59 | 1-7 · 1-8 · 1-9 (grupo de nivel 13/12/11) |
+| 59 → 3 h 49 min | Repite 1-9 (6½ min por vuelta) hasta que sale la primera llave; sube a nivel 24 y llena casillas |
+| 3 h 49 min | Jefe del mundo 1: cae al primer intento, en 7 s |
+| 3 h 54 min → 4 h 52 min | Mundo 2: etapas de 4 a 11 minutos cada una |
+| 10 h | Jefe del mundo 2, tras 5 h esperando la llave |
+
+En cuatro partidas el jefe del mundo 1 cayó entre 1,1 y 7,3 horas (mediana 2,9).
+
+## F. Tablas en `src/data/stageScaling.ts`
+
+`GRUNT_HP_TUNE`, `STAGE_BOSS_HP_TUNE`, `TRASH_DMG_TUNE` (59 puntos: etapas 1-1…1-10 y luego un valor por mundo, del 2 al 50) y `WORLD_WALL_MULT` (50 mundos). La referencia de lo que hizo el grupo con equipo del nivel al afinarlas está en `test/sim/probe/anchorReference.ts`.
+

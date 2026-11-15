@@ -83,6 +83,26 @@
         "hurt": "Golpe recibido",
         "death": "Muerte"
       }
+    },
+    {
+      "key": "mistletoe",
+      "kind": "worldboss",
+      "name_es": "Nuestra Señora del Muérdago",
+      "name_en": "Our Lady of Mistletoe",
+      "role_es": "Jefe de mundo",
+      "bullets_es": [
+        "Cuelga en vez de estar de pie: un nudo de raíces en la copa (el corazón del bosque, con una luz fría en las grietas) sostenido por cuatro lianas, y de su parte baja, cabeza abajo, una mujer colosal de madera de abedul",
+        "Una máscara serena, del revés, a la altura del Knight; brazos demasiado largos, con los codos por encima de los hombros, apoyada en las yemas de los dedos como una araña en su hilo",
+        "Ataque: se balancea hacia atrás, se alza con los dos brazos sobre la presa y la máscara se abre por la costura sobre una garganta de espinas; cae todo el péndulo y las dos manos rastrillan el camino",
+        "Muerte: convulsiona, las lianas se rompen una a una y la dejan caer un tramo cada vez; con la cuarta, el corazón le cae encima. Queda un montículo oscuro con la máscara cerrada y salen luciérnagas de su pelo"
+      ],
+      "anims_es": {
+        "idle": "Reposo",
+        "run": "Avanzar",
+        "attack": "Rastrillo",
+        "hurt": "Golpe recibido",
+        "death": "Muerte"
+      }
     }
   ]
 }

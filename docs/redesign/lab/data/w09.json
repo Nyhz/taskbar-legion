@@ -85,6 +85,26 @@
         "hurt": "Golpe recibido",
         "death": "Muerte"
       }
+    },
+    {
+      "key": "verdict",
+      "kind": "worldboss",
+      "name_es": "El Veredicto",
+      "name_en": "The Verdict",
+      "role_es": "Jefe de mundo",
+      "bullets_es": [
+        "La ley de la ciudadela, sentada todavía en juicio dentro de la armadura de su último rey: una coraza color tormenta de la altura de la tira, vacía",
+        "Del cuello abierto, donde iría la cabeza, sale un nudo de nubarrón con una corona de oro flotando encima; sostiene una balanza sobre quien tiene delante (una llama fría en un platillo, el otro vacío y bajando sobre la presa) y apoya en el hombro una espada de verdugo",
+        "Ataque: el platillo vacío cae, la espada se carga de blanco con la tormenta y se desploma con una columna de rayo sobre la punta",
+        "Muerte: la tormenta se encabrita y se apaga; la corona cae dentro del cuello vacío, la balanza se desprende, la espada resbala y la coraza se vuelca sobre las losas con el manto encima"
+      ],
+      "anims_es": {
+        "idle": "Reposo",
+        "run": "Avanzar",
+        "attack": "Sentencia",
+        "hurt": "Golpe recibido",
+        "death": "Muerte"
+      }
     }
   ]
 }

@@ -65,11 +65,31 @@
       }
     },
     {
-      "key": "unmaker",
+      "key": "lictor",
       "kind": "boss",
+      "name_es": "El Lictor",
+      "name_en": "The Lictor",
+      "role_es": "Jefe de etapa",
+      "bullets_es": [
+        "Camina por delante del Deshacedor llevando un trozo de él: una figura alta y estrecha envuelta en vendas blancas hasta el suelo, sin cabeza; sobre el cuello abierto cuelga un pequeño sol negro cuya corona arde más del lado de la presa, y así es como te mira",
+        "Detrás del hombro flota una gran esquirla de espejo llena de estrellas, uno de los seis paños que lleva el Deshacedor; las manos le cuelgan hasta las rodillas, con los dedos demasiado largos",
+        "Ataque: alza una mano, el paño sube sobre ella y se inclina mientras el sol se hincha; cae de canto sobre el camino, donde se levanta una costura de luz blanca",
+        "Muerte: el paño se agrieta, cae y se hace añicos; el sol negro se raja y derrama luz, el cuerpo se deshace hacia arriba en motas y queda un anillo apagado sobre los últimos pliegues"
+      ],
+      "anims_es": {
+        "idle": "Reposo",
+        "run": "Avanzar",
+        "attack": "Guillotina de espejo",
+        "hurt": "Golpe recibido",
+        "death": "Muerte"
+      }
+    },
+    {
+      "key": "unmaker",
+      "kind": "worldboss",
       "name_es": "El Deshacedor",
       "name_en": "The Unmaker",
-      "role_es": "Jefe final · la puerta a las dificultades altas",
+      "role_es": "Jefe de mundo",
       "bullets_es": [
         "Una figura blanca, imposiblemente delgada y sin rostro, cuelga en el aire con los brazos algo abiertos y los pies en punta; su única facción es una costura negra vertical. Detrás de la cabeza arde un sol negro, más oscuro que el cielo, con una corona blanca que brilla más por el lado que mira a los héroes. La rodean seis hojas de espejo roto llenas de estrellas, tres a cada lado como las alas de un serafín. Mide unos 115 px, más de tres héroes.",
         "Casi no se mueve y nada en él se detiene: flota, las hojas respiran, los rayos giran, piedras y un trozo de suelo orbitan a su alrededor; bajo él el suelo pierde el color y suben motas planas. Para avanzar se desliza erguido, con las hojas y las vendas quedándose atrás.",

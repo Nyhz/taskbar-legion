@@ -222,6 +222,12 @@ export interface PetDef {
 
 Owning grants the bonus permanently; all owned pets stack. Selected pet is **cosmetic only**.
 
+> **Redesign (2026-11-15) — pets have RANKS.** `PetDef.bonus` is now `ranks: PetBonus[]` (what the pet gives at
+> rank 1, 2, …; the last entry is the old bonus) plus `objective: { kind, goals }`: a pet is found at rank 1 and
+> grows through its own objective, counted since it was found, for every owned pet at once. Rules in
+> `sim/pets.ts`, numbers in `data/pets.ts`; `getBonuses(techRanks, petRanks)` takes the RANK of each owned pet,
+> and the save carries `pets.progress` (optional: old saves load at rank 1). See `docs/redesign/PROGRESS.md`.
+
 ## Effects — `data/effects.ts` + `sim/effects.ts`
 
 ```ts

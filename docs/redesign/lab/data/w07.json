@@ -83,6 +83,26 @@
         "hurt": "Golpe recibido",
         "death": "Muerte"
       }
+    },
+    {
+      "key": "amanita",
+      "kind": "worldboss",
+      "name_es": "El Ángel Destructor",
+      "name_en": "The Destroying Angel",
+      "role_es": "Jefe de mundo",
+      "bullets_es": [
+        "El cuerpo fructífero del único micelio que hay bajo las cavernas: un tallo grueso como un árbol que sale del suelo roto y se dobla sobre el camino como un cuello",
+        "Bajo una cúpula ancha de amanita con verrugas blancas, un bulto sin nariz ni mandíbula: un solo ojo que es un pozo de esporas doradas y una boca rasgada, medio cosida con hilos. Las láminas dan la única luz cálida del mundo",
+        "Un racimo a su alrededor: una seta hermana, setas menores, huevos a medio abrir y tres cordones gruesos como brazos agarrando el camino. Ataque: recoge el cuello, se hincha y sopla un torrente de esporas doradas",
+        "Muerte: vacía sus esporas hacia el techo, el ojo y las láminas se apagan y el sombrero cae de bruces; después le brotan setas pequeñas encima"
+      ],
+      "anims_es": {
+        "idle": "Reposo",
+        "run": "Avanzar",
+        "attack": "Aliento de esporas",
+        "hurt": "Golpe recibido",
+        "death": "Muerte"
+      }
     }
   ]
 }

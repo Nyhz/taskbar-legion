@@ -17,7 +17,7 @@ tuned. Put each number in its matching `data/` file; reference it, never re-type
 ## Simulation
 
 - **Tick:** 100 ms logical timestep. Render interpolates.
-- **Offline cap:** 12 hours of catch-up. Sampled deterministically from the seed.
+- **Offline cap:** 8 hours of catch-up (was 12 until 2026-11-15); the Time Imp pet adds +2/+4/+6/+8/+10 h by rank, up to 18. Sampled deterministically from the seed.
 - **Autosave:** every 30 s + on meaningful events (chest open, equip, tech/talent purchase, stage advance).
 - **Party wipe penalty:** retreat 1 stage; resume. No permadeath.
 
@@ -103,8 +103,9 @@ One scaler identity per gem (`data/gems.ts`):
 | Emerald | health | Diamond | armor + magicResist (½ each) |
 
 **Balance note:** `GEM_AFFIX_FRACTION` lifts AGGREGATE gear power (up to 4 sockets/item). Re-validate the
-zone-boss walls via `sim-worlds` / `sim-survival` when changing it; `gearTrack` (`stageScaling.ts`) is the
-compensating knob if enemies fall behind.
+zone-boss walls when changing it (`npm run probe`), and re-run `scripts/tune-pacing.ts`: since 2026-11-15 enemy
+life is anchored to the on-gear party (the tables of DIFFICULTY.md §6b), so anything that moves hero power
+moves the anchors (`gearTrack` is gone).
 
 Gems drop from chests (gated by `gemDropMult` tech); gem **tier** uses the shared `rollTier` (stage-scaled,
 T1–T8, T4+ unlock-gated, rare). Socketing sets `item.bound=true` and grants stack **on top** of item affixes
@@ -113,11 +114,11 @@ T1–T8, T4+ unlock-gated, rare). Socketing sets `item.bound=true` and grants st
 ## Chests — `data/chests.ts` (`ChestDropConfig`)
 
 ```
-baseDropChance: { normal: 0.02, stageBoss: 0.25, zoneBoss: 1.00 }   // per relevant kill (current)
+baseDropChance: { normal: 0.002, stageBoss: 0.25, zoneBoss: 1.00 }  // per relevant kill — common chest ≈ one every 5 min (user, 2026-11-15; was 0.015)
 capacity:       { normal: 6,    stageBoss: 4,    zoneBoss: 4 }
-itemsPerChest:  { normal: 1,    stageBoss: 2,    zoneBoss: 3 }
-zoneKeyChance:  { normal: 0.02, stageBoss: 0.06, zoneBoss: 0.25 }   // per chest opened
-gemChance:      { normal: 0.075, stageBoss: 0.50, zoneBoss: 1.00 }  // per chest opened → a tiered gem (rollTier) × gemDropMult tech (cap 1.0); boss chests are a reliable source
+itemsPerChest:  { normal: 1,    stageBoss: 1,    zoneBoss: 1 }
+STAGE_KEY_DROP_CHANCE = 0.25                                         // a stage-boss chest holds a world-boss key 1 time in 4 (user, 2026-11-15; was 0.5) — in NORMAL every one does
+gemChance:      { normal: 0.10, stageBoss: 0.50, zoneBoss: 1.00 }   // per chest opened → a tiered gem (rollTier) × gemDropMult tech (cap 1.0); boss chests are a reliable source
 ```
 
 Full type → stops accruing. Auto-open base interval 600000 ms (10 min), reducible by tech (floor 60 s).
@@ -159,7 +160,7 @@ totalExpToReach(L) = floor(50*L^3 + 8*1.55^L)          // Lv36≈59M, Lv100≈8e
 > only income — so the §8 level milestones still hold. The tech **gold× (≤~23×) / xp× (≤~13×)** bonuses are
 > the intended late-game relief that rewards investing in the Economy branch. Measure with
 > `scripts/sim-pacing.ts` (mid/late) and `scripts/sim-newgame.ts` (the fresh-start bootstrap). Party-slot
-> tech is hand-priced CHEAP (slot 2 = 1000g, slot 3 = 10000g via `costOverride`) so the tank·dps·healer
+> tech is hand-priced CHEAP (slot 2 = 300g, slot 3 = 600g since the 2026-11-15 retune; each class 150g) so the tank·dps·healer
 > trio forms in early world 1 (2nd member by ~stage 1-3, trio by ~stage 4-6) despite the tight gold.
 
 **Tier drop weights are stage-gated + rare** — `rollTier` (DIFFICULTY.md §13) uses per-tier `baseWeight` +
@@ -174,10 +175,10 @@ CLAUDE.md override). **Knight is free; others cost small gold** (never a progres
 | key | name | role | unlock | flavor base stats (fill the rest sensibly) |
 |---|---|---|---|---|
 | knight | Knight | tank | free | high health/armor, low attackSpeed; hpRegen 5 (early cushion) |
-| ranger | Ranger | dps | gold 500 | high attackSpeed/critChance (owns Rapid Fire) |
-| priest | Priest | healer | gold 500 | moderate stats; heals lowest-HP ally each cadence |
+| ranger | Ranger | dps | gold 150 | high attackSpeed/critChance (owns Rapid Fire) |
+| priest | Priest | healer | gold 150 | moderate stats; heals lowest-HP ally each cadence |
 
-> Class unlocks are all a flat **500 gold** (knight free) — deliberately cheap so they're never a
+> Class unlocks are all a flat **150 gold** (knight free; 500 before the 2026-11-15 retune) — deliberately cheap so they're never a
 > progression blocker. Owning a class ≠ fielding it: party SLOTS gate the active 3, and the slot-2/3 tech is
 > the (cheap) real gate on party size.
 
@@ -234,8 +235,8 @@ Nodes are grouped into four presentation **categories** (Combat / Economy / Ches
 | chest_drop_normal/stage/zone | Chests | +10/5/5% per-type drop | 90/110/140 | 1.35–1.4 | ∞ |
 | chest_gem | Chests | +2.5% gem drop chance (× base, capped 1.0) | 400 | 1.5 | ∞ |
 | store_normal/stage/zone | Chests | +1 storage (per type) | 250/300/350 | 1.7 | ∞ |
-| auto_open | Utility | unlock + −45s interval / rank | 500 | 1.6 | 12 (floor) |
-| party_size | Utility | +1 active party slot | 1000 | 2.5 | 2 |
+| auto_open | Utility | unlock + −90s interval / rank (30 min base, 12 min floor; was 15 / −45s / 6 until 2026-11-15) | 500 | 1.6 | 12 (floor) |
+| party_size | Utility | +1 active party slot | 300 | 2.0 | 2 |
 
 > Removed in this pass: the Combat *Damage Increase*, *Dodge Chance* and *Block* nodes, and the Chests
 > *Treasure Sense* (global drop %) node. Those stats still come from gear/talents (and the global
@@ -248,7 +249,7 @@ the player is always bounded by gold income rather than by a maxRanks cap. `hpRe
 have no tech nodes (gear-only).
 
 **Gold is the tech currency** (and class unlocks + inventory); `researchPoints` is reserved/unused in v1.
-**Recruitment** (`party_size`, hand-priced 1000g/2500g for slots 2/3) is the real gate on party size — cheap so the
+**Recruitment** (`party_size`, hand-priced 300g/600g for slots 2/3, plus 150g per class) is the real gate on party size — cheap so the
 tank·dps·healer trio forms in early world 1, NOT behind the deep sink. (Inventory slots are NOT a tech node —
 they're their own gold system below; the `inventorySlots` TechEffect kind was removed in the rework.)
 
@@ -279,6 +280,11 @@ baseDropChance: enemy 0.00002 (1 in 50k), boss 0.0001 (1 in 10k); zone boss uses
 `coin_sprite` goldMult +15%; `scholar_owl` xpMult +15%; `pack_mule` chestStorage normal +2;
 `lucky_cat` chestDropMult +12%; `keymaster` zoneKeyMult +25%; `time_imp` autoOpenReduce -90s;
 `hoarder` chestStorage stageBoss +1. Selected pet is cosmetic; all owned stack.
+
+> **Superseded (redesign, 2026-11-15):** drops are now 1 in 1,000,000 per normal kill and 1 in 5,000 per boss
+> kill, per pet (about 0.66 pets expected at the end of Normal — a late-game find), and a pet starts at rank 1
+> with about a fifth of the bonus above and reaches it at its last rank through its own objective. Every number
+> is in `src/data/pets.ts` and is PROVISIONAL until the pacing retune.
 
 ## UI / settings defaults
 

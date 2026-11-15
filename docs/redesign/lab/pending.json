@@ -1,0 +1,15 @@
+{
+  "updated": "15 nov 2026",
+  "intro": "Solo lo que está por confirmar. Lo ya aprobado sale de aquí (sigue en el juego y en docs/redesign/lab/index.html, que es el archivo completo). Confirmado el 15 nov: el HUD sobre los personajes, la derrota escalonada y la reaparición, la flecha de avanzar, los élites, el portal, los efectos del Ranger y de la Priest, los ataques enemigos y los jefes de mundo 2 a 9 con el Lictor.",
+  "sections": [
+    {
+      "id": "balance",
+      "title": "Balance: decisiones pendientes",
+      "eyebrow": "Reajuste de ritmo · primer punto de control",
+      "text": "Segunda ronda en marcha con tus decisiones: llave al 25 % (cofre de jefe de etapa al 25 %), Normal en 3–4 horas y cada dificultad más exigente (objetivo 4 · 40 · 120 · 230 · 325 horas, unos 3 meses), equiparse pesa más cuanto más se avanza, intentos fallidos y apertura automática como están. El informe se actualizará en docs/redesign/PACING_REPORT.md.",
+      "questions": [
+        "Nada que contestar ahora: te traeré los resultados de la segunda ronda."
+      ]
+    }
+  ]
+}
