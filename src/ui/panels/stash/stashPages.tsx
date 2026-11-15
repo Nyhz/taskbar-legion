@@ -2,7 +2,7 @@ import { useStore } from '@/state/store';
 import { STASH_MAX_PAGES, stashPageCost } from '@/data/inventory';
 import { format } from '@/sim/num';
 import { useT } from '@/i18n';
-import { Chip, Tip, TipLine, TipText, TipTitle, TipWarn } from '@/ui/kit';
+import { Chip, Pager, Tip, TipLine, TipText, TipTitle, TipWarn } from '@/ui/kit';
 import { STASH_PAGES_LISTED } from './stashLayout';
 
 // The stash's pages, in its footer: up to STASH_PAGES_LISTED owned pages as numbers (the shown one lit); more than
@@ -24,45 +24,7 @@ export function StashPages({
   const cost = stashPageCost(next);
   const affordable = gold >= cost;
   return (
-    <div className="tk-stash-pages">
-      {pages <= STASH_PAGES_LISTED ? (
-        Array.from({ length: pages }, (_, i) => (
-          <button
-            key={i}
-            type="button"
-            className={i + 1 === shown ? 'on' : undefined}
-            aria-label={t('stash.page', { n: i + 1 })}
-            aria-pressed={i + 1 === shown}
-            onClick={() => onPage(i + 1)}
-          >
-            {i + 1}
-          </button>
-        ))
-      ) : (
-        <>
-          <button
-            type="button"
-            className="step"
-            disabled={shown <= 1}
-            aria-label={t('stash.page', { n: Math.max(1, shown - 1) })}
-            onClick={() => onPage(Math.max(1, shown - 1))}
-          >
-            {'<'}
-          </button>
-          <span className="at" aria-label={t('stash.page', { n: shown })}>
-            {shown} / {pages}
-          </span>
-          <button
-            type="button"
-            className="step"
-            disabled={shown >= pages}
-            aria-label={t('stash.page', { n: Math.min(pages, shown + 1) })}
-            onClick={() => onPage(Math.min(pages, shown + 1))}
-          >
-            {'>'}
-          </button>
-        </>
-      )}
+    <Pager page={shown} pages={pages} onPage={onPage} listed={STASH_PAGES_LISTED} pageLabel={(n) => t('stash.page', { n })}>
       {next <= STASH_MAX_PAGES && (
         <Chip
           sign="map_lock_s"
@@ -86,6 +48,6 @@ export function StashPages({
           }
         />
       )}
-    </div>
+    </Pager>
   );
 }

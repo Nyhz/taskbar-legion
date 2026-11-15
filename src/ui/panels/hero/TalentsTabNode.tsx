@@ -2,7 +2,7 @@ import type { TalentNode } from '@/data/talents';
 import type { SpendCheck } from '@/sim/talentRules';
 import type { EffectiveStats } from '@/sim/stats';
 import { talentNodeName } from '@/i18n';
-import { Node, Sign, type NodeKind, type NodeState, type TipSide } from '@/ui/kit';
+import { Node, type NodeKind, type NodeState, type TipSide } from '@/ui/kit';
 import { talentNodeArtStem } from '@/ui/abilityArt';
 import { TalentsTip } from './TalentsTip';
 import { hasPips, type PlacedNode } from './talentsLayout';
@@ -17,9 +17,10 @@ import { spendBlockLine } from './talentWords';
 // missing, the other of its pair is taken, its branch is short of points) is dimmed and does not answer a
 // click; its tooltip says why — sim/talentRules.canSpend gives the reason, ./talentWords the sentence.
 
-const FRAME: Record<Exclude<TalentNode['kind'], 'role'>, NodeKind> = {
+const FRAME: Record<TalentNode['kind'], NodeKind> = {
   ability: 'ability',
   passive: 'passive',
+  role: 'role',
   modifier: 'modifier',
   capstone: 'ultimate',
 };
@@ -54,29 +55,6 @@ export function TalentsTabNode({ classKey, talents, placed, check, stats, side, 
   };
   const tip = <TalentsTip classKey={classKey} talents={talents} node={node} rank={rank} stats={stats} side={side} blocked={blocked} />;
 
-  if (node.kind === 'role') {
-    // The kit's Node has no role frame: the same markup, with the pointed seal (KIT GAP — see TalentsTab.css).
-    const can = check.ok && !locked;
-    return (
-      <div
-        className={`tk-node tk-tal-role has${locked ? ' lock' : ''}${can ? ' can' : ''}`}
-        style={style}
-        onClick={can ? onSpend : undefined}
-        onContextMenu={refund}
-      >
-        <Sign name={`tal_role_${state}`} className="f" />
-        <Sign name={sign} alt={name} className="g" />
-        {pips !== undefined && (
-          <div className="tk-pips">
-            {Array.from({ length: pips.max }, (_, i) => (
-              <i key={i} className={i < pips.rank ? 'on' : undefined} />
-            ))}
-          </div>
-        )}
-        {tip}
-      </div>
-    );
-  }
   return (
     <Node
       kind={FRAME[node.kind]}

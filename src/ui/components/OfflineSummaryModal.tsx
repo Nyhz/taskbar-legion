@@ -4,7 +4,7 @@ import type { ChestType } from '@/data/chests';
 import { stageInWorldOf, worldInDifficulty } from '@/data/difficulties';
 import { format } from '@/sim/num';
 import { chestName, petName, useT } from '@/i18n';
-import { Head, Key, KitRoot, Sign, Title, Window } from '@/ui/kit';
+import { Head, Key, KitRoot, Sign, Title, Veil, Window } from '@/ui/kit';
 import { kitZoomNear } from '@/ui/panels/items/kitZoom';
 import { awayDuration, placeLabel } from '@/ui/overlay/overlayText';
 import '@/ui/overlay/overlay.css';
@@ -31,7 +31,7 @@ export function OfflineSummaryModal({
   const moved = summary.toStage !== summary.fromStage;
   const place = (g: number): string => placeLabel(worldInDifficulty(g), stageInWorldOf(g));
   return (
-    <div className="tk-veil" data-interactive="true">
+    <Veil>
       <KitRoot zoom={zoom}>
         <Window id="offline-summary" closeLabel={t('overlay.awayCollect')} onClose={onClose} width={214}>
           <Head>
@@ -64,7 +64,7 @@ export function OfflineSummaryModal({
           </div>
         </Window>
       </KitRoot>
-    </div>
+    </Veil>
   );
 }
 

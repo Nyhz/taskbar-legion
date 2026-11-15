@@ -1,6 +1,6 @@
 import type { TechNode } from '@/data/techTree';
 import { techDescription, techName, useT } from '@/i18n';
-import { Sign, Tip, TipLine, TipName, TipNote, TipRule, TipText, TipWarn, type TipSide } from '@/ui/kit';
+import { Sign, SlimKey, Tip, TipLine, TipName, TipNote, TipRule, TipText, TipWarn, type TipSide } from '@/ui/kit';
 import { factorText, figureText, goldText, techFigure, techState, type TechFigure } from './techFigures';
 
 // One upgrade: its sign on a round seal (dark while unbought, brass once owned, bright when complete), what it
@@ -53,16 +53,14 @@ export function TechUpgrade({
       {state.maxed ? (
         <Sign name="tech_done" alt={t('tech.complete')} className="tk-tech-done" />
       ) : (
-        <button
-          type="button"
-          className={`tk-tech-buy${state.affordable ? '' : ' off'}`}
-          aria-label={t('tech.buy', { name, amount: goldText(state.cost) })}
-          aria-disabled={!state.affordable}
-          onClick={state.affordable ? onBuy : undefined}
-          onPointerDown={(e) => e.stopPropagation()}
+        <SlimKey
+          className="tk-tech-buy"
+          label={t('tech.buy', { name, amount: goldText(state.cost) })}
+          disabled={!state.affordable}
+          onClick={onBuy}
         >
           {goldText(state.cost)}
-        </button>
+        </SlimKey>
       )}
       <Tip side={tipSide} size="item">
         <TipName tone="gold">{name}</TipName>

@@ -43,7 +43,7 @@ export function PetsWindow(): React.JSX.Element {
           </span>
         </div>
       </Head>
-      <div className="tk-pets-niche has">
+      <div className="tk-niche tk-pets-niche has">
         {companion !== null && <Sign name={`pet_${petDef(companion).sprite}`} alt={petName(companion)} />}
         <Tip side="left">
           <TipTitle>{t('pets.companion')}</TipTitle>

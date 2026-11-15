@@ -32,6 +32,7 @@ import {
   Title,
   Window,
 } from './index';
+import { Controls } from './GalleryControls';
 
 // DEV ONLY — every kit piece in use, without the game: open the dev server at `/#kit` (or `/#kit=1.5` for another
 // zoom). It exists to LOOK at the kit (scripts/shot-app.mjs) and as the worked example of how the pieces compose.
@@ -576,6 +577,9 @@ export function Gallery(): React.JSX.Element {
             <Nodes />
           </Block>
         </div>
+        <Block title="Pager · Segment · Switch · SlimKey · big number · role Node · niche">
+          <Controls />
+        </Block>
       </KitRoot>
     </div>
   );

@@ -13,7 +13,7 @@
 .tk-cube-out > .q > img { position: absolute; left: 0; top: 0; }
 .tk-cube-out > .q > span { position: relative; }
 /* The gold that comes out: the coin over the one big number (six characters fit the column). */
-.tk-cube-total { position: relative; display: grid; justify-items: center; gap: 1px; font: 20px/20px var(--f-big); color: var(--gold-hi); text-shadow: 1px 1px 0 var(--k0); white-space: nowrap; }
+.tk-cube-total { position: relative; display: grid; justify-items: center; gap: 1px; white-space: nowrap; }
 .tk-cube-count { position: relative; color: var(--k6); }
 .tk-cube-count.full { color: var(--good); }
 
@@ -29,10 +29,8 @@
 
 /* Where the pieces come from: the bag (and the stash), six cells across, a few rows a page. */
 .tk-cube-pick-head { display: flex; align-items: center; gap: 3px; height: 16px; color: var(--k6); }
-.tk-cube-pick-head > .end { margin-left: auto; display: flex; align-items: center; gap: 3px; }
-.tk-cube-pick-head button { min-width: 7px; height: 12px; line-height: 12px; text-align: center; color: var(--k8); }
-.tk-cube-pick-head button:disabled { color: var(--k4); cursor: default; }
-.tk-cube-pick-head .at { color: var(--gold-hi); }
+.tk-cube-pick-head > .end { margin-left: auto; }
+.tk-cube-pick-head > .tk-pager > button { min-width: 7px; } /* the kit's pager, a little tighter: the head is short */
 .tk-cube-pick { margin-top: 2px; min-height: 24px; }
 .tk-cube-off { display: contents; }
 .tk-cube-off .tk-slot > :first-child { opacity: .3; }

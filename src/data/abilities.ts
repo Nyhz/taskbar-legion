@@ -93,19 +93,6 @@ export interface AbilityDef {
   aura?: { stat: StatKey; baseValue: number; valuePerRank: number };
 }
 
-export const TARGET_LABEL: Record<AbilityDef['target'], string> = {
-  self: 'Self',
-  lowestAllyHp: 'Lowest-HP ally',
-  lowestOtherAlly: 'Lowest-HP other ally',
-  frontEnemy: 'Front enemy',
-  meleeEnemies: 'Enemies in melee range',
-  allEnemies: 'All enemies',
-  allAllies: 'All allies',
-  randomDpsAlly: 'Random damage-dealer',
-  twoDpsAllies: 'Two heroes',
-  tank: 'Tank',
-};
-
 export const ABILITIES: Record<string, AbilityDef> = {
   // ───────────────────────── Knight ─────────────────────────
   knight_guard: {

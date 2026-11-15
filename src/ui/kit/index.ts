@@ -17,7 +17,10 @@ export {
   type PlaceState,
 } from './Window';
 export { Slot, ItemIcon, SlotGrid, type SlotProps } from './Slot';
-export { Key, Chip, Check, Gold, type KeyProps, type KeyTone, type ChipProps, type CheckProps } from './Key';
+export { Key, SlimKey, Chip, Check, Gold, type KeyProps, type KeyTone, type ChipProps, type CheckProps } from './Key';
+export { Pager, type PagerProps } from './Pager';
+export { Segment, Switch, type SegmentItem } from './Choice';
+export { Veil, type VeilLevel } from './Veil';
 export { Menu, MenuRow, type MenuRowProps } from './Menu';
 export { Node, type NodeProps, type NodeKind, type NodeState } from './Node';
 export { StatRow, type StatRowProps } from './StatRow';

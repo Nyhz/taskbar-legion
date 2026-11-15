@@ -2,7 +2,7 @@
    the stone niche, its name, and the collection on plinths with each pet's bonus under it. Art pixels. */
 .tk-pets-count { position: relative; display: flex; align-items: center; gap: 2px; color: var(--k6); padding-top: 5px; }
 .tk-pets-count > img { margin-top: -5px; }
-.tk-pets-niche { position: relative; width: 100px; height: 116px; margin: 5px auto 0; background: url('../../../assets/ui/ui_alcove.png'); }
+.tk-pets-niche { margin: 5px auto 0; } /* the kit's niche, centred */
 /* The companion at twice its size, standing on the slab (the hero's niche does the same with its figure). */
 .tk-pets-niche > img { position: absolute; left: 14px; top: 35px; width: 72px; height: 72px; }
 .tk-pets-name { height: 12px; margin-top: 5px; text-align: center; font: 12px/12px var(--f-name); color: var(--gold-hi); text-shadow: 1px 1px 0 var(--k0); white-space: nowrap; }

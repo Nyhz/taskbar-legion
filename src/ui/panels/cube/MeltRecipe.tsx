@@ -49,7 +49,7 @@ export function MeltRecipe(): React.JSX.Element {
         <CubeFace loaded={loaded} onRemove={toggle} />
         <Sign name="cube_arrow" />
         <div className="tk-cube-out">
-          <div className="tk-cube-total has">
+          <div className="tk-big tk-cube-total has">
             <Sign name="ui_gold" />
             <span>{format(total)}</span>
             <Tip side="left" size="tag">

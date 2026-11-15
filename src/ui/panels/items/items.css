@@ -14,10 +14,10 @@
 /* The card of the hovered piece keeps its place beside the worn one whatever their heights. */
 .tk-cmp > .tk-tip { flex: none; }
 
-/* Layers portaled to <body>: each carries its own KitRoot at the panel's zoom (kitZoom.ts). */
+/* Layers portaled to <body>: each carries its own KitRoot at the panel's zoom (kitZoom.ts). The socket dialogs
+   sit on the kit's Veil (level `over`, above these two). */
 .tk-layer-menu { position: fixed; z-index: 10001; }
 .tk-layer-back { position: fixed; inset: 0; z-index: 10000; }
-.tk-layer-dialog { position: fixed; inset: 0; z-index: 10002; display: flex; align-items: center; justify-content: center; background: rgba(11, 13, 23, .6); }
 
 /* Socket dialogs: what the gem grants, the warning, the keys. */
 .tk-socket-pair { display: flex; align-items: center; gap: 6px; margin-top: 5px; }

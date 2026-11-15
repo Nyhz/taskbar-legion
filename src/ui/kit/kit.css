@@ -13,6 +13,8 @@
   --f-title: 'Jacquard 12', serif; /* window titles: the same face at twice the size */
   --f-num: 'Jersey 10', monospace; /* numbers and tooltip text: 10 px grid */
   --f-big: 'Jersey 20', monospace; /* the one big number: 20 px grid */
+  --ink: 1px 0 0 var(--k0), -1px 0 0 var(--k0), 0 1px 0 var(--k0), 0 -1px 0 var(--k0); /* lettering on art: a one-pixel outline all round */
+  --step: polygon(1px 0, calc(100% - 1px) 0, calc(100% - 1px) 1px, 100% 1px, 100% calc(100% - 1px), calc(100% - 1px) calc(100% - 1px), calc(100% - 1px) 100%, 1px 100%, 1px calc(100% - 1px), 0 calc(100% - 1px), 0 1px, 1px 1px); /* a box with stepped corners */
   font: 10px/10px var(--f-num);
   color: var(--k8);
   image-rendering: pixelated;
@@ -97,7 +99,7 @@
 .tk-slot.gone > :first-child { opacity: .18; }
 .tk-slot > img.cls { position: absolute; right: 0; bottom: 0; width: 9px; height: 9px; }
 .tk-slot > img.mark { position: absolute; left: 0; top: 0; width: 7px; height: 7px; }
-.tk-slot > b { position: absolute; right: 1px; bottom: 1px; z-index: 1; font-weight: 400; color: var(--k9); text-shadow: 1px 0 0 var(--k0), -1px 0 0 var(--k0), 0 1px 0 var(--k0), 0 -1px 0 var(--k0); }
+.tk-slot > b { position: absolute; right: 1px; bottom: 1px; z-index: 1; font-weight: 400; color: var(--k9); text-shadow: var(--ink); }
 .tk-slot.sel::after { content: ''; position: absolute; inset: -2px; pointer-events: none;
   background:
     linear-gradient(var(--gold-hi), var(--gold-hi)) 0 0 / 5px 1px, linear-gradient(var(--gold-hi), var(--gold-hi)) 0 0 / 1px 5px,
@@ -113,7 +115,7 @@
 
 /* Bars: stepped corners, a lit top row, the number inside. */
 .tk-bar { position: relative; height: 11px; background: var(--k0);
-  clip-path: polygon(1px 0, calc(100% - 1px) 0, calc(100% - 1px) 1px, 100% 1px, 100% calc(100% - 1px), calc(100% - 1px) calc(100% - 1px), calc(100% - 1px) 100%, 1px 100%, 1px calc(100% - 1px), 0 calc(100% - 1px), 0 1px, 1px 1px); }
+  clip-path: var(--step); }
 .tk-bar > u { position: absolute; left: 1px; top: 1px; bottom: 1px; background: linear-gradient(var(--xp-hi) 0 1px, var(--xp) 1px 7px, var(--xp-dk) 7px); }
 .tk-bar > b { position: absolute; inset: 0; font-weight: 400; text-align: center; line-height: 11px; color: var(--k9); text-shadow: 1px 1px 0 var(--k0); }
 
@@ -136,11 +138,8 @@
 .tk-tip .sub .r { margin-left: auto; display: flex; align-items: center; color: var(--k9); }
 .tk-tip .tk-rule { margin: 4px 0 3px; }
 .tk-tip .aff { display: grid; grid-template-columns: 16px auto 1fr; gap: 3px; align-items: center; height: 15px; }
-.tk-tip .aff b, .tk-tip .cmp b, .tk-tip .ln b { font-weight: 400; color: var(--k9); }
+.tk-tip .aff b, .tk-tip .ln b { font-weight: 400; color: var(--k9); }
 .tk-tip .aff.gem b { color: #f08a62; }
-.tk-tip .cmp { display: flex; align-items: center; gap: 1px; height: 16px; margin: 0 0 -3px -2px; }
-.tk-tip .cmp b { color: var(--good); }
-.tk-tip .lore { color: var(--k5); padding-top: 4px; }
 .tk-tip .ln { display: flex; justify-content: space-between; padding-top: 3px; }
 .tk-tip p + .ln { padding-top: 5px; }
 .tk .t0 .nm { color: var(--t0); } .tk .t1 .nm { color: var(--t1); } .tk .t2 .nm { color: var(--t2); } .tk .t3 .nm { color: var(--t3); } .tk .t4 .nm { color: var(--t4); }
@@ -210,7 +209,7 @@
 .tk-node > img.b { left: auto; right: -2px; top: -2px; }
 .tk-node.lock > img, .tk-node.lock > .tk-pips { opacity: .38; }
 .tk-node.cd > img.g { opacity: .35; }
-.tk-node > i { position: absolute; right: 3px; bottom: 3px; font-style: normal; color: var(--k9); text-shadow: 1px 0 0 var(--k0), -1px 0 0 var(--k0), 0 1px 0 var(--k0), 0 -1px 0 var(--k0); }
+.tk-node > i { position: absolute; right: 3px; bottom: 3px; font-style: normal; color: var(--k9); text-shadow: var(--ink); }
 .tk-node.can:hover > img.f { filter: brightness(1.4); }
 .tk-pips { position: absolute; left: 50%; top: calc(100% + 1px); transform: translateX(-50%); display: flex; gap: 1px; }
 .tk-pips > i { width: 3px; height: 2px; background: var(--k3); }
@@ -254,6 +253,44 @@
 
 /* A hovered group of cards (TipGroup) is a row, not a block. */
 .tk .has:hover > .tk-cmp.tt { display: flex; }
+
+/* The one big number of a panel (an item level, a total, the points to spend): the 20 px face, gold, on a shadow. */
+.tk-big { font: 20px/20px var(--f-big); color: var(--gold-hi); text-shadow: 1px 1px 0 var(--k0); }
+
+/* The stone niche a figure stands in (the hero in its window, the companion in the pets wing): 100×116. */
+.tk-niche { position: relative; width: 100px; height: 116px; background: url('../../assets/ui/ui_alcove.png'); }
+
+/* Pager (Pager.tsx): the pages of a grid as numbers — the shown one lit and underlined — or, when they are many,
+   a stepper "< 5 / 8 >". Every button on the line is a low one, whatever it is. */
+.tk-pager { display: flex; align-items: center; gap: 3px; color: var(--k6); }
+.tk-pager > button { min-width: 9px; height: 12px; line-height: 12px; text-align: center; }
+.tk-pager > button.on { color: var(--gold-hi); box-shadow: inset 0 -1px 0 var(--gold); }
+.tk-pager > button.step { color: var(--k8); }
+.tk-pager > button.step:disabled { color: var(--k4); cursor: default; }
+.tk-pager > .at { color: var(--gold-hi); white-space: nowrap; }
+
+/* Segment and Switch (Choice.tsx): a choice between a few — keys side by side, the chosen one lit — and on / off. */
+.tk-seg { display: flex; gap: 1px; }
+.tk-seg > button { height: 20px; border: 4px solid transparent; border-image: url('../../assets/ui/ui_btn_off.png') 4 fill / 4px / 0 stretch;
+  padding: 0 5px; color: var(--k6); line-height: 11px; white-space: nowrap; }
+.tk-seg > button.on { border-image-source: url('../../assets/ui/ui_btn.png'); color: var(--k9); }
+.tk-seg > button:hover { filter: brightness(1.15); }
+.tk-seg.names > button { font: 12px/11px var(--f-name); padding: 0 4px; }
+.tk-switch:hover { filter: brightness(1.15); }
+
+/* SlimKey (Key.tsx): a low key that is only its lettering — a price. Lit and gold-lettered when it can be
+   pressed, grey and dead when it cannot. Its width is its owner's. */
+.tk-slimkey { height: 16px; border: 4px solid transparent; border-image: url('../../assets/ui/ui_btn.png') 4 fill / 4px / 0 stretch;
+  text-align: center; line-height: 8px; color: var(--gold-hi); text-shadow: 1px 1px 0 var(--k0); white-space: nowrap; }
+.tk-slimkey:hover { filter: brightness(1.2); }
+.tk-slimkey.off { border-image-source: url('../../assets/ui/ui_btn_off.png'); color: var(--k5); text-shadow: none; cursor: default; }
+.tk-slimkey.off:hover { filter: none; }
+
+/* Veil (Veil.tsx): the dark layer a dialog sits on, centred, over the whole page. It stands outside a KitRoot, so
+   it uses no token. `top` covers everything and is nearly opaque; `over` clears the panels' floating layers. */
+.tk-veil { position: fixed; inset: 0; z-index: 200; display: flex; align-items: center; justify-content: center; background: rgba(11, 13, 23, .6); pointer-events: auto; }
+.tk-veil.top { z-index: 9999; background: rgba(11, 13, 23, .92); }
+.tk-veil.over { z-index: 10002; }
 
 /* The panel layer's wrappers (src/app/PanelLayer): the one under the pointer rises, so a tooltip leaving a
    window is never covered by the window next to it. */

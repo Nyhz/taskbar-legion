@@ -2,7 +2,7 @@
    The layer is 600×160 art px, zoomed like the HUD; lettering goes straight on the art, outlined. */
 .tk-strip { position: absolute; left: 0; top: 0; width: 600px; height: 160px; pointer-events: none; }
 .tk-strip > * { position: absolute; }
-.tk-ink { text-shadow: 1px 0 0 var(--k0), -1px 0 0 var(--k0), 0 1px 0 var(--k0), 0 -1px 0 var(--k0), 1px 1px 0 var(--k0); }
+.tk-ink { text-shadow: var(--ink), 1px 1px 0 var(--k0); }
 
 /* The boss in front: what it is, its life, and the clock before it enrages. */
 .tk-foe { left: 180px; top: 5px; width: 240px; }
@@ -21,8 +21,6 @@
 .tk-corner > .tt { left: auto; right: 0; top: auto; bottom: calc(100% + 3px); }
 .tk-badge { right: 5px; top: 5px; width: 16px; height: 16px; pointer-events: auto; }
 .tk-badge > .tt { left: auto; right: 0; top: calc(100% + 3px); }
-.tk-tip .ln.here { color: var(--gold-hi); }
-.tk-tip .ln.here b { color: var(--gold-hi); }
 
 /* Banners: a band of pixel rows across the middle of the strip, lettered in blackletter. Danger pulses a few
    times (peaking at 0.9) and fades; the stage band fades in, holds and fades out. Each runs once. */
@@ -54,9 +52,7 @@
 .tk-loot-line > img:first-child { margin-left: 4px; }
 .tk-loot-line > .nm { font: 12px/12px var(--f-name); }
 
-/* Dialogs that sit over everything (the summary of an absence, the graphics failure): a veil and one window. */
-.tk-veil { position: fixed; inset: 0; z-index: 200; display: flex; align-items: center; justify-content: center; background: rgba(11, 13, 23, .6); pointer-events: auto; }
-.tk-veil.top { z-index: 9999; background: rgba(11, 13, 23, .92); }
+/* Dialogs that sit over everything (the summary of an absence, the graphics failure): one window on the kit's Veil. */
 .tk-away-note { color: var(--k7); line-height: 10px; margin: 2px 0 5px; }
 .tk-away-row { display: grid; grid-template-columns: 16px 1fr auto; gap: 4px; align-items: center; height: 18px; color: var(--k7); }
 .tk-away-row > b { font-weight: 400; color: var(--k9); }

@@ -7,10 +7,13 @@ export function Sign({
   name,
   alt = '',
   className,
+  style,
 }: {
   name: string;
   alt?: string;
   className?: string;
+  /** For a sign placed by its owner (a mark on a line, a pin on a map). */
+  style?: React.CSSProperties;
 }): React.JSX.Element {
-  return <img src={art(name)} alt={alt} className={className} draggable={false} />;
+  return <img src={art(name)} alt={alt} className={className} style={style} draggable={false} />;
 }

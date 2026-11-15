@@ -3,7 +3,8 @@ import { Sign } from './Sign';
 
 // Keys. `Key` is a raised key: with only a `sign` it is the square 24×24 key; with a word (children) and / or a
 // price it is the worded key. `Chip` is a bare sign that toggles (a filter, a small action). `Check` is the
-// labelled pixel checkbox. All are real buttons; `label` is what assistive tech reads when there is no word.
+// labelled pixel checkbox. `SlimKey` is a low key that is only its lettering (a price), for where many keys stack.
+// All are real buttons; `label` is what assistive tech reads when there is no word.
 
 export type KeyTone = 'plum' | 'gold' | 'danger';
 
@@ -72,6 +73,35 @@ export function Key({
       {badge !== undefined && <b className={worded ? 'badge' : undefined}>{badge}</b>}
       {lamp && <u />}
       {tip}
+    </button>
+  );
+}
+
+/** A low key (16 px) that is only its lettering — a price under each of a dozen things. Lit and gold-lettered;
+ *  `disabled` is grey and dead (it still shows, to say the price). Its width is the caller's (`className`). */
+export function SlimKey({
+  children,
+  disabled = false,
+  label,
+  onClick,
+  className,
+}: {
+  children: ReactNode;
+  disabled?: boolean;
+  label: string;
+  onClick?: MouseEventHandler<HTMLButtonElement>;
+  className?: string;
+}): React.JSX.Element {
+  return (
+    <button
+      type="button"
+      className={`tk-slimkey${disabled ? ' off' : ''}${className === undefined ? '' : ` ${className}`}`}
+      aria-label={label}
+      aria-disabled={disabled}
+      onClick={disabled ? undefined : onClick}
+      onPointerDown={(e) => e.stopPropagation()}
+    >
+      {children}
     </button>
   );
 }

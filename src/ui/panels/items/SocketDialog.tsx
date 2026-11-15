@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import type { GemInstance } from '@/data/gems';
 import { gemGrants } from '@/sim/gems';
 import { statLabel, useT } from '@/i18n';
-import { Head, KitRoot, Sign, Title, Window } from '@/ui/kit';
+import { Head, KitRoot, Sign, Title, Veil, Window } from '@/ui/kit';
 import { statGain } from './itemText';
 import { kitZoomNear } from './kitZoom';
 import './items.css';
@@ -28,7 +28,7 @@ export function SocketDialog({
   const t = useT();
   const [zoom] = useState(() => kitZoomNear());
   return createPortal(
-    <div className="tk-layer-dialog" onClick={onClose} data-interactive="true">
+    <Veil level="over" onClick={onClose}>
       <div onClick={(e) => e.stopPropagation()}>
         <KitRoot zoom={zoom}>
           <Window id={id} closeLabel={t('items.close')} onClose={onClose} width={width}>
@@ -39,7 +39,7 @@ export function SocketDialog({
           </Window>
         </KitRoot>
       </div>
-    </div>,
+    </Veil>,
     document.body,
   );
 }

@@ -90,7 +90,7 @@ export function TalentsTab({ heroId }: { heroId: string }): React.JSX.Element | 
             <TipText>{t('talents.activesHelp', { max: MAX_ACTIVE_ABILITIES })}</TipText>
           </Tip>
         </div>
-        <div className={`tk-tal-free end has${hero.talentPoints > 0 ? '' : ' none'}`}>
+        <div className={`tk-big tk-tal-free end has${hero.talentPoints > 0 ? '' : ' none'}`}>
           <Sign name="tal_point" alt={t('talents.points')} />
           {hero.talentPoints}
           <Tip side="below-end">
@@ -158,9 +158,7 @@ export function TalentsTab({ heroId }: { heroId: string }): React.JSX.Element | 
               className={`tk-tal-link${taken ? ' on' : ''}`}
               style={{ left: link.x, top: link.y, width: link.width }}
             >
-              <i style={{ left: Math.floor((link.width - EITHER) / 2), top: -Math.floor(EITHER / 2) }}>
-                <Sign name="tal_either" />
-              </i>
+              <Sign name="tal_either" style={{ left: Math.floor((link.width - EITHER) / 2), top: -Math.floor(EITHER / 2) }} />
             </span>
           );
         })}

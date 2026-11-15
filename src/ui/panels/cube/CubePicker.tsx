@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { isGem, isItem, type InvEntry } from '@/sim/items';
 import { useT } from '@/i18n';
-import { Sign, SlotGrid } from '@/ui/kit';
+import { Pager, Sign, SlotGrid } from '@/ui/kit';
 import { ItemCell } from '../items/ItemCell';
 import { PICK_COLS, PICK_PER_PAGE } from './cubeLayout';
 import { pageOf } from './cubeLogic';
@@ -35,27 +35,15 @@ export function CubePicker<T extends InvEntry>({
         <Sign name="bag_pack" />
         {label}
         {pages > 1 && (
-          <span className="end">
-            <button
-              type="button"
-              disabled={page === 0}
-              aria-label={t('cube.prevPage')}
-              onClick={() => setWanted(page - 1)}
-            >
-              &lt;
-            </button>
-            <span className="at" aria-label={t('cube.page', { n: page + 1, total: pages })}>
-              {page + 1} / {pages}
-            </span>
-            <button
-              type="button"
-              disabled={page >= pages - 1}
-              aria-label={t('cube.nextPage')}
-              onClick={() => setWanted(page + 1)}
-            >
-              &gt;
-            </button>
-          </span>
+          <Pager
+            className="end"
+            page={page + 1}
+            pages={pages}
+            onPage={(n) => setWanted(n - 1)}
+            pageLabel={(n) => t('cube.page', { n, total: pages })}
+            prevLabel={t('cube.prevPage')}
+            nextLabel={t('cube.nextPage')}
+          />
         )}
       </div>
       {pool.length === 0 ? (

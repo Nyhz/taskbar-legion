@@ -1,17 +1,7 @@
 /* The options window (mock-up: docs/redesign/mockups/60_options.html): one row per setting — its sign, then its
    control; what each is lives in its tooltip. Art pixels, like the kit. */
-.tk-opt-ver { color: var(--k5); padding-top: 5px; }
 .tk-opt-rows { display: grid; gap: 3px; margin-top: 5px; }
 .tk-opt-row { position: relative; display: grid; grid-template-columns: 16px 1fr; gap: 6px; align-items: center; min-height: 20px; }
-
-/* A choice between a few: keys side by side, the chosen one lit. */
-.tk-opt-seg { display: flex; gap: 1px; }
-.tk-opt-seg > button { height: 20px; border: 4px solid transparent; border-image: url('../../assets/ui/ui_btn_off.png') 4 fill / 4px / 0 stretch;
-  padding: 0 5px; color: var(--k6); line-height: 11px; white-space: nowrap; }
-.tk-opt-seg > button.on { border-image-source: url('../../assets/ui/ui_btn.png'); color: var(--k9); }
-.tk-opt-seg > button:hover { filter: brightness(1.15); }
-.tk-opt-seg.names > button { font: 12px/11px var(--f-name); padding: 0 4px; }
-.tk-opt-switch:hover { filter: brightness(1.15); }
 
 /* The save keys and the way out. */
 .tk-opt-foot { display: flex; align-items: center; gap: 3px; }

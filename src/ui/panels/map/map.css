@@ -18,7 +18,7 @@
 .tk-map-w > .pic { position: relative; display: block; width: 50px; height: 28px; background-position: -3px -7px; box-shadow: inset 0 0 0 1px var(--k0); }
 .tk-map-w:not(.shut):hover > .pic { filter: brightness(1.15); }
 .tk-map-w.sel > .pic { box-shadow: inset 0 0 0 1px var(--gold-hi), 0 0 0 1px var(--k0); }
-.tk-map-w > .pic > b { position: absolute; left: 3px; top: 2px; font-weight: 400; color: var(--k9); text-shadow: 1px 0 0 var(--k0), -1px 0 0 var(--k0), 0 1px 0 var(--k0), 0 -1px 0 var(--k0); }
+.tk-map-w > .pic > b { position: absolute; left: 3px; top: 2px; font-weight: 400; color: var(--k9); text-shadow: var(--ink); }
 .tk-map-w.shut > .pic > b { color: var(--k5); }
 .tk-map-w > .pic > .lock { position: absolute; right: 2px; top: 2px; }
 .tk-map-w > .pips { display: flex; justify-content: center; gap: 1px; height: 2px; margin-top: 1px; }

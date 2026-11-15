@@ -1,24 +1,27 @@
 import type { MouseEventHandler, ReactNode } from 'react';
 import { Sign } from './Sign';
 
-// A node: an ability, a passive, an ability modifier or an ultimate, on the frame that says which (talents tab,
-// and the hero's two abilities + ultimate under the paper doll). The shape is the meaning:
+// A node: an ability, a passive, a role talent, an ability modifier or an ultimate, on the frame that says which
+// (talents tab, and the hero's two abilities + ultimate under the paper doll). The shape is the meaning:
 //   ability  → square plate (24)      passive  → round seal (22)
 //   modifier → teal plate with a "+"  ultimate → octagon (30)
+//   role     → a seal with four points, on the plate's footprint (24)
 
-export type NodeKind = 'ability' | 'passive' | 'modifier' | 'ultimate';
+export type NodeKind = 'ability' | 'passive' | 'role' | 'modifier' | 'ultimate';
 /** off = nothing spent / not learned · on = has ranks / learned · max = every rank. */
 export type NodeState = 'off' | 'on' | 'max';
 
 const FRAME: Record<NodeKind, Record<NodeState, string>> = {
   ability: { off: 'tal_plate_off', on: 'tal_plate_on', max: 'tal_plate_max' },
   passive: { off: 'tal_seal_off', on: 'tal_seal_on', max: 'tal_seal_max' },
+  role: { off: 'tal_role_off', on: 'tal_role_on', max: 'tal_role_max' },
   modifier: { off: 'tal_mod_off', on: 'tal_mod_on', max: 'tal_mod_on' },
   ultimate: { off: 'tal_ult_off', on: 'tal_ult_on', max: 'tal_ult_on' },
 };
 const KIND_CLASS: Record<NodeKind, string> = {
   ability: '',
   passive: ' seal',
+  role: ' role',
   modifier: ' mod',
   ultimate: ' ult',
 };

@@ -5,8 +5,8 @@ import { getArrowTexture } from './characterFrames';
 import { drawCrosshair, ARROW_RED } from './effectAuras';
 
 // A world-space layer for the big, transient ABILITY spectacles that play OVER a group of
-// targets rather than on one body: a volley of arrows raining onto the wave, a frost pool
-// spreading under it, a holy nova bursting through it, a boss shockwave rocking the party.
+// targets rather than on one body: a volley of arrows raining onto the wave, a holy
+// nova bursting through it, a boss shockwave rocking the party.
 // Cosmetic only — GameStrip fires these off 'cast' events and feeds them the target band's
 // on-screen position. Each effect owns a tiny update closure and is reaped when it expires.
 
@@ -96,46 +96,6 @@ export class WorldFxLayer extends Container {
         // stuck-in-ground fade once landed
         a.s.alpha = k >= 1 ? Math.max(0, 1 - (local - a.fall) / 360) : 1;
         a.s.tint = ARROW_FALL;
-      }
-    });
-  }
-
-  /** Frozen Trap: an icy pool spreads under the [cx±halfW] band, shimmering, with crystal
-   *  shards jutting up and a cold mist — lingers for `dur` (the slow's duration). */
-  frostPool(cx: number, groundY: number, halfW: number, dur: number): void {
-    const g = new Graphics();
-    const ICE = hexToNum('#9fe9ff');
-    const ICE_DEEP = hexToNum('#5ab4e6');
-    const W = halfW * 1.15;
-    this.push(g, dur, (t) => {
-      g.clear();
-      const grow = Math.min(1, t / 260); // spread in
-      const fade = t > dur - 420 ? Math.max(0, (dur - t) / 420) : 1; // melt out
-      const a = fade;
-      const cy = groundY - 2;
-      const rx = W * grow;
-      const ry = rx * 0.34;
-      // pool body (flattened ellipse on the ground) + rim
-      g.ellipse(cx, cy, rx, ry).fill({ color: ICE_DEEP, alpha: 0.32 * a });
-      g.ellipse(cx, cy, rx, ry).stroke({ color: ICE, width: 2, alpha: 0.7 * a });
-      g.ellipse(cx, cy, rx * 0.62, ry * 0.62).stroke({ color: ICE, width: 1, alpha: 0.4 * a });
-      // crystal shards jutting up around the rim
-      const shards = Math.max(5, Math.round(W / 9));
-      for (let i = 0; i < shards; i++) {
-        const ang = (i / shards) * Math.PI * 2 + t / 1400;
-        const sx = cx + Math.cos(ang) * rx * 0.82;
-        const sy = cy + Math.sin(ang) * ry * 0.82;
-        const h = (5 + (i % 3) * 3) * grow;
-        const w = 2.2;
-        g.poly([sx - w, sy, sx + w, sy, sx, sy - h]).fill({ color: ICE, alpha: 0.85 * a });
-        g.poly([sx - w * 0.4, sy, sx + w * 0.2, sy, sx, sy - h * 0.9]).fill({ color: 0xffffff, alpha: 0.6 * a });
-      }
-      // drifting frost sparkles
-      for (let i = 0; i < 7; i++) {
-        const p = (t / 900 + i / 7) % 1;
-        const px = cx + Math.sin(i * 2.3 + t / 600) * rx * 0.8;
-        const py = cy - p * 22;
-        g.circle(px, py, 1.2).fill({ color: 0xffffff, alpha: (1 - p) * 0.7 * a });
       }
     });
   }

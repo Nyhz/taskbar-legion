@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { collectRenderDiagnostics, formatDiagnostics } from '@/game/render/gpuDiagnostics';
 import { useT } from '@/i18n';
-import { Head, Key, KitRoot, Title, Window } from '@/ui/kit';
+import { Head, Key, KitRoot, Title, Veil, Window } from '@/ui/kit';
 import { kitZoomNear } from '@/ui/panels/items/kitZoom';
 import '@/ui/overlay/overlay.css';
 
@@ -34,7 +34,7 @@ export function RenderErrorPanel({ error }: { error: unknown }): React.JSX.Eleme
   };
 
   return (
-    <div className="tk-veil top" data-interactive="true">
+    <Veil level="top">
       <KitRoot zoom={zoom}>
         {/* The close key reloads: there is nothing behind this panel to go back to. */}
         <Window id="render-error" closeLabel={t('overlay.gfxReload')} onClose={reload} width={270}>
@@ -51,6 +51,6 @@ export function RenderErrorPanel({ error }: { error: unknown }): React.JSX.Eleme
           </div>
         </Window>
       </KitRoot>
-    </div>
+    </Veil>
   );
 }
