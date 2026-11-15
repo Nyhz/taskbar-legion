@@ -640,3 +640,18 @@ conservadora, marcada como provisional; si salta el límite de uso, dejar anotad
         al lanzar; Vigilia no sale en la hoja; el paginador de la bolsa con el `Pager` del kit no se ha visto en
         captura (solo hay una página en la partida de prueba); los velos y el diálogo de engarce, comparados por
         estilo calculado, no en captura.
+- [x] **Primera prueba en Tauri (2026-11-15, mediodía)** — app empaquetada (`tauri build --bundles app`) desde
+      `wip/integration`, abierta por el usuario en su pantalla de 2560×1440.
+      - Visto por el usuario: la tira nueva se pinta (sin lienzo en negro), las fuentes de píxel cargan, la
+        transparencia y el paso de clics funcionan, arrastrar desde la tira mueve la ventana, la partida continúa
+        al reabrir.
+      - Arreglado: el juego salía a ×1 porque leía el tamaño guardado por la app de junio (0,75 de la escala
+        antigua); los tamaños anteriores al sistema de píxel entero ya no se leen (`settingsShim.storedGameScale`).
+      - Arreglado (fallos vistos jugando): el Knight parecía dar dos tajos por un golpe al llegar a un grupo — un
+        golpe que nadie anunció empieza ahora su clip EN el tajo (`ClipPlayer.act(..., fromMs)`); el tooltip de
+        «devolver puntos» salía bajo los talentos — la tecla bajo el puntero sube con su tooltip (`kit.css`).
+      - Arreglado (visto en captura): con más de una página, la bolsa mantiene la altura de una página llena (la
+        ventana encogía y el paginador se iba de debajo del puntero). Vistos por fin en captura: el `Pager` de la
+        bolsa (80 huecos), el menú de una gema y el diálogo de engarce con su velo.
+      - Pendiente: en 2560×1440 el máximo es ×2; un ajuste guardado se rebaja si la ventana encoge y no vuelve
+        a subir solo.
