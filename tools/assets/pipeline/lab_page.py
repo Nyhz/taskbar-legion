@@ -108,7 +108,7 @@ def worlds_ready() -> list[tuple[str, dict, object]]:
             continue
         missing = [foe["key"] for foe in info["foes"] if foe["key"] not in ROSTER]
         kinds = [foe["kind"] for foe in info["foes"]]
-        if missing or sorted(k for k in kinds if k != "worldboss") != sorted(KINDS):
+        if missing or sorted(k for k in kinds if k not in ("worldboss", "support")) != sorted(KINDS):
             print(f"skip {key}: creatures missing {missing}")
             continue
         out.append((key, info, bd))

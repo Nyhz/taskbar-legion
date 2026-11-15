@@ -47,7 +47,12 @@ def main(argv: list[str]) -> int:
 
         export_fx()
         return 0
-    print("commands: chars [names…], scene, lab, icons, export-ui, export-strip, export-figs, export-fx")
+    if cmd == "export-pets":
+        from .export_pets import main as export_pets
+
+        export_pets()
+        return 0
+    print("commands: chars [names…], scene, lab, icons, export-ui, export-strip, export-figs, export-fx, export-pets")
     return 1
 
 

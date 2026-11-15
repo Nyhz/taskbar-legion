@@ -32,7 +32,7 @@ DEST = ROOT / "src" / "assets" / "strip" / "figs"
 KINDS = ("beast", "melee", "ranged", "boss")
 #: A world may also give its WORLD boss (the W-10 fight) a creature of its own: one more entry, `kind` "worldboss".
 #: A world without one keeps drawing its stage boss there.
-OPTIONAL_KINDS = ("worldboss",)
+OPTIONAL_KINDS = ("worldboss", "support")  # the world boss's own creature; the wave's aura carrier
 #: No atlas is wider than this many pixels.
 MAX_WIDTH = 2048
 #: The animation whose frames measure the standing figure (where its life bar and auras go).
