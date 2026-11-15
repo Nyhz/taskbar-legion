@@ -48,7 +48,7 @@ def power_infusion() -> Icon:  # an arrow rising among sparks: power poured into
         E,
         E,
         E,
-    ], {"v": ("violet", 4), "V": ("violet", 7), "y": ("brass", 6)})
+    ], {"v": ("brass", 4), "V": ("brass", 6), "y": ("light", 0)})  # yellow, like the aura it lays (it was violet until 2026-11-15)
 
 
 def holy_shield() -> Icon:  # a golden shield with a cross of light

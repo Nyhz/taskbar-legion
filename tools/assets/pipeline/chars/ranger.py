@@ -155,20 +155,30 @@ class Ranger(Character):
             gx, gy = gx + (self.build.root_x + bx - gx) * w, gy + (GROUND - by - gy) * w
         draw_bow(cel, (gx, gy), pose["bow"], pose.get("draw", 0.0), J["handN"], pose.get("arrow", 0.0) > 0.5)
         self.arm(cel, J, "N", far=False)
+        hx_, hy_ = J["handN"]
+        if pose.get("flask", 0.0) > 0.5:
+            # Tar Flask: a stoppered clay flask in the throwing hand, its wick alight.
+            for dx, dy, t in ((0, -3, ("brass", 7)), (0, -2, ("leather", 5)), (-1, -1, ("leather", 2)), (0, -1, ("leather", 4)), (1, -1, ("leather", 3)),
+                              (-1, 0, ("leather", 2)), (0, 0, ("leather", 3)), (1, 0, ("leather", 2)), (0, 1, ("leather", 1))):
+                cel.put(hx_ + 1 + dx, hy_ - 1 + dy, t)
+        if pose.get("caltrops", 0.0) > 0.5:
+            # Caltrops: a fistful of iron points.
+            for dx, dy in ((1, 0), (2, -1), (0, 1), (2, 1)):
+                cel.put(hx_ + dx, hy_ + dy, ("ink", 7))
+            cel.put(hx_ + 1, hy_ - 1, ("ink", 9))
+        if pose.get("fistful", 0.0) > 0.5:
+            # Rapid Fire: three arrows pulled from the quiver at once, held by the nocks.
+            for n, ox in enumerate((-0.42, -0.12, 0.2)):
+                for i in range(1, 13):
+                    cel.put(hx_ + ox * i + n - 1, hy_ - i, ("bone", 6) if i < 10 else ("crimson", 4 + (n % 2)))
         cel.outline()
-        if pose.get("loosed", 0.0) > 0.5:
-            # The arrow leaving: a streak along the line of the shot.
-            gx, gy = J["handF"]
-            a = math.radians(pose["bow"])
-            fx, fy = math.sin(a), -math.cos(a)
-            for i in range(8, 30):
-                cel.soft(gx + fx * i, gy + fy * i, ("light", 0) if i > 18 else ("bone", 6))
+        # No streak on the loosing frame (`loosed`): the game flies a real arrow from the bow.
 
 
 # --------------------------------------------------------------------------------------- animations
 READY: Pose = dict(dx=0.0, drop=0.9, lean=3.0, footN=(-4.5, 0.0, 0.0), footF=(5.0, 0.0, 0.0), hip_rot=0.0, sh_rot=0.0,
                    armN=-8.0, elbN=24.0, armF=24.0, elbF=34.0, bow=74.0, draw=0.0, arrow=0.0, loosed=0.0, head_dx=0.0, head_dy=0.0, breath=0.0,
-                   head_rot=0.0, bow_free=0.0, bow_at=(0.0, 0.0))
+                   head_rot=0.0, bow_free=0.0, bow_at=(0.0, 0.0), flask=0.0, caltrops=0.0, fistful=0.0)
 
 
 def idle_pose(ph: float) -> Pose:
@@ -238,7 +248,103 @@ QUICK_KEYS = [
     (1.00, k(), "io"),
 ]
 
+# Kneeling shot (a second basic attack): he drops onto the back knee as he draws, looses level, and rises.
+_KNEE = dict(drop=6.4, footN=(-9.5, 2.4, -100.0), footF=(4.8, 0.0, 0.0))
+KNEEL_KEYS = [
+    (0.00, k(), "lin"),
+    (0.18, k(drop=3.6, lean=7.0, armF=70.0, elbF=14.0, bow=90.0, armN=38.0, elbN=90.0, draw=0.04, footN=(-7.0, 0.6, -30.0)), "out"),
+    (0.32, k(lean=5.0, armF=84.0, elbF=6.0, bow=90.0, armN=56.0, elbN=64.0, draw=0.12, arrow=1.0, **_KNEE), "io"),
+    (0.56, k(dx=-0.6, lean=-1.0, sh_rot=1.2, armF=88.0, elbF=3.0, bow=90.0, armN=-100.0, elbN=190.0, draw=1.0, arrow=1.0, **_KNEE), "out"),
+    (0.70, k(dx=-0.8, lean=-1.6, sh_rot=1.3, armF=88.0, elbF=3.0, bow=90.0, armN=-102.0, elbN=191.0, draw=1.0, arrow=1.0, **_KNEE), "io"),
+    (0.74, k(dx=-0.3, lean=1.0, sh_rot=0.8, armF=86.0, elbF=3.0, bow=101.0, armN=-106.0, elbN=262.0, draw=-0.18, loosed=1.0, **_KNEE), "lin"),
+    (0.86, k(lean=4.0, armF=78.0, elbF=8.0, bow=96.0, armN=-80.0, elbN=206.0, draw=0.05, **{**_KNEE, "drop": 5.6}), "out"),
+    (1.00, k(), "io"),
+]
+
+# Skipping shot (a third basic attack): he springs back off the front foot drawing in the air, lands on the back
+# foot and looses, then steps back up to his place.
+SKIP_KEYS = [
+    (0.00, k(), "lin"),
+    (0.14, k(dx=0.8, drop=2.6, lean=8.0, armF=60.0, elbF=20.0, bow=88.0, armN=30.0, elbN=96.0, draw=0.04), "out"),
+    (0.28, k(dx=-2.6, drop=-3.4, lean=-3.0, armF=80.0, elbF=6.0, bow=90.0, armN=54.0, elbN=66.0, draw=0.14, arrow=1.0,
+             footN=(-5.0, 4.4, -30.0), footF=(3.0, 5.6, 20.0)), "out"),
+    (0.46, k(dx=-5.2, drop=-2.0, lean=-7.0, sh_rot=1.2, armF=86.0, elbF=3.0, bow=90.0, armN=-96.0, elbN=186.0, draw=0.9, arrow=1.0,
+             footN=(-7.5, 2.4, -16.0), footF=(4.0, 4.0, 14.0)), "io"),
+    (0.62, k(dx=-6.0, drop=2.2, lean=-5.0, sh_rot=1.3, armF=86.0, elbF=3.0, bow=90.0, armN=-102.0, elbN=191.0, draw=1.0, arrow=1.0,
+             footN=(-6.0, 0.0, 0.0), footF=(6.0, 0.0, 0.0)), "out"),
+    (0.70, k(dx=-6.0, drop=2.4, lean=-5.4, sh_rot=1.3, armF=86.0, elbF=3.0, bow=90.0, armN=-102.0, elbN=191.0, draw=1.0, arrow=1.0,
+             footN=(-6.0, 0.0, 0.0), footF=(6.0, 0.0, 0.0)), "io"),
+    (0.74, k(dx=-5.6, drop=1.8, lean=-2.0, sh_rot=0.8, armF=84.0, elbF=3.0, bow=101.0, armN=-106.0, elbN=262.0, draw=-0.18, loosed=1.0,
+             footN=(-6.0, 0.0, 0.0), footF=(6.0, 0.0, 0.0)), "lin"),
+    (0.86, k(dx=-3.4, drop=1.0, lean=3.0, armF=70.0, elbF=12.0, bow=92.0, armN=-70.0, elbN=200.0, draw=0.05, footF=(5.0, 1.6, 8.0)), "out"),
+    (1.00, k(), "io"),
+]
+
+# Aimed Shot: he sets his feet wide, raises the bow high and brings it down onto the mark in one long, slow draw;
+# the hold is the longest of any shot he makes.
+AIMED_KEYS = [
+    (0.00, k(), "lin"),
+    (0.14, k(dx=-0.6, drop=1.6, lean=-2.0, armF=128.0, elbF=8.0, bow=58.0, armN=44.0, elbN=96.0, draw=0.04, footN=(-6.5, 0.0, 0.0)), "out"),
+    (0.28, k(dx=-1.0, drop=2.0, lean=-5.0, armF=134.0, elbF=5.0, bow=54.0, armN=62.0, elbN=70.0, draw=0.14, arrow=1.0, footN=(-7.5, 0.0, 0.0)), "io"),
+    (0.52, k(dx=-1.8, drop=2.6, lean=-7.0, sh_rot=1.4, armF=92.0, elbF=3.0, bow=88.0, armN=-104.0, elbN=192.0, draw=1.0, arrow=1.0,
+             footN=(-8.0, 0.0, 0.0), footF=(5.6, 0.0, 0.0), head_dx=0.4), "out"),
+    (0.72, k(dx=-2.0, drop=2.8, lean=-7.6, sh_rot=1.5, armF=90.0, elbF=3.0, bow=90.0, armN=-106.0, elbN=193.0, draw=1.0, arrow=1.0,
+             footN=(-8.0, 0.0, 0.0), footF=(5.6, 0.0, 0.0), head_dx=0.5), "io"),
+    (0.76, k(dx=-3.0, drop=2.2, lean=-10.0, sh_rot=0.8, armF=88.0, elbF=3.0, bow=104.0, armN=-112.0, elbN=268.0, draw=-0.2, loosed=1.0,
+             footN=(-8.5, 0.0, 0.0), footF=(5.0, 0.6, 6.0)), "lin"),
+    (0.88, k(dx=-1.4, drop=1.4, lean=-2.0, armF=80.0, elbF=8.0, bow=97.0, armN=-88.0, elbN=214.0, draw=0.05, footN=(-6.0, 0.0, 0.0)), "out"),
+    (1.00, k(), "io"),
+]
+
+# Tar Flask: the flask comes out in the free hand, goes back behind his head and is lobbed high and long.
+LOB_KEYS = [
+    (0.00, k(), "lin"),
+    (0.16, k(drop=1.6, lean=2.0, armN=20.0, elbN=80.0, flask=1.0), "out"),
+    (0.36, k(dx=-1.6, drop=2.4, lean=-10.0, sh_rot=1.2, armN=-150.0, elbN=96.0, flask=1.0, armF=60.0, elbF=20.0, bow=80.0, footF=(5.5, 1.0, 8.0)), "io"),
+    (0.46, k(dx=-1.8, drop=2.6, lean=-11.0, sh_rot=1.3, armN=-156.0, elbN=100.0, flask=1.0, armF=62.0, elbF=20.0, bow=80.0, footF=(5.8, 1.2, 8.0)), "io"),
+    (0.52, k(dx=2.2, drop=1.6, lean=6.0, sh_rot=-1.6, armN=112.0, elbN=6.0, armF=30.0, elbF=40.0, bow=70.0, footF=(8.0, 0.0, 0.0), footN=(-5.0, 0.0, -18.0)), "in"),
+    (0.66, k(dx=2.8, drop=2.2, lean=13.0, sh_rot=-1.2, armN=70.0, elbN=20.0, armF=22.0, elbF=44.0, bow=68.0, footF=(8.0, 0.0, 0.0), footN=(-5.0, 0.0, -22.0)), "out"),
+    (0.84, k(dx=1.2, drop=1.4, lean=6.0, armN=20.0, elbN=30.0, footF=(6.4, 0.8, 4.0)), "io"),
+    (1.00, k(), "io"),
+]
+
+# Caltrops: he crouches and sows them underhand in one low sweep across the ground ahead.
+SOW_KEYS = [
+    (0.00, k(), "lin"),
+    (0.18, k(drop=2.4, lean=6.0, armN=-30.0, elbN=40.0, caltrops=1.0), "out"),
+    (0.36, k(dx=-1.0, drop=4.6, lean=12.0, sh_rot=1.0, armN=-70.0, elbN=30.0, caltrops=1.0, armF=40.0, elbF=40.0, bow=84.0), "io"),
+    (0.44, k(dx=-1.2, drop=4.8, lean=13.0, sh_rot=1.1, armN=-74.0, elbN=28.0, caltrops=1.0, armF=42.0, elbF=40.0, bow=84.0), "io"),
+    (0.50, k(dx=2.0, drop=5.0, lean=20.0, sh_rot=-1.0, armN=62.0, elbN=8.0, armF=24.0, elbF=50.0, bow=78.0, footF=(8.0, 0.0, 0.0), footN=(-5.5, 0.0, -20.0)), "in"),
+    (0.64, k(dx=2.4, drop=4.6, lean=18.0, sh_rot=-1.2, armN=96.0, elbN=4.0, armF=22.0, elbF=52.0, bow=76.0, footF=(8.0, 0.0, 0.0), footN=(-5.5, 0.0, -22.0)), "out"),
+    (0.84, k(dx=1.0, drop=2.0, lean=7.0, armN=30.0, elbN=24.0, footF=(6.2, 0.8, 4.0)), "io"),
+    (1.00, k(), "io"),
+]
+
+# Mark of the Hunter: he levels his arm at the quarry and holds it there.
+POINT_KEYS = [
+    (0.00, k(), "lin"),
+    (0.20, k(drop=1.8, lean=5.0, armN=30.0, elbN=70.0, head_dx=0.3), "out"),
+    (0.34, k(dx=1.0, drop=1.4, lean=7.0, sh_rot=-1.2, armN=92.0, elbN=4.0, armF=10.0, elbF=44.0, bow=64.0, head_dx=0.6, footF=(6.4, 0.0, 0.0)), "out3"),
+    (0.74, k(dx=1.2, drop=1.5, lean=7.6, sh_rot=-1.3, armN=94.0, elbN=2.0, armF=8.0, elbF=44.0, bow=63.0, head_dx=0.6, footF=(6.4, 0.0, 0.0)), "lin"),
+    (0.88, k(dx=0.4, drop=1.2, lean=4.0, armN=40.0, elbN=40.0), "io"),
+    (1.00, k(), "io"),
+]
+
 # Hit: light on his feet, he is knocked furthest. The free arm flies up for balance, the bow arm is flung back.
+# Rapid Fire: his hand goes over the shoulder to the quiver and comes back with a fistful of arrows, which he
+# snaps down to the string — from now on he does not reach again.
+_QUIVER = dict(armN=-152.0, elbN=92.0)
+HASTE_KEYS = [
+    (0.00, k(), "lin"),
+    (0.20, k(drop=1.4, lean=1.0, armF=50.0, elbF=24.0, bow=84.0, head_dx=-0.3, **_QUIVER), "out"),
+    (0.34, k(drop=1.6, lean=0.0, armF=52.0, elbF=22.0, bow=84.0, head_dx=-0.4, armN=-156.0, elbN=96.0), "io"),
+    (0.42, k(drop=0.2, lean=-4.0, armF=70.0, elbF=12.0, bow=88.0, armN=-176.0, elbN=40.0, fistful=1.0, head_dy=-0.5), "in"),
+    (0.60, k(drop=0.0, lean=-5.0, armF=74.0, elbF=10.0, bow=88.0, armN=-182.0, elbN=34.0, fistful=1.0, head_dy=-0.6), "lin"),
+    (0.72, k(drop=1.4, lean=4.0, armF=82.0, elbF=6.0, bow=90.0, armN=56.0, elbN=66.0, fistful=1.0, draw=0.12), "in"),
+    (0.86, k(drop=1.2, lean=4.0, armF=80.0, elbF=8.0, bow=90.0, armN=52.0, elbN=70.0, draw=0.12, arrow=1.0), "io"),
+    (1.00, k(), "io"),
+]
+
 HURT_KEYS = stagger_keys(READY, push=5.0, bend=15.0, buckle=2.8, whip=24.0, over={
     "impact": dict(armF=40.0, elbF=30.0, armN=-20.0, elbN=30.0, bow=66.0),
     "reel": dict(armF=62.0, elbF=18.0, armN=-44.0, elbN=44.0, bow=50.0),
@@ -275,6 +381,20 @@ ANIMS = {
                    [90, 70, 70, 70, 80, 80, 90, 110, 140, 160, 50, 60, 80, 90, 120], False, STILL),
     "quick": Anim("quick", keyed(QUICK_KEYS), [0.0, 0.06, 0.12, 0.18, 0.24, 0.28, 0.34, 0.40, 0.46, 0.52, 0.56, 0.63, 0.70, 0.85, 1.0],
                   [60, 50, 50, 50, 60, 45, 50, 50, 50, 60, 45, 60, 70, 80, 100], False, STILL),
+    "attack2": Anim("attack2", keyed(KNEEL_KEYS), [0.0, 0.09, 0.18, 0.25, 0.32, 0.40, 0.48, 0.56, 0.63, 0.70, 0.74, 0.80, 0.86, 0.93, 1.0],
+                    [80, 60, 70, 60, 70, 70, 80, 100, 120, 150, 50, 60, 90, 90, 110], False, STILL),
+    "attack3": Anim("attack3", keyed(SKIP_KEYS), [0.0, 0.07, 0.14, 0.21, 0.28, 0.37, 0.46, 0.54, 0.62, 0.70, 0.74, 0.80, 0.86, 0.93, 1.0],
+                    [80, 60, 70, 60, 60, 70, 80, 90, 120, 150, 50, 60, 90, 90, 110], False, STILL),
+    "aimed": Anim("aimed", keyed(AIMED_KEYS), [0.0, 0.07, 0.14, 0.21, 0.28, 0.36, 0.44, 0.52, 0.62, 0.72, 0.76, 0.82, 0.88, 0.94, 1.0],
+                  [80, 70, 80, 70, 80, 90, 100, 120, 150, 180, 50, 70, 90, 90, 120], False, STILL),
+    "lob": Anim("lob", keyed(LOB_KEYS), [0.0, 0.08, 0.16, 0.26, 0.36, 0.46, 0.52, 0.59, 0.66, 0.84, 1.0],
+                [60, 50, 60, 70, 90, 110, 40, 60, 100, 100, 110], False, STILL),
+    "sow": Anim("sow", keyed(SOW_KEYS), [0.0, 0.09, 0.18, 0.27, 0.36, 0.44, 0.50, 0.57, 0.64, 0.84, 1.0],
+                [60, 50, 60, 70, 90, 110, 40, 60, 100, 100, 110], False, STILL),
+    "point": Anim("point", keyed(POINT_KEYS), [0.0, 0.10, 0.20, 0.27, 0.34, 0.44, 0.54, 0.64, 0.74, 0.88, 1.0],
+                  [70, 60, 80, 110, 40, 90, 100, 100, 110, 90, 100], False, STILL),
+    "haste": Anim("haste", keyed(HASTE_KEYS), [0.0, 0.10, 0.20, 0.34, 0.42, 0.51, 0.60, 0.72, 0.79, 0.86, 1.0],
+                  [70, 70, 90, 120, 40, 80, 100, 50, 70, 90, 100], False, STILL),
     "hurt": Anim("hurt", keyed(HURT_KEYS), HURT_TIMES, HURT_MS, False, STILL),
     "death": Anim("death", keyed(DEATH_KEYS), [0.0, 0.04, 0.08, 0.14, 0.20, 0.27, 0.34, 0.38, 0.42, 0.46, 0.50, 0.56, 0.62, 0.74, 1.0],
                   [50, 40, 70, 60, 70, 60, 60, 45, 50, 60, 80, 80, 90, 140, 1200], False, STILL),

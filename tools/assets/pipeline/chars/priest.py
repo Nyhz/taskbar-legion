@@ -246,12 +246,8 @@ class Priest(Character):
         # Light: a halo of rays round the lantern that grows with the spell.
         glow = pose.get("glow", 0.0)
         cx, cy = lan[0], lan[1] + 2.0
-        if pose.get("bolt", 0.0) > 0.5:
-            # Smite: a lance of light from the lantern at whatever stands in front of him.
-            for i in range(4, 30):
-                cel.soft(cx + i, cy - i * 0.12, ("light", 0) if i < 20 else ("brass", 6))
-                if i < 16:
-                    cel.soft(cx + i, cy - i * 0.12 + 1, ("brass", 6))
+        # Nothing is thrown in the frames themselves (`bolt` once drew a lance here): the game flies a real bolt
+        # from the lantern, a page from the book, and plays each spell's own effect.
         if glow < 0.03:
             return
         reach = 2.6 + 4.2 * glow
@@ -327,6 +323,120 @@ SMITE_KEYS = [
     (1.00, k(), "io"),
 ]
 
+# ── More basic attacks (they alternate at random with the thrust above) ──
+# The page: the book comes up open across her chest, and a backhand flick of the wrist sends a leaf of it out.
+PAGE_KEYS = [
+    (0.00, k(), "lin"),
+    (0.20, k(drop=1.0, lean=-3.0, sh_rot=1.4, armN=34.0, elbN=90.0, head_dx=-0.3, head_rot=6.0, staff=1.0, glow=0.2), "out"),
+    (0.40, k(dx=-0.8, drop=1.3, lean=-5.0, sh_rot=1.8, armN=26.0, elbN=104.0, head_dx=-0.4, head_rot=8.0, staff=0.0, glow=0.35), "io"),
+    (0.50, k(dx=1.6, drop=1.1, lean=7.0, sh_rot=-1.6, armN=84.0, elbN=6.0, head_dx=0.5, staff=5.0, glow=0.7, footN=(-2.6, 0.0, -10.0)), "in3"),
+    (0.64, k(dx=1.9, drop=1.2, lean=8.0, sh_rot=-1.8, armN=88.0, elbN=3.0, head_dx=0.5, staff=6.0, glow=0.5, footN=(-2.6, 0.0, -12.0)), "lin"),
+    (0.82, k(dx=0.8, drop=0.9, lean=3.0, armN=40.0, elbN=44.0, staff=4.0, glow=0.2), "io"),
+    (1.00, k(), "io"),
+]
+
+# The rap: she lifts the staff straight up off the ground and brings its foot down hard; the lantern jumps and
+# lets its light go from the top of the crook.
+RAP_KEYS = [
+    (0.00, k(), "lin"),
+    (0.22, k(drop=-0.3, lean=-3.0, armF=58.0, elbF=58.0, staff=-2.0, staff_lift=5.0, armN=-10.0, elbN=26.0, glow=0.3, footN=(-2.6, 0.0, -8.0)), "out"),
+    (0.42, k(drop=-0.9, lean=-5.0, armF=74.0, elbF=62.0, staff=-4.0, staff_lift=9.5, armN=-16.0, elbN=30.0, head_dy=-0.4, glow=0.5,
+             footN=(-2.6, 0.0, -14.0), footF=(3.0, 0.0, -10.0)), "io"),
+    (0.52, k(drop=1.9, lean=6.0, armF=34.0, elbF=34.0, staff=4.0, staff_lift=0.0, armN=6.0, elbN=20.0, head_dy=0.8, glow=1.2), "in3"),
+    (0.66, k(drop=1.6, lean=5.0, armF=34.0, elbF=36.0, staff=3.5, armN=4.0, elbN=18.0, head_dy=0.6, glow=0.8), "lin"),
+    (0.84, k(drop=0.9, lean=1.0, armF=32.0, elbF=40.0, staff=3.0, glow=0.3), "io"),
+    (1.00, k(), "io"),
+]
+
+# ── Her spells: each its own gesture ──
+# Mend: she tends — the lantern held out low towards the hurt one, her head bowed over it, her book hand at her heart.
+MEND_KEYS = [
+    (0.00, k(), "lin"),
+    (0.24, k(drop=1.2, lean=3.0, armF=44.0, elbF=40.0, staff=14.0, staff_lift=2.0, armN=14.0, elbN=74.0, head_rot=6.0, glow=0.3), "out"),
+    (0.42, k(dx=0.8, drop=1.6, lean=8.0, armF=62.0, elbF=22.0, staff=34.0, staff_lift=3.0, armN=14.0, elbN=84.0, head_rot=12.0, head_dy=0.7, glow=0.7), "io"),
+    (0.50, k(dx=1.2, drop=1.8, lean=10.0, armF=68.0, elbF=14.0, staff=40.0, staff_lift=3.0, armN=16.0, elbN=88.0, head_rot=14.0, head_dy=0.9, glow=1.1), "in"),
+    (0.74, k(dx=1.2, drop=1.9, lean=10.5, armF=69.0, elbF=13.0, staff=41.0, staff_lift=3.0, armN=16.0, elbN=88.0, head_rot=14.0, head_dy=1.0, glow=0.9), "lin"),
+    (0.88, k(dx=0.4, drop=1.1, lean=4.0, armF=44.0, elbF=34.0, staff=16.0, staff_lift=1.0, armN=8.0, elbN=50.0, head_rot=4.0, glow=0.3), "io"),
+    (1.00, k(), "io"),
+]
+
+# Holy Shield: she wards — the staff planted, her weight back, and the open book thrust out at arm's length like a hand raised to halt.
+WARD_KEYS = [
+    (0.00, k(), "lin"),
+    (0.22, k(dx=-0.6, drop=1.2, lean=-2.0, sh_rot=1.2, armN=30.0, elbN=96.0, staff=0.0, glow=0.2), "out"),
+    (0.36, k(dx=-1.0, drop=1.5, lean=-3.0, sh_rot=1.6, armN=36.0, elbN=110.0, staff=-1.0, glow=0.3), "io"),
+    (0.44, k(dx=0.6, drop=1.3, lean=-6.0, sh_rot=-1.4, armN=90.0, elbN=4.0, armF=24.0, elbF=44.0, staff=-3.0, head_dx=-0.3, head_rot=-6.0, glow=0.9,
+             footN=(-4.4, 0.0, 0.0)), "in3"),
+    (0.72, k(dx=0.7, drop=1.4, lean=-6.5, sh_rot=-1.5, armN=92.0, elbN=2.0, armF=24.0, elbF=44.0, staff=-3.0, head_dx=-0.3, head_rot=-6.0, glow=0.7,
+             footN=(-4.4, 0.0, 0.0)), "lin"),
+    (0.88, k(drop=0.9, lean=-2.0, armN=30.0, elbN=50.0, staff=1.0, glow=0.3), "io"),
+    (1.00, k(), "io"),
+]
+
+# Holy Nova: both hands take the staff high over her head, up on her toes — and she drives its foot into the ground.
+_NOVA_GRIP = dict(reachN_w=1.0)
+NOVA_KEYS = [
+    (0.00, k(), "lin"),
+    (0.18, k(drop=1.4, lean=4.0, armF=50.0, elbF=50.0, staff=0.0, armN=40.0, elbN=70.0, glow=0.3), "out"),
+    (0.38, k(drop=-0.8, lean=-6.0, armF=132.0, elbF=24.0, staff=-6.0, staff_lift=12.0, armN=118.0, elbN=40.0, head_rot=-10.0, head_dy=-0.5, glow=0.7,
+             footN=(-2.6, 0.0, -16.0), footF=(3.0, 0.0, -12.0)), "io"),
+    (0.50, k(drop=-1.1, lean=-8.0, armF=138.0, elbF=20.0, staff=-9.0, staff_lift=14.0, armN=124.0, elbN=36.0, head_rot=-12.0, head_dy=-0.6, glow=0.9,
+             footN=(-2.6, 0.0, -18.0), footF=(3.0, 0.0, -14.0)), "io"),
+    (0.58, k(dx=0.8, drop=2.6, lean=12.0, armF=46.0, elbF=34.0, staff=5.0, staff_lift=0.0, armN=52.0, elbN=60.0, head_rot=10.0, head_dy=1.0, glow=1.4), "in3"),
+    (0.76, k(dx=0.8, drop=2.3, lean=11.0, armF=46.0, elbF=36.0, staff=5.0, armN=50.0, elbN=60.0, head_rot=8.0, head_dy=0.8, glow=1.0), "lin"),
+    (0.90, k(drop=1.1, lean=3.0, armF=34.0, elbF=40.0, staff=3.0, armN=10.0, elbN=40.0, glow=0.3), "io"),
+    (1.00, k(), "io"),
+]
+
+# Smite: the staff swung up and back over her shoulder, then brought over and down at the enemy like a gavel.
+JUDGE_KEYS = [
+    (0.00, k(), "lin"),
+    (0.20, k(dx=-0.8, drop=0.6, lean=-5.0, armF=96.0, elbF=40.0, staff=-22.0, staff_lift=8.0, armN=-18.0, elbN=30.0, head_rot=-6.0, glow=0.3), "out"),
+    (0.38, k(dx=-1.4, drop=0.3, lean=-8.0, armF=128.0, elbF=30.0, staff=-38.0, staff_lift=10.0, armN=-26.0, elbN=34.0, head_rot=-8.0, glow=0.6,
+             footN=(-2.6, 0.0, -10.0)), "io"),
+    (0.48, k(dx=2.6, drop=1.6, lean=13.0, armF=70.0, elbF=6.0, staff=76.0, staff_lift=7.0, armN=10.0, elbN=40.0, head_rot=8.0, head_dx=0.5, glow=1.3,
+             footF=(5.6, 0.0, 0.0), footN=(-2.6, 0.0, -14.0)), "in3"),
+    (0.66, k(dx=2.8, drop=1.7, lean=13.5, armF=68.0, elbF=6.0, staff=79.0, staff_lift=7.0, armN=10.0, elbN=40.0, head_rot=8.0, head_dx=0.5, glow=1.0,
+             footF=(5.6, 0.0, 0.0), footN=(-2.6, 0.0, -14.0)), "lin"),
+    (0.84, k(dx=1.2, drop=1.0, lean=5.0, armF=50.0, elbF=30.0, staff=30.0, staff_lift=3.0, glow=0.4, footF=(5.0, 0.0, 0.0)), "io"),
+    (1.00, k(), "io"),
+]
+
+# Power Infusion: she reads it in — the book lifted high and open over her head, her face turned up to it, then
+# the arm swept down and out at the one she gives it to.
+INFUSE_KEYS = [
+    (0.00, k(), "lin"),
+    (0.22, k(drop=0.4, lean=-4.0, armN=96.0, elbN=60.0, head_rot=-8.0, staff=1.0, glow=0.3), "out"),
+    (0.40, k(drop=-0.6, lean=-7.0, armN=142.0, elbN=22.0, head_rot=-16.0, head_dy=-0.5, staff=0.0, glow=0.6, footN=(-2.6, 0.0, -12.0)), "io"),
+    (0.50, k(drop=-0.7, lean=-7.5, armN=146.0, elbN=18.0, head_rot=-17.0, head_dy=-0.5, staff=0.0, glow=0.8, footN=(-2.6, 0.0, -13.0)), "lin"),
+    (0.58, k(dx=1.4, drop=1.3, lean=8.0, sh_rot=-1.5, armN=80.0, elbN=4.0, head_rot=4.0, head_dx=0.4, staff=6.0, glow=1.2), "in3"),
+    (0.78, k(dx=1.5, drop=1.4, lean=8.5, sh_rot=-1.6, armN=82.0, elbN=3.0, head_rot=4.0, head_dx=0.4, staff=6.0, glow=0.9), "lin"),
+    (0.90, k(dx=0.5, drop=0.9, lean=3.0, armN=36.0, elbN=40.0, staff=4.0, glow=0.3), "io"),
+    (1.00, k(), "io"),
+]
+
+# Battle Enrage (the ultimate): a step forward and the staff thrown up and out ahead of the party like a standard,
+# her book arm flung back, the lantern blazing.
+EXALT_KEYS = [
+    (0.00, k(), "lin"),
+    (0.16, k(dx=-1.0, drop=1.8, lean=6.0, armF=20.0, elbF=66.0, staff=-8.0, armN=10.0, elbN=60.0, head_rot=8.0, head_dy=0.7, glow=0.3), "out"),
+    (0.30, k(dx=-1.4, drop=2.1, lean=8.0, armF=16.0, elbF=72.0, staff=-12.0, armN=14.0, elbN=64.0, head_rot=10.0, head_dy=0.9, glow=0.5), "io"),
+    (0.38, k(dx=2.6, drop=0.2, lean=9.0, armF=132.0, elbF=10.0, staff=30.0, staff_lift=10.0, armN=-48.0, elbN=26.0, head_rot=-10.0, head_dx=0.5, glow=1.4,
+             footF=(6.2, 0.0, 0.0), footN=(-3.4, 0.0, -18.0)), "in3"),
+    (0.50, k(dx=2.9, drop=0.0, lean=10.0, armF=136.0, elbF=8.0, staff=33.0, staff_lift=11.0, armN=-54.0, elbN=24.0, head_rot=-12.0, head_dx=0.5, glow=1.4,
+             footF=(6.2, 0.0, 0.0), footN=(-3.4, 0.0, -20.0)), "out"),
+    (0.76, k(dx=2.8, drop=0.2, lean=9.5, armF=134.0, elbF=9.0, staff=32.0, staff_lift=10.5, armN=-52.0, elbN=25.0, head_rot=-11.0, head_dx=0.5, glow=1.2,
+             footF=(6.2, 0.0, 0.0), footN=(-3.4, 0.0, -19.0)), "lin"),
+    (0.90, k(dx=1.0, drop=0.9, lean=4.0, armF=60.0, elbF=34.0, staff=12.0, staff_lift=3.0, armN=-10.0, elbN=24.0, glow=0.4, footF=(5.0, 0.0, 0.0)), "io"),
+    (1.00, k(), "io"),
+]
+
+
+def _clip(name: str, keys: list, frames: list[tuple[float, int]], air=None) -> "Anim":
+    """An action clip from its keys and (time, ms) per frame."""
+    return Anim(name, keyed(keys), [t for t, _ in frames], [ms for _, ms in frames], False, air or STILL)
+
+
 # Hit: she flinches round the staff and pulls it in; the book arm swings out behind her, and the mane follows.
 HURT_KEYS = stagger_keys(REST, push=4.2, bend=12.0, buckle=2.4, whip=20.0, over={
     "impact": dict(armF=44.0, elbF=50.0, staff=-4.0, armN=-14.0, elbN=24.0),
@@ -369,6 +479,24 @@ ANIMS = {
                    [80, 70, 90, 110, 40, 50, 80, 90, 70, 80, 90, 110], False, STILL),
     "cast": Anim("cast", keyed(CAST_KEYS), [0.0, 0.1, 0.2, 0.29, 0.37, 0.45, 0.53, 0.60, 0.65, 0.70, 0.77, 0.85, 0.93, 1.0],
                  [100, 90, 110, 80, 80, 90, 110, 130, 70, 90, 90, 100, 100, 140], False, cast_air),
+    # Every acting clip holds its wind-up and then SNAPS (the frame after the longest hold is at least 2.5× shorter):
+    # that frame is the release the game waits for before the bolt, the page or the spell's light appears.
+    "attack2": _clip("attack2", PAGE_KEYS, [(0.0, 80), (0.10, 70), (0.20, 80), (0.30, 90), (0.40, 120), (0.46, 40), (0.50, 50), (0.57, 80), (0.64, 90),
+                                             (0.73, 80), (0.82, 80), (0.91, 90), (1.0, 110)]),
+    "attack3": _clip("attack3", RAP_KEYS, [(0.0, 80), (0.11, 70), (0.22, 80), (0.32, 90), (0.42, 130), (0.48, 40), (0.52, 50), (0.59, 90), (0.66, 90),
+                                            (0.75, 80), (0.84, 80), (0.92, 90), (1.0, 110)]),
+    "mend": _clip("mend", MEND_KEYS, [(0.0, 90), (0.12, 90), (0.24, 100), (0.33, 110), (0.42, 140), (0.47, 50), (0.50, 70), (0.58, 120), (0.66, 130),
+                                      (0.74, 110), (0.81, 90), (0.88, 90), (0.94, 100), (1.0, 120)]),
+    "ward": _clip("ward", WARD_KEYS, [(0.0, 80), (0.11, 80), (0.22, 90), (0.29, 100), (0.36, 130), (0.41, 40), (0.44, 60), (0.53, 110), (0.62, 120),
+                                      (0.72, 100), (0.80, 90), (0.88, 90), (0.94, 90), (1.0, 110)]),
+    "nova": _clip("nova", NOVA_KEYS, [(0.0, 80), (0.09, 80), (0.18, 90), (0.28, 90), (0.38, 100), (0.44, 110), (0.50, 150), (0.55, 45), (0.58, 60),
+                                      (0.67, 110), (0.76, 110), (0.83, 90), (0.90, 90), (0.95, 90), (1.0, 110)], cast_air),
+    "smite": _clip("smite", JUDGE_KEYS, [(0.0, 80), (0.10, 70), (0.20, 80), (0.29, 90), (0.38, 130), (0.44, 40), (0.48, 50), (0.57, 100), (0.66, 100),
+                                         (0.75, 80), (0.84, 80), (0.92, 90), (1.0, 110)]),
+    "infuse": _clip("infuse", INFUSE_KEYS, [(0.0, 80), (0.11, 80), (0.22, 90), (0.31, 90), (0.40, 100), (0.45, 110), (0.50, 140), (0.55, 45), (0.58, 60),
+                                            (0.68, 110), (0.78, 110), (0.84, 90), (0.90, 90), (0.95, 90), (1.0, 110)]),
+    "exalt": _clip("exalt", EXALT_KEYS, [(0.0, 80), (0.08, 80), (0.16, 90), (0.23, 100), (0.30, 150), (0.35, 45), (0.38, 60), (0.44, 100), (0.50, 130),
+                                         (0.59, 130), (0.68, 130), (0.76, 120), (0.83, 90), (0.90, 90), (0.95, 90), (1.0, 110)], cast_air),
     "hurt": Anim("hurt", keyed(HURT_KEYS), HURT_TIMES, HURT_MS, False, STILL),
     "death": Anim("death", keyed(DEATH_KEYS), [0.0, 0.04, 0.08, 0.16, 0.24, 0.31, 0.38, 0.46, 0.52, 0.61, 0.70, 0.77, 0.84, 0.88, 0.92, 0.96, 1.0],
                   [50, 40, 70, 80, 90, 70, 60, 60, 80, 110, 160, 80, 60, 50, 60, 100, 1200], False, STILL),

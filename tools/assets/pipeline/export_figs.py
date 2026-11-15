@@ -1,7 +1,7 @@
 """`export-figs`: the FIGHTERS the game draws in the battle strip, written into `src/assets/strip/figs/` (tracked in
 git, so the game builds without the pipeline):
 
-- `<figure>.png` — one atlas per figure (the three heroes and every world's four creatures): a grid of `w`×`h`
+- `<figure>.png` — one atlas per figure (the three heroes, every world's four creatures and its world boss if it has one): a grid of `w`×`h`
   cells, `cols` wide; each animation starts on a row of its own and wraps onto the next ones when it has more than
   `cols` frames (so no atlas is wider than `MAX_WIDTH`, which every GPU can hold as one texture);
 - `figs.json` — ONE file with every figure's meta (cell size, `cols`, the `root` column and `ground` row that
@@ -30,6 +30,9 @@ DATA = ROOT / "docs" / "redesign" / "lab" / "data"
 DEST = ROOT / "src" / "assets" / "strip" / "figs"
 #: The roles of a world's cast (`kind` in docs/redesign/lab/data/wNN.json).
 KINDS = ("beast", "melee", "ranged", "boss")
+#: A world may also give its WORLD boss (the W-10 fight) a creature of its own: one more entry, `kind` "worldboss".
+#: A world without one keeps drawing its stage boss there.
+OPTIONAL_KINDS = ("worldboss",)
 #: No atlas is wider than this many pixels.
 MAX_WIDTH = 2048
 #: The animation whose frames measure the standing figure (where its life bar and auras go).
@@ -60,15 +63,16 @@ def export_figure(name: str) -> dict:
 
 
 def worlds() -> dict[str, dict[str, str]]:
-    """Per world, which creature plays each role: {"w01": {"beast": "boar", …}, …}."""
+    """Per world, which creature plays each role: {"w01": {"beast": "boar", …, "worldboss": "crowmother"}, …}."""
     out: dict[str, dict[str, str]] = {}
     for f in sorted(DATA.glob("w[0-9][0-9].json")):
         foes = json.loads(f.read_text())["foes"]
         cast = {foe["kind"]: foe["key"] for foe in foes}
-        assert sorted(cast) == sorted(KINDS), f"{f.stem}: needs exactly one creature per role, got {sorted(cast)}"
+        assert len(cast) == len(foes), f"{f.stem}: two creatures with the same role"
+        assert sorted(k for k in cast if k not in OPTIONAL_KINDS) == sorted(KINDS), f"{f.stem}: needs exactly one creature per role, got {sorted(cast)}"
         missing = [key for key in cast.values() if key not in ROSTER]
         assert not missing, f"{f.stem}: creatures without a figure: {missing}"
-        out[f.stem] = {kind: cast[kind] for kind in KINDS}
+        out[f.stem] = {kind: cast[kind] for kind in KINDS + OPTIONAL_KINDS if kind in cast}
     return out
 
 

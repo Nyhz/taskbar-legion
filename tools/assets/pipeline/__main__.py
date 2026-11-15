@@ -42,7 +42,12 @@ def main(argv: list[str]) -> int:
 
         export_figs()
         return 0
-    print("commands: chars [names…], scene, lab, icons, export-ui, export-strip, export-figs")
+    if cmd == "export-fx":
+        from .export_fx import main as export_fx
+
+        export_fx()
+        return 0
+    print("commands: chars [names…], scene, lab, icons, export-ui, export-strip, export-figs, export-fx")
     return 1
 
 

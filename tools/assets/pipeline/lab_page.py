@@ -6,7 +6,8 @@
    the data block of the script — from `docs/redesign/lab/data/wNN.json` and what was exported.
 3. Writes `out/lab/files.json`: published path → source file, for publishing the page.
 
-A world appears once it has a backdrop family, a data file and all four of its creatures. `LAB_WORLDS=w01,w02`
+A world appears once it has a backdrop family, a data file and all four of its creatures (a fifth entry, `kind`
+"worldboss", is the creature of its world boss: it gets a card of its own and can be put alone on the live strip). `LAB_WORLDS=w01,w02`
 limits the build to some worlds.
 """
 from __future__ import annotations
@@ -106,7 +107,8 @@ def worlds_ready() -> list[tuple[str, dict, object]]:
             print(f"skip {key}: no backdrop")
             continue
         missing = [foe["key"] for foe in info["foes"] if foe["key"] not in ROSTER]
-        if missing or len(info["foes"]) != 4:
+        kinds = [foe["kind"] for foe in info["foes"]]
+        if missing or sorted(k for k in kinds if k != "worldboss") != sorted(KINDS):
             print(f"skip {key}: creatures missing {missing}")
             continue
         out.append((key, info, bd))
@@ -136,13 +138,17 @@ def world_section(n: int, key: str, info: dict, bg: tuple[int, int, int], figs: 
         fig = figs[foe["key"]]
         bullets = "\n".join(f"            <li>{esc(b)}</li>" for b in foe["bullets_es"])
         clips = "\n".join(clip(foe["key"], a, lab, foe["name_es"], fig) for a, lab in foe["anims_es"].items() if a in fig["anims"])
+        # A world boss can be put alone on the live strip, in front of the heroes.
+        solo = (f'\n          <button class="link" data-boss="{foe["key"]}" data-boss-world="{key}">Verlo solo en la tira, frente a los héroes</button>'
+                if foe["kind"] == "worldboss" else "")
+        size = f' · {fig["w"]} × {fig["h"]} px' if foe["kind"] == "worldboss" else ""
         cards.append(f'''      <article class="hero">
         <div class="body">
-          <span class="role foe">{esc(foe["role_es"])}</span>
+          <span class="role foe">{esc(foe["role_es"])}{size}</span>
           <h3>{esc(foe["name_es"])}</h3>
           <ul>
 {bullets}
-          </ul>
+          </ul>{solo}
         </div>
         <div class="clips" style="background:{hex_of(bg)};--clip-label:{label}">
 {clips}

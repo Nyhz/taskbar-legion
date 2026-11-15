@@ -253,12 +253,85 @@ ATTACK_KEYS = [
     # Strike: the hips drive forward, the arm unfolds over the top and the blade whips after it.
     (0.42, k(dx=3.0, drop=2.2, lean=10.0, sh_rot=-1.0, armN=-200.0, elbN=350.0, sword=-110.0, footF=(11.0, 0.6, 4.0), footN=(-5.0, 0.0, -14.0), armF=8.0, elbF=36.0, smear=1.0), "in"),
     (0.48, k(dx=7.0, drop=3.0, lean=18.0, sh_rot=-1.6, armN=-282.0, elbN=372.0, sword=12.0, footF=(11.0, 0.0, 0.0), footN=(-5.0, 0.0, -25.0), armF=-6.0, elbF=30.0, smear=1.0, shield_dx=-1.0), "lin"),
-    # Impact held, then the blade carries on down as the body sinks into the lunge.
-    (0.60, k(dx=7.6, drop=3.5, lean=21.0, sh_rot=-1.6, armN=-300.0, elbN=380.0, sword=38.0, footF=(11.0, 0.0, 0.0), footN=(-5.0, 0.0, -27.0), armF=-6.0, elbF=28.0, shield_dx=-1.0), "out"),
-    (0.74, k(dx=6.2, drop=3.0, lean=16.0, sh_rot=-0.8, armN=-318.0, elbN=390.0, sword=58.0, footF=(11.0, 0.0, 0.0), footN=(-5.0, 0.0, -18.0), armF=4.0, elbF=34.0), "io"),
-    # Recover: push off the lead foot, the sword comes back up into guard.
-    (0.88, k(dx=2.0, drop=1.6, lean=7.0, armN=-338.0, elbN=420.0, sword=6.0, footF=(8.0, 1.4, 6.0), armF=16.0, elbF=40.0), "io"),
+    # Follow-through: the ARM carries the cut on down — blade, wrist and forearm in one line — and the body sinks
+    # onto the front foot; it ends low ahead of him, the point a hand above the ground (never a blade hanging
+    # off a level arm: that read as a bent sword).
+    (0.60, k(dx=7.6, drop=3.5, lean=21.0, sh_rot=-1.6, armN=-310.0, elbN=382.0, sword=20.0, footF=(11.0, 0.0, 0.0), footN=(-5.0, 0.0, -27.0), armF=-6.0, elbF=28.0, shield_dx=-1.0), "out"),
+    (0.74, k(dx=6.4, drop=3.2, lean=17.0, sh_rot=-0.8, armN=-340.0, elbN=400.0, sword=30.0, footF=(11.0, 0.0, 0.0), footN=(-5.0, 0.0, -18.0), armF=4.0, elbF=34.0), "io"),
+    # Recover: push off the lead foot, the point lifts first and the sword comes back up into guard.
+    (0.88, k(dx=2.0, drop=1.6, lean=7.0, armN=-344.0, elbN=422.0, sword=-8.0, footF=(8.0, 1.4, 6.0), armF=16.0, elbF=40.0), "io"),
     (1.00, k(armN=-345.0, elbN=435.0), "out"),
+]
+
+# Thrust (a second basic attack): the sword hand is drawn back to the hip, blade level, and he lunges long and
+# low behind the point.
+THRUST_KEYS = [
+    (0.00, k(), "lin"),
+    (0.24, k(dx=-2.4, drop=2.2, lean=-3.0, sh_rot=1.2, armN=-42.0, elbN=118.0, sword=-4.0, armF=44.0, elbF=52.0, footF=(5.5, 1.2, 8.0)), "out"),
+    (0.36, k(dx=-3.0, drop=2.5, lean=-4.0, sh_rot=1.4, armN=-50.0, elbN=124.0, sword=-2.0, armF=46.0, elbF=54.0, footF=(7.0, 1.8, 10.0)), "io"),
+    (0.44, k(dx=5.5, drop=3.0, lean=13.0, sh_rot=-1.2, armN=60.0, elbN=28.0, sword=2.0, footF=(12.0, 0.0, 0.0), footN=(-5.0, 0.0, -20.0), armF=10.0, elbF=40.0, smear=1.0), "in"),
+    (0.50, k(dx=8.5, drop=3.6, lean=17.0, sh_rot=-1.6, armN=84.0, elbN=6.0, sword=1.0, footF=(12.5, 0.0, 0.0), footN=(-5.0, 0.0, -26.0), armF=0.0, elbF=34.0, smear=1.0, shield_dx=-1.0), "lin"),
+    (0.62, k(dx=8.8, drop=3.8, lean=18.0, sh_rot=-1.6, armN=86.0, elbN=4.0, sword=2.0, footF=(12.5, 0.0, 0.0), footN=(-5.0, 0.0, -27.0), armF=0.0, elbF=32.0, shield_dx=-1.0), "out"),
+    (0.80, k(dx=4.5, drop=2.2, lean=9.0, armN=50.0, elbN=50.0, sword=-18.0, footF=(9.0, 1.2, 6.0), footN=(-5.0, 0.0, -10.0)), "io"),
+    (1.00, k(), "out"),
+]
+
+# Shield bash (a third basic attack): the shield is drawn in to the chest and then the whole body goes in behind
+# it; the sword arm trails back for balance.
+BASH_KEYS = [
+    (0.00, k(), "lin"),
+    (0.24, k(dx=-2.2, drop=2.4, lean=-2.0, sh_rot=-1.0, armF=-6.0, elbF=92.0, armN=-20.0, elbN=60.0, sword=-70.0, footF=(5.5, 1.4, 10.0)), "out"),
+    (0.36, k(dx=-2.8, drop=2.8, lean=-3.0, sh_rot=-1.2, armF=-12.0, elbF=100.0, armN=-26.0, elbN=58.0, sword=-78.0, footF=(7.0, 2.0, 12.0)), "io"),
+    (0.44, k(dx=5.0, drop=2.6, lean=12.0, sh_rot=1.2, armF=58.0, elbF=40.0, armN=-40.0, elbN=40.0, sword=-100.0, footF=(11.5, 0.0, 0.0), footN=(-5.0, 0.0, -20.0), shield_dx=1.0), "in"),
+    (0.50, k(dx=8.0, drop=3.2, lean=16.0, sh_rot=1.6, armF=84.0, elbF=8.0, armN=-52.0, elbN=34.0, sword=-112.0, footF=(12.0, 0.0, 0.0), footN=(-5.0, 0.0, -26.0), shield_dx=2.0, spark=1.0), "lin"),
+    (0.62, k(dx=8.2, drop=3.4, lean=16.0, sh_rot=1.6, armF=86.0, elbF=6.0, armN=-54.0, elbN=34.0, sword=-114.0, footF=(12.0, 0.0, 0.0), footN=(-5.0, 0.0, -27.0), shield_dx=2.0), "out"),
+    (0.80, k(dx=4.0, drop=2.0, lean=8.0, armF=50.0, elbF=40.0, armN=-10.0, elbN=64.0, sword=-60.0, footF=(9.0, 1.2, 6.0), footN=(-5.0, 0.0, -10.0)), "io"),
+    (1.00, k(), "out"),
+]
+
+# Stone Skin: he gathers with the sword fist against his chest, then snaps square — feet wide, arms driven down —
+# and holds as the stone takes him.
+HARDEN_KEYS = [
+    (0.00, k(), "lin"),
+    (0.20, k(drop=2.8, lean=6.0, armN=40.0, elbN=110.0, sword=-110.0, armF=30.0, elbF=70.0), "out"),
+    (0.34, k(drop=3.2, lean=7.0, armN=44.0, elbN=118.0, sword=-118.0, armF=34.0, elbF=74.0, head_dy=0.6), "io"),
+    (0.42, k(drop=0.4, lean=-3.0, armN=-18.0, elbN=40.0, sword=-58.0, armF=-12.0, elbF=44.0, head_dy=-0.6, footN=(-6.5, 0.0, 0.0), footF=(6.5, 0.0, 0.0)), "in"),
+    (0.70, k(drop=0.2, lean=-4.0, armN=-22.0, elbN=38.0, sword=-56.0, armF=-14.0, elbF=42.0, head_dy=-0.6, footN=(-6.5, 0.0, 0.0), footF=(6.5, 0.0, 0.0)), "lin"),
+    (1.00, k(), "io"),
+]
+
+# Plant (Bulwark, Hold the Line, Last Stand): the shield goes up high and is driven down into the ground ahead of
+# him; he sets himself behind it.
+PLANT_KEYS = [
+    (0.00, k(), "lin"),
+    (0.22, k(dx=-1.0, drop=1.0, lean=-4.0, armF=120.0, elbF=30.0, armN=-10.0, elbN=60.0, sword=-70.0, shield_dx=1.0), "out"),
+    (0.34, k(dx=-1.2, drop=0.6, lean=-6.0, armF=132.0, elbF=24.0, armN=-12.0, elbN=58.0, sword=-74.0, shield_dx=1.0), "io"),
+    (0.42, k(dx=2.0, drop=3.6, lean=10.0, armF=46.0, elbF=10.0, armN=-6.0, elbN=64.0, sword=-66.0, footF=(8.5, 0.0, 0.0), shield_dx=2.0, spark=1.0), "in"),
+    (0.72, k(dx=2.2, drop=4.0, lean=11.0, armF=44.0, elbF=8.0, armN=-6.0, elbN=64.0, sword=-66.0, footF=(8.5, 0.0, 0.0), shield_dx=2.0), "lin"),
+    (1.00, k(), "io"),
+]
+
+# Roar (Bloodlust): he hunches over the rage, then throws his arms back and his head up and lets it out.
+ROAR_KEYS = [
+    (0.00, k(), "lin"),
+    (0.22, k(drop=3.0, lean=10.0, armN=20.0, elbN=95.0, sword=-30.0, armF=30.0, elbF=60.0, head_dy=0.8), "out"),
+    (0.36, k(drop=3.4, lean=12.0, armN=24.0, elbN=100.0, sword=-26.0, armF=34.0, elbF=64.0, head_dy=1.0), "io"),
+    (0.44, k(drop=0.2, lean=-9.0, armN=-50.0, elbN=30.0, sword=-130.0, armF=-40.0, elbF=24.0, head_dy=-1.0, head_rot=-12.0), "in"),
+    (0.74, k(drop=0.4, lean=-8.0, armN=-54.0, elbN=28.0, sword=-134.0, armF=-42.0, elbF=22.0, head_dy=-1.0, head_rot=-14.0), "lin"),
+    (0.88, k(drop=1.6, lean=4.0, armN=0.0, elbN=70.0, sword=-50.0, armF=14.0, elbF=40.0), "io"),
+    (1.00, k(), "io"),
+]
+
+# Riposte: the shield snaps up into the blow, and the answer is a thrust straight off the parry.
+RIPOSTE_KEYS = [
+    (0.00, k(), "lin"),
+    (0.14, k(dx=-1.0, drop=2.2, lean=4.0, armF=64.0, elbF=60.0, armN=-30.0, elbN=110.0, sword=-6.0, shield_dx=-1.0, spark=1.0), "out3"),
+    (0.30, k(dx=-1.6, drop=2.5, lean=2.0, armF=60.0, elbF=62.0, armN=-44.0, elbN=120.0, sword=-3.0, footF=(6.5, 1.4, 8.0)), "io"),
+    (0.38, k(dx=5.5, drop=3.0, lean=13.0, sh_rot=-1.2, armN=60.0, elbN=28.0, sword=2.0, footF=(12.0, 0.0, 0.0), footN=(-5.0, 0.0, -20.0), armF=20.0, elbF=44.0, smear=1.0), "in"),
+    (0.44, k(dx=8.5, drop=3.6, lean=17.0, sh_rot=-1.6, armN=84.0, elbN=6.0, sword=1.0, footF=(12.5, 0.0, 0.0), footN=(-5.0, 0.0, -26.0), armF=6.0, elbF=36.0, smear=1.0), "lin"),
+    (0.60, k(dx=8.8, drop=3.8, lean=18.0, sh_rot=-1.6, armN=86.0, elbN=4.0, sword=2.0, footF=(12.5, 0.0, 0.0), footN=(-5.0, 0.0, -27.0), armF=4.0, elbF=34.0), "out"),
+    (0.80, k(dx=4.5, drop=2.2, lean=9.0, armN=50.0, elbN=50.0, sword=-18.0, footF=(9.0, 1.2, 6.0), footN=(-5.0, 0.0, -10.0)), "io"),
+    (1.00, k(), "out"),
 ]
 
 # Rising cleave: the blade drops behind him, then rips up from low to high as he steps in.
@@ -326,11 +399,23 @@ ANIMS = {
     "run": Anim("run", run_pose, [i / 14 for i in range(14)], [48] * 14, True, lambda t: (-1.5, 0.0)),
     "attack": Anim("attack", keyed(ATTACK_KEYS), [0.0, 0.11, 0.22, 0.34, 0.42, 0.48, 0.54, 0.60, 0.74, 0.88, 1.0],
                    [80, 70, 80, 130, 35, 50, 90, 110, 100, 90, 130], False, STILL),
+    "attack2": Anim("attack2", keyed(THRUST_KEYS), [0.0, 0.12, 0.24, 0.36, 0.44, 0.50, 0.56, 0.62, 0.80, 1.0],
+                    [80, 70, 80, 130, 35, 50, 90, 110, 110, 120], False, STILL),
+    "attack3": Anim("attack3", keyed(BASH_KEYS), [0.0, 0.12, 0.24, 0.36, 0.44, 0.50, 0.56, 0.62, 0.80, 1.0],
+                    [80, 70, 80, 130, 35, 50, 90, 110, 110, 120], False, STILL),
     "cleave": Anim("cleave", keyed(CLEAVE_KEYS), [0.0, 0.11, 0.22, 0.34, 0.42, 0.48, 0.53, 0.58, 0.72, 0.88, 1.0],
                    [80, 70, 80, 120, 35, 50, 80, 110, 100, 90, 120], False, STILL),
     "block": Anim("block", keyed(BLOCK_KEYS), [0.0, 0.09, 0.18, 0.34, 0.40, 0.48, 0.60, 0.8, 1.0], [50, 50, 90, 60, 50, 80, 90, 90, 100], False, STILL),
     "shout": Anim("shout", keyed(SHOUT_KEYS), [0.0, 0.12, 0.25, 0.34, 0.42, 0.5, 0.58, 0.66, 0.75, 0.87, 1.0],
                   [70, 70, 90, 50, 50, 80, 90, 90, 110, 90, 100], False, STILL),
+    "harden": Anim("harden", keyed(HARDEN_KEYS), [0.0, 0.10, 0.20, 0.34, 0.42, 0.50, 0.60, 0.70, 0.85, 1.0],
+                   [70, 70, 90, 120, 40, 70, 90, 100, 90, 100], False, STILL),
+    "plant": Anim("plant", keyed(PLANT_KEYS), [0.0, 0.11, 0.22, 0.34, 0.42, 0.50, 0.61, 0.72, 0.86, 1.0],
+                  [70, 70, 90, 120, 40, 70, 90, 100, 90, 100], False, STILL),
+    "roar": Anim("roar", keyed(ROAR_KEYS), [0.0, 0.11, 0.22, 0.36, 0.44, 0.52, 0.63, 0.74, 0.88, 1.0],
+                 [70, 70, 90, 130, 40, 70, 100, 110, 90, 100], False, STILL),
+    "riposte": Anim("riposte", keyed(RIPOSTE_KEYS), [0.0, 0.07, 0.14, 0.30, 0.38, 0.44, 0.52, 0.60, 0.80, 1.0],
+                    [50, 50, 80, 110, 35, 50, 80, 100, 100, 110], False, STILL),
     "hurt": Anim("hurt", keyed(HURT_KEYS), HURT_TIMES, HURT_MS, False, STILL),
     "death": Anim("death", keyed(DEATH_KEYS), [0.0, 0.04, 0.08, 0.15, 0.22, 0.29, 0.36, 0.43, 0.50, 0.56, 0.63, 0.70, 0.85, 1.0],
                   [50, 40, 70, 70, 80, 80, 90, 70, 60, 70, 90, 120, 160, 1200], False, STILL),
