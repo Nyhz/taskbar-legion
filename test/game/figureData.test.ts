@@ -116,9 +116,12 @@ describe('creatureRole', () => {
 
   it('maps every enemy kind of the simulation to a role', () => {
     for (const kind of ENEMY_KINDS) {
+      // A bare enemy (no kind said): by how it attacks. With its kind: render/foeFx ROLE_FIGURE (test/game/foeFx).
       const role = creatureRole({ id: 'e5_10_0', range: kind.range, enemyMagic: kind.magic });
       if (kind.style === 'melee') expect(['melee', 'beast']).toContain(role);
       else expect(role).toBe('ranged');
+      const said = creatureRole({ id: 'e5_10_0', range: kind.range, enemyMagic: kind.magic, enemyRole: kind.role });
+      expect(said).toBe(kind.role === 'beast' ? 'beast' : kind.style === 'melee' ? 'melee' : 'ranged');
     }
   });
 

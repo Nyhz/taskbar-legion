@@ -11,6 +11,7 @@ export const FX = {
   shield: hexToNum('#7fc8ff'), // cyan — absorb
   buff: hexToNum('#d8a0ff'), // violet — stat buffs
   dot: hexToNum('#9bd14a'), // poison-green — DoT ticks/aura
+  leech: hexToNum('#f08a62'), // blood — what a Vampiric boss heals off a hit
   debuff: hexToNum('#ff6f6f'), // red — debuffs / CC
   offense: hexToNum('#ffb15a'), // amber — offensive cast flourish
   support: hexToNum('#9fe6c0'), // mint — supportive cast flourish

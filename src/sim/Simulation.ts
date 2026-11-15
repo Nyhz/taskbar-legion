@@ -1,4 +1,5 @@
 import type { Rng } from './rng';
+import { clearRecent } from './recent';
 import { makeRng } from './rng';
 import type { Combatant, WorldState } from './world';
 import { emptyPending } from './world';
@@ -151,6 +152,7 @@ export class Simulation {
       h.attackTimerMs = 0;
       h.movedThisTick = false;
       h.respawnMs = undefined;
+      clearRecent(h);
       h.x = w.partyX - i * HERO_SPACING; // drop in at this hero's formation slot, not the bare anchor
     });
   }
@@ -180,7 +182,7 @@ export class Simulation {
     for (const ev of events) {
       if (ev.type !== 'death') continue;
       const enemy = w.enemies.find((e) => e.id === ev.targetId);
-      if (enemy === undefined) continue;
+      if (enemy === undefined || enemy.summon !== undefined) continue; // a boss's summon is no kill: no rewards, no roll
       this.awardKill(enemy, ctx);
     }
   }
@@ -366,6 +368,7 @@ export class Simulation {
       h.cooldownTotals = {};
       h.attackTimerMs = 0;
       h.respawnMs = undefined; // cancel any in-flight revive
+      clearRecent(h);
       if (h.ult?.effect.type === 'deathBlock') h.ultCharge = h.ult.effect.chargesPerStage;
       h.triggerUses = undefined; // "once per stage" triggers (a capstone's emergency heal) refill here too
     }

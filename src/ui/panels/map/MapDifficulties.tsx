@@ -2,9 +2,11 @@ import { DIFFICULTY_KEYS, difficultyDef } from '@/data/difficulties';
 import { difficultyName, tierName, useT } from '@/i18n';
 import { Sign, Tip, TipLine, TipTitle, TipWarn } from '@/ui/kit';
 import { offStyle } from './mapOff';
+import { MapFoes } from './MapFoes';
 
 // The five difficulties as five signs. The chosen one is underlined; one that is not open yet is an iron
-// silhouette that cannot be picked and says how it opens. Names and the loot cap live in the tooltips.
+// silhouette that cannot be picked and says how it opens. Names, the loot cap and what the enemies of each
+// difficulty do (their traits, the support's auras: MapFoes) live in the tooltips.
 
 const CHIP_PITCH = 20; // art px from one sign to the next
 
@@ -38,12 +40,14 @@ export function MapDifficulties({
             onPointerDown={(e) => e.stopPropagation()}
           >
             <Sign name={`map_diff_${key}${locked ? '_off' : ''}`} />
-            <Tip side="left">
+            <Tip side="left" size="wide">
               <TipTitle>{name}</TipTitle>
               <TipLine label={t('map.diffLoot')} value={tierName(difficultyDef(key).tierCap)} />
               {locked && before !== undefined && (
                 <TipWarn>{t('map.diffLocked', { name: difficultyName(before) })}</TipWarn>
               )}
+              {/* What its enemies do: each kind's traits and the support's auras (data/enemies). */}
+              <MapFoes difficulty={d} />
             </Tip>
           </button>
         );

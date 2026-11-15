@@ -12,20 +12,29 @@ import { BOSS_DOWN_BLACK, TELEPORT_FROM_BLACK, bossDownBlackAlpha, smoothBeatClo
 import { wipeLook } from './render/wipeBeat';
 import { arrivalDelayMs } from './render/arrival';
 import { TICK_MS } from '@/sim/Simulation';
+import { isDisarmed } from '@/sim/effects';
 import { ProjectileLayer, lookFlightMs } from './render/Projectiles';
 import { PortalSprite } from './render/PortalSprite';
+import { PetCompanion } from './render/PetCompanion';
 import { PORTAL_ENTER_FX, PORTAL_FROM_RIGHT } from './render/portalLook';
 import { ENEMY_Z } from './render/eliteLook';
+import { crowdPlaces, easeCrowd, type CrowdMember } from './render/crowdLayout';
+import { CHARGED_SHOT, CHARGE_HIT_FX, CHARGE_HIT_LIFT, FOCUS_RETICLE_FX, FOCUS_RETICLE_LIFT, FOE_CUES } from './render/foeFx';
+import { focusedHero } from '@/sim/enemyTraits';
 import { Delayed } from './render/delayed';
 import { KIT_FONT_PHRASE, applyKitFont } from './render/kitFont';
 import { t, type PlainTextKey } from '@/i18n';
 import { castFx, FX } from './render/fx';
 import { creatureRole, enemyRank } from './render/figureData';
 import { loadHeroFigures, worldFigures } from './render/figureTextures';
-import { BLOW_SIGNS, LIGHT_SHOTS, abilityLook, bandCount, type AbilityLook, type BandLook, type CastBurst } from './render/abilityFx';
+import { BLOW_SIGNS, LIGHT_SHOTS, abilityLook, bandCount, hasAuraLook, type AbilityLook, type BandLook, type CastBurst } from './render/abilityFx';
 import { BlowFxLayer } from './render/BlowFx';
 import { BLOW_PAST_PARTY, FOE_ARC_HEIGHT, FOE_SHOT, WARN_HOT_FROM, areaBlow, burstOffsets, shotGoesOver, warnTiles, waveReachMs, type AreaBlow } from './render/enemyFx';
-import { FxShots } from './render/BodyFx';
+import { FxShots, fxLoop, type FxLoop } from './render/BodyFx';
+import { BossKitFx } from './render/BossKitFx';
+import { SHOVE } from './render/bossFx';
+import { ShoveDelay } from './render/shoveDelay';
+import { doubleFigure, summonFigure } from './render/summonFigures';
 import { loadFx } from './render/fxTextures';
 import { loadStripHud } from './render/stripHudTextures';
 import { HERO_HUD_STEP, HERO_HUD_WIDTH, stackBars } from './render/stripHud';
@@ -106,10 +115,15 @@ export class GameStrip {
   private readonly blowFront = new BlowFxLayer();
   private readonly floating = new FloatingTextLayer();
   private readonly delayed = new Delayed(); // hits held back a beat so their number lands with the blow
+  // The boss kit's own spectacle (render/BossKitFx): cast cues, the bolt, each boss's Deadeye shot, the leech.
+  private readonly bossKit = new BossKitFx({ ground: this.fxGround, air: this.fxAir, projectiles: this.projectiles, delayed: this.delayed, heroes: () => this.heroSprites, enemies: () => this.enemySprites, sign: (x, y, abilityKey) => this.signs.spawn(x, y, castFx(abilityKey).sign) });
+  // A hero thrown back by a wave goes when the wave reaches him on the strip (render/shoveDelay).
+  private readonly shove = new ShoveDelay();
   private readonly shotLandMs = new Map<string, number>(); // per ability fired at the wave: when its last shot lands, from its cast
   private readonly signs = new FloatingSignLayer(); // the sign of an ability, over the hero that casts it
   // The world-boss portal, pinned screen-right while farming a beaten W-9 (see frame()).
   private readonly portal = new PortalSprite();
+  private readonly pet = new PetCompanion(); // the chosen companion: cosmetic, behind the party (render/petMotion)
   // Full-strip blackout for the teleport sequence + the wipe cinematic; teleportMs counts
   // down the zone-teleport sequence. The wipe cinematic is driven instead by the sim's wipeMs.
   private readonly blackout = new Graphics();
@@ -136,6 +150,9 @@ export class GameStrip {
   // (no "teleporting" between ticks). The camera reads the smoothed party position.
   private displayPartyX = -1;
   private readonly enemyDisplayX = new Map<string, number>();
+  private readonly enemyCrowd = new Map<string, { dx: number; lift: number }>();
+  private focusReticle: FxLoop | null = null; // Fuego concentrado's one reticle (render/foeFx)
+  private pointer: { x: number; y: number } | null = null; // where the pointer is over the strip (the stage's space), for the chip tooltip // where each enemy is drawn in its pile (render/crowdLayout)
   private readonly heroDisplayX = new Map<string, number>();
 
   get logicalHeight(): number {
@@ -155,11 +172,13 @@ export class GameStrip {
     // lazily when the party gets there (reconcileEnemies); the backdrop loads its own sheet the same way.
     await Promise.all([loadHeroFigures(CLASS_KEYS), loadFx(CLASS_KEYS), loadStripHud()]);
     this.engine = new GameEngine();
-    this.fxGround.addChild(this.blowWarn);
-    this.fxAir.addChild(this.blowFront);
+    this.fxGround.addChild(this.blowWarn, this.bossKit.cuesGround);
+    this.fxAir.addChild(this.blowFront, this.bossKit.cuesAir);
     setEngine(this.engine);
 
     this.combatants.sortableChildren = true; // honour zIndex (party above enemies)
+    this.pet.zIndex = 2.5; // over the heroes it flies past
+    this.combatants.addChild(this.pet);
     this.world.addChild(this.backdrop.back, this.fxGround, this.combatants, this.backdrop.front, this.fxAir, this.projectiles, this.signs, this.floating, this.portal, this.blackout, this.wipePhrase);
     // The portal is the ONLY interactive object — prune every other layer (and its whole
     // subtree of sprites/graphics) from pointer hit-testing so a tap walks just the portal.
@@ -178,6 +197,10 @@ export class GameStrip {
 
     app.renderer.on('resize', () => this.relayout());
     app.ticker.add((t) => this.frame(t.deltaMS));
+    // The effect chips over the heroes explain themselves on hover (ui/overlay/StripEffectTip): the strip only
+    // says which chip the pointer is on.
+    app.canvas.addEventListener('pointermove', this.onPointerMove);
+    app.canvas.addEventListener('pointerleave', this.onPointerLeave);
   }
 
   applyScale(uiScale: number): void {
@@ -187,7 +210,38 @@ export class GameStrip {
     this.relayout();
   }
 
+  private readonly onPointerMove = (ev: PointerEvent): void => {
+    const app = this.app;
+    if (app === null) return;
+    const r = app.canvas.getBoundingClientRect();
+    if (r.width <= 0 || r.height <= 0) return;
+    this.pointer = { x: ((ev.clientX - r.left) / r.width) * app.screen.width, y: ((ev.clientY - r.top) / r.height) * app.screen.height };
+    this.refreshChipTip();
+  };
+
+  private readonly onPointerLeave = (): void => {
+    this.pointer = null;
+    useStore.getState().setStripTip(null);
+  };
+
+  // Which hero's effect chip the pointer is on, if any — asked on every move and every frame while it is over the
+  // strip (the heroes walk, effects end).
+  private refreshChipTip(): void {
+    if (this.pointer === null) return;
+    for (const hero of this.heroSprites.values()) {
+      const at = hero.toLocal(this.pointer);
+      const hit = hero.effectChipAt(at.x, at.y);
+      if (hit === null) continue;
+      const corner = hero.toGlobal({ x: hit.x, y: hit.y });
+      useStore.getState().setStripTip({ effects: hit.worn, x: Math.round(corner.x / this.uiScale), y: Math.round(corner.y / this.uiScale) });
+      return;
+    }
+    useStore.getState().setStripTip(null);
+  }
+
   destroy(): void {
+    this.app?.canvas.removeEventListener('pointermove', this.onPointerMove);
+    this.app?.canvas.removeEventListener('pointerleave', this.onPointerLeave);
     setEngine(null);
     // releaseGlobalResources clears the renderer's pooled batches/textures so a remount
     // (React StrictMode double-mounts in dev) doesn't inherit stale pools → flicker.
@@ -237,17 +291,22 @@ export class GameStrip {
       // death spot) and give every hero its turn. Done before reconcileHeroes, so no hero shows a frame early.
       this.wipeArrived = true;
       this.heroDisplayX.clear();
+      this.shove.clear();
       this.arriveParty(w.heroes);
     }
     if (wipeMs === undefined) this.wipeArrived = false;
     this.reconcileHeroes(w.heroes, w.enemies, groundY, dtMs, toScreen, wipeDead, wipeHidden);
     this.reconcileEnemies(w, groundY, dtMs, toScreen);
+    this.updatePet(w, events, groundY, dtMs, toScreen, wipeDead, wipeHidden);
+    this.showFocusReticle(w, dtMs);
+    this.refreshChipTip();
     this.delayed.tick(dtMs);
     this.applyEvents(events, groundY);
     this.fxGround.update(dtMs);
     this.fxAir.update(dtMs);
     this.blowWarn.update(dtMs);
     this.blowFront.update(dtMs);
+    this.bossKit.update(dtMs);
     this.projectiles.update(dtMs);
     this.floating.update(dtMs);
     this.signs.update(dtMs);
@@ -255,6 +314,29 @@ export class GameStrip {
     this.driveBossDown(w, dtMs);
     this.detectAndDriveTeleport(w, dtMs);
     this.driveWipe(w);
+  }
+
+  // The chosen companion (state `selectedPet`; cosmetic): told where the party's last hero is drawn and what just
+  // happened (a boss fell, a chest dropped, the party fell), it does the rest itself.
+  private updatePet(w: WorldState, events: readonly CombatEvent[], groundY: number, dtMs: number, toScreen: (wx: number) => number, fallen: boolean, hidden: boolean): void {
+    const store = useStore.getState();
+    let rearX: number | undefined;
+    for (const x of this.heroDisplayX.values()) rearX = rearX === undefined ? x : Math.min(rearX, x);
+    this.pet.update(
+      {
+        petKey: store.selectedPet,
+        rearX,
+        toScreen,
+        groundY,
+        fallen,
+        hidden,
+        bossIds: w.enemies.filter((e) => e.alive && e.isBoss === true).map((e) => e.id),
+        events,
+        chestCount: store.chests.reduce((sum, c) => sum + c.count, 0),
+        levelSum: store.roster.reduce((sum, h) => sum + h.level, 0), // the level-up gesture: drop this line to remove it
+      },
+      dtMs,
+    );
   }
 
   // A world boss has fallen and the simulation gives its defeat a beat (world.bossDown): the boss plays its
@@ -343,6 +425,7 @@ export class GameStrip {
     if (phase >= TELEPORT_LIFT_AT && !this.teleportArrived) {
       this.teleportArrived = true;
       this.heroDisplayX.clear();
+      this.shove.clear();
       this.arriveParty(w.heroes);
     }
     if (this.teleportMs <= 0) this.blackout.visible = false;
@@ -403,10 +486,14 @@ export class GameStrip {
     // Heroes are placed by their OWN world position (they move freely / stack); each
     // display x velocity-matches its sim x for smooth, surge-free 60fps motion.
     const live = new Set(heroes.map((h) => h.id));
-    for (const id of [...this.heroDisplayX.keys()]) if (!live.has(id)) this.heroDisplayX.delete(id);
-    // The party's passive auras (the Priest's Retribution: an ability with `aura`, slotted by a living hero) have
-    // no effect in the simulation to draw from: every hero is told which reach it, and wears their look.
-    const auras = heroes.flatMap((h) => (h.alive ? h.abilities.filter((a) => a.def.aura !== undefined).map((a) => ({ abilityKey: a.def.key, sourceId: h.id })) : []));
+    for (const id of [...this.heroDisplayX.keys()]) {
+      if (live.has(id)) continue;
+      this.heroDisplayX.delete(id);
+      this.shove.forget(id);
+    }
+    // The party's passive auras (the Priest's Retribution: a talent a living hero holds) have no effect in the
+    // simulation to draw from: every hero is told which reach it, and wears their look.
+    const auras = heroes.flatMap((h) => (h.alive ? (h.auraKeys ?? []).filter(hasAuraLook).map((key) => ({ abilityKey: key, sourceId: h.id })) : []));
     const placed: { sprite: HeroSprite; x: number }[] = [];
     for (const c of heroes) {
       let sprite = this.heroSprites.get(c.id);
@@ -426,12 +513,15 @@ export class GameStrip {
         continue;
       }
       const prev = this.heroDisplayX.get(c.id);
-      const disp = prev === undefined ? c.x : trackDisplay(prev, c.x, dtMs, WALK_SPEED);
+      // (Thrown back — Resaca drags the party — a hero goes when the wave reaches HIM on the strip, and is swept
+      // there fast; he walks back at his own pace.)
+      const aim = this.shove.target(c.id, c.x, dtMs, SHOVE.fromPx, () => this.waveReachesMs(sprite.x));
+      const disp = prev === undefined ? c.x : trackDisplay(prev, aim, dtMs, prev - aim > SHOVE.fromPx ? WALK_SPEED * SHOVE.speedMult : WALK_SPEED);
       this.heroDisplayX.set(c.id, disp);
       const sx = toScreen(disp);
       sprite.setPartyAuras(auras);
       sprite.setBossEngaged(bossEngaged);
-      sprite.leadAttack(c, inReach(c, enemies), dtMs);
+      sprite.leadAttack(c, inReach(c, enemies) && !isDisarmed(c.effects), dtMs); // a bound hero (Roots) starts no attack
       sprite.update(c, sx, groundY, dtMs, wipeDead);
       placed.push({ sprite, x: sx });
     }
@@ -478,6 +568,18 @@ export class GameStrip {
     const figures = worldFigures(worldInDifficulty(w.globalStageIndex));
     const worldBossStage = isZoneBossStage(w.globalStageIndex);
 
+    // Where each enemy is this frame (velocity-matched to its sim x: smooth, no surge, capped at its own advance
+    // speed), and — presentation only — where its pile wants it drawn: enemies that share a spot fan out a few
+    // pixels behind the first one, in two depth rows (render/crowdLayout).
+    const crowd: CrowdMember[] = [];
+    for (const c of enemies) {
+      const prev = this.enemyDisplayX.get(c.id);
+      const disp = prev === undefined ? c.x : trackDisplay(prev, c.x, dtMs, c.moveSpeed > 0 ? c.moveSpeed : WALK_SPEED);
+      this.enemyDisplayX.set(c.id, disp);
+      if (c.alive && c.isBoss !== true && c.summon === undefined) crowd.push({ id: c.id, x: disp, prominent: c.isElite === true || c.enemyRole === 'support' });
+    }
+    const places = crowdPlaces(crowd);
+
     const placed: { sprite: EnemySprite; x: number }[] = [];
     for (const c of enemies) {
       let sprite = this.enemySprites.get(c.id);
@@ -486,20 +588,34 @@ export class GameStrip {
         // A world boss is drawn with its world's own figure for it, when the world has one (data/worlds.ts).
         const rank = enemyRank(c, worldBossStage);
         const own = rank === 'worldBoss' ? figures.worldBoss : undefined;
-        sprite = new EnemySprite(c, own ?? figures[creatureRole(c)], rank, own !== undefined);
-        sprite.zIndex = rank === 'elite' ? ENEMY_Z.elite : ENEMY_Z.common; // below the party; an elite in front of the pack it stands in
-        sprite.spawnIn(); // materialise (teleport-in) on first appearance
+        // What a boss summons (its crows) is drawn with a figure of its own, made of effects (render/summonFigures).
+        // …or, a hero's double (the Unmaker's reflection), with that hero's own figure in the double's skin.
+        const summoned = c.summon === undefined ? undefined : c.summon.of !== undefined ? doubleFigure(c.summon.key, c.summon.of.classKey) : summonFigure(c.summon.key);
+        if (summoned === null) continue;
+        // A support is its world's own figure for it, or — until the world has one — its ranged creature, tinted.
+        const supportOwn = c.enemyRole === 'support' ? figures.support : undefined;
+        sprite = new EnemySprite(c, summoned ?? own ?? supportOwn ?? figures[creatureRole(c)], rank, own !== undefined, c.enemyRole === 'support' && supportOwn === undefined);
+        sprite.zIndex = summoned !== undefined ? ENEMY_Z.summon : rank === 'elite' ? ENEMY_Z.elite : ENEMY_Z.common; // below the party; an elite in front of the pack it stands in; a summon over the party
+        if (summoned === undefined) sprite.spawnIn(); // materialise (teleport-in) on first appearance; a summon flies in
         this.enemySprites.set(c.id, sprite);
         this.combatants.addChild(sprite);
+        // A double steps out of the mirror the boss raised: the mirror goes dark and bursts, where it hung.
+        const double = sprite.doubleLook;
+        if (double !== null) this.fxAir.play(double.enter, toScreen(c.x), groundY - double.mirrorUp, -1);
       }
-      // Velocity-match the enemy's display position to its sim x (smooth, no surge), capped
-      // at its own advance speed so it tracks at constant on-screen velocity.
-      const prev = this.enemyDisplayX.get(c.id);
-      const disp = prev === undefined ? c.x : trackDisplay(prev, c.x, dtMs, c.moveSpeed > 0 ? c.moveSpeed : WALK_SPEED);
-      this.enemyDisplayX.set(c.id, disp);
-      const sx = toScreen(disp);
+      // Its place in its pile, eased (a dead enemy keeps the place it fell in).
+      const want = places.get(c.id);
+      const had = this.enemyCrowd.get(c.id);
+      const at = want === undefined ? (had ?? { dx: 0, lift: 0 }) : had === undefined ? { dx: want.dx, lift: want.lift } : easeCrowd(had, want, dtMs);
+      this.enemyCrowd.set(c.id, at);
+      if (want !== undefined) sprite.setCrowd(at.lift, want.order);
+      const sx = toScreen(this.enemyDisplayX.get(c.id) ?? c.x) + at.dx;
       sprite.leadAttack(c, inReach(c, w.heroes), dtMs);
-      if (c.casting !== undefined) this.showBlowWarning(c, groundY);
+      if (c.casting !== undefined) {
+        this.showBlowWarning(c, groundY);
+        this.bossKit.showCastCue(c, sprite, w.heroes, groundY);
+      }
+      if (c.isBoss === true) this.bossKit.showLasting(c, groundY);
       sprite.update(c, sx, groundY, dtMs);
       if (c.alive) placed.push({ sprite, x: sx });
     }
@@ -510,11 +626,12 @@ export class GameStrip {
     for (const [id, sprite] of this.enemySprites) {
       if (live.has(id)) continue;
       const disp = this.enemyDisplayX.get(id);
-      sprite.updateOrphan(disp === undefined ? sprite.x : toScreen(disp), groundY, dtMs);
+      sprite.updateOrphan(disp === undefined ? sprite.x : toScreen(disp) + (this.enemyCrowd.get(id)?.dx ?? 0), groundY, dtMs);
       if (sprite.isExpired()) {
         this.combatants.removeChild(sprite);
         this.enemySprites.delete(id);
         this.enemyDisplayX.delete(id);
+        this.enemyCrowd.delete(id);
       }
     }
   }
@@ -525,12 +642,18 @@ export class GameStrip {
     // cast (and lists them BEFORE its cast marker), so a heal looks up here whether its healer is casting.
     const castBy = new Map<string, string>();
     for (const ev of events) if (ev.type === 'cast' && ev.abilityKey !== undefined) castBy.set(ev.targetId, ev.abilityKey);
+    this.bossKit.beginEvents();
     for (const ev of events) {
       const heroSprite = this.heroSprites.get(ev.targetId);
       const enemySprite = this.enemySprites.get(ev.targetId);
       const sprite = heroSprite ?? enemySprite;
       const amt = ev.amount ?? 0;
-      if (ev.type === 'cast' && ev.abilityKey !== undefined) {
+      if (ev.type === 'cue') {
+        // A wave enemy's trait or a support falling (sim/enemyTraits): a brief flash, nothing that stays.
+        const cue = ev.cue === undefined ? undefined : FOE_CUES[ev.cue];
+        if (cue !== undefined && enemySprite !== undefined) this.playFoeCue(cue.fx, cue.at, enemySprite, groundY);
+        else if (enemySprite !== undefined) this.bossKit.cue(ev, enemySprite); // a world boss's mechanic (Espejos)
+      } else if (ev.type === 'cast' && ev.abilityKey !== undefined) {
         // Each ability shows its OWN sign (the one the panels show) over the hero that casts it, plus a
         // coloured burst ring. Enemies and bosses have no signs: theirs is the ring alone.
         const heroCaster = this.heroSprites.get(ev.targetId);
@@ -542,7 +665,9 @@ export class GameStrip {
           // band — the side it actually hits — so the caster's own ring would read as landing on its own party.
           const look = abilityLook(ev.abilityKey);
           const blow = heroCaster === undefined ? areaBlow(ev.abilityKey) : undefined;
-          if (look === undefined && blow === undefined) caster.castBurst(fx.color);
+          // …and so does a boss's own mechanic or affix (render/BossKitFx).
+          const kit = heroCaster === undefined && caster instanceof EnemySprite && this.bossKit.cast(ev.abilityKey, caster, groundY);
+          if (look === undefined && blow === undefined && !kit) caster.castBurst(fx.color);
           if (heroCaster !== undefined) {
             const at = heroCaster.signPoint();
             this.signs.spawn(at.x, at.y, fx.sign);
@@ -566,7 +691,9 @@ export class GameStrip {
             // The heal that keeps working is seen on the body itself (its lasting look: render/abilityFx).
             this.floating.spawn(sprite.x, sprite.y - 20, `+${formatDmg(amt)}`, FX.heal, 0.9);
           } else {
-            this.floating.spawn(sprite.x, sprite.y - 16, formatDmg(amt), FX.dot, 0.9);
+            // (A world boss's mechanic that takes its toll in ticks — Culpa — has its own colour and its pang.)
+            const kitColor = heroSprite === undefined ? null : this.bossKit.tick(ev, heroSprite);
+            this.floating.spawn(sprite.x, sprite.y - 16, formatDmg(amt), kitColor ?? FX.dot, kitColor === null ? 0.9 : 1);
           }
         }
       } else if (ev.type === 'damage' && sprite !== undefined) {
@@ -577,7 +704,10 @@ export class GameStrip {
         // effect + swing fire once, on the PRIMARY target, not on every splashed enemy.
         // A shot nothing announced waits for its clip's release, and its number (splash hits included) with it.
         const source = ev.sourceId ?? '';
-        if (ev.splash !== true) shotWait.set(source, this.playAttack(ev.sourceId, sprite, ev.abilityKey));
+        // A hit of the boss kit (the chain bolt, a Deadeye shot) has its own picture instead of the boss's swing.
+        const kitWait = heroSprite === undefined ? null : this.bossKit.hit(ev, heroSprite, groundY, this.frontHeroX());
+        if (kitWait !== null) shotWait.set(source, kitWait);
+        else if (ev.splash !== true) shotWait.set(source, this.playAttack(ev.sourceId, sprite, ev.abilityKey, ev.charged === true));
         const wait = shotWait.get(source) ?? 0;
         // An enemy's area blow reaches each hero when its wave gets there, not all at once.
         const blowWait = heroSprite === undefined ? 0 : this.areaBlowWaitMs(ev, heroSprite, groundY);
@@ -591,6 +721,11 @@ export class GameStrip {
           // A splash of her own light (the Priest's basic attack reaches the enemies beside its target) shows on each.
           if (ev.splash === true && enemySprite !== undefined && ev.abilityKey === undefined) this.splashLight(ev.sourceId, enemySprite, wait);
         }
+      } else if (ev.type === 'heal' && enemySprite !== undefined && amt > 0) {
+        // A boss that feeds on its hits (the Vampiric affix): blood drawn up into it, and what it got back. (A
+        // heal it took by reflecting one — Espejos — shows the number alone: the light flew into it already.)
+        if (ev.cue === 'leech') this.bossKit.leech(enemySprite, ev.targetId);
+        this.floating.spawn(enemySprite.feetPoint().x, enemySprite.y - 30, `+${formatDmg(amt)}`, FX.leech, 1);
       } else if (ev.type === 'heal' && heroSprite !== undefined && amt > 0) {
         // The heal wells up on whoever it heals (render/abilityFx HEAL_BLOOM) — when the healer's gesture reaches
         // its release, if the heal comes from a spell being cast, not while her arm is still going up.
@@ -700,7 +835,7 @@ export class GameStrip {
     let max = Number.NEGATIVE_INFINITY;
     for (const s of group.values()) {
       if (!s.visible) continue;
-      if (s instanceof EnemySprite && s.fallen) continue; // a corpse is not part of the wave any more
+      if (s instanceof EnemySprite && (s.fallen || s.flying)) continue; // a corpse is not part of the wave any more; nor is a summon over the party
       if (s.x < min) min = s.x;
       if (s.x > max) max = s.x;
     }
@@ -713,6 +848,14 @@ export class GameStrip {
     let front = Number.NEGATIVE_INFINITY;
     for (const h of this.heroSprites.values()) if (h.visible && h.standing && h.x > front) front = h.x;
     return front;
+  }
+
+  // How long a wave let go now takes to reach strip x `heroX` (ms): the party's front hero first, the ones behind
+  // as it passes them — at the pace of the blow that throws heroes back (render/bossFx SHOVE).
+  private waveReachesMs(heroX: number): number {
+    const blow = areaBlow(SHOVE.blow);
+    const stretch = this.blowStretch();
+    return blow === undefined || stretch === null ? 0 : waveReachMs(blow, stretch.fromX - heroX);
   }
 
   // The stretch of ground an enemy's area blow covers: from just ahead of the front hero back past the last one.
@@ -773,6 +916,34 @@ export class GameStrip {
     return wait;
   }
 
+  // A wave enemy's cue (render/foeFx FOE_CUES): on its body, at its feet, or — a support falling — a wisp off
+  // every enemy of its wave still standing.
+  private playFoeCue(fx: string, at: 'body' | 'feet' | 'wave', enemy: EnemySprite, groundY: number): void {
+    // (Over the fighters, not inside the enemy: in a pile its own layer is hidden by whoever stands in front.)
+    if (at === 'body') this.fxAir.play(fx, enemy.bodyPoint().x, enemy.bodyPoint().y, -1);
+    else if (at === 'feet') this.fxAir.play(fx, enemy.feetPoint().x, groundY);
+    else for (const other of this.enemySprites.values()) if (other === enemy || (!other.fallen && other.visible)) this.fxAir.play(fx, other.bodyPoint().x, other.bodyPoint().y + 6);
+  }
+
+  // Fuego concentrado: ONE reticle, on the hero every focusing shooter lofts its shots at (sim/enemyTraits) —
+  // while there is one; it follows that hero.
+  private showFocusReticle(w: WorldState, dtMs: number): void {
+    const marked = focusedHero(w);
+    const hero = marked === undefined ? undefined : this.heroSprites.get(marked.id);
+    if (hero === undefined || !hero.visible) {
+      if (this.focusReticle !== null) this.focusReticle.sprite.visible = false;
+      return;
+    }
+    if (this.focusReticle === null) {
+      this.focusReticle = fxLoop(FOCUS_RETICLE_FX);
+      if (this.focusReticle === null) return;
+      this.fxAir.addChild(this.focusReticle.sprite);
+    }
+    this.focusReticle.advance(dtMs);
+    this.focusReticle.sprite.visible = true;
+    this.focusReticle.sprite.position.set(Math.round(hero.x + hero.bodyCx), Math.round(hero.y - FOCUS_RETICLE_LIFT));
+  }
+
   // The Priest's basic attack reaches the enemies beside its target: her light bursts on each of them too.
   private splashLight(sourceId: string | undefined, enemy: EnemySprite, wait: number): void {
     const hero = sourceId === undefined ? undefined : this.heroSprites.get(sourceId);
@@ -787,7 +958,7 @@ export class GameStrip {
   // Play the attacker's animation by archetype: melee → sword swing + lunge;
   // ranged → arrow; caster → fireball, flying from the attacker to its target. A hit
   // tagged with an abilityKey is an ability cast → the melee swing uses the heavy variant.
-  private playAttack(sourceId: string | undefined, target: HeroSprite | EnemySprite, abilityKey?: string): number {
+  private playAttack(sourceId: string | undefined, target: HeroSprite | EnemySprite, abilityKey?: string, charged = false): number {
     if (sourceId === undefined) return 0;
     const heroSrc = this.heroSprites.get(sourceId);
     const enemySrc = heroSrc === undefined ? this.enemySprites.get(sourceId) : undefined;
@@ -804,6 +975,25 @@ export class GameStrip {
       if (heroSrc !== undefined) heroSrc.attack(abilityKey);
       else enemySrc?.swing();
       src.lungeAttack();
+      // A beast's Embestida (its first blow, twice as hard): a short burst on the hero it lands on (render/foeFx).
+      if (charged && enemySrc !== undefined && target instanceof HeroSprite) this.fxAir.play(CHARGE_HIT_FX, target.x + target.bodyCx, target.y - CHARGE_HIT_LIFT);
+      // A hero's double strikes as that hero does: a shard of the mirror sent from afar, or its blow, breaking on him.
+      const double = enemySrc?.doubleLook ?? null;
+      if (enemySrc !== undefined && double !== null) {
+        const at = (): { x: number; y: number } => ({ x: target.x, y: target.y - 14 });
+        const land = (x: number, y: number): void => this.fxAir.play(double.land, x, y);
+        const from = enemySrc.shotPoint();
+        if (!enemySrc.steps) {
+          this.projectiles.spawnLook(from.x, from.y, at, double.shot, 0, land, { facing: -1, straight: true });
+          return 0;
+        }
+        // The Knight's double has no reach from where it stands: it steps to its victim, and its blow lands there.
+        const wait = enemySrc.stepStrike(target.x);
+        this.delayed.add(wait, () => land(at().x, at().y));
+        return wait;
+      }
+      // A boss's summon dives at the hero it pecks: the hit shows when it gets there.
+      if (enemySrc !== undefined && enemySrc.flying) return enemySrc.diveAt(target.x, target.y - 14);
       return 0;
     }
     // The projectile homes on the target's LIVE position (it keeps advancing), so it
@@ -828,7 +1018,9 @@ export class GameStrip {
       }
       // A foe's shot (render/enemyFx): level at the front hero, lofted over him at anyone standing behind.
       if (enemySrc !== undefined && (src.style === 'ranged' || src.style === 'caster')) {
-        const shot = FOE_SHOT[src.style];
+        // A shooter's charged shot (Tiro cargado) is the same arrow, lit (render/foeFx).
+        const plain = FOE_SHOT[src.style];
+        const shot = charged && src.style === 'ranged' ? { ...plain, ...CHARGED_SHOT } : plain;
         const over = shot.arc !== undefined && shotGoesOver(target.x, this.frontHeroX());
         const from = enemySrc.shotPoint();
         const land = (x: number, y: number): void => this.fxAir.play(shot.land, x, y);

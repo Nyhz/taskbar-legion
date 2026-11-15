@@ -75,6 +75,18 @@ export interface UiSlice {
   setHideSocketWarning: (on: boolean) => void;
   setMenuScale: (scale: number) => void;
   setGameScale: (scale: number) => void;
+  /** The effect chip of the strip the pointer is on (not persisted): the effects behind it and where its top-left
+   *  corner is, in art pixels of the strip. The strip sets it; ui/overlay/StripEffectTip words it. */
+  stripTip: StripTip | null;
+  setStripTip: (tip: StripTip | null) => void;
+}
+
+export interface StripTip {
+  /** The effects behind the chip and what each is worth on the hero right now (value per stack, stacks, the time
+   *  it was laid for). */
+  effects: readonly { key: string; value?: number; stacks?: number; totalMs?: number }[];
+  x: number;
+  y: number;
 }
 
 /** Screen pixels per CSS pixel of the display the window is on (1 outside a browser). */
@@ -120,6 +132,12 @@ export const createUiSlice: StateCreator<UiSlice, [], [], UiSlice> = (set, get) 
     dockOrientation: persisted.dockOrientation ?? 'bottom',
     retryStage: persisted.retryStage ?? false,
     hideSocketWarning: persisted.hideSocketWarning ?? false,
+    stripTip: null,
+    setStripTip: (tip) => {
+      const now = get().stripTip;
+      const same = now === tip || (now !== null && tip !== null && now.x === tip.x && now.y === tip.y && JSON.stringify(now.effects) === JSON.stringify(tip.effects));
+      if (!same) set({ stripTip: tip });
+    },
 
     togglePanel: (key) =>
       set((s) =>

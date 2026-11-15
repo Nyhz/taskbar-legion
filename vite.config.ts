@@ -15,7 +15,6 @@ export default defineConfig({
     // (WKWebView/WebKitGTK) — createImageBitmap throws and a CORS <img> is blocked — leaving a
     // black canvas. data: URIs sidestep the protocol entirely (no fetch, no CORS, no canvas
     // taint), so the sprites + backdrops load identically everywhere. Browser/dev unaffected.
-    // See src/game/render/configurePixiLoader.ts for the matching loader hardening.
     assetsInlineLimit(filePath) {
       // The interface's pixel fonts are inlined for the same reason: no fetch over tauri://, no flash of fallback type.
       if (filePath.endsWith('.png') || filePath.endsWith('.ttf')) return true;

@@ -19,7 +19,7 @@ describe('partyAuras', () => {
     const rosters: StoredHero[][] = [
       CLASS_KEYS.map((k) => hero(k, everyNode(k))),
       [hero('knight', { knight_warden: 3 }), hero('ranger'), hero('priest', { priest_retribution: 5, priest_sacred_ward: 2 })],
-      [hero('priest', { priest_mend: 5, priest_powerinfusion: 5, priest_retribution: 5 })], // the aura is not one of the two active
+      [hero('priest', { priest_mend: 5, priest_powerinfusion: 5, priest_retribution: 5 })], // the aura is a passive: two abilities beside it
       [],
     ];
     for (const roster of rosters) {
@@ -36,9 +36,9 @@ describe('partyAuras', () => {
     expect(auras[0]?.mod.key).toBe('health');
   });
 
-  it('an aura ability counts only while it is one of the two active abilities', () => {
+  it('Retribution is a passive talent: its aura counts whatever abilities are learned', () => {
     expect(partyAuras([hero('priest', { priest_retribution: 5 })]).map((a) => a.nodeKey)).toEqual(['priest_retribution']);
-    expect(partyAuras([hero('priest', { priest_mend: 1, priest_powerinfusion: 1, priest_retribution: 5 })])).toEqual([]);
+    expect(partyAuras([hero('priest', { priest_mend: 1, priest_powerinfusion: 1, priest_retribution: 5 })]).map((a) => a.nodeKey)).toEqual(['priest_retribution']);
   });
 });
 

@@ -36,4 +36,28 @@ export const hud = {
   enrage: 'Enrage',
   enrageHelp: 'When the clock runs out, the boss hits twice as hard every five seconds.',
   enraged: 'Enraged',
+  // The tooltip of an effect chip (ui/overlay/StripEffectTip, worded by effectTipWords): one line per effect.
+  // By kind — what most abilities' effects are; `{what}` is «Attack speed +25 %», or two of them joined.
+  fxStats: '{what} for {s} s.',
+  fxStatsOpen: '{what}.',
+  fxDot: 'Takes {dps} damage a second for {s} s.',
+  fxHot: 'Heals {hps} life a second for {s} s.',
+  fxWeaken: 'Deals {v} % less damage for {s} s.',
+  fxVulnerable: 'Takes {v} % more damage for {s} s.',
+  fxHealCut: 'Heals on it are {v} % weaker for {s} s.',
+  fxInvulnerable: 'Takes no damage for {s} s.',
+  fxSilence: 'Cannot cast abilities for {s} s.',
+  // Effects with a line of their own: what an enemy or a boss lays on a hero (and where it came from), marks, boss states.
+  fxTremor: "A brute's blow shook the ground: attacks {pct} % slower for a moment. Purify leaves it alone.",
+  fxMortalWound: "A boss's blow left a deep wound: heals on it are {v} % weaker for {s} s. Purify removes it.",
+  fxVenom: "Venom from the boss's hits: {dps} damage a second, up to {n} layers; it fades {s} s after the last hit. Purify removes it.",
+  fxRooted: 'Bound by roots: no attacks and no abilities for {s} s. Purify tears them off at once.',
+  fxGuilt: 'Carries the guilt: loses {v} % of its life for every 1 % the boss loses, for {s} s. Purify removes it.',
+  fxGilded: 'The cooldowns of its abilities stand still for {s} s. Purify removes it.',
+  fxSpores: "Spores from the boss's clouds: {dps} damage a second, up to {n} layers. Any direct heal, or Purify, clears them.",
+  fxPanes: '{n} of its {max} mirrors are lit: it deals {v} % more damage. With all of them lit it breaks them over the party.',
+  fxMark: 'Marked: takes {v} % more damage from everyone until it dies.',
+  fxShell: 'While the shell holds, the boss takes less from every hit. {left} damage left to break it.',
+  fxFrenzy: 'Attack speed +{v} % and growing (stacks: {n}).',
+  fxSeismic: 'The ground shakes under it: its area blow comes every {s} s.',
 } as const;

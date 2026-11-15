@@ -11,6 +11,7 @@ import {
   vulnerabilityMult,
   weakenMult,
   healReceivedMult,
+  isDisarmed,
 } from './effects';
 import { tickCooldowns, castReadyAbilities, foesBehind, resolveChanneledCast } from './abilities';
 import { dealtMult, liveStats } from './liveStats';
@@ -18,6 +19,17 @@ import { checkLowHp, onBlock, onCrit, onEffectsEnded, onEnemyDeath, onEnemyEngag
 import { mitigation, enrageMultiplier, MAX_DAMAGE_REDUCTION } from '@/data/stageScaling';
 import { WALK_SPEED, HERO_SPACING, MOVE_EPS, RANGE, RESPAWN_MS } from '@/data/field';
 import { tryAbilityDef } from '@/data/abilities';
+import { behindBack, dismissSummons, isSummon, onBossHit, shellDamage, tickBossKit } from './bossMechanics';
+import { summonPrey } from './mirror';
+import { noteDamageTaken, tickRecent } from './recent';
+import {
+  dotTaken, guardedDamage, noteBlockStreak, overflowShield, critBleed, overkillPierce, passiveOf, refreshPartyGuards, respawnFactor,
+  takeDiverted,
+} from './passives';
+import { noteStruck } from './liveStats';
+import { attackHastePct, backShotChance, cannotBeSlowed, focusedHero, foeDamageMult, foeWard, heavyHit, onFoeDeath, tickFoeTraits } from './enemyTraits';
+import { pickTarget } from './targeting';
+import { TRAIT_TUNING } from '@/data/enemies';
 
 // Deterministic lane-pusher combat. The party holds a formation around `partyX`
 // (which only ever increases — they walk forward); enemies advance left from the
@@ -34,9 +46,11 @@ export function heroStats(c: Combatant): EffectiveStats {
  *  values bypass the hero stat-aggregation, so we apply the net attackSpeed% stat-mods
  *  here to BOTH the enemy's attack cadence and its movement. Floored so it can't fully
  *  freeze an enemy in place. */
-function enemySpeedFactor(e: Combatant): number {
+function enemySpeedFactor(e: Combatant, attacking = false): number {
   let pct = 0;
-  for (const m of effectStatMods(e.effects)) if (m.key === 'attackSpeed' && m.mode === 'percent') pct += m.value;
+  const unstoppable = cannotBeSlowed(e); // Imparable (a brute's trait): a slow does nothing to it
+  for (const m of effectStatMods(e.effects)) if (m.key === 'attackSpeed' && m.mode === 'percent' && !(unstoppable && m.value < 0)) pct += m.value;
+  if (attacking) pct += attackHastePct(e); // Rabia, Último aliento, the support's Furia: its swings only
   return Math.max(0.1, 1 + pct / 100);
 }
 
@@ -51,12 +65,16 @@ export function resolveCombatTick(world: WorldState, deltaMs: number, rng: Rng):
   // Party life regeneration (a role talent): the living heroes' shares add up, for every hero.
   let partyRegenPct = 0;
   for (const h of heroes) if (h.alive && h.partyRegenPct !== undefined) partyRegenPct += h.partyRegenPct;
+  // What the party's guard passives mean for each hero this tick (sim/passives.ts).
+  refreshPartyGuards(heroes);
 
   // 1. Upkeep: effects, cooldowns, dot/hot, regen, boss enrage clock, deaths. Heroes
   //    then enemies — same order as the old [...heroes, ...enemies], minus the per-tick
   //    array allocation. The upkeep step consumes no RNG, so this is byte-identical.
   for (const c of heroes) tickCombatantUpkeep(c, world.tick, deltaMs, dtSec, ctx, partyRegenPct);
   for (const c of enemies) tickCombatantUpkeep(c, world.tick, deltaMs, dtSec, ctx, 0);
+  // The wave's traits and its support's auras (sim/enemyTraits): no rng.
+  tickFoeTraits(enemies, S, deltaMs);
 
   // 2. Formation march: a lead anchor (partyX) advances to the engage line; each
   //    hero eases to its COLUMN slot (front = slot 0, the rest trail behind). The
@@ -65,7 +83,8 @@ export function resolveCombatTick(world: WorldState, deltaMs: number, rng: Rng):
   //    A hero that actually moves this tick can't attack on it — it must be standing
   //    still to fire (no settle delay; the instant it stops it can swing/shoot).
   const living = enemies.filter((e) => e.alive);
-  const nearestEnemy = living.length > 0 ? living.reduce((lo, e) => (e.x < lo.x ? e : lo)) : undefined;
+  // (A boss's summons fly over the party: they are not what the column marches on.)
+  const nearestEnemy = living.reduce<Combatant | undefined>((lo, e) => (isSummon(e) || (lo !== undefined && lo.x <= e.x) ? lo : e), undefined);
   const leadTarget = nearestEnemy !== undefined ? nearestEnemy.x - RANGE.melee : world.partyX + WALK_SPEED * dtSec;
   if (leadTarget > world.partyX) world.partyX = Math.min(leadTarget, world.partyX + WALK_SPEED * dtSec);
   // ENGAGING once the wave reaches the front line: heroes close in to fight (their
@@ -135,10 +154,12 @@ export function resolveCombatTick(world: WorldState, deltaMs: number, rng: Rng):
   //    Like heroes, an enemy can't attack on a tick it moved — it swings once stopped.
   if (frontHero !== undefined) {
     for (const e of living) {
+      if (isSummon(e)) continue; // a summon flies to its own place over the back line (sim/bossMechanics)
       const stopX = frontHero.x + e.range;
       const gap = e.x - stopX; // distance still to close before it's in range
       const before = e.x;
-      if (gap > 0) e.x = Math.max(stopX, e.x - e.moveSpeed * enemySpeedFactor(e) * dtSec);
+      // (A boss whose undertow has just dragged the party back holds its ground until they return: `holdMs`.)
+      if (gap > 0 && e.holdMs === undefined) e.x = Math.max(stopX, e.x - e.moveSpeed * enemySpeedFactor(e) * dtSec);
       e.movedThisTick = Math.abs(e.x - before) > MOVE_EPS;
       // Boss enrage clock counts FIGHT time (once engaged), not the walk-up.
       if (gap <= 0) {
@@ -170,15 +191,25 @@ export function resolveCombatTick(world: WorldState, deltaMs: number, rng: Rng):
   //    cast pushes its own damage/heal events; we add a 'cast' marker.
   for (const h of heroes) {
     if (!h.alive) continue;
+    if (isDisarmed(h.effects)) continue; // bound (a world boss's Roots): no attack, no cast, while it lasts
     const stats = heroStats(h);
     advanceAttack(h, stats.attackSpeed, deltaMs, () => {
       const cast = castReadyAbilities(h, heroes, enemies, S, rng, events);
       if (cast.length > 0) {
         for (const key of cast) events.push({ type: 'cast', targetId: h.id, abilityKey: key });
+        // Pierce Through: an enemy its shot has just killed falls NOW, and the damage left over goes on behind.
+        // (Without the talent an ability's kill is resolved by the next upkeep, as always.)
+        if (passiveOf(h, 'overkillPierce') !== undefined) {
+          for (const e of enemies) if (e.alive && e.hp <= 0 && e.lastHitBy === h.id) killWithPierce(h, e, enemies, ctx);
+        }
         return true; // the ability used up this swing — no auto-attack this turn
       }
-      const target = nearestEnemyInRange(h, enemies);
-      if (target === undefined) return false;
+      // The Knight strikes the nearest enemy he can touch. The Ranger and the Priest pick by priority across their
+      // shot's reach (sim/targeting) — which is longer than where they stand, so the support at the back is theirs.
+      // What says she can shoot is unchanged: an enemy has come as near as she stands from it.
+      const near = nearestEnemyInRange(h, enemies);
+      if (near === undefined) return false;
+      const target = h.shotReach !== undefined ? (pickTarget(h, enemies) ?? near) : near;
       heroAttack(h, stats, target, enemies, rng, events, heroes);
       return true;
     });
@@ -203,19 +234,26 @@ export function resolveCombatTick(world: WorldState, deltaMs: number, rng: Rng):
 
   // 6. Enemy attacks (range-gated). An enemy channelling an ability that holds its attack (a boss winding up
   //    its area blow) does not swing meanwhile — its swing timer simply waits.
+  const focus = focusedHero(world); // Fuego concentrado: the one hero the focusing shooters loft their shots at
   for (const e of enemies) {
     if (!e.alive) continue;
     if (e.casting !== undefined && tryAbilityDef(e.casting.key)?.holdsAttack === true) continue;
-    advanceAttack(e, (e.enemyAttackSpeed ?? 0.8) * enemySpeedFactor(e), deltaMs, () => {
+    advanceAttack(e, (e.enemyAttackSpeed ?? 0.8) * enemySpeedFactor(e, true), deltaMs, () => {
       if (frontHero === undefined || !frontHero.alive) return false;
       if (e.x - frontHero.x > e.range + MOVE_EPS) return false; // not in range yet (MOVE_EPS: same anti-deadband as nearestEnemyInRange)
-      enemyAttack(e, attackTarget(e, frontHero, heroes, rng), S, rng, ctx);
+      enemyAttack(e, attackTarget(e, frontHero, heroes, rng, focus), S, rng, ctx);
       return true;
     });
   }
 
+  // 6b. Guardian: the share of the hits aimed at the heroes behind that the Knight took on himself.
+  settleDiverted(heroes, S, ctx);
+
   // 7. "An ally is low" triggers (a capstone's emergency heal): looked at once per tick.
   checkLowHp(ctx);
+
+  // 8. The boss kit's clocks (sim/bossMechanics): summons, the frenzy and shell timers, who has hurt the boss most.
+  tickBossKit(heroes, enemies, deltaMs, events);
 
   return events;
 }
@@ -230,12 +268,23 @@ function tickCombatantUpkeep(c: Combatant, worldTick: number, deltaMs: number, d
   if (ended !== undefined) onEffectsEnded(c, ended, ctx);
   tickCooldowns(c, deltaMs);
   // Marked targets (Ranger ult) take amplified DoT ticks; an invulnerable hero takes none.
-  const dot = dotDps(c.effects) * dtSec * vulnerabilityMult(c.effects);
-  if (dot > 0 && !isInvulnerable(c.effects)) c.hp -= absorbDamage(c.effects, dot); // shields soak DoTs too
+  let dot = dotDps(c.effects) * dtSec * vulnerabilityMult(c.effects);
+  // Damage over time ON A HERO (a boss's venom) is not a hit — no armour, no block, nothing for Guardian, Close
+  // Ranks or Endurance to act on — but "takes X % less damage" holds for it too (sim/passives.dotTaken).
+  if (dot > 0 && c.side === 'hero') dot = dotTaken(c, dot, heroStats(c).damageReduction);
+  if (dot > 0 && !isInvulnerable(c.effects)) {
+    noteDamageTaken(c, dot); // what lands on it, shield or no shield
+    const through = shellDamage(c, foeWard(c, absorbDamage(c.effects, dot), false), false); // shields soak DoTs too; so do a wave's auras and a boss's shell
+    c.hp -= through;
+  }
+  if (c.side === 'hero') tickRecent(c, deltaMs);
   // Mortal Wound (healReduction) cuts every heal the target receives — HoT ticks + regen.
   const healMult = healReceivedMult(c.effects);
   const hot = hotHps(c.effects) * dtSec * healMult;
-  if (hot > 0) c.hp = Math.min(c.maxHp, c.hp + hot);
+  if (hot > 0) {
+    overflowShield(c, c.hp + hot - c.maxHp); // Overflow: a rolling heal on a full bar becomes a shield
+    c.hp = Math.min(c.maxHp, c.hp + hot);
+  }
   if (worldTick % 10 === 0) {
     const dps = dotDps(c.effects);
     if (dps > 0) events.push({ type: 'damage', targetId: c.id, amount: dps, tick: true });
@@ -284,12 +333,17 @@ function frontmostHero(heroes: Combatant[]): Combatant | undefined {
  *  a hero BEHIND it that share of the time, picked at random: the arrow flies over the tank. The reach gate
  *  stays the front hero's. With nobody behind there is no roll, so a lone hero's fight draws the same numbers
  *  as before. (The back line takes damage: docs/DIFFICULTY.md §5b.) */
-function attackTarget(e: Combatant, front: Combatant, heroes: Combatant[], rng: Rng): Combatant {
-  const chance = e.backShotChance ?? 0;
+function attackTarget(e: Combatant, front: Combatant, heroes: Combatant[], rng: Rng, focus?: Combatant): Combatant {
+  const prey = summonPrey(e, front, heroes); // a reflection goes for the hero it is the double of
+  if (prey !== undefined) return prey;
+  const chance = backShotChance(e);
   if (chance <= 0) return front;
   const behind = foesBehind(front, heroes);
   if (behind.length === 0) return front;
-  return rng.chance(chance) ? rng.pick(behind) : front;
+  if (!rng.chance(chance)) return front;
+  // Fuego concentrado: every focusing shooter's lofted shot lands on the same hero (no pick is drawn).
+  if (focus !== undefined && focus.alive && TRAIT_TUNING.focusFire.backShotChance === chance) return focus;
+  return rng.pick(behind);
 }
 
 function nearestEnemyInRange(hero: Combatant, enemies: Combatant[]): Combatant | undefined {
@@ -303,6 +357,7 @@ function nearestEnemyInRange(hero: Combatant, enemies: Combatant[]): Combatant |
     // the run (no kill, no progress). Matching the attack tolerance to the move tolerance
     // closes it.
     if (Math.abs(e.x - hero.x) > hero.range + MOVE_EPS) continue;
+    if (behindBack(hero, e)) continue; // a summon flying behind him: the heroes further back shoot it
     if (best === undefined || e.x < best.x) best = e;
   }
   return best;
@@ -331,13 +386,20 @@ export function heroAttack(h: Combatant, stats: EffectiveStats, target: Combatan
     dmg = Math.max(1, dmg);
     dmg *= vulnerabilityMult(victim.effects); // Ranger's Mark amplifies all damage to the boss
     dmg *= dealtMult(h, victim, 'damage'); // role talents: more damage to the wounded / the approaching / elites and bosses
+    noteStruck(h, victim); // First Blood: the next hit on it is no longer the first
+    dmg = foeWard(victim, dmg, true, events); // a wave enemy's parry (Guardia) and its support's auras
+    dmg = shellDamage(victim, dmg, crit); // a boss's shell (the Acorazado affix) cuts the hit and wears off with it
+    dmg = Math.max(0, absorbDamage(victim.effects, dmg)); // a shield on an enemy (a boss that reflected one: Espejos) soaks it
     victim.hp -= dmg;
     victim.lastHitBy = h.id;
     events.push({ type: 'damage', targetId: victim.id, sourceId: h.id, amount: dmg, crit, multi, splash: mult < 1 ? true : undefined });
     const heal = ((dmg * stats.lifesteal) / 100) * healReceivedMult(h.effects); // Mortal Wound cuts lifesteal too
     if (heal > 0) h.hp = Math.min(h.maxHp, h.hp + heal);
-    if (crit) onCrit(h, victim, ctx);
-    if (victim.hp <= 0) kill(victim, ctx);
+    if (crit) {
+      onCrit(h, victim, ctx);
+      critBleed(h, victim, dmg); // Hemorrhage: her critical hits leave a bleed
+    }
+    if (victim.hp <= 0) killWithPierce(h, victim, enemies, ctx);
   };
   strike(target, 1, false);
   // Multistrike: a chance for a second hit this swing (already soft-capped in aggregate).
@@ -380,15 +442,56 @@ function enemyAttack(e: Combatant, target: Combatant, S: number, rng: Rng, ctx: 
   const mit = mitigation(Math.max(0, defense), S);
   const enrage = e.isBoss === true ? enrageMultiplier(e.fightMs ?? 0, e.enrageMs ?? Number.POSITIVE_INFINITY) : 1;
   // weakenMult: a Debilitated enemy (Knight's Debilitating Cleave) deals less damage.
-  let dmg = (e.enemyDamage ?? 1) * enrage * weakenMult(e.effects) * (1 - mit);
+  // Its support's Saña; a shooter's Tiro cargado (one basic shot in four) or a beast's Embestida (its first blow).
+  const heavy = heavyHit(e);
+  const charged = heavy > 1;
+  const base = (e.enemyDamage ?? 1) * foeDamageMult(e) * heavy;
+  let dmg = base * enrage * weakenMult(e.effects) * (1 - mit);
   const blocked = rng.chance(Math.min(1, stats.block / 100));
   if (blocked) dmg *= 0.5;
   dmg *= 1 - Math.min(MAX_DAMAGE_REDUCTION, Math.max(0, stats.damageReduction)) / 100; // flat % off (e.g. Stone Skin)
+  // The guard passives: the Knight takes part of a hit aimed behind him, the most hurt hero takes less…
+  dmg = guardedDamage(target, dmg, { raw: base * enrage * weakenMult(e.effects), area: false, magic: e.enemyMagic === true });
+  noteBlockStreak(target, blocked); // Weathered Hide counts the hit AFTER it was reduced by the stacks it had
+  // "Being hit" is what LANDS on the hero, not what gets through: a shield soaking the blows does not make the
+  // abilities that answer them (Hold the Line, Holy Shield, Stone Skin) think nobody is under attack.
+  noteDamageTaken(target, dmg);
   dmg = Math.max(0, absorbDamage(target.effects, dmg)); // shields soak the hit first
   target.hp -= dmg;
-  events.push({ type: 'damage', targetId: target.id, sourceId: e.id, amount: dmg, blocked });
+  events.push({ type: 'damage', targetId: target.id, sourceId: e.id, amount: dmg, blocked, charged: charged ? true : undefined });
+  if (e.isBoss === true) onBossHit(e, target, dmg, blocked, events); // its affixes: the leech, the venom
   if (blocked) onBlock(target, e, ctx); // a blocked hit feeds the block triggers (Riposte's charges…)
   if (target.hp <= 0) kill(target, ctx);
+}
+
+/** Guardian: the raw damage the heroes behind handed over this tick lands on the Knight — through his own
+ *  armour (or magic resist), damage reduction and shields. Shown as a number on him, without a swing. */
+function settleDiverted(heroes: Combatant[], S: number, ctx: TriggerCtx): void {
+  const due = takeDiverted(heroes);
+  if (due === undefined) return;
+  const knight = due.owner;
+  if (isInvulnerable(knight.effects)) return;
+  const stats = heroStats(knight);
+  let dmg = due.phys * (1 - mitigation(Math.max(0, stats.armor), S)) + due.magic * (1 - mitigation(Math.max(0, stats.magicResist), S));
+  dmg *= 1 - Math.min(MAX_DAMAGE_REDUCTION, Math.max(0, stats.damageReduction)) / 100;
+  noteDamageTaken(knight, dmg);
+  dmg = Math.max(0, absorbDamage(knight.effects, dmg));
+  if (dmg <= 0) return;
+  knight.hp -= dmg;
+  ctx.events.push({ type: 'damage', targetId: knight.id, amount: dmg, splash: true });
+  if (knight.hp <= 0) kill(knight, ctx);
+}
+
+/** A hero's hit has just killed `victim`: Pierce Through sends a share of the damage left over into the enemy
+ *  behind (which may die of it; it goes no further). */
+function killWithPierce(h: Combatant, victim: Combatant, enemies: Combatant[], ctx: TriggerCtx): void {
+  const overkill = -victim.hp;
+  kill(victim, ctx);
+  if (victim.alive) return;
+  const through = overkillPierce(h, victim, overkill, enemies);
+  if (through === undefined) return;
+  ctx.events.push({ type: 'damage', targetId: through.target.id, sourceId: h.id, amount: through.dmg, splash: true });
+  if (through.target.hp <= 0) kill(through.target, ctx);
 }
 
 function kill(c: Combatant, ctx: TriggerCtx): void {
@@ -400,9 +503,14 @@ function kill(c: Combatant, ctx: TriggerCtx): void {
   c.hp = 0;
   // A fallen hero starts a revive countdown (resolved by the Simulation each tick);
   // enemies just stay dead.
-  if (c.side === 'hero') c.respawnMs = RESPAWN_MS;
+  if (c.side === 'hero') {
+    c.respawnMs = RESPAWN_MS * respawnFactor(ctx.heroes); // Revive: back sooner
+    c.respawnTotalMs = c.respawnMs;
+  }
   ctx.events.push({ type: 'death', targetId: c.id });
   if (c.side === 'enemy') onEnemyDeath(c, ctx); // the kill and "its bearer died" triggers
+  if (c.side === 'enemy' && c.enemyRole !== undefined) onFoeDeath(c, ctx.enemies, ctx.events); // Último aliento; a support's auras end
+  if (c.isBoss === true) dismissSummons(ctx.enemies, ctx.events); // what a boss summoned goes with it
 }
 
 /** Seed a freshly-engaged boss's ability openers: an ability with `openerMs` starts on that

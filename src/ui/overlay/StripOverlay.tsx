@@ -7,6 +7,7 @@ import { DangerBanner } from './DangerBanner';
 import { StageBanner } from './StageBanner';
 import { SaveErrorBadge } from './SaveErrorBadge';
 import './overlay.css';
+import { StripEffectTip } from './StripEffectTip';
 
 // React overlay pinned over the Pixi strip (it fills the strip wrapper): ONE kit layer, authored at the art's
 // pixel like the HUD above it — the banners, the failed-save warning, retry (with the arrow to the next stage over it) and weakened healing. (The boss's
@@ -24,6 +25,7 @@ export function StripOverlay(): React.JSX.Element {
         <SaveErrorBadge />
         <NextStageKey />
         <RetryKey />
+        <StripEffectTip />
       </KitRoot>
     </div>
   );

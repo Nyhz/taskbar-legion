@@ -22,20 +22,20 @@ const reason = (classKey: string, talents: Record<string, number>, key: string, 
 /** The whole Knight trunk with Stone Skin + Cleave: 10 + 40 + 15 = 65 points. */
 const TRUNK: Record<string, number> = {
   knight_guard: 5, knight_debilitate: 5,
-  knight_t1_health: 5, knight_t1_armor: 5, knight_t2_health: 5, knight_t2_block: 5,
+  knight_t1_health: 5, knight_guardian: 5, knight_t2_health: 5, knight_t2_block: 5,
   knight_t3_armor: 5, knight_t3_magicResist: 5, knight_t4_health: 5, knight_t4_block: 5,
   knight_vanguard: 5, knight_unyielding: 5, knight_warden: 5,
 };
 /** Bastion's six passives (30 points) on top of the trunk: 95 spent. */
 const BASTION: Record<string, number> = {
   ...TRUNK,
-  knight_bastion_t5_magicResist: 5, knight_bastion_t7_armor: 5, knight_bastion_t7_health: 5,
-  knight_bastion_t8_block: 5, knight_bastion_t9_health: 5, knight_bastion_t9_damageReduction: 5,
+  knight_bastion_t5_magicResist: 5, knight_close_ranks: 5, knight_bastion_t7_health: 5,
+  knight_bastion_t8_block: 5, knight_shelter: 5, knight_bastion_t9_damageReduction: 5,
 };
 
 describe('canSpend', () => {
   it('a fresh hero can buy any tier-1 node, and nothing above it', () => {
-    for (const key of ['knight_guard', 'knight_debilitate', 'knight_t1_health', 'knight_t1_armor']) {
+    for (const key of ['knight_guard', 'knight_debilitate', 'knight_t1_health', 'knight_guardian']) {
       expect(reason('knight', {}, key, 1)).toBe('ok');
     }
     const c = canSpend('knight', {}, 1, 'knight_bulwark');
@@ -52,7 +52,7 @@ describe('canSpend', () => {
   });
 
   it('only two different abilities may hold points; ranking a learned one further is free', () => {
-    const two = { knight_guard: 5, knight_debilitate: 5, knight_t1_health: 5, knight_t1_armor: 5 };
+    const two = { knight_guard: 5, knight_debilitate: 5, knight_t1_health: 5, knight_guardian: 5 };
     expect(MAX_ACTIVE_ABILITIES).toBe(2);
     expect(canSpend('knight', two, 5, 'knight_bulwark')).toEqual({ ok: false, reason: 'abilityCap', max: 2 });
     expect(reason('knight', { ...two, knight_guard: 3 }, 'knight_guard')).toBe('ok');
@@ -84,7 +84,7 @@ describe('canSpend', () => {
     // With 25 in each branch the second capstone is still refused: choose one.
     const split = {
       ...BASTION, knight_bastion_t9_damageReduction: 0,
-      knight_scourge_t5_block: 5, knight_scourge_t7_health: 5, knight_scourge_t7_lifesteal: 5, knight_scourge_t8_armor: 5, knight_scourge_t9_attackDamage: 5,
+      knight_scourge_t5_block: 5, knight_weathered_hide: 5, knight_scourge_t7_lifesteal: 5, knight_scourge_t8_armor: 5, knight_scourge_t9_attackDamage: 5,
       knight_cap_living_wall: 1,
     };
     expect(branchPoints('knight', split, 'bastion')).toBe(25);
@@ -135,7 +135,7 @@ describe('sanitizeTalents (old or damaged saves)', () => {
   });
 
   it('keeps the first two abilities when three hold points — the active ones first', () => {
-    const three = { knight_guard: 2, knight_debilitate: 2, knight_bulwark: 2, knight_t1_health: 5, knight_t1_armor: 5 };
+    const three = { knight_guard: 2, knight_debilitate: 2, knight_bulwark: 2, knight_t1_health: 5, knight_guardian: 5 };
     const byTree = sanitizeTalents('knight', three, 30);
     expect(learnedAbilityNodes('knight', byTree.talents).map((n) => n.key)).toEqual(['knight_guard', 'knight_debilitate']);
     expect(byTree.talentPoints).toBe(30 - 14);
@@ -158,7 +158,7 @@ describe('sanitizeTalents (old or damaged saves)', () => {
   });
 
   it('clamps ranks, and ignores ranks that are not whole positive numbers', () => {
-    const bad = { knight_guard: 99, knight_t1_health: -3, knight_t1_armor: Number.NaN, knight_debilitate: 2.9, knight_bulwark: '5' };
+    const bad = { knight_guard: 99, knight_t1_health: -3, knight_guardian: Number.NaN, knight_debilitate: 2.9, knight_bulwark: '5' };
     const out = sanitizeTalents('knight', bad, 40);
     expect(out.talents).toEqual({ knight_guard: 5, knight_debilitate: 2 });
     expect(out.talentPoints).toBe(33);

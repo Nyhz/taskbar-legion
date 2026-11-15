@@ -6,7 +6,8 @@ import { ChipRow } from './ChipRow';
 import { LifeBar } from './LifeBar';
 import {
   BARS, CHIP_STEP, HERO_BAR_STYLE, LOW_BEAT_MS, LOW_LIFE,
-  abilityChips, effectChips, heroHudLayout, newGhost, rowLeft, stepGhost, ultimateChip,
+  MAX_EFFECT_CHIPS, abilityChips, chipIndexAt, effectChips, heroHudLayout, newGhost, rowLeft, stackChips, stepGhost, ultimateChip,
+  type ChipView, type ChipWorn,
 } from './stripHud';
 import { stripHudTexture } from './stripHudTextures';
 
@@ -30,6 +31,7 @@ export class HeroHud {
   private ghost = newGhost();
   private elapsed = 0;
   private lift = 0;
+  private shownEffects: readonly ChipView[] = []; // the effect chips on show now (for their tooltip)
 
   /** `cx`: the centre line (container-local x); `headY` / `feetY`: the top of the standing figure and the ground line. */
   constructor(cx: number, private readonly headY: number, feetY: number) {
@@ -66,6 +68,17 @@ export class HeroHud {
     this.feet.visible = on;
   }
 
+  /** The effect chip under a point (in the hero sprite's own space, art pixels): the effects behind it and its
+   *  top-left corner — or null. What the strip's chip tooltip asks (ui/overlay/StripEffectTip). */
+  effectChipAt(x: number, y: number): { worn: readonly ChipWorn[]; x: number; y: number } | null {
+    if (!this.above.visible || this.shownEffects.length === 0) return null;
+    const left = this.above.x + this.effects.x;
+    const top = this.above.y + this.effects.y;
+    const i = chipIndexAt(x, y, left, top, this.shownEffects.length);
+    const worn = i < 0 ? undefined : this.shownEffects[i]?.worn;
+    return worn === undefined || worn.length === 0 ? null : { worn, x: left + i * CHIP_STEP, y: top };
+  }
+
   /** Container-local y of the top of what stands over the head now (a cast sign goes just above it). */
   get topY(): number {
     return this.headY - this.lift - this.layout.top;
@@ -77,7 +90,8 @@ export class HeroHud {
     const fighting = c.alive && !reviving;
     if (reviving) {
       const left = c.respawnMs ?? 0;
-      const prog = Math.max(0, Math.min(1, 1 - left / RESPAWN_MS));
+      // The count runs over what THIS fall has to wait (Revive shortens it), so the bar always starts empty.
+      const prog = Math.max(0, Math.min(1, 1 - left / (c.respawnTotalMs ?? RESPAWN_MS)));
       this.bar.setCasing(BARS.hero.casing);
       this.bar.setFill('hud_s_fill_respawn');
       this.bar.set(prog);
@@ -97,9 +111,10 @@ export class HeroHud {
     this.respawn.visible = reviving;
 
     // The effects on him: a row centred over the bar, only while there are any.
-    const fx = fighting ? effectChips(c.effects) : { chips: [], more: 0 };
+    const fx = fighting ? effectChips(c.effects, MAX_EFFECT_CHIPS, stackChips(c)) : { chips: [], more: 0 };
     const places = this.effects.show(fx.chips, fx.more, dtMs);
     this.effects.x = rowLeft(places);
+    this.shownEffects = fx.chips;
 
     // His abilities, then his ultimate: one row at his feet, centred whether it holds two chips or three.
     const ult = fighting ? ultimateChip(c, bossEngaged) : null;

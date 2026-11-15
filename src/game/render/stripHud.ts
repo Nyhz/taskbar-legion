@@ -111,6 +111,17 @@ export interface ChipView {
   shade: number;
   /** About to run out (an effect) — its frame blinks. */
   ending: boolean;
+  /** The effects behind an effect chip (the ones that share its sign) and what each is worth on the fighter, for
+   *  its tooltip. */
+  worn?: readonly ChipWorn[];
+}
+
+/** One effect behind a chip, as the tooltip needs it (ui/overlay/effectTipWords EffectTipFact). */
+export interface ChipWorn {
+  key: string;
+  value?: number;
+  stacks?: number;
+  totalMs?: number;
 }
 
 /** The mini sign of an ability or ultimate: the same picture as its 16 px sign (ui/abilityArt), drawn at 7 px. */
@@ -137,12 +148,19 @@ const EFFECT_SIGN: Readonly<Record<string, string>> = {
   fx_sanctuary: 'sanctuary',
   fx_ward: 'holy_shield',
   buff_aegis_dr: 'holy_shield',
+  buff_shelter: 'shelter', // the Knight's Shelter on the ally that dropped under half its life
   buff_infusion_as: 'power_infusion',
   buff_infusion_cdr: 'power_infusion',
   buff_enrage_as: 'battle_enrage',
   buff_enrage_cdr: 'battle_enrage',
   // what an enemy lays on a hero, and what heroes lay on enemies (a boss line may list these one day)
   debuff_mortal_wound: 'wound',
+  debuff_venom: 'venom',
+  debuff_rooted: 'roots',
+  debuff_guilt: 'guilt',
+  debuff_gilded: 'gilded',
+  debuff_spores: 'spores',
+  debuff_tremor: 'tremor', // a brute's Temblor: the ground split, the shock going out over it
   debuff_weaken: 'cleave',
   debuff_riposte_weaken: 'riposte',
   debuff_vengeance_weaken: 'riposte',
@@ -153,6 +171,7 @@ const EFFECT_SIGN: Readonly<Record<string, string>> = {
   fx_mark: 'hunters_mark',
   debuff_weakspot: 'weak_spot',
   fx_dot: 'bleed',
+  fx_hemorrhage: 'bleed', // the Ranger's Hemorrhage is a bleed like the Caltrops'
   fx_burn: 'explosive_arrow',
   fx_tar: 'tar_flask',
 };
@@ -180,6 +199,9 @@ export interface WornFact {
   defKey: string;
   remainingMs: number;
   totalMs?: number;
+  /** What it is worth on the fighter (sim ActiveEffect): for the chip's tooltip. */
+  value?: number;
+  stacks?: number;
 }
 
 /** Rows of a sign under shade when `gone` (0…1) of the time has run. */
@@ -190,30 +212,52 @@ export function shadeRows(gone: number): number {
 /** The chips of the effects on a hero: one per SIGN (an ability that lays two effects is one chip, timed by the
  *  one that lasts longest), debuffs first, each in the order it was applied; `more` counts those that did not fit
  *  (the row then shows `max - 1` chips and "+more"). */
-export function effectChips(effects: readonly WornFact[], max = MAX_EFFECT_CHIPS): { chips: ChipView[]; more: number } {
-  const bySign = new Map<string, { good: boolean; left: number; total: number }>();
+export function effectChips(effects: readonly WornFact[], max = MAX_EFFECT_CHIPS, extra: readonly ChipView[] = []): { chips: ChipView[]; more: number } {
+  const bySign = new Map<string, { good: boolean; left: number; total: number; worn: ChipWorn[] }>();
   for (const e of effects) {
     if (!hasChip(e.defKey)) continue;
     const def = EFFECTS[e.defKey];
     const sign = effectSign(e.defKey);
     const total = e.totalMs ?? def?.durationMs ?? 0;
     const known = bySign.get(sign);
-    if (known === undefined) bySign.set(sign, { good: def?.beneficial !== false, left: e.remainingMs, total });
-    else if (e.remainingMs > known.left) {
+    const worn: ChipWorn = { key: e.defKey, totalMs: total, ...(e.value === undefined ? {} : { value: e.value }), ...(e.stacks === undefined ? {} : { stacks: e.stacks }) };
+    if (known === undefined) {
+      bySign.set(sign, { good: def?.beneficial !== false, left: e.remainingMs, total, worn: [worn] });
+      continue;
+    }
+    if (!known.worn.some((w) => w.key === e.defKey)) known.worn.push(worn);
+    if (e.remainingMs > known.left) {
       known.left = e.remainingMs;
       known.total = total;
     }
   }
   const all = [...bySign.entries()].map(([sign, v]) => ({ sign, ...v }));
-  const ordered = [...all.filter((c) => !c.good), ...all.filter((c) => c.good)];
-  const shown = ordered.length > max ? ordered.slice(0, max - 1) : ordered;
-  const chips = shown.map((c): ChipView => ({
+  const timed = [...all.filter((c) => !c.good), ...all.filter((c) => c.good)].map((c): ChipView => ({
     sign: c.sign,
     frame: c.good ? 'buff' : 'debuff',
     shade: c.total > 0 ? shadeRows(1 - c.left / c.total) : 0,
     ending: c.left <= ENDING_MS,
+    worn: c.worn,
   }));
-  return { chips, more: ordered.length - shown.length };
+  // `extra`: chips that are not effects (a passive's stacks) — after everything that comes and goes.
+  const ordered = [...timed, ...extra];
+  const chips = ordered.length > max ? ordered.slice(0, max - 1) : ordered;
+  return { chips, more: ordered.length - chips.length };
+}
+
+/** What the strip knows of a hero's Weathered Hide (sim Combatant: `hideStacks`, and the passive it holds). */
+export interface StackFacts {
+  hideStacks?: number;
+  passives?: readonly { def: { is: string; maxStacks?: number } }[];
+}
+
+/** The chips of a hero's passives that BUILD UP in a fight: Weathered Hide's stacks of blocked hits — the green
+ *  frame of something that charges hit by hit, a step clearer with each stack, gone when the stacks are. */
+export function stackChips(c: StackFacts): ChipView[] {
+  const stacks = c.hideStacks ?? 0;
+  if (stacks <= 0) return [];
+  const max = c.passives?.find((p) => p.def.is === 'blockStreak')?.def.maxStacks ?? stacks;
+  return [{ sign: 'weathered_hide', frame: stacks >= max ? 'ready' : 'charge', shade: shadeRows(1 - stacks / Math.max(1, max)), ending: false }];
 }
 
 export interface AbilityFact {
@@ -362,4 +406,13 @@ export const HERO_HUD_STEP = BARS.hero.h + 1 + CHIP + 1;
 /** Width of a row of `n` chips set `step` apart. */
 export function rowWidth(n: number, step = CHIP_STEP): number {
   return n <= 0 ? 0 : (n - 1) * step + CHIP;
+}
+
+/** Which chip of a row is under a point: the row's first chip has its top-left at (`left`, `top`), chips are CHIP
+ *  square and `step` apart. -1 when the point is on none of the `count` chips. (The effect chips' tooltip.) */
+export function chipIndexAt(x: number, y: number, left: number, top: number, count: number, step = CHIP_STEP): number {
+  if (y < top || y >= top + CHIP || x < left) return -1;
+  const i = Math.floor((x - left) / step);
+  if (i >= count) return i === count && x < left + (count - 1) * step + CHIP ? count - 1 : -1; // the shared border pixel of the last chip
+  return x < left + i * step + CHIP ? i : -1;
 }

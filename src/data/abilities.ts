@@ -1,6 +1,7 @@
 import type { StatKey } from './stats';
 import type { TriggerDef } from './triggers';
 import { BRANCH_ABILITIES } from './branchAbilities';
+import { BOSS_ABILITIES } from './bossAbilities';
 
 // Ability library (TALENTS.md). Abilities apply declarative effects; ranks (from the
 // talent tree) scale them. Two scaling channels:
@@ -64,7 +65,75 @@ export type AbilityTarget =
   | 'allAllies'
   | 'randomDpsAlly'
   | 'twoDpsAllies' // two different heroes: damage dealers first, then the tank, then anyone left
-  | 'tank';
+  | 'tank'
+  // ── targets of the abilities that react (FireRule below) ──
+  // The enemy in the caster's shot reach whose BLAST catches the most enemies (the ability's splashRadius) — an
+  // elite or a boss among equals, then the nearest. Explosive Arrow: it goes where it does the most, not by priority.
+  | 'biggestCluster'
+  // The enemy that comes first in the shooting heroes' order (data/enemies TARGET_PRIORITY: support, shooter,
+  // beast, soldier, brute; an elite before its kind; a boss when there is one), across the caster's SHOT reach.
+  | 'priorityEnemy'
+  | 'mostHitAlly' // the living ally that has taken the most damage in the last moments
+  | 'hurtAlly' // an ally that has just taken a heavy hit, else the one with the least life
+  | 'harmedAlly' // the ally carrying the most harmful effects, else the one with the least life
+  // ── the boss kit (data/bossKit.ts): whom a boss picks among the heroes, wherever they stand ──
+  | 'randomEnemy' // any living foe, at random
+  | 'softestEnemy' // the living foe with the least armour (the Certero affix)
+  | 'topDamageEnemy'; // the living foe that has dealt this boss the most damage in the fight (Roots)
+
+/** What an ability does beyond laying effects (sim/bossMechanics.resolveSpecial). */
+export type AbilitySpecial =
+  // Summon `count` creatures of data/bossKit SUMMONS; each of their hits is `hitOfTrash` of a normal enemy's.
+  | { kind: 'summon'; summon: string; count: number; hitOfTrash: number }
+  // Drag every hero `dragPx` back along the path; the caster holds its ground until they have walked back.
+  | { kind: 'undertow'; dragPx: number }
+  // One more layer of `effectKey` on every hero, each worth `pctPerLayer` % of his life per second.
+  | { kind: 'spores'; effectKey: string; pctPerLayer: number }
+  // The ground under the party burns for `burnMs`: each hero takes `totalOfHit` of the caster's hit over that time.
+  | { kind: 'groundFire'; burnMs: number; totalOfHit: number }
+  // Every living hero drops to the share of life of the one who has least.
+  | { kind: 'scales' }
+  // Reflect the last ability a hero cast (sim/mirror): its harm on the heroes, its boons on the caster.
+  // …and, besides (the six mirrors and the dark reflection): each cast lights one more pane — a stack of
+  // `paneEffectKey` worth `panePct` % damage — and every `reflectionEvery`-th pane a summon `reflection` of the
+  // hero it copied steps out, hitting for `reflectionHit` of a normal enemy's hit.
+  | { kind: 'mirror'; harm: number; boon: number; buff: number; panes: number; paneEffectKey: string; panePct: number; reflectionEvery: number; reflection: string; reflectionHit: number }
+  // Only once the caster's `panes` panes are all lit (stacks of `paneEffectKey`): it breaks them — they go dark.
+  | { kind: 'shatter'; panes: number; paneEffectKey: string };
+
+/** WHEN a hero's ability fires once it is ready — its fixed default behaviour (user decision 2026-11-15: no
+ *  player settings; "se usa siempre que sea útil y, si está pasando algo concreto, lo aprovecha — nunca se queda
+ *  guardada para algo que quizá no llegue"). Read by sim/abilities.conditionMet; worded for the tooltip's
+ *  "When it fires" line by the interface (ui/panels/hero/talentWords.fireLine). */
+export type FireRule =
+  // `foes` or more enemies within the caster's reach, an elite or a boss in reach — or every enemy still alive
+  // is already in reach (nothing else is coming, so there is no point in waiting). foes 1 = as soon as one is.
+  | { when: 'inReach'; foes: number }
+  // The fight is worth a cooldown: `foes` or more enemies alive, or an elite or a boss among them. A buff or a
+  // wave-wide hit is not thrown at the last one or two of a wave — the next batch is seconds away.
+  | { when: 'worthIt'; foes: number }
+  // `foes` or more enemies inside the blast around the front enemy, or that enemy is an elite or a boss.
+  | { when: 'cluster'; foes: number }
+  // The caster has taken damage in the last RECENT_HIT_MS (a defence is not burnt before any blow comes).
+  | { when: 'selfHit' }
+  // Someone of the party has taken damage in the last RECENT_HIT_MS. `atAreaBlow`: while an enemy that
+  // telegraphs an area blow (a boss) is in the fight, it fires as that blow winds up instead.
+  | { when: 'partyHit'; atAreaBlow?: boolean }
+  // An ally has taken damage in the last RECENT_HIT_MS (the ability's target says which one it lands on).
+  | { when: 'allyHit' }
+  // An ally is under `frac` of its life — or (`orHeavyHit`) has just taken a single hit of HEAVY_HIT_LIFE_FRAC.
+  | { when: 'allyBelow'; frac: number; orHeavyHit?: boolean }
+  // `allies` living heroes under `frac` of their life (all of them when the party is smaller), or one under `orOneBelow`.
+  | { when: 'partyHurt'; allies: number; frac: number; orOneBelow: number }
+  // An ally carries a harmful effect, or is under `frac` of its life.
+  | { when: 'harmedOrBelow'; frac: number };
+
+/** How long a hit stays "recent" for the fire rules, and what share of its life one hit must take from a hero
+ *  to count as heavy (sim/recent.ts keeps the bookkeeping). */
+export const RECENT_HIT_MS = 2500;
+export const HEAVY_HIT_LIFE_FRAC = 0.15;
+/** A hero's running tally of damage taken halves every this long (who is taking the MOST damage right now). */
+export const RECENT_DAMAGE_HALF_LIFE_MS = 1500;
 
 export interface AbilityDef {
   key: string;
@@ -84,9 +153,15 @@ export interface AbilityDef {
   // (a boss rears up for its slam instead of slamming on top of its blows — the area attack costs the tank
   // about what the missed swings would have). Needs `castTimeMs`.
   holdsAttack?: boolean;
+  /** An ENEMY ability whose damage is always magic (met by magic resist), whatever its caster's own attacks are. */
+  magic?: boolean;
+  /** What it does beyond its effects (a summon…). */
+  special?: AbilitySpecial;
   target: AbilityTarget;
   applies: AppliedEffect[];
   castCondition?: 'always' | 'enemyPresent' | 'allyBelowHpPct' | 'tankEngaged';
+  /** Hero abilities: when it fires once ready (its default behaviour). When set it replaces `castCondition`. */
+  fires?: FireRule;
   power?: AbilityPower;
   rankScaling?: { perRank: Partial<{ value: number; durationMs: number; cooldownMs: number }> };
   // Charge-gated cast (no cooldown): the ability banks `perAttack` charge(s) per AUTO-
@@ -110,7 +185,8 @@ export const ABILITIES: Record<string, AbilityDef> = {
     cooldownMs: 20000, target: 'self',
     // buff_guard_block: 20% damage reduction at rank 1, +5%/rank → 40% at rank 5. 6s uptime.
     applies: [{ effectKey: 'buff_guard_block' }],
-    castCondition: 'enemyPresent', rankScaling: { perRank: { value: 5 } },
+    // Not burnt before any blow comes: it waits until he is actually being hit.
+    castCondition: 'enemyPresent', fires: { when: 'selfHit' }, rankScaling: { perRank: { value: 5 } },
   },
   knight_debilitate: {
     key: 'knight_debilitate', name: 'Debilitating Cleave', icon: 'expose',
@@ -119,7 +195,8 @@ export const ABILITIES: Record<string, AbilityDef> = {
     // Bonus damage (1.2×→2.0× AD) + debuff_weaken to EVERY enemy in melee reach: each deals
     // 15%→25% less damage for 6s.
     applies: [{ effectKey: 'fx_damage' }, { effectKey: 'debuff_weaken' }],
-    castCondition: 'enemyPresent', power: { coeff: 1.2, coeffPerRank: 0.2, canCrit: true },
+    // A sweep wants company: two in reach, or something tough, or the last of the wave.
+    castCondition: 'enemyPresent', fires: { when: 'inReach', foes: 2 }, power: { coeff: 1.2, coeffPerRank: 0.2, canCrit: true },
     rankScaling: { perRank: { value: 2.5 } },
   },
   knight_bulwark: {
@@ -128,7 +205,7 @@ export const ABILITIES: Record<string, AbilityDef> = {
     cooldownMs: 24000, target: 'self',
     applies: [{ effectKey: 'fx_shield', durationMsOverride: 8000 }],
     // Self-shield: 30%→50% of his max HP absorbed (+5%/rank).
-    castCondition: 'enemyPresent', power: { coeff: 0.3, coeffPerRank: 0.05 },
+    castCondition: 'enemyPresent', fires: { when: 'selfHit' }, power: { coeff: 0.3, coeffPerRank: 0.05 },
   },
   knight_battlecry: {
     key: 'knight_battlecry', name: 'Battle Cry', icon: 'cry',
@@ -136,7 +213,8 @@ export const ABILITIES: Record<string, AbilityDef> = {
     cooldownMs: 24000, target: 'allAllies',
     // buff_battlecry_ad 15%→25% AD + buff_battlecry_crit 5%→15% crit (both +2.5/rank). 8s uptime.
     applies: [{ effectKey: 'buff_battlecry_ad' }, { effectKey: 'buff_battlecry_crit' }],
-    castCondition: 'enemyPresent', rankScaling: { perRank: { value: 2.5 } },
+    // Eight seconds of party offence are not spent on the last stragglers of a wave.
+    castCondition: 'enemyPresent', fires: { when: 'worthIt', foes: 3 }, rankScaling: { perRank: { value: 2.5 } },
   },
   knight_bloodlust: {
     key: 'knight_bloodlust', name: 'Bloodlust', icon: 'flurry',
@@ -148,17 +226,18 @@ export const ABILITIES: Record<string, AbilityDef> = {
       { effectKey: 'buff_bloodlust_as', valuePerRank: 4 },
       { effectKey: 'buff_bloodlust_ls', valuePerRank: 1 },
     ],
-    castCondition: 'enemyPresent',
+    castCondition: 'enemyPresent', fires: { when: 'worthIt', foes: 3 },
   },
 
   // ───────────────────────── Priest ─────────────────────────
   priest_mend: {
     key: 'priest_mend', name: 'Mend', icon: 'heal',
     desc: 'A rolling heal on whoever is hurt — amplified by heal power.',
-    cooldownMs: 20000, target: 'lowestAllyHp', applies: [{ effectKey: 'fx_hot', durationMsOverride: 6000 }],
+    cooldownMs: 20000, target: 'hurtAlly', applies: [{ effectKey: 'fx_hot', durationMsOverride: 6000 }],
     // HoT coeff is the TOTAL heal over the duration (× target max HP × healPower), spread
     // per-tick. 15%→25% of max HP over 6s (+2.5/rank).
-    castCondition: 'allyBelowHpPct', power: { coeff: 0.15, coeffPerRank: 0.025 },
+    // On whoever has just taken a heavy hit; otherwise on the most hurt, once someone is under 70 %.
+    castCondition: 'allyBelowHpPct', fires: { when: 'allyBelow', frac: 0.7, orHeavyHit: true }, power: { coeff: 0.15, coeffPerRank: 0.025 },
   },
   priest_powerinfusion: {
     key: 'priest_powerinfusion', name: 'Power Infusion', icon: 'surge',
@@ -169,29 +248,31 @@ export const ABILITIES: Record<string, AbilityDef> = {
       { effectKey: 'buff_infusion_as', valuePerRank: 5 },
       { effectKey: 'buff_infusion_cdr', valuePerRank: 5 },
     ],
-    castCondition: 'enemyPresent',
+    castCondition: 'enemyPresent', fires: { when: 'worthIt', foes: 3 },
   },
   priest_holyshield: {
     key: 'priest_holyshield', name: 'Holy Shield', icon: 'shield',
-    desc: 'A divine barrier on the tank — absorbs a burst of the hits it’s taking.',
-    cooldownMs: 24000, target: 'tank', applies: [{ effectKey: 'fx_shield', durationMsOverride: 4000 }],
-    // Shield = 10%→20% of the tank's max HP (+2.5/rank). Only while the tank is engaged.
-    castCondition: 'tankEngaged', power: { coeff: 0.1, coeffPerRank: 0.025 },
+    desc: 'A divine barrier on the ally taking the most damage — absorbs a burst of the hits it’s taking.',
+    cooldownMs: 24000, target: 'mostHitAlly', applies: [{ effectKey: 'fx_shield', durationMsOverride: 4000 }],
+    // Shield = 10%→20% of that ally's max HP (+2.5/rank). On whoever is taking the most damage right now —
+    // the tank most of the time, an archer's target behind him when that is where the blows land.
+    castCondition: 'tankEngaged', fires: { when: 'allyHit' }, power: { coeff: 0.1, coeffPerRank: 0.025 },
   },
   priest_nova: {
     key: 'priest_nova', name: 'Holy Nova', icon: 'holy',
     desc: 'A burst of holy light damaging the whole wave.',
     cooldownMs: 20000, target: 'allEnemies', applies: [{ effectKey: 'fx_damage' }],
     // Per-target wave damage: 1.2× → 2.8× AD (+0.4/rank).
-    castCondition: 'enemyPresent', power: { coeff: 1.2, coeffPerRank: 0.4, canCrit: true },
+    castCondition: 'enemyPresent', fires: { when: 'worthIt', foes: 3 }, power: { coeff: 1.2, coeffPerRank: 0.4, canCrit: true },
   },
-  priest_retribution: {
-    key: 'priest_retribution', name: 'Retribution Aura', icon: 'surge',
-    desc: 'Passive: while slotted, the whole party deals +5%→+15% damage.',
-    cooldownMs: 0, target: 'self', applies: [],
-    // Passive party aura — never cast; occupies a loadout slot. +5% damage done at rank 1,
-    // +2.5%/rank → +15% at rank 5, applied to every ally (sim/loadout.partyAuraMods).
-    aura: { stat: 'damageIncrease', baseValue: 5, valuePerRank: 2.5 },
+  priest_purify: {
+    key: 'priest_purify', name: 'Purify', icon: 'holy',
+    desc: 'Lifts every harmful effect from an ally — venom, a mortal wound, spores — and heals it a little.',
+    cooldownMs: 16000, target: 'harmedAlly', applies: [{ effectKey: 'fx_cleanse' }, { effectKey: 'fx_heal' }],
+    // On the ally carrying the most harmful effects (with none harmed, the most hurt): they are all removed,
+    // then it heals 6%→10% of that ally's max HP (+1/rank), so a wound that cut healing no longer cuts this one.
+    // Kept for a harmful effect; with none around it is still used as a small heal on an ally under 60 %.
+    fires: { when: 'harmedOrBelow', frac: 0.6 }, power: { coeff: 0.06, coeffPerRank: 0.01 },
   },
 
   // ───────────────────────── Ranger ─────────────────────────
@@ -200,13 +281,14 @@ export const ABILITIES: Record<string, AbilityDef> = {
     desc: 'A sustained burst of attack speed.',
     cooldownMs: 24000, target: 'self', applies: [{ effectKey: 'buff_fast_fire' }],
     // buff_fast_fire 25%→45% attack speed (+5/rank). 8s uptime.
-    castCondition: 'enemyPresent', rankScaling: { perRank: { value: 5 } },
+    castCondition: 'enemyPresent', fires: { when: 'worthIt', foes: 3 }, rankScaling: { perRank: { value: 5 } },
   },
   ranger_aimedshot: {
     key: 'ranger_aimedshot', name: 'Aimed Shot', icon: 'aim',
     desc: 'A heavy charged shot — banks 1 charge per auto-attack, fires at 10.',
-    cooldownMs: 0, target: 'frontEnemy', applies: [{ effectKey: 'fx_damage' }],
-    castCondition: 'enemyPresent', power: { coeff: 1.8, coeffPerRank: 0.4, canCrit: true },
+    // The heavy shot goes to whoever comes first in her order (the support, then the shooters…).
+    cooldownMs: 0, target: 'priorityEnemy', applies: [{ effectKey: 'fx_damage' }],
+    castCondition: 'enemyPresent', fires: { when: 'inReach', foes: 1 }, power: { coeff: 1.8, coeffPerRank: 0.4, canCrit: true },
     charge: { perAttack: 1, toCast: 10 },
   },
   ranger_multishot: {
@@ -214,15 +296,16 @@ export const ABILITIES: Record<string, AbilityDef> = {
     desc: 'A volley spread across the whole wave.',
     cooldownMs: 20000, target: 'allEnemies', applies: [{ effectKey: 'fx_damage' }],
     // Per-target wave damage: 1.2× → 2.8× AD (+0.4/rank).
-    castCondition: 'enemyPresent', power: { coeff: 1.2, coeffPerRank: 0.4, canCrit: true },
+    castCondition: 'enemyPresent', fires: { when: 'worthIt', foes: 3 }, power: { coeff: 1.2, coeffPerRank: 0.4, canCrit: true },
   },
   ranger_focus: {
     key: 'ranger_focus', name: 'Explosive Arrow', icon: 'explosion',
-    desc: 'A detonating arrow: a heavy hit on the front enemy that blasts nearby enemies for less.',
-    cooldownMs: 18000, target: 'frontEnemy', applies: [{ effectKey: 'fx_damage' }],
-    // Front enemy 1.6×→3.2× AD (+0.4/rank, can crit); splash 0.6×→1.2× AD (+0.15/rank) to
+    desc: 'A detonating arrow: a heavy hit where its blast catches the most enemies, and a lesser one on those nearby.',
+    cooldownMs: 18000, target: 'biggestCluster', applies: [{ effectKey: 'fx_damage' }],
+    // The enemy whose blast catches the most (user decision 2026-11-15: the pile, not the priority) 1.6×→3.2× AD (+0.4/rank, can crit); splash 0.6×→1.2× AD (+0.15/rank) to
     // enemies within ~1.5 bodies (45 world-px) of the primary target.
-    castCondition: 'enemyPresent',
+    // The blast needs something to catch: two in it, or a tough target.
+    castCondition: 'enemyPresent', fires: { when: 'cluster', foes: 2 },
     power: { coeff: 1.6, coeffPerRank: 0.4, canCrit: true, splashCoeff: 0.6, splashCoeffPerRank: 0.15, splashRadius: 45 },
   },
   ranger_frozentrap: {
@@ -230,11 +313,14 @@ export const ABILITIES: Record<string, AbilityDef> = {
     desc: 'Hurl a spray of caltrops that spread across the ground ahead — bleeding every enemy in the field for 4s.',
     cooldownMs: 24000, target: 'allEnemies', applies: [{ effectKey: 'fx_dot', durationMsOverride: 4000 }],
     // Wave DoT over 4s: total damage per enemy = 0.6×→1.4× AD (+0.2/rank), dealt in 100ms ticks.
-    castCondition: 'enemyPresent', power: { coeff: 0.6, coeffPerRank: 0.2 },
+    castCondition: 'enemyPresent', fires: { when: 'worthIt', foes: 3 }, power: { coeff: 0.6, coeffPerRank: 0.2 },
   },
 
   // ───────────── Branch abilities (docs/redesign/CLASSES.md, first wave) ─────────────
   ...BRANCH_ABILITIES,
+
+  // ───────────── The boss kit: affix abilities and world-boss mechanics (data/bossKit.ts) ─────────────
+  ...BOSS_ABILITIES,
 
   // ───────────────────────── Enemies ─────────────────────────
   // Enemy abilities follow the SAME pattern as hero abilities: damage = coeff ×
@@ -258,6 +344,15 @@ export const ABILITIES: Record<string, AbilityDef> = {
     key: 'enemy_smash', name: 'Brutal Smash', icon: 'explosion',
     desc: 'A brute winds up a heavy blow on the front hero; the shock reaches everyone behind for less.',
     cooldownMs: 9000, target: 'frontEnemy', applies: [{ effectKey: 'fx_damage' }],
+    castCondition: 'enemyPresent', power: { coeff: 2.2, splashCoeff: 0.3, splashRadius: WHOLE_PARTY },
+  },
+  // Temblor (data/enemies TRAIT_TUNING.tremor: the brute's blow from Eternal on): the same blow, and the heroes
+  // it reaches carry `debuff_tremor` (data/effects) for a moment — on the front hero and, riding the splash, on
+  // everyone behind.
+  enemy_smash_tremor: {
+    key: 'enemy_smash_tremor', name: 'Tremor Smash', icon: 'explosion',
+    desc: 'A brute winds up a heavy blow on the front hero; the shock reaches everyone behind for less and leaves them all attacking slower for a moment.',
+    cooldownMs: 9000, target: 'frontEnemy', applies: [{ effectKey: 'fx_damage' }, { effectKey: 'debuff_tremor', onSplash: true }],
     castCondition: 'enemyPresent', power: { coeff: 2.2, splashCoeff: 0.3, splashRadius: WHOLE_PARTY },
   },
   enemy_aimed: {
@@ -287,36 +382,22 @@ export const ABILITIES: Record<string, AbilityDef> = {
     power: { coeff: 1.2, splashCoeff: 0.6, splashRadius: WHOLE_PARTY },
   },
 
-  // ───────────────────── World-boss kit (DIFFICULTY.md §5) ─────────────────────
-  // World bosses are pure STAT walls on Normal/Hell; they gain ONE special ability at
-  // Inferno (Frenzy) and a SECOND at Torment (Mortal Wound). Both CHANNEL for 1.5s (a cast
-  // bar fills under the boss) before resolving, so the cast is telegraphed. Their openers
-  // stagger the cadence: one cast every 15s from Inferno (Frenzy, first at 7.5s); in Torment
-  // Mortal Wound (first at 0s) interleaves so something fires every ~7.5s.
-  boss_frenzy: {
-    key: 'boss_frenzy', name: 'Frenzy', icon: 'flurry',
-    desc: 'The world boss works itself into a frenzy, attacking 50% faster for 6s.',
-    cooldownMs: 15000, openerMs: 7500, castTimeMs: 1500, target: 'self',
-    applies: [{ effectKey: 'buff_boss_frenzy' }], castCondition: 'enemyPresent',
-  },
+  // ───────────────────── Herida mortal (an AFFIX: data/bossKit.ts) ─────────────────────
+  // A heavy blow, CHANNELLED for 1.5 s (the cast bar fills under the boss), that also cuts the healing its target
+  // receives. It used to be the Torment world bosses' own; it is now one of the seven affixes any boss may carry
+  // (Frenzy, the other old world-boss ability, became the Enfurecido affix: a stacking effect, no cast).
   boss_mortal_wound: {
     key: 'boss_mortal_wound', name: 'Mortal Wound', icon: 'expose',
     desc: 'A crippling blow that wounds the tank, cutting its healing received by 25% for 8s.',
-    cooldownMs: 15000, openerMs: 0, castTimeMs: 1500, target: 'frontEnemy',
+    cooldownMs: 15000, openerMs: 2000, castTimeMs: 1500, target: 'frontEnemy',
     applies: [{ effectKey: 'fx_damage' }, { effectKey: 'debuff_mortal_wound' }],
-    castCondition: 'enemyPresent', power: { coeff: 2.5 },
+    castCondition: 'enemyPresent', power: { coeff: 1.5 },
   },
 };
 
-// The world-boss special abilities, each gated to a MINIMUM difficulty index (0=Normal …
-// 4=Torment). A boss at difficulty d wields every ability whose minDifficulty ≤ d — so
-// Normal/Hell get the Shockwave only, Inferno+ add Frenzy, Torment also Mortal Wound.
-// Shared across the 10 world bosses for v1; per-world flavor can layer on later.
-const WORLD_BOSS_ABILITIES: readonly { key: string; minDifficulty: number }[] = [
-  { key: 'boss_shockwave', minDifficulty: 0 }, // every difficulty: the area blow (§5b)
-  { key: 'boss_frenzy', minDifficulty: 2 }, // Inferno+
-  { key: 'boss_mortal_wound', minDifficulty: 4 }, // Torment+
-];
+/** The ability every WORLD boss wields on every difficulty: its telegraphed area blow (§5b). Its mechanic and
+ *  its affixes are added by the boss kit (data/bossKit.ts, sim/bossMechanics.bossKit). */
+const WORLD_BOSS_ABILITIES: readonly string[] = ['boss_shockwave'];
 
 /** The abilities every STAGE boss wields, on every difficulty: its telegraphed area blow (§5b). */
 const STAGE_BOSS_ABILITIES: readonly string[] = ['boss_slam'];
@@ -325,11 +406,8 @@ export function stageBossAbilityKeys(): string[] {
   return [...STAGE_BOSS_ABILITIES];
 }
 
-/** Ability keys a world boss wields at difficulty index `d` (0..4): those whose
- *  minDifficulty ≤ d (the Shockwave alone on Normal/Hell). */
-export function worldBossAbilityKeys(d: number): string[] {
-  const di = Math.floor(d);
-  return WORLD_BOSS_ABILITIES.filter((a) => di >= a.minDifficulty).map((a) => a.key);
+export function worldBossAbilityKeys(): string[] {
+  return [...WORLD_BOSS_ABILITIES];
 }
 
 export function abilityDef(key: string): AbilityDef {

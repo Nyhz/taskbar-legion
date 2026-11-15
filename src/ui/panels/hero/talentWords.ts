@@ -1,6 +1,11 @@
 import type { AbilityDef, AbilityTarget } from '@/data/abilities';
 import type { TalentNode, TalentNodeKind } from '@/data/talents';
-import { abilityAuraFact, abilityEffectFacts, type EffectFact, type LifeBasis } from '@/sim/abilityFacts';
+import {
+  abilityAuraFact, abilityEffectFacts, abilityFireFact, ultimateFireFact,
+  type EffectFact, type FireFact, type LifeBasis,
+} from '@/sim/abilityFacts';
+import type { FireRule } from '@/data/abilities';
+import type { UltimateDef, UltimatePatch } from '@/data/ultimates';
 import { format } from '@/sim/num';
 import type { EffectiveStats } from '@/sim/stats';
 import type { SpendBlock } from '@/sim/talentRules';
@@ -24,7 +29,8 @@ export function nodeKindName(kind: TalentNodeKind): string {
   return t(KIND_TEXT[kind]);
 }
 
-const TARGET_TEXT: Record<AbilityTarget, PlainTextKey> = {
+// Hero abilities only: a target only enemies use has no line here and falls back to the front enemy's.
+const TARGET_TEXT: Partial<Record<AbilityTarget, PlainTextKey>> = {
   self: 'talents.targetSelf',
   lowestAllyHp: 'talents.targetLowestAlly',
   lowestOtherAlly: 'talents.targetLowestOtherAlly',
@@ -36,11 +42,16 @@ const TARGET_TEXT: Record<AbilityTarget, PlainTextKey> = {
   randomDpsAlly: 'talents.targetRandomDps',
   twoDpsAllies: 'talents.targetTwoHeroes',
   tank: 'talents.targetTank',
+  priorityEnemy: 'talents.targetPriority',
+  biggestCluster: 'talents.targetCluster',
+  mostHitAlly: 'talents.targetMostHit',
+  hurtAlly: 'talents.targetHurt',
+  harmedAlly: 'talents.targetHarmed',
 };
 
 /** Who an ability (or one of its effects) lands on. */
 export function targetName(target: AbilityTarget): string {
-  return t(TARGET_TEXT[target]);
+  return t(TARGET_TEXT[target] ?? 'talents.targetFrontEnemy');
 }
 
 function lowerFirst(text: string): string {
@@ -146,6 +157,8 @@ function factLine(fact: EffectFact): string {
       return t('talents.fxRoot', { s: seconds(fact.ms) });
     case 'silence':
       return t('talents.fxSilence', { s: seconds(fact.ms) });
+    case 'cleanse':
+      return t('talents.fxCleanse');
   }
 }
 
@@ -164,4 +177,52 @@ export function abilityLines(ability: AbilityDef, rank: number, stats: Effective
     lines.push(line);
   }
   return lines;
+}
+
+function ruleLine(rule: FireRule): string {
+  switch (rule.when) {
+    case 'inReach':
+      return rule.foes <= 1 ? t('talents.firesReach') : t('talents.firesReachSeveral', { n: rule.foes });
+    case 'worthIt':
+      return t('talents.firesWorthIt', { n: rule.foes });
+    case 'cluster':
+      return t('talents.firesCluster', { n: rule.foes });
+    case 'selfHit':
+      return t('talents.firesSelfHit');
+    case 'partyHit':
+      return rule.atAreaBlow === true ? t('talents.firesPartyHitBoss') : t('talents.firesPartyHit');
+    case 'allyHit':
+      return t('talents.firesAllyHit');
+    case 'allyBelow':
+      return rule.orHeavyHit === true
+        ? t('talents.firesAllyBelowOrHit', { pct: figure(rule.frac * 100, 0) })
+        : t('talents.firesAllyBelow', { pct: figure(rule.frac * 100, 0) });
+    case 'partyHurt':
+      return t('talents.firesPartyHurt', { n: rule.allies, pct: figure(rule.frac * 100, 0), low: figure(rule.orOneBelow * 100, 0) });
+    case 'harmedOrBelow':
+      return t('talents.firesHarmed', { pct: figure(rule.frac * 100, 0) });
+  }
+}
+
+function fireFactLine(fact: FireFact): string {
+  if (fact.when === 'ready') return t('talents.firesReady');
+  if (fact.when === 'charged') {
+    // A charge ability with a plain "an enemy in reach" rule only needs its charges said.
+    const rule = fact.rule;
+    const extra = rule === undefined || (rule.when === 'inReach' && rule.foes <= 1) ? '' : ` ${ruleLine(rule)}`;
+    return `${t('talents.firesCharged', { n: fact.charges })}${extra}`;
+  }
+  return ruleLine(fact);
+}
+
+/** WHEN an ability fires, in words — the tooltip's "When it fires" line. */
+export function fireLine(ability: AbilityDef): string {
+  return fireFactLine(abilityFireFact(ability));
+}
+
+/** When a class ultimate fires, in words; `patch` is the capstone the hero holds (elites too). */
+export function ultimateFireLine(ultimate: UltimateDef, patch?: UltimatePatch): string {
+  const fact = ultimateFireFact(ultimate, patch);
+  if (fact.when === 'lethal') return t('talents.firesLethal', { n: fact.perStage });
+  return fact.elites ? t('talents.firesBossOrElite') : t('talents.firesBoss');
 }

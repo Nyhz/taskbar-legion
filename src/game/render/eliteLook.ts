@@ -65,5 +65,5 @@ export function eliteAuraSpots(halfW: number): number[] {
 }
 
 /** Drawing order among the enemies (the party is above them all): an elite goes in front of the common enemies
- *  it overlaps, so neither its body nor its bar is buried in a pack. */
-export const ENEMY_Z = { common: 1, elite: 1.5 } as const;
+ *  it overlaps, so neither its body nor its bar is buried in a pack. A boss's summon flies over the party itself. */
+export const ENEMY_Z = { common: 1, elite: 1.5, summon: 3 } as const;

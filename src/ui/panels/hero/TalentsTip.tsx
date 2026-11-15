@@ -8,7 +8,9 @@ import type { EffectiveStats } from '@/sim/stats';
 import { useStore } from '@/state/store';
 import { abilityDescription, abilityName, talentNodeDescription, talentNodeName, ultimateName, useT } from '@/i18n';
 import { Tip, TipLine, TipName, TipSub, TipText, TipTitle, TipWarn, type TipSide } from '@/ui/kit';
-import { abilityLines, figure, nodeKindName, nodeRequirementLine, roleUnit, signed, targetName } from './talentWords';
+import {
+  abilityLines, figure, fireLine, nodeKindName, nodeRequirementLine, roleUnit, signed, targetName,
+} from './talentWords';
 
 // The tooltip of a talent node. An ability says who it targets, how often it fires (cooldown with the hero's
 // reduction, or its charge, or "aura"), what each effect does at the hero's CURRENT stats and rank (with the
@@ -94,6 +96,12 @@ function AbilityTip({
           }
         />
       )}
+      {ability.aura === undefined && (
+        <>
+          <div className="tk-tal-at">{t('talents.fires')}</div>
+          <div className="tk-tal-fx">{fireLine(ability)}</div>
+        </>
+      )}
       <div className="tk-tal-at">
         {rank === 0 ? t('talents.atFirstRank') : t('talents.atRank', { n: shown })}
       </div>
@@ -157,7 +165,7 @@ function PassiveTip({ classKey, node, rank, side, blocked }: TalentsTipProps): R
     <Tip side={side} size={role !== undefined ? 'wide' : undefined}>
       <TipTitle>{name}</TipTitle>
       {desc !== undefined && <TipText>{desc}</TipText>}
-      <TipLine label={nodeKindName(role !== undefined ? 'role' : 'passive')} value={`${rank} / ${node.maxRank}`} />
+      <TipLine label={nodeKindName(node.kind === 'role' ? 'role' : 'passive')} value={`${rank} / ${node.maxRank}`} />
       <TipLine label={t('talents.perRank')} value={amount(1)} />
       {rank > 0 && <TipLine label={t('talents.now')} value={amount(rank)} />}
       {rank < node.maxRank && <TipLine label={t('talents.nextRank')} value={amount(rank + 1)} tone="good" />}

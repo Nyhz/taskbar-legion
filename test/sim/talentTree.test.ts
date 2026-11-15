@@ -6,23 +6,25 @@ import { CAPSTONE_BRANCH_POINTS, TRUNK, rowUnlockThreshold, talentNodes, talentT
 
 // The talent TREE as data (docs/redesign/CLASSES.md §2, F1): its shape, its budget and its stable keys.
 
+// The Priest's fifth is Purify since the second combat wave: Retribution Aura became a passive of the same tier.
 const ORIGINAL_ABILITIES: Record<string, string[]> = {
   knight: ['knight_guard', 'knight_debilitate', 'knight_bulwark', 'knight_battlecry', 'knight_bloodlust'],
   ranger: ['ranger_fast_fire', 'ranger_aimedshot', 'ranger_multishot', 'ranger_focus', 'ranger_frozentrap'],
-  priest: ['priest_mend', 'priest_powerinfusion', 'priest_holyshield', 'priest_nova', 'priest_retribution'],
+  priest: ['priest_mend', 'priest_powerinfusion', 'priest_holyshield', 'priest_nova', 'priest_purify'],
 };
 
 describe('talent tree shape', () => {
-  it('ten tiers; the trunk holds the five original abilities (keys unchanged), 8 passives and 3 role talents', () => {
+  it('ten tiers; the trunk holds the five abilities (keys unchanged), 8 passives and 3 role talents — the Priest 7 and 4', () => {
     for (const k of CLASS_KEYS) {
       const tree = talentTree(k);
       expect(tree.rows).toHaveLength(10);
       const trunk = talentNodes(k).filter((n) => n.lane === TRUNK);
       expect(trunk.every((n) => n.rowIndex <= 3)).toBe(true);
       expect(trunk.filter((n) => n.kind === 'ability').map((n) => n.key)).toEqual(ORIGINAL_ABILITIES[k]);
-      expect(trunk.filter((n) => n.kind === 'passive')).toHaveLength(8);
+      // Retribution Aura (a role talent now) took one of the Priest's tier-4 passives.
+      expect(trunk.filter((n) => n.kind === 'passive')).toHaveLength(k === 'priest' ? 7 : 8);
       const roles = trunk.filter((n) => n.kind === 'role');
-      expect(roles.map((n) => n.rowIndex)).toEqual([1, 2, 3]); // one in each of tiers 2, 3 and 4
+      expect(roles.map((n) => n.rowIndex)).toEqual(k === 'priest' ? [1, 2, 3, 3] : [1, 2, 3]); // one in each of tiers 2, 3 and 4
       // Tier 1 is the old row 1: two abilities and two passives.
       expect(tree.rows[0]?.map((n) => n.kind)).toEqual(['ability', 'ability', 'passive', 'passive']);
     }
@@ -74,27 +76,39 @@ describe('talent tree shape', () => {
       const ranks = (kind: string, lane?: (l: string) => boolean): number =>
         nodes.filter((n) => n.kind === kind && (lane === undefined || lane(n.lane))).reduce((a, n) => a + n.maxRank, 0);
       const guaranteed = 2 * 5 + ranks('passive', (l) => l === TRUNK) + ranks('role') + ranks('passive', (l) => l !== TRUNK) + 1;
-      expect(ranks('passive', (l) => l === TRUNK)).toBe(40);
-      expect(ranks('role')).toBe(15);
+      expect(ranks('passive', (l) => l === TRUNK)).toBe(k === 'priest' ? 35 : 40);
+      expect(ranks('role')).toBe(k === 'priest' ? 20 : 15);
       expect(ranks('passive', (l) => l !== TRUNK)).toBe(60);
       expect(guaranteed).toBe(126);
     }
   });
 
-  it('every passive node is a percent bonus', () => {
+  it('every passive node is a percent bonus of a stat, or an effect passive with its behaviour and its words', () => {
     for (const k of CLASS_KEYS) {
-      for (const n of talentNodes(k)) if (n.kind === 'passive') expect(n.passive?.mode, n.key).toBe('percent');
+      for (const n of talentNodes(k)) {
+        if (n.kind !== 'passive') continue;
+        if (n.role === undefined) expect(n.passive?.mode, n.key).toBe('percent');
+        else {
+          expect(n.passive, n.key).toBeUndefined();
+          expect(n.desc, n.key).toBeDefined();
+        }
+      }
     }
   });
 
-  it('tier 1 keeps the values of the old row 1 (the fresh start does not change)', () => {
+  it('five effect passives per class, where the second combat wave put them', () => {
+    const where = (k: string): string[] =>
+      talentNodes(k).filter((n) => n.kind === 'passive' && n.role !== undefined).map((n) => `${n.key}@${n.lane}${n.rowIndex + 1}`);
+    expect(where('knight')).toEqual(['knight_guardian@trunk1', 'knight_close_ranks@bastion7', 'knight_weathered_hide@scourge7', 'knight_shelter@bastion9', 'knight_endurance@scourge9']);
+    expect(where('ranger')).toEqual(['ranger_first_blood@trunk1', 'ranger_countersniper@marksman7', 'ranger_pierce_through@stalker7', 'ranger_hemorrhage@marksman9', 'ranger_cruelty@stalker9']);
+    expect(where('priest')).toEqual(['priest_overflow@trunk1', 'priest_mantle@devotion7', 'priest_searing_light@zeal7', 'priest_revive@devotion9', 'priest_condemn@zeal9']);
+  });
+
+  it('tier 1 keeps the values of the old row 1 for the stat passive that stayed', () => {
     const value = (classKey: string, key: string): unknown => tryTalentNode(classKey, key)?.passive;
     expect(value('knight', 'knight_t1_health')).toEqual({ stat: 'health', mode: 'percent', valuePerRank: 2 });
-    expect(value('knight', 'knight_t1_armor')).toEqual({ stat: 'armor', mode: 'percent', valuePerRank: 2.5 });
     expect(value('ranger', 'ranger_t1_attackDamage')).toEqual({ stat: 'attackDamage', mode: 'percent', valuePerRank: 3 });
-    expect(value('ranger', 'ranger_t1_attackSpeed')).toEqual({ stat: 'attackSpeed', mode: 'percent', valuePerRank: 1.5 });
     expect(value('priest', 'priest_t1_healPower')).toEqual({ stat: 'healPower', mode: 'percent', valuePerRank: 3 });
-    expect(value('priest', 'priest_t1_health')).toEqual({ stat: 'health', mode: 'percent', valuePerRank: 2 });
   });
 });
 

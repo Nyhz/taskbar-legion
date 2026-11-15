@@ -5,7 +5,7 @@ import type { StatMod } from './stats';
 import type { ResolvedAbility } from './loadout';
 import type { UltimateDef } from '@/data/ultimates';
 import type { TriggerDef } from '@/data/triggers';
-import type { TargetCondition } from '@/data/talents';
+import type { PassiveEffect, TargetCondition } from '@/data/talents';
 
 // The mutable runtime state the Simulation owns and ticks. Combat mutates these
 // objects in place within a tick (deterministic — no hidden global state). The
@@ -26,6 +26,9 @@ export interface Combatant {
   attackTimerMs: number;
   x: number; // world position (heroes derived from partyX; enemies advance left)
   range: number; // attack reach (world px) — melee short, ranged/caster long
+  /** How far its SHOT can pick a target (world px), for the heroes that shoot: longer than `range`, which stays
+   *  where it stands (sim/targeting). Undefined: it hits only what it stands next to. */
+  shotReach?: number;
   moveSpeed: number; // px/s an enemy advances toward the party (0 for heroes)
   alive: boolean;
   respawnMs?: number; // when a hero is dead: ms left until it revives (heroes only); undefined = not respawning
@@ -44,6 +47,27 @@ export interface Combatant {
   lowHpMods?: readonly { hpBelow: number; mod: StatMod }[]; // stats that hold while its own life is under a share
   dealtBonuses?: readonly DealtBonus[]; // more damage / stronger heals depending on who receives them
   partyRegenPct?: number; // while alive: every hero regenerates this % of its max HP per second
+  /** Keys of the party auras this hero gives (a role talent with a stat for the whole party; an aura ability):
+   *  the strip reads them to draw the ones that have a look. */
+  auraKeys?: readonly string[];
+  /** Effect passives the hero holds, at their rank (sim/passives.ts). */
+  passives?: readonly { def: PassiveEffect; value: number }[];
+  // What the party's guard passives mean for this hero this tick (sim/passives.refreshPartyGuards):
+  divertPct?: number; // share of each hit aimed at it that the Knight takes instead (Guardian)
+  areaLessPct?: number; // less damage from area blows (Close Ranks)
+  takenLessPct?: number; // less damage, as the hero with the least life (Mantle)
+  overflowPct?: number; // healing that does not fit becomes a shield up to this share of its life (Overflow)
+  divertedPhys?: number; // raw damage handed to the Knight this tick, settled at its end
+  divertedMagic?: number;
+  sheltered?: boolean; // under the Shelter line and already given its protection
+  hideStacks?: number; // Weathered Hide: blocked hits banked
+  hideMisses?: number; // …and hits in a row without a block
+  struckBy?: string[]; // enemy-only: ids of the heroes that have already hit it (First Blood)
+  respawnTotalMs?: number; // hero-only: how long this fall waits in all (Revive shortens it) — the count's full bar
+  // ── what it has been through lately (sim/recent.ts; the abilities that react read it) ──
+  sinceHitMs?: number; // ms since it last took damage (undefined: not yet)
+  sinceHeavyHitMs?: number; // ms since a single blow last took a big share of its life
+  recentDamage?: number; // running tally of damage taken, fading (who is taking the most right now)
   // ── bookkeeping for triggers ──
   engaged?: boolean; // enemy-only: it has reached the fight (its engage triggers have fired)
   lastHitBy?: string; // enemy-only: id of the hero whose hit or bleed last landed (who gets the kill)
@@ -53,6 +77,17 @@ export interface Combatant {
   enemyMagic?: boolean;
   isBoss?: boolean;
   isElite?: boolean; // a beefed-up "champion" trash mob (2× hp/dmg, 2× chest) — render bigger
+  // ── what kind of wave enemy it is and what it has gained with the difficulty (data/enemies.ts, sim/enemyTraits.ts) ──
+  enemyRole?: 'beast' | 'soldier' | 'shooter' | 'brute' | 'support'; // wave enemies only (a boss or a summon has none)
+  traits?: readonly string[]; // its role's traits at this difficulty (data/enemies EnemyTrait), accumulated
+  guardUp?: boolean; // Guardia: the first direct hit it takes is parried
+  chargeUp?: boolean; // Embestida: its first basic attack is still to land (it hits harder)
+  shots?: number; // Tiro cargado: basic shots fired so far
+  rousedMs?: number; // Último aliento: ms it still attacks faster, roused by a soldier's death
+  auras?: readonly string[]; // a SUPPORT's own auras (data/enemies SupportAura): its whole wave carries them while it lives
+  underAuras?: Readonly<Partial<Record<string, number>>>; // what a living support's auras are worth on this enemy now (sim/enemyTraits)
+  aegis?: number; // Égida: what is left of the shield it entered with
+  aegisGiven?: boolean; // Égida: it has already been given that shield
   backShotChance?: number; // enemy-only: share of its basic attacks that go for a hero behind the front one (data/enemies)
   enrageMs?: number; // enrage window for this boss (Infinity = never; bosses = 60 s)
   bossUltTriggered?: boolean; // boss-only: the party's onBossEngage ults have fired for this boss
@@ -60,6 +95,29 @@ export interface Combatant {
   // `totalMs` (the cast bar) before its effect resolves. While set, the boss starts no new
   // cast. Render reads this to draw the under-boss cast bar (GameStrip → EnemySprite).
   casting?: { key: string; remainingMs: number; totalMs: number };
+  // ── the boss kit (data/bossKit.ts, sim/bossMechanics.ts) ──
+  affixes?: readonly string[]; // boss-only: its affix keys (data/bossKit BossAffixKey), in the list's order
+  mechanic?: string; // world-boss-only: its own mechanic (data/bossKit BossMechanicKey)
+  holdMs?: number; // boss-only: ms it still holds its ground instead of walking up (Resaca: the party was dragged back)
+  hpSeen?: number; // boss-only: its life at the end of the last tick (Culpa: what the party took off it since)
+  groundFire?: { leftMs: number; dps: number }; // boss-only, Hoja al rojo: the ground under the party still burns
+  lastHeroCast?: { key: string; rank: number; heroId?: string }; // boss-only, Espejos: the last ability a hero cast in this fight, and who cast it
+  /** Boss-only, Espejos: a reflection that was due while the last one still stood — it steps out when that one is gone. */
+  reflectionOwed?: { summon: string; hit: number; stage: number };
+  /** hero-only: what a mechanic that takes its toll little by little (Culpa, the burning ground) has cost since
+   *  the last number shown, by the ability key the numbers carry. */
+  tolls?: Record<string, { dmg: number; ms: number }>;
+  bossRank?: 'stage' | 'world'; // boss-only: which numbers of an affix apply to it
+  shellBackMs?: number; // Acorazado: ms until the broken shell returns
+  frenzyClockMs?: number; // Enfurecido: fight time since the last stack
+  /** A summoned creature (a world boss's crows): it leaves when `leftMs` runs out, gives no rewards, and flies to
+   *  its place over the back line instead of walking up to the front one. */
+  summon?: {
+    key: string; leftMs: number; slot: number; toX?: number; left?: boolean;
+    /** A reflection (Espejos): the hero it is the dark double of — it goes for him when he stands behind the front one. */
+    of?: { heroId: string; classKey: string };
+  };
+  dealtToBoss?: number; // hero-only: damage dealt to the boss of the fight under way (who Roots binds)
 }
 
 /** A role talent's bonus to what a hero deals: `pct`% more damage, or stronger heals, when the receiver meets
@@ -73,7 +131,7 @@ export interface DealtBonus {
 // Render/accrual event emitted by a combat tick (lives here so both combat.ts and
 // abilities.ts can produce them without an import cycle).
 export interface CombatEvent {
-  type: 'damage' | 'heal' | 'death' | 'cast';
+  type: 'damage' | 'heal' | 'death' | 'cast' | 'cue';
   targetId: string;
   sourceId?: string;
   amount?: number;
@@ -84,6 +142,12 @@ export interface CombatEvent {
   splash?: boolean; // this hit is AoE splash off a primary target (Priest auto) — reduced damage
   abilityKey?: string;
   tick?: boolean; // a DoT/HoT periodic tick (render as a number; no attack animation)
+  charged?: boolean; // an enemy's heavy basic attack: a shooter's Tiro cargado (the shot flies lit), a beast's Embestida (a burst on the hero)
+  /** type 'cue': something brief to SHOW on `targetId`, with no number (sim/enemyTraits): a soldier's parry
+   *  (`guard`), its Último aliento (`lastBreath`), a support falling with its auras (`supportDown`); a world boss
+   *  reflecting a hero's ability (`mirror`, with `abilityKey` the ability it reflects — sim/mirror).
+   *  On a 'heal' of a boss it says where the heal came from: `leech` is the Vampiric affix feeding on a hit. */
+  cue?: string;
 }
 
 export type StagePhase = 'advancing' | 'fighting' | 'boss' | 'zoneBoss' | 'walled';

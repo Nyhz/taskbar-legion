@@ -286,5 +286,133 @@
   "priest_cap_crusade.desc": {
     "en": "Battle Enrage also fires against elites and lasts 15s.",
     "es": "Furia de batalla salta también contra élites y dura 15 s."
+  },
+  "knight_guardian.name": {
+    "en": "Guardian",
+    "es": "Guardián"
+  },
+  "knight_guardian.desc": {
+    "en": "He takes on himself 4% per rank of the damage aimed at the heroes behind him.",
+    "es": "Recibe él un 4 % por rango del daño dirigido a los héroes de detrás."
+  },
+  "knight_close_ranks.name": {
+    "en": "Close Ranks",
+    "es": "Cerrar filas"
+  },
+  "knight_close_ranks.desc": {
+    "en": "While he lives, his allies take 2% less damage per rank from area blows.",
+    "es": "Mientras él vive, sus aliados reciben un 2 % menos de daño por rango de los golpes en área."
+  },
+  "knight_shelter.name": {
+    "en": "Shelter",
+    "es": "Amparo"
+  },
+  "knight_shelter.desc": {
+    "en": "When an ally drops under 50% of its life, that ally takes 3% less damage per rank for 6s.",
+    "es": "Cuando un aliado baja del 50 % de su vida, ese aliado recibe un 3 % menos de daño por rango durante 6 s."
+  },
+  "knight_weathered_hide.name": {
+    "en": "Weathered Hide",
+    "es": "Piel curtida"
+  },
+  "knight_weathered_hide.desc": {
+    "en": "Each blocked hit reduces the damage that follows by 1% per rank, up to 5 times. All of it is lost after 5 hits in a row without a block.",
+    "es": "Cada golpe bloqueado reduce un 1 % por rango el daño siguiente, hasta 5 veces. Se pierde entera tras 5 golpes seguidos sin bloquear."
+  },
+  "knight_endurance.name": {
+    "en": "Endurance",
+    "es": "Aguante"
+  },
+  "knight_endurance.desc": {
+    "en": "Hits for more than 15% of his life are reduced by 3% per rank.",
+    "es": "Los golpes de más del 15 % de su vida se reducen un 3 % por rango."
+  },
+  "ranger_first_blood.name": {
+    "en": "First Blood",
+    "es": "Primera sangre"
+  },
+  "ranger_first_blood.desc": {
+    "en": "+6% damage per rank on her first hit on each enemy.",
+    "es": "+6 % de daño por rango en su primer golpe a cada enemigo."
+  },
+  "ranger_countersniper.name": {
+    "en": "Countersniper",
+    "es": "Cazatiradores"
+  },
+  "ranger_countersniper.desc": {
+    "en": "+4% damage per rank to enemies that fight from range.",
+    "es": "+4 % de daño por rango a los enemigos que atacan a distancia."
+  },
+  "ranger_hemorrhage.name": {
+    "en": "Hemorrhage",
+    "es": "Hemorragia"
+  },
+  "ranger_hemorrhage.desc": {
+    "en": "Her critical hits also leave a bleed worth 4% of that hit per rank over 3s.",
+    "es": "Sus críticos dejan además un sangrado del 4 % de ese daño por rango durante 3 s."
+  },
+  "ranger_pierce_through.name": {
+    "en": "Pierce Through",
+    "es": "Atravesar"
+  },
+  "ranger_pierce_through.desc": {
+    "en": "When a shot kills, 10% per rank of the damage left over passes to the enemy behind.",
+    "es": "Si un disparo mata, un 10 % por rango del daño sobrante pasa al enemigo de detrás."
+  },
+  "ranger_cruelty.name": {
+    "en": "Cruelty",
+    "es": "Ensañamiento"
+  },
+  "ranger_cruelty.desc": {
+    "en": "+3% damage per rank to enemies that bleed, burn or are slowed.",
+    "es": "+3 % de daño por rango a los enemigos que sangran, arden o están ralentizados."
+  },
+  "priest_overflow.name": {
+    "en": "Overflow",
+    "es": "Rebosar"
+  },
+  "priest_overflow.desc": {
+    "en": "While she lives, healing that does not fit becomes a shield of up to 1% of life per rank.",
+    "es": "Mientras ella vive, la sanación sobrante se convierte en un escudo de hasta un 1 % de la vida por rango."
+  },
+  "priest_mantle.name": {
+    "en": "Mantle",
+    "es": "Manto"
+  },
+  "priest_mantle.desc": {
+    "en": "While she lives, the hero with the least life takes 2% less damage per rank.",
+    "es": "Mientras ella vive, el héroe con menos vida recibe un 2 % menos de daño por rango."
+  },
+  "priest_revive.name": {
+    "en": "Revive",
+    "es": "Reanimar"
+  },
+  "priest_revive.desc": {
+    "en": "Fallen heroes come back 6% sooner per rank.",
+    "es": "Los héroes caídos reaparecen un 6 % antes por rango."
+  },
+  "priest_searing_light.name": {
+    "en": "Searing Light",
+    "es": "Luz hiriente"
+  },
+  "priest_searing_light.desc": {
+    "en": "+6% damage per rank on her attacks and her damage abilities.",
+    "es": "+6 % de daño por rango en sus ataques y sus habilidades de daño."
+  },
+  "priest_condemn.name": {
+    "en": "Condemn",
+    "es": "Condena"
+  },
+  "priest_condemn.desc": {
+    "en": "Enemies hit by her damage abilities take 2% more damage per rank from the whole party for 4s.",
+    "es": "Los enemigos golpeados por sus habilidades de daño reciben un 2 % más de daño por rango de todo el grupo durante 4 s."
+  },
+  "priest_retribution.name": {
+    "en": "Retribution Aura",
+    "es": "Aura de castigo"
+  },
+  "priest_retribution.desc": {
+    "en": "The whole party deals 3% more damage per rank.",
+    "es": "Todo el grupo hace un 3 % más de daño por rango."
   }
 }

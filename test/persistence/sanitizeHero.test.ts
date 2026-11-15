@@ -6,7 +6,7 @@ import { heroAbilities, buildHeroCombatant, partyAuraMods } from '@/sim/loadout'
 import { spentPoints } from '@/sim/talentRules';
 import { abilityArtStem } from '@/ui/abilityArt';
 import { layoutTalentTree } from '@/ui/panels/hero/talentsLayout';
-import { talentTree } from '@/data/talents';
+import { REPLACED_NODES, talentTree } from '@/data/talents';
 import type { HeroState, SaveV1 } from '@/persistence/saveSchema';
 
 // Tolerant loading (docs/redesign/CLASSES.md §7): a save written against another talent tree — or a damaged
@@ -56,8 +56,8 @@ describe('sanitizeHeroTalents', () => {
   });
 
   it('wrong ranks and a wrong point count are put right from the level', () => {
-    const out = sanitizeHeroTalents(hero({ level: 12, talentPoints: 999, talents: { knight_guard: 50, knight_t1_health: -2, knight_t1_armor: 3.7 } }));
-    expect(out.talents).toEqual({ knight_guard: 5, knight_t1_armor: 3 });
+    const out = sanitizeHeroTalents(hero({ level: 12, talentPoints: 999, talents: { knight_guard: 50, knight_t1_health: -2, knight_guardian: 3.7 } }));
+    expect(out.talents).toEqual({ knight_guard: 5, knight_guardian: 3 });
     expect(out.talentPoints).toBe(4);
   });
 
@@ -122,5 +122,41 @@ describe('loading an old or damaged save into the game', () => {
     expect(st.spendTalent('h0', 'knight_r0_s2')).toBe(false); // a key from the old tree: refused, not a throw
     expect(st.refundTalent('h0', 'knight_r0_s2')).toBe(false);
     expect(useStore.getState().roster[0]?.talents.knight_t1_health).toBe(1);
+  });
+});
+
+describe('a save from before the second combat wave', () => {
+  it('Retribution learned as an ability loads as the passive it is now: its ranks stay, its slot is free', () => {
+    const old = hero({
+      classKey: 'priest', level: 40,
+      talents: { priest_mend: 5, priest_retribution: 4, priest_t1_healPower: 5, priest_t1_health: 5, priest_t2_magicResist: 5, priest_sacred_ward: 5, priest_t4_magicResist: 3 },
+      activeAbilities: ['priest_retribution', 'priest_mend'],
+    });
+    const out = sanitizeHeroTalents(old);
+    // Same key: its ranks carry over; the points of the magic-resist node it took the place of join it (to 5).
+    expect(out.talents.priest_retribution).toBe(5);
+    expect(out.activeAbilities).toEqual(['priest_mend']); // no longer an ability
+    // The tier-1 life node gave way to Overflow: its points stand there now, so every tier stays open.
+    expect(out.talents.priest_t1_health).toBeUndefined();
+    expect(out.talents.priest_overflow).toBe(5);
+    expect(out.talents.priest_t4_magicResist).toBeUndefined();
+    expect(spentPoints(out.talents) + out.talentPoints).toBe(40); // nothing lost: spent + to spend = earned
+    // It fights: the aura reaches the party, and there is room for a second ability (Purify).
+    expect(partyAuraMods([{ ...out, activeAbilities: out.activeAbilities }]).find((m) => m.key === 'damageIncrease')?.value).toBe(15);
+    expect(heroAbilities('priest', out.talents).map((a) => a.def.key)).toEqual(['priest_mend']);
+    expect(() => buildHeroCombatant({ id: out.id, classKey: out.classKey, level: out.level, equipment: {}, talents: out.talents, activeAbilities: out.activeAbilities }, [])).not.toThrow();
+    expect(abilityArtStem('priest_retribution')).toBeDefined(); // a stale key never throws in the interface
+  });
+
+  it('points in a stat node that gave way move to the passive standing there now, for the three classes', () => {
+    for (const [oldKey, newKey] of Object.entries(REPLACED_NODES)) {
+      const classKey = oldKey.split('_')[0] ?? '';
+      // The whole trunk bought, so every tier is open and the moved points have somewhere to stand.
+      const trunk = Object.fromEntries(talentTree(classKey).rows.slice(0, 4).flat().filter((n) => n.kind !== 'ability' && n.key !== newKey).map((n) => [n.key, n.maxRank]));
+      const branches = Object.fromEntries(talentTree(classKey).rows.slice(4, 9).flat().filter((n) => n.kind === 'passive' && n.key !== newKey).map((n) => [n.key, n.maxRank]));
+      const out = sanitizeHeroTalents(hero({ classKey, level: 120, talents: { ...trunk, ...branches, [oldKey]: 4 } }));
+      expect(out.talents[oldKey], oldKey).toBeUndefined();
+      expect(out.talents[newKey], `${oldKey} → ${newKey}`).toBe(4);
+    }
   });
 });

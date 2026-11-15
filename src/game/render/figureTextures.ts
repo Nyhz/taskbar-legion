@@ -1,6 +1,6 @@
 import { Assets, Rectangle, Texture } from 'pixi.js';
 import type { CreatureRole } from '@/data/worlds';
-import { figureMeta, frameCell, worldBossFigureKey, worldCreatureKeys, type FigureMeta } from './figureData';
+import { figureMeta, frameCell, worldBossFigureKey, worldCreatureKeys, worldSupportFigureKey, type FigureMeta } from './figureData';
 import { creatureSheetLoader, heroSheetUrl } from './figureSheets';
 
 // The figures' atlases as Pixi textures, cut into frames. The three HEROES load before the first frame
@@ -51,7 +51,7 @@ export function heroFigure(classKey: string): FigureSheet | null {
 }
 
 /** A world's cast by role, and the figure of its world boss when that world has one of its own. */
-export type WorldFigures = Record<CreatureRole, FigureSheet> & { worldBoss?: FigureSheet };
+export type WorldFigures = Record<CreatureRole, FigureSheet> & { worldBoss?: FigureSheet; support?: FigureSheet };
 
 // The world on screen and the one before it stay loaded (four small atlases each).
 const KEEP = 2;
@@ -71,14 +71,16 @@ async function loadWorld(world: number): Promise<void> {
     return loadSheet(key, url);
   };
   const own = worldBossFigureKey(world);
-  const [beast, melee, ranged, boss, worldBoss] = await Promise.all([
+  const ownSupport = worldSupportFigureKey(world);
+  const [beast, melee, ranged, boss, worldBoss, support] = await Promise.all([
     load(cast.beast),
     load(cast.melee),
     load(cast.ranged),
     load(cast.boss),
     own === undefined ? Promise.resolve(undefined) : load(own),
+    ownSupport === undefined ? Promise.resolve(undefined) : load(ownSupport),
   ]);
-  worlds.set(world, { urls, figures: { beast, melee, ranged, boss, ...(worldBoss === undefined ? {} : { worldBoss }) } });
+  worlds.set(world, { urls, figures: { beast, melee, ranged, boss, ...(worldBoss === undefined ? {} : { worldBoss }), ...(support === undefined ? {} : { support }) } });
   trim(world);
 }
 

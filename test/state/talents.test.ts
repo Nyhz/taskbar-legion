@@ -40,7 +40,7 @@ describe('spendTalent / refundTalent / respec', () => {
     reset();
     spend('knight_guard', 5);
     spend('knight_debilitate', 5);
-    for (const key of ['knight_t1_health', 'knight_t1_armor', 'knight_t2_health', 'knight_t2_block', 'knight_t3_armor', 'knight_t3_magicResist']) spend(key, 5);
+    for (const key of ['knight_t1_health', 'knight_guardian', 'knight_t2_health', 'knight_t2_block', 'knight_t3_armor', 'knight_t3_magicResist']) spend(key, 5);
     expect(spend('knight_mod_shared_skin')).toEqual([false]); // 40 spent: tier 6 opens at 50
     for (const key of ['knight_t4_health', 'knight_t4_block', 'knight_vanguard']) spend(key, 5); // 55 spent
     expect(spend('knight_mod_mending_bulwark')).toEqual([false]); // Bulwark is not learned
@@ -63,17 +63,17 @@ describe('spendTalent / refundTalent / respec', () => {
     reset();
     spend('knight_guard', 5);
     spend('knight_debilitate', 5);
-    const trunk = ['knight_t1_health', 'knight_t1_armor', 'knight_t2_health', 'knight_t2_block', 'knight_t3_armor', 'knight_t3_magicResist', 'knight_t4_health', 'knight_t4_block', 'knight_vanguard', 'knight_unyielding', 'knight_warden'];
+    const trunk = ['knight_t1_health', 'knight_guardian', 'knight_t2_health', 'knight_t2_block', 'knight_t3_armor', 'knight_t3_magicResist', 'knight_t4_health', 'knight_t4_block', 'knight_vanguard', 'knight_unyielding', 'knight_warden'];
     for (const key of trunk) expect(spend(key, 5).every(Boolean), key).toBe(true);
     expect(spend('knight_cap_living_wall')).toEqual([false]); // 65 spent: tier 10 opens at 90
-    for (const key of ['knight_bastion_t5_magicResist', 'knight_bastion_t7_armor', 'knight_bastion_t7_health', 'knight_bastion_t8_block', 'knight_bastion_t9_health']) spend(key, 5);
+    for (const key of ['knight_bastion_t5_magicResist', 'knight_close_ranks', 'knight_bastion_t7_health', 'knight_bastion_t8_block', 'knight_shelter']) spend(key, 5);
     expect(h().talentPoints).toBe(120 - 90);
     expect(spend('knight_cap_living_wall')).toEqual([true]);
     expect(spend('knight_cap_vengeance')).toEqual([false]);
     // The capstone's branch points cannot be pulled from under it.
-    expect(useStore.getState().refundTalent('h0', 'knight_bastion_t9_health')).toBe(false);
+    expect(useStore.getState().refundTalent('h0', 'knight_shelter')).toBe(false);
     expect(useStore.getState().refundTalent('h0', 'knight_cap_living_wall')).toBe(true);
-    expect(useStore.getState().refundTalent('h0', 'knight_bastion_t9_health')).toBe(true);
+    expect(useStore.getState().refundTalent('h0', 'knight_shelter')).toBe(true);
   });
 
   it('respec gives every point back, for free', () => {

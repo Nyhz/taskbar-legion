@@ -2,6 +2,9 @@ import type { Combatant } from './world';
 import { aggregate, type EffectiveStats } from './stats';
 import { effectStatMods } from './effects';
 import type { TargetCondition } from '@/data/talents';
+import { effectDef } from '@/data/effects';
+import { RANGE } from '@/data/field';
+import { blockStreakReduction } from './passives';
 
 // A combatant's stats RIGHT NOW, and the role talents' conditional bonuses (docs/redesign/CLASSES.md, F4).
 // Pure reads of the combatant; combat and ability resolution both go through here so a conditional stat
@@ -14,10 +17,23 @@ export function liveStats(c: Combatant): EffectiveStats {
   if (c.lowHpMods !== undefined) {
     for (const m of c.lowHpMods) if (c.hp < c.maxHp * m.hpBelow) mods.push(m.mod);
   }
+  // Weathered Hide: blocked hits banked as damage reduction.
+  if (c.hideStacks !== undefined && c.hideStacks > 0) mods.push({ key: 'damageReduction', mode: 'percent', value: blockStreakReduction(c) });
   return aggregate(c.baseStats, mods);
 }
 
-function meets(when: TargetCondition, target: Combatant): boolean {
+/** Bleeding, burning or slowed: a damage-over-time effect, or a slow, on it. */
+function afflicted(target: Combatant): boolean {
+  for (const e of target.effects) {
+    if (e.remainingMs <= 0) continue;
+    const kind = effectDef(e.defKey).kind;
+    if (kind.type === 'dot') return true;
+    if (kind.type === 'statMod' && kind.stat === 'attackSpeed' && e.value < 0) return true;
+  }
+  return false;
+}
+
+function meets(when: TargetCondition, target: Combatant, source: Combatant): boolean {
   switch (when.type) {
     case 'hpBelow':
       return target.hp < target.maxHp * when.frac;
@@ -25,6 +41,14 @@ function meets(when: TargetCondition, target: Combatant): boolean {
       return target.engaged !== true; // still walking in: it has not reached the fight
     case 'eliteOrBoss':
       return target.isElite === true || target.isBoss === true;
+    case 'firstHit':
+      return target.struckBy === undefined || !target.struckBy.includes(source.id);
+    case 'ranged':
+      return target.range >= RANGE.ranged;
+    case 'afflicted':
+      return afflicted(target);
+    case 'always':
+      return true;
   }
 }
 
@@ -34,6 +58,15 @@ export function dealtMult(source: Combatant, target: Combatant, what: 'damage' |
   const bonuses = source.dealtBonuses;
   if (bonuses === undefined) return 1;
   let pct = 0;
-  for (const b of bonuses) if (b.what === what && meets(b.when, target)) pct += b.pct;
+  for (const b of bonuses) if (b.what === what && meets(b.when, target, source)) pct += b.pct;
   return 1 + pct / 100;
+}
+
+/** `source` has just hit the enemy `target` (a blow, an ability, a bleed laid on it): from now on it is not its
+ *  first hit on it (First Blood). Only heroes that care keep the list. */
+export function noteStruck(source: Combatant, target: Combatant): void {
+  if (source.dealtBonuses === undefined || target.side !== 'enemy') return;
+  if (!source.dealtBonuses.some((b) => b.when.type === 'firstHit')) return;
+  const list = (target.struckBy ??= []);
+  if (!list.includes(source.id)) list.push(source.id);
 }

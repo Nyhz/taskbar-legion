@@ -46,6 +46,9 @@ export function Controls(): React.JSX.Element {
         <Node kind="role" state="off" sign="stat_armor" pips={{ rank: 0, max: 3 }} locked />
         <Node kind="role" state="on" sign="stat_health" pips={{ rank: 2, max: 3 }} onClick={noop} />
         <Node kind="role" state="max" sign="stat_block" pips={{ rank: 3, max: 3 }} onClick={noop} />
+        <Node kind="effect" state="off" sign="tal_e_guardian" pips={{ rank: 0, max: 5 }} locked />
+        <Node kind="effect" state="on" sign="tal_e_overflow" pips={{ rank: 2, max: 5 }} onClick={noop} />
+        <Node kind="effect" state="max" sign="tal_e_pierce_through" pips={{ rank: 5, max: 5 }} onClick={noop} />
       </div>
       <div className="tk-niche" />
     </div>

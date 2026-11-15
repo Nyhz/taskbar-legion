@@ -2,6 +2,7 @@ import type { Combatant } from '@/sim/world';
 import type { Rng } from '@/sim/rng';
 import { heroAbilities, type ResolvedAbility } from '@/sim/loadout';
 import type { StatKey } from '@/data/stats';
+import type { AbilityDef } from '@/data/abilities';
 import { talentNodes, tryTalentNode } from '@/data/talents';
 import { canSpend } from '@/sim/talentRules';
 
@@ -22,7 +23,15 @@ export const base = (s: Partial<Record<StatKey, number>>): Partial<Record<StatKe
 export function learned(classKey: string, talents: Record<string, number>, abilityKey: string): ResolvedAbility {
   const found = heroAbilities(classKey, talents).find((a) => a.def.key === abilityKey);
   if (found === undefined) throw new Error(`${abilityKey} is not learned in this build`);
-  return found;
+  return { ...found, def: anyMoment(found.def) };
+}
+
+/** The ability without its fire rule (data/abilities `fires`): it casts as soon as it is ready, so a test about
+ *  WHAT an ability does need not stage the moment it waits for. When each one fires is test/sim/fireRules.test.ts. */
+export function anyMoment(def: AbilityDef): AbilityDef {
+  const copy = { ...def };
+  delete copy.fires;
+  return copy;
 }
 
 /** An RNG whose every chance fails (no crit, no block) and that counts how often it was asked. */

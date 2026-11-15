@@ -3,7 +3,9 @@ import { getEngine } from '@/game/engineRef';
 import { MAX_ACTIVE_ABILITIES, heroAbilities } from '@/sim/loadout';
 import { tryAbilityDef, type AbilityDef } from '@/data/abilities';
 import { ULTIMATES } from '@/data/ultimates';
-import { abilityDescription, abilityName, ultimateDescription, ultimateName, useT, type TextKey } from '@/i18n';
+import { talentNodes } from '@/data/talents';
+import { abilityDescription, abilityName, ultimateDescription, ultimateName, useT } from '@/i18n';
+import { fireLine, ultimateFireLine } from './talentWords';
 import { abilityArtStem, ultimateArtStem } from '@/ui/abilityArt';
 import { Node, Sign, Tip, TipLine, TipName, TipSub, TipText, TipTitle } from '@/ui/kit';
 
@@ -11,11 +13,6 @@ import { Node, Sign, Tip, TipLine, TipName, TipSub, TipText, TipTitle } from '@/
 // no slot) and the abilities the hero has learned in Talents (at most MAX_ACTIVE_ABILITIES: learned = active),
 // with their live cooldown or charges. Re-renders with each HUD push. Ability and ultimate names come straight
 // from data (English) until the class kits are redesigned and get their dictionaries.
-
-const TRIGGER_TEXT: Record<string, TextKey> = {
-  onLethalDamage: 'hero.triggerLethal',
-  onBossEngage: 'hero.triggerBoss',
-};
 
 export function AbilityRow({ heroId }: { heroId: string }): React.JSX.Element | null {
   const t = useT();
@@ -26,7 +23,8 @@ export function AbilityRow({ heroId }: { heroId: string }): React.JSX.Element | 
   const combatant = getEngine()?.world.heroes.find((h) => h.id === heroId);
   const ult = ULTIMATES[hero.classKey];
   const ultOn = ult !== undefined && hero.level >= ult.unlockLevel;
-  const trigger = ult === undefined ? undefined : TRIGGER_TEXT[ult.trigger];
+  // The capstone the hero holds can widen when the ultimate fires (elites too).
+  const capstone = talentNodes(hero.classKey).find((n) => n.kind === 'capstone' && (hero.talents[n.key] ?? 0) > 0);
 
   return (
     <>
@@ -42,7 +40,8 @@ export function AbilityRow({ heroId }: { heroId: string }): React.JSX.Element | 
             <TipName>{ultimateName(hero.classKey)}</TipName>
             <TipSub>{t('hero.ultimate')}</TipSub>
             <TipText>{ultimateDescription(hero.classKey)}</TipText>
-            {trigger !== undefined && <TipText>{t(trigger)}</TipText>}
+            <TipLine label={t('talents.fires')} />
+            <TipText>{ultimateFireLine(ult, capstone?.ult)}</TipText>
             <TipText>{ultOn ? t('hero.ultUnlocked') : t('hero.ultLocked', { n: ult.unlockLevel })}</TipText>
           </Tip>
         </Node>
@@ -102,6 +101,12 @@ function AbilityNode({
         {charge !== undefined && (def.charge?.perAttack ?? 0) > 0 && <TipText>{t('hero.abilityChargesHelp')}</TipText>}
         {!passive && charge === undefined && (
           <TipLine label={t('hero.cooldown')} value={`${Number((def.cooldownMs / 1000).toFixed(1))} s`} />
+        )}
+        {!passive && (
+          <>
+            <TipLine label={t('talents.fires')} />
+            <TipText>{fireLine(def)}</TipText>
+          </>
         )}
       </Tip>
     </Node>

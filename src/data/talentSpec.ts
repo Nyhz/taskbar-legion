@@ -21,7 +21,38 @@ export const TRUNK = 'trunk';
 export type TargetCondition =
   | { type: 'hpBelow'; frac: number } // under this share of its life
   | { type: 'approaching' } // an enemy that has not reached the fight yet
-  | { type: 'eliteOrBoss' };
+  | { type: 'eliteOrBoss' }
+  | { type: 'firstHit' } // an enemy this hero has not hit yet
+  | { type: 'ranged' } // an enemy that fights from range
+  | { type: 'afflicted' } // an enemy that bleeds, burns or is slowed
+  | { type: 'always' };
+
+/** An EFFECT passive (second combat wave, B — agreed 2026-11-15): a passive with behaviour of its own, read by
+ *  sim/passives.ts. The figure per rank is the role's `perRank`; what is written here are its fixed numbers. */
+export type PassiveEffect =
+  // The owner takes a share of the damage AIMED at the heroes behind the front one (mitigated by his own defences).
+  | { is: 'intercept' }
+  // While the owner lives, the rest of the party takes less from area blows.
+  | { is: 'areaGuard' }
+  // When an ally drops under `hpBelow` of its life, that ally takes less damage for a while (`effectKey`).
+  | { is: 'allyLowGuard'; hpBelow: number; effectKey: string }
+  // Each blocked hit is a stack of less damage taken (up to `maxStacks`); all lost after `missesToLose` hits in
+  // a row without a block.
+  | { is: 'blockStreak'; maxStacks: number; missesToLose: number }
+  // Hits over `lifeFrac` of the owner's life are reduced.
+  | { is: 'bigHitGuard'; lifeFrac: number }
+  // The owner's critical hits also leave a bleed (`effectKey`) worth a share of that hit, over the effect's time.
+  | { is: 'critBleed'; effectKey: string }
+  // When the owner's shot kills, a share of the damage left over goes to the enemy behind.
+  | { is: 'overkillPierce' }
+  // While the owner lives, healing that does not fit becomes a shield (`effectKey`), up to a share of life.
+  | { is: 'overhealShield'; effectKey: string }
+  // While the owner lives, the hero with the least life takes less damage.
+  | { is: 'lowestGuard' }
+  // Fallen heroes come back sooner.
+  | { is: 'fasterRespawn' }
+  // Enemies hit by the owner's damage abilities take more damage from everyone for a while (`effectKey`).
+  | { is: 'condemn'; effectKey: string };
 
 /** What a ROLE talent does — a passive with behaviour (F4). Values are per rank. */
 export type RoleEffect =
@@ -32,7 +63,9 @@ export type RoleEffect =
   // A stat for the owner while its own life is under a share.
   | { type: 'selfStatWhen'; hpBelow: number; stat: StatKey; mode: 'flat' | 'percent'; valuePerRank: number }
   // More damage dealt / stronger heals, depending on who receives them.
-  | { type: 'dealt'; what: 'damage' | 'heal'; when: TargetCondition; pctPerRank: number };
+  | { type: 'dealt'; what: 'damage' | 'heal'; when: TargetCondition; pctPerRank: number }
+  // An effect passive: `perRank` is its figure (a percentage) per rank.
+  | { type: 'passive'; effect: PassiveEffect; perRank: number };
 
 export interface TalentNode {
   /** Stable key (what a save stores). An ability node's key is its ability key. */
@@ -43,14 +76,14 @@ export interface TalentNode {
   /** TRUNK, or the key of the branch it belongs to. */
   lane: string;
   name: string;
-  /** What it does, in English (role talents, modifiers, capstones). */
+  /** What it does, in English (role talents, effect passives, modifiers, capstones). */
   desc?: string;
   maxRank: number;
   /** passive: a percent of a stat per rank. */
   passive?: { stat: StatKey; mode: 'flat' | 'percent'; valuePerRank: number };
   /** ability: the ability it teaches. */
   abilityKey?: string;
-  /** role: its behaviour. */
+  /** role, or an effect passive: its behaviour. */
   role?: RoleEffect;
   /** modifier: the ability it changes — usable only while that ability is learned, and given back with it. */
   modifies?: string;
@@ -107,6 +140,12 @@ export function stat(key: string, statKey: StatKey, perRank: number): NodeSpec {
 /** A role talent (5 ranks). */
 export function role(key: string, name: string, desc: string, effect: RoleEffect): NodeSpec {
   return { key, kind: 'role', name, desc, maxRank: RANKS, role: effect };
+}
+
+/** An EFFECT passive (5 ranks): a passive with behaviour of its own instead of a stat — it stands where a stat
+ *  passive would (same frame, same place in the row) and carries a role effect. */
+export function effect(key: string, name: string, desc: string, behaviour: RoleEffect): NodeSpec {
+  return { key, kind: 'passive', name, desc, maxRank: RANKS, role: behaviour };
 }
 
 /** A modifier (1 rank) of an ability: a patch on its definition and/or triggers. */

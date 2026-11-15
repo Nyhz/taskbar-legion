@@ -14,8 +14,31 @@ import { PRIEST_TREE } from './talentTrees/priest';
 // The model and the node constructors are in data/talentSpec.ts, the content in data/talentTrees/*; the rules
 // (what can be bought or given back) are pure functions in sim/talentRules.ts.
 
-export type { RoleEffect, TalentBranch, TalentNode, TalentNodeKind, TargetCondition } from './talentSpec';
+export type { PassiveEffect, RoleEffect, TalentBranch, TalentNode, TalentNodeKind, TargetCondition } from './talentSpec';
 export { CAPSTONE_BRANCH_POINTS, TRUNK } from './talentSpec';
+
+/** Nodes that took the PLACE of another (second combat wave, 2026-11-15: an effect passive where a stat passive
+ *  stood): old key → the key that stands there now. A save's points in the old node move to the new one
+ *  (sim/talentRules.sanitizeTalents), so the tiers a build had open stay open; what does not fit is given back. */
+export const REPLACED_NODES: Readonly<Record<string, string>> = {
+  knight_t1_armor: 'knight_guardian',
+  knight_bastion_t7_armor: 'knight_close_ranks',
+  knight_bastion_t9_health: 'knight_shelter',
+  knight_scourge_t7_health: 'knight_weathered_hide',
+  knight_scourge_t9_damageReduction: 'knight_endurance',
+  ranger_t1_attackSpeed: 'ranger_first_blood',
+  ranger_marksman_t7_attackDamage: 'ranger_countersniper',
+  ranger_marksman_t9_critChance: 'ranger_hemorrhage',
+  ranger_pierce_armor: 'ranger_hemorrhage', // the passive that stood there first (it did nothing: no enemy armour)
+  ranger_stalker_t7_attackDamage: 'ranger_pierce_through',
+  ranger_stalker_t9_cooldownReduction: 'ranger_cruelty',
+  priest_t1_health: 'priest_overflow',
+  priest_devotion_t7_magicResist: 'priest_mantle',
+  priest_devotion_t9_cooldownReduction: 'priest_revive',
+  priest_zeal_t7_health: 'priest_searing_light',
+  priest_zeal_t9_healPower: 'priest_condemn',
+  priest_t4_magicResist: 'priest_retribution', // the aura took this node's place (it keeps its own ranks first)
+};
 
 export interface ClassTalentTree {
   classKey: string;

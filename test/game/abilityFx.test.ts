@@ -217,7 +217,7 @@ describe('tileCount', () => {
 });
 
 describe('fxFrameAt', () => {
-  const meta = { x: 0, y: 0, w: 8, h: 8, cols: 3, ax: 4, ay: 8, n: 3, ms: [100, 50, 50], loop: false };
+  const meta = { page: 0, x: 0, y: 0, w: 8, h: 8, cols: 3, ax: 4, ay: 8, n: 3, ms: [100, 50, 50], loop: false };
   it('steps through a one-shot by its own frame times and ends', () => {
     expect(fxTotalMs(meta)).toBe(200);
     expect([0, 99, 100, 149, 150, 199].map((t) => fxFrameAt(meta, t))).toEqual([0, 0, 1, 1, 2, 2]);

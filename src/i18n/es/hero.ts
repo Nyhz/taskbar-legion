@@ -24,8 +24,6 @@ export const hero: Record<keyof typeof en, string> = {
   softCap: 'Techo',
   partyAuras: 'De las auras del grupo:',
   ultimate: 'Definitiva',
-  triggerLethal: 'Salta cuando va a recibir un golpe mortal.',
-  triggerBoss: 'Salta al trabar combate con un jefe de etapa o de mundo.',
   ultUnlocked: 'Desbloqueada: salta sola y no ocupa hueco de habilidad.',
   ultLocked: 'Se desbloquea al nivel {n}.',
   ability: 'Habilidad',

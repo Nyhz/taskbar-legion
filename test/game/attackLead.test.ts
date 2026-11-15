@@ -114,6 +114,10 @@ describe('abilityTakesSwing', () => {
     expect(abilityTakesSwing(mend)).toBe(false);
     const cry = { attackTimerMs: 300, cooldowns: { c: 0 }, abilities: [{ def: { key: 'c', castCondition: 'enemyPresent' } }] };
     expect(abilityTakesSwing(cry)).toBe(true);
+    const rule = (fires: { when: string; foes?: number }) => ({ attackTimerMs: 300, cooldowns: { f: 0 }, abilities: [{ def: { key: 'f', fires } }] });
+    expect(abilityTakesSwing(rule({ when: 'inReach', foes: 1 }))).toBe(true);
+    expect(abilityTakesSwing(rule({ when: 'inReach', foes: 2 }))).toBe(false);
+    expect(abilityTakesSwing(rule({ when: 'partyHit' }))).toBe(false);
   });
 
   it('is false with no abilities', () => {

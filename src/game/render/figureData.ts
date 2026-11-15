@@ -1,6 +1,8 @@
 import file from '@/assets/strip/figs/figs.json';
 import { RANGE } from '@/data/field';
 import { tryWorldDef, type CreatureRole } from '@/data/worlds';
+import type { EnemyRole } from '@/data/enemies';
+import { ROLE_FIGURE } from './foeFx';
 
 // The strip's FIGHTERS as data (no Pixi here — pure, unit-tested): every figure's atlas layout and animations, and
 // which ROLE of a world's cast (data/worlds.ts) an enemy of the simulation is drawn as. The file is written by the asset pipeline
@@ -98,6 +100,7 @@ export interface EnemyLook {
   range: number;
   isBoss?: boolean;
   enemyMagic?: boolean;
+  enemyRole?: EnemyRole;
 }
 
 function hashId(id: string): number {
@@ -107,15 +110,25 @@ function hashId(id: string): number {
 }
 
 /**
- * The role an enemy of the simulation is drawn as. A boss is the world's boss; whatever attacks from afar (an
- * archer, a caster) is its ranged creature. The simulation has no "beast" kind of its own (its melee kinds are the
- * grunt and the brute, which a Combatant does not tell apart), so melee enemies alternate between the world's
- * melee creature and its beast by their id — the same enemy is always the same creature, and both appear.
+ * The role an enemy of the simulation is drawn as. A boss is the world's boss. A wave enemy says what it is
+ * (`enemyRole`: data/enemies) and each kind has its figure (render/foeFx ROLE_FIGURE): the beast is the world's
+ * beast, the soldier and the brute its melee fighter (the brute a size up), the shooter and — until its world has
+ * one of its own — the support its ranged creature. An enemy that does not say (a stale value, a test's bare
+ * enemy) falls back to how it attacks: from afar the ranged creature, else the melee fighter or the beast by its
+ * id — the same enemy is always the same creature.
  */
 export function creatureRole(c: EnemyLook): CreatureRole {
   if (c.isBoss === true) return 'boss';
+  if (c.enemyRole !== undefined) return ROLE_FIGURE[c.enemyRole];
   if (c.enemyMagic === true || c.range >= RANGE.ranged) return 'ranged';
   return hashId(c.id) % 2 === 0 ? 'melee' : 'beast';
+}
+
+/** The figure of a world's SUPPORT, if that world has a creature of its own for it (data/worlds `support`) and
+ *  its figure has been exported; otherwise undefined, and its ranged creature stands in, tinted. */
+export function worldSupportFigureKey(world: number): string | undefined {
+  const key = tryWorldDef(world)?.support?.key;
+  return key !== undefined && figureMeta(key) !== undefined ? key : undefined;
 }
 
 /** How an enemy is told apart by its marking, not by its figure. */

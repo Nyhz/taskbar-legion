@@ -10,6 +10,17 @@
 .tk-map-diff:not(.shut):hover > img { filter: brightness(1.2); }
 .tk-map-diff.on { box-shadow: inset 0 -1px 0 var(--gold); }
 .tk-map-diff.shut { cursor: default; }
+/* A difficulty's tooltip also says what its enemies do (MapFoes): one row per trait — the kind, then the trait
+   in a sentence — and one per aura of the support, behind its sign. Wider than a wide tip so most rows are one
+   line: the tallest (Torment) must fit over the strip on every target screen. */
+.tk-map-diff > .tk-tip.wide { width: 268px; }
+.tk-map-foes .hd { padding-bottom: 1px; }
+.tk-map-foes .tr { display: grid; grid-template-columns: 34px 1fr; gap: 3px; padding-top: 2px; }
+.tk-map-foes .tr > b { font-weight: 400; color: var(--k9); }
+.tk-map-foes .tr.sup { padding-top: 5px; }
+.tk-map-foes .tr.sup > b { color: var(--gold-hi); }
+.tk-map-foes .au { display: grid; grid-template-columns: 9px 1fr; gap: 4px; align-items: start; padding: 2px 0 0 37px; }
+.tk-map-foes .au > .sg { display: block; width: 9px; height: 9px; image-rendering: pixelated; margin-top: 1px; }
 
 .tk-map-worlds { display: grid; grid-template-columns: repeat(3, 50px); gap: 3px 2px; margin-top: 3px; }
 .tk-map-w { position: relative; display: block; width: 50px; }

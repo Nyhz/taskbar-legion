@@ -100,4 +100,26 @@ export const BRANCH_EFFECTS: Record<string, EffectDef> = {
     ...base, key: 'buff_aegis_dr', name: 'Aegis', icon: 'shield',
     kind: { type: 'statMod', stat: 'damageReduction', mode: 'percent', value: 10 }, durationMs: 4000, beneficial: true,
   },
+  // ── Effect passives (second combat wave, B) — values come from the talent's rank at apply time ──────────
+  // Shelter (Knight): an ally that drops under half its life takes less damage for 6s.
+  buff_shelter: {
+    ...base, key: 'buff_shelter', name: 'Shelter', icon: 'shield',
+    kind: { type: 'statMod', stat: 'damageReduction', mode: 'percent', value: 0 }, durationMs: 6000, beneficial: true,
+  },
+  // Hemorrhage (Ranger): a bleed her critical hits leave — a share of that hit over 3s. Its own key, so it adds
+  // to the Caltrops' bleed instead of overwriting it.
+  fx_hemorrhage: {
+    ...base, key: 'fx_hemorrhage', name: 'Hemorrhage', icon: 'bleed',
+    kind: { type: 'dot', damagePerTick: 0 }, durationMs: 3000, beneficial: false,
+  },
+  // Overflow (Priest): healing that did not fit, kept as a small shield.
+  fx_overflow: {
+    ...base, key: 'fx_overflow', name: 'Overflow', icon: 'shield',
+    kind: { type: 'shield' }, durationMs: 8000, beneficial: true,
+  },
+  // Condemn (Priest): an enemy hit by her damage abilities takes more damage from the whole party for 4s.
+  debuff_condemn: {
+    ...base, key: 'debuff_condemn', name: 'Condemned', icon: 'aim',
+    kind: { type: 'vulnerable' }, durationMs: 4000, beneficial: false,
+  },
 };

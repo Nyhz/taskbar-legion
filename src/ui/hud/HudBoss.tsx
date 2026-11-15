@@ -4,11 +4,13 @@ import { BOSS_ENRAGE_RAMP_MS } from '@/data/stageScaling';
 import { creatureName, useT } from '@/i18n';
 import { worldInDifficulty } from '@/data/difficulties';
 import { tryWorldDef } from '@/data/worlds';
-import { Bar, Sign, Tip, TipText, TipTitle } from '@/ui/kit';
+import { Bar, Sign, Tip, TipNote, TipText, TipTitle } from '@/ui/kit';
 import { bossPlateInfo, clockText } from './bossPlate';
+import { bossMarks } from './bossMarks';
 
 // With a boss in front (stage boss or world boss) the rail's middle IS the boss's line: a sign for its rank
-// (skull: stage boss; gold crown: world boss), its NAME, its life, and the clock before it enrages — then the
+// (skull: stage boss; gold crown: world boss), its NAME, the marks of its kit (a world boss's own mechanic, then
+// its affixes: a small sign each, the words in its tooltip), its life, and the clock before it enrages — then the
 // enrage stacks (×N: its damage doubles every BOSS_ENRAGE_RAMP_MS). It lives on the rail, not on the strip, so
 // nothing covers a boss as tall as the strip; the boss wears no life bar of its own (one bar, not two). It stays
 // through the beat a fallen world boss gets (sim `bossDown`), its bar empty. Reads the live sim boss and
@@ -39,6 +41,19 @@ export function HudBoss(): React.JSX.Element | null {
     <div className={`tk-hud-foe ${info.rank === 'worldBoss' ? 'world' : 'stage'}`}>
       <Sign name={info.sign} alt={rankName} />
       <div className="nm">{name}</div>
+      {bossMarks(boss, globalStage).map((mark) => (
+        <div key={mark.key} className={`tk-hud-foe-mark has ${mark.kind}`}>
+          <Sign name={mark.sign} alt={mark.name} />
+          {mark.count !== undefined && <span className="n">{mark.count}</span>}
+          {/* A mark with more than one part gets a broader tip, so it stays short enough for the smallest screen. */}
+          <Tip side="below" size={mark.more === undefined ? undefined : 'wide'}>
+            <TipTitle>{mark.name}</TipTitle>
+            <TipText>{mark.help}</TipText>
+            {mark.more?.map((line) => <TipText key={line}>{line}</TipText>)}
+            <TipNote>{mark.kindName}</TipNote>
+          </Tip>
+        </div>
+      ))}
       <Bar className="tk-hud-foe-life" value={boss.alive && boss.maxHp > 0 ? boss.hp / boss.maxHp : 0} tone="danger" />
       {timed && (
         <div className={`tk-hud-foe-clock has${enraged ? ' late' : ''}`}>

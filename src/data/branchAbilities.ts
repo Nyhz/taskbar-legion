@@ -12,7 +12,9 @@ export const BRANCH_ABILITIES: Record<string, AbilityDef> = {
     cooldownMs: 26000, target: 'allAllies',
     // buff_holdline_dr: 10% less damage taken at rank 1, +2.5/rank → 20% at rank 5. 6s.
     applies: [{ effectKey: 'buff_holdline_dr' }],
-    castCondition: 'enemyPresent', rankScaling: { perRank: { value: 2.5 } },
+    // When the party is being hit; with a boss in the fight it is kept for the wind-up of its area blow (one
+    // every 10 s, so it never waits longer than that).
+    castCondition: 'enemyPresent', fires: { when: 'partyHit', atAreaBlow: true }, rankScaling: { perRank: { value: 2.5 } },
   },
   // ── Knight · Scourge ──
   knight_riposte: {
@@ -21,7 +23,7 @@ export const BRANCH_ABILITIES: Record<string, AbilityDef> = {
     cooldownMs: 0, target: 'frontEnemy',
     // 1.5×→2.5× AD (+0.25/rank) + debuff_riposte_weaken: deals 10%→20% less damage (+2.5/rank) for 4s.
     applies: [{ effectKey: 'fx_damage' }, { effectKey: 'debuff_riposte_weaken' }],
-    castCondition: 'enemyPresent', power: { coeff: 1.5, coeffPerRank: 0.25, canCrit: true },
+    castCondition: 'enemyPresent', fires: { when: 'inReach', foes: 1 }, power: { coeff: 1.5, coeffPerRank: 0.25, canCrit: true },
     rankScaling: { perRank: { value: 2.5 } },
     charge: { perAttack: 0, toCast: 4 },
     triggers: [
@@ -32,11 +34,11 @@ export const BRANCH_ABILITIES: Record<string, AbilityDef> = {
   // ── Ranger · Marksman ──
   ranger_weakspot: {
     key: 'ranger_weakspot', name: 'Weak Spot', icon: 'aim',
-    desc: 'A shot at the front enemy that leaves it marked: it takes more damage from everyone.',
-    cooldownMs: 18000, target: 'frontEnemy',
+    desc: 'A shot at her priority target that leaves it marked: it takes more damage from everyone.',
+    cooldownMs: 18000, target: 'priorityEnemy',
     // 1.2×→2.0× AD (+0.2/rank) + debuff_weakspot: +6%→+12% damage taken (+1.5/rank) for 6s.
     applies: [{ effectKey: 'fx_damage' }, { effectKey: 'debuff_weakspot', value: 6, valuePerRank: 1.5 }],
-    castCondition: 'enemyPresent', power: { coeff: 1.2, coeffPerRank: 0.2, canCrit: true },
+    castCondition: 'enemyPresent', fires: { when: 'inReach', foes: 1 }, power: { coeff: 1.2, coeffPerRank: 0.2, canCrit: true },
   },
   // ── Ranger · Stalker ──
   ranger_tarflask: {
@@ -45,7 +47,7 @@ export const BRANCH_ABILITIES: Record<string, AbilityDef> = {
     cooldownMs: 22000, target: 'allEnemies',
     // fx_tar: 0.8×→1.6× AD in total over 5s (+0.2/rank) + debuff_tar_slow: −15%→−30% speed (−3.75/rank).
     applies: [{ effectKey: 'fx_tar' }, { effectKey: 'debuff_tar_slow', valuePerRank: -3.75 }],
-    castCondition: 'enemyPresent', power: { coeff: 0.8, coeffPerRank: 0.2 },
+    castCondition: 'enemyPresent', fires: { when: 'worthIt', foes: 3 }, power: { coeff: 0.8, coeffPerRank: 0.2 },
   },
 
   // ── Priest · Devotion ──
@@ -55,19 +57,21 @@ export const BRANCH_ABILITIES: Record<string, AbilityDef> = {
     cooldownMs: 30000, target: 'allAllies',
     // fx_sanctuary: 6%→10% of each one's max HP over 6s (+1/rank), × heal power.
     applies: [{ effectKey: 'fx_sanctuary' }],
-    castCondition: 'allyBelowHpPct', power: { coeff: 0.06, coeffPerRank: 0.01 },
+    // A party heal is for a hurt PARTY: two heroes under 80 %, or one under half.
+    castCondition: 'allyBelowHpPct', fires: { when: 'partyHurt', allies: 2, frac: 0.8, orOneBelow: 0.5 }, power: { coeff: 0.06, coeffPerRank: 0.01 },
   },
   // ── Priest · Zeal ──
   priest_smite: {
     key: 'priest_smite', name: 'Smite', icon: 'lightning',
-    desc: 'An instant heal on whoever is hurt most and, with it, a strike of light on the enemy in front.',
+    desc: 'An instant heal on whoever is hurt most and, with it, a strike of light on her priority target.',
     cooldownMs: 14000, target: 'lowestAllyHp',
     // Heal 8%→14% of the ally's max HP (+1.5/rank, × heal power); the strike is an effect of its own:
-    // 0.6×→1.0× AD (+0.1/rank) on the front enemy, skipped when none is in reach.
+    // 0.6×→1.0× AD (+0.1/rank) on her priority target, skipped when no enemy has reached her.
     applies: [
       { effectKey: 'fx_heal' },
-      { effectKey: 'fx_damage', target: 'frontEnemy', power: { coeff: 0.6, coeffPerRank: 0.1, canCrit: true } },
+      { effectKey: 'fx_damage', target: 'priorityEnemy', power: { coeff: 0.6, coeffPerRank: 0.1, canCrit: true } },
     ],
-    castCondition: 'allyBelowHpPct', power: { coeff: 0.08, coeffPerRank: 0.015 },
+    // Her fast heal (and her strike): on any real wound, not only a deep one.
+    castCondition: 'allyBelowHpPct', fires: { when: 'allyBelow', frac: 0.85 }, power: { coeff: 0.08, coeffPerRank: 0.015 },
   },
 };

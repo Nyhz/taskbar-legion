@@ -204,8 +204,9 @@ export const ABILITY_LOOKS: Readonly<Record<string, AbilityLook>> = {
     band: [{ fx: 'nova_shaft', layer: 'air', every: 15, sweepMs: 220, atBlow: true, delayMs: 40 }],
     hit: 'nova_hit', hitDelayMs: 150,
   },
-  // Retribution Aura: never cast — the seal under her and the tread under her allies are its lasting looks (AURA_LOOKS).
-  priest_retribution: {},
+  // Purify: her book flashes white-gold; the heal it carries blooms on the cleansed ally like any heal.
+  // (Retribution Aura is a passive talent now: its seal and tread are lasting looks under its stand-in key.)
+  priest_purify: { cast: [{ fx: 'nova_flash', spot: 'caster-over', atBlow: true, dx: 8 }] },
   // Sanctuary: a ring of mint light opens under the whole party; the glow each of them stands in is its lasting look.
   priest_sanctuary: { cast: [{ fx: 'sanctuary_ring', spot: 'party', atBlow: true, dy: 2 }] },
   // Smite: light falls on the enemy from the sky (the heal it carries blooms on the ally like any heal).
@@ -249,11 +250,16 @@ export const BLOW_SIGNS = {
 } as const;
 
 /** A passive party AURA has no effect of its own in the simulation; the strip gives every hero it reaches a
- *  stand-in worn effect under this key (`aura:<ability key>`, applied by the hero who has the ability) so its
+ *  stand-in worn effect under this key (`aura:<talent key>`, applied by the hero who holds the talent) so its
  *  look goes through the same slots as everything else. */
 export const AURA_PREFIX = 'aura:';
 export function auraEffectKey(abilityKey: string): string {
   return `${AURA_PREFIX}${abilityKey}`;
+}
+
+/** Whether a party aura (a talent key) has a look of its own: only those are handed to the sprites. */
+export function hasAuraLook(key: string): boolean {
+  return EFFECT_LOOKS[auraEffectKey(key)] !== undefined;
 }
 
 /** How many one-shots a band look scatters over a band `width` pixels wide: at least three. */
@@ -311,6 +317,8 @@ export const EFFECT_LOOKS: Readonly<Record<string, readonly LastingLook[]>> = {
   debuff_weakspot: [{ slot: 'body', fx: 'weak_spot', up: 0.3, priority: 1, delayMs: 270 }],
   // Caltrops: it bleeds.
   fx_dot: [{ slot: 'feet', fx: 'bleeding', tile: true, delayMs: 620 }],
+  // Hemorrhage (a passive: her critical hits leave a bleed): the same bleeding, at once — no Caltrops to land first.
+  fx_hemorrhage: [{ slot: 'feet', fx: 'bleeding', tile: true }],
   // Scorched Earth: it burns.
   fx_burn: [{ slot: 'body', fx: 'burning', tile: true, delayMs: 720 }],
   // Tar Flask: tar up its legs, still alight.
@@ -352,6 +360,21 @@ export const EFFECT_LOOKS: Readonly<Record<string, readonly LastingLook[]>> = {
   buff_boss_frenzy: [{ slot: 'feet', fx: 'frenzy_fire', start: 'frenzy_burst', tile: true, priority: 2 }],
   // Mortal Wound: the claws that land, and the wound that stays open on the hero while its healing is cut.
   debuff_mortal_wound: [{ slot: 'mark', fx: 'mortal_wound', start: 'mortal_rend', priority: 2 }],
+  // ── The boss kit (data/bossKit.ts; the rest of its spectacle is render/bossFx) ──
+  // Armored: plates of steel light over the whole boss while the shell holds; they lock on, and burst when it breaks.
+  buff_boss_shell: [{ slot: 'body', fx: 'shell_plate', tile: true, start: 'shell_raise', end: 'shell_break', up: 0.5, priority: 3 }],
+  // Venomous: the hero it has poisoned bubbles green (over Stone Skin's glint: the poison is what matters).
+  debuff_venom: [{ slot: 'body', fx: 'venom_drip', start: 'venom_splash', up: 0.5, priority: 3 }],
+  // Roots: he is held — roots out of the ground wound round him, falling away when they let go.
+  debuff_rooted: [{ slot: 'feet', fx: 'roots_bind', start: 'roots_rise', end: 'roots_break', priority: 3 }],
+  // Esporas: destroying angels at his feet and rooted on him, their dust climbing; they wither when a heal clears them.
+  debuff_spores: [{ slot: 'feet', fx: 'spores_grow', start: 'spore_land', end: 'spore_wither', priority: 3 }],
+  // Seismic: the ground never rests at the boss's feet — low dust and pebbles along its whole width.
+  buff_boss_tremor: [{ slot: 'low', fx: 'seismic_tremor', tile: true }],
+  // Culpa: the Scapegoat's brand glows on the marked hero; it comes down on him when the mark is laid.
+  debuff_guilt: [{ slot: 'mark', fx: 'guilt_brand', start: 'guilt_fall', priority: 3 }],
+  // Silencio dorado: a dial of gold wire behind the hero, its hands stopped.
+  debuff_gilded: [{ slot: 'behind', fx: 'gilded_halo', start: 'gild_lock', up: 0.6, priority: 1 }],
 };
 
 /** Effects of covered abilities that are shown by a sibling effect's look. */

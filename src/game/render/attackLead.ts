@@ -148,7 +148,9 @@ export interface SwingOwner {
   attackTimerMs: number;
   cooldowns: Readonly<Record<string, number>>;
   charges?: Readonly<Record<string, number>>;
-  abilities: readonly { def: { key: string; charge?: { toCast: number }; castCondition?: string } }[];
+  abilities: readonly {
+    def: { key: string; charge?: { toCast: number }; castCondition?: string; fires?: { when: string; foes?: number } };
+  }[];
 }
 
 // Cast conditions that only ask for a fight to be on: an ability with one of these fires as soon as it is ready.
@@ -161,7 +163,11 @@ const FIRES_WHEN_READY: ReadonlySet<string> = new Set(['always', 'enemyPresent',
  *  take the swing, its clip simply cuts in over the attack's wind-up. */
 export function abilityTakesSwing(c: SwingOwner): boolean {
   return c.abilities.some(({ def }) => {
-    if (!FIRES_WHEN_READY.has(def.castCondition ?? 'always')) return false;
+    // A fire rule (data/abilities) that only asks for one enemy in reach fires when ready; every other rule waits
+    // for its moment (a hit taken, a pack, an ally hurt).
+    if (def.fires !== undefined) {
+      if (def.fires.when !== 'inReach' || (def.fires.foes ?? 1) > 1) return false;
+    } else if (!FIRES_WHEN_READY.has(def.castCondition ?? 'always')) return false;
     if (def.charge !== undefined) return (c.charges?.[def.key] ?? 0) >= def.charge.toCast;
     return (c.cooldowns[def.key] ?? 0) <= c.attackTimerMs;
   });

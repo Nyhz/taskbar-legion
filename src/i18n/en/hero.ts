@@ -23,8 +23,6 @@ export const hero = {
   softCap: 'Ceiling',
   partyAuras: 'From the party’s auras:',
   ultimate: 'Ultimate',
-  triggerLethal: 'It fires when a lethal blow would land.',
-  triggerBoss: 'It fires on engaging a stage or world boss.',
   ultUnlocked: 'Unlocked: it fires on its own and takes no ability slot.',
   ultLocked: 'Unlocks at level {n}.',
   ability: 'Ability',

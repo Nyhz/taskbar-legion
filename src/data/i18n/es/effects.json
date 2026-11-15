@@ -158,5 +158,61 @@
   "buff_aegis_dr": {
     "en": "Aegis",
     "es": "Égida"
+  },
+  "buff_boss_shell": {
+    "en": "Shell",
+    "es": "Coraza"
+  },
+  "debuff_venom": {
+    "en": "Venom",
+    "es": "Veneno"
+  },
+  "debuff_rooted": {
+    "en": "Rooted",
+    "es": "Enraizado"
+  },
+  "fx_cleanse": {
+    "en": "Purify",
+    "es": "Purificar"
+  },
+  "buff_shelter": {
+    "en": "Shelter",
+    "es": "Amparo"
+  },
+  "fx_overflow": {
+    "en": "Overflow",
+    "es": "Rebosar"
+  },
+  "debuff_condemn": {
+    "en": "Condemned",
+    "es": "Condenado"
+  },
+  "fx_hemorrhage": {
+    "en": "Hemorrhage",
+    "es": "Hemorragia"
+  },
+  "debuff_tremor": {
+    "en": "Tremor",
+    "es": "Temblor"
+  },
+  "buff_boss_tremor": {
+    "en": "Tremor",
+    "es": "Temblor"
+  },
+  "debuff_guilt": {
+    "en": "Guilt",
+    "es": "Culpa"
+  },
+  "debuff_gilded": {
+    "en": "Golden Silence",
+    "es": "Silencio dorado"
+  },
+  "debuff_spores": {
+    "en": "Spores",
+    "es": "Esporas"
+  },
+  "buff_mirror_panes": {
+    "en": "Lit Mirrors",
+    "es": "Espejos encendidos"
   }
 }

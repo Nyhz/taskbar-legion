@@ -182,12 +182,9 @@ describe('party protection reaches the back line', () => {
 });
 
 describe('boss area blows', () => {
-  it('every stage boss carries the slam; world bosses the shockwave on every difficulty, and their old kit as before', () => {
+  it('every stage boss carries the slam; world bosses the shockwave on every difficulty (the rest of a kit is affixes and mechanics: bossKit.test)', () => {
     expect(stageBossAbilityKeys()).toEqual(['boss_slam']);
-    expect(worldBossAbilityKeys(0)).toEqual(['boss_shockwave']); // Normal
-    expect(worldBossAbilityKeys(1)).toEqual(['boss_shockwave']); // Hell
-    expect(worldBossAbilityKeys(2)).toEqual(['boss_shockwave', 'boss_frenzy']); // Inferno
-    expect(worldBossAbilityKeys(4)).toEqual(['boss_shockwave', 'boss_frenzy', 'boss_mortal_wound']); // Torment
+    expect(worldBossAbilityKeys()).toEqual(['boss_shockwave']);
     for (const key of ['boss_slam', 'boss_shockwave']) {
       const def = abilityDef(key);
       expect(def.castTimeMs ?? 0).toBeGreaterThan(0); // telegraphed: the cast bar fills first
@@ -200,7 +197,7 @@ describe('boss area blows', () => {
     expect(stage.enemies[0]?.abilities.map((a) => a.def.key)).toEqual(['boss_slam']);
     const wall = fight([hero('tank')], [], 10);
     spawnZoneBoss(wall, makeRng(1));
-    expect(wall.enemies[0]?.abilities.map((a) => a.def.key)).toEqual(['boss_shockwave']);
+    expect(wall.enemies[0]?.abilities.map((a) => a.def.key)).toEqual(['boss_flock', 'boss_shockwave']); // world 1: her own mechanic first
   });
 
   it('the boss winds up (no swings meanwhile), then the blow lands on everyone: full in front, less behind', () => {

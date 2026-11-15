@@ -84,8 +84,8 @@
     "es": "Flecha explosiva"
   },
   "ranger_focus.desc": {
-    "en": "A detonating arrow: a heavy hit on the front enemy that blasts nearby enemies for less.",
-    "es": "Una flecha que detona: un golpe fuerte al enemigo de delante y una explosión menor a los cercanos."
+    "en": "A detonating arrow: a heavy hit where its blast catches the most enemies, and a lesser one on those nearby.",
+    "es": "Una flecha que detona: un golpe fuerte donde su explosión alcance a más enemigos y uno menor a los cercanos."
   },
   "ranger_frozentrap.name": {
     "en": "Caltrops",
@@ -100,8 +100,8 @@
     "es": "Punto débil"
   },
   "ranger_weakspot.desc": {
-    "en": "A shot at the front enemy that leaves it marked: it takes more damage from everyone.",
-    "es": "Un disparo al enemigo de delante que lo deja señalado: recibe más daño de todos."
+    "en": "A shot at her priority target that leaves it marked: it takes more damage from everyone.",
+    "es": "Un disparo a su objetivo prioritario que lo deja señalado: recibe más daño de todos."
   },
   "ranger_tarflask.name": {
     "en": "Tar Flask",
@@ -132,8 +132,8 @@
     "es": "Escudo sagrado"
   },
   "priest_holyshield.desc": {
-    "en": "A divine barrier on the tank — absorbs a burst of the hits it’s taking.",
-    "es": "Una barrera divina sobre el tanque: absorbe parte de los golpes que está recibiendo."
+    "en": "A divine barrier on the ally taking the most damage — absorbs a burst of the hits it’s taking.",
+    "es": "Una barrera divina sobre el aliado que más daño recibe: absorbe parte de los golpes que está recibiendo."
   },
   "priest_nova.name": {
     "en": "Holy Nova",
@@ -143,13 +143,13 @@
     "en": "A burst of holy light damaging the whole wave.",
     "es": "Un estallido de luz sagrada que daña a toda la oleada."
   },
-  "priest_retribution.name": {
-    "en": "Retribution Aura",
-    "es": "Aura de represalia"
+  "priest_purify.name": {
+    "en": "Purify",
+    "es": "Purificar"
   },
-  "priest_retribution.desc": {
-    "en": "Passive: while slotted, the whole party deals +5%→+15% damage.",
-    "es": "Pasiva: mientras está activa, todo el grupo hace +5 %→+15 % de daño."
+  "priest_purify.desc": {
+    "en": "Lifts every harmful effect from an ally — venom, a mortal wound, spores — and heals it a little.",
+    "es": "Quita todos los efectos dañinos de un aliado —veneno, herida mortal, esporas— y lo sana un poco."
   },
   "priest_sanctuary.name": {
     "en": "Sanctuary",
@@ -164,8 +164,8 @@
     "es": "Castigo"
   },
   "priest_smite.desc": {
-    "en": "An instant heal on whoever is hurt most and, with it, a strike of light on the enemy in front.",
-    "es": "Una cura inmediata a quien esté más herido y, con ella, un golpe de luz al enemigo de delante."
+    "en": "An instant heal on whoever is hurt most and, with it, a strike of light on her priority target.",
+    "es": "Una cura inmediata a quien esté más herido y, con ella, un golpe de luz a su objetivo prioritario."
   },
   "knight_laststand.name": {
     "en": "Last Stand",

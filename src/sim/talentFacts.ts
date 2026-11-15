@@ -21,6 +21,8 @@ export function roleValue(role: RoleEffect): { perRank: number; unit: RoleUnit }
       return { perRank: role.pctMaxHpPerSecPerRank, unit: 'percentPerSecond' };
     case 'dealt':
       return { perRank: role.pctPerRank, unit: 'percent' };
+    case 'passive':
+      return { perRank: role.perRank, unit: 'percent' };
   }
 }
 

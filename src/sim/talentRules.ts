@@ -1,4 +1,4 @@
-import { rowUnlockThreshold, talentNodes, tryTalentNode, type TalentNode } from '@/data/talents';
+import { REPLACED_NODES, rowUnlockThreshold, talentNodes, tryTalentNode, type TalentNode } from '@/data/talents';
 
 // The RULES of the talent tree (docs/redesign/CLASSES.md §2, F1), as pure functions over a hero's
 // `talents` map (node key → rank). The store's spend / refund / respec actions and the load-time sanitiser
@@ -145,11 +145,17 @@ export function sanitizeTalents(
   } catch {
     return { talents: {}, talentPoints: earned };
   }
+  // Points saved in a node that another has taken the place of count for the one standing there now.
+  const moved: Record<string, number> = {};
+  for (const [oldKey, newKey] of Object.entries(REPLACED_NODES)) {
+    const raw = source[oldKey];
+    if (typeof raw === 'number' && Number.isFinite(raw) && raw >= 1) moved[newKey] = (moved[newKey] ?? 0) + Math.floor(raw);
+  }
   const ranked: Record<string, number> = {};
   for (const n of nodes) {
     const raw = source[n.key];
-    if (typeof raw !== 'number' || !Number.isFinite(raw)) continue;
-    const rank = Math.min(n.maxRank, Math.floor(raw));
+    const own = typeof raw === 'number' && Number.isFinite(raw) ? Math.floor(raw) : 0;
+    const rank = Math.min(n.maxRank, Math.max(0, own) + (moved[n.key] ?? 0));
     if (rank >= 1) ranked[n.key] = rank;
   }
   // Two abilities at most: the hero's active ones first, then tree order. An ability chosen here can still

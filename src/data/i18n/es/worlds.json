@@ -238,5 +238,45 @@
   "creature.lictor": {
     "en": "The Lictor",
     "es": "El Lictor"
+  },
+  "creature.drummer": {
+    "en": "Reaping Drummer",
+    "es": "Tamborilero de la siega"
+  },
+  "creature.bellringer": {
+    "en": "Moss Bell-Ringer",
+    "es": "Campanero del musgo"
+  },
+  "creature.stiltwalker": {
+    "en": "Marsh Carp-Bearer",
+    "es": "Zancudo de la carpa"
+  },
+  "creature.hornblower": {
+    "en": "War-Horn Bearer",
+    "es": "Portador del cuerno"
+  },
+  "creature.wheelturner": {
+    "en": "Wheel-Turner",
+    "es": "Girador de plegarias"
+  },
+  "creature.tideaugur": {
+    "en": "Tide Augur",
+    "es": "Augur de la marea"
+  },
+  "creature.lightangler": {
+    "en": "Light Angler",
+    "es": "Pescador de luz"
+  },
+  "creature.stoker": {
+    "en": "Ember Stoker",
+    "es": "Fogonero"
+  },
+  "creature.kiteflyer": {
+    "en": "Kite Acolyte",
+    "es": "Acólito de la Cometa"
+  },
+  "creature.hourbearer": {
+    "en": "Hour Bearer",
+    "es": "Portador de las Horas"
   }
 }

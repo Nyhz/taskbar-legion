@@ -1,4 +1,5 @@
-import type { AbilityDef, AbilityTarget } from '@/data/abilities';
+import type { AbilityDef, AbilityTarget, FireRule } from '@/data/abilities';
+import type { UltimateDef, UltimatePatch } from '@/data/ultimates';
 import { effectDef } from '@/data/effects';
 import { STATS, type StatKey } from '@/data/stats';
 import { effectCoeff, effectDuration, effectMagnitude, powerOf } from './abilities';
@@ -28,6 +29,7 @@ export type EffectFact = {
   | { type: 'vulnerable'; pct: number; ms: number } // more damage taken
   | { type: 'root'; ms: number }
   | { type: 'silence'; ms: number }
+  | { type: 'cleanse' } // removes harmful effects
 );
 
 /** A party aura at a rank (an aura ability grants it while learned), or null if the ability has none.
@@ -90,9 +92,31 @@ export function abilityEffectFacts(ability: AbilityDef, rank: number, cs: Effect
       case 'silence':
         facts.push({ ...base, type: 'silence', ms });
         break;
+      case 'cleanse':
+        facts.push({ ...base, type: 'cleanse' });
+        break;
       default:
         break;
     }
   }
   return facts;
+}
+
+/** WHEN an ability fires, as data for the tooltip's "When it fires" line: its fire rule (data/abilities), with
+ *  a charge-gated ability saying how many charges it waits for, and an ability without a rule firing as soon as
+ *  it is ready. */
+export type FireFact = FireRule | { when: 'charged'; charges: number; rule?: FireRule } | { when: 'ready' };
+
+export function abilityFireFact(ability: AbilityDef): FireFact {
+  if (ability.charge !== undefined) return { when: 'charged', charges: ability.charge.toCast, ...(ability.fires !== undefined ? { rule: ability.fires } : {}) };
+  return ability.fires ?? { when: 'ready' };
+}
+
+/** When a class ultimate fires: on a blow that would kill its hero (per-stage charges), or on engaging a boss —
+ *  an elite too with the capstone that says so (`patch`). */
+export type UltimateFireFact = { when: 'lethal'; perStage: number } | { when: 'bossEngage'; elites: boolean };
+
+export function ultimateFireFact(u: UltimateDef, patch?: UltimatePatch): UltimateFireFact {
+  if (u.effect.type === 'deathBlock') return { when: 'lethal', perStage: u.effect.chargesPerStage };
+  return { when: 'bossEngage', elites: patch?.vs === 'eliteOrBoss' };
 }

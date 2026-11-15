@@ -8,8 +8,8 @@ import { TalentsTip } from './TalentsTip';
 import { hasPips, type PlacedNode } from './talentsLayout';
 import { spendBlockLine } from './talentWords';
 
-// One node of the talents wing. The frame says the kind: a plate for an ability, a round seal for a passive,
-// a seal with four points for a ROLE talent, the teal plate for a modifier, the octagon for a capstone. Its
+// One node of the talents wing. The frame says the kind: a plate for an ability, a round seal for a stat passive,
+// a seal with four points for a ROLE talent — and the same pointed seal, a size down, for an EFFECT passive —, the teal plate for a modifier, the octagon for a capstone. Its
 // sign comes from ui/abilityArt.talentNodeArtStem (stand-ins for role talents, modifiers and capstones until
 // theirs are drawn).
 //
@@ -57,7 +57,7 @@ export function TalentsTabNode({ classKey, talents, placed, check, stats, side, 
 
   return (
     <Node
-      kind={FRAME[node.kind]}
+      kind={node.kind === 'passive' && node.role !== undefined ? 'effect' : FRAME[node.kind]}
       state={state}
       sign={sign}
       alt={name}

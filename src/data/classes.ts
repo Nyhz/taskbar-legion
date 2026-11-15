@@ -22,6 +22,12 @@ export interface ClassDef {
   /** Combat reach: melee must be at the front line; ranged/casters hit from afar. */
   style: AttackStyle;
   range: number;
+  /** How far its shot can PICK a target (world px) — apart from `range`, which is where it stands and what says
+   *  the fight has reached it. Long enough for the support at the far end of a wave (data/enemies SUPPORT_KIND:
+   *  it stops RANGE.caster + 30 from the front hero, i.e. 170 past the nearest enemy; the Ranger stands 160
+   *  before that enemy and the Priest 195 → 330 and 365 away, plus a margin). Omit for a hero that only hits
+   *  what it stands next to (the Knight). */
+  shotReach?: number;
   /** Basic auto-attack AoE: the primary target takes full damage, every other enemy within
    *  `radius` world-px takes `coeff×` the hit (e.g. 0.5 = 50%). Omit for single-target autos.
    *  The Priest's holy strike uses this (mirrors Explosive Arrow's splash, but on the auto). */
@@ -56,7 +62,7 @@ export const CLASSES: Record<string, ClassDef> = {
     statGrowthPerLevel: { health: 3, armor: 0.3, attackDamage: 2.6, critChance: 0.15 },
     unlock: { type: 'gold', cost: 150 },
     signatureAbility: 'ranger_fast_fire',
-    style: 'ranged', range: RANGE.ranged,
+    style: 'ranged', range: RANGE.ranged, shotReach: RANGE.ranged + 180,
   },
   priest: {
     key: 'priest', name: 'Priest', role: 'healer',
@@ -64,7 +70,7 @@ export const CLASSES: Record<string, ClassDef> = {
     statGrowthPerLevel: { health: 4, armor: 0.3, magicResist: 0.4, attackDamage: 1.5 }, // hpRegen stays flat (2) — not a scaling stat
     unlock: { type: 'gold', cost: 150 },
     signatureAbility: 'priest_mend',
-    style: 'caster', range: RANGE.caster,
+    style: 'caster', range: RANGE.caster, shotReach: RANGE.caster + 180,
     // The priest's holy strike lands ON the target and splashes nearby enemies for 50% (45
     // world-px ≈ 1.5 bodies, same radius as Explosive Arrow) — turns the auto into light AoE.
     autoSplash: { coeff: 0.5, radius: 45 },

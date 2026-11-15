@@ -6,7 +6,9 @@ import file from '@/assets/strip/fx/fx.json';
 // pixel = 1 strip pixel, never scaled.
 
 export interface FxMeta {
-  /** Top-left of the effect's first frame in the atlas; frame i is at (x + (i % cols)·w, y + floor(i / cols)·h). */
+  /** The page of the atlas it is on (`fx_<page>.png`: the atlas is written in pages no GPU finds too big). */
+  page: number;
+  /** Top-left of the effect's first frame in its page; frame i is at (x + (i % cols)·w, y + floor(i / cols)·h). */
   x: number;
   y: number;
   /** Cell size, in art pixels. */
@@ -23,10 +25,39 @@ export interface FxMeta {
 }
 
 interface FxFile {
+  /** How many pages the effects' atlas has. */
+  pages: number;
   fx: Record<string, FxMeta>;
   /** Skin name → the heroes that have it (their atlas is `skin_<hero>_<skin>.png`, laid out like the hero's own).
    *  RIMS are listed here too: sheets of the same layout that hold only a line of light round each frame's figure. */
   skins: Record<string, string[]>;
+  /** Figure → its own panes, LIT (the Unmaker's six mirrors): an atlas `panes_<figure>.png` of equal cells. */
+  panes?: Record<string, PaneSheetMeta>;
+}
+
+/** Where pane j goes on frame f of a clip: the cell's top-left and the pane's middle, in art pixels from the
+ *  figure's root on the ground, the figure facing right; null when nothing of that pane shows on that frame. */
+export type PanePlace = readonly [dx: number, dy: number, cx: number, cy: number] | null;
+
+export interface PaneSheetMeta {
+  /** Cell size and cells per row; pane j on frame f of a clip is cell `first + f·6 + j`. */
+  w: number;
+  h: number;
+  cols: number;
+  anims: Record<string, { first: number; frames: PanePlace[][] }>;
+}
+
+/** The lit panes of a figure, or undefined when it has none. */
+export function paneSheetMeta(figure: string): PaneSheetMeta | undefined {
+  return DATA.panes?.[figure];
+}
+
+/** Which cell holds pane `pane` on frame `frame` of `clip`, and where it goes; undefined when it does not show. */
+export function panePlace(meta: PaneSheetMeta, clip: string, frame: number, pane: number): { cell: number; at: NonNullable<PanePlace> } | undefined {
+  const anim = meta.anims[clip];
+  const at = anim?.frames[frame]?.[pane];
+  if (anim === undefined || at === undefined || at === null) return undefined;
+  return { cell: anim.first + frame * 6 + pane, at };
 }
 
 const DATA = file as unknown as FxFile;
@@ -37,12 +68,18 @@ export function fxMeta(key: string): FxMeta | undefined {
 
 export const FX_KEYS: readonly string[] = Object.keys(DATA.fx);
 
+/** How many pages the effects' atlas is written in (`fx_0.png` … `fx_<n−1>.png`). */
+export const FX_PAGES: number = DATA.pages;
+
 /** True when `hero` has the whole-figure skin `skin`. */
 export function hasSkin(hero: string, skin: string): boolean {
   return DATA.skins[skin]?.includes(hero) === true;
 }
 
 export const SKIN_NAMES: readonly string[] = Object.keys(DATA.skins);
+
+/** The figures that have lit panes of their own. */
+export const PANE_FIGURES: readonly string[] = Object.keys(DATA.panes ?? {});
 
 export function fxTotalMs(meta: FxMeta): number {
   let total = 0;

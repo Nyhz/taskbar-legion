@@ -1,5 +1,6 @@
 import type { StatKey } from './stats';
 import { BRANCH_EFFECTS } from './branchEffects';
+import { BOSS_EFFECTS } from './bossEffects';
 
 // Effect library. Abilities apply declarative EffectDefs; the combat loop processes
 // a GENERIC ActiveEffect list (SPEC §4.10) — adding content is data, never editing
@@ -31,6 +32,18 @@ export type EffectKind =
   // from all sources (heals, HoTs, regen, lifesteal) while active. Read by
   // sim/effects.healReceivedMult in every heal path.
   | { type: 'healReduction'; value: number }
+  // Bound (a world boss's Roots): the holder makes no attacks and casts nothing while it lasts.
+  | { type: 'disarm' }
+  // A boss's shell (the Acorazado affix): ActiveEffect.value is what is left of it; while it holds, the boss takes
+  // less from every hit and the hits wear it down (sim/bossMechanics.shellDamage).
+  | { type: 'shell' }
+  // Culpa (a world boss's mark): while it lasts the holder loses ActiveEffect.value % of its life for every 1 % of
+  // its life the boss loses (sim/worldBossRules).
+  | { type: 'guilt' }
+  // Silencio dorado: the holder's ability cooldowns do not run while it lasts (sim/abilities.tickCooldowns).
+  | { type: 'cooldownFreeze' }
+  // Purify: instant — removes every harmful effect from its target (sim/abilities.applyToTarget).
+  | { type: 'cleanse' }
   | { type: 'tag'; tag: string };
 
 export interface EffectDef {
@@ -42,6 +55,11 @@ export interface EffectDef {
   maxStacks: number; // 1 = refresh-only; >1 = stacks
   stackRule: 'refresh' | 'extend' | 'independent';
   beneficial: boolean;
+  /** A harmful effect too slight and too brief to spend a cleanse on: Purify neither looks for it nor removes it
+   *  (a brute's Temblor). It still shows on the hero that carries it. */
+  cleanseIgnores?: boolean;
+  /** Any DIRECT heal on the holder — an instant heal, not a rolling one — removes it (a world boss's spores). */
+  healCleansed?: boolean;
 }
 
 export interface ActiveEffect {
@@ -65,6 +83,10 @@ export const EFFECTS: Record<string, EffectDef> = {
   fx_heal: {
     key: 'fx_heal', name: 'Heal', icon: 'heal',
     kind: { type: 'heal' }, durationMs: 0, maxStacks: 1, stackRule: 'refresh', beneficial: true,
+  },
+  fx_cleanse: {
+    key: 'fx_cleanse', name: 'Purify', icon: 'holy',
+    kind: { type: 'cleanse' }, durationMs: 0, maxStacks: 1, stackRule: 'refresh', beneficial: true,
   },
   fx_shield: {
     key: 'fx_shield', name: 'Shield', icon: 'shield',
@@ -167,9 +189,11 @@ export const EFFECTS: Record<string, EffectDef> = {
   // it for both swing cadence and movement). Suppressed from the generic offense overlay so
   // its dedicated red foot-aura is the only read (effectAuras.categorize).
   buff_boss_frenzy: {
+    // The ENFURECIDO affix (data/bossKit): one stack every 5 s of the fight, +5 % attack speed each. Laid by
+    // sim/bossMechanics, never by a cast; it lasts the fight.
     key: 'buff_boss_frenzy', name: 'Frenzy', icon: 'flurry',
-    kind: { type: 'statMod', stat: 'attackSpeed', mode: 'percent', value: 35 },
-    durationMs: 6000, maxStacks: 1, stackRule: 'refresh', beneficial: true,
+    kind: { type: 'statMod', stat: 'attackSpeed', mode: 'percent', value: 5 },
+    durationMs: 3_600_000, maxStacks: 12, stackRule: 'refresh', beneficial: true,
   },
   // Boss Mortal Wound (Torment+): a crippling blow that cuts the tank's healing received by
   // 25% for 8s (on top of the strike's damage). Read by sim/effects.healReceivedMult.
@@ -177,6 +201,14 @@ export const EFFECTS: Record<string, EffectDef> = {
     key: 'debuff_mortal_wound', name: 'Mortal Wound', icon: 'expose',
     kind: { type: 'healReduction', value: 25 },
     durationMs: 8000, maxStacks: 1, stackRule: 'refresh', beneficial: false,
+  },
+
+  // Temblor (a brute's area blow from Eternal on — data/enemies TRAIT_TUNING.tremor): the heroes it reaches
+  // attack 20 % slower for 2.5 s. Shown on the hero (its chip says why he is slow); Purify leaves it alone.
+  debuff_tremor: {
+    key: 'debuff_tremor', name: 'Tremor', icon: 'expose',
+    kind: { type: 'statMod', stat: 'attackSpeed', mode: 'percent', value: -20 },
+    durationMs: 2500, maxStacks: 1, stackRule: 'refresh', beneficial: false, cleanseIgnores: true,
   },
 
   // ── Debuffs / CC ──
@@ -193,6 +225,7 @@ export const EFFECTS: Record<string, EffectDef> = {
 
   // ── Class redesign, first wave (branch abilities, modifiers, capstones) ──
   ...BRANCH_EFFECTS,
+  ...BOSS_EFFECTS,
 };
 
 /** The total-immunity effect a rescue grants (Last Stand and its capstone). */

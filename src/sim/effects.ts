@@ -91,6 +91,18 @@ function hasKind(effects: readonly ActiveEffect[], type: string): boolean {
 
 export const isSilenced = (effects: readonly ActiveEffect[]): boolean => hasKind(effects, 'silence');
 export const isRooted = (effects: readonly ActiveEffect[]): boolean => hasKind(effects, 'root');
+/** A direct heal has just landed on the holder of `effects`: what such a heal clears (a world boss's spores) goes. */
+export function liftHealCleansed(effects: ActiveEffect[]): void {
+  for (let i = effects.length - 1; i >= 0; i--) {
+    const e = effects[i];
+    if (e !== undefined && effectDef(e.defKey).healCleansed === true) effects.splice(i, 1);
+  }
+}
+
+/** Silencio dorado: its ability cooldowns stand still while this lasts. */
+export const isCooldownFrozen = (effects: readonly ActiveEffect[]): boolean => hasKind(effects, 'cooldownFreeze');
+/** Bound (a world boss's Roots): it neither attacks nor casts while this lasts. */
+export const isDisarmed = (effects: readonly ActiveEffect[]): boolean => hasKind(effects, 'disarm');
 /** A combatant under a Last Stand-style immunity takes no damage at all. */
 export const isInvulnerable = (effects: readonly ActiveEffect[]): boolean => hasKind(effects, 'invulnerable');
 

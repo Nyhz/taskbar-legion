@@ -9,7 +9,7 @@ import { EFFECT_LOOKS } from '@/game/render/abilityFx';
 import {
   BARS, CHIP, ENDING_MS, FOE_BAR_FADE_MS, FOE_BAR_STAY_MS, GHOST_HOLD_MS, HERO_HUD_CX, HERO_HUD_WIDTH, MAX_EFFECT_CHIPS, SIGN,
   abilityChips, barSegments, effectChips, effectSign, foeBarAlpha, heroHudCx, heroHudLayout, miniSign, newGhost, rowLeft, rowWidth,
-  shadeRows, stackBars, stepGhost, ultimateChip,
+  shadeRows, stackBars, stackChips, stepGhost, ultimateChip,
 } from '@/game/render/stripHud';
 
 const ART = new Set(
@@ -61,6 +61,24 @@ describe('a bar of the strip HUD', () => {
 });
 
 describe('the chips of the effects on a hero', () => {
+  it('Weathered Hide shows its stacks as a chip that clears with each one, after the effects, and goes with them', () => {
+    const hide = { passives: [{ def: { is: 'blockStreak', maxStacks: 5 } }] };
+    expect(stackChips({ ...hide, hideStacks: 0 })).toEqual([]);
+    expect(stackChips({})).toEqual([]);
+    const two = stackChips({ ...hide, hideStacks: 2 });
+    expect(two).toEqual([{ sign: 'weathered_hide', frame: 'charge', shade: shadeRows(0.6), ending: false }]);
+    expect(stackChips({ ...hide, hideStacks: 5 })[0]).toMatchObject({ frame: 'ready', shade: 0 });
+    // It takes a place in the row like any chip: after what comes and goes, and counted by the "+N".
+    const row = effectChips([{ defKey: 'buff_guard_block', remainingMs: 3000, totalMs: 6000 }], MAX_EFFECT_CHIPS, two);
+    expect(row.chips.map((c) => c.sign)).toEqual(['stone_skin', 'weathered_hide']);
+    expect(ART.has('hud_s_m_weathered_hide')).toBe(true);
+  });
+
+  it('Shelter on an ally is a chip of its own', () => {
+    expect(effectSign('buff_shelter')).toBe('shelter');
+    expect(ART.has('hud_s_m_shelter')).toBe(true);
+  });
+
   const fx = (defKey: string, remainingMs: number, totalMs: number): { defKey: string; remainingMs: number; totalMs: number } => ({ defKey, remainingMs, totalMs });
 
   it('every hero ability and ultimate has a mini sign', () => {
@@ -215,5 +233,35 @@ describe('where a hero\'s HUD sits', () => {
     expect(lay.effectsY + CHIP).toBe(lay.bar.y - 1);
     expect(lay.top).toBe(-lay.effectsY);
     expect(lay.cooldowns.y).toBeGreaterThan(0);
+  });
+});
+
+describe('effect chips and their tooltip', () => {
+  it('a chip carries the effects behind its sign, and Tremor is a debuff chip with its own sign', async () => {
+    const { effectChips, effectSign, chipIndexAt, CHIP, CHIP_STEP } = await import('@/game/render/stripHud');
+    const { chips } = effectChips([
+      { defKey: 'debuff_tremor', remainingMs: 2000, totalMs: 2500 },
+      { defKey: 'buff_battlecry_ad', remainingMs: 5000, totalMs: 8000 },
+      { defKey: 'buff_battlecry_crit', remainingMs: 5000, totalMs: 8000 },
+    ]);
+    expect(chips.map((c) => [c.sign, c.frame, c.worn?.map((w) => w.key)])).toEqual([
+      ['tremor', 'debuff', ['debuff_tremor']],
+      ['battle_cry', 'buff', ['buff_battlecry_ad', 'buff_battlecry_crit']],
+    ]);
+    // …and what each is worth on the hero, when the strip knows it (the tooltip's numbers).
+    const live = effectChips([{ defKey: 'debuff_venom', remainingMs: 3000, totalMs: 4000, value: 12, stacks: 3 }]).chips[0];
+    expect(live?.worn).toEqual([{ key: 'debuff_venom', totalMs: 4000, value: 12, stacks: 3 }]);
+    expect(effectSign('debuff_tremor')).toBe('tremor');
+    // The pointer on a row of two chips whose first corner is at (10, 20).
+    expect(chipIndexAt(10, 20, 10, 20, 2)).toBe(0);
+    expect(chipIndexAt(10 + CHIP_STEP - 1, 20 + CHIP - 1, 10, 20, 2)).toBe(0);
+    expect(chipIndexAt(10 + CHIP_STEP, 20, 10, 20, 2)).toBe(1); // the border pixel two chips share is the next one's
+    expect(chipIndexAt(10 + CHIP - 1, 20, 10, 20, 1)).toBe(0); // …and the last chip's own
+    expect(chipIndexAt(10 + CHIP_STEP + 1, 24, 10, 20, 2)).toBe(1);
+    expect(chipIndexAt(10 + CHIP_STEP + CHIP - 1, 24, 10, 20, 2)).toBe(1);
+    expect(chipIndexAt(10 + CHIP_STEP + CHIP, 24, 10, 20, 2)).toBe(-1);
+    expect(chipIndexAt(9, 24, 10, 20, 2)).toBe(-1);
+    expect(chipIndexAt(12, 19, 10, 20, 2)).toBe(-1);
+    expect(chipIndexAt(12, 20 + CHIP, 10, 20, 2)).toBe(-1);
   });
 });

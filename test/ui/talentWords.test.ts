@@ -6,7 +6,8 @@ import { heroAbilities, heroBaseStats } from '@/sim/loadout';
 import { aggregate } from '@/sim/stats';
 import { canSpend } from '@/sim/talentRules';
 import { setLanguage, talentNodeDescription, talentNodeName } from '@/i18n';
-import { abilityLines, figure, nodeKindName, nodeRequirementLine, signed, spendBlockLine, targetName } from '@/ui/panels/hero/talentWords';
+import { abilityLines, figure, fireLine, nodeKindName, nodeRequirementLine, signed, spendBlockLine, targetName, ultimateFireLine } from '@/ui/panels/hero/talentWords';
+import { ULTIMATES, type UltimateDef } from '@/data/ultimates';
 
 // The words of the talents wing in both languages: written here from the facts the simulation hands over.
 
@@ -22,7 +23,7 @@ describe('talent words', () => {
     };
     const trunk = Object.fromEntries(talentNodes('knight').filter((n) => n.lane === 'trunk' && n.kind !== 'ability').map((n) => [n.key, 5]));
     const build = { ...trunk, knight_guard: 5, knight_bulwark: 5 };
-    const deep = { ...build, knight_bastion_t5_magicResist: 5, knight_bastion_t7_armor: 5, knight_bastion_t7_health: 5, knight_bastion_t8_block: 5, knight_scourge_t5_block: 5 }; // 90 spent
+    const deep = { ...build, knight_bastion_t5_magicResist: 5, knight_close_ranks: 5, knight_bastion_t7_health: 5, knight_bastion_t8_block: 5, knight_scourge_t5_block: 5 }; // 90 spent
 
     expect(line({}, 'knight_bulwark')).toBe('Opens at 10 points spent.');
     expect(line({}, 'knight_guard', 0)).toBe(''); // nothing to spend is not a warning
@@ -109,17 +110,41 @@ describe('talent words', () => {
   it('writes the known lines exactly', () => {
     const cleave = ABILITIES.knight_debilitate;
     const cry = ABILITIES.knight_battlecry;
-    const aura = ABILITIES.priest_retribution;
+    const purify = ABILITIES.priest_purify;
+    const hold = ABILITIES.knight_holdtheline;
     expect(cleave).toBeDefined();
     expect(cry).toBeDefined();
-    expect(aura).toBeDefined();
-    if (cleave === undefined || cry === undefined || aura === undefined) return;
+    expect(purify).toBeDefined();
+    expect(hold).toBeDefined();
+    if (cleave === undefined || cry === undefined || purify === undefined || hold === undefined) return;
     expect(abilityLines(cleave, 1, stats, 1)[1]).toBe('−15 % damage dealt for 6 s');
-    expect(abilityLines(aura, 1, stats, 1)[0]).toBe('+5 % Damage Increase to the whole party');
+    expect(abilityLines(purify, 1, stats, 1)[0]).toBe('Removes every harmful effect');
+    // When it fires, in words (the tooltip's own line).
+    expect(fireLine(hold)).toBe('When the party is taking damage. Against a boss it waits for its area blow.');
+    expect(fireLine(cry)).toBe('With 3 or more enemies up, or against an elite or a boss.');
+    expect(fireLine(purify)).toBe('When an ally carries a harmful effect, or is under 60 % of its life.');
+    expect(ultimateFireLine(ULTIMATES.knight as UltimateDef)).toBe('When a blow would kill the hero. Uses per stage: 1.');
+    expect(ultimateFireLine(ULTIMATES.ranger as UltimateDef, { vs: 'eliteOrBoss' })).toBe('On engaging an elite, a stage boss or a world boss.');
     setLanguage('es');
     expect(abilityLines(cleave, 1, stats, 1)[1]).toBe('−15 % de daño infligido durante 6 s');
-    expect(abilityLines(aura, 1, stats, 1)[0]).toBe('+5 % de aumento de daño a todo el grupo');
+    expect(abilityLines(purify, 1, stats, 1)[0]).toBe('Quita todos los efectos dañinos');
     expect(abilityLines(cry, 1, stats, 1)[0]).toMatch(/^\+\d+(,\d)? % de daño de ataque durante \d+ s$/);
+    expect(fireLine(hold)).toBe('Cuando el grupo está recibiendo daño. Contra un jefe espera a su golpe en área.');
+    expect(fireLine(ABILITIES.priest_mend ?? purify)).toBe('Cuando un aliado baja del 70 % de su vida o acaba de recibir un golpe fuerte.');
+    expect(ultimateFireLine(ULTIMATES.priest as UltimateDef)).toBe('Al entrar en combate con un jefe de etapa o de mundo.');
+  });
+
+  it('every hero ability says when it fires, in both languages, with no token left unfilled', () => {
+    for (const lang of ['en', 'es'] as const) {
+      setLanguage(lang);
+      for (const def of Object.values(ABILITIES)) {
+        if (!def.key.startsWith('knight_') && !def.key.startsWith('ranger_') && !def.key.startsWith('priest_')) continue;
+        if (def.aura !== undefined) continue;
+        const line = fireLine(def);
+        expect(line.length, def.key).toBeGreaterThan(10);
+        expect(line, def.key).not.toMatch(/[{}]/);
+      }
+    }
   });
 
   it('numbers follow the language: a decimal comma in Spanish, no wasted decimals', () => {

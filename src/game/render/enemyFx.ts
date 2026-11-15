@@ -48,10 +48,20 @@ const WARN = { fx: 'warn_crack', hot: 'warn_crack_hot', step: 22 };
 export const AREA_BLOWS: Readonly<Record<string, AreaBlow>> = {
   // Brutal Smash: instant — the ground jumps in a low run of dust and stones.
   enemy_smash: { wave: { kind: 'bursts', fx: 'smash_burst', every: 17 }, speed: 0.34, jolt: 'jolt' },
+  // Temblor (a brute's blow from Eternal on): the same run of dust, and the ground SPLITS under each hero it
+  // reaches — that is what says they are shaken (nothing is hung on the heroes).
+  enemy_smash_tremor: { wave: { kind: 'bursts', fx: 'smash_burst', every: 17 }, speed: 0.34, jolt: 'tremor_crack' },
   // Ground Slam: rock driven up out of the path, tooth after tooth, through the whole party.
   boss_slam: { warn: WARN, wave: { kind: 'bursts', fx: 'slam_spike', every: 19 }, speed: 0.3, jolt: 'jolt' },
   // Shockwave: a ring where it is let go, and a wall of force as tall as a hero running back through everyone.
   boss_shockwave: { warn: WARN, origin: 'shock_ring', wave: { kind: 'front', fx: 'shock_front', trail: 'shock_trail', trailEvery: 20 }, speed: 0.26, jolt: 'jolt' },
+  // Resaca (the Ninth Wave's own mechanic, data/bossKit): the path goes under while it is wound up, then a wave as
+  // tall as a hero runs back through the party and drags it along.
+  boss_undertow: { warn: { fx: 'warn_tide', hot: 'warn_tide_hot', step: 22 }, origin: 'undertow_surge', wave: { kind: 'front', fx: 'undertow_front', trail: 'undertow_trail', trailEvery: 18 }, speed: 0.3, jolt: 'undertow_splash' },
+  // The breaking of the mirrors (the Unmaker, with its six panes lit — data/bossKit): splinters lie glinting
+  // along the path while it is wound up, stand on end at the last — then the panes burst on its figure
+  // (render/PaneGlow) and blades of mirror come down through the whole party, one after another.
+  boss_shatter: { warn: { fx: 'warn_glass', hot: 'warn_glass_hot', step: 22 }, wave: { kind: 'bursts', fx: 'shatter_rain', every: 21 }, speed: 0.36, jolt: 'shard_hit' },
 };
 
 export function areaBlow(abilityKey: string | undefined): AreaBlow | undefined {

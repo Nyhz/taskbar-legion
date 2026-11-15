@@ -1,12 +1,18 @@
-import type { AbilityDef, AbilityPower, AbilityTarget, AppliedEffect } from '@/data/abilities';
+import type { AbilityDef, AbilityPower, AbilityTarget, AppliedEffect, FireRule } from '@/data/abilities';
 import type { EffectDef } from '@/data/effects';
 import { effectDef } from '@/data/effects';
 import type { Combatant, CombatEvent } from './world';
 import type { Rng } from './rng';
 import type { EffectiveStats } from './stats';
-import { applyEffect, absorbDamage, isSilenced, isInvulnerable, vulnerabilityMult, weakenMult, healReceivedMult } from './effects';
-import { dealtMult, liveStats } from './liveStats';
+import { applyEffect, absorbDamage, liftHealCleansed, isCooldownFrozen, isSilenced, isInvulnerable, vulnerabilityMult, weakenMult, healReceivedMult } from './effects';
+import { noteStruck, dealtMult, liveStats } from './liveStats';
 import { onCrit, type TriggerCtx } from './triggers';
+import { noteDamageTaken, recentlyHit, recentlyHitHard } from './recent';
+import { condemn, critBleed, guardedDamage, overflowShield } from './passives';
+import { behindBack, resolveSpecial, shellDamage } from './bossMechanics';
+import { afterMirror, reflection, specialReady } from './mirror';
+import { foeDamageMult, foeWard } from './enemyTraits';
+import { biggestCluster, pickTarget } from './targeting';
 import { classDef } from '@/data/classes';
 import { mitigation, enrageMultiplier, MAX_DAMAGE_REDUCTION } from '@/data/stageScaling';
 import { healPowerEffectiveness } from '@/data/difficulties';
@@ -21,6 +27,7 @@ const MAX_CDR = 75; // cap cooldown reduction so abilities can't go free
 export function tickCooldowns(c: Combatant, deltaMs: number): void {
   const keys = Object.keys(c.cooldowns);
   if (keys.length === 0) return;
+  if (isCooldownFrozen(c.effects)) return; // Silencio dorado (a world boss's mechanic): they stand still
   // CDR applies DYNAMICALLY: cooldowns store their BASE duration (no CDR baked in), and we
   // drain them faster the higher the caster's CURRENT cooldown reduction. So a CDR buff
   // gained mid-cooldown shortens the remaining wait, and losing it returns the drain to
@@ -48,7 +55,7 @@ function casterStats(c: Combatant): EffectiveStats {
  *  `enemyDamage`. This is what lets enemy abilities scale through the SAME path as
  *  hero abilities (enemies carry no attackDamage stat). */
 export function normalAttackDamage(caster: Combatant, cs: EffectiveStats): number {
-  if (caster.side === 'enemy') return caster.enemyDamage ?? 0;
+  if (caster.side === 'enemy') return (caster.enemyDamage ?? 0) * foeDamageMult(caster); // its support's Saña
   return cs.attackDamage * (1 + cs.damageIncrease / 100);
 }
 
@@ -139,7 +146,105 @@ function findTank(allies: Combatant[]): Combatant | undefined {
   return frontmostAlly(allies, (a) => roleOf(a) === 'tank') ?? frontmostAlly(allies);
 }
 
-function conditionMet(ability: AbilityDef, allies: Combatant[], enemies: Combatant[]): boolean {
+/** Whether an ability is an enemy's telegraphed AREA blow: it winds up (a cast bar) and its splash reaches the
+ *  whole party (the bosses' Ground Slam / Shockwave). */
+export function isAreaBlow(ability: AbilityDef): boolean {
+  return (ability.castTimeMs ?? 0) > 0 && ability.power?.splashCoeff !== undefined;
+}
+
+const lifeFrac = (c: Combatant): number => (c.maxHp > 0 ? c.hp / c.maxHp : 1);
+const tough = (c: Combatant): boolean => c.isElite === true || c.isBoss === true;
+
+/** A harmful effect Purify cares about: not one too slight to cleanse (data/effects `cleanseIgnores`: Temblor). */
+function cleansable(defKey: string): boolean {
+  const def = effectDef(defKey);
+  return !def.beneficial && def.cleanseIgnores !== true;
+}
+
+/** Whether `c` carries a harmful effect that Purify removes. */
+export function isHarmed(c: Combatant): boolean {
+  return c.effects.some((e) => e.remainingMs > 0 && cleansable(e.defKey));
+}
+
+/** A hero ability's FireRule (data/abilities): is this the moment? Pure read of both sides. */
+function fireRuleMet(rule: FireRule, ability: AbilityDef, caster: Combatant, allies: Combatant[], enemies: Combatant[]): boolean {
+  switch (rule.when) {
+    case 'inReach': {
+      let inReach = 0;
+      let alive = 0;
+      let big = false;
+      for (const e of enemies) {
+        if (!e.alive) continue;
+        alive += 1;
+        if (!inRange(caster, e)) continue;
+        inReach += 1;
+        if (tough(e)) big = true;
+      }
+      return inReach >= rule.foes || (inReach > 0 && (big || inReach === alive));
+    }
+    case 'worthIt': {
+      let alive = 0;
+      for (const e of enemies) {
+        if (!e.alive) continue;
+        if (tough(e)) return true;
+        alive += 1;
+      }
+      return alive >= rule.foes;
+    }
+    case 'cluster': {
+      // Around whoever the ability will land on: the front enemy, or — an ability that goes for the biggest pile
+      // (Explosive Arrow) — that pile's centre.
+      const reached = enemies.find((e) => e.alive && inRange(caster, e));
+      const radius = ability.power?.splashRadius ?? DEFAULT_BLAST_RADIUS;
+      const front = ability.target === 'biggestCluster' && reached !== undefined ? biggestCluster(caster, enemies, radius) : reached;
+      if (front === undefined) return false;
+      if (tough(front)) return true;
+      return enemies.filter((e) => e.alive && Math.abs(e.x - front.x) <= radius).length >= rule.foes;
+    }
+    case 'selfHit':
+      return recentlyHit(caster);
+    case 'partyHit': {
+      if (rule.atAreaBlow === true) {
+        // An enemy in the fight that telegraphs an area blow: the ability is kept for that blow's wind-up.
+        const blower = enemies.find((e) => e.alive && e.engaged === true && e.abilities.some((a) => isAreaBlow(a.def)));
+        if (blower !== undefined) {
+          return enemies.some((e) => e.alive && e.casting !== undefined && e.abilities.some((a) => a.def.key === e.casting?.key && isAreaBlow(a.def)));
+        }
+      }
+      return allies.some((a) => a.alive && recentlyHit(a));
+    }
+    case 'allyHit':
+      return allies.some((a) => a.alive && recentlyHit(a));
+    case 'allyBelow':
+      return allies.some((a) => a.alive && (lifeFrac(a) < rule.frac || (rule.orHeavyHit === true && recentlyHitHard(a) && a.hp < a.maxHp)));
+    case 'partyHurt': {
+      let living = 0;
+      let hurt = 0;
+      for (const a of allies) {
+        if (!a.alive) continue;
+        living += 1;
+        const f = lifeFrac(a);
+        if (f < rule.orOneBelow) return true;
+        if (f < rule.frac) hurt += 1;
+      }
+      return living > 0 && hurt >= Math.min(rule.allies, living);
+    }
+    case 'harmedOrBelow':
+      return allies.some((a) => a.alive && (isHarmed(a) || lifeFrac(a) < rule.frac));
+  }
+}
+
+/** A rule that answers what happens to the party (a heal, a ward): it does not wait for the caster to be in
+ *  reach of an enemy, unlike a buff. */
+function isReactive(ability: AbilityDef): boolean {
+  const w = ability.fires?.when;
+  return w === 'allyHit' || w === 'allyBelow' || w === 'partyHurt' || w === 'harmedOrBelow' || ability.castCondition === 'allyBelowHpPct';
+}
+
+function conditionMet(ability: AbilityDef, caster: Combatant, allies: Combatant[], enemies: Combatant[]): boolean {
+  if (ability.fires !== undefined && caster.side === 'hero') {
+    return enemies.some((e) => e.alive) && fireRuleMet(ability.fires, ability, caster, allies, enemies);
+  }
   const cond = ability.castCondition ?? 'always';
   if (cond === 'enemyPresent') return enemies.some((e) => e.alive);
   if (cond === 'allyBelowHpPct') {
@@ -158,6 +263,7 @@ function conditionMet(ability: AbilityDef, allies: Combatant[], enemies: Combata
 // An enemy ability target must be within the caster's ATTACK RANGE — a melee enemy
 // can only Bash a hero it has reached, a ranged hero can only Fireball a foe in range.
 function inRange(caster: Combatant, target: Combatant): boolean {
+  if (behindBack(caster, target)) return false; // a boss's summon flying behind his back
   return Math.abs(target.x - caster.x) <= caster.range;
 }
 
@@ -175,7 +281,7 @@ function isSelfOrPartyBuff(ability: AbilityDef): boolean {
   // self / whole-party / single-ally buffs (e.g. Power Infusion on a DPS) all wait for
   // engagement so their uptime isn't wasted on the walk-up.
   if (ability.target !== 'self' && ability.target !== 'allAllies' && ability.target !== 'randomDpsAlly' && ability.target !== 'twoDpsAllies') return false;
-  return ability.castCondition !== 'allyBelowHpPct';
+  return !isReactive(ability);
 }
 
 /** The shield an ability IS about — its first effect, when that is a shield (Bulwark, Holy Shield). A shield
@@ -196,7 +302,10 @@ export function foesBehind(front: Combatant, foes: readonly Combatant[]): Combat
   return foes.filter((f) => f.alive && f !== front);
 }
 
-function selectTargets(caster: Combatant, target: AbilityTarget, allies: Combatant[], enemies: Combatant[], rng: Rng): Combatant[] {
+/** The blast radius of an ability that states none (world px ≈ 1.5 bodies). */
+const DEFAULT_BLAST_RADIUS = 45;
+
+function selectTargets(caster: Combatant, target: AbilityTarget, allies: Combatant[], enemies: Combatant[], rng: Rng, blastRadius = DEFAULT_BLAST_RADIUS): Combatant[] {
   switch (target) {
     case 'self':
       return [caster];
@@ -270,6 +379,91 @@ function selectTargets(caster: Combatant, target: AbilityTarget, allies: Combata
       const tank = findTank(allies);
       return tank !== undefined ? [tank] : [];
     }
+    case 'biggestCluster': {
+      // Once the fight has reached the caster (an enemy as near as she stands), the enemy in her shot reach whose
+      // blast catches the most (sim/targeting). Deterministic, no RNG.
+      if (!enemies.some((e) => e.alive && inRange(caster, e))) return [];
+      const best = biggestCluster(caster, enemies, blastRadius);
+      return best !== undefined ? [best] : [];
+    }
+    case 'priorityEnemy': {
+      // Once an enemy has come as near as the caster stands (the fight has reached her), the one that comes
+      // first in the heroes' order across her whole shot reach (sim/targeting): the support at the back before
+      // the brute in front. Deterministic, no RNG.
+      if (!enemies.some((e) => e.alive && inRange(caster, e))) return [];
+      const best = pickTarget(caster, enemies);
+      return best !== undefined ? [best] : [];
+    }
+    case 'mostHitAlly': {
+      // Whoever is taking the most damage right now (the fading tally of sim/recent.ts); nobody when no one is.
+      let best: Combatant | undefined;
+      for (const a of allies) {
+        if (!a.alive || !recentlyHit(a)) continue;
+        if (best === undefined || (a.recentDamage ?? 0) > (best.recentDamage ?? 0)) best = a;
+      }
+      return best !== undefined ? [best] : [];
+    }
+    case 'hurtAlly': {
+      // An ally that has just taken a heavy hit (the one that lost the largest share), else the most hurt.
+      let hard: Combatant | undefined;
+      let low: Combatant | undefined;
+      for (const a of allies) {
+        if (!a.alive) continue;
+        if (recentlyHitHard(a) && a.hp < a.maxHp && (hard === undefined || (a.recentDamage ?? 0) / a.maxHp > (hard.recentDamage ?? 0) / hard.maxHp)) hard = a;
+        if (low === undefined || lifeFrac(a) < lifeFrac(low)) low = a;
+      }
+      const pick = hard ?? low;
+      return pick !== undefined ? [pick] : [];
+    }
+    case 'harmedAlly': {
+      // The ally with the most harmful effects on it; with none harmed, the most hurt.
+      let best: Combatant | undefined;
+      let most = 0;
+      let low: Combatant | undefined;
+      for (const a of allies) {
+        if (!a.alive) continue;
+        const n = a.effects.filter((e) => e.remainingMs > 0 && cleansable(e.defKey)).length;
+        if (n > most || (n > 0 && n === most && best !== undefined && lifeFrac(a) < lifeFrac(best))) {
+          most = n;
+          best = a;
+        }
+        if (low === undefined || lifeFrac(a) < lifeFrac(low)) low = a;
+      }
+      const pick = best ?? low;
+      return pick !== undefined ? [pick] : [];
+    }
+    // A boss's picks among the party (its affixes and mechanics, data/bossKit). They are not gated by reach —
+    // a bolt, a shot, roots from the ground — but only once the boss has reached the fight.
+    case 'randomEnemy': {
+      if (caster.side === 'enemy' && caster.engaged !== true) return [];
+      const alive = enemies.filter((e) => e.alive);
+      return alive.length > 0 ? [rng.pick(alive)] : [];
+    }
+    case 'softestEnemy': {
+      // The one with the least armour (ties: the one further back, last in the list).
+      if (caster.side === 'enemy' && caster.engaged !== true) return [];
+      let best: Combatant | undefined;
+      let least = Number.POSITIVE_INFINITY;
+      for (const e of enemies) {
+        if (!e.alive) continue;
+        const armor = liveStats(e).armor;
+        if (armor <= least) {
+          least = armor;
+          best = e;
+        }
+      }
+      return best !== undefined ? [best] : [];
+    }
+    case 'topDamageEnemy': {
+      // Whoever has hurt this boss the most so far (sim/bossMechanics keeps the count); nobody yet → the front one.
+      if (caster.side === 'enemy' && caster.engaged !== true) return [];
+      let best: Combatant | undefined;
+      for (const e of enemies) {
+        if (!e.alive) continue;
+        if (best === undefined || (e.dealtToBoss ?? 0) > (best.dealtToBoss ?? 0)) best = e;
+      }
+      return best !== undefined ? [best] : [];
+    }
     default:
       return [];
   }
@@ -311,6 +505,7 @@ function applyToTarget(
   if (kind === 'heal' || kind === 'hot') value *= dealtMult(caster, target, 'heal');
   else if (kind === 'dot' && caster.side === 'hero') {
     value *= dealtMult(caster, target, 'damage');
+    noteStruck(caster, target);
     target.lastHitBy = caster.id;
   }
 
@@ -336,7 +531,7 @@ function applyToTarget(
         return;
       }
       const ts = liveStats(target);
-      const defense = caster.enemyMagic === true ? ts.magicResist : ts.armor;
+      const defense = (ability.magic ?? caster.enemyMagic === true) ? ts.magicResist : ts.armor; // a spell of a boss that otherwise hits with steel
       dmg *= weakenMult(caster.effects); // a Debilitated enemy's spells hit softer too
       // A blow that takes the place of the boss's swings (holdsAttack) carries, ON ITS MAIN TARGET, the enrage
       // those swings would have had — otherwise winding it up would be a rest for the tank once the boss is
@@ -344,13 +539,23 @@ function applyToTarget(
       if (ability.holdsAttack === true && caster.isBoss === true && coeffOverride === undefined) {
         dmg *= enrageMultiplier(caster.fightMs ?? 0, caster.enrageMs ?? Number.POSITIVE_INFINITY);
       }
+      const raw = dmg;
       dmg *= 1 - mitigation(Math.max(0, defense), S);
       dmg *= 1 - Math.min(MAX_DAMAGE_REDUCTION, Math.max(0, ts.damageReduction)) / 100; // flat % off (e.g. shields/DR buffs)
+      // The guard passives (sim/passives.ts). An area blow is a splash, or an ability that reaches everyone.
+      const area = coeffOverride !== undefined || ability.target === 'allEnemies' || ability.power?.splashCoeff !== undefined;
+      dmg = guardedDamage(target, dmg, { raw, area, magic: (ability.magic ?? caster.enemyMagic === true) });
     } else {
       dmg *= vulnerabilityMult(target.effects); // Ranger's Mark amplifies hero ability damage to the boss
       dmg *= dealtMult(caster, target, 'damage'); // role talents
+      noteStruck(caster, target); // First Blood
+      dmg = foeWard(target, dmg, true, events); // a wave enemy's parry (Guardia) and its support's auras
+      dmg = shellDamage(target, dmg, crit); // a boss's shell (the Acorazado affix)
+      if (crit) critBleed(caster, target, dmg); // Hemorrhage: her critical hits leave a bleed
       target.lastHitBy = caster.id;
+      condemn(caster, target); // Condemn: hit by her damage abilities, it takes more from everyone
     }
+    noteDamageTaken(target, dmg); // what lands on a hero, before its shields (sim/recent.ts)
     dmg = Math.max(0, absorbDamage(target.effects, dmg));
     target.hp -= dmg;
     // Tag the source ability so the render layer can pick the caster's ability-cast swing
@@ -361,10 +566,20 @@ function applyToTarget(
     events.push({ type: 'damage', targetId: target.id, sourceId: caster.id, amount: dmg, crit, abilityKey: ability.key, splash });
     return;
   }
+  if (kind === 'cleanse') {
+    // Purify: every harmful effect on the target goes (they end now; a heal after it is no longer cut).
+    for (let i = target.effects.length - 1; i >= 0; i--) {
+      const e = target.effects[i];
+      if (e !== undefined && cleansable(e.defKey)) target.effects.splice(i, 1);
+    }
+    return;
+  }
   if (kind === 'heal') {
     // Mortal Wound (and any healReduction) cuts the healing the target receives.
     const heal = Math.max(0, value) * healReceivedMult(target.effects);
+    overflowShield(target, target.hp + heal - target.maxHp); // Overflow: what does not fit becomes a shield
     target.hp = Math.min(target.maxHp, target.hp + heal);
+    if (heal > 0) liftHealCleansed(target.effects); // a direct heal clears what such a heal clears (a world boss's spores)
     events.push({ type: 'heal', targetId: target.id, sourceId: caster.id, amount: heal, crit: healCrit });
     return;
   }
@@ -402,12 +617,13 @@ export function castReadyAbilities(
     } else if ((caster.cooldowns[ability.key] ?? 0) > 0) {
       continue;
     }
-    if (!conditionMet(ability, allies, enemies)) continue;
+    if (!conditionMet(ability, caster, allies, enemies)) continue;
+    if (ability.special !== undefined && (caster.engaged !== true || !specialReady(caster, ability))) continue; // a boss's mechanic waits for the fight (and the breaking of the mirrors, for all six)
     // Don't blow a self/party buff — OR a whole-wave AoE — during the walk-up: hold it
     // until the caster is actually engaged (a foe in range). The AoE then lands on the
     // ENTIRE wave (selectTargets no longer range-gates allEnemies), not just what's in reach.
     if ((isSelfOrPartyBuff(ability) || ability.target === 'allEnemies') && !engaged(caster, enemies)) continue;
-    const targets = selectTargets(caster, ability.target, allies, enemies, rng);
+    const targets = selectTargets(caster, ability.target, allies, enemies, rng, ability.power?.splashRadius);
     if (targets.length === 0) continue;
     // Don't stack shields: if this ability IS a shield and every target already has an active
     // shield of that kind (from ANY source), skip the cast WITHOUT consuming its cooldown — it
@@ -451,6 +667,18 @@ function applyAbilityEffectsTo(
   rng: Rng,
   events: CombatEvent[],
 ): void {
+  resolveSpecial(caster, ability, allies, enemies, S, events); // what it does beyond effects (a boss's summons, its undertow…)
+  if (ability.special?.kind === 'mirror') {
+    // Espejos: the boss casts back the last ability a hero cast (sim/mirror builds it) — a cast like any other,
+    // resolved here; a cue says which ability it was.
+    const reflected = reflection(caster, ability.special);
+    if (reflected !== undefined) {
+      events.push({ type: 'cue', targetId: caster.id, cue: 'mirror', abilityKey: reflected.of });
+      const aimed = selectTargets(caster, reflected.def.target, allies, enemies, rng);
+      if (aimed.length > 0) applyAbilityEffectsTo(caster, reflected.def, 1, cs, aimed, allies, enemies, S, rng, events);
+    }
+    afterMirror(caster, ability.special, allies, enemies, S, events); // one more pane lit; every other one, the reflection
+  }
   for (const applied of ability.applies) {
     if (applied.chance !== undefined && !rng.chance(applied.chance)) continue;
     const def = effectDef(applied.effectKey);
@@ -526,7 +754,7 @@ export function resolveChanneledCast(
   const resolved = caster.abilities.find((a) => a.def.key === ch.key);
   if (resolved === undefined) return null;
   const cs = casterStats(caster);
-  const targets = selectTargets(caster, resolved.def.target, allies, enemies, rng);
+  const targets = selectTargets(caster, resolved.def.target, allies, enemies, rng, resolved.def.power?.splashRadius);
   if (targets.length > 0) applyAbilityEffectsTo(caster, resolved.def, resolved.rank, cs, targets, allies, enemies, S, rng, events);
   return resolved.def.key;
 }

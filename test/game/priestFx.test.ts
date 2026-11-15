@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { ABILITIES } from '@/data/abilities';
 import { EFFECTS } from '@/data/effects';
+import { talentNodes } from '@/data/talents';
 import {
   ABILITY_LOOKS,
   AURA_PREFIX,
@@ -14,6 +14,7 @@ import {
   SILENT_EFFECTS,
   auraEffectKey,
   basicShotOf,
+  hasAuraLook,
   hasOwnLook,
   wornLooks,
   type WornEffect,
@@ -32,7 +33,7 @@ const priest = { id: 'priest', classKey: 'priest' };
 describe('the Priest', () => {
   it('has a look for every ability: nothing is left pending', () => {
     expect(PENDING_ABILITIES).toEqual([]);
-    for (const key of ['priest_mend', 'priest_powerinfusion', 'priest_holyshield', 'priest_nova', 'priest_retribution', 'priest_sanctuary', 'priest_smite', 'priest_enrage']) {
+    for (const key of ['priest_mend', 'priest_powerinfusion', 'priest_holyshield', 'priest_nova', 'priest_purify', 'priest_sanctuary', 'priest_smite', 'priest_enrage']) {
       expect(ABILITY_LOOKS[key], key).toBeDefined();
     }
   });
@@ -98,12 +99,15 @@ describe('the Priest', () => {
     expect(got.rim?.look.rim).toBe('infused'); // …which still shows by its rim
   });
 
-  it('Retribution is a seal under her and a tread under each ally, through a stand-in key for an aura ability', () => {
+  it('Retribution is a seal under her and a tread under each ally, through a stand-in key for a party aura', () => {
     const key = auraEffectKey('priest_retribution');
     expect(key.startsWith(AURA_PREFIX)).toBe(true);
-    expect(ABILITIES.priest_retribution?.aura).toBeDefined();
+    expect(hasAuraLook('priest_retribution')).toBe(true);
+    expect(hasAuraLook('priest_sacred_ward')).toBe(false);
+    // Every aura with a look is a talent that gives the whole party a stat (Retribution is a passive now).
+    const partyTalents = new Set(talentNodes('priest').filter((n) => n.role?.type === 'partyStat').map((n) => n.key));
     for (const k of Object.keys(EFFECT_LOOKS)) {
-      if (k.startsWith(AURA_PREFIX)) expect(ABILITIES[k.slice(AURA_PREFIX.length)]?.aura, `${k} names an aura ability`).toBeDefined();
+      if (k.startsWith(AURA_PREFIX)) expect(partyTalents.has(k.slice(AURA_PREFIX.length)), `${k} names a party aura`).toBe(true);
     }
     const aura: WornEffect = { defKey: key, sourceId: 'priest', remainingMs: 1 };
     expect(wornLooks([aura], priest).slots.get('ground')?.look.fx).toBe('retribution_seal');

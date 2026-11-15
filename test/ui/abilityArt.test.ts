@@ -56,6 +56,21 @@ describe('ability art', () => {
     expect(EXPORTED.has(branchArtStem('knight', 'no_such_branch'))).toBe(true);
     // A role talent's frame is drawn in its three states.
     for (const state of ['off', 'on', 'max']) expect(EXPORTED.has(`tal_role_${state}`)).toBe(true);
+    // …and so is an effect passive's (the same pointed seal, a size down).
+    for (const state of ['off', 'on', 'max']) expect(EXPORTED.has(`tal_effect_${state}`)).toBe(true);
+  });
+
+  it('every effect passive has a sign of its own: never a stat sign, never another node’s', () => {
+    for (const c of CLASS_KEYS) {
+      const nodes = talentNodes(c);
+      const effects = nodes.filter((x) => x.kind === 'passive' && x.role !== undefined);
+      expect(effects).toHaveLength(5);
+      for (const n of effects) {
+        const stem = talentNodeArtStem(c, n);
+        expect(stem.startsWith('tal_e_'), `${n.key} → ${stem}`).toBe(true);
+        expect(nodes.filter((x) => talentNodeArtStem(c, x) === stem).map((x) => x.key), stem).toEqual([n.key]);
+      }
+    }
   });
 
   it('every role talent has a sign no other node of its tree uses', () => {

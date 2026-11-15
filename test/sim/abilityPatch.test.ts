@@ -5,7 +5,8 @@ import { heroAbilities } from '@/sim/loadout';
 import { vulnerabilityMult } from '@/sim/effects';
 import { abilityDef } from '@/data/abilities';
 import type { CombatEvent } from '@/sim/world';
-import { base, effect, learned, luckyRng, quietRng, unit } from './_kit';
+import { base, effect, learned, luckyRng, quietRng, unit, anyMoment } from './_kit';
+import { noteDamageTaken } from '@/sim/recent';
 
 // Ability PATCHES (F2): what each modifier of the first wave does to its ability, end to end — and the effects
 // with a target / coefficient of their own (F3) and the "two heroes" target (F6) they lean on.
@@ -218,7 +219,7 @@ describe('Priest abilities and modifiers', () => {
   const priestWith = (talents: Record<string, number>, key: string): ReturnType<typeof unit> =>
     unit({ id: 'p', side: 'hero', classKey: 'priest', x: -60, range: 200, baseStats: AD100, abilities: [learned('priest', talents, key)] });
 
-  it('Smite: an instant heal on the hurt-most ally and, as an effect of its own, a strike on the front enemy', () => {
+  it('Smite: an instant heal on the hurt-most ally and, as an effect of its own, a strike on her priority target', () => {
     const cast = (rank: number, withFoe: boolean): { ally: number; foe: number; cast: string[] } => {
       const priest = priestWith({ priest_smite: rank }, 'priest_smite');
       const ally = unit({ id: 'k', side: 'hero', hp: 500 });
@@ -270,7 +271,7 @@ describe('Priest abilities and modifiers', () => {
   it('a ward riding on Sanctuary does not hold the cast back, and does not stop a real shield ability', () => {
     // Everyone already carries a ward: Sanctuary (a heal that also wards) still fires.
     const priest = priestWith({ priest_sanctuary: 1, priest_mod_deep_sanctuary: 1 }, 'priest_sanctuary');
-    const knight = unit({ id: 'k', side: 'hero', hp: 500, abilities: [{ def: abilityDef('knight_bulwark'), rank: 1 }] });
+    const knight = unit({ id: 'k', side: 'hero', hp: 500, abilities: [{ def: anyMoment(abilityDef('knight_bulwark')), rank: 1 }] });
     for (const h of [priest, knight]) h.effects.push({ defKey: 'fx_ward', sourceId: 'p', remainingMs: 3000, stacks: 1, value: 10 });
     const foe = unit({ id: 'e', side: 'enemy', x: 10 });
     expect(castReadyAbilities(priest, [priest, knight], [foe], 1, quietRng(), [])).toEqual(['priest_sanctuary']);
@@ -297,6 +298,7 @@ describe('Priest abilities and modifiers', () => {
   it('Aegis: Holy Shield also gives the tank 10% less damage taken for its 4s', () => {
     const priest = priestWith({ priest_holyshield: 1, priest_mod_aegis: 1 }, 'priest_holyshield');
     const tank = unit({ id: 'k', side: 'hero' });
+    noteDamageTaken(tank, 1); // the shield goes on whoever is being hit
     castReadyAbilities(priest, [tank, priest], [unit({ id: 'e', side: 'enemy', x: 10 })], 1, quietRng(), []);
     expect(effect(tank, 'fx_shield')?.value).toBeCloseTo(100, 5);
     expect(effect(tank, 'buff_aegis_dr')).toMatchObject({ value: 10, remainingMs: 4000 });

@@ -21,6 +21,10 @@ export interface WorldDef {
   creatures: Record<CreatureRole, CreatureDef>;
   /** The creature of its world boss, if it has one of its own. */
   worldBoss?: CreatureDef;
+  /** The creature of its SUPPORT (the wave enemy that carries auras: data/enemies SUPPORT_KIND), if it has one of
+   *  its own. Until a world has it — and its figure is exported — the strip draws the support with the world's
+   *  ranged creature, tinted (render/foeFx). */
+  support?: CreatureDef;
 }
 
 const creature = (role: CreatureRole, key: string, name: string): CreatureDef => ({ key, name, role });
@@ -35,6 +39,7 @@ export const WORLDS: readonly WorldDef[] = [
       ranged: creature('ranged', 'poacher', 'Crowfeather Poacher'),
       boss: creature('boss', 'king', 'Harvest King'),
     },
+    support: creature('ranged', 'drummer', 'Reaping Drummer'),
     worldBoss: creature('boss', 'crowmother', 'The Crowmother'),
   },
   {
@@ -46,6 +51,7 @@ export const WORLDS: readonly WorldDef[] = [
       ranged: creature('ranged', 'sporecaller', 'Sporecaller'),
       boss: creature('boss', 'warden', 'Antlered Warden'),
     },
+    support: creature('ranged', 'bellringer', 'Moss Bell-Ringer'),
     worldBoss: creature('boss', 'mistletoe', 'Our Lady of Mistletoe'),
   },
   {
@@ -57,6 +63,7 @@ export const WORLDS: readonly WorldDef[] = [
       ranged: creature('ranged', 'bogwitch', 'Bog Witch'),
       boss: creature('boss', 'ferryman', 'The Ferryman'),
     },
+    support: creature('ranged', 'stiltwalker', 'Marsh Carp-Bearer'),
     worldBoss: creature('boss', 'drownedmoon', 'The Drowned Moon'),
   },
   {
@@ -68,6 +75,7 @@ export const WORLDS: readonly WorldDef[] = [
       ranged: creature('ranged', 'vulture', 'Carrion Harrier'),
       boss: creature('boss', 'colossus', 'Sandstone Colossus'),
     },
+    support: creature('ranged', 'hornblower', 'War-Horn Bearer'),
     worldBoss: creature('boss', 'scapegoat', 'The Scapegoat'),
   },
   {
@@ -79,6 +87,7 @@ export const WORLDS: readonly WorldDef[] = [
       ranged: creature('ranged', 'rimewraith', 'Rime Wraith'),
       boss: creature('boss', 'bellbearer', 'The Bell-Bearer'),
     },
+    support: creature('ranged', 'wheelturner', 'Wheel-Turner'),
     worldBoss: creature('boss', 'abbot', 'The Gilded Abbot'),
   },
   {
@@ -90,6 +99,7 @@ export const WORLDS: readonly WorldDef[] = [
       ranged: creature('ranged', 'siren', 'Siren'),
       boss: creature('boss', 'admiral', 'The Drowned Admiral'),
     },
+    support: creature('ranged', 'tideaugur', 'Tide Augur'),
     worldBoss: creature('boss', 'ninthwave', 'The Ninth Wave'),
   },
   {
@@ -101,6 +111,7 @@ export const WORLDS: readonly WorldDef[] = [
       ranged: creature('ranged', 'bat', 'Gloom Bat'),
       boss: creature('boss', 'geode', 'The Geode Titan'),
     },
+    support: creature('ranged', 'lightangler', 'Light Angler'),
     worldBoss: creature('boss', 'amanita', 'The Destroying Angel'),
   },
   {
@@ -112,6 +123,7 @@ export const WORLDS: readonly WorldDef[] = [
       ranged: creature('ranged', 'slagimp', 'Slag Imp'),
       boss: creature('boss', 'magmawyrm', 'Forge Wyrm'),
     },
+    support: creature('ranged', 'stoker', 'Ember Stoker'),
     worldBoss: creature('boss', 'quench', 'The Quench'),
   },
   {
@@ -123,6 +135,7 @@ export const WORLDS: readonly WorldDef[] = [
       ranged: creature('ranged', 'cantor', 'Storm Cantor'),
       boss: creature('boss', 'archon', 'The Archon'),
     },
+    support: creature('ranged', 'kiteflyer', 'Kite Acolyte'),
     worldBoss: creature('boss', 'verdict', 'The Verdict'),
   },
   {
@@ -134,6 +147,7 @@ export const WORLDS: readonly WorldDef[] = [
       ranged: creature('ranged', 'weaver', 'Star Weaver'),
       boss: creature('boss', 'lictor', 'The Lictor'),
     },
+    support: creature('ranged', 'hourbearer', 'Hour Bearer'),
     worldBoss: creature('boss', 'unmaker', 'The Unmaker'),
   },
 ];
@@ -145,5 +159,5 @@ export function tryWorldDef(index: number): WorldDef | undefined {
 
 /** Every creature of every world: its cast of four and, where it has one, the creature of its world boss. */
 export function allCreatures(): CreatureDef[] {
-  return WORLDS.flatMap((w) => [...CREATURE_ROLES.map((role) => w.creatures[role]), ...(w.worldBoss === undefined ? [] : [w.worldBoss])]);
+  return WORLDS.flatMap((w) => [...CREATURE_ROLES.map((role) => w.creatures[role]), ...(w.worldBoss === undefined ? [] : [w.worldBoss]), ...(w.support === undefined ? [] : [w.support])]);
 }

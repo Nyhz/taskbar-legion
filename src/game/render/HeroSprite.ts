@@ -170,6 +170,11 @@ export class HeroSprite extends Container {
     this.partyAuras = auras;
   }
 
+  /** The effect chip under a point of this sprite's own space (render/HeroHud.effectChipAt). */
+  effectChipAt(x: number, y: number): { worn: readonly { key: string; value?: number; stacks?: number; totalMs?: number }[]; x: number; y: number } | null {
+    return this.visible ? this.hud.effectChipAt(x, y) : null;
+  }
+
   /** Where the sign of an ability this hero casts appears (parent coords): centred over the body, its
    *  bottom edge just above the overhead HUD. */
   signPoint(): { x: number; y: number } {

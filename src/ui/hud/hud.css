@@ -28,6 +28,12 @@
 .tk-hud-foe { flex: 1; min-width: 0; display: flex; align-items: center; gap: 3px; }
 .tk-hud-foe > .nm { flex: 0 1 auto; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font: 12px/14px var(--f-name); color: var(--k9); text-shadow: 1px 1px 0 var(--k0); }
 .tk-hud-foe.world > .nm { color: var(--gold-hi); }
+/* The marks of its kit, tight after the name: the mechanic of a world boss, then its affixes. */
+.tk-hud-foe-mark { position: relative; flex: 0 0 auto; display: flex; align-items: center; margin-left: -2px; }
+.tk-hud-foe-mark:hover > img { filter: brightness(1.25); }
+/* …and a sober counter beside a sign that counts something (the Unmaker's mirrors lit: 2/6). */
+.tk-hud-foe-mark > .n { margin: 0 3px 0 1px; color: var(--k9); }
+.tk-hud-foe-mark > .tk-tip.wide { width: 236px; }
 .tk-hud-foe-life { flex: 1 1 70px; min-width: 70px; max-width: 170px; height: 9px; margin-left: 2px; }
 .tk-hud-foe-clock { position: relative; display: flex; align-items: center; min-width: 34px; color: var(--k9); }
 .tk-hud-foe-clock.late { color: var(--bad); }

@@ -5,7 +5,7 @@ import { BOSS_DOWN_MS, RANGE } from '@/data/field';
 import { hexToNum } from '@/styles/palette';
 import { auraCategories, drawCategoryAuras, totalShield, type AuraRegion } from './effectAuras';
 import { BodyFx, fxLoop, type FxLoop } from './BodyFx';
-import { ELITE_ARRIVE_FX, ELITE_CREST_FX, ELITE_FIGURE_SCALE, ELITE_RIM_INNER, ELITE_RIM_OFFSETS, ELITE_SPARKS_FX, eliteAuraFx, eliteAuraSpots, eliteRimOuter } from './eliteLook';
+import { ENEMY_Z, ELITE_ARRIVE_FX, ELITE_CREST_FX, ELITE_FIGURE_SCALE, ELITE_RIM_INNER, ELITE_RIM_OFFSETS, ELITE_SPARKS_FX, eliteAuraFx, eliteAuraSpots, eliteRimOuter } from './eliteLook';
 import { figureMask } from './figureMask';
 import { FigureBody } from './FigureBody';
 import { DEATH } from './figureClip';
@@ -16,6 +16,12 @@ import type { FigureSheet } from './figureTextures';
 import { ATTACK_CLIP, HURT_CLIP } from './heroClips';
 import { LifeBar } from './LifeBar';
 import { BARS, foeBarAlpha, type BarSpec } from './stripHud';
+import { DOUBLE_LOOKS, PANES, SUMMON_LOOKS, litPaneCount, summonLift, type DoubleLook, type SummonLook } from './bossFx';
+import { fxMeta, fxTotalMs, paneSheetMeta } from './fxData';
+import { heroSkin, paneCells } from './fxTextures';
+import { PaneGlow } from './PaneGlow';
+import { AURA_SIGN_LIFT, BRUTE_FIGURE_SCALE, RAGE_TINT, SUPPORT_BORROWED_TINT, auraSignOffsets, auraSigns } from './foeFx';
+import { isEnraged } from '@/sim/enemyTraits';
 
 // An enemy display object: a creature of the world the party is in (the redesign's figures — FigureBody), drawn
 // 1 art pixel = 1 strip pixel and mirrored to face the heroes, with its feet on the ground line it is given.
@@ -24,6 +30,8 @@ import { BARS, foeBarAlpha, type BarSpec } from './stripHud';
 // scaled, and why), a stage boss has its own large figure, a world boss its own larger one (or, in a world that
 // has none yet, the stage boss's figure with gold rings). A boss wears no life bar: its name,
 // life and enrage clock are on the HUD rail (ui/hud/HudBoss), so nothing is drawn over a boss as tall as the strip.
+// A boss's SUMMON (its crows — render/bossFx SUMMON_LOOKS) is an enemy too: it flies at its own height over the
+// ground, dives at the hero it pecks, and flies off when its time is up.
 // Reads sim state only. Each enemy MATERIALISES (teleport-in) on first appearance, and on death plays its death
 // animation to the end before the driver removes it.
 
@@ -61,6 +69,14 @@ const RANK: Record<EnemyRank, RankLook> = {
   stageBoss: { bar: BARS.foe, ownBar: false, rings: null },
   worldBoss: { bar: BARS.foe, ownBar: false, rings: { color: GOLD, reach: 46 } },
 };
+
+/** How much of the way to its mark a dive (a crow's peck, a double's step) goes at its deepest. */
+const DIVE_REACH = 0.85;
+
+/** Whether `sheet` is the hero's figure in the double's own skin (not the hero's plain figure). */
+function sheetIsSkin(sheet: FigureSheet, look: DoubleLook): boolean {
+  return heroSkin(sheet.key, look.skin) === sheet;
+}
 
 export class EnemySprite extends Container {
   readonly style: AttackStyle;
@@ -108,21 +124,38 @@ export class EnemySprite extends Container {
   private prevAlive = true;
   private barLift = 0; // px the HP bar is raised to dodge a crowded neighbour's bar (set by GameStrip)
   private barCrowded = false; // no room for its bar among its neighbours' (set by GameStrip): it shows none
+  private readonly summon: SummonLook | null; // a boss's summon: how it flies (render/bossFx)
+  private readonly double: DoubleLook | null; // a boss's summon that is a hero's double (the Unmaker's reflection)
+  private readonly panes: PaneGlow | null; // its own panes, lit one by one (the Unmaker's six mirrors)
+  private lift = 0; // how high over the ground line it is drawn (a summon flies)
+  private dive: { dx: number; dy: number; t: number; ms: number } | null = null; // a summon's dive at the hero it pecks
+  private leaving = false; // a summon whose time is up: it flies off instead of falling
+  private drift = 0; // …and how far it has flown off sideways
+  private crowdLift = 0; // how much higher it is drawn as the back row of its pile (render/crowdLayout)
+  private readonly bodyTint: number; // the tint of its own body when nothing else colours it (a support in a borrowed figure)
+  private readonly auraSigns = new Container(); // a support's auras: one small sign each, in a row over its head (render/foeFx)
 
   /** `ownFigure`: the sheet is a figure drawn for this rank alone (a world boss with a creature of its own). It
    *  needs no ground rings to be told from the stage boss — its body does that — and keeps the gold bar. */
-  constructor(c: Combatant, sheet: FigureSheet, rank: EnemyRank, ownFigure = false) {
+  /** `borrowed`: a support drawn with its world's ranged creature (the world has no figure for it yet): tinted. */
+  constructor(c: Combatant, sheet: FigureSheet, rank: EnemyRank, ownFigure = false, borrowed = false) {
     super();
     // A boss is shown by its own figure's attack — a slam, a peck — whatever its damage type: it throws no generic
     // bolt (a "magic" boss used to launch the old fireball from its feet). Presentation only.
     this.boss = rank === 'stageBoss' || rank === 'worldBoss';
     this.elite = rank === 'elite';
     this.sheet = sheet;
-    this.style = this.boss ? 'melee' : c.enemyMagic === true ? 'caster' : c.range >= RANGE.ranged ? 'ranged' : 'melee';
+    this.summon = c.summon === undefined ? null : (SUMMON_LOOKS[c.summon.key] ?? null);
+    this.double = c.summon === undefined ? null : (DOUBLE_LOOKS[c.summon.key] ?? null);
+    // (A summon strikes with its own body — a dive — whatever reach the simulation gives it.)
+    this.style = this.boss || c.summon !== undefined ? 'melee' : c.enemyMagic === true ? 'caster' : c.range >= RANGE.ranged ? 'ranged' : 'melee';
     this.look = ownFigure ? { ...RANK[rank], rings: null } : RANK[rank];
     // The standing figure's box, mirrored (the art faces right; enemies face the party on their left).
     // An elite is drawn a size up (render/eliteLook): its box grows with it, from the feet.
-    const size = rank === 'elite' ? ELITE_FIGURE_SCALE : 1;
+    // A brute is its world's melee fighter a size up (render/foeFx): the one other place the art is scaled.
+    const size = (rank === 'elite' ? ELITE_FIGURE_SCALE : 1) * (c.enemyRole === 'brute' ? BRUTE_FIGURE_SCALE : 1);
+    // (A double wears its skin; without it — the hero's own figure — it is darkened by a tint.)
+    this.bodyTint = borrowed ? SUPPORT_BORROWED_TINT : this.double !== null && !sheetIsSkin(sheet, this.double) ? this.double.tint : 0xffffff;
     const [left, top, right] = sheet.meta.box.map((v) => v * size) as [number, number, number, number];
     const height = -top;
     // A melee figure too wide for the gap the fight leaves is drawn set back, so its body stands behind the
@@ -146,18 +179,37 @@ export class EnemySprite extends Container {
     this.attackMs = attack === undefined ? 0 : clipMs(attack);
 
     this.figure = new FigureBody(sheet, -1);
+    if (this.double !== null) this.figure.setRim(heroSkin(sheet.key, this.double.rim)); // the cold edge of the glass it came out of
     const attackAnim = sheet.meta.anims[ATTACK_CLIP];
     this.lead = new AttackLead(attackAnim === undefined ? 0 : impactMs(attackAnim));
     this.figure.position.set(setback, FEET_Y);
     this.figure.scale.set(size);
     this.eliteRim.position.copyFrom(this.figure.position);
     this.eliteRim.scale.set(size);
+    const paneMeta = paneSheetMeta(sheet.key);
+    const paneArt = paneCells(sheet.key);
+    this.panes = paneMeta === undefined || paneArt === null ? null : new PaneGlow(paneMeta, paneArt);
+    if (this.panes !== null) {
+      this.panes.position.copyFrom(this.figure.position);
+      this.panes.scale.set(-size, size); // the art faces right; it faces the party
+    }
     // The rank rings + frenzy pool sit on the ground UNDER the feet, then enrageAura behind the
     // body; HP bar + cast bar on top.
     this.bodyFx = new BodyFx({ cx: this.cx, feetY: FEET_Y, height, halfW: this.halfW, facing: -1 });
     if (rank === 'elite') this.wearElite(height);
-    this.addChild(this.eliteFire, this.rankAura, this.enrageAura, this.bodyFx.under, this.eliteRim, this.figure, this.bodyFx.over, this.aura, this.lifeBar, this.castBar, this.tpRing);
+    this.addChild(this.eliteFire, this.rankAura, this.enrageAura, this.bodyFx.under, this.eliteRim, this.figure);
+    if (this.panes !== null) this.addChild(this.panes);
+    this.addChild(this.bodyFx.over, this.aura, this.lifeBar, this.castBar, this.tpRing);
     if (this.eliteCrest !== null) this.addChild(this.eliteCrest.sprite);
+    // A support wears its auras over its head: the one standing sign a wave enemy has (they are what it IS).
+    const signs = auraSigns(c.auras);
+    auraSignOffsets(signs.length).forEach((dx, i) => {
+      const sign = fxLoop(signs[i] ?? '');
+      if (sign === null) return;
+      sign.sprite.position.set(dx, 0);
+      this.auraSigns.addChild(sign.sprite);
+    });
+    if (signs.length > 0) this.addChild(this.auraSigns);
   }
 
   // An elite's marks (render/eliteLook): fire standing behind the body and well above it (as many drawings side
@@ -224,6 +276,59 @@ export class EnemySprite extends Container {
     }
   }
 
+  /** True for a boss's summon — a crow over the party, a hero's double among it: not part of the wave's line. */
+  get flying(): boolean {
+    return this.summon !== null || this.double !== null;
+  }
+
+  /** How a hero's double strikes (render/bossFx), or null for anything else. */
+  get doubleLook(): DoubleLook | null {
+    return this.double;
+  }
+
+  /** True for a double that strikes with its body (the Knight's): it steps to its victim for each blow. */
+  get steps(): boolean {
+    return this.double !== null && !this.double.shooters.includes(this.sheet.key);
+  }
+
+  /** A double steps to the hero standing at `x` (strip x), strikes and steps back. Its swing is played so that it
+   *  lands as it arrives. Returns how long after now it is there (ms): when the blow should show. */
+  stepStrike(x: number): number {
+    const look = this.double;
+    if (look === null) return 0;
+    const reach = look.stepMs / 2;
+    // It stops short of him, on the side it came from.
+    const to = x + (this.x >= x ? look.stepGap : -look.stepGap);
+    this.dive = { dx: (to - this.x) / DIVE_REACH, dy: 0, t: 0, ms: look.stepMs };
+    const attack = this.sheet.meta.anims[ATTACK_CLIP];
+    this.figure.clips.act(ATTACK_CLIP, true, 1, Math.max(0, (attack === undefined ? 0 : impactMs(attack)) - reach));
+    return reach;
+  }
+
+  /** The figure it is drawn as (a creature's key of data/worlds; `summon:<key>` for a summon). */
+  get figureKey(): string {
+    return this.sheet.key;
+  }
+
+  /** The standing figure's height (art pixels). */
+  get bodyHeight(): number {
+    return -this.sheet.meta.box[1];
+  }
+
+  /** A one-shot on this enemy, centred `up` of its height above the ground line (0 = standing on it). */
+  burstAt(fx: string, up: number): void {
+    this.bodyFx.burst(fx, 'over', 0, -Math.round(-this.sheet.meta.box[1] * up));
+  }
+
+  /** A summon dives at the point (x, y) of the strip — the hero it pecks — and comes back. Returns how long
+   *  after the start the dive is at its deepest (ms): when its hit should show. */
+  diveAt(x: number, y: number): number {
+    const ms = this.summon?.diveMs ?? 0;
+    if (ms <= 0) return 0;
+    this.dive = { dx: x - this.x, dy: y - this.y, t: 0, ms };
+    return ms / 2;
+  }
+
   /** True once this enemy has fallen (its corpse is still on screen): a spectacle aimed at the wave leaves it out. */
   get fallen(): boolean {
     return this.dying;
@@ -245,6 +350,11 @@ export class EnemySprite extends Container {
   hitFx(fx: string, spot: 'body' | 'ground' = 'body'): void {
     if (spot === 'ground') this.bodyFx.burst(fx, 'over');
     else this.bodyFx.burstOnBody(fx);
+  }
+
+  /** The middle of this enemy's body (parent coords): where a flash that must show over the whole pile is played. */
+  bodyPoint(): { x: number; y: number } {
+    return { x: this.x + this.cx, y: this.y + this.cy };
   }
 
   /** Where this enemy's shots leave from (parent coords): ahead of its body, a little above its middle. */
@@ -277,6 +387,7 @@ export class EnemySprite extends Container {
   /** Start the attack clip EARLY so its blow lands with the hit (render/attackLead). Called every frame with
    *  the sim's enemy and whether a hero is within its reach. */
   leadAttack(c: Combatant, heroInReach: boolean, dtMs: number): void {
+    if (this.steps) return; // a double that steps to its victim swings as it arrives (stepStrike), not from afar
     this.lead.tick(dtMs);
     // The timer jumping up means a swing just happened and shows the time to the next one: a clip drawn longer
     // than that (a boss's slam) is played a little faster, so its recovery is seen instead of being cut.
@@ -301,9 +412,27 @@ export class EnemySprite extends Container {
   update(c: Combatant, x: number, groundY: number, dtMs: number): void {
     this.elapsed += dtMs;
     this.visible = true;
+    // A summon flies: it comes down from where it was let go to the height it hovers at, and bobs there.
+    if (this.summon !== null && c.summon !== undefined && c.alive) {
+      this.lift = summonLift(this.summon, c.summon.slot, this.elapsed) + Math.round(18 * Math.max(0, 1 - this.elapsed / 500));
+    }
+    // A double comes down out of the mirror — a short fall, showing as it comes — and stands among the party.
+    if (this.double !== null && c.alive) {
+      const k = Math.min(1, this.elapsed / this.double.dropMs);
+      this.lift = Math.round(this.double.dropPx * (1 - k * k));
+      this.alpha = Math.min(1, this.elapsed / (this.double.dropMs * 0.5));
+    }
+    if (this.dive !== null) {
+      this.dive.t += dtMs;
+      if (this.dive.t >= this.dive.ms) this.dive = null;
+    }
     this.place(x, groundY);
 
-    if (this.prevAlive && !c.alive) this.startDeath();
+    if (this.prevAlive && !c.alive) {
+      if (this.double !== null) this.startBreak(this.double);
+      else if (c.summon?.left === true && this.summon !== null) this.startLeave(this.summon.leaveMs);
+      else this.startDeath();
+    }
     this.prevAlive = c.alive;
 
     // Held move-grace: any recent motion keeps the run loop alive through the bursty
@@ -315,14 +444,27 @@ export class EnemySprite extends Container {
 
     this.flash = Math.max(0, this.flash - dtMs / 220);
     const enraged = c.isBoss === true && c.alive && (c.fightMs ?? 0) > (c.enrageMs ?? Number.POSITIVE_INFINITY);
-    this.figure.setTint(this.flash > 0 ? 0xffd0d0 : enraged ? 0xff9a86 : 0xffffff);
+    // Rabia (a beast under half its life, Hell on) reddens its own body: a trait's only lasting mark is a tint.
+    this.figure.setTint(this.flash > 0 ? 0xffd0d0 : enraged ? 0xff9a86 : isEnraged(c) ? RAGE_TINT : this.bodyTint);
     // A boss also lightens towards white — a tint only multiplies, and does nothing on a black figure — for the
     // first half of the flash only: under the whole party's fire it must blink, not stay pale.
     if (this.boss) this.figure.setFlash(this.flash * 2 - 1);
 
     this.figure.update(dtMs, moving);
+    if (this.panes !== null) {
+      // Its mirrors: one lit per stack, flickering while it winds their breaking up; a flash as each lights, a
+      // burst of glass from each as they go out.
+      const beats = this.panes.sync(this.figure.clips.clip, this.figure.clips.frame, litPaneCount(c.effects), c.casting?.key === PANES.breaking, c.alive, dtMs);
+      for (const beat of beats) this.bodyFx.burst(beat.kind === 'lit' ? PANES.flash : PANES.break, 'over', this.cx - this.figure.x + beat.x, beat.y);
+    }
     this.bodyFx.sync(c.effects, { id: c.id }, dtMs, c.alive);
     this.drawHpBar(c, groundY, dtMs);
+    // A support's signs ride just over where its bar is — shown or not — and go when it falls.
+    if (this.auraSigns.children.length > 0) {
+      const barTop = Math.max(this.barY - (this.barShown ? this.barLift : 0), -(groundY - FEET_Y) + STRIP_TOP_CLEAR + AURA_SIGN_LIFT);
+      this.auraSigns.visible = c.alive;
+      this.auraSigns.position.set(Math.round(this.cx), Math.round(barTop - AURA_SIGN_LIFT));
+    }
     this.castMs = Math.max(0, this.castMs - dtMs);
     this.drawAura(c);
     this.drawEnrage(enraged);
@@ -339,6 +481,8 @@ export class EnemySprite extends Container {
   updateOrphan(x: number, groundY: number, dtMs: number): void {
     this.elapsed += dtMs;
     this.place(x, groundY);
+    if (!this.dying && this.double !== null) this.startBreak(this.double); // a double always ends as broken glass
+    this.panes?.sync('', 0, 0, false, false, dtMs);
     if (!this.dying) {
       // Pruned while still "alive" (a stage/wave reset, not a kill) → no death anim, fade fast.
       this.dying = true;
@@ -346,6 +490,7 @@ export class EnemySprite extends Container {
       this.hideLifeBar();
       this.rankAura.clear();
     }
+    this.auraSigns.visible = false;
     this.figure.setFlash(0);
     this.figure.update(dtMs, false);
     this.advanceElite(dtMs, false);
@@ -353,10 +498,42 @@ export class EnemySprite extends Container {
     this.tickDeath(dtMs);
   }
 
+  /** Its place in the pile it stands in (render/crowdLayout): the back row is drawn a little higher and behind. */
+  setCrowd(lift: number, order: number): void {
+    this.crowdLift = lift;
+    // A support — and the signs over its head — is drawn over the enemies it stands among, elites included.
+    this.zIndex = (this.auraSigns.children.length > 0 ? ENEMY_Z.elite + 0.2 : this.elite ? ENEMY_Z.elite : ENEMY_Z.common) + order / 100000;
+  }
+
   // Whole art pixels: the figure is drawn 1 art pixel = 1 strip pixel, on the backdrop's grid.
   private place(x: number, groundY: number): void {
-    this.x = Math.round(x);
-    this.y = groundY - FEET_BELOW_ORIGIN;
+    // A dive goes most of the way to its mark and back, in one smooth swing.
+    const k = this.dive === null ? 0 : Math.sin((this.dive.t / this.dive.ms) * Math.PI) * DIVE_REACH;
+    this.x = Math.round(x + this.drift + (this.dive?.dx ?? 0) * k);
+    this.y = Math.round(groundY - FEET_BELOW_ORIGIN - this.lift - this.crowdLift + (this.dive?.dy ?? 0) * k);
+  }
+
+  // A summon whose time is up: no death — it keeps flying, up and away, and fades.
+  private startLeave(ms: number): void {
+    if (this.dying) return;
+    this.dying = true;
+    this.leaving = true;
+    this.deathMs = ms;
+    this.dive = null;
+    this.hideLifeBar();
+  }
+
+  // A double's end, killed or out of time: no death of the hero it looks like — it breaks like glass where it
+  // stands, and is gone.
+  private startBreak(look: DoubleLook): void {
+    if (this.dying) return;
+    this.dying = true;
+    const gone = fxMeta(look.gone);
+    this.deathMs = gone === undefined ? DEATH_FADE_MS : fxTotalMs(gone);
+    this.figure.visible = false;
+    this.lift = 0;
+    this.bodyFx.burst(look.gone, 'over');
+    this.hideLifeBar();
   }
 
   private startDeath(): void {
@@ -385,6 +562,10 @@ export class EnemySprite extends Container {
   // popping. The driver removes the sprite once isExpired().
   private tickDeath(dtMs: number): void {
     if (!this.dying) return;
+    if (this.leaving) {
+      this.lift += dtMs * 0.09;
+      this.drift += dtMs * 0.07;
+    }
     this.deathMs = Math.max(0, this.deathMs - dtMs);
     this.alpha = Math.min(this.alpha, this.deathMs > DEATH_FADE_MS ? 1 : Math.max(0, this.deathMs / DEATH_FADE_MS));
   }

@@ -1,4 +1,4 @@
-// Where the effects' atlas and the heroes' skins are. Like every PNG of the game they are inlined as data: URIs by
+// Where the pages of the effects' atlas, the heroes' skins and the lit panes are. Like every PNG of the game they are inlined as data: URIs by
 // the build (vite.config.ts) — the packaged desktop app cannot decode images served over tauri://.
 
 const SHEETS = import.meta.glob<string>('../../assets/strip/fx/*.png', { query: '?url', import: 'default', eager: true });
@@ -9,9 +9,14 @@ function find(name: string): string | undefined {
   return path === undefined ? undefined : SHEETS[path];
 }
 
-/** The one atlas every effect is cut from. */
-export function fxAtlasUrl(): string | undefined {
-  return find('fx');
+/** Page `page` of the atlas the effects are cut from (render/fxData FX_PAGES of them). */
+export function fxPageUrl(page: number): string | undefined {
+  return find(`fx_${page}`);
+}
+
+/** The atlas of a figure's own panes, lit (the Unmaker's mirrors), or undefined if it has none. */
+export function paneSheetUrl(figure: string): string | undefined {
+  return find(`panes_${figure}`);
 }
 
 /** The atlas of a hero's figure in a skin, or undefined if that hero has no such skin. */

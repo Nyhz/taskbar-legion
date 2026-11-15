@@ -8,6 +8,10 @@ import { aggregate } from '@/sim/stats';
 import type { Combatant, CombatEvent } from '@/sim/world';
 import { makeRng } from '@/sim/rng';
 import type { StatKey } from '@/data/stats';
+import { anyMoment } from './_kit';
+
+/** The ability firing as soon as it is ready: these tests are about what it does (when: fireRules.test.ts). */
+const plain = (key: string): ReturnType<typeof abilityDef> => anyMoment(abilityDef(key));
 
 // The TALENTS.md ability mechanics: power-scaled instant damage/heal, shields.
 
@@ -25,7 +29,7 @@ describe('ability mechanics', () => {
     const caster = unit({
       id: 'm', side: 'hero',
       baseStats: base({ attackDamage: 100, damageIncrease: 0, critChance: 0 }),
-      abilities: [{ def: abilityDef('ranger_aimedshot'), rank: 1 }], // coeff 1.8, no crit
+      abilities: [{ def: plain('ranger_aimedshot'), rank: 1 }], // coeff 1.8, no crit
     });
     caster.charges = { ranger_aimedshot: 10 }; // charge-gated — bank it full so it fires
     const enemy = unit({ id: 'e', side: 'enemy', hp: 1000, maxHp: 1000 });
@@ -36,11 +40,11 @@ describe('ability mechanics', () => {
     expect(enemy.hp).toBeCloseTo(820, 1);
   });
 
-  it('Explosive Arrow hits the front enemy hard and splashes only nearby enemies (45px radius)', () => {
+  it('Explosive Arrow hits its target hard and splashes only nearby enemies (45px radius)', () => {
     const caster = unit({
       id: 'r', side: 'hero',
       baseStats: base({ attackDamage: 100, critChance: 0 }),
-      abilities: [{ def: abilityDef('ranger_focus'), rank: 1 }], // 1.6× front, 0.6× splash, r=45
+      abilities: [{ def: plain('ranger_focus'), rank: 1 }], // 1.6× front, 0.6× splash, r=45
     });
     const front = unit({ id: 'e1', side: 'enemy', x: 10, hp: 1000, maxHp: 1000 });
     const near = unit({ id: 'e2', side: 'enemy', x: 40, hp: 1000, maxHp: 1000 }); // Δ30 ≤ 45 → splashed
@@ -55,7 +59,7 @@ describe('ability mechanics', () => {
     const caster = unit({
       id: 'r', side: 'hero',
       baseStats: base({ attackDamage: 100 }),
-      abilities: [{ def: abilityDef('ranger_frozentrap'), rank: 1 }], // 0.6× AD total over 5s
+      abilities: [{ def: plain('ranger_frozentrap'), rank: 1 }], // 0.6× AD total over 5s
     });
     const e1 = unit({ id: 'e1', side: 'enemy', x: 10 });
     const e2 = unit({ id: 'e2', side: 'enemy', x: 20 });
@@ -72,7 +76,7 @@ describe('ability mechanics', () => {
     const caster = unit({
       id: 'k', side: 'hero', x: 0, range: 55, // knight melee reach
       baseStats: base({ attackDamage: 100, critChance: 0 }),
-      abilities: [{ def: abilityDef('knight_debilitate'), rank: 1 }], // 1.2× AD + 15% weaken/6s
+      abilities: [{ def: plain('knight_debilitate'), rank: 1 }], // 1.2× AD + 15% weaken/6s
     });
     const nearA = unit({ id: 'e1', side: 'enemy', x: 20, hp: 1000, maxHp: 1000 }); // Δ20 ≤ 55 → cleaved
     const nearB = unit({ id: 'e2', side: 'enemy', x: 50, hp: 1000, maxHp: 1000 }); // Δ50 ≤ 55 → cleaved
@@ -91,7 +95,7 @@ describe('ability mechanics', () => {
     const priest = unit({
       id: 'p', side: 'hero', hp: 100, maxHp: 100,
       baseStats: base({ healPower: 100 }), // ×2 amplifier raw — but devalued by the zone debuff
-      abilities: [{ def: abilityDef('priest_mend'), rank: 1 }], // coeff 0.15 total over 6s × maxHp
+      abilities: [{ def: plain('priest_mend'), rank: 1 }], // coeff 0.15 total over 6s × maxHp
     });
     const ally = unit({ id: 'a', side: 'hero', hp: 10, maxHp: 100 });
     castReadyAbilities(priest, [priest, ally], [], 1, makeRng(1), []); // stage 1 = Normal (heal eff 1.0)
@@ -104,7 +108,7 @@ describe('ability mechanics', () => {
   it('the zone heal-power debuff shrinks the SAME heal as difficulty rises (Mend)', () => {
     const mk = (): Combatant => unit({
       id: 'p', side: 'hero', hp: 100, maxHp: 100, baseStats: base({ healPower: 200 }),
-      abilities: [{ def: abilityDef('priest_mend'), rank: 1 }],
+      abilities: [{ def: plain('priest_mend'), rank: 1 }],
     });
     const hotPerSec = (stage: number): number => {
       const priest = mk();
@@ -135,7 +139,7 @@ describe('ability mechanics', () => {
 
   it('a shield ability holds (no cast, no cooldown) when the target is already shielded', () => {
     const enemy = unit({ id: 'e', side: 'enemy', x: 10 }); // in range → engaged + enemyPresent
-    const knight = unit({ id: 'k', side: 'hero', classKey: 'knight', abilities: [{ def: abilityDef('knight_bulwark'), rank: 1 }] });
+    const knight = unit({ id: 'k', side: 'hero', classKey: 'knight', abilities: [{ def: plain('knight_bulwark'), rank: 1 }] });
     // Already shielded (e.g. by the Priest's Holy Shield) → Bulwark must not double it up.
     applyEffect(knight.effects, effectDef('fx_shield'), 'priest', 50, 4000);
     const held = castReadyAbilities(knight, [knight], [enemy], 1, makeRng(1), []);
@@ -155,7 +159,7 @@ describe('ability mechanics', () => {
       baseStats: base({ attackDamage: 50 }),
       // Both ready, both can hit the wave → they must NOT fire together: a hero takes one
       // action per swing, so only the first fires this call.
-      abilities: [{ def: abilityDef('ranger_multishot'), rank: 1 }, { def: abilityDef('ranger_frozentrap'), rank: 1 }],
+      abilities: [{ def: plain('ranger_multishot'), rank: 1 }, { def: plain('ranger_frozentrap'), rank: 1 }],
     });
     const enemy = unit({ id: 'e', side: 'enemy' });
     const first = castReadyAbilities(caster, [caster], [enemy], 1, makeRng(1), []);
@@ -169,7 +173,7 @@ describe('ability mechanics', () => {
   it('enemies are NOT limited to one cast (they fire every ready ability)', () => {
     const foe = unit({
       id: 'e', side: 'enemy',
-      abilities: [{ def: abilityDef('enemy_bolt'), rank: 1 }, { def: abilityDef('enemy_smash'), rank: 1 }],
+      abilities: [{ def: plain('enemy_bolt'), rank: 1 }, { def: plain('enemy_smash'), rank: 1 }],
     });
     const hero = unit({ id: 'h', side: 'hero' });
     const cast = castReadyAbilities(foe, [foe], [hero], 1, makeRng(1), []);
@@ -180,7 +184,7 @@ describe('ability mechanics', () => {
     const caster = unit({
       id: 'm', side: 'hero',
       baseStats: base({ attackDamage: 50, cooldownReduction: 50 }),
-      abilities: [{ def: abilityDef('priest_nova'), rank: 1 }], // AoE damage → 20000ms base
+      abilities: [{ def: plain('priest_nova'), rank: 1 }], // AoE damage → 20000ms base
     });
     const enemy = unit({ id: 'e', side: 'enemy' });
     castReadyAbilities(caster, [caster], [enemy], 1, makeRng(1), []);
@@ -196,7 +200,7 @@ describe('ability mechanics', () => {
     const caster = unit({
       id: 'm', side: 'hero',
       baseStats: base({ attackDamage: 50 }), // 0% CDR at cast
-      abilities: [{ def: abilityDef('priest_nova'), rank: 1 }],
+      abilities: [{ def: plain('priest_nova'), rank: 1 }],
     });
     const enemy = unit({ id: 'e', side: 'enemy' });
     castReadyAbilities(caster, [caster], [enemy], 1, makeRng(1), []);
@@ -241,7 +245,7 @@ describe('per-ability cooldowns', () => {
   it('a charge-gated ability fires only at full charge, then resets to 0', () => {
     const caster = unit({
       id: 'm', side: 'hero', baseStats: base({ attackDamage: 50, critChance: 0 }),
-      abilities: [{ def: abilityDef('ranger_aimedshot'), rank: 1 }],
+      abilities: [{ def: plain('ranger_aimedshot'), rank: 1 }],
     });
     const enemy = unit({ id: 'e', side: 'enemy' });
     caster.charges = { ranger_aimedshot: 9 };
@@ -254,29 +258,17 @@ describe('per-ability cooldowns', () => {
   });
 });
 
-describe('Retribution Aura (passive party buff)', () => {
+describe('Retribution Aura (a passive talent since the second combat wave)', () => {
   const cfg = (over: Partial<HeroConfig>): HeroConfig => ({
     id: 'p', classKey: 'priest', level: 1, equipment: {}, talents: {}, ...over,
   });
 
-  it('grants party-wide damageIncrease only when SLOTTED, scaling with rank', () => {
-    // Ranked but not slotted → no aura.
-    expect(partyAuraMods([cfg({ talents: { priest_retribution: 3 }, activeAbilities: [] })])).toHaveLength(0);
-    // Slotted at rank 3 → +5 + 2.5×2 = +10% damageIncrease for the party.
-    expect(partyAuraMods([cfg({ talents: { priest_retribution: 3 }, activeAbilities: ['priest_retribution'] })]))
-      .toEqual([{ key: 'damageIncrease', mode: 'percent', value: 10 }]);
-  });
-
-  it('an undefined selection (headless harness) counts a ranked aura as slotted', () => {
+  it('gives the whole party damageIncrease by its rank — no slot, no ability', () => {
+    expect(ABILITIES.priest_retribution).toBeUndefined();
+    expect(partyAuraMods([cfg({ talents: { priest_retribution: 3 }, activeAbilities: [] })]))
+      .toEqual([{ key: 'damageIncrease', mode: 'percent', value: 9 }]); // 3 % per rank
     expect(partyAuraMods([cfg({ talents: { priest_retribution: 5 }, activeAbilities: undefined })]))
-      .toEqual([{ key: 'damageIncrease', mode: 'percent', value: 15 }]); // rank 5 → +15%
-  });
-
-  it('a passive aura is never cast (no cooldown consumed)', () => {
-    const caster = unit({ id: 'p', side: 'hero', classKey: 'priest', abilities: [{ def: abilityDef('priest_retribution'), rank: 3 }] });
-    const enemy = unit({ id: 'e', side: 'enemy' });
-    expect(castReadyAbilities(caster, [caster], [enemy], 1, makeRng(1), [])).toHaveLength(0);
-    expect(caster.cooldowns.priest_retribution ?? 0).toBe(0);
+      .toEqual([{ key: 'damageIncrease', mode: 'percent', value: 15 }]); // rank 5 → +15 %, as the aura gave
   });
 
   it('actually raises an ALLY\'s effective per-hit damage when active (end-to-end)', () => {

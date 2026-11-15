@@ -4,6 +4,7 @@ import { EFFECT_LOOKS, hasOwnLook, wornLooks } from '@/game/render/abilityFx';
 import { categorize } from '@/game/render/effectAuras';
 import { AREA_BLOWS, FOE_SHOT, WARN_HOT_FROM, areaBlow, burstOffsets, shotGoesOver, warnTiles, waveReachMs } from '@/game/render/enemyFx';
 import { fxMeta } from '@/game/render/fxData';
+import { KIT_HITS } from '@/game/render/bossFx';
 
 describe("the enemies' shots", () => {
   it('an archer and a caster each fly their own shot, with a landing', () => {
@@ -25,8 +26,11 @@ describe("the enemies' shots", () => {
 
 describe('area blows', () => {
   it('every enemy ability that reaches the whole party has a look, and nothing else does', () => {
-    const reaching = Object.values(ABILITIES).filter((a) => a.power?.splashRadius === WHOLE_PARTY).map((a) => a.key).sort();
+    // (A boss mechanic that reaches everyone in its own way — the chain bolt leaping from hero to hero — is not a
+    // blow along the ground: its picture is the boss kit's, render/bossFx KIT_HITS.)
+    const reaching = Object.values(ABILITIES).filter((a) => a.power?.splashRadius === WHOLE_PARTY && KIT_HITS[a.key] === undefined).map((a) => a.key).sort();
     expect(Object.keys(AREA_BLOWS).sort()).toEqual(reaching);
+    expect(KIT_HITS.boss_chain_bolt?.kind).toBe('bolt');
     expect(areaBlow('boss_slam')).toBeDefined();
     expect(areaBlow('enemy_bolt')).toBeUndefined();
     expect(areaBlow(undefined)).toBeUndefined();
