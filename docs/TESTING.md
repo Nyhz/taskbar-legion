@@ -133,7 +133,21 @@ node scripts/shot-app.mjs out.png --url http://localhost:5199/ --size 1512x918 -
   two-hero party with gear, a bag and a stash.
 - The four target screens as headless viewports: `1512x918 --scale 2` (MacBook Pro), `1920x1016`, `1280x656`,
   `2560x1376` (each minus the OS chrome). Run it from bash: zsh does not word-split `$var`.
-- Tooltips under a scripted pointer do not always make it into the frame; read their text from the page instead.
+- Tooltips (and any other hover state) under a scripted pointer: capture them at `--scale 1`. With `--scale 2`
+  the screenshot itself re-sends the pointer at HALF its coordinates (seen 2026-11-15: a `mouseover` at
+  (x/2, y/2) with every `Page.captureScreenshot`, then back), so the tooltip is in some frames of a burst and not
+  in others. It is the capture, not the game: without a screenshot the hover holds, and at `--scale 1` it holds
+  through a burst (the boss line's signs and its enrage clock were both checked).
+- While other jobs edit the tree, a dev server reloads the page in the middle of a capture. Serve the capture
+  from a config that merges the project's with `server: { hmr: false, watch: null }` (restart it after your own
+  edits), and wait for the engine (`getEngine() !== null`) before driving it.
+- Something that lasts a few frames (a figure stepping out, a burst) is caught by slowing the game, not by
+  bursting faster — a screenshot takes ~150 ms: wrap `window.requestAnimationFrame` so the callback gets a clock
+  that advances at a fraction of real time (render and simulation both read the ticker's delta).
+- **No atlas over 4096 px on a side** (`test/game/stripAtlases.test.ts`, on the exported files): a GPU that
+  cannot hold a texture draws BLACK BOXES in its place — seen 2026-11-15 when the effects atlas, one tall
+  column, passed 8192. `export-fx` now writes the effects in pages (`fx_<n>.png`) and fails rather than write
+  one over the limit.
 
 ## A good habit: a sim smoke harness
 

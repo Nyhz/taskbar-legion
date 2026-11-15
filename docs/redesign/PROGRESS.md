@@ -984,13 +984,13 @@ Descartado por el usuario: interrumpir a los jefes, combinaciones entre héroes 
 clase («de momento»), órdenes configurables por habilidad, tercera habilidad, segunda definitiva (las tres
 definitivas se quedan como están), afijos en élites («de momento»).
 
-- [ ] **A · Habilidades que reaccionan** (un buen comportamiento por defecto para cada habilidad y definitiva, sin
+- [x] **A · Habilidades que reaccionan** (un buen comportamiento por defecto para cada habilidad y definitiva, sin
       ajustes). Regla: se usa siempre que sea útil y, si está pasando algo concreto, lo aprovecha — nunca se queda
       guardada para algo que quizá no llegue. Hold the Line: cuando el grupo recibe daño; con un jefe preparando su
       golpe en área y la habilidad lista, espera a que caiga (cada 10 s). Holy Shield: al aliado que más daño está
       recibiendo, no siempre al tanque. Mend: prioriza a quien acaba de recibir un golpe fuerte. Revisar el resto
       una a una. **Cada habilidad lleva en su tooltip una línea «Cuándo se lanza»** (EN + ES).
-- [ ] **B · Pasivos de efecto** (cinco rangos; la cifra es por rango). Cada clase cambia cinco nodos de «+X %» por
+- [x] **B · Pasivos de efecto** (cinco rangos; la cifra es por rango). Cada clase cambia cinco nodos de «+X %» por
       estos (de 20 a 15 nodos de estadística):
       - Knight (todos defensivos): fila 1 **Guardián** (se lleva un 4 % del daño dirigido a la retaguardia) ·
         Bastion 7 **Cerrar filas** (los aliados reciben 2 % menos de los golpes en área) · Bastion 9 **Amparo**
@@ -1007,7 +1007,7 @@ definitivas se quedan como están), afijos en élites («de momento»).
         golpeados por sus habilidades de daño reciben +2 % de daño de todo el grupo 4 s).
       - **Retribution Aura** deja de ser habilidad: pasa a pasivo de efecto en la fila 4 de la Priest. Su hueco de
         habilidad es **Purificar** (nueva): quita los efectos dañinos de un aliado y lo cura un poco.
-- [ ] **C · Afijos de jefe.** Jefes de etapa: ninguno en Normal, uno desde Infierno, dos en Eterno y Tormento, al
+- [x] **C · Afijos de jefe.** Jefes de etapa: ninguno en Normal, uno desde Infierno, dos en Eterno y Tormento, al
       azar. Jefes de mundo: su mecánica propia siempre, y además un afijo desde Averno y dos en Tormento. Signos
       junto al nombre en la barra superior, con tooltip. **Acorazado** (coraza = 10 % de su vida; 30 % menos de daño
       mientras la tiene; los críticos la rompen el doble de rápido; vuelve a los 15 s) · **Vampírico** (se cura 3 %
@@ -1016,7 +1016,7 @@ definitivas se quedan como están), afijos en élites («de momento»).
       vida por segundo cada uno; se va tras 4 s sin golpes) · **Certero** (cada 8 s un ataque al héroe con menos
       armadura — CADA JEFE con su propio efecto: un cuervo en picado, un rayo, una cuenta del rosario…) · **Herida
       mortal** (su golpe fuerte reduce 25 % la curación del tanque 8 s; ya existía).
-- [ ] **D · Mecánica propia de cada jefe de mundo** (pelea de 60 s: se repite 3–4 veces; suave en Normal, aprieta
+- [x] **D · Mecánica propia de cada jefe de mundo** — *los diez mundos hechos (2026-11-15)* (pelea de 60 s: se repite 3–4 veces; suave en Normal, aprieta
       por dificultad). Madre de los Cuervos — **Bandada**: cada 15 s tres cuervos a la retaguardia; poca vida, se
       van solos a los 8 s. Señora del Muérdago — **Raíces**: cada 15 s enreda al héroe que más daño hace; no ataca
       5 s. Luna Ahogada — **Rayo en cadena**: cada 12 s cae sobre un héroe al azar y salta a los demás. Chivo
@@ -1045,3 +1045,748 @@ definitivas se quedan como están), afijos en élites («de momento»).
   mascotas, curva de equipo viejo y su test ligero, poner al día DIFFICULTY §6b–§8 y el informe entero.
   Decisiones abiertas del usuario: `docs/redesign/PACING_REPORT.md`, R.9.
 
+### Combate, segunda ola — A y B hechos (2026-11-15, sin commit)
+
+- **A · Cuándo se lanza cada habilidad.** Regla por habilidad en datos (`fires` en `data/abilities.ts` y
+  `data/branchAbilities.ts`; tipos `FireRule`), evaluada en `sim/abilities.ts` (`fireRuleMet`). Lo que hace falta
+  saber del combate (quién acaba de recibir daño, cuánto, si fue un golpe fuerte) lo lleva `sim/recent.ts`:
+  2,5 s de memoria, golpe fuerte = 15 % de la vida de una vez. Objetivos nuevos: el enemigo más duro a su alcance,
+  el aliado que más daño recibe, el aliado más castigado, el aliado con más efectos dañinos.
+  - Knight — Piel de piedra y Baluarte: cuando él está recibiendo daño. Tajo debilitante: con 2 enemigos a su
+    alcance, o un élite o jefe, o cuando ya no vienen más. Grito de batalla y Sed de sangre: con 3 enemigos en pie,
+    o un élite o jefe. Mantener la línea: cuando el grupo recibe daño; con un jefe que tiene golpe en área, espera
+    a que lo prepare. Réplica: a sus 4 cargas.
+  - Ranger — Fuego rápido, Lluvia de flechas, Abrojos y Frasco de brea: con 3 enemigos en pie, o un élite o jefe.
+    Disparo certero (10 cargas) y Punto débil: al enemigo más duro a su alcance. Flecha explosiva: cuando la
+    explosión alcanza a 2, o sobre un élite o jefe.
+  - Priest — Sanar: aliado bajo el 70 % o que acaba de recibir un golpe fuerte (ese primero). Escudo sagrado: al
+    aliado que más daño está recibiendo. Infusión de poder y Nova sagrada: con 3 enemigos en pie, o un élite o jefe.
+    Santuario: 2 aliados bajo el 80 %, o uno bajo el 50 %. Castigo: aliado bajo el 85 %. Purificar: aliado con un
+    efecto dañino, o bajo el 60 %.
+  - Definitivas: sin cambios (golpe mortal; entrar en combate con un jefe, también élites con su remate).
+  - Tooltip: línea «Cuándo se lanza» / «When it fires» en el ala de talentos y en la fila de habilidades de la
+    ventana del héroe, definitiva incluida (`sim/abilityFacts.ts` da el hecho, `talentWords.ts` lo escribe).
+- **B · Pasivos de efecto.** Modelo en `data/talentSpec.ts` (`PassiveEffect`, constructor `effect()`: nodo de tipo
+  pasivo con comportamiento, mismo marco y mismo sitio que el de estadística, así el ala no cambia de tamaño);
+  comportamiento en `sim/passives.ts`; condiciones nuevas de daño en `sim/liveStats.ts`. Nodo de estadística que
+  cede el sitio: Knight — Guardián (armadura de la fila 1), Cerrar filas (armadura de Bastion 7), Amparo (vida de
+  Bastion 9), Piel curtida (vida de Scourge 7), Aguante (reducción de daño de Scourge 9). Ranger — Primera sangre
+  (velocidad de ataque de la fila 1), Cazatiradores (daño de ataque de Marksman 7), Perforar armadura (crítico de
+  Marksman 9), Atravesar (daño de ataque de Stalker 7), Ensañamiento (reducción de recarga de Stalker 9). Priest —
+  Rebosar (vida de la fila 1), Manto (resistencia mágica de Devotion 7), Reanimar (reducción de recarga de
+  Devotion 9), Luz hiriente (vida de Zeal 7), Condena (poder de curación de Zeal 9).
+  - Decisiones mías, a revisar: Guardián solo mueve los golpes APUNTADOS a la retaguardia (no la salpicadura de
+    un golpe en área) y el Knight los recibe con sus propias defensas; Cerrar filas y Amparo valen para los demás,
+    no para él; Manto vale para el héroe con menos vida, ella incluida; Reanimar cuenta aunque ella esté caída;
+    Rebosar recoge las curas de habilidad y las progresivas (no el robo de vida ni la regeneración) y el escudo
+    dura 8 s; Perforar armadura actúa sobre la coraza del afijo Acorazado (los enemigos no tienen otra armadura).
+  - **Retribution Aura** es un pasivo de la fila 4 (misma clave, 3 % por rango: 15 % al máximo como antes, 3 % en
+    vez de 5 % a rango 1); ocupa el sitio de la resistencia mágica de esa fila, junto a Custodia sagrada, y conserva
+    su sello bajo ella y la estela bajo los aliados.
+  - **Purificar** (`priest_purify`, 16 s): quita todos los efectos dañinos y cura 6 %→10 % de la vida. Efecto
+    nuevo `cleanse`. Aspecto: reutiliza el destello de la Nova más la flor de cura (provisional). Signo y signo
+    mini nuevos (`abil_purify`, `hud_s_m_purify`).
+  - Partidas guardadas: los puntos de un nodo que cedió el sitio pasan al pasivo que está ahora ahí
+    (`REPLACED_NODES` en `data/talents.ts`), así no se cierra ninguna fila; lo que no cabe se devuelve.
+- Signos de los quince pasivos: provisionales, prestados de las estadísticas (`ui/abilityArt.ts`).
+- Ritmo: los tests fijados siguen en verde sin tocarlos; la política de talentos de la sonda compra los nodos
+  nuevos sin cambios. La pasada del afinador sigue pendiente (tras C y D).
+- Capturas: `tools/assets/out/preview/wave2_*.png` (tres clases, ES y EN, 1512×918 ×2 y 1280×656 ×1, dos tooltips).
+
+### Decisiones del usuario tras el segundo punto de control del balance (2026-11-15, noche) — para la pasada final
+- **Llave**: la primera vez que se supera la etapa 9 de un mundo se recibe UNA llave garantizada; después, 25 % de
+  los cofres de jefe de etapa (25 % de cofre). En todas las dificultades, sin el 100 % especial de Normal.
+- **«Equipado al 100 % de la zona»** = todas las casillas con una pieza del nivel de ese mundo, de la rareza más
+  habitual allí (sin depender de la suerte). Los muros se afinan para pedir un 80–90 % de eso (matar a los 60 s).
+- **Oleadas por etapa**: Normal 16 · Infierno 17 · Averno 18 · Eterno 19 · Tormento 20. **Normal sigue en 3–4 h**:
+  «lo de los 2-3 golpes era una estimación… el agente tendrá que balancear Normal como sea».
+- **Botín en Normal**: no se toca (solo las 16 oleadas; «si le toca el cofre de zona, enhorabuena»).
+- **Furia**: 60 s y el daño se dobla cada 2 s (como está).
+- **Perforar armadura → Hemorragia** (los críticos del Ranger dejan un sangrado del 4 %/rango de ese daño, 3 s).
+- Purificar limpia todo, también efectos de jefe (Raíces). Guardián solo desvía golpes DIRIGIDOS a la retaguardia.
+- **Enemigos (acordado, por hacer)**: capa 1 — cada tipo gana algo por dificultad, CON sus efectos visuales
+  (Bestia: Manada / Rabia · Soldado: Guardia / Formación / Último aliento · Tirador: Tiro cargado / Fuego
+  concentrado · Bruto: Imparable / Temblor); capa 2 — un cuarto tipo por mundo, **Apoyo**, con figura nueva; las
+  habilidades de un solo objetivo priorizan Apoyo → Tirador → Bestia → Bruto «o algo así, como Aimed Shot».
+
+### Combate, segunda ola — C hecho y D en los mundos 1–3 (2026-11-15, sin commit)
+
+- **El kit de jefe.** Un jefe es su golpe en área + afijos + (jefes de mundo) su mecánica. Todos los números en
+  `src/data/bossKit.ts`; las reglas en `src/sim/bossMechanics.ts`; las habilidades y efectos nuevos en
+  `data/bossAbilities.ts` y `data/bossEffects.ts`. Al aparecer, el jefe recibe `affixes`, `mechanic` y `bossRank`
+  (`sim/stages.ts`). Los afijos de una etapa salen de la semilla de la partida y del número de etapa, con un
+  generador aparte: no mueven el azar del combate ni del botín, y la misma etapa lleva siempre los mismos.
+  Reparto: etapa 0·1·1·2·2, mundo 0·0·1·1·2 (Normal → Tormento).
+- **C · Los siete afijos** (con su signo junto al nombre en la barra y tooltip en inglés y español; signos en
+  `tools/assets/pipeline/icon_sets/s9g_affixes.py`, textos en `src/i18n/*/boss.ts`, lógica en `ui/hud/bossMarks.ts`):
+  - **Acorazado** — coraza del 10 % de su vida; mientras aguanta recibe 30 % menos; un crítico la gasta el doble;
+    vuelve a los 15 s de romperse. Se ve: placas de acero sobre el jefe, que se cierran y estallan.
+  - **Vampírico** — se cura con cada golpe no bloqueado: 3 % un jefe de etapa, **0,4 % un jefe de mundo**
+    (desviación mía: con 3 % un muro de 60 s se cura más de lo que el grupo le hace). Se ve: hilos de sangre que
+    suben por el jefe y la cifra de lo que recupera.
+  - **Enfurecido** — +5 % de velocidad de ataque cada 5 s de pelea, hasta 12 veces (antes era una ráfaga del 50 %
+    con lanzamiento; ya no se lanza). Se ve: el fuego rojo a sus pies.
+  - **Sísmico** — su golpe en área cada 6 s en vez de 10. Sin efecto propio: se nota en el aviso del suelo.
+  - **Venenoso** — cada golpe deja una acumulación (1 % de la vida del héroe por segundo, hasta 5; se va a los 4 s
+    sin golpes). Se limpia con Purificar. Se ve: burbujas verdes sobre el héroe y su ficha.
+  - **Certero** — cada 8 s (el primero a los 3,5 s) un ataque al héroe con menos armadura, del 80 % de su golpe.
+    Una sola regla y una forma por jefe (`render/bossFx.ts` `DEADEYE_SHOT`): Madre de los Cuervos, un cuervo en
+    picado; Señora del Muérdago y Guardián Astado, una espina; Luna Ahogada, una hoz de luz; Rey de la Cosecha, su
+    hoz; Barquero, un fuego fatuo; el resto, un virote rojo por defecto. Con una mira que se cierra sobre el héroe.
+  - **Herida mortal** — el golpe que ya existía, ahora afijo (150 % de su golpe, antes 250 %: ahora lo llevan
+    también jefes de etapa desde Infierno). Se limpia con Purificar.
+- **D · Mecánicas de los mundos 1–3** (cada una con barra de lanzamiento de 1,5 s y una señal propia):
+  - **Bandada** (Madre de los Cuervos) — cada 15 s (la primera a los 7 s): 2 cuervos en Normal, 3 de Infierno a
+    Eterno, 4 en Tormento. Vuelan a la retaguardia, picotean solo a los de atrás (35 % → 80 % del golpe de un
+    enemigo común), tienen el 60 % de la vida de un enemigo común y se van solos a los 8 s. Los de atrás los
+    derriban; el héroe de delante no los alcanza. No dan botín ni cuentan como muertes; si ella cae, caen con ella.
+  - **Raíces** (Señora del Muérdago) — cada 18 s en Normal, 15 s de Infierno a Eterno, 12 s en Tormento (la primera
+    a los 8 s): enreda 5 s al héroe que más daño le ha hecho; ni ataca ni lanza. Purificar lo libera (decisión del
+    usuario). Señal: el suelo se abre bajo ese héroe.
+  - **Rayo en cadena** (Luna Ahogada) — cada 12 s (el primero a los 7 s): cae sobre un héroe al azar (80 % → 130 %
+    de su golpe, mágico) y salta a los demás (40 % → 65 % de eso). Señal: chispas sobre los tres héroes.
+- **Cómo entran las otras siete mecánicas**: una línea en `WORLD_BOSS_MECHANIC` (figura → mecánica), sus números
+  por dificultad en `MECHANIC` y `mechanicAbility`, una habilidad en `data/bossAbilities.ts`; si hace algo que no
+  es un efecto, un caso en `AbilitySpecial` / `resolveSpecial` (hoy: invocar) o un tipo de efecto nuevo (hoy:
+  `disarm`, `shell`); y su aspecto en `render/bossFx.ts` (señal, lanzamiento, impactos) con el arte en
+  `tools/assets/pipeline/fx/boss.py`.
+- Piezas nuevas reutilizables: objetivos `randomEnemy`, `softestEnemy`, `topDamageEnemy`; habilidad de jefe mágica
+  aunque el jefe pegue con acero (`magic`); invocaciones como enemigos de verdad (`Combatant.summon`) dibujadas con
+  una figura hecha de efectos (`render/summonFigures.ts`); señales mientras dura un lanzamiento (`render/CueLayer`).
+- Un héroe enredado ya no reproduce su ataque en la tira (se veía disparar sin disparar).
+- Ritmo: nada reajustado. Los tests fijados (anclas, sonda, progresión) siguen en verde sin tocarlos. Sonda con
+  una semilla: Normal 3,9 h (objetivo 4), Infierno 35 h (objetivo 40). `docs/DIFFICULTY.md` §5 lleva la nota del
+  cambio. La pasada del afinador sigue pendiente.
+- Pendiente de este bloque: mundos 4–10 (Culpa, Silencio dorado, Resaca, Esporas, Hoja al rojo, Balanza, Espejos);
+  sonido; el nombre «Enfurecido» coincide en español con el texto de la furia del reloj (`hud.enraged`).
+- Capturas: `tools/assets/out/preview/bosskit_*.png` (1512×918 ×2 y 1280×656 ×1). En las capturas el jefe tenía la
+  vida multiplicada y los héroes no podían caer, para poder ver cada mecánica.
+
+### Enemigos — ACORDADO con el usuario el 2026-11-15 (por hacer)
+- **Enemigos apilados**: al DIBUJARLOS se separan unos píxeles en horizontal y en dos filas de profundidad (solo
+  presentación). Norma: nada permanente sobre un enemigo normal (un estado = teñir su cuerpo o una marca mínima
+  junto a su barra); los efectos son destellos breves cuando pasa algo.
+- **Rasgos por dificultad** (Formación y Manada descartadas): Bestia — **Rabia** (bajo media vida ataca mucho más
+  rápido; se tiñe de rojo) desde Infierno. Soldado — **Guardia** (para el primer golpe; una chispa) desde Infierno,
+  **Último aliento** (al morir enardece a los suyos; un destello) desde Averno. Tirador — apunta atrás (existe),
+  **Tiro cargado** (cada cuarto disparo pega el doble; flecha encendida) desde Averno, **Fuego concentrado** (todos
+  al mismo héroe; una mira sobre él) en Eterno y Tormento. Bruto — área (existe), **Imparable** (no se le
+  ralentiza) desde Averno, **Temblor** (su área ralentiza un momento a los héroes; grietas) en Eterno y Tormento.
+- **Apoyo** (cuarto tipo, figura nueva por mundo): frágil, detrás del grupo, apenas ataca. NO lanza habilidades
+  («no van a durar tanto»): mientras vive, TODA su oleada tiene sus **auras**; al morir se acaban. Auras al azar
+  (deterministas por semilla), apiladas por dificultad: Normal 1, Infierno 2, Averno 3, Eterno 4, Tormento 5.
+  Tipos: Aguante (−20 % daño recibido), Furia (+20 % velocidad de ataque), Vigor (regeneran), Égida (entran con
+  escudo), y los que hagan falta para llegar a cinco o seis. En Normal aparece desde el mundo 3. Solo el Apoyo
+  lleva la señal (un signo pequeño por aura sobre su cabeza) y un destello por la oleada cuando cae.
+- **Prioridad de objetivos**: el Ranger (disparos normales, Aimed Shot, Weak Spot, Explosive Arrow) y la Priest
+  (Smite y su ataque) eligen Apoyo → Tirador → Bestia → Soldado → Bruto; un élite por delante de los normales de
+  su tipo; contra un jefe, al jefe. El Knight no cambia. Para que sirva, **se separa «dónde se coloca» de «hasta
+  dónde llega su disparo»**: el Ranger se planta donde hoy y solo su tiro llega más lejos.
+
+### Combate, segunda ola — A y B, segunda pasada (2026-11-15, sin commit)
+
+- Lecturas confirmadas por el usuario: Guardián solo mueve los golpes APUNTADOS a la retaguardia; Purificar quita
+  todo, también los efectos de jefe (Raíces).
+- **Signos propios** para los quince pasivos de efecto (`tools/assets/pipeline/icon_sets/s9h_passives.py`,
+  `tal_e_*`) y **marco propio**: el sello de cuatro puntas del talento de rol, al tamaño de una pasiva (22 px,
+  `tal_effect_*`; tipo `effect` en `ui/kit/Node.tsx`). A 24 px el ala pasaba de su altura máxima (317 > 314).
+  Retribution Aura conserva su signo de siempre sobre el sello de rol. Provisionales.
+- **Hemorragia** sustituye a Perforar armadura (elección del usuario): los críticos de la Ranger dejan además un
+  sangrado del 4 % de ese daño por rango durante 3 s (`ranger_hemorrhage`, efecto `fx_hemorrhage`,
+  `sim/passives.critBleed`). Críticos repetidos: el tiempo vuelve a empezar con lo mayor entre lo que deja el
+  nuevo golpe y lo que le quedaba por hacer al sangrado anterior; no se apilan. Cuenta como sangrado para
+  Ensañamiento y lleva el aspecto y el chip del sangrado. La devolución sobre la coraza de Acorazado está quitada.
+  Los puntos de `ranger_pierce_armor` y del nodo de crítico original pasan a Hemorragia (`REPLACED_NODES`).
+- **«Recibir daño» cuenta lo que le cae al héroe, no lo que atraviesa el escudo** (`sim/recent.ts`): visto en el
+  juego, el escudo de Rebosar se tragaba los flechazos y Escudo sagrado dejaba de lanzarse.
+- Franja: chip de **Amparo** sobre el aliado cubierto y chip de las acumulaciones de **Piel curtida** (se aclara
+  con cada una, marco dorado a las cinco, desaparece al perderlas); la cuenta de reaparición empieza vacía con
+  Reanimar (`respawnTotalMs`).
+- Visto en el juego real (etapa 4-6, grupo a nivel 120 sin equipo; daño y vida de los enemigos forzados para que
+  el combate dure): Guardián (25,3 a la Ranger, 6,3 al Knight en el mismo instante), Piel curtida (0→5 y a 0 al
+  quinto golpe sin bloquear), Atravesar (50 % del daño sobrante al de detrás), Rebosar (escudo hasta el 5 %),
+  Reanimar (42 s en vez de 60), Purificar (quita Herida mortal y cura), Mantener la línea (4 s recibiendo golpes
+  sin lanzarse; salta a los 0,5 s de empezar el Golpe de tierra), Escudo sagrado (sobre la Ranger bajo flechas).
+  Capturas: `tools/assets/out/preview/wave2_live_*.png`, hoja de signos `wave2_passive_signs.png`, alas
+  `wave2_wings_es_x2.png` y `wave2_wings_es_x1.png`.
+- **Pasivos de guardia sobre el daño de jefes** (hecho, `test/sim/guardPaths.test.ts`): los afijos y mecánicas de
+  jefe hacen su daño por los mismos tres caminos (golpe básico, habilidad, daño en el tiempo), así que cada pasivo
+  sigue su regla. Guardián: se lleva su parte de lo APUNTADO a un héroe de detrás (el disparo de Certero, los
+  picotazos de los cuervos), nada de un golpe en área. Cerrar filas: el Rayo en cadena entero (el rayo y sus
+  saltos) cuenta como golpe en área. Amparo, Manto, Aguante, Piel curtida e Inquebrantable valen en cualquier
+  golpe. **Daño en el tiempo sobre un héroe (veneno)**: no es un golpe — ni armadura, ni bloqueo, ni Guardián, ni
+  Cerrar filas, ni Aguante —, pero «recibe X % menos de daño» sí cuenta: la reducción de daño (Vanguardia, Piel
+  de piedra, Mantener la línea, Inquebrantable, Amparo, Piel curtida; con su tope) y Manto. Todo ello cuenta como
+  «estar recibiendo daño» para las habilidades que reaccionan.
+
+### Decisiones del usuario (2026-11-15, noche) — jefes y enemigos, ronda de preguntas con opciones
+
+- **Vampírico**: solo en jefes de etapa; nunca en jefes de mundo.
+- **Herida mortal**: 150 % del golpe en jefes de etapa, 250 % en jefes de mundo.
+- **Afijo de velocidad**: se llama **Frenético** (EN «Frenzied»); «Enfurecido» queda solo para la furia de los 60 s.
+- **Sísmico**: temblor leve y constante a los pies del jefe (polvo y piedrecitas).
+- **Cuervos de Bandada**: sí cuentan como bajas para los talentos de «al matar» (como estaba).
+- **Rayo en cadena**: todo cuenta como golpe en área (como estaba).
+- **Mecánicas de los mundos 4–10**: «Construye ya las siete» (en dos puntos de control: 4–6 y 7–10).
+- **Bestia**: segundo rasgo **Embestida** desde Averno — el primer golpe al llegar pega ×2.
+- **Flecha explosiva**: al montón más grande, sin seguir la prioridad Apoyo → Tirador → …
+- **Fuego concentrado**: versión suave (35 %), como estaba.
+- **Auras del Apoyo y rasgos**: se explican en el mapa, en el tooltip de cada dificultad.
+- **Temblor**: efecto visible en la fila del héroe, pero Purificar no lo gasta.
+- **Apoyos de los mundos 4 y 7**: rechazados («algo cutres, especialmente la del 4») → se rehacen desde cero
+  (heraldo del cañón con cuerno de carnero; pescador de luz con silueta de pez abisal). Los otros ocho no se objetaron.
+- **Culpa**: medida por % de vida del jefe, 1,5 % en Normal y +0,25 por dificultad (1,5 / 1,75 / 2 / 2,25 / 2,5 %);
+  marca al azar entre los tres.
+- **Resaca**: arrastre como está y además corta el lanzamiento en curso del héroe al que pille.
+- **Silencio dorado**: 6 s en todas las dificultades.
+- **Confirmado por el usuario (15 nov, noche)**: los Apoyos rehechos de los mundos 4 y 7 («ok»), la separación de
+  enemigos al dibujarse y el tooltip de dificultad del mapa completo, como está («perfecto»).
+- **Pasada final de ritmo**: NO empezarla por cuenta propia. Cuando todo lo demás esté terminado, avisar al usuario
+  y esperar su visto bueno («avísame, no la empieces solo», 15 nov).
+- **Búho acompañante**: un 30 % más grande (unos 20 px); detrás del último héroe, posándose a los 5 s y pardo, como
+  estaba. Siguientes mascotas: Coin Sprite y Lucky Cat (punto de control 2), luego las otras tres.
+- **Resaca**: el corte vale como está (reinicia el golpe o la habilidad que preparaba; la recarga no se gasta).
+- **Hoja al rojo**: suelo que arde, Purificar no lo quita (como está).
+- **Espejos**: el jefe usa también el daño de ataque de las mejoras que copia; crítico y bloqueo siguen sin servirle.
+- **Esporas**: solo las quita una cura instantánea o Purificar (como está).
+- **Mecánicas de los mundos 4–10: CONFIRMADAS** («Confirmado todo», 15 nov). Único cambio: Espejos es «demasiado
+  forgiving» para el mundo 10 → se le añaden dos efectos: **Los seis espejos** (cada copia enciende un panel, cada
+  panel le da más daño, con los seis los rompe en un golpe en área) y **Tu reflejo te ataca** (un reflejo oscuro del
+  héroe copiado ataca a la retaguardia 8 s o hasta que lo matan).
+
+- **Mascotas (15 nov, noche)**: Búho, Duende de la moneda y Gato de la suerte CONFIRMADOS; el gesto de subida de nivel
+  lo hacen todas; la sombra se queda solo en las mascotas; la cadencia de gestos en reposo, como está. Siguen la
+  Mula de carga, el Diablillo del tiempo y el Acaparador.
+- **Las seis mascotas CONFIRMADAS (15 nov, noche)**: Mula de carga, Diablillo del tiempo y Acaparador valen como
+  están (el Acaparador «anda el cofre»; la Mula siempre de pie salvo en la derrota — así leí su «sí» a las dos
+  preguntas de «¿así o…?»). Por mirar: el Diablillo sobre los mundos violetas (9 y 10).
+- **Mascotas**: «todo se queda como está» (Acaparador sobre su cofre, Mula de pie) — confirmado.
+- **Deshacedor (16 nov, madrugada)**: Espejos cada 8 s (la rotura cae hacia el segundo 49); el reflejo pega
+  80 / 95 / 110 / 125 / 140 % del golpe de un enemigo normal; el reflejo se planta a media distancia entre el tanque y
+  la retaguardia.
+- **CONFIRMADO (16 nov)**: los paneles, la rotura y el reflejo del Deshacedor se entienden («sí»), y las veinte formas
+  de Certero valen («sí»).
+
+> El backlog vive en `docs/redesign/BACKLOG.md`.
+
+### Enemigos — HECHO (2026-11-15, sin commit): separados al dibujarse, rasgos, Apoyo, prioridad y alcance
+
+Lo acordado arriba («Enemigos — ACORDADO»), en cuatro partes. Comprobaciones al cerrar: `tsc`, lint y 97 archivos
+/ 858 pruebas en verde.
+
+- **1 · Enemigos separados al dibujarse** (solo presentación; el simulador no cambia): `game/render/crowdLayout.ts`
+  (puro, `test/game/crowdLayout.test.ts`). Los que comparten sitio (a 8 px o menos) se abren hacia atrás a 9 px
+  (72 px como mucho por pila) y en dos filas: la de atrás 3 px más alta y dibujada detrás. El sitio es estable
+  por enemigo (ordenados por id; al morir uno, los demás se deslizan a 45 px/s). Élites y Apoyo, delante. Jefes e
+  invocaciones, intactos. Barras, impactos y proyectiles siguen la posición dibujada (`GameStrip.reconcileEnemies`,
+  `EnemySprite.setCrowd`).
+- **2 · Cuatro tipos y sus rasgos** (`data/enemies.ts`, `sim/enemyTraits.ts`, `test/sim/enemyTraits.test.ts`):
+  - Tipos reales y con figura fija (`render/foeFx.ROLE_FIGURE`): **Bestia** = la bestia del mundo (nueva en el
+    simulador: vida ×0,75, daño ×0,8, ataca ×1,3 más rápido, camina ×1,4; peso 2), **Soldado** = el cuerpo a
+    cuerpo (peso 3, antes 5), **Tirador** = el de distancia, **Bruto** = el cuerpo a cuerpo dibujado ×1,15 (un
+    bruto élite lleva los dos tamaños; su paso ya era ×0,8). Antes la figura de un cuerpo a cuerpo se echaba a
+    suertes por su id. La vida total de una oleada baja un 6 % y su daño sube un 1 %.
+  - Rasgos ACUMULADOS por dificultad (`ROLE_TRAITS`, números en `TRAIT_TUNING`): Bestia — Rabia desde Infierno
+    (bajo el 50 % de vida, +40 % velocidad de ataque; cuerpo teñido de rojo). Soldado — Guardia desde Infierno
+    (para entero el primer golpe directo; un sangrado no lo gasta; chispa), Último aliento desde Averno (al morir,
+    el resto de la oleada +25 % velocidad de ataque 3 s; un estallido a sus pies). Tirador — Tiro cargado desde
+    Averno (uno de cada cuatro disparos básicos pega ×2; la flecha vuela encendida), Fuego concentrado en Eterno y
+    Tormento (los disparos por encima del tanque van TODOS al mismo héroe y pasan a ser el 35 % en vez del 25 %;
+    UNA mira sobre ese héroe). Bruto — Imparable desde Averno (las ralentizaciones no le hacen nada), Temblor en
+    Eterno y Tormento (su golpe pasa a ser `enemy_smash_tremor`: los héroes alcanzados atacan un 20 % más lento
+    2,5 s; el suelo se agrieta bajo ellos).
+  - Nada de esto es un efecto: son marcas del combatiente (`traits`, `guardUp`, `rousedMs`, `shaken`…), así que
+    no hay chips, ni aspecto permanente, ni nada que Purificar persiga. Los destellos viajan como evento `cue`.
+    Arte: `tools/assets/pipeline/fx/foes.py` (`foe_guard`, `foe_last_breath`, `foe_arrow_lit(_arc)`, `foe_reticle`,
+    `tremor_crack`), datos de la franja en `render/foeFx.ts` (`test/game/foeFx.test.ts`).
+- **3 · El Apoyo** (`SUPPORT_KIND`, `supportAuras`): un enemigo más en una de cada tres oleadas (nunca dos), desde
+  la etapa 21 (mundo 3 de Normal). Vida ×0,6, daño ×0,3, ataca ×0,6; se queda a 225 px del tanque (los tiradores
+  a 170) y no lanza nada. Qué oleadas y qué auras salen de un generador propio sembrado con (partida, etapa,
+  oleada): el del combate no se toca. Auras distintas según dificultad: 1 / 2 / 3 / 4 / 5.
+
+  | Aura | Qué hace | Normal | Infierno | Averno | Eterno | Tormento |
+  |---|---|---|---|---|---|---|
+  | Aguante | la oleada recibe menos daño | 20 % | 20 % | 20 % | 25 % | 25 % |
+  | Furia | ataca más rápido | 20 % | 20 % | 20 % | 25 % | 25 % |
+  | Vigor | regenera vida por segundo | 2 % | 2 % | 2,5 % | 3 % | 3 % |
+  | Égida | cada enemigo entra con un escudo (de su vida) | 15 % | 15 % | 20 % | 20 % | 25 % |
+  | Saña | hace más daño | 15 % | 15 % | 15 % | 20 % | 20 % |
+
+  Mientras vive, toda su oleada (él incluido) las lleva; al morir se acaban en ese mismo tick (el escudo también).
+  Se ve SOLO en él: un signo de 9 px por aura en fila sobre su cabeza (`aura_*`), y al caer un destello sobre cada
+  enemigo (`support_down`). Figura: `WorldDef.support` es opcional; mientras un mundo no tenga la suya exportada,
+  es el de distancia de ese mundo teñido de violeta frío. No existe bestiario en el panel del mapa: los nombres de
+  las auras (Aguante, Furia, Vigor, Égida, Saña) aún no se leen en ningún sitio del juego.
+- **4 · Prioridad y alcance** (`sim/targeting.ts`, `test/sim/targeting.test.ts`): Ranger y Priest eligen Apoyo →
+  Tirador → Bestia → Soldado → Bruto, un élite antes que los normales de su tipo; con jefe, el jefe (y antes lo que
+  haya invocado sobre el grupo). Vale para sus ataques básicos, Aimed Shot, Weak Spot, Explosive Arrow y el golpe
+  de Smite (objetivo `priorityEnemy`, que sustituye a `toughestEnemy`; textos EN + ES). El Knight no cambia.
+  **Dónde se coloca** sigue siendo `range` (160 la Ranger, 195 la Priest) y es también lo que dice «el combate ha
+  llegado a ella»; **hasta dónde llega el disparo** es `shotReach` de la clase (340 y 375: el Apoyo queda a 330 y
+  365). Prueba: la misma oleada con y sin `shotReach` deja a los tres héroes y a los enemigos en las mismas x.
+  Explosive Arrow: su condición de grupo se mide alrededor de su objetivo prioritario, y un Apoyo vale la flecha
+  por sí solo.
+- **Ritmo**: no se ha reajustado nada. `test/sim/anchors.test.ts` y las pruebas de la sonda pasan sin tocar
+  referencias. `PROBE_SEEDS=1 PROBE_STOP=200 npm run probe` termina: Normal 3,5 h; Infierno 35,5 h (39 h en
+  total), con el mundo 20 en 14,1 h y 10 intentos. Una sola semilla y sin medida previa con la que comparar.
+- **Capturas** (`tools/assets/out/preview/`): `foes_fanout.png` (pila con élite, mundos 1, 2 y 10 a ×2 y ×1),
+  `foes_support.png` (Apoyo en Normal y Tormento, mira de Fuego concentrado, flecha encendida),
+  `foes_traits_a.png`, `foes_traits_b.png`, `foes_flashes.png`, `foes_fx_sheet.png`. En las capturas los enemigos
+  tenían la vida forzada y los héroes no podían caer.
+- **Flojo o sin ver**: la chispa de Guardia no ha salido limpia en ninguna captura (dura 0,2 s); el estallido de
+  Último aliento se ve pequeño; el Apoyo teñido se distingue poco del tirador en mundos oscuros hasta que tenga
+  figura; el ×1,15 del bruto deja píxeles desiguales, como el élite.
+
+### Enemigos — ronda 2 (2026-11-15, sin commit): cinco decisiones del usuario
+
+Al cerrar: `tsc` y lint limpios, 100 archivos / 892 pruebas en verde. Sin exportar arte (el `export-fx` era de
+otro trabajo): lo que pedía signo nuevo reutiliza uno existente y queda apuntado como pendiente.
+
+- **Embestida** (Bestia, desde Averno; también Eterno y Tormento): el primer golpe básico de cada bestia pega ×2
+  (`TRAIT_TUNING.charge`, marca `chargeUp`, `sim/enemyTraits.heavyHit`). En la franja, un estallido breve sobre el
+  héroe que lo recibe: reutiliza `foe_hit` (PENDIENTE un estallido propio).
+- **Flecha explosiva**: objetivo nuevo `biggestCluster` (`sim/targeting.biggestCluster`): el enemigo a su alcance
+  de disparo cuya explosión pilla a más enemigos; a igualdad, un élite o jefe y luego el más cercano. Ya no sigue
+  la prioridad Apoyo → Tirador → …; su condición «grupo» se mide en ese mismo punto y el Apoyo ya no la dispara
+  por sí solo. Textos de objetivo y descripción en EN y ES.
+- **Fuego concentrado**: sin cambios (35 %).
+- **Rasgos y auras explicados en el mapa**: el tooltip de cada dificultad dice qué rasgos tiene cada tipo allí
+  (una frase por rasgo con sus números) y cuántas auras lleva el Apoyo, con el signo y una línea por aura con su
+  valor en esa dificultad (`sim/foeFacts.ts` da los hechos, `ui/panels/map/foeWords.ts` los redacta,
+  `MapFoes.tsx` los pinta). Los signos de aura salen del atlas de efectos de la franja (PENDIENTE: signos propios
+  en el juego de la interfaz). El tooltip mide 268 px de arte de ancho y, en Tormento, 276 de alto: entra entero en
+  las cuatro pantallas objetivo, pero al pasar el ratón tapa el riel del HUD y parte de la franja (acaba en
+  565/720, 770/1080, 1130/1440 y 750/982 px).
+- **Temblor es un efecto visible** (`debuff_tremor`: −20 % velocidad de ataque 2,5 s; sustituye a la marca
+  `shaken`): chip de perjuicio sobre el héroe con el signo del grillete (`slow`; PENDIENTE signo propio) y
+  **tooltip al pasar el ratón**. Purificar lo ignora del todo (`cleanseIgnores` en el efecto): ni se lanza por él,
+  ni elige a quien lo lleva, ni lo quita. El tooltip es nuevo para TODOS los chips de efecto de los héroes: la
+  franja dice sobre qué chip está el puntero (`stripHud.chipIndexAt`, `HeroHud.effectChipAt`, estado `stripTip`) y
+  `ui/overlay/StripEffectTip.tsx` lo redacta con el kit; hoy solo Temblor tiene frase propia, el resto muestra su
+  nombre.
+- **Apoyo con figura propia**: comprobado en un mundo claro (Infierno 1-5) y dos oscuros (Tormento 3-5, Infierno
+  10-5 a ×1): se dibuja con la figura de su mundo, sin tinte, con los signos centrados sobre ella; el tirador
+  teñido queda solo como reserva si un mundo no tuviera figura exportada.
+- **Capturas** (`tools/assets/out/preview/`): `foes2_strip.png` (Apoyo en tres mundos, chip y tooltip de Temblor,
+  Embestida), `foes2_map_torment_es_1280x720.png`, `…_1920x1080.png`, `…_2560x1440.png`, `…_1512x982.png`,
+  `foes2_map_inferno_en_1280x720.png`, `foes2_map_tooltip_zoom.png`.
+- **Flojo o sin ver**: el estallido de Embestida no se distingue en la captura; el tooltip de los chips no se ha
+  probado en la app empaquetada (depende de que el lienzo reciba el puntero con la ventana transparente); sobre un
+  Apoyo de figura alta los signos quedan bastante por encima de la cabeza.
+
+### Jefes, ronda 3 — punto de control 1: correcciones de afijos y mecánicas de los mundos 4–6 (2026-11-15, sin commit)
+
+- **Afijos (decisiones del usuario)**:
+  - **Vampírico** solo sale en jefes de etapa (`AFFIX_POOL` en `data/bossKit.ts`); un jefe de mundo elige entre
+    los otros seis. Fuera el caso del 0,4 %.
+  - **Herida mortal**: 150 % del golpe en un jefe de etapa, 250 % en un jefe de mundo (`BOSS_AFFIX.mortalWound.coeff`;
+    el tooltip dice la cifra).
+  - **Frenético** (EN «Frenzied») es el nombre del afijo de velocidad; «Enfurecido / Enraged» queda solo para la
+    furia del reloj. La clave de datos (`frenzied`, efecto `buff_boss_frenzy`) no cambia: los guardados cargan igual.
+  - **Sísmico** lleva ahora su señal: polvo bajo y piedrecitas saltando a los pies del jefe, a todo su ancho,
+    desde que entra en combate (`buff_boss_tremor`, un marcador sin efecto en la simulación; 12 px de alto: no
+    tapa la barra de lanzamiento ni las figuras).
+  - Sin cambios, confirmado: los cuervos cuentan como bajas para «al matar»; el Rayo en cadena entero es área.
+- **Culpa** (Chivo Expiatorio, mundo 4) — cada 20 s en Normal, 18 s de Infierno a Eterno, 15 s en Tormento (la
+  primera a los 6 s) marca a un héroe AL AZAR durante 8 s. Mientras está marcado paga por el daño que el GRUPO
+  hace al jefe: **por cada 1 % de vida que pierde el jefe, él pierde un 1,5 % · 2 % · 2,5 % · 3 % · 3,5 % de la
+  suya** (Normal → Tormento). En una pelea a ritmo (el muro cae en 60 s) una marca cuesta un 20 % de su vida en
+  Normal y un 47 % en Tormento.
+  - **Por qué en porcentajes de vida y no «una parte del daño» tal cual** (decisión mía, a confirmar): medido con
+    el grupo de la sonda, lo que el grupo le hace al muro por segundo es 1,5 veces la vida de la Ranger en Normal
+    4-10 y 12 veces en Infierno 4-10. Ninguna fracción fija del daño vale para las dos: la que se nota en Normal
+    mata en un segundo en Infierno.
+  - Cuenta todo lo que le quita vida al jefe (golpes, habilidades, sangrados). Puede matar.
+- **Silencio dorado** (Abad Dorado, mundo 5) — cada 24 s en Normal, 20 s en Infierno y Averno, 18 s en Eterno,
+  16 s en Tormento (el primero a los 8 s): durante 6 s las recargas de las habilidades de los tres héroes no
+  avanzan. Una habilidad que ya estaba lista se puede lanzar; las cargas por golpes (Disparo certero) siguen.
+- **Resaca** (Novena Ola, mundo 6) — cada 12 s (la primera a los 6 s) una ola golpea a los tres con el 50 % ·
+  60 % · 70 % · 80 % · 90 % de su golpe y los arrastra 50 · 70 · 85 · 100 · 120 px atrás. Vuelven andando (a su
+  paso son 0,45–1,1 s, y los de atrás tardan hasta medio segundo más en arrancar) y nadie ataca ni lanza
+  mientras anda; el jefe se queda donde está y tampoco les alcanza. Oleada tras oleada la pelea no se desplaza.
+- **Con Purificar**: quita la marca de Culpa y el Silencio dorado del aliado sobre el que se lanza (los dos son
+  efectos dañinos). La Resaca no deja efecto: no hay nada que limpiar.
+- **Con los pasivos de guardia** (`test/sim/guardPaths.test.ts`): el peaje de Culpa no es un golpe y nadie lo
+  apunta — misma regla que el daño en el tiempo: ni armadura, ni bloqueo, ni Guardián, ni Cerrar filas, ni
+  Aguante; sí la reducción de daño y Manto; los escudos lo absorben y cuenta como «estar recibiendo daño». La ola
+  de la Resaca es un golpe en área sobre los tres: Cerrar filas la reduce a sus aliados, Guardián no se lleva
+  nada. El Silencio dorado no hace daño.
+- **Qué se ve**: Culpa — la marca (una cabeza con cuernos al rojo) sobre los tres mientras elige, baja sobre el
+  elegido, le brilla en el pecho y da una punzada con cada cifra roja. Silencio dorado — anillos de oro subiendo
+  por el Abad, un anillo que se abre al tañer y una esfera de reloj parada detrás de cada héroe. Resaca — el
+  camino se inunda bajo el grupo mientras la prepara, y una ola alta como un héroe lo recorre y se los lleva.
+  Los tres con su signo junto al nombre en la barra y su tooltip (EN y ES); Culpa y Silencio dorado, ficha sobre
+  la cabeza.
+- Dónde: números en `data/bossKit.ts` (`MECHANIC`), reglas en `sim/worldBossRules.ts` (el peaje, el arrastre) y
+  `sim/abilities.tickCooldowns` (recargas paradas), pruebas en `test/sim/worldBossRules.test.ts`, aspecto en
+  `render/bossFx.ts`, `render/enemyFx.ts` (la Resaca es un golpe en área con su propia ola) y
+  `tools/assets/pipeline/fx/boss.py`.
+- Flojo o sin verificar: los héroes de atrás retroceden en el instante en que la ola sale, antes de que les
+  llegue dibujada; el dibujo de la ola es tosco; el tooltip bajo un puntero real aparece en unas capturas y en
+  otras no (el elemento no se vuelve a montar: no encontré la causa).
+- Ritmo: nada reajustado. Sonda con una semilla hasta Infierno 7-1: Normal 3,5 h (objetivo 4); los muros 4, 5 y 6
+  caen en Normal (2, 0 y 0 derrotas) y en Infierno (1, 0 y 0). Averno en adelante, sin medir.
+- Capturas: `tools/assets/out/preview/boss_r3_*.png`. Como antes: jefe con la vida multiplicada y héroes que no
+  pueden caer.
+- Pendiente (punto de control 2): mundos 7–10 — Esporas, Hoja al rojo, Balanza, Espejos.
+
+### Mascota acompañante en la franja — punto de control 1: el Búho erudito (2026-11-15, sin commit)
+
+- **Qué es**: la mascota elegida (`selectedPet`) se dibuja en la franja. Solo presentación: nada en `sim/`, no
+  recibe daño ni es objetivo. Sin acompañante elegida, o si la elegida no tiene figura (hoy solo la tiene el
+  Búho), no se dibuja nada. Las otras cinco esperan al veredicto del búho.
+- **Figura** (`tools/assets/pipeline/pets/scholar_owl.py`): búho pardo de frente, pecho crema moteado, penachos y
+  gafas redondas de latón sobre un disco facial claro. 11 px de cuerpo, 13–16 de alto con penachos y alas; celda
+  de 29×26. Las alas son palas movidas por el motor (ángulo por pose). Clips: `idle` (flota), `fly` (viaja
+  inclinado, mirando adonde va), `perch` (posado: parpadea, mira adelante y atrás), `cheer`, `spot`, `mourn`.
+- **Atlas propio**: `sh tools/assets/run.sh export-pets` → `src/assets/strip/pets/<mascota>.png` + `pets.json`
+  (misma forma que `figs.json`; `root`/`ground` = el punto bajo sus patas) y una hoja ampliada en
+  `tools/assets/out/preview/pet_<mascota>_sheet.png`. Una mascota es un módulo en `pipeline/pets/` con
+  `PET = "Clase"`. No toca `export-figs` ni `export-fx`.
+- **Cómo se mueve** (`src/game/render/petMotion.ts`, puro, `test/game/petMotion.test.ts`): vive DETRÁS del último
+  héroe. En reposo flota a la altura de su hombro (34 px detrás, 21 de alto, con una deriva lenta); a los 5 s de
+  grupo parado baja a posarse en el camino; cuando el grupo anda se eleva (35 px), se adelanta hasta el hombro
+  del último héroe y vuela con él (alcanza el 85 % de su paso de salida y recupera el resto: se retrasa un poco
+  y lo alcanza); al parar vuelve a su sitio. Llega volando desde atrás la primera vez; tras un salto (teletransporte,
+  mundo nuevo, vuelta de una derrota) simplemente está en su sitio.
+- **La regla que lo aparta del HUD**: nunca pasa de una LÍNEA 24 px detrás del último héroe. Todo lo que lleva
+  un héroe (barra, fichas, números, fichas de habilidad) va centrado en él, y un héroe pegado a otro sube su
+  barra un piso: por encima del grupo no hay altura segura, detrás de esa línea solo hay aire. Además se
+  mantiene dentro del borde izquierdo de la franja cuando la cámara se adelanta (salvo que el propio héroe esté
+  a menos de 40 px del borde: manda la línea).
+- **Reacciones** (de hechos que el juego ya tiene; `render/PetCompanion.ts`): cae un jefe de etapa o de mundo
+  (evento de muerte de un jefe) → `cheer`, dos botes con las alas arriba y un destello en las gafas (1 s);
+  entra un cofre en el almacén (sube la cuenta de cofres guardados) → `spot`, penachos arriba y ojos como platos
+  (0,9 s); el grupo cae (primer tiempo de la derrota) → baja al suelo y `mourn`, cabeza gacha, hasta el negro.
+  Una reacción puede esperar a que acabe otra; dos iguales seguidas no se repiten.
+- **Enganche en `GameStrip.ts`**: un campo, un `addChild` (en `combatants`, `zIndex` 2,5) y `updatePet`, que le
+  pasa la x del último héroe, los jefes vivos, los eventos del fotograma y la cuenta de cofres.
+- **Visto en captura** (jefe/enemigos con la vida multiplicada y héroes que no pueden caer, salvo en la derrota):
+  `tools/assets/out/preview/pet_scholar_owl_sheet.png` (clips ampliados), `pet_strip_x2.png` (mundo 1 Normal y
+  mundo 3 Tormento: reposo, posado, avanzando, jefe derrotado, cofre, derrota) y `pet_strip_x1.png` (lo mismo a ×1).
+- **Flojo o sin verificar**: pardo sobre el camino pardo del mundo 1 destaca poco posado (lo salva la cara clara);
+  al viajar inclinado el cuerpo se dentella un poco; el ala caída es estrecha en dos fotogramas del aleteo; no
+  hay transición de aterrizaje/despegue (cambia de clip al tocar el suelo); no lleva sombra; solo visto en los
+  mundos 1 y 3 (los otros ocho, sin mirar); no visto en la app empaquetada; el atlas de una mascota que se deja
+  de llevar no se descarga (son 7 KB).
+- **Pendiente (punto de control 2, tras el veredicto)**: las otras cinco mascotas (cada una con su manera de
+  moverse: la Mula y el Gato andan, no vuelan), y lo que salga de las preguntas (tamaño, dónde vuela, reacciones).
+
+### Enemigos — ronda 3 (2026-11-15, sin commit): una frase por chip de efecto
+
+Al cerrar: `tsc` y lint limpios, 104 archivos / 937 pruebas en verde. Sin arte nuevo ni exportaciones.
+
+- **Los 47 efectos con duración que hay hoy en los datos tienen frase** en el tooltip de su chip, en EN y ES
+  (`ui/overlay/effectTipWords.ts`, textos `hud.fx…`): 11 con frase PROPIA — lo que un enemigo o un jefe pone a un
+  héroe (Temblor, Herida mortal, Veneno, Raíces, Culpa, Silencio dorado, Esporas: dicen de dónde viene y si
+  Purificar lo quita), la Marca del cazador y los estados de jefe (Coraza, Frenesí, el temblor de Sísmico) — y 36
+  por su TIPO, sin escribirlos uno a uno: estadística arriba o abajo («Velocidad de ataque +45 % durante 8 s.»; un
+  beneficio de dos estadísticas es UNA frase), daño o cura por segundo, hace menos daño, recibe más daño, curas
+  mermadas, no recibe daño, silencio.
+- **Los números son hechos**: lo que el efecto vale EN ese héroe en ese momento (valor por acumulación,
+  acumulaciones y el tiempo con el que se puso; así sale el rango de la habilidad), que viajan con el chip
+  (`stripHud.ChipWorn` → estado `stripTip.effects`); a falta de ellos, los del propio efecto en `data/`.
+- **Un efecto que nadie ha redactado enseña solo su nombre** (no se rompe nada). Prueba nueva
+  `test/ui/effectTipWords.test.ts`: lista los efectos visibles sin frase (hoy ninguno) y exige frase PROPIA a todo
+  lo que esté en `BOSS_EFFECTS`; saltará cuando entren los efectos de los mundos 7–10 sin redactar, con el
+  mensaje de dónde añadirlos.
+- El tooltip se abre AL LADO del chip (antes debajo), a 172 px de arte de ancho: el más largo (Veneno en español,
+  tres renglones) mide 56 px de alto y queda dentro de la franja a 1280×720 (de 65 a 121 de 160) y a ×2.
+- Solo los héroes llevan chips en la franja: las frases de lo que llevan enemigos y jefes están escritas, pero
+  hoy no tienen dónde verse.
+- **Capturas** (`tools/assets/out/preview/`): `foes3_effect_tips.png` (Veneno y Herida mortal en español a ×1,
+  Culpa en inglés a ×1, Esporas en inglés a ×2), y sueltas `foes3_tip_venom_es_1280x720.png`,
+  `foes3_tip_venom_es_1512x918.png`, `foes3_tip_wound_es_1280x720.png`, `foes3_tip_guilt_en_1280x720.png`,
+  `foes3_tip_spores_en_1512x918.png`.
+
+### Jefes, ronda 3 — punto de control 2: mundos 7–10, decisiones del usuario y tres arreglos (2026-11-15, sin commit)
+
+- **Decisiones del usuario sobre el punto de control 1**:
+  - **Culpa** sigue midiéndose en porcentajes de vida, con números más bajos: 1,5 % · 1,75 % · 2 % · 2,25 % · 2,5 %
+    de la vida del marcado por cada 1 % que pierde el jefe (una marca a ritmo cuesta un 20 % en Normal y un 33 %
+    en Tormento). Sigue marcando al azar entre los tres.
+  - **Resaca**: el arrastre como estaba, y además **corta lo que cada héroe estuviera preparando**. En la
+    simulación los héroes no tienen un «lanzamiento en curso» — una habilidad se resuelve en el instante en que
+    se lanza, en el sitio de un golpe —, así que cortar es esto: el golpe que estaba cargando (o la habilidad que
+    iba a lanzar con él) empieza de cero. La habilidad cortada no llegó a lanzarse: su recarga no se gasta y lo
+    vuelve a intentar con el golpe siguiente. Cuesta, como mucho, un golpe más de espera al volver.
+  - **Silencio dorado**: 6 s en todas las dificultades (como estaba).
+- **Arreglos**:
+  - **La ola de la Resaca**, redibujada: lomo largo y oscuro con líneas de espuma que lo recorren, cresta que se
+    riza en un labio blanco con el hueco de agua profunda debajo, espuma hirviendo al pie y salpicaduras
+    arrancadas de la cresta; fina donde el agua es fina (deja ver el fondo). Azul marino y espuma color hueso (el
+    del jefe y el mar del mundo 6), también el aviso del suelo, el arranque, la estela, el chapoteo y el signo.
+  - **Cada héroe retrocede cuando la ola le llega dibujada** (`render/shoveDelay.ts`): la franja muestra el sitio
+    de cada héroe como era hace un rato — lo que la ola tarda en llegar hasta él —, así que primero se va el de
+    delante y los de atrás cuando les pasa por encima. El simulador no cambia.
+  - **Tooltip que aparecía a veces**: no era el juego. Con las capturas a ×2, cada captura de pantalla vuelve a
+    mandar el puntero a la MITAD de sus coordenadas (un `mouseover` en (x/2, y/2) y vuelta), y el tooltip sale en
+    unas imágenes de la ráfaga y en otras no. Sin capturar, el puntero se queda sobre el signo los 4 s medidos; a
+    ×1 aguanta toda la ráfaga. Igual para el tooltip de la furia. Los tooltips de las fichas de efecto de la
+    franja van por otro camino (estado `stripTip`, capa propia) y no coinciden con los del riel: el puntero solo
+    puede estar sobre uno. Apuntado en `docs/TESTING.md`.
+- **Esporas** (Ángel Destructor, mundo 7) — cada 12 s en Normal, 10 s de Infierno a Eterno, 8 s en Tormento (la
+  primera a los 5 s) una nube deja una capa más sobre los tres: cada capa, 0,2 % · 0,3 % · 0,4 % · 0,5 % · 0,6 %
+  de la vida del héroe por segundo, hasta 5 capas; cada nube las renueva todas. **Cualquier cura directa** sobre
+  un héroe (instantánea: ni una cura progresiva, ni regeneración, ni robo de vida) le quita las suyas; Purificar
+  también. Es daño en el tiempo, como el veneno.
+- **Hoja al rojo** (El Temple, mundo 8) — cada 18 s en Normal, 15 s de Infierno a Eterno, 12 s en Tormento (la
+  primera a los 7 s) el suelo arde 6 s bajo los tres: cada uno recibe el 60 % · 80 % · 100 % · 120 % · 140 % del
+  golpe del jefe repartido en ese tiempo. **Arde el suelo, no el héroe**: no deja efecto, así que Purificar no
+  tiene nada que quitar (decisión mía, a confirmar).
+- **Balanza** (El Veredicto, mundo 9) — cada 20 s en Normal, 15 s de Infierno a Eterno, 12 s en Tormento (la
+  primera a los 9 s) todos los héroes bajan al PORCENTAJE de vida del que menos tiene, siempre del todo. Quita
+  vida, no hace daño: ni armadura, ni reducción, ni escudos lo paran. Un héroe invulnerable (Última resistencia)
+  conserva la suya; un héroe caído no es la medida; un héroe solo no se iguala con nadie.
+- **Espejos** (El Deshacedor, mundo 10) — cada 10 s (el primero a los 6 s) refleja la ÚLTIMA habilidad que lanzó
+  un héroe (nunca una definitiva). Lo que esa habilidad hace a los enemigos cae sobre los héroes al 25 % · 30 % ·
+  35 % · 40 % · 45 % de su fuerza (el golpe del jefe en lugar del ataque del héroe, con el rango que el héroe
+  tiene); lo que hace por los aliados se lo queda el jefe: curas y escudos al 2 % · 3 % · 4 % · 5 % · 6 % (son
+  porcentajes de SU vida) y mejoras al 30 % · 40 % · 50 % · 60 % · 70 %. Una habilidad mixta (Castigo) hace las
+  dos cosas. Un disparo que la heroína apunta por su orden de prioridad cae sobre un héroe al azar. Si aún no se
+  ha lanzado nada, no pasa nada.
+  - De las mejoras, al jefe le sirven la velocidad de ataque y la reducción de daño (Piel de piedra, Mantener la
+    línea); crítico, robo de vida, daño de ataque y bloqueo no le hacen nada (limitación conocida).
+- **Con Purificar**: quita las Esporas y lo que Espejos deje sobre un héroe (son efectos dañinos). El suelo que
+  arde y la Balanza no dejan efecto.
+- **Con los pasivos de guardia** (`test/sim/guardPaths.test.ts`): Esporas, como el veneno (cuentan la reducción de
+  daño y Manto; no la armadura ni los pasivos del Knight). El suelo que arde es un peaje como el de Culpa. La
+  Balanza quita vida: nada la reduce, y cuenta como «estar recibiendo daño». Lo que Espejos refleja es una
+  habilidad como cualquier otra: una descarga a todos es golpe en área (Cerrar filas), un disparo a uno es
+  apuntado (Guardián).
+- **Qué se ve**: Esporas — nubes de polvo subiendo alrededor del Ángel; setas blancas a los pies de cada héroe
+  (y sobre él) con su polvo, que se marchitan cuando una cura las limpia. Hoja al rojo — el camino se raja y se
+  pone al blanco bajo cada héroe, la hoja sube por la grieta y queda fuego de fragua bajo los tres, con cifras
+  naranjas. Balanza — un platillo colgando sobre cada héroe; al igualar baja sobre quien pierde vida y se la
+  lleva en cuentas rojas. Espejos — esquirlas que se juntan en un espejo delante del Deshacedor; lo que refleja
+  vuelve en esquirlas, el signo de la habilidad copiada sube sobre el jefe y lo que se queda le entra como luz.
+- Dónde: `data/bossKit.ts` (`MECHANIC`), `sim/worldBossRules.ts`, `sim/mirror.ts` (qué refleja), pruebas en
+  `test/sim/worldBossesLate.test.ts`; aspecto en `render/bossFx.ts` y `tools/assets/pipeline/fx/boss.py`.
+- Ritmo: nada reajustado. Sonda con una semilla hasta el final de Infierno: Normal 3,5 h (objetivo 4), Infierno
+  completo; el muro 10 de Infierno (Espejos) pide 9 intentos (6 en la medición anterior). Averno en adelante, sin
+  medir.
+- Flojo o sin verificar: el espejo se forma sobre el sitio del tanque y lo tapa mientras dura la barra; los
+  platillos y el fuego se ven pequeños a ×1; las mejoras que el jefe no puede usar; mecánicas vistas solo en
+  Normal (jefe con la vida multiplicada, héroes que no caen); un héroe arrastrado puede verse andando un instante
+  después de que el simulador ya le deja atacar.
+- Capturas: `tools/assets/out/preview/boss_r3b_*.png` (1512×918 ×2, 1280×656 ×1 y el tooltip en español a ×1).
+
+### Mascotas en la franja — punto de control 2: Búho a la talla nueva, Duende de la moneda y Gato de la suerte (2026-11-15, sin commit)
+
+- **Decisiones del usuario sobre el búho** (hoy): un 30 % más grande, unos 20 px (redibujado, no escalado); detrás
+  del último héroe, como estaba; se posa a los 5 s de pelea, como estaba; pardo, como estaba. Esa talla es la
+  referencia de escala de las demás mascotas (`tools/assets/pipeline/pets/__init__.py`).
+- **Búho a 20 px** (`pipeline/pets/scholar_owl.py`): cuerpo de 13×16, gafas redondas de 5×5 con lente clara, pupila
+  y brillo (cerradas, un párpado cruza la lente: las gafas no se quitan), penachos de tres píxeles. Arreglos: el ala
+  caída conserva su anchura; al viajar ya no se cizalla — cabeza un píxel adelante, cola un píxel atrás, tres
+  bloques limpios; clips nuevos `land` (frena con las patas fuera), `settle` (toca el suelo, se agacha y pliega) y
+  `takeoff` (se agacha, abre las alas y salta): ya no cambia de clip en seco.
+- **Dos maneras de moverse** (`render/petMotion.ts`, `PetStyle.kind`, números por mascota en `PET_STYLES`):
+  - **Volador** (búho, duende): flota detrás del último héroe; al andar el grupo sube y vuela a la altura de su
+    hombro; al parar vuelve. Uno que `perches` (el búho) baja a posarse a los 5 s; el duende no se posa nunca.
+  - **Terrestre** (gato): no deja el camino. Está sentado detrás del grupo; cuando el grupo anda se levanta y
+    trota detrás; donde el grupo para, se sienta. No se mueve por un héroe que da dos pasos (correa de 14 px) y
+    mientras hace un gesto se queda donde está y luego corre a alcanzarlos.
+  - Dejar el camino y llegar a él llevan un momento cada uno (`launchMs`, `settleMs`): sobre ellos suenan los clips
+    `takeoff` y `settle` (en el gato, levantarse y sentarse).
+- **La regla del HUD, igual**: ninguna pasa de su LÍNEA detrás del último héroe (`clearBehind` = donde empieza la
+  barra de un héroe + el alcance de la figura; un test lo comprueba contra `pets.json`). Con la Priest y la Ranger
+  pegadas (barra un piso arriba) sigue sin tocar nada: no hay nada de un héroe detrás de esa línea. Dentro del
+  borde izquierdo de la franja salvo que el propio héroe esté pegado al borde.
+- **Duende de la moneda** (`pipeline/pets/coin_sprite.py`): moneda de oro viva de 13 px con cara y dos alitas
+  azules. Su carácter es la voltereta: el disco lo dibuja el motor a partir de un número (`spin`) — se pone de
+  canto, enseña la estrella del reverso y vuelve. En reposo da una cada 7 s (`fidget`); jefe derrotado: dos
+  rápidas subiendo entre destellos; cofre: se queda clavada y BRILLA (un tono más clara, ojos como platos,
+  temblando); nivel: una voltereta y un destello; derrota: baja al camino, de canto, apagada, alas caídas.
+- **Gato de la suerte** (`pipeline/pets/lucky_cat.py`): gato blanco, orejas rojas por dentro, collar rojo y
+  cascabel — el gato de los mostradores. Tres posturas con una cabeza: sentado, a cuatro patas (las patas las
+  mueve el motor en pares diagonales) y hecho un ovillo. Sentado mueve la cola, parpadea, mira atrás, y cada 9 s
+  levanta la pata y llama (`fidget`). Jefe derrotado: bota sentado con la pata arriba; cofre: de pie, tieso, cola
+  recta, ojos redondos, y luego se agazapa y menea el trasero; nivel: una llamada lenta con la pata; derrota: se
+  hace un ovillo con las orejas atrás.
+- **Gesto de subida de nivel** (`ding`; propuesta del coordinador, SIN confirmar por el usuario): salta cuando
+  sube la suma de niveles del grupo (dato del store; el sim no emite un evento de nivel). Para quitarlo: borrar la
+  línea `levelSum` de `GameStrip.updatePet` (nada más depende de ella); los clips `ding` pueden quedarse.
+- **Sombra**: dos filas de tinta en el camino bajo la mascota, que se estrechan y se apagan cuando un volador sube
+  (nada por encima de 42 px). Los héroes y los enemigos NO llevan sombra: hoy solo la llevan las mascotas.
+- **Cosa de vez en cuando** (`fidgetEveryMs`): en reposo, cada mascota hace lo suyo cada tanto (voltereta, pata).
+  El búho no tiene: posado ya parpadea y mira.
+- **Enganche en `GameStrip.ts`**: el mismo de antes más una línea (`levelSum`).
+- **Capturas** (enemigos con la vida multiplicada y héroes que no pueden caer, salvo en la derrota):
+  `tools/assets/out/preview/pet2_<mascota>_sheet.png` (clips ampliados), `pet2_<mascota>_strip_x2.png` (mundo 1
+  Normal: reposo, avanzando con la Priest y la Ranger pegadas, jefe, cofre, nivel, derrota; mundo 3 Tormento tras
+  9 s de pelea) y `pet2_strip_x1.png` (las tres a ×1 en el mundo 3 Tormento).
+- **AVISO — atlas de efectos demasiado alto (no es de este trabajo)**: `src/assets/strip/fx/fx.png` mide 1024×8262
+  desde el `export-fx` de las 22:58. Pasa de 8192, el tamaño máximo de textura de muchas GPU: en el Chromium de
+  las capturas (SwiftShader, tope 8192) los efectos del atlas salen como CAJAS NEGRAS (el fuego de los élites, las
+  auras de los héroes). En el Mac de desarrollo (tope 16384) no se ve; en un PC con tope 8192 sí se vería. Hay que
+  partir el atlas o ponerle un tope de alto. Estas capturas se hicieron con una copia de `shot-app.mjs` que usa la
+  GPU (`--use-angle=metal`), en el scratchpad.
+- **Flojo o sin verificar**: aterrizaje y despegue del búho comprobados por test (orden de clips) y en la hoja, no
+  en captura de la franja (duran un cuarto de segundo); la sombra es discreta sobre caminos oscuros; el duende
+  dorado destaca poco contra el cielo naranja del mundo 1; el gato sentado mira al frente, no de perfil, y al
+  trotar la cabeza es grande para el cuerpo; las llamadas con la pata son pocos píxeles; solo vistos en los mundos
+  1 y 3; nada visto en la app empaquetada; el atlas de una mascota que se deja de llevar no se descarga.
+- **Pendiente**: Mula de carga, Diablillo del tiempo y Acaparador (la mula será terrestre; el diablillo, volador).
+
+### Mascotas en la franja — punto de control 3 (último): Mula de carga, Diablillo del tiempo y Acaparador (2026-11-15, sin commit)
+
+- **Decisiones del usuario** (hoy): las tres primeras valen; el gesto de subida de nivel se queda y lo hacen
+  TODAS; la sombra se queda como está, solo en las mascotas (dársela a héroes y enemigos: al backlog); la cadencia
+  de los gestos en reposo está bien.
+- **Las seis tienen figura**: cualquier mascota elegida se dibuja (un test compara `PET_FIGURES` con `PET_KEYS`).
+- **Mula de carga** (`pipeline/pets/pack_mule.py`, terrestre): mula parda pequeña (media altura de héroe a las
+  orejas), crin oscura, morro claro, bajo unas alforjas de cuero con hebilla de latón y una manta roja enrollada
+  encima: la carga es casi todo lo que se ve. NUNCA se sienta ni se echa con la carga puesta: en reposo está de
+  pie, echa una oreja atrás, espanta con la cola, y cada 11 s baja la cabeza a pastar. Al andar el grupo va detrás
+  al paso, cabeceando. Jefe: cabeza arriba, rebuzna y bota sobre las manos; cofre: orejas tiesas, cabeza alta y
+  patea el suelo (más que cargar); nivel: asiente dos veces; derrota: dobla las patas y se echa bajo la carga.
+- **Diablillo del tiempo** (`pipeline/pets/time_imp.py`, volador que no se posa): diablillo violeta de cuernos de
+  hueso, ojos de latón y dientecillos, con dos alitas de murciélago y un RELOJ DE ARENA abrazado al costado. El
+  reloj es su carácter: la arena cae mientras flota; cada 8 s le da la vuelta para que no se acabe (de lado, y
+  arriba otra vez con la arena en lo alto). Jefe: lo sube sobre la cabeza y lo hace girar; cofre: lo agita con
+  fuerza y salta arena; nivel: una vuelta limpia y un destello — en punto; derrota: baja a sentarse en el camino
+  con el reloj de lado en el regazo, parado.
+- **Acaparador** (`pipeline/pets/hoarder.py`, terrestre a su manera): un draco verde pequeño tumbado sobre la tapa
+  de un cofre de cuero con banda y cerradura de latón, que NO LO SUELTA. No anda él: anda el cofre — le salen dos
+  patas con garras por debajo y el conjunto se bambolea detrás del grupo; donde paran, mete las patas y el cofre
+  se asienta. En reposo mira a un lado y a otro (¿quién mira su cofre?) y cada 10 s levanta la tapa una rendija,
+  mira el oro que brilla dentro y la cierra deprisa. Cofre (su gran momento): ojos enormes, la tapa abierta de par
+  en par, temblando; jefe: el cofre bota con la tapa aleteando; nivel: palmaditas en la tapa y un destello en la
+  cerradura; derrota: se aplasta sobre la tapa con los ojos cerrados.
+- **Escala** (junto al búho de ≈20 px y a un héroe de 40): mula ≈20 de alto y 22 de largo; diablillo ≈17; draco
+  con cofre ≈14 de alto y 14 de ancho. **De un vistazo a ×1**: búho pardo con alas abiertas, moneda dorada redonda,
+  gato blanco, mula gris con carga roja, diablillo violeta con reloj dorado, bulto verde sobre cofre marrón.
+- **Contraste**: tras verlas en la franja, la mula y el draco suben un tono respecto a su icono del panel (la mula
+  se perdía sobre el camino pardo del mundo 1 y el draco sobre el verde oscuro del mundo 3 en Tormento).
+- **Tamaño de los atlas**: el mayor mide 624×340 px. El exportador se niega a escribir uno de más de 4096 px de
+  lado (`MAX_SIDE` en `export_pets.py`) y un test lo comprueba contra `pets.json` (`PET_ATLAS_MAX`, `petAtlasSize`
+  en `render/petData.ts`).
+- **App empaquetada**: `src/game/render/configurePixiLoader.ts` YA NO EXISTE (se quitó en el commit `5c0b2c8`;
+  el comentario de `vite.config.ts` que lo nombra está viejo). Lo que hoy hace que las texturas carguen en la app
+  empaquetada es que el build mete TODOS los PNG como `data:` (regla `assetsInlineLimit` de `vite.config.ts`) y se
+  cargan con `Assets.load`. Las mascotas van por ese mismo camino: comprobado con un build de producción en una
+  carpeta aparte — cada mascota es un trozo JS propio con su atlas como `data:image/png;base64`, y el build no
+  deja ningún `.png` suelto. No probado dentro de la app empaquetada.
+- **Capturas**: `tools/assets/out/preview/pet3_<mascota>_sheet.png` (clips ampliados de las tres nuevas),
+  `pet3_<mascota>_strip_x2.png` (en la franja a ×2: reposo, avanzando, jefe, cofre, nivel, derrota en el mundo 1
+  Normal; tras 9 s de pelea en el mundo 3 Tormento), `pet3_six_x1_light.png` y `pet3_six_x1_dark.png` (las seis
+  a ×1, mundo 1 Normal y mundo 3 Tormento) y `pet3_lineup.png` (las seis junto a la Priest, recortadas de los
+  atlas, a ×4 y a ×1 sobre un fondo claro y uno oscuro).
+- **Flojo o sin verificar**: las alas del diablillo son pequeñas y oscuras (vuela más por el aleteo que por la
+  silueta); el diablillo violeta sobre los mundos violetas (9 y 10) no se ha mirado; la mula de frente al grupo
+  tiene las orejas cortas (se lee burro o caballo pequeño); el draco es frontal y al andar hacia atrás se
+  espeja (solo cambia de lado la cola); las patas del Acaparador son dos píxeles; nada visto en la app
+  empaquetada; mundos 2 y 4–10 sin mirar.
+- **Backlog**: sombra bajo héroes y enemigos (decisión del usuario: ahora no).
+
+### Jefes, ronda 4 (2026-11-15/16, sin commit): decisiones, formas de Certero, tres signos, los seis espejos y el reflejo oscuro — y el atlas de efectos en páginas
+
+- **A · Decisiones del usuario.** Resaca, Hoja al rojo y Esporas se quedan como estaban. **Espejos: al jefe le
+  sirve también el daño de ataque** — una mejora de daño de ataque copiada (Grito de batalla) le hace pegar más
+  mientras dura, con la fracción de mejoras de su dificultad (`sim/enemyTraits.foeDamageMult`); crítico y bloqueo
+  siguen sin servirle. Tooltip y tests al día.
+- **B · Dos arreglos de presentación.** El espejo de Espejos ya no se forma sobre el tanque: cuelga 40 px por
+  delante del jefe y a la altura de su torso y cabeza (94 px sobre el suelo). Los platillos de Balanza pasan de
+  13 a 19 px de ancho y cuelgan más arriba (`CAST_CUES.boss_scales.up` 66: libres de barras y chips); el fuego de
+  Hoja al rojo crece (celda 56×48). Mirado a 1280×656 ×1.
+- **C · Certero: una forma por jefe.** Los 20 jefes (de etapa y de mundo, mundos 1–10) envían algo suyo
+  (`render/bossFx.ts DEADEYE_SHOT`; arte en `fx/boss.py`): cuerno arrancado (Scapegoat), cuenta del rosario
+  (Abbot), lanza de agua (Ninth Wave), sombrero de seta (Destroying Angel), espada al rojo (Quench), mazo
+  (Verdict), esquirla de nada (Unmaker); y los de etapa: bloque de piedra, campana, bala de cañón, cristal,
+  goterón de magma, jabalina de luz, hacha. `DEADEYE_DEFAULT` queda solo para una figura que se dibuje después.
+  Un test exige forma propia a todos los jefes de `data/worlds` y que los diez jefes de mundo no repitan.
+- **D · Tres signos de enemigos con arte propio** (solo cambia la referencia al arte): chip de Temblor →
+  `hud_s_m_tremor` (suelo partido y la sacudida; antes el grillete); Embestida → `charge_burst` (estrella blanca
+  dura con dos surcos y el polvo de la carrera; antes `foe_hit`); auras del Apoyo en el tooltip de dificultad del
+  mapa → `map_aura_<aura>` en el juego de iconos de la interfaz (`icon_sets/s9i_foes.py`, que las saca del mismo
+  dibujo que lleva el Apoyo sobre la cabeza), y `MapFoes.tsx` ya no recorta el atlas de la franja.
+- **E1 · Los seis espejos** (`data/bossKit.ts MECHANIC.mirror`, `sim/mirror.ts`). Cada Espejos (cada 10 s)
+  enciende uno de los seis paneles de la figura: una acumulación de `buff_mirror_panes`, +5 / 6 / 7 / 8 / 10 % de
+  daño por panel (Normal → Tormento), para golpes y habilidades, hasta que los rompe. Con los seis encendidos
+  (segundo 57,5) lanza `boss_shatter`: barra de 1,5 s, aviso propio en el suelo, y un golpe en área a los tres de
+  120 / 145 / 170 / 195 / 220 % de su golpe. Los paneles se apagan ANTES de que caiga el golpe (es el 120 % a
+  secas, no × el +30 %) y vuelve a empezar. Es un golpe en área: Cerrar filas lo reduce, Guardián no (test).
+  Los paneles encendidos son una mejora del jefe: Purificar no tiene nada que quitar.
+  - **Se ve en el propio jefe**: `export-fx` hornea los seis paneles ENCENDIDOS fotograma a fotograma de sus
+    clips (`fx/mirrors.lit_panes` → `panes_unmaker.png` + `fx.json panes`), solo los píxeles de cada panel que
+    la figura enseña de verdad; `render/PaneGlow.ts` los pone encima del panel oscuro siguiendo el clip y el
+    fotograma (orden: de arriba abajo, un lado y el otro). Destello al encenderse cada uno, parpadeo mientras
+    carga la rotura, estallido de cristal en cada panel al romperse y hojas de espejo cayendo por todo el grupo
+    (`AREA_BLOWS.boss_shatter`). **Contador** `n/6` junto al signo de Espejos en la línea del jefe.
+- **E2 · El reflejo oscuro.** De uno de cada dos espejos (2.º, 4.º, 6.º; `reflection.every`, por dificultad)
+  sale del espejo un reflejo del héroe cuya habilidad se copió: una invocación (`SUMMONS.reflection`, como los
+  cuervos: vida propia, 8 s, sin botín ni progreso, cuenta como baja para talentos, cae con el jefe, la
+  retaguardia la prioriza y el Caballero no la alcanza). Se planta un hueco de héroe por delante de la
+  retaguardia y golpea a SU héroe si está detrás del tanque (si el copiado es el tanque, a los de detrás), al
+  ritmo de ataque de ese héroe (entre 0,6 y 1,6 por segundo). Guardián se lleva su parte de cada golpe; Cerrar
+  filas no (test). Sin habilidad copiada aún, o con ese héroe caído: no sale.
+  - **Vida**: 1,5 × la de un enemigo normal de esa etapa (un enemigo normal son 2–3 golpes del que más pega →
+    3–4,5 golpes). **Daño — cambiado respecto a la propuesta**: 50 / 60 / 70 / 80 / 90 % del golpe de un enemigo
+    normal de esa etapa, NO el 30–60 % del daño básico del héroe reflejado: el golpe de un héroe está medido
+    contra la vida de los enemigos y desde Infierno es varias veces la vida entera de un héroe.
+  - **Figura**: la del héroe (sus clips), en una piel nueva `shade` (violeta noche) con un ribete frío `glass`
+    (`export-fx`: `skin_<héroe>_shade.png`, `skin_<héroe>_glass.png`), mirando al grupo. Entrada: el espejo se
+    oscurece y revienta (`reflection_out`) y el reflejo baja de él; salida, por muerte o por tiempo: se rompe
+    como un cristal (`reflection_break`), nunca la muerte del héroe. Golpes: esquirla de espejo desde lejos
+    (Ranger, Priest) o su golpe (Knight), rompiéndose sobre el héroe.
+  - **Tooltip** del signo en tres líneas cortas (EN + ES) y en un cuadro más ancho: a 116 px de ancho el texto
+    se salía por abajo de la ventana a 1280×720.
+- **Cuánto más dura es la pelea** (`PROBE_SEEDS=1 PROBE_STOP=200`, sin retocar el muro): Normal sigue en 3,5 h
+  y el Deshacedor de Normal cae al primer intento en 30 s — el jugador ve tres paneles (+15 %) y un reflejo, la
+  rotura no; el de Infierno (etapa 200) necesita 9 intentos, los mismos que antes, y cae a los 75 s (ahí sí ve
+  la rotura, en el segundo 59). Infierno entero: 36 h de 40.
+- **El atlas de efectos, en páginas.** `fx.png` era una sola columna y pasó de 8192 px de alto (8262, luego
+  8588): las GPU con ese tope dibujan cajas negras en lugar de los efectos (visto en las capturas). Ahora
+  `export-fx` empaqueta los efectos por estantes en páginas `fx_<n>.png` de 2048 px de ancho y como mucho 4096 de
+  alto (hoy UNA página de 2048×1981: el mismo arte ocupa menos de la mitad), abre otra página cuando no cabe y
+  FALLA antes que escribir una hoja de más de 4096 px de lado (también pieles y paneles). `fx.json` dice
+  `pages` y la `page` de cada efecto; `fxSheets`/`fxTextures` cargan las páginas. `test/game/stripAtlases.test.ts`
+  comprueba sobre los archivos exportados que NINGÚN PNG de `src/assets` pasa de 4096 de lado (el mayor de los
+  demás — figuras, mascotas, fondos, interfaz — mide 2048), que cada efecto cabe en su página y que no se pisan.
+  Las páginas van por el camino de todas las hojas: URL del `import.meta.glob`, que el build mete como `data:`
+  (comprobado con un build de producción en una carpeta aparte: ningún `.png` suelto), y `Assets.load`.
+  `configurePixiLoader.ts` ya no existe (commit `5c0b2c8`). No probado dentro de la app empaquetada.
+- **Capturas** (`tools/assets/out/preview/`): `boss_r4_espejos_paneles.png` (2, 4 y 6 paneles),
+  `boss_r4_espejos_rotura.png`, `boss_r4_espejos_reflejo_sale.png`, `boss_r4_espejos_reflejo_ataca.png`,
+  `boss_r4_espejos_reflejo_rompe.png`, `boss_r4_espejos_tooltip.png` (EN y ES a 1280×656 ×1),
+  `boss_r4_x1_balanza_hoja_espejo.png` (los tres arreglos de B a ×1), `boss_r4_certero_formas.png` (las 20 formas
+  en una hoja), `boss_r4_certero_en_juego.png` (Deshacedor y Veredicto disparando), `boss_r4_signos.png`.
+- **Flojo o sin verificar**: la rotura llega en el segundo 59, uno antes del enfurecimiento (60 s): quien gana
+  con margen no la ve nunca; el signo de Temblor a 7 px se lee como una mancha oscura con grieta; el reflejo
+  se planta casi pegado al héroe al que ataca; el reflejo más mirado es el del Priest — el del Caballero y el de
+  la Ranger solo se han visto de pasada y con una piel anterior, más oscura; Espejos visto solo en Normal; las formas de Certero de los jefes de
+  etapa de los mundos 4–10 vistas en la hoja, no en el juego; el sondeo es de una sola semilla; nada visto en la
+  app empaquetada.
+
+### Jefes, ronda 5 (2026-11-16, sin commit): tres ajustes del Deshacedor, los tres reflejos de cerca y el signo de Temblor
+
+- **Espejos cada 8 s** (antes 10; `MECHANIC.mirror.everyMs`). Paneles en 7,5 · 15,5 · 23,5 · 31,5 · 39,5 · 47,5 s
+  y la rotura cae en el **segundo 49**, once antes del enfurecimiento. El reflejo sigue saliendo de uno de cada
+  dos espejos (segundos 15,5 · 31,5 · 47,5): uno cada 16 s y cada uno dura 8, así que con estos números no se
+  solapan. Aun así queda la regla, por si cambian: **nunca dos a la vez** — el que toca mientras el anterior
+  sigue en pie queda debido (`reflectionOwed` en el jefe) y sale en cuanto el anterior cae o caduca
+  (`sim/mirror.releaseReflection`, cada tick). Test con el espejo acelerado. El tooltip lee la cadencia de los
+  datos («Cada 8 s…»).
+- **Daño del reflejo**: 80 / 95 / 110 / 125 / 140 % del golpe de un enemigo normal de esa etapa, al ritmo de
+  ataque del héroe reflejado.
+- **Posición**: a media distancia entre el primer héroe de la retaguardia y el tanque (`SUMMONS.reflection
+  .between` 0,5; con las posiciones del juego, a 50 px de cada uno), solo, sin pisar figuras, barras ni fichas.
+  Ranger y Priest reflejados atacan desde ahí con una esquirla de espejo. El **reflejo del Caballero da el paso**:
+  en cada golpe va hasta su víctima, descarga el tajo al llegar y vuelve a su sitio (360 ms ida y vuelta;
+  `EnemySprite.stepStrike`, `DOUBLE_LOOKS.stepMs/stepGap`); el daño se muestra al llegar.
+- **Los tres reflejos de cerca**, con la piel actual (violeta noche con ribete frío): `boss_r5_reflejos.png`
+  (una fila por héroe: en su sitio y golpeando).
+- **Signo de Temblor** rehecho: una losa clara partida por UNA grieta negra y la sacudida saltando de sus
+  esquinas (antes grietas oscuras sobre marrón medio: una mancha). `boss_r5_temblor.png`.
+- **Sonda** (`PROBE_SEEDS=1 PROBE_STOP=200`, sin tocar el muro): Normal 3,5 h, el Deshacedor de Normal cae al
+  primer intento en 30 s (igual que antes: ve tres o cuatro paneles y un reflejo, la rotura no). El de Infierno
+  (etapa 200): 12 derrotas antes de caer (eran 9), 19,0 h en ese mundo (eran 14,1; objetivo 5,5), cae a los 74 s
+  con nivel 50 (antes 48). Infierno entero: 41 h (eran 36; objetivo 40).
+- **Capturas** (`tools/assets/out/preview/`): `boss_r5_reflejos.png`, `boss_r5_temblor.png`,
+  `boss_r5_espejos_tooltip.png`.
+- **Flojo o sin verificar**: el reflejo del Caballero, al dar el paso hacia el Priest, atraviesa a la Ranger;
+  el reflejo es muy oscuro sobre el fondo oscuro del mundo 10 (se lee por el ribete); el muro 10 de Infierno ya
+  estaba por encima de su objetivo y ahora más (sin retocar, como se pidió); todo visto solo en Normal; una sola
+  semilla en la sonda; la rotura a los 49 s no se ha recapturado (cambia solo el momento); nada en la app
+  empaquetada.

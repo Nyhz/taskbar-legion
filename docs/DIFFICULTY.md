@@ -122,6 +122,21 @@ on Normal/Hell that is all it has, then it gains **special abilities at the high
 **channels for 1.5s** (a cast bar fills under the boss) before it resolves, telegraphing the cast.
 *(Before 2026-11-15 this read "pure stat walls on Normal/Hell … no party-wide AoE": §5b overrides that.)*
 
+> **SUPERSEDED 2026-11-15 by the BOSS KIT** (`src/data/bossKit.ts`, rules in `src/sim/bossMechanics.ts`; agreed in
+> `docs/redesign/PROGRESS.md` "Combate, segunda ola", C and D). A boss is now **its area blow + affixes + (world
+> bosses) a mechanic of its own**. The table below is kept as history: Frenzy is the *Frenético* affix (a stack of
+> +5 % attack speed every 5 s, no cast) and Mortal Wound the *Herida mortal* affix (150 % of the hit from a stage
+> boss, 250 % from a world boss) — two of seven (Acorazado, Vampírico, Frenético, Sísmico, Venenoso, Certero,
+> Herida mortal; Vampírico is a stage boss's alone). **Stage bosses** carry none in Normal, one from Hell, two in
+> Eternal and Torment; **world bosses** carry one from Inferno and two in Torment, on top of their mechanic
+> (one per world: Bandada, Raíces, Rayo en cadena, Culpa, Silencio dorado, Resaca, Esporas, Hoja al rojo, Balanza,
+> Espejos; mild in Normal, tightening by difficulty). Affixes are picked from the run's seed and the stage alone. Strengths are conservative until the
+> final pacing pass. The world-10 boss's Espejos has two more parts (2026-11-16, `MECHANIC.mirror`): each cast
+> (every 8 s) lights one of its **six mirrors** (+5 → +10 % damage each) and with all six lit — the 49th second —
+> it breaks them over the whole party (120 → 220 % of its hit, an area blow); and every second mirror lets out a
+> **dark reflection** of the hero it copied (a summon: 8 s, 1.5 × a normal enemy's life, 80 → 140 % of a normal
+> enemy's hit at that hero's pace, on the back line from half-way between it and the tank; never two at once).
+
 | Difficulty | Special abilities | Cadence (from engage) |
 |---|---|---|
 | Normal · Hell | Shockwave only (§5b) | every 10s, first cast starts at 4s |

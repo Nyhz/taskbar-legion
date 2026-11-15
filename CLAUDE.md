@@ -126,7 +126,8 @@ docs/
   ART.md                 ← the procedural pixel-art approach (no external assets) + palette
   BALANCE.md             ← every `tune` value resolved into concrete starting numbers
   redesign/              ← THE CURRENT WORK (Spanish): REDESIGN.md → PLAN.md → PROGRESS.md (living log),
-                           CLASSES.md (class redesign), I18N.md (languages + glossary), mockups/, lab/
+                           BACKLOG.md (parked items — never start one unasked), CLASSES.md (class redesign),
+                           I18N.md (languages + glossary), mockups/, lab/
 src/                     ← the game (structure mirrors SPEC §2; see ARCHITECTURE.md § "Since the redesign")
   ui/kit/                ← the interface kit every panel is built from (`tk-` prefix; gallery at /#kit)
   i18n/                  ← texts in English and Spanish; names from data via data/i18n/es/*.json
