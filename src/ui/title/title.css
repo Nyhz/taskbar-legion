@@ -1,0 +1,24 @@
+/* The title screen (mock-up: docs/redesign/mockups/70_title.html): the strip itself, 600×160 art px, standing
+   exactly where the game's strip will be, with the party where the game picks them up. Art pixels, like the kit. */
+.tk-ts { position: relative; width: 600px; height: 160px; overflow: hidden; background: url('../../assets/ui/title_backdrop.png');
+  box-shadow: 0 0 0 1px var(--k0); }
+.tk-ts > .hero { position: absolute; }
+.tk-ts > .fore { position: absolute; left: 0; top: 0; pointer-events: none; }
+.tk-ts > .logo { position: absolute; left: 321px; top: 9px; pointer-events: none; }
+
+/* Everything that can be pressed sits in one row on the calm grass: three signs, then the one gold key. */
+.tk-ts-menu { position: absolute; right: 8px; bottom: 5px; display: flex; align-items: center; gap: 2px; }
+.tk-ts-play { position: relative; height: 24px; margin-left: 5px; border: 4px solid transparent;
+  border-image: url('../../assets/ui/ui_btn_gold.png') 4 fill / 4px / 0 stretch; display: flex; align-items: center; gap: 1px;
+  padding: 0 7px 1px 0; font: 12px/12px var(--f-name); color: var(--gold-dk); white-space: nowrap; }
+.tk-ts-play > img { margin-top: -1px; }
+.tk-ts-play:hover { filter: brightness(1.12); }
+.tk-ts-play .tk-tip { font: 10px/10px var(--f-num); }
+.tk-ts-party { display: flex; align-items: center; gap: 2px; padding-top: 3px; color: var(--k9); }
+.tk-ts-party > img + img { margin-left: 4px; }
+
+/* It fades in on boot and out when the game takes over (App keeps it mounted on top for EXIT_MS = 680 ms). */
+@keyframes tk-ts-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes tk-ts-out { from { opacity: 1; } to { opacity: 0; } }
+.tk-ts-wrap { animation: tk-ts-in 420ms ease-out both; }
+.tk-ts-wrap.out { animation: tk-ts-out 640ms ease-in forwards; pointer-events: none; }

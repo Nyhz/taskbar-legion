@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useStore } from '@/state/store';
 import { format } from '@/sim/num';
 import { useT } from '@/i18n';
@@ -5,21 +6,24 @@ import { KitRoot, Sign, Tip, TipTag, TipText, TipTitle } from '@/ui/kit';
 import { HudDock } from './HudDock';
 import { HudStage } from './HudStage';
 import { HudChests } from './HudChests';
-import { ScaleControls } from './ScaleControls';
-import { SettingsHeaderButton } from './OptionsPopover';
-import { QuitGameButton } from '@/ui/components/QuitGameButton';
-import { isTauri } from '@/platform/tauri';
+import { OptionsAnchor } from '@/ui/options/OptionsAnchor';
+import { OptionsWindow } from '@/ui/options/OptionsWindow';
 import './hud.css';
 
 // The rail above the battle strip (mock-up: docs/redesign/mockups/05_hud.html), driven by the live HUD snapshot
 // the engine pushes. Left: the panel launchers. Middle: where the party is. Right: chests, keys, the purse and
-// the options. It is authored at the art's pixel and zoomed by the UI baseline, like the strip under it.
+// the cog that opens the options. It is authored at the art's pixel and zoomed by the UI baseline, like the
+// strip under it.
 
 export function StripHud(): React.JSX.Element {
   const t = useT();
   const uiScale = useStore((s) => s.uiScale);
   const gold = useStore((s) => s.hud.gold);
   const keys = useStore((s) => s.hud.zoneKeysHeld);
+  // The options hang from the cog at the rail's end (a window of their own, above the rail).
+  const gameScale = useStore((s) => s.gameScale);
+  const [cog, setCog] = useState<HTMLButtonElement | null>(null);
+  const [optionsOpen, setOptionsOpen] = useState(false);
 
   return (
     <KitRoot zoom={uiScale} data-interactive="true">
@@ -42,17 +46,24 @@ export function StripHud(): React.JSX.Element {
           {format(gold)}
           <TipTag side="below-end">{t('hud.gold')}</TipTag>
         </div>
-        {/* Settings, scale and quit are still the old popovers, authored at screen size: undo the rail's zoom
-            for them. They are replaced when the Options panel is rebuilt on the kit. */}
-        <div
-          style={{ zoom: 1 / uiScale, display: 'flex', alignItems: 'center', gap: 4 }}
-          onPointerDown={(e) => e.stopPropagation()}
+        <button
+          ref={setCog}
+          type="button"
+          className={`tk-hud-key has${optionsOpen ? ' on' : ''}`}
+          aria-label={t('options.settings')}
+          aria-pressed={optionsOpen}
+          onPointerDown={(e) => e.stopPropagation()} // a press here must not start dragging the strip
+          onClick={() => setOptionsOpen((open) => !open)}
         >
-          <SettingsHeaderButton />
-          <ScaleControls />
-          {isTauri() && <QuitGameButton />}
-        </div>
+          <Sign name="hud_options" />
+          {!optionsOpen && <TipTag side="below-end">{t('options.settings')}</TipTag>}
+        </button>
       </div>
+      {optionsOpen && (
+        <OptionsAnchor anchor={cog} zoom={uiScale * gameScale}>
+          <OptionsWindow onClose={() => setOptionsOpen(false)} />
+        </OptionsAnchor>
+      )}
     </KitRoot>
   );
 }

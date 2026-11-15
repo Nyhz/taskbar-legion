@@ -3,7 +3,6 @@ import type { overlay as en } from '../en/overlay';
 export const overlay: Record<keyof typeof en, string> = {
   danger: 'Peligro',
   dangerLabel: 'Ha llegado un jefe',
-  stage: '{difficulty} · {place}',
   entering: 'Entrando en {difficulty} {place}',
   saveFailed: 'No se guarda',
   saveFailedTitle: 'El progreso no se está guardando',

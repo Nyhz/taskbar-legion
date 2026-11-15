@@ -546,3 +546,14 @@ conservadora, marcada como provisional; si salta el límite de uso, dejar anotad
       usa la cara del jefe de etapa (los jefes de mundo no tienen arte); frases de mascotas provisionales;
       «Upgrades» en gótica se lee «Jpgrades»; reglas locales que van al kit (tecla fina de precio, paginador,
       insignia de paso, fila seleccionable, tooltip desplazado).
+- [x] **Bloque 2 — resto de la interfaz** (lab v46). Ajustes: una rueda en el HUD abre una ventana del kit
+      (idioma, tamaño ×N, música del título, exportar / importar, partida nueva con pregunta dentro de la ventana,
+      salir en Tauri); se borran `OptionsPopover`, `ScaleControls`, `QuitGameButton`. Título: montado sobre la
+      propia tira con el logo dibujado, tecla Empezar / Continuar con el resumen de la partida, y se desvanece al
+      entrar (antes encogía); se borran `TitleStage`, `TitleScene`, `TitleParticles` y el logo viejo. Sobre la
+      tira: banda de peligro y de etapa, aviso de guardado fallido, líneas de botín con icono y rareza, resumen
+      de ausencia y panel de error de render, todo en el kit y en los dos idiomas.
+      Sin ver: nada de esto en Tauri; importar con éxito y confirmar partida nueva (recargan la página); el
+      resumen de ausencia en su arranque real (en navegador el guardado es en memoria). Pendiente menor: reglas
+      muertas en `global.css` (`tl-title-exit`, `tl-logo`, `tl-menu-in`, `tl-fade-late`, `tl-danger`,
+      `tl-stage-banner`); el texto flotante de combate sigue en inglés y con emoji (`FloatingText`, `GameStrip`).

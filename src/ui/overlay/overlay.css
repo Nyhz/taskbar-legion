@@ -23,3 +23,45 @@
 .tk-badge > .tt { left: auto; right: 0; top: calc(100% + 3px); }
 .tk-tip .ln.here { color: var(--gold-hi); }
 .tk-tip .ln.here b { color: var(--gold-hi); }
+
+/* Banners: a band of pixel rows across the middle of the strip, lettered in blackletter. Danger pulses a few
+   times (peaking at 0.9) and fades; the stage band fades in, holds and fades out. Each runs once. */
+.tk-band { left: 0; width: 600px; display: flex; align-items: center; justify-content: center; gap: 6px; pointer-events: none; }
+.tk-band > .nm { font: 12px/12px var(--f-name); white-space: nowrap; }
+.tk-band.danger { top: 66px; height: 28px; background: linear-gradient(#0b0d17 0 1px, #dc5f48 1px 2px, #8f2433 2px 23px, #63192e 23px 27px, #0b0d17 27px);
+  animation: tk-band-danger 1.9s ease-in-out forwards; }
+.tk-band.danger > .nm { font: 24px/22px var(--f-title); }
+.tk-band.danger > .nm { color: #fff4c6; }
+.tk-band.stage { top: 71px; height: 18px; background: linear-gradient(#0b0d17 0 1px, #5b6880 1px 2px, #212a40 2px 15px, #151a2b 15px 17px, #0b0d17 17px);
+  animation: tk-band-stage 1.8s ease-in-out forwards; }
+.tk-band.stage > .nm { color: var(--gold-hi); }
+.tk-band.stage > b { font-weight: 400; color: var(--k9); }
+@keyframes tk-band-danger { 0% { opacity: 0; } 12% { opacity: .9; } 24% { opacity: .25; } 40% { opacity: .9; } 56% { opacity: .25; } 72% { opacity: .9; } 88% { opacity: .3; } 100% { opacity: 0; } }
+@keyframes tk-band-stage { 0% { opacity: 0; } 12% { opacity: 1; } 78% { opacity: 1; } 100% { opacity: 0; } }
+
+/* Progress is not being saved: a crimson key in the strip's top-left corner that blinks until it is. */
+.tk-save { left: 5px; top: 5px; pointer-events: auto; }
+.tk-save > .tk-key { animation: tk-save-blink 1s steps(2, jump-none) infinite; }
+.tk-save > .tk-key .tk-tip { animation: none; filter: none; }
+@keyframes tk-save-blink { 0% { filter: none; } 100% { filter: brightness(1.45); } }
+
+/* Loot lines: a column over the strip, newest at the bottom; the piece in its frame, then what it is. */
+.tk-loot-zone { position: absolute; left: 50%; bottom: 8px; transform: translateX(-50%); z-index: 100; pointer-events: none; }
+.tk-loot { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+/* Each line sits on a dark plate: the lines float over open panels and, in the desktop overlay, over whatever
+   is behind the game — an outline alone does not carry them there. */
+.tk-loot-line { display: flex; align-items: center; gap: 4px; height: 24px; padding-right: 6px; white-space: nowrap; background: rgba(11, 13, 23, .8); }
+.tk-loot-line > img:first-child { margin-left: 4px; }
+.tk-loot-line > .nm { font: 12px/12px var(--f-name); }
+
+/* Dialogs that sit over everything (the summary of an absence, the graphics failure): a veil and one window. */
+.tk-veil { position: fixed; inset: 0; z-index: 200; display: flex; align-items: center; justify-content: center; background: rgba(11, 13, 23, .6); pointer-events: auto; }
+.tk-veil.top { z-index: 9999; background: rgba(11, 13, 23, .92); }
+.tk-away-note { color: var(--k7); line-height: 10px; margin: 2px 0 5px; }
+.tk-away-row { display: grid; grid-template-columns: 16px 1fr auto; gap: 4px; align-items: center; height: 18px; color: var(--k7); }
+.tk-away-row > b { font-weight: 400; color: var(--k9); }
+.tk-away-row > b.gold { color: var(--gold-hi); }
+.tk-away-keys { display: flex; justify-content: flex-end; gap: 4px; margin-top: 6px; }
+.tk-gfx-text { color: var(--k7); line-height: 10px; margin: 2px 0 5px; }
+.tk-gfx-pre { margin: 0; padding: 4px 5px; max-height: 120px; overflow: auto; background: var(--k0); color: var(--k8); font: 10px/10px var(--f-num);
+  white-space: pre-wrap; word-break: break-word; user-select: text; -webkit-user-select: text; }

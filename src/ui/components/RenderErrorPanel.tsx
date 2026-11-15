@@ -1,17 +1,23 @@
 import { useMemo, useState } from 'react';
-import { PALETTE } from '@/styles/palette';
 import { collectRenderDiagnostics, formatDiagnostics } from '@/game/render/gpuDiagnostics';
+import { useT } from '@/i18n';
+import { Head, Key, KitRoot, Title, Window } from '@/ui/kit';
+import { kitZoomNear } from '@/ui/panels/items/kitZoom';
+import '@/ui/overlay/overlay.css';
 
-// Shown when a Pixi canvas fails to initialise or its textures fail to load. Replaces the old
-// silent-black-screen failure with a real, copyable report (which webview, which GPU, what
-// WebGL exists, the actual error) plus a reload. Pure DOM — needs no working canvas.
+// Shown when a Pixi canvas fails to initialise or its textures fail to load. Replaces a silent black screen
+// with a real, copyable report (which webview, which GPU, what WebGL exists, the actual error) plus a reload.
+// Pure DOM on the interface kit — it needs no working canvas. The report itself is diagnostic text, not prose:
+// it stays in English whatever the language, so the developer can read what a player sends.
 
 function reload(): void {
   window.location.reload();
 }
 
 export function RenderErrorPanel({ error }: { error: unknown }): React.JSX.Element {
+  const t = useT();
   const [copied, setCopied] = useState(false);
+  const [zoom] = useState(() => kitZoomNear());
 
   const details = useMemo(() => formatDiagnostics(collectRenderDiagnostics(), error), [error]);
 
@@ -28,77 +34,23 @@ export function RenderErrorPanel({ error }: { error: unknown }): React.JSX.Eleme
   };
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 9999,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'rgba(13, 11, 18, 0.92)',
-        pointerEvents: 'auto',
-        fontFamily: 'monospace',
-        padding: 16,
-      }}
-    >
-      <div
-        style={{
-          maxWidth: 540,
-          width: '100%',
-          background: PALETTE.bgPanel,
-          border: `2px solid ${PALETTE.goldDim}`,
-          borderRadius: 4,
-          padding: 20,
-          color: PALETTE.textLight,
-          boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
-        }}
-      >
-        <h2 style={{ margin: '0 0 8px', color: PALETTE.gold, fontSize: 18 }}>Graphics failed to start</h2>
-        <p style={{ margin: '0 0 14px', fontSize: 13, color: PALETTE.textMute, lineHeight: 1.5 }}>
-          The game canvas couldn&apos;t start on this machine. Please copy these details and send
-          them to the developer.
-        </p>
-        <pre
-          style={{
-            margin: '0 0 14px',
-            padding: 10,
-            background: PALETTE.ink,
-            borderRadius: 3,
-            color: PALETTE.parchment,
-            fontSize: 11,
-            lineHeight: 1.45,
-            whiteSpace: 'pre-wrap',
-            wordBreak: 'break-word',
-            maxHeight: 220,
-            overflow: 'auto',
-          }}
-        >
-          {details}
-        </pre>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <button type="button" onClick={copy} style={btnStyle(true)}>
-            {copied ? 'Copied!' : 'Copy details'}
-          </button>
-          <button type="button" onClick={reload} style={btnStyle(false)}>
-            Reload
-          </button>
-        </div>
-      </div>
+    <div className="tk-veil top" data-interactive="true">
+      <KitRoot zoom={zoom}>
+        {/* The close key reloads: there is nothing behind this panel to go back to. */}
+        <Window id="render-error" closeLabel={t('overlay.gfxReload')} onClose={reload} width={270}>
+          <Head>
+            <Title>{t('overlay.gfxTitle')}</Title>
+          </Head>
+          <p className="tk-gfx-text">{t('overlay.gfxHelp')}</p>
+          <pre className="tk-gfx-pre tl-scroll">{details}</pre>
+          <div className="tk-away-keys">
+            <Key onClick={reload}>{t('overlay.gfxReload')}</Key>
+            <Key tone="gold" onClick={copy}>
+              {copied ? t('overlay.gfxCopied') : t('overlay.gfxCopy')}
+            </Key>
+          </div>
+        </Window>
+      </KitRoot>
     </div>
   );
-}
-
-function btnStyle(primary: boolean): React.CSSProperties {
-  return {
-    padding: '8px 14px',
-    fontFamily: 'monospace',
-    fontSize: 13,
-    fontWeight: 'bold',
-    cursor: 'pointer',
-    borderRadius: 3,
-    border: `2px solid ${primary ? PALETTE.gold : PALETTE.goldDim}`,
-    background: primary ? PALETTE.gold : 'transparent',
-    color: primary ? PALETTE.ink : PALETTE.textLight,
-  };
 }

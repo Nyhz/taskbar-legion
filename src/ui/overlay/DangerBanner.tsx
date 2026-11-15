@@ -1,11 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { useStore } from '@/state/store';
+import { useT } from '@/i18n';
+import { Sign } from '@/ui/kit';
 
-// A full-width red "DANGER" stripe that flashes over the strip the instant a stage boss
-// or a zone (-10) boss appears — it pulses a few times (peaking at 0.9 opacity) then
-// fades out. Cosmetic; driven by the rising edge of the HUD phase into 'boss'/'zoneBoss'.
+// A crimson band across the strip that flashes the instant a stage boss or a world (-10) boss appears — it
+// pulses a few times (peaking at 0.9 opacity) then fades out. Cosmetic; driven by the rising edge of the HUD
+// phase into 'boss' / 'zoneBoss'. Lives on the strip's kit layer (StripOverlay), in art pixels.
 
 export function DangerBanner(): React.JSX.Element | null {
+  const t = useT();
   const phase = useStore((s) => s.hud.phase);
   const prev = useRef(phase);
   const [runKey, setRunKey] = useState(0);
@@ -25,27 +28,14 @@ export function DangerBanner(): React.JSX.Element | null {
   return (
     <div
       key={runKey}
-      className="tl-danger"
+      className="tk-band danger"
+      role="status"
+      aria-label={t('overlay.dangerLabel')}
       onAnimationEnd={() => setVisible(false)}
-      style={{
-        position: 'absolute',
-        left: 0,
-        right: 0,
-        top: '50%',
-        transform: 'translateY(-50%)',
-        height: 32,
-        background: '#cc1f1f',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        pointerEvents: 'none',
-        borderTop: '1px solid rgba(0,0,0,0.45)',
-        borderBottom: '1px solid rgba(0,0,0,0.45)',
-      }}
     >
-      <span style={{ color: '#fff', fontWeight: 800, fontSize: 18, letterSpacing: 6, textShadow: '0 1px 2px rgba(0,0,0,0.6)' }}>
-        DANGER
-      </span>
+      <Sign name="hud_boss" />
+      <span className="nm tk-ink">{t('overlay.danger')}</span>
+      <Sign name="hud_boss" />
     </div>
   );
 }

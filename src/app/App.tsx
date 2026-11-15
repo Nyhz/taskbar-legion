@@ -10,7 +10,7 @@ import { PALETTE } from '@/styles/palette';
 import { isTauri } from '@/platform/tauri';
 import { fadeOutMusic } from '@/platform/audio';
 
-const EXIT_MS = 680; // title shrink-out duration (matches the .tl-title-exit animation)
+const EXIT_MS = 680; // how long the title takes to fade out over the game (title.css)
 
 // Top-level router: boots at the title screen, then hands off to the live game once the
 // player picks Start/Continue. Title + game share ONE window (no resize), so the hand-off is

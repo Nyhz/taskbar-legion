@@ -3,7 +3,6 @@
 export const overlay = {
   danger: 'Danger',
   dangerLabel: 'A boss is here',
-  stage: '{difficulty} · {place}',
   entering: 'Entering {difficulty} {place}',
   saveFailed: 'Not saving',
   saveFailedTitle: 'Progress is not being saved',
