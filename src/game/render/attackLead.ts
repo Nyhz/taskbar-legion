@@ -23,6 +23,18 @@ export function impactMs(anim: FigureAnim): number {
   return ms;
 }
 
+/** The longest a hit's number is held back to wait for its blow. A longer wind-up (a full bow draw, a long
+ *  incantation) is not waited for: the number would trail the life bar by most of a second. */
+export const MAX_BLOW_WAIT_MS = 450;
+
+/** How long after an ABILITY's clip starts its hit should show: the clip's time to its blow, when that is short
+ *  enough to wait for; otherwise at once. (A basic attack needs no wait — its clip is started early instead.) */
+export function blowWaitMs(anim: FigureAnim | undefined): number {
+  if (anim === undefined) return 0;
+  const ms = impactMs(anim);
+  return ms <= MAX_BLOW_WAIT_MS ? ms : 0;
+}
+
 /** When the swing will really happen, from the swing timer: the simulation only acts on its ticks, so a timer
  *  with 250 ms left fires on the third tick from now — in 300 ms. `tickMs` is the simulation's tick length. */
 export function swingEtaMs(swingTimerMs: number, tickMs: number): number {

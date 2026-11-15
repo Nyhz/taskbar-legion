@@ -305,13 +305,16 @@ export class WorldFxLayer extends Container {
    *  boss's persistent mark-reticle aura (drawn by EnemySprite) takes over — so the lock-on
    *  reads as one continuous motion that then "stays there" for the fight. `radius` is the
    *  boss reticle's size, so the fly-in opens up to exactly match the aura it hands off to. */
-  markCrosshair(fromX: number, fromY: number, toX: number, toY: number, radius: number): void {
+  markCrosshair(fromX: number, fromY: number, target: () => { x: number; y: number }, radius: number): void {
     const g = new Graphics();
     const travel = 520; // streak from the ranger's head to the boss
     const settle = 460; // lock-on pulse, fading out as the persistent aura reticle takes over
     const dur = travel + settle;
     this.push(g, dur, (t) => {
       g.clear();
+      // The target is read LIVE: the bearer is usually still walking into the fight when it is marked, and a
+      // crosshair aimed at where it stood would lock on to thin air beside it.
+      const { x: toX, y: toY } = target();
       if (t < travel) {
         const k = 1 - Math.pow(1 - t / travel, 3); // ease-out: fast off the head, eases onto the target
         const x = fromX + (toX - fromX) * k;

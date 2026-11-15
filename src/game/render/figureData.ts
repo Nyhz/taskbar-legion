@@ -66,6 +66,26 @@ export function clipMs(anim: FigureAnim): number {
   return total;
 }
 
+/** How far the heroes' standing figures reach in front of their root (the widest of the three), in art pixels. */
+export function heroFrontReach(): number {
+  let reach = 0;
+  for (const key of HERO_FIGURES) reach = Math.max(reach, figureMeta(key)?.box[2] ?? 0);
+  return reach;
+}
+
+/**
+ * How far BEHIND its place in the simulation a melee enemy's figure is drawn, in art pixels. The simulation stops
+ * a melee enemy `reach` away from the hero it fights, measured between their roots; a figure whose body reaches
+ * further forward than that leaves room for (a wide beast, a boss that is mostly head and claws) would be drawn
+ * on top of the hero. So its art is set back until its standing front edge just meets the hero's: the enemy's
+ * place in the fight — where it is hit, where numbers pop — stays where the simulation has it, at the figure's
+ * front, and the body stands behind that point. Figures that fit (most of them) are not moved.
+ */
+export function frontSetback(meta: FigureMeta, reach: number): number {
+  const room = Math.max(0, reach - heroFrontReach());
+  return Math.max(0, Math.round(meta.box[2] - room));
+}
+
 /** What the render needs to know of an enemy to choose its creature (a slice of sim/world's Combatant). */
 export interface EnemyLook {
   id: string;

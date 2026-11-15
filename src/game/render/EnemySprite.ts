@@ -6,7 +6,7 @@ import { hexToNum } from '@/styles/palette';
 import { auraCategories, drawCategoryAuras, totalShield, drawShieldBar, crosshairRadius, drawFrenzyGround, hasFrenzy, SMALL_MARK_RADIUS, type AuraRegion } from './effectAuras';
 import { FigureBody } from './FigureBody';
 import { DEATH } from './figureClip';
-import { clipMs, FEET_BELOW_ORIGIN, type EnemyRank } from './figureData';
+import { clipMs, FEET_BELOW_ORIGIN, frontSetback, type EnemyRank } from './figureData';
 import { AttackLead, impactMs, swingEtaMs } from './attackLead';
 import { TICK_MS } from '@/sim/Simulation';
 import type { FigureSheet } from './figureTextures';
@@ -94,7 +94,11 @@ export class EnemySprite extends Container {
     // The standing figure's box, mirrored (the art faces right; enemies face the party on their left).
     const [left, top, right] = sheet.meta.box;
     const height = -top;
-    this.cx = -Math.round((left + right) / 2);
+    // A melee figure too wide for the gap the fight leaves is drawn set back, so its body stands behind the
+    // point where it meets the hero instead of over him (figureData.frontSetback). Everything hung on the body
+    // (bars, rings, auras, marks) follows `cx`.
+    const setback = this.style === 'melee' ? frontSetback(sheet.meta, c.range) : 0;
+    this.cx = setback - Math.round((left + right) / 2);
     this.halfW = (right - left) / 2;
     this.barY = FEET_Y + top - BAR_H - 3;
     this.cy = FEET_Y + Math.round(top / 2);
@@ -105,7 +109,7 @@ export class EnemySprite extends Container {
     this.figure = new FigureBody(sheet, -1);
     const attackAnim = sheet.meta.anims[ATTACK_CLIP];
     this.lead = new AttackLead(attackAnim === undefined ? 0 : impactMs(attackAnim));
-    this.figure.position.set(0, FEET_Y);
+    this.figure.position.set(setback, FEET_Y);
     // The rank rings + frenzy pool sit on the ground UNDER the feet, then enrageAura behind the
     // body; HP bar + cast bar on top.
     this.addChild(this.rankAura, this.frenzyAura, this.enrageAura, this.figure, this.aura, this.hpBg, this.hpBar, this.castBar, this.tpRing);

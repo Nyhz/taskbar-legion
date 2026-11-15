@@ -10,17 +10,20 @@ import { auraCategories, drawCategoryAuras, totalShield, drawShieldBar, drawMort
 import { FigureBody } from './FigureBody';
 import type { Texture } from 'pixi.js';
 import { getHealEffectFrames, getBattleEnrageFrames, getHolyStrikeFrames } from './characterFrames';
-import { FEET_BELOW_ORIGIN } from './figureData';
+import { FEET_BELOW_ORIGIN, type FigureAnim } from './figureData';
 import { heroFigure } from './figureTextures';
 import { ATTACK_CLIP, BLOCK_CLIP, HURT_CLIP, heroAbilityClip } from './heroClips';
-import { AttackLead, abilityTakesSwing, impactMs, swingEtaMs } from './attackLead';
+import { AttackLead, abilityTakesSwing, blowWaitMs, impactMs, swingEtaMs } from './attackLead';
 import { TICK_MS } from '@/sim/Simulation';
 
 const MS_PER_FRAME = 1000 / 60; // Pixi AnimatedSprite.update expects ticker-frame units
+const HIT_FLASH_MS = 110;
+const HIT_FLASH_TINT = 0xffa8a8;
 const HEAL_FX_FPS = 14;
 const HEAL_FX_ALPHA = 0.7; // a heal landing on the hero
 const HEAL_FX_TICK_ALPHA = 0.32; // one tick of a heal over time
 const ENRAGE_FX_FPS = 14; // cadence of the looping Battle Enrage swirl
+const ENRAGE_FX_ALPHA = 0.8; // the swirl is a backdrop to the hero, not a coat of paint
 // Mend + Battle Enrage share the same 128px on-ally sheet geometry, so they share a transform:
 // seated with the sheet's BASE at the hero's feet (anchorY 1) and the same scale — so the ult
 // swirl reads at the same size/height as the heal it tops up. These are sheets from before the
@@ -118,6 +121,7 @@ export class HeroSprite extends Container {
   private readonly enrageFx: AnimatedSprite | null;
   private readonly fxShim = { deltaTime: 0 } as unknown as Ticker;
   private prevAlive = true; // tracks the alive→dead / dead→alive edge to drive death/revive
+  private readonly anims: Readonly<Record<string, FigureAnim>>;
   private flash = 0;
   private castMs = 0;
   private castColor = 0xffffff;
@@ -141,6 +145,7 @@ export class HeroSprite extends Container {
     const sheet = heroFigure(classKey);
     if (sheet === null) throw new Error(`No figure loaded for the hero class ${classKey}`);
     this.figure = new FigureBody(sheet);
+    this.anims = sheet.meta.anims;
     const attackAnim = sheet.meta.anims[ATTACK_CLIP];
     this.lead = new AttackLead(attackAnim === undefined ? 0 : impactMs(attackAnim));
     const h = this.hud;
@@ -160,8 +165,11 @@ export class HeroSprite extends Container {
     // The figure's root column and ground row sit at (0, FEET_Y): its feet are on the ground line.
     this.figure.position.set(0, FEET_Y);
     // holyGround sits UNDER the body so the halo pools on the ground beneath the priest.
-    this.addChild(this.hpBg, this.hpBar, this.holyGround, this.figure, this.aura, this.pips, this.cdPips, this.respawnLabel, this.ultLabel, this.ultCross, this.tpRing);
-    if (this.enrageFx !== null) this.addChild(this.enrageFx); // enrage swirl over the body
+    // The Battle Enrage swirl loops for the whole buff (10–15 s) on every hero: it plays BEHIND the body, so the
+    // party stays readable inside it instead of being painted over.
+    this.addChild(this.hpBg, this.hpBar, this.holyGround);
+    if (this.enrageFx !== null) this.addChild(this.enrageFx);
+    this.addChild(this.figure, this.aura, this.pips, this.cdPips, this.respawnLabel, this.ultLabel, this.ultCross, this.tpRing);
     if (this.healFx !== null) this.addChild(this.healFx); // sparkle on top of everything
     this.tpRing.visible = false;
   }
@@ -243,6 +251,11 @@ export class HeroSprite extends Container {
   /** Play the attack animation for a hit this hero landed: its basic `attack`, or — when the
    *  hit came from an ability — that ability's clip (heroClips). An ability cuts a basic attack
    *  in progress; otherwise a clip in progress finishes first (figureClip). */
+  /** How long after this hero starts an ability's clip its hit should show (render/attackLead.blowWaitMs). */
+  abilityBlowMs(abilityKey: string): number {
+    return blowWaitMs(this.anims[heroAbilityClip(this.classKey, abilityKey)]);
+  }
+
   attack(abilityKey?: string): void {
     if (abilityKey !== undefined) this.figure.clips.act(heroAbilityClip(this.classKey, abilityKey), true);
     else if (!this.lead.claim()) this.figure.clips.act(ATTACK_CLIP); // unless it was started early (leadAttack)
@@ -324,9 +337,10 @@ export class HeroSprite extends Container {
     const falling = !c.alive && this.deadMs < DEATH_SHOWN_MS;
     this.alpha = c.alive || falling ? 1 : wipeHold ? 0.9 : reviving ? 0.55 : 0.25;
 
-    // hit flash → brief darkening tint pulse (tint multiplies, so it dims)
-    this.flash = Math.max(0, this.flash - dtMs / 220);
-    const tint = this.flash > 0 ? 0xff7777 : 0xffffff;
+    // Hit flash → a brief reddish tint (tint multiplies, so it dims). Kept short and light: a tank under three or
+    // four attackers is hit several times a second, and a long, strong flash left him painted red for the fight.
+    this.flash = Math.max(0, this.flash - dtMs / HIT_FLASH_MS);
+    const tint = this.flash > 0 ? HIT_FLASH_TINT : 0xffffff;
 
     // Drive the death → revive edges so the body plays its death one-shot (then holds its
     // last frame) and resets to idle on respawn.
@@ -408,6 +422,7 @@ export class HeroSprite extends Container {
     fx.position.set(bodyCx, FEET_Y); // seated at the feet, matching Mend's positioning
     fx.loop = true;
     fx.animationSpeed = ENRAGE_FX_FPS / 60;
+    fx.alpha = ENRAGE_FX_ALPHA;
     fx.visible = false;
     return fx;
   }

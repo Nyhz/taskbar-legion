@@ -11,6 +11,7 @@ import { FloatingSignLayer } from './render/FloatingSigns';
 import { ProjectileLayer } from './render/Projectiles';
 import { WorldFxLayer } from './render/WorldFx';
 import { PortalSprite } from './render/PortalSprite';
+import { Delayed } from './render/delayed';
 import { KIT_FONT_PHRASE, applyKitFont } from './render/kitFont';
 import { t, type PlainTextKey } from '@/i18n';
 import { castFx, isWholeWaveCast, FX } from './render/fx';
@@ -109,6 +110,8 @@ export class GameStrip {
   // Ground-level FX drawn BELOW the bodies (Caltrops spikes) so the wave walks over them.
   private readonly groundFx = new WorldFxLayer();
   private readonly floating = new FloatingTextLayer();
+  private readonly delayed = new Delayed(); // hits held back a beat so their number lands with the blow
+  private focusFlightMs = 0; // flight time of the last Explosive Arrow: its hits show when it bursts
   private readonly signs = new FloatingSignLayer(); // the sign of an ability, over the hero that casts it
   // The world-boss portal, pinned screen-right while farming a beaten W-9 (see frame()).
   private readonly portal = new PortalSprite();
@@ -237,6 +240,7 @@ export class GameStrip {
     this.driveRespawnTeleport(dtMs);
     this.reconcileHeroes(w.heroes, w.enemies, groundY, dtMs, toScreen, wipeDead, wipeHidden);
     this.reconcileEnemies(w, groundY, dtMs, toScreen);
+    this.delayed.tick(dtMs);
     this.applyEvents(events, groundY);
     this.worldFx.update(dtMs);
     this.groundFx.update(dtMs);
@@ -485,8 +489,12 @@ export class GameStrip {
         const boss = ev.sourceId === undefined ? undefined : this.enemySprites.get(ev.sourceId);
         if (ranger !== undefined && boss !== undefined) {
           const from = ranger.headPoint();
-          const to = boss.markPoint();
-          this.worldFx.markCrosshair(from.x, from.y, to.x, to.y, to.radius);
+          // Aimed live at the bearer (it may still be walking in); if it is gone, the crosshair ends where it was.
+          let to = boss.markPoint();
+          this.worldFx.markCrosshair(from.x, from.y, () => {
+            if (boss.parent !== null && !boss.fallen) to = boss.markPoint();
+            return to;
+          }, to.radius);
         }
         if (ranger !== undefined) {
           const at = ranger.signPoint();
@@ -522,6 +530,7 @@ export class GameStrip {
               const ty = groundY - 8;
               // Same arrow as the basic auto (no size override), then a bigger detonation.
               const flight = this.projectiles.spawn(caster.x, caster.y - 8, () => ({ x: tx, y: ty }), 'arrow');
+              this.focusFlightMs = flight; // its hits show when it lands (abilityHitWaitMs)
               if (fb !== null) this.worldFx.fireballBurst(tx, ty - 4, fb, flight, EXPLOSION_SCALE);
             }
           }
@@ -549,28 +558,47 @@ export class GameStrip {
           // Negated by Last Stand invulnerability: yellow callout, no number/hit-flash.
           this.floating.spawn(sprite.x, sprite.y - 22, t('overlay.floatInvulnerable'), hexToNum('#ffe14d'), 0.95);
         } else if (amt > 0) {
-          // Land the number + flash immediately.
-          const color = enemySprite !== undefined ? (ev.crit ? hexToNum('#ffd35d') : 0xffffff) : hexToNum('#ff7a7a');
-          sprite.flashHit();
-          if (heroSprite !== undefined) heroSprite.hurtReact(); // sprite heroes flinch when hit
-          this.floating.spawn(sprite.x, sprite.y - 18, formatDmg(amt), color, ev.crit === true ? 1.4 : 1);
-          // Multistrike proc: a big, bright-yellow "MULTI!" pops over the ALLY that procced it
-          // (the attacker, resolved from sourceId), not over the enemy taking the hit.
-          if (ev.multi === true) {
-            const attacker = ev.sourceId === undefined ? undefined : this.heroSprites.get(ev.sourceId);
-            if (attacker !== undefined) this.floating.spawn(attacker.x, attacker.y - 40, t('overlay.floatMulti'), hexToNum('#ffee33'), 1.6);
-          }
-          // A blocked hit (block-stat proc) on a hero plays its shield-block reaction.
-          if (ev.blocked === true && heroSprite !== undefined) {
-            heroSprite.blockReact();
-            this.floating.spawn(sprite.x, sprite.y - 30, t('overlay.floatBlocked'), hexToNum('#5aa0ff'), 0.85); // blue, above the number
-          }
+          // The number and the flash land with the blow: at once for a basic attack (its clip was started
+          // early), a beat later for a hero's ability whose clip is just starting (abilityHitWaitMs).
+          this.delayed.add(this.abilityHitWaitMs(ev, enemySprite), () => this.landHit(ev, sprite, amt));
         }
       } else if (ev.type === 'heal' && heroSprite !== undefined && amt > 0) {
         heroSprite.showHealEffect(); // green sparkle on the healed ally
         this.floating.spawn(heroSprite.x, heroSprite.y - 20, `+${formatDmg(amt)}`, FX.heal, 1);
       }
     }
+  }
+
+  // A hit shows: the number, the flash and flinch of whoever took it, and the callouts that go with it.
+  private landHit(ev: CombatEvent, sprite: HeroSprite | EnemySprite, amt: number): void {
+    const onHero = sprite instanceof HeroSprite;
+    const color = onHero ? hexToNum('#ff7a7a') : ev.crit === true ? hexToNum('#ffd35d') : 0xffffff;
+    sprite.flashHit();
+    if (onHero) sprite.hurtReact(); // sprite heroes flinch when hit
+    this.floating.spawn(sprite.x, sprite.y - 18, formatDmg(amt), color, ev.crit === true ? 1.4 : 1);
+    // Multistrike proc: a big, bright-yellow "MULTI!" pops over the ALLY that procced it
+    // (the attacker, resolved from sourceId), not over the enemy taking the hit.
+    if (ev.multi === true) {
+      const attacker = ev.sourceId === undefined ? undefined : this.heroSprites.get(ev.sourceId);
+      if (attacker !== undefined) this.floating.spawn(attacker.x, attacker.y - 40, t('overlay.floatMulti'), hexToNum('#ffee33'), 1.6);
+    }
+    // A blocked hit (block-stat proc) on a hero plays its shield-block reaction.
+    if (ev.blocked === true && onHero) {
+      sprite.blockReact();
+      this.floating.spawn(sprite.x, sprite.y - 30, t('overlay.floatBlocked'), hexToNum('#5aa0ff'), 0.85); // blue, above the number
+    }
+  }
+
+  // How long a hit's number waits for the picture, in ms. Only a HERO's ABILITY landing on an enemy waits: its
+  // clip starts on the cast, the same instant the simulation resolves the damage, so the number would pop while
+  // the arm is still going back. It waits for the clip's blow (HeroSprite.abilityBlowMs — nothing when the
+  // wind-up is too long to wait for), and the Explosive Arrow's waits for the arrow to arrive and burst.
+  private abilityHitWaitMs(ev: CombatEvent, enemySprite: EnemySprite | undefined): number {
+    if (enemySprite === undefined || ev.abilityKey === undefined || ev.sourceId === undefined) return 0;
+    const hero = this.heroSprites.get(ev.sourceId);
+    if (hero === undefined) return 0;
+    if (ev.abilityKey === 'ranger_focus') return this.focusFlightMs;
+    return hero.abilityBlowMs(ev.abilityKey);
   }
 
   // Map an AoE ability's cast to its world spectacle, played over the target band:
