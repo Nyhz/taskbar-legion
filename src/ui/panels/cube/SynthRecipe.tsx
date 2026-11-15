@@ -28,7 +28,7 @@ export function SynthRecipe(): React.JSX.Element {
   const stash = entries(useStore((s) => s.stash));
   const cubeCombine = useStore((s) => s.cubeCombine);
   const techRanks = useStore((s) => s.techRanks);
-  const ownedPets = useStore((s) => s.ownedPets);
+  const petRanks = useStore((s) => s.petRanks);
   const [useStash, setUseStash] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
   const [made, setMade] = useState<Made | null>(null);
@@ -42,7 +42,7 @@ export function SynthRecipe(): React.JSX.Element {
   const ready = loaded.length === CUBE_INPUT_COUNT;
   const fill = fillSynth(pool);
   const luckPct =
-    Math.round((SYNTH_DOUBLE_TIER_CHANCE + getBonuses(techRanks, ownedPets).synthDoubleChance) * 1000) / 10;
+    Math.round((SYNTH_DOUBLE_TIER_CHANCE + getBonuses(techRanks, petRanks).synthDoubleChance) * 1000) / 10;
 
   const synthesize = (): void => {
     if (!ready || first === undefined) return;

@@ -5,9 +5,10 @@ import { getBonuses } from '@/sim/bonuses';
 import { createWorld } from '@/sim/Simulation';
 import { makeRng } from '@/sim/rng';
 import { worldBossStageOf } from '@/data/difficulties';
+import { STAGE_KEY_DROP_CHANCE, stageKeyDropChance } from '@/data/chests';
 import { godHero } from './_helpers';
 
-const bonuses = getBonuses({}, []);
+const bonuses = getBonuses({}, {});
 
 function meanTier(type: 'normal' | 'stageBoss' | 'zoneBoss', S: number, n: number): number {
   const rng = makeRng(123);
@@ -58,7 +59,7 @@ describe('chests', () => {
     expect(Math.abs((gemH[1] ?? 0) - ((itemH[0] ?? 0) + (itemH[1] ?? 0))) / N).toBeLessThan(0.01);
   });
 
-  it('world-boss keys drop ONLY from stage-boss chests, credited to the zone (~50%)', () => {
+  it('world-boss keys drop ONLY from stage-boss chests, credited to the zone (1 chest in 4; every chest in Normal)', () => {
     const S = 135; // Hell 4-5 → its zone's world boss is Hell 4-10 (global 140)
     const bossStage = worldBossStageOf(S);
     expect(bossStage).toBe(140);
@@ -71,8 +72,15 @@ describe('chests', () => {
     };
     expect(keyRate('normal')).toBe(0); // only stage-boss chests carry keys
     expect(keyRate('zoneBoss')).toBe(0);
-    expect(keyRate('stageBoss')).toBeGreaterThan(0.45); // ~0.5 (STAGE_KEY_DROP_CHANCE)
-    expect(keyRate('stageBoss')).toBeLessThan(0.55);
+    // STAGE_KEY_DROP_CHANCE: one stage-boss chest in four (user decision, 2026-11-15, round 2).
+    expect(STAGE_KEY_DROP_CHANCE).toBe(0.25);
+    expect(stageKeyDropChance(S)).toBe(0.25); // Hell
+    expect(keyRate('stageBoss')).toBeGreaterThan(0.22);
+    expect(keyRate('stageBoss')).toBeLessThan(0.28);
+    // Normal is strolled through: every stage-boss chest of its hundred stages holds a key, and only there.
+    for (const g of [1, 55, 100]) expect(stageKeyDropChance(g)).toBe(1);
+    for (const g of [101, 250, 500]) expect(stageKeyDropChance(g)).toBe(0.25);
+    expect(openChest('stageBoss', 35, makeRng(3), bonuses).keys[worldBossStageOf(35)]).toBe(1);
 
     // The key is credited to the world-boss of the chest's OWN zone, never another.
     const rng = makeRng(7);
@@ -101,7 +109,7 @@ describe('chests', () => {
   it('a gem is EXTRA loot — it never replaces the gear piece', () => {
     // High gem chance via a big gemDropMult → many opens roll a gem; assert the gear is
     // still always there AND that some chests yield BOTH a gear piece and a gem.
-    const greedy = getBonuses({ chest_gem_1: 6, chest_gem_2: 8 }, []);
+    const greedy = getBonuses({ chest_gem_1: 6, chest_gem_2: 8 }, {});
     const rng = makeRng(42);
     let sawGem = false;
     let sawBoth = false;

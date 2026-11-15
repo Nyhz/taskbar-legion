@@ -1,64 +1,95 @@
-import { Assets, Container, Graphics, Rectangle, Sprite, Text, Texture } from 'pixi.js';
+import { Assets, Container, Rectangle, Sprite, Text, Texture } from 'pixi.js';
 import { hexToNum } from '@/styles/palette';
 import bossSignUrl from '@/assets/ui/hud_boss.png?url';
 import keySignUrl from '@/assets/ui/hud_key.png?url';
 import { KIT_FONT_TEXT, applyKitFont } from './kitFont';
+import { fxLoop, type FxLoop } from './BodyFx';
+import { PORTAL_FX, PORTAL_SIGNS_UP, portalHitBox, portalState, type PortalState } from './portalLook';
 
-// A red, swirling world-boss portal pinned to the right edge of the strip while the
-// party farms a beaten W-9. Tapping it enters the W-10 world boss — which costs ONE zone
-// key (one spent per attempt, even on a wipe). The portal wears the boss sign and shows the keys held
-// (the key sign and held/1), and greys out when key-less. Signs, not words: nothing here needs translating. Cosmetic + an interactive affordance — GameStrip drives its key count + tap.
+// The world boss's GATE, standing on the path near the right edge of the strip while the party farms a beaten
+// W-9 (render/portalLook says what it shows; the art is the pipeline's — fx/flow.py). Tapping it enters the W-10
+// world boss, which costs ONE zone key (one spent per attempt, even on a wipe): without a key the gate is chained
+// shut; with one it is awake, and wider awake under the pointer. Over it, signs — not words: the boss sign, the
+// key and how many are held of the one needed. This container's origin is the middle of the gate's base, on the
+// ground line. GameStrip drives its key count and its tap.
 
-const RING = hexToNum('#c0473a');
-const RING_HI = hexToNum('#ff7a7a');
-const CORE = hexToNum('#2a0a0e');
-const STONE = hexToNum('#2a1518');
-
-const RX = 18;
-const RY = 27;
+const STONE = hexToNum('#151a2b');
 
 export class PortalSprite extends Container {
-  private readonly frame = new Graphics();
-  private readonly swirl = new Graphics();
+  private readonly gate = new Container();
+  private readonly loops = new Map<PortalState, FxLoop>();
   private readonly bossSign = new Sprite(Texture.EMPTY);
   private readonly keySign = new Sprite(Texture.EMPTY);
   private readonly keyText: Text; // "held/1" — keys held vs the 1 needed to enter
-  private elapsed = 0;
-  private enabled = false;
+  private state: PortalState = 'shut';
+  private pointerOver = false;
+  private pressed = false;
 
   constructor() {
     super();
+    // One row over the gate: boss · key · count.
     this.bossSign.anchor.set(0.5);
-    this.bossSign.y = -RY - 30;
+    this.bossSign.position.set(-17, -PORTAL_SIGNS_UP);
     this.keySign.anchor.set(0.5);
-    this.keySign.position.set(-9, -RY - 13); // the key and its count sit just above the vortex
+    this.keySign.position.set(-2, -PORTAL_SIGNS_UP);
     this.keyText = new Text({ text: '0/1', style: { fontFamily: 'monospace', fontSize: 10, fill: hexToNum('#f8dc84'), stroke: { color: STONE, width: 2, join: 'miter' } } });
     this.keyText.anchor.set(0, 0.5);
-    this.keyText.position.set(1, -RY - 13);
+    this.keyText.position.set(7, -PORTAL_SIGNS_UP);
     applyKitFont(this.keyText, KIT_FONT_TEXT, 10);
     void this.loadSigns();
-    this.addChild(this.frame, this.swirl, this.bossSign, this.keySign, this.keyText);
-    // A generous, fixed hit area so the whole portal (and its labels) is reliably tappable.
+    this.addChild(this.gate, this.bossSign, this.keySign, this.keyText);
+    // The whole gate and its signs are the tap target (the strip's canvas is one surface for the desktop overlay's
+    // click-through; inside it Pixi hit-tests only this object).
     this.eventMode = 'static';
     this.cursor = 'pointer';
-    this.hitArea = new Rectangle(-RX - 6, -RY - 40, (RX + 6) * 2, RY * 2 + 50);
+    const box = portalHitBox();
+    this.hitArea = new Rectangle(box.x, box.y, box.width, box.height);
+    this.on('pointerover', () => { this.pointerOver = true; });
+    this.on('pointerout', () => { this.pointerOver = false; this.pressed = false; });
+    this.on('pointerdown', () => { this.pressed = true; });
+    this.on('pointerup', () => { this.pressed = false; });
+    this.on('pointerupoutside', () => { this.pressed = false; });
   }
 
-  /** Driven each frame with the zone's keys held: ≥1 → enterable (lit, the count gold);
-   *  0 → greyed/inert (you must farm this zone's stage bosses for a key). One key is spent
-   *  per attempt regardless, so the count is a live budget of remaining tries. */
+  /** Driven each frame with the zone's keys held: ≥1 → enterable (awake, the count gold); 0 → chained shut (you
+   *  must farm this zone's stage bosses for a key). One key is spent per attempt regardless, so the count is a
+   *  live budget of remaining tries. */
   update(dtMs: number, keysHeld: number): void {
-    this.elapsed += dtMs;
-    this.enabled = keysHeld > 0;
+    const enabled = keysHeld > 0;
     const count = `${keysHeld}/1`;
     if (this.keyText.text !== count) this.keyText.text = count;
-    this.keyText.tint = this.enabled ? 0xffffff : 0xa89c8c;
-    this.cursor = this.enabled ? 'pointer' : 'default';
-    this.alpha = this.enabled ? 1 : 0.5;
-    this.draw();
+    this.keyText.tint = enabled ? 0xffffff : 0xa89c8c;
+    this.keySign.alpha = enabled ? 1 : 0.6;
+    this.cursor = enabled ? 'pointer' : 'default';
+    this.show(portalState(keysHeld, this.pointerOver));
+    for (const loop of this.loops.values()) loop.advance(dtMs);
+    // Pressed, the gate sinks a pixel: it answers the hand.
+    this.gate.y = this.pressed && enabled ? 1 : 0;
   }
 
-  // The two signs are interface art (src/assets/ui). If one cannot be loaded the portal simply goes without it.
+  /** The party is gone (the gate is hidden): forget the pointer, so it does not come back "hot". */
+  rest(): void {
+    this.pointerOver = false;
+    this.pressed = false;
+  }
+
+  // The effects' atlas loads after this object is made (GameStrip.init), so each drawing's loop is made the
+  // first time it is needed.
+  private show(state: PortalState): void {
+    if (state !== this.state || !this.loops.has(state)) {
+      if (!this.loops.has(state)) {
+        const loop = fxLoop(PORTAL_FX[state]);
+        if (loop !== null) {
+          this.loops.set(state, loop);
+          this.gate.addChild(loop.sprite);
+        }
+      }
+      this.state = state;
+    }
+    for (const [key, loop] of this.loops) loop.sprite.visible = key === state;
+  }
+
+  // The signs are interface art (src/assets/ui). If one cannot be loaded the gate simply goes without it.
   private async loadSigns(): Promise<void> {
     try {
       const [boss, key] = await Promise.all([Assets.load<Texture>(bossSignUrl), Assets.load<Texture>(keySignUrl)]);
@@ -70,33 +101,5 @@ export class PortalSprite extends Container {
     } catch {
       /* cosmetic */
     }
-  }
-
-  private draw(): void {
-    const t = this.elapsed / 1000;
-    const g = this.swirl;
-    g.clear();
-    g.ellipse(0, 0, RX, RY).fill({ color: CORE }); // dark vortex mouth
-    // rotating concentric arcs → the swirl
-    for (let i = 0; i < 3; i++) {
-      const phase = t * (1.4 + i * 0.5) + i * 1.1;
-      const pulse = 0.6 + 0.4 * Math.sin(t * 3 + i);
-      g.ellipse(Math.cos(phase) * 2, Math.sin(phase) * 2, RX * (0.4 + i * 0.24), RY * (0.4 + i * 0.24)).stroke({
-        color: i === 1 ? RING_HI : RING,
-        width: 2,
-        alpha: this.enabled ? 0.45 + 0.4 * pulse : 0.5,
-      });
-    }
-    // inward-spiralling specks
-    for (let i = 0; i < 6; i++) {
-      const a = t * 2 + (i * Math.PI) / 3;
-      const r = 4 + (i % 3) * 5 + Math.sin(t * 4 + i) * 2;
-      g.circle(Math.cos(a) * r, Math.sin(a) * r * 1.35, 1.4).fill({ color: RING_HI, alpha: this.enabled ? 0.9 : 0.35 });
-    }
-    // stone frame ring
-    const f = this.frame;
-    f.clear();
-    f.ellipse(0, 0, RX + 4, RY + 4).stroke({ color: STONE, width: 3 });
-    f.ellipse(0, 0, RX + 4, RY + 4).stroke({ color: this.enabled ? RING : hexToNum('#5a4040'), width: 1.5 });
   }
 }

@@ -23,8 +23,12 @@ export interface AbilityPower {
   // front enemy takes the full `coeff`, only nearby enemies take the reduced splash.
   splashCoeff?: number;
   splashCoeffPerRank?: number;
-  splashRadius?: number; // world-px blast radius around the primary target (default 45 ≈ 1.5 bodies)
+  splashRadius?: number; // world-px blast radius around the primary target (default 45 ≈ 1.5 bodies; WHOLE_PARTY = everyone)
 }
+
+/** A splash radius that reaches every foe on the field: an enemy's area blow hits the whole party, however far
+ *  back the archer and the healer stand. */
+export const WHOLE_PARTY = Number.POSITIVE_INFINITY;
 
 export interface AppliedEffect {
   effectKey: string;
@@ -54,6 +58,7 @@ export type AbilityTarget =
   | 'lowestAllyHp'
   | 'lowestOtherAlly' // the hurt-most living ally that is not the caster (nobody when alone)
   | 'frontEnemy'
+  | 'backEnemy' // a foe BEHIND the front one, at random — the front one itself when it stands alone
   | 'meleeEnemies'
   | 'allEnemies'
   | 'allAllies'
@@ -75,6 +80,10 @@ export interface AbilityDef {
   // under the boss) before its effect resolves — telegraphs the cast. Heroes ignore it
   // (instant, one-per-swing). Undefined/0 = instant.
   castTimeMs?: number;
+  // While an ENEMY channels this ability it makes no basic attacks: the windup takes the place of its swings
+  // (a boss rears up for its slam instead of slamming on top of its blows — the area attack costs the tank
+  // about what the missed swings would have). Needs `castTimeMs`.
+  holdsAttack?: boolean;
   target: AbilityTarget;
   applies: AppliedEffect[];
   castCondition?: 'always' | 'enemyPresent' | 'allyBelowHpPct' | 'tankEngaged';
@@ -238,17 +247,44 @@ export const ABILITIES: Record<string, AbilityDef> = {
     cooldownMs: 6000, target: 'frontEnemy', applies: [{ effectKey: 'fx_damage' }],
     castCondition: 'enemyPresent', power: { coeff: 1.4 },
   },
+  // THE BACK LINE TAKES DAMAGE (docs/DIFFICULTY.md §5b, user decision 2026-11-15). Two sources only:
+  //   • shooters aim behind the tank — a share of an archer's basic shots (data/enemies `backShotChance`) and
+  //     its charged shot below (`backEnemy`);
+  //   • area blows — the brute's Smash and the bosses' telegraphed slam hit the front hero in full and
+  //     everyone else for `splashCoeff` (WHOLE_PARTY).
+  // Each hit is mitigated by ITS OWN target (armour / magic resist / damage reduction, shields). Tuned with
+  // scripts/measure-backline.ts: ~25–30 % of a full wave's damage lands behind the front hero.
   enemy_smash: {
     key: 'enemy_smash', name: 'Brutal Smash', icon: 'explosion',
-    desc: 'A brute winds up a heavy blow on the front hero.',
+    desc: 'A brute winds up a heavy blow on the front hero; the shock reaches everyone behind for less.',
     cooldownMs: 9000, target: 'frontEnemy', applies: [{ effectKey: 'fx_damage' }],
-    castCondition: 'enemyPresent', power: { coeff: 2.2 },
+    castCondition: 'enemyPresent', power: { coeff: 2.2, splashCoeff: 0.3, splashRadius: WHOLE_PARTY },
   },
   enemy_aimed: {
-    key: 'enemy_aimed', name: 'Piercing Shot', icon: 'aim',
-    desc: 'An archer lines up a piercing shot on the front hero.',
-    cooldownMs: 7000, target: 'frontEnemy', applies: [{ effectKey: 'fx_damage' }],
-    castCondition: 'enemyPresent', power: { coeff: 1.6 },
+    key: 'enemy_aimed', name: 'Arcing Shot', icon: 'aim',
+    desc: 'An archer lofts a heavy shot over the front line at a hero behind it (at the front hero when it stands alone).',
+    cooldownMs: 7000, target: 'backEnemy', applies: [{ effectKey: 'fx_damage' }],
+    castCondition: 'enemyPresent', power: { coeff: 0.7 },
+  },
+
+  // ───────────────────── Boss area blows (DIFFICULTY.md §5b) ─────────────────────
+  // Every boss TELEGRAPHS one area attack: it channels (the cast bar under it fills), then the blow lands on the
+  // front hero in full and on everyone behind for less. Stage bosses and world bosses each have their own, on
+  // every difficulty; a boss alone with a solo hero just hits that hero.
+  boss_slam: {
+    key: 'boss_slam', name: 'Ground Slam', icon: 'explosion',
+    desc: 'The stage boss rears up and slams the ground: a heavy blow on the front hero that shakes everyone behind for less.',
+    cooldownMs: 10000, openerMs: 4000, castTimeMs: 1500, holdsAttack: true, target: 'frontEnemy',
+    applies: [{ effectKey: 'fx_damage' }], castCondition: 'enemyPresent',
+    // 1.2 on the front hero ≈ the swings missed while channelling (1.5 s at 0.8/s): the tank's load is unchanged.
+    power: { coeff: 1.2, splashCoeff: 0.6, splashRadius: WHOLE_PARTY },
+  },
+  boss_shockwave: {
+    key: 'boss_shockwave', name: 'Shockwave', icon: 'explosion',
+    desc: 'The world boss gathers itself and lets go a shockwave: the front hero takes it in full, everyone behind for less.',
+    cooldownMs: 10000, openerMs: 4000, castTimeMs: 1500, holdsAttack: true, target: 'frontEnemy',
+    applies: [{ effectKey: 'fx_damage' }], castCondition: 'enemyPresent',
+    power: { coeff: 1.2, splashCoeff: 0.6, splashRadius: WHOLE_PARTY },
   },
 
   // ───────────────────── World-boss kit (DIFFICULTY.md §5) ─────────────────────
@@ -274,15 +310,23 @@ export const ABILITIES: Record<string, AbilityDef> = {
 
 // The world-boss special abilities, each gated to a MINIMUM difficulty index (0=Normal …
 // 4=Torment). A boss at difficulty d wields every ability whose minDifficulty ≤ d — so
-// Normal/Hell get none (stat walls), Inferno+ get Frenzy, Torment also gets Mortal Wound.
+// Normal/Hell get the Shockwave only, Inferno+ add Frenzy, Torment also Mortal Wound.
 // Shared across the 10 world bosses for v1; per-world flavor can layer on later.
 const WORLD_BOSS_ABILITIES: readonly { key: string; minDifficulty: number }[] = [
+  { key: 'boss_shockwave', minDifficulty: 0 }, // every difficulty: the area blow (§5b)
   { key: 'boss_frenzy', minDifficulty: 2 }, // Inferno+
   { key: 'boss_mortal_wound', minDifficulty: 4 }, // Torment+
 ];
 
+/** The abilities every STAGE boss wields, on every difficulty: its telegraphed area blow (§5b). */
+const STAGE_BOSS_ABILITIES: readonly string[] = ['boss_slam'];
+
+export function stageBossAbilityKeys(): string[] {
+  return [...STAGE_BOSS_ABILITIES];
+}
+
 /** Ability keys a world boss wields at difficulty index `d` (0..4): those whose
- *  minDifficulty ≤ d (empty on Normal/Hell). */
+ *  minDifficulty ≤ d (the Shockwave alone on Normal/Hell). */
 export function worldBossAbilityKeys(d: number): string[] {
   const di = Math.floor(d);
   return WORLD_BOSS_ABILITIES.filter((a) => di >= a.minDifficulty).map((a) => a.key);

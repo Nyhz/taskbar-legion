@@ -1,39 +1,26 @@
-import { AnimatedSprite, Container, Graphics, Text } from 'pixi.js';
-import type { Ticker } from 'pixi.js';
+import { Container, Graphics } from 'pixi.js';
 import type { Combatant } from '@/sim/world';
-import { effectDef } from '@/data/effects';
 import { classDef } from '@/data/classes';
-import { type AttackStyle, RESPAWN_MS } from '@/data/field';
-import { hexToNum } from '@/styles/palette';
-import { isInvulnerable, INVULN_YELLOW, isEnraged } from './fx';
-import { auraCategories, drawCategoryAuras, totalShield, drawShieldBar, drawMortalWoundCrosses, hasMortalWound, drawHolyGround } from './effectAuras';
+import type { AttackStyle } from '@/data/field';
+import { auraCategories, drawCategoryAuras } from './effectAuras';
 import { FigureBody } from './FigureBody';
-import type { Texture } from 'pixi.js';
-import { getHealEffectFrames, getBattleEnrageFrames, getHolyStrikeFrames } from './characterFrames';
 import { FEET_BELOW_ORIGIN, type FigureAnim } from './figureData';
 import { heroFigure } from './figureTextures';
-import { ATTACK_CLIP, BLOCK_CLIP, HURT_CLIP, heroAbilityClip } from './heroClips';
-import { AttackLead, abilityTakesSwing, blowWaitMs, impactMs, swingEtaMs } from './attackLead';
+import { ATTACK_CLIP, BLOCK_CLIP, HURT_CLIP, attackClips, heroAbilityClip, pickAttackClip } from './heroClips';
+import { BodyFx } from './BodyFx';
+import { HEAL_BLOOM, HEAL_BLOOM_GAP_MS, SHOT_FROM, auraEffectKey, basicShotOf, type WornEffect } from './abilityFx';
+import { heroSkin } from './fxTextures';
+import { HeroHud } from './HeroHud';
+import { heroHudCx } from './stripHud';
+import { ARRIVAL_CHOICE, DEPART_FX, arrivalBody, arrivalFx, departBody, type BodyLook } from './arrival';
+import { AttackLead, abilityTakesSwing, blowRate, blowWaitMs, impactMs, swingEtaMs, unledRate, unledWaitMs } from './attackLead';
 import { TICK_MS } from '@/sim/Simulation';
 
-const MS_PER_FRAME = 1000 / 60; // Pixi AnimatedSprite.update expects ticker-frame units
 const HIT_FLASH_MS = 110;
 const HIT_FLASH_TINT = 0xffa8a8;
-const HEAL_FX_FPS = 14;
-const HEAL_FX_ALPHA = 0.7; // a heal landing on the hero
-const HEAL_FX_TICK_ALPHA = 0.32; // one tick of a heal over time
-const ENRAGE_FX_FPS = 14; // cadence of the looping Battle Enrage swirl
-const ENRAGE_FX_ALPHA = 0.8; // the swirl is a backdrop to the hero, not a coat of paint
-// Mend + Battle Enrage share the same 128px on-ally sheet geometry, so they share a transform:
-// seated with the sheet's BASE at the hero's feet (anchorY 1) and the same scale — so the ult
-// swirl reads at the same size/height as the heal it tops up. These are sheets from before the
-// redesign, drawn for bigger bodies: halved to rise about one and a half heroes high.
-const ALLY_FX_SCALE = 0.5;
-const ALLY_FX_ANCHOR_Y = 1; // frame bottom sits on the feet → the effect rises from the feet up
-
-// A hero display object: its figure (the redesign's art, one per class — FigureBody) + HP bar +
-// effect aura (twinkling stars for HoTs/buffs) + buff/debuff pips + two ability cooldown pips
-// (top-left) + a cast burst + a death/respawn countdown. Reads sim state; never mutates it.
+// A hero display object: its figure (the redesign's art, one per class — FigureBody), the looks of the effects
+// on it (BodyFx), a cast burst, and the strip's HUD over its head and at its feet (HeroHud: life bar, effect
+// chips, ability chips, the count of its return). Reads sim state; never mutates it.
 // The container's origin is FEET_BELOW_ORIGIN above the feet (GameStrip aims at it); the figure
 // stands with its feet exactly on the ground line it is given.
 
@@ -42,184 +29,163 @@ const ALLY_FX_ANCHOR_Y = 1; // frame bottom sits on the feet → the effect rise
 // the sprite to its idle pose and back — it settles to idle only once truly stopped.
 const MOVE_GRACE_MS = 140;
 
-const CD_READY = hexToNum('#e8c34c'); // ability charged
-const CD_CHARGING = hexToNum('#4a78d6'); // ability recharging (timed cooldown)
-const CD_CHARGE = hexToNum('#46c98b'); // charge-gated ability banking toward its next cast
 const CAST_MS = 340; // cast-burst ring lifetime
-const TP_BEAM = hexToNum('#fff2a8'); // teleport upward beam / sparks
-const TP_RING = hexToNum('#ffe27a'); // teleport charge ring
-const RECRUIT_SPAWN_MS = 650; // first-recruit materialise-in (the teleport-IN half of a respawn)
 
-// "Ghost"/delayed-damage HP bar: when a hero takes a hit, the chunk it's about to lose
-// lingers in bright red, then drains down to the real value — so you can read how much a
-// single hit cost. Held briefly for legibility, then drained at a steady fraction/ms.
-const GHOST_RED = hexToNum('#ff3b3b'); // the about-to-be-lost slice
-const GHOST_HOLD_MS = 240; // pause before the red slice starts draining
-const GHOST_DRAIN_PER_MS = 0.0016; // bar-fractions drained per ms (~full bar in ~625ms)
-
-// Overhead HUD geometry (HP bar, buff/debuff pips, ability-cooldown pips), in container-local
-// coords (negative y = up). The heroes' figures stand 35–40 px tall with their feet at FEET_Y, so
-// one HUD seated over the tallest head fits every class. `bodyCx` is the single horizontal centre
-// for the whole cluster — the HP bar, the pip row (centred by count) and the effect aura all
-// centre on it — and it is where the figures' bodies are (a little ahead of their root column).
-// Cooldown pips tuck just to the left of the bar.
-interface HudLayout {
-  bodyCx: number; barY: number; barW: number; barH: number;
-  pipY: number; pipSize: number; pipStep: number;
-  cdY: number; cdStep: number; cdW: number; cdH: number;
-  labelY: number; labelSize: number;
-}
-
-const CD_GAP = 2; // px between the cooldown pips and the HP bar's left edge
+// Over the head and at the feet a hero wears the strip's HUD (render/HeroHud: life bar, the chips of the effects
+// on him, of his abilities and of his ultimate), centred with the cast sign on the class's own line
+// (render/stripHud HERO_HUD_CX). `BODY_CX` is the horizontal centre of what is hung on the BODY (the ability
+// looks, the auras): a little ahead of the figures' root column.
+const BODY_CX = 4;
+const BODY_HALF_W = 9; // half the body's width, for what is hung on it
 
 // Container-local y of the hero's feet (the ground line).
 const FEET_Y = FEET_BELOW_ORIGIN;
+const SHOT_AHEAD = 13; // the bow hand, from the body's centre
+const SHOT_HEIGHT = 21; // …and above the ground line
 const HERO_HEIGHT = 40; // the tallest hero's standing figure (the knight's plume, the priest's staff)
-const BODY_MID_Y = FEET_Y - 18; // the middle of the body: cast ring, shield bubble, teleport ring
+const BODY_MID_Y = FEET_Y - 18; // the middle of the body: cast ring, shield bubble
 
-const HUD: HudLayout = {
-  bodyCx: 4, barY: FEET_Y - HERO_HEIGHT - 6, barW: 20, barH: 3,
-  pipY: FEET_Y - HERO_HEIGHT - 14, pipSize: 3, pipStep: 5,
-  cdY: FEET_Y - HERO_HEIGHT - 12, cdStep: 6, cdW: 3, cdH: 5,
-  labelY: FEET_Y - HERO_HEIGHT - 7, labelSize: 9,
-};
 const AURA_SCALE = 0.8; // glyph size of the category auras / holy ground for a ~40 px body
 // A hurt flinch plays at most this often, so a hero under a hail of blows still reads as fighting.
 const HURT_GAP_MS = 700;
 // A fallen hero stays solid this long (the heroes' death clips run 2.2–2.4 s), then fades to a ghost.
 const DEATH_SHOWN_MS = 2400;
 // The classes whose basic attack lands a holy strike ON the target instead of flying there.
-const HOLY_STRIKE_CLASSES: ReadonlySet<string> = new Set(['priest']);
-
-/** Left x of the HP bar — centred on the body. */
-function barLeft(h: HudLayout): number {
-  return h.bodyCx - h.barW / 2;
-}
 
 export class HeroSprite extends Container {
   readonly style: AttackStyle;
   private readonly classKey: string;
   private readonly figure: FigureBody;
-  private readonly hud: HudLayout = HUD;
-  private readonly hpBg = new Graphics();
-  private readonly hpBar = new Graphics();
-  private readonly holyGround = new Graphics(); // Retribution Aura: golden ground halo at the feet
+  private readonly hud: HeroHud; // life bar, effect chips, ability chips (render/HeroHud)
+  private readonly hudCx: number; // its centre line: where this class's body stands (render/stripHud HERO_HUD_CX)
+  private bossEngaged = false; // a boss is in the fight and the engage ultimates have fired (set by the strip)
   private readonly aura = new Graphics(); // ongoing-effect stars + cast burst
-  private readonly pips = new Container();
-  private readonly cdPips = new Graphics(); // up to 2 ability cooldown indicators
-  private readonly tpRing = new Graphics(); // teleport charge ring + beam (counter-scaled)
-  private readonly respawnLabel = new Text({ text: '', style: { fontFamily: 'monospace', fontSize: 9, fill: hexToNum('#bcd2ff'), fontWeight: 'bold' } });
-  // Knight-only ultimate indicator: a "U" badge that reads gold when the Last Stand
-  // charge is up and grey + crossed-out once it's been spent this stage.
-  private readonly ultLabel = new Text({ text: 'U', style: { fontFamily: 'monospace', fontSize: 8, fill: hexToNum('#e8c34c'), fontWeight: 'bold' } });
-  private readonly ultCross = new Graphics();
-  private readonly isKnight: boolean;
   private readonly lead: AttackLead; // starts the attack clip ahead of the swing, so the blow lands with the hit
-  // Heal sparkle shown ON this hero whenever a Priest heals it.
-  private readonly healFx: AnimatedSprite | null;
-  // Battle Enrage swirl looped over this hero while the Priest ult buff is on it.
-  private readonly enrageFx: AnimatedSprite | null;
-  private readonly fxShim = { deltaTime: 0 } as unknown as Ticker;
+  private readonly attacks: string[]; // the basic-attack clips this figure has (heroClips.attackClips)
+  private attackClip = ATTACK_CLIP; // the one the NEXT swing plays
+  /** The ability effects on this hero: lasting looks, their openings and closings (render/BodyFx). */
+  readonly bodyFx: BodyFx;
+  private lastAttackClip = ATTACK_CLIP; // the basic-attack clip of the swing in progress (what it throws, and from where)
+  private sinceHealBloom = Number.POSITIVE_INFINITY; // ms since a heal last bloomed on this hero
+  private readonly sinceSign = new Map<string, number>(); // ms since each blow sign last showed on this hero
+  private partyAuras: readonly { abilityKey: string; sourceId: string }[] = []; // the party's passive auras that reach this hero
+  private onField = true; // alive and present (not fallen, arriving or away), as of its last update
   private prevAlive = true; // tracks the alive→dead / dead→alive edge to drive death/revive
   private readonly anims: Readonly<Record<string, FigureAnim>>;
   private flash = 0;
   private castMs = 0;
   private castColor = 0xffffff;
   private elapsed = 0;
-  private hpGhost = 1; // lagging HP fraction → the red "about to lose" slice trails the real bar
-  private prevHpFrac = 1; // last frame's real HP fraction → detects the exact frame a hit lands
-  private ghostHoldMs = 0; // >0 while the red slice is held still before it starts draining
   private moveGraceMs = 0; // >0 while recently moving → play run; 0 → idle
+  // The hero's comings and goings (render/arrival): `arriving` counts the ms of an arrival (negative while it
+  // waits for its turn), `leaving` those of a departure; `away` holds it off the field between the two. While
+  // any of them is on the hero is `teleporting`: its looks, auras and overhead HUD stand down.
+  private arriving: number | null = null;
+  private arrivalShown = false; // the arrival's effects have started (its turn came)
+  private leaving: number | null = null;
+  private away = false;
   private teleporting = false;
-  private teleportK = 1; // 1 = fully present, 0 = fully dematerialised (mid-teleport)
-  private spawnMs = 0; // >0 while a freshly-recruited hero is materialising in (drops top-down into formation)
   private deadMs = 0; // time since this hero fell (0 while alive)
-  private hudLift = 0; // px the overhead HUD is raised to dodge a crowded neighbour
 
   constructor(classKey: string) {
     super();
     this.classKey = classKey;
     this.style = classDef(classKey).style;
-    this.isKnight = classKey === 'knight';
     // Every class has a figure, loaded before the first frame (GameStrip.init → loadHeroFigures).
     const sheet = heroFigure(classKey);
     if (sheet === null) throw new Error(`No figure loaded for the hero class ${classKey}`);
     this.figure = new FigureBody(sheet);
     this.anims = sheet.meta.anims;
-    const attackAnim = sheet.meta.anims[ATTACK_CLIP];
-    this.lead = new AttackLead(attackAnim === undefined ? 0 : impactMs(attackAnim));
-    const h = this.hud;
-    this.hpBg.rect(barLeft(h), h.barY, h.barW, h.barH).fill({ color: hexToNum('#3a2030') });
-    this.respawnLabel.anchor.set(0.5, 1);
-    this.respawnLabel.x = h.bodyCx;
-    this.respawnLabel.y = h.labelY;
-    this.respawnLabel.style.fontSize = h.labelSize;
-    // Ult badge sits just to the RIGHT of the HP bar, level with the cooldown pips.
-    this.ultLabel.anchor.set(0.5, 0.5);
-    this.ultLabel.position.set(barLeft(h) + h.barW + 5, h.cdY + h.cdH / 2);
-    this.ultCross.position.set(this.ultLabel.x, this.ultLabel.y);
-    this.ultLabel.visible = false;
-    this.ultCross.visible = false;
-    this.healFx = this.makeHealFx(h.bodyCx);
-    this.enrageFx = this.makeEnrageFx(h.bodyCx);
+    this.attacks = attackClips(sheet.meta.anims);
+    this.lead = new AttackLead(0);
+    this.nextAttackClip(undefined);
+    this.bodyFx = new BodyFx({ cx: BODY_CX, feetY: FEET_Y, height: HERO_HEIGHT, halfW: BODY_HALF_W, facing: 1 });
+    this.hudCx = heroHudCx(classKey);
+    this.hud = new HeroHud(this.hudCx, FEET_Y - HERO_HEIGHT, FEET_Y);
     // The figure's root column and ground row sit at (0, FEET_Y): its feet are on the ground line.
     this.figure.position.set(0, FEET_Y);
-    // holyGround sits UNDER the body so the halo pools on the ground beneath the priest.
-    // The Battle Enrage swirl loops for the whole buff (10–15 s) on every hero: it plays BEHIND the body, so the
-    // party stays readable inside it instead of being painted over.
-    this.addChild(this.hpBg, this.hpBar, this.holyGround);
-    if (this.enrageFx !== null) this.addChild(this.enrageFx);
-    this.addChild(this.figure, this.aura, this.pips, this.cdPips, this.respawnLabel, this.ultLabel, this.ultCross, this.tpRing);
-    if (this.healFx !== null) this.addChild(this.healFx); // sparkle on top of everything
-    this.tpRing.visible = false;
+    // The ability effects go around the figure: `under` behind it (auras, fires, a banner), `over` in front; the
+    // HUD goes over everything of the hero.
+    this.addChild(this.bodyFx.under, this.figure, this.bodyFx.over, this.aura, this.hud.feet, this.hud.above);
   }
 
-  /** Drive the teleport effect from a single 0→1 progress over the whole out+in
-   *  sequence (0 = present, 0.5 = fully gone, 1 = present again). `phase < 0` ends it
-   *  and restores the sprite. GameStrip orchestrates this party-wide on zone change/wipe. */
-  setTeleport(phase: number): void {
-    if (phase < 0) {
-      this.teleporting = false;
-      return;
-    }
-    this.teleporting = true;
-    this.teleportK = Math.abs(1 - 2 * phase); // 1 at the ends, 0 at the dematerialised midpoint
+  /** The hero comes back onto the field (render/arrival): after a defeat, on reviving in a fight, on joining
+   *  the party, on reaching a new world. `delayMs` holds it off the field until its turn — a returning party
+   *  arrives one after another. Self-driven (counts in `update`). */
+  arrive(delayMs = 0): void {
+    this.arriving = -Math.max(0, delayMs);
+    this.arrivalShown = false;
+    this.leaving = null;
+    this.away = false;
   }
 
-  /** Play the teleport-IN materialise on its own — a freshly-recruited hero drops top-down
-   *  into its formation slot (same yellow ring + beam + lift FX as a post-wipe respawn),
-   *  instead of just popping into place. Self-driven (counts down in `update`). */
-  spawnIn(): void {
-    this.spawnMs = RECRUIT_SPAWN_MS;
+  /** The hero is taken off the field (the party leaves for another world) and stays away until `arrive`.
+   *  `seen` false: it is simply gone (the strip is already black). */
+  depart(seen = true): void {
+    this.arriving = null;
+    this.leaving = seen ? 0 : null;
+    this.away = !seen;
+    if (seen) for (const fx of DEPART_FX.under) this.bodyFx.burst(fx, 'under');
+    if (seen) for (const fx of DEPART_FX.over) this.bodyFx.burst(fx, 'over');
   }
 
-  /** A point just above this hero's head (parent coords) — where the ranger's ultimate
-   *  crosshair spawns before it flies off to lock onto the boss. */
-  headPoint(): { x: number; y: number } {
-    return { x: this.x, y: this.y + this.hud.barY };
+  /** Where this hero's shots leave from (parent coords): the bow hand, ahead of the body at chest height — or
+   *  wherever the class's clip in progress lets go (render/abilityFx SHOT_FROM: the Priest's lantern, her book). */
+  shotPoint(): { x: number; y: number } {
+    const from = SHOT_FROM[this.classKey]?.[this.lastAttackClip];
+    return { x: this.x + BODY_CX + (from?.dx ?? SHOT_AHEAD), y: this.y + FEET_Y - (from?.up ?? SHOT_HEIGHT) };
+  }
+
+  /** What this hero's basic attack in progress throws (render/abilityFx: its class's shot, or the clip's own);
+   *  undefined for a class with none of its own. */
+  basicShot(): string | undefined {
+    return basicShotOf(this.classKey, this.lastAttackClip);
+  }
+
+  /** True while the hero stands on the field: alive and neither arriving, leaving nor away. */
+  get standing(): boolean {
+    return this.onField;
+  }
+
+  /** A heal lands on this hero: it wells up over the body (render/abilityFx HEAL_BLOOM) — at most once every
+   *  HEAL_BLOOM_GAP_MS, so a heal on everyone and its ticks do not strobe. */
+  healBloom(): void {
+    if (this.sinceHealBloom < HEAL_BLOOM_GAP_MS) return;
+    this.sinceHealBloom = 0;
+    this.bodyFx.burst(HEAL_BLOOM, 'over');
+  }
+
+  /** A blow raises its sign on this hero instead of a word (render/abilityFx BLOW_SIGNS: a block is a spark on the
+   *  shield, a hit that did nothing a gold glance, a second strike two crossing cuts). */
+  blowSign(sign: { fx: string; gapMs: number }): void {
+    if ((this.sinceSign.get(sign.fx) ?? Number.POSITIVE_INFINITY) < sign.gapMs) return;
+    this.sinceSign.set(sign.fx, 0);
+    // On the side the blows come from, at shield height.
+    this.bodyFx.burst(sign.fx, 'over', 9, -24);
+  }
+
+  /** The party's passive auras that reach this hero (the Priest's Retribution): the strip tells every hero each
+   *  frame; each becomes a stand-in worn effect so its look goes through the same slots as the rest. */
+  setPartyAuras(auras: readonly { abilityKey: string; sourceId: string }[]): void {
+    this.partyAuras = auras;
   }
 
   /** Where the sign of an ability this hero casts appears (parent coords): centred over the body, its
    *  bottom edge just above the overhead HUD. */
   signPoint(): { x: number; y: number } {
-    return { x: this.x + this.hud.bodyCx, y: this.y + this.hud.pipY - 1 - this.hudLift };
+    return { x: this.x + this.hudCx, y: this.y + this.hud.topY - 1 };
   }
 
   /** Raise the whole overhead HUD by `px` (0 = default). GameStrip lifts a rear hero's
    *  HUD when it would overlap the party member just ahead, so crowded HP bars / pips stay
    *  legible. Shifts only the HUD layer — the body, aura and teleport FX are untouched. */
   setHudLift(px: number): void {
-    if (px === this.hudLift) return;
-    this.hudLift = px;
-    const h = this.hud;
-    this.hpBg.y = -px;
-    this.hpBar.y = -px;
-    this.pips.y = -px;
-    this.cdPips.y = -px;
-    this.respawnLabel.y = h.labelY - px;
-    const ultY = h.cdY + h.cdH / 2 - px;
-    this.ultLabel.y = ultY;
-    this.ultCross.y = ultY;
+    this.hud.setLift(px);
+  }
+
+  /** Whether a boss is in the fight and the party's engage ultimates have fired on it: their chips show spent. */
+  setBossEngaged(on: boolean): void {
+    this.bossEngaged = on;
   }
 
   /** Play a colored cast burst (ability flourish on the caster). */
@@ -230,12 +196,6 @@ export class HeroSprite extends Container {
 
   flashHit(): void {
     this.flash = 1;
-  }
-
-  /** The holy strike that lands on the target of this hero's basic attack (Priest), or null —
-   *  the driver plays it on the enemy instead of throwing a projectile. */
-  get projectileFrames(): Texture[] | null {
-    return HOLY_STRIKE_CLASSES.has(this.classKey) ? getHolyStrikeFrames() : null;
   }
 
   /** Play the shield-block reaction (the Knight has one) — fired only when an attack is
@@ -251,17 +211,64 @@ export class HeroSprite extends Container {
   /** Play the attack animation for a hit this hero landed: its basic `attack`, or — when the
    *  hit came from an ability — that ability's clip (heroClips). An ability cuts a basic attack
    *  in progress; otherwise a clip in progress finishes first (figureClip). */
+  /** The body's horizontal centre, from the sprite's x (art pixels). */
+  get bodyCx(): number {
+    return BODY_CX;
+  }
+
+  /** How long after a cast starts its clip the clip reaches its blow, as drawn (a shout's cry, a cleave's cut):
+   *  when the cast's effect belongs. Unlike abilityBlowMs this is never 0 for a long wind-up. */
+  castBlowMs(abilityKey: string): number {
+    const anim = this.anims[heroAbilityClip(this.classKey, abilityKey)];
+    return anim === undefined ? 0 : impactMs(anim) / blowRate(anim);
+  }
+
   /** How long after this hero starts an ability's clip its hit should show (render/attackLead.blowWaitMs). */
   abilityBlowMs(abilityKey: string): number {
     return blowWaitMs(this.anims[heroAbilityClip(this.classKey, abilityKey)]);
   }
 
-  attack(abilityKey?: string): void {
-    if (abilityKey !== undefined) this.figure.clips.act(heroAbilityClip(this.classKey, abilityKey), true);
-    // Unless it was started early (leadAttack). A hit nothing announced — the hero strikes the instant it
-    // arrives — starts the clip AT its blow: from its first frame the blow would land after its own number and
-    // just before the next swing's, and read as two blows for one hit.
-    else if (!this.lead.claim()) this.figure.clips.act(ATTACK_CLIP, false, 1, this.lead.windupMs);
+  /** Returns how long what the attack shoots should wait to leave (ms): an ability's shot waits for its clip's
+   *  release (attackLead.blowWaitMs); a basic shot or spell that nothing announced, for its hurried clip
+   *  (attackLead.unledWaitMs); anything else, nothing. */
+  attack(abilityKey?: string): number {
+    if (abilityKey !== undefined) {
+      // An ability's hit: its clip (often started a moment ago by `cast`) is hurried when its wind-up is long,
+      // and what it shoots waits for the release — or an Aimed Shot's arrow would leave before the bow is drawn.
+      const clip = heroAbilityClip(this.classKey, abilityKey);
+      const rate = blowRate(this.anims[clip]);
+      const fresh = this.figure.clips.act(clip, true, rate) || this.figure.clips.hurry(clip, rate);
+      if (fresh) this.lead.drop(); // a basic attack's clip started early is no longer on screen
+      return fresh ? blowWaitMs(this.anims[clip]) : 0;
+    }
+    const clip = this.attackClip;
+    this.lastAttackClip = clip;
+    if (this.lead.claim()) {
+      this.nextAttackClip(clip); // its clip was started early (leadAttack): the swing after it plays another
+      return 0;
+    }
+    const windup = this.lead.windupMs;
+    let wait = 0;
+    if (this.style === 'melee') {
+      // A blow nothing announced — the hero strikes the instant it arrives — starts the clip AT its blow: from
+      // its first frame the blow would land after its own number and just before the next swing's, and read as
+      // two blows for one hit.
+      this.figure.clips.act(clip, false, 1, windup);
+    } else if (this.figure.clips.act(clip, false, unledRate(windup))) {
+      // A shot: the whole draw plays, hurried, and the arrow waits for the release — starting at the release
+      // would loose an arrow with no draw at all.
+      wait = unledWaitMs(windup);
+    }
+    this.nextAttackClip(clip);
+    return wait;
+  }
+
+  // Choose the basic-attack clip of the next swing — any but the one just played, at random (render only: the
+  // simulation knows nothing of it) — and time the early start to ITS blow.
+  private nextAttackClip(last: string | undefined): void {
+    this.attackClip = pickAttackClip(this.attacks, last, Math.random());
+    const anim = this.anims[this.attackClip];
+    this.lead.setWindup(anim === undefined ? 0 : impactMs(anim));
   }
 
   /** Start the basic attack clip EARLY so its blow lands with the hit (render/attackLead). Called every frame
@@ -272,7 +279,7 @@ export class HeroSprite extends Container {
     const eta = swingEtaMs(c.attackTimerMs, TICK_MS);
     if (!c.alive || !enemyInReach || c.movedThisTick === true || !this.lead.due(eta)) return;
     if (abilityTakesSwing(c)) return;
-    if (this.figure.clips.act(ATTACK_CLIP, false, this.lead.rate(eta))) this.lead.started();
+    if (this.figure.clips.act(this.attackClip, false, this.lead.rate(eta))) this.lead.started();
   }
 
   /** Play the clip of an ability this hero just cast (a heal, a buff, a shout, a blow). */
@@ -283,40 +290,6 @@ export class HeroSprite extends Container {
   /** Play a take-a-hit flinch. Never interrupts an attack or an ability. */
   hurtReact(): void {
     this.figure.clips.react(HURT_CLIP, HURT_GAP_MS);
-  }
-
-  /** Show the heal sparkle ON this hero (it's the one being healed by a Priest). */
-  /** The effect is translucent — the hero must stay readable inside the light. A heal cast on the hero plays
-   *  it in full; a heal-over-time `tick` (Mend, Sanctuary: one every second on the whole party) only plays a
-   *  faint one, and never restarts one already playing, so a rolling heal does not bury the party in pillars. */
-  showHealEffect(tick = false): void {
-    const fx = this.healFx;
-    if (fx === null) return;
-    if (tick && fx.visible) return;
-    fx.visible = true;
-    fx.alpha = tick ? HEAL_FX_TICK_ALPHA : HEAL_FX_ALPHA;
-    fx.gotoAndPlay(0);
-  }
-
-  /** Build the on-ally heal overlay from the Mend effect frames (a 5×3 grid of 128px cells —
-   *  see characterFrames). The pillar content nearly fills the frame with its base at the very
-   *  bottom, so we anchor the frame bottom on the feet (ALLY_FX_ANCHOR_Y) and the effect rises
-   *  from there, at ALLY_FX_SCALE (shared with the enrage swirl). Null if not loaded. */
-  private makeHealFx(bodyCx: number): AnimatedSprite | null {
-    const frames = getHealEffectFrames();
-    if (frames === null || frames.length === 0) return null;
-    const fx = new AnimatedSprite(frames);
-    fx.autoUpdate = false;
-    fx.anchor.set(0.5, ALLY_FX_ANCHOR_Y); // seat the sheet's base on the hero's feet
-    fx.scale.set(ALLY_FX_SCALE); // matches the enrage swirl
-    fx.position.set(bodyCx, FEET_Y);
-    fx.loop = false;
-    fx.animationSpeed = HEAL_FX_FPS / 60;
-    fx.visible = false;
-    fx.onComplete = (): void => {
-      fx.visible = false;
-    };
-    return fx;
   }
 
   update(c: Combatant, x: number, groundY: number, dtMs: number, wipeHold = false): void {
@@ -338,7 +311,8 @@ export class HeroSprite extends Container {
     // The fall itself is shown solid: the fade only sets in once the death clip has played.
     this.deadMs = c.alive ? 0 : this.deadMs + dtMs;
     const falling = !c.alive && this.deadMs < DEATH_SHOWN_MS;
-    this.alpha = c.alive || falling ? 1 : wipeHold ? 0.9 : reviving ? 0.55 : 0.25;
+    // A hero waiting to come back keeps his HUD solid (the count must read): only his body fades (below).
+    this.alpha = c.alive || falling || reviving ? 1 : wipeHold ? 0.9 : 0.25;
 
     // Hit flash → a brief reddish tint (tint multiplies, so it dims). Kept short and light: a tank under three or
     // four attackers is hit several times a second, and a long, strong flash left him painted red for the fight.
@@ -347,187 +321,72 @@ export class HeroSprite extends Container {
 
     // Drive the death → revive edges so the body plays its death one-shot (then holds its
     // last frame) and resets to idle on respawn.
-    if (this.prevAlive && !c.alive) this.figure.clips.die();
-    else if (!this.prevAlive && c.alive) this.figure.clips.revive();
-    this.figure.setTint(tint);
-    this.figure.setBodyAlpha(c.alive || wipeHold || falling ? 1 : 0.5); // keep the corpse solid through a wipe hold
-    this.figure.update(dtMs, moving); // death anim advances + holds; idle/run when alive
-
-    // HP bar — while dead-and-reviving it becomes a respawn-progress bar instead.
-    const h = this.hud;
-    const bx = barLeft(h);
-    this.hpBar.clear();
-    if (reviving) {
-      const prog = Math.max(0, Math.min(1, 1 - (c.respawnMs ?? 0) / RESPAWN_MS));
-      this.hpBar.rect(bx, h.barY, Math.max(1, Math.round(h.barW * prog)), h.barH).fill({ color: hexToNum('#4a78d6') });
-      this.respawnLabel.text = `${Math.ceil((c.respawnMs ?? 0) / 1000)}s`;
-      this.respawnLabel.visible = true;
-      this.hpGhost = prog; // don't carry a stale red slice into/out of the respawn bar
-      this.ghostHoldMs = 0;
-    } else {
-      const frac = c.maxHp > 0 ? Math.max(0, Math.min(1, c.hp / c.maxHp)) : 0;
-      // Advance the ghost: heals (or first frame) snap it up; a drop refreshes the hold,
-      // then it drains toward the real fraction so the lost slice reads as a red chunk.
-      if (frac >= this.hpGhost) {
-        this.hpGhost = frac;
-        this.ghostHoldMs = 0;
-      } else {
-        if (frac < this.prevHpFrac) this.ghostHoldMs = GHOST_HOLD_MS; // a fresh hit this frame
-        this.ghostHoldMs = Math.max(0, this.ghostHoldMs - dtMs);
-        if (this.ghostHoldMs === 0) this.hpGhost = Math.max(frac, this.hpGhost - GHOST_DRAIN_PER_MS * dtMs);
-      }
-      this.prevHpFrac = frac;
-      this.hpBar
-        .rect(bx, h.barY, Math.round(h.barW * frac), h.barH)
-        .fill({ color: frac > 0.4 ? hexToNum('#4caf50') : hexToNum('#c0473a') });
-      // Delayed-damage slice: the red chunk between the real bar and the lagging ghost.
-      if (this.hpGhost > frac) {
-        const gx = bx + Math.round(h.barW * frac);
-        const gw = Math.max(1, Math.round(h.barW * (this.hpGhost - frac)));
-        this.hpBar.rect(gx, h.barY, gw, h.barH).fill({ color: GHOST_RED });
-      }
-      // WoW-style absorb overlay: a yellow shell laid over the HP from the right edge,
-      // drawn AFTER the fill so it sits on top, shrinking as the shield soaks hits.
-      drawShieldBar(this.hpBar, bx, h.barY, h.barW, h.barH, totalShield(c.effects), c.maxHp, this.elapsed);
-      this.respawnLabel.visible = false;
+    if (this.prevAlive && !c.alive) {
+      this.figure.clips.die();
+      this.arriving = null; // it fell while still arriving: the fall wins
+      this.leaving = null;
+      this.away = false;
+    } else if (!this.prevAlive && c.alive) {
+      this.figure.clips.revive();
+      // Back on its feet: it ARRIVES (unless the strip already scheduled its arrival — a returning party).
+      if (this.arriving === null && !this.away) this.arrive();
     }
+    this.figure.setTint(tint);
+    this.figure.setBodyAlpha(c.alive || wipeHold || falling ? 1 : reviving ? 0.3 : 0.5); // keep the corpse solid through a wipe hold; a ghost while he waits to return
+    this.figure.update(dtMs, moving); // death anim advances + holds; idle/run when alive
+    // The looks its effects give it (render/abilityFx): loops around the body, and the figure itself in a skin.
+    this.onField = c.alive && !this.teleporting;
+    this.sinceHealBloom += dtMs;
+    for (const [key, ms] of this.sinceSign) this.sinceSign.set(key, ms + dtMs);
+    const worn: readonly WornEffect[] = this.partyAuras.length === 0
+      ? c.effects
+      : [...c.effects, ...this.partyAuras.map((a) => ({ defKey: auraEffectKey(a.abilityKey), sourceId: a.sourceId, remainingMs: 1 }))];
+    const skin = this.bodyFx.sync(worn, { id: c.id, classKey: this.classKey }, dtMs, this.onField);
+    this.figure.setSkin(heroSkin(this.classKey, skin));
+    this.figure.setRim(heroSkin(this.classKey, this.bodyFx.rim)); // a rim sheet is laid out like a skin
+
+    this.hud.update(c, dtMs, reviving, this.bossEngaged);
 
     this.castMs = Math.max(0, this.castMs - dtMs);
-    this.drawHolyGround(c);
     this.drawAura(c);
-    this.drawPips(c);
-    this.drawCooldowns(c, reviving);
-    // A freshly-recruited hero materialises in (the respawn teleport-IN) on its first
-    // frames: drive the teleport from 0 (gone, lifted up) → 1 (present, settled in slot).
-    if (this.spawnMs > 0) {
-      this.spawnMs = Math.max(0, this.spawnMs - dtMs);
-      this.teleporting = this.spawnMs > 0;
-      this.teleportK = 1 - this.spawnMs / RECRUIT_SPAWN_MS;
-    }
-    this.applyTeleport();
-    this.updateEnrageFx(c, dtMs); // after teleport so it stands down while the body de/materialises
-    this.drawUlt(c, reviving); // after teleport so it owns the badge's visibility
-    this.advanceHealFx(dtMs);
+    this.applyPresence(dtMs);
     this.prevAlive = c.alive;
   }
 
-  // Build the looping Battle Enrage swirl from its shared frames (a 5×3 grid of 128px cells,
-  // see characterFrames). Seated at the feet with the SAME transform as the Mend effect
-  // (ALLY_FX_ANCHOR_Y + ALLY_FX_SCALE) so the ult swirl reads at the same height/positioning as
-  // a heal. Hidden until updateEnrageFx turns it on. Null if the sheet isn't loaded.
-  private makeEnrageFx(bodyCx: number): AnimatedSprite | null {
-    const frames = getBattleEnrageFrames();
-    if (frames === null || frames.length === 0) return null;
-    const fx = new AnimatedSprite(frames);
-    fx.autoUpdate = false;
-    fx.anchor.set(0.5, ALLY_FX_ANCHOR_Y); // same as Mend: seat the sheet's base on the feet
-    fx.scale.set(ALLY_FX_SCALE); // same height as the Mend effect (shared on-ally geometry)
-    fx.position.set(bodyCx, FEET_Y); // seated at the feet, matching Mend's positioning
-    fx.loop = true;
-    fx.animationSpeed = ENRAGE_FX_FPS / 60;
-    fx.alpha = ENRAGE_FX_ALPHA;
-    fx.visible = false;
-    return fx;
-  }
-
-  // Battle Enrage (Priest ult): loop the swirl over every buffed ally for the buff's whole
-  // duration. Shown only while alive and not mid-teleport; advanced from our own dtMs.
-  private updateEnrageFx(c: Combatant, dtMs: number): void {
-    const fx = this.enrageFx;
-    if (fx === null) return;
-    const on = c.alive && !this.teleporting && isEnraged(c.effects);
-    if (on && !fx.visible) { fx.visible = true; fx.gotoAndPlay(0); }
-    else if (!on && fx.visible) { fx.visible = false; fx.stop(); }
-    if (fx.visible && dtMs > 0) { this.fxShim.deltaTime = dtMs / MS_PER_FRAME; fx.update(this.fxShim); }
-  }
-
-  // Advance the heal-sparkle one-shot while it's playing (manual update — autoUpdate off).
-  private advanceHealFx(dtMs: number): void {
-    const fx = this.healFx;
-    if (fx === null || !fx.visible || dtMs <= 0) return;
-    this.fxShim.deltaTime = dtMs / MS_PER_FRAME;
-    fx.update(this.fxShim);
-  }
-
-  // Knight-only ultimate badge: "U" in gold while Last Stand is charged, grey + crossed
-  // out once spent this stage. Hidden mid-teleport, while dead/reviving, or pre-unlock.
-  private drawUlt(c: Combatant, reviving: boolean): void {
-    const has = this.isKnight && c.ult?.effect.type === 'deathBlock';
-    if (this.teleporting || reviving || !c.alive || !has) {
-      this.ultLabel.visible = false;
-      this.ultCross.visible = false;
-      return;
-    }
-    const ready = (c.ultCharge ?? 0) > 0;
-    this.ultLabel.visible = true;
-    this.ultLabel.style.fill = ready ? hexToNum('#e8c34c') : hexToNum('#5a5560'); // gold up / grey spent
-    this.ultCross.clear();
-    if (ready) {
-      this.ultCross.visible = false;
-    } else {
-      const r = 4;
-      this.ultCross.moveTo(-r, -r).lineTo(r, r).stroke({ color: hexToNum('#c0473a'), width: 1.5 });
-      this.ultCross.visible = true;
-    }
-  }
-
-  // Teleport: shrink + rise + fade the body (a yellow charge ring + upward beam stays
-  // full-size around it), so the party flashes up out of the world and drops back in.
-  // The ring is COUNTER-scaled (1/s) so the container's shrink doesn't shrink it too.
-  private applyTeleport(): void {
-    if (!this.teleporting) {
-      if (this.scale.x !== 1) this.scale.set(1);
-      if (!this.hpBg.visible) {
-        // restore the HUD that applyTeleport hid (once, the frame teleport ends)
-        this.hpBg.visible = true;
-        this.hpBar.visible = true;
-        this.pips.visible = true;
-        this.cdPips.visible = true;
+  // The hero's arrival / departure (render/arrival): the effects play around the figure (BodyFx one-shots), the
+  // figure itself shows, whitens and cools by the script, and the overhead HUD stays off until it has arrived.
+  private applyPresence(dtMs: number): void {
+    let look: BodyLook | null = null;
+    if (this.arriving !== null) {
+      // Waiting for its turn (negative) it only counts up to 0; from its first frame on it runs with the clock.
+      this.arriving = this.arriving < 0 ? Math.min(0, this.arriving + dtMs) : this.arrivalShown ? this.arriving + dtMs : 0;
+      if (this.arriving >= 0 && !this.arrivalShown) {
+        this.arrivalShown = true;
+        const fx = arrivalFx(ARRIVAL_CHOICE, this.classKey);
+        for (const key of fx.under) this.bodyFx.burst(key, 'under');
+        for (const key of fx.over) this.bodyFx.burst(key, 'over');
       }
-      this.tpRing.visible = false;
-      return;
+      look = arrivalBody(ARRIVAL_CHOICE, this.arriving);
+      if (look.done) this.arriving = null;
+    } else if (this.leaving !== null) {
+      this.leaving += dtMs;
+      look = departBody(this.leaving);
+      if (look.done) {
+        this.leaving = null;
+        this.away = true;
+      }
+    } else if (this.away) {
+      look = { alpha: 0, white: 0, hud: false, done: false };
     }
-    const k = this.teleportK; // 1 = present, 0 = gone
-    const s = Math.max(0.04, k);
-    this.scale.set(s, s);
-    this.y -= (1 - k) * 24; // lifts up as it (de)materialises
-    this.figure.setBodyAlpha(k);
-    // The overhead HUD reads as noise mid-teleport — hide it.
-    this.hpBg.visible = false;
-    this.hpBar.visible = false;
-    this.pips.visible = false;
-    this.cdPips.visible = false;
-    this.respawnLabel.visible = false;
-
-    const g = this.tpRing;
-    g.visible = true;
-    g.scale.set(1 / s); // cancel the container shrink so the ring stays full size
-    g.clear();
-    const cx = this.hud.bodyCx;
-    const cy = BODY_MID_Y;
-    const pulse = 0.55 + 0.45 * Math.sin(this.elapsed / 35);
-    // upward beam — brightest as the body vanishes
-    const beamA = (1 - k) * 0.85;
-    if (beamA > 0.01) g.rect(cx - 2, cy - 26 - (1 - k) * 28, 4, 52 + (1 - k) * 44).fill({ color: TP_BEAM, alpha: beamA });
-    for (let i = 0; i < 2; i++) {
-      const r = 13 + i * 5;
-      g.ellipse(cx, cy, r, r * 1.25).stroke({ color: TP_RING, width: 2, alpha: 0.3 + 0.5 * pulse });
+    const present = look === null || look.done;
+    this.teleporting = !present;
+    if (look !== null && !look.done) {
+      this.figure.setBodyAlpha(look.alpha);
+      this.figure.setWhite(look.white);
+    } else {
+      this.figure.setWhite(0);
     }
-    for (let i = 0; i < 5; i++) {
-      const a = this.elapsed / 90 + (i * Math.PI * 2) / 5;
-      const rr = 6 + (i % 3) * 4;
-      g.circle(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr - (1 - k) * 10, 1.4).fill({ color: TP_BEAM, alpha: 0.8 * pulse });
-    }
-  }
-
-  // Retribution Aura: a golden holy halo pooled on the ground beneath the priest while the
-  // passive party damage aura is slotted (it lives in c.abilities — see sim/loadout). It has
-  // no ActiveEffect of its own, so this dedicated ground overlay is its only visual read.
-  private drawHolyGround(c: Combatant): void {
-    this.holyGround.clear();
-    const active = c.alive && !this.teleporting && c.abilities.some((a) => a.def.aura?.stat === 'damageIncrease');
-    if (!active) return;
-    drawHolyGround(this.holyGround, this.hud.bodyCx, FEET_Y, AURA_SCALE, this.elapsed);
+    this.hud.setVisible(look === null || look.hud);
   }
 
   // Effect aura: twinkling diamond "stars" orbiting the hero while an ongoing effect
@@ -535,102 +394,26 @@ export class HeroSprite extends Container {
   // ring that expands and fades on each ability cast.
   private drawAura(c: Combatant): void {
     this.aura.clear();
-    const cx = this.hud.bodyCx; // centre the shield/stars on the same line as the body + HP bar
+    const cx = BODY_CX; // centre the shield/stars on the same line as the body + HP bar
     const cy = BODY_MID_Y;
     if (this.castMs > 0) {
       const t = this.castMs / CAST_MS;
       this.aura.circle(cx, cy, (1 - t) * 15 + 5).stroke({ color: this.castColor, width: 2, alpha: t });
     }
     if (!c.alive) return;
-    // Last Stand: a translucent yellow shield bubble around the hero while invulnerable.
-    if (isInvulnerable(c.effects)) {
-      const pulse = 0.16 + 0.1 * Math.abs(Math.sin(this.elapsed / 200));
-      this.aura.circle(cx, cy, 22).fill({ color: INVULN_YELLOW, alpha: pulse });
-      this.aura.circle(cx, cy, 22).stroke({ color: INVULN_YELLOW, width: 1.5, alpha: 0.75 });
-    }
-    // Battle Enrage (Priest ult) is NOT an aura: every buffed ally rhythmically SWELLS and
-    // reddens (drawn in applyEnrage, after teleport, so it owns the body's scale + tint).
-    // Bold category overlays: green up-arrows (offense buff), dancing shields (defense
-    // buff), red down-arrows (debuff) — drawn over the body's vertical span.
+    // Every hero ability, the world bosses' kit and the party auras are drawn by the ability effects
+    // (render/abilityFx). What is left here is the generic vocabulary for an effect nobody has drawn yet: green
+    // up-arrows (offense buff), shields (defense buff), red down-arrows (debuff) over the body's vertical span.
     const cats = auraCategories(c.effects);
     const region = {
       cx,
       topY: FEET_Y - HERO_HEIGHT + 4,
       botY: FEET_Y - 2,
       cy: BODY_MID_Y, // heroes never wear the mark; the body's middle is fine
-      halfW: this.hud.barW * 0.45,
+      halfW: BODY_HALF_W,
       scale: AURA_SCALE,
       elapsed: this.elapsed,
     };
     drawCategoryAuras(this.aura, cats, region);
-    // World-boss Mortal Wound: crossed-out heal crosses over the wounded tank (its generic
-    // debuff overlay is suppressed so this is the sole, unmistakable read).
-    if (hasMortalWound(c.effects)) drawMortalWoundCrosses(this.aura, region);
-  }
-
-  // Up to two ability cooldown pips at the TOP-LEFT of the hero (stacked vertically):
-  // a small bar that fills as the ability recharges (gold ready, blue charging).
-  private drawCooldowns(c: Combatant, reviving: boolean): void {
-    this.cdPips.clear();
-    const abilities = c.abilities.slice(0, 2);
-    if (reviving || !c.alive || abilities.length === 0) return;
-    const lay = this.hud;
-    // Pips sit just to the LEFT of the HP bar — derived from the bar so they line up the
-    // same way for every class regardless of bodyCx (no per-class overlap with the bar).
-    const cdX = barLeft(lay) - CD_GAP - lay.cdW;
-    abilities.forEach((a, i) => {
-      const baseY = lay.cdY + i * lay.cdStep; // stacked vertically, top-left
-      // Charge-gated abilities (e.g. Aimed Shot) have NO timed cooldown — they bank
-      // charges per auto-attack and fire at toCast. Show that fill (green) so the pip
-      // climbs as charges build instead of reading as forever-ready like a 0ms cooldown.
-      const charge = a.def.charge;
-      let ready: boolean;
-      let fillFrac: number;
-      let buildColor: number;
-      if (charge !== undefined) {
-        const banked = c.charges?.[a.def.key] ?? 0;
-        ready = banked >= charge.toCast;
-        fillFrac = Math.max(0, Math.min(1, banked / charge.toCast));
-        buildColor = CD_CHARGE;
-      } else {
-        const remaining = c.cooldowns[a.def.key] ?? 0;
-        const total = c.cooldownTotals?.[a.def.key] ?? 0;
-        ready = remaining <= 0 || total <= 0;
-        fillFrac = ready ? 1 : Math.max(0, Math.min(1, 1 - remaining / total));
-        buildColor = CD_CHARGING;
-      }
-      this.cdPips.rect(cdX, baseY, lay.cdW, lay.cdH).fill({ color: hexToNum('#15121c') });
-      const fillH = Math.max(1, Math.round(lay.cdH * fillFrac));
-      this.cdPips.rect(cdX, baseY + (lay.cdH - fillH), lay.cdW, fillH).fill({ color: ready ? CD_READY : buildColor });
-    });
-  }
-
-  // Buff/debuff pips double as DURATION gauges: each is a dark cell with a colored
-  // column (green buff / red debuff) that drains DOWNWARD as the effect runs out — so a
-  // nearly-full pip = lots of time left, an almost-empty one = about to expire. The dark
-  // backdrop stays put so the remaining column reads clearly against the sprite.
-  private drawPips(c: Combatant): void {
-    this.pips.removeChildren();
-    const lay = this.hud;
-    const shown = c.effects.slice(0, 4);
-    const w = lay.pipSize;
-    const barH = lay.pipSize + 3; // a touch taller than wide so the drain is legible
-    // Centre the pip row on the body so the buffs sit squarely over the sprite + HP bar.
-    const rowW = shown.length > 0 ? (shown.length - 1) * lay.pipStep + w : 0;
-    const startX = lay.bodyCx - rowW / 2;
-    const baselineY = lay.pipY + lay.pipSize; // bottom edge the column drains down to
-    const topY = baselineY - barH;
-    shown.forEach((e, i) => {
-      const def = effectDef(e.defKey);
-      const x = startX + i * lay.pipStep;
-      const total = e.totalMs ?? def.durationMs;
-      const frac = total > 0 ? Math.max(0, Math.min(1, e.remainingMs / total)) : 1;
-      const fillH = Math.max(1, Math.round(barH * frac));
-      const g = new Graphics();
-      g.rect(x, topY, w, barH).fill({ color: hexToNum('#0d0b12') }); // dark backdrop
-      g.rect(x, baselineY - fillH, w, fillH).fill({ color: def.beneficial ? hexToNum('#4caf50') : hexToNum('#c0473a') });
-      g.rect(x, topY, w, barH).stroke({ color: hexToNum('#000000'), width: 1, alpha: 0.5 }); // edge
-      this.pips.addChild(g);
-    });
   }
 }

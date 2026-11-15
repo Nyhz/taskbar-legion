@@ -3,19 +3,21 @@ import type { ActiveEffect } from '@/data/effects';
 import { effectDef } from '@/data/effects';
 import type { StatKey } from '@/data/stats';
 import { hexToNum } from '@/styles/palette';
+import { hasOwnLook } from './abilityFx';
 
 // Shared, render-only effect-aura vocabulary. Every ongoing buff/debuff a combatant
 // carries reads as ONE of a few bold, unmistakable overlays drawn over the body:
 //   • offense buff  → bright GREEN arrows surging UPWARD
 //   • defense buff  → glowing SHIELDS dancing around the body
 //   • debuff/CC     → angry RED arrows sinking DOWNWARD
-//   • hot           → handled by the heal-sparkle sprite (HeroSprite)
-//   • shield        → handled by the HP-bar absorb overlay
-//   • invuln        → handled by the Last Stand bubble (HeroSprite)
+//   • shield        → the HP-bar absorb overlay
+// An effect that has its own pixel-art look (render/abilityFx) never gets one of these overlays — and today that
+// is every effect of every hero ability, the world bosses' kit and the party auras. They are what is left for an
+// effect nobody has drawn yet (a new ability's, before its job).
 // These are pure draw helpers (state + elapsed time in, Graphics out) so HeroSprite and
 // EnemySprite share one flashy, consistent visual language. Big · colorful · shiny.
 
-export type AuraCategory = 'offense' | 'defense' | 'debuff' | 'mark' | 'hot' | 'shield' | 'dot' | 'invuln';
+export type AuraCategory = 'offense' | 'defense' | 'debuff' | 'hot' | 'shield' | 'dot' | 'invuln';
 
 // Stats whose buff reads as DEFENSIVE (dancing shields). Everything else beneficial reads
 // as offensive (green up-arrows): attack speed/damage, crit, lifesteal, CDR, heal power…
@@ -32,12 +34,8 @@ const WHITE = 0xffffff;
 /** Classify one active effect into its visual category (null = no overlay of its own —
  *  e.g. an instant damage/heal effect, or a pure tag). */
 export function categorize(e: ActiveEffect): AuraCategory | null {
-  // Battle Enrage gets its own dedicated red aura (HeroSprite), so suppress the generic
-  // offense overlay its stat buffs would otherwise add — keeps the ult's signal unique.
-  if (e.defKey === 'buff_enrage_cdr' || e.defKey === 'buff_enrage_as') return null;
-  // World-boss Frenzy (red foot aura, EnemySprite) and Mortal Wound (crossed-out heal
-  // crosses, HeroSprite) each draw their OWN dedicated overlay — suppress the generic one.
-  if (e.defKey === 'buff_boss_frenzy' || e.defKey === 'debuff_mortal_wound') return null;
+  // An effect of an ability with its own pixel-art look (render/abilityFx) is drawn there, never as arrows or shields.
+  if (hasOwnLook(e.defKey)) return null;
   const def = effectDef(e.defKey);
   const k = def.kind;
   switch (k.type) {
@@ -49,9 +47,8 @@ export function categorize(e: ActiveEffect): AuraCategory | null {
     case 'statMod':
       if (!def.beneficial) return 'debuff';
       return DEFENSE_STATS.has(k.stat) ? 'defense' : 'offense';
-    // The ranger's Mark of the Hunter reads as a target reticle locked onto the boss —
-    // its own bold, unmistakable overlay rather than the generic red down-arrows.
-    case 'vulnerable': return 'mark';
+    // More damage taken: every such effect today has its own look (the Ranger's marks, render/abilityFx).
+    case 'vulnerable': return 'debuff';
     // weaken/root/silence are the other hostile marks
     case 'weaken': case 'root': case 'silence':
       return 'debuff';
@@ -83,13 +80,10 @@ export interface AuraRegion {
   cx: number;
   topY: number;
   botY: number;
-  cy: number; // the body CENTRE y for point-overlays (the mark reticle) — corrected for big mounts
+  cy: number; // the body CENTRE y for point-overlays — corrected for big mounts
   halfW: number;
   scale: number;
   elapsed: number;
-  /** Where the mark reticle sits and how big it is, when it should not frame the whole body: an ordinary
-   *  enemy wears a small one over its chest (a whole wave can be marked at once); a boss keeps the big one. */
-  mark?: { cy: number; radius: number };
 }
 
 /** Draw whichever arrow/shield overlays the active categories call for. The caller passes
@@ -98,55 +92,6 @@ export function drawCategoryAuras(g: Graphics, cats: Set<AuraCategory>, r: AuraR
   if (cats.has('offense')) drawOffenseArrows(g, r);
   if (cats.has('defense')) drawDancingShields(g, r);
   if (cats.has('debuff')) drawDebuffArrows(g, r);
-  if (cats.has('mark')) drawMarkCrosshair(g, r);
-}
-
-// ── Mark of the Hunter: a target reticle ──
-// The radius the locked-on reticle spans over a body — a touch wider than the figure so it
-// reads as a crosshair framing the whole target. Exported so the fly-in FX (WorldFxLayer)
-// lands exactly on the persistent reticle the aura then keeps drawing.
-export function crosshairRadius(r: AuraRegion): number {
-  return r.mark?.radius ?? Math.max(r.halfW * 1.15, (r.botY - r.topY) * 0.34);
-}
-
-/** Radius of the small reticle an ordinary (non-boss) marked enemy wears. */
-export const SMALL_MARK_RADIUS = 7;
-
-/** A red targeting reticle: a glow, a slowly-spinning 4-arc ring, fixed N/E/S/W ticks
- *  crossing toward a center gap, an inner ring and a center dot. Shared by the persistent
- *  mark aura and the ranger's ultimate fly-in so they read as one continuous lock-on. */
-export function drawCrosshair(g: Graphics, cx: number, cy: number, radius: number, alpha: number, spin: number, color: number = ARROW_RED): void {
-  if (alpha <= 0.02 || radius <= 0) return;
-  const w = radius < 12 ? 1 : 2; // a small reticle is drawn with hairlines
-  // outer glow ring
-  g.circle(cx, cy, radius * 1.06).stroke({ color, width: w + 1, alpha: alpha * 0.18 });
-  // spinning ring drawn as four gapped arcs
-  const seg = (Math.PI / 2) * 0.6;
-  for (let i = 0; i < 4; i++) {
-    const a0 = spin + (i * Math.PI) / 2 - seg / 2;
-    g.moveTo(cx + Math.cos(a0) * radius, cy + Math.sin(a0) * radius)
-      .arc(cx, cy, radius, a0, a0 + seg)
-      .stroke({ color, width: w, alpha });
-  }
-  // fixed crosshair ticks (top/bottom/left/right), leaving a clear gap in the middle
-  const gap = radius * 0.42;
-  const outer = radius * 1.18;
-  for (const [dx, dy] of [[0, -1], [0, 1], [-1, 0], [1, 0]] as const) {
-    g.moveTo(cx + dx * gap, cy + dy * gap)
-      .lineTo(cx + dx * outer, cy + dy * outer)
-      .stroke({ color, width: w, alpha });
-  }
-  // inner ring + bright center pip
-  if (radius >= 12) g.circle(cx, cy, radius * 0.3).stroke({ color: WHITE, width: 1, alpha: alpha * 0.55 });
-  g.circle(cx, cy, radius < 12 ? 1 : 1.8).fill({ color, alpha });
-}
-
-// The persistent reticle the marked boss wears for the whole fight — a soft pulse and a
-// slow spin so it reads as "actively locked on" rather than a static decal.
-function drawMarkCrosshair(g: Graphics, r: AuraRegion): void {
-  const cy = r.mark?.cy ?? r.cy;
-  const pulse = 0.72 + 0.28 * Math.sin(r.elapsed / 320);
-  drawCrosshair(g, r.cx, cy, crosshairRadius(r), pulse, r.elapsed / 1100);
 }
 
 // One bold, shiny arrow: fat translucent glow behind, saturated body, white core stripe.
@@ -245,146 +190,4 @@ function drawDancingShields(g: Graphics, r: AuraRegion): void {
     const a = 0.5 + 0.5 * (front * 0.5 + 0.5);
     drawShield(g, x, y, s, a, depth);
   }
-}
-
-// ── World-boss special-ability overlays ──
-// Frenzy reads as an angry RED aura pooled at the boss's FEET (ground plane), distinct from
-// the body-centred enrage flames; Mortal Wound reads as crossed-out heal crosses over the
-// wounded tank. Both are their own unmistakable signal (the generic overlay is suppressed
-// for their effects in `categorize`).
-
-export const FRENZY_RED = hexToNum('#ff3322');
-const MORTAL_GREEN = hexToNum('#7fe6a0'); // heal-cross green (it's healing being denied)
-const MORTAL_SLASH = hexToNum('#ff3b30'); // the red "no" slash through the cross
-
-/** True while the boss carries the Frenzy attack-speed buff. */
-export function hasFrenzy(effects: readonly ActiveEffect[]): boolean {
-  return effects.some((e) => e.defKey === 'buff_boss_frenzy');
-}
-
-/** True while the tank carries the Mortal Wound healing-reduction debuff. */
-export function hasMortalWound(effects: readonly ActiveEffect[]): boolean {
-  return effects.some((e) => e.defKey === 'debuff_mortal_wound');
-}
-
-/** A red frenzy aura pooled on the ground at the boss's feet: a pulsing base glow + two
- *  expanding rings + flickering flame licks, all flattened to the ground plane. `cy` is the
- *  container-local feet line; `scale` sizes it to the body; `elapsed` drives the animation. */
-export function drawFrenzyGround(g: Graphics, cx: number, cy: number, scale: number, elapsed: number): void {
-  const FLAT = 0.4; // ground-plane flatten (y radius ÷ x radius)
-  const maxR = 26 * scale;
-  const pulse = 0.55 + 0.45 * Math.sin(elapsed / 90);
-  // base glow
-  g.ellipse(cx, cy, maxR * 0.6, maxR * 0.6 * FLAT).fill({ color: FRENZY_RED, alpha: 0.14 * pulse });
-  // two expanding rings, staggered so one is always growing
-  for (let i = 0; i < 2; i++) {
-    const t = (elapsed / 620 + i / 2) % 1;
-    const r = t * maxR;
-    const a = (1 - t) * 0.7;
-    if (a <= 0.02 || r < 0.5) continue;
-    g.ellipse(cx, cy, r, r * FLAT).stroke({ color: FRENZY_RED, width: 2.5, alpha: a });
-  }
-  // flame licks rising off the ring
-  for (let i = 0; i < 6; i++) {
-    const ang = (i / 6) * Math.PI * 2 + elapsed / 200;
-    const br = maxR * 0.5;
-    const bx = cx + Math.cos(ang) * br;
-    const by = cy + Math.sin(ang) * br * FLAT;
-    const len = (5 + 4 * Math.abs(Math.sin(elapsed / 80 + i))) * scale;
-    g.moveTo(bx, by).lineTo(bx, by - len).stroke({ color: 0xff5a2a, width: 2, alpha: 0.35 + 0.4 * pulse });
-  }
-}
-
-// ── Priest Retribution Aura: a holy ground aura at the priest's feet ──
-// The passive party damage aura (sim/loadout.partyAuraMods) has no ActiveEffect to drive the
-// generic overlay, so it gets its own dedicated, unmistakable read: a warm GOLDEN halo pooled
-// on the ground beneath the priest — a soft pulsing base glow, two slow expanding rings, a ring
-// of radiant spokes, and gentle light motes rising off it. Reads as "blessed / empowered party".
-
-export const HOLY_GOLD = hexToNum('#ffd76a');
-const HOLY_PALE = hexToNum('#fff3c4'); // brighter inner/highlight gold
-
-/** A golden holy aura pooled on the ground at a hero's feet. `cx`/`cy` are the container-local
- *  feet point; `scale` sizes it to the body; `elapsed` drives the (slow, gentle) animation. */
-export function drawHolyGround(g: Graphics, cx: number, cy: number, scale: number, elapsed: number): void {
-  const FLAT = 0.42; // ground-plane flatten (y radius ÷ x radius)
-  const maxR = 24 * scale;
-  const pulse = 0.6 + 0.4 * Math.sin(elapsed / 280); // slow, calm breathing
-  // base glow — a soft pooled disc
-  g.ellipse(cx, cy, maxR * 0.62, maxR * 0.62 * FLAT).fill({ color: HOLY_GOLD, alpha: 0.13 + 0.07 * pulse });
-  // two expanding rings, staggered so one is always blooming outward
-  for (let i = 0; i < 2; i++) {
-    const t = (elapsed / 1500 + i / 2) % 1;
-    const r = t * maxR;
-    const a = (1 - t) * 0.55;
-    if (a <= 0.02 || r < 0.5) continue;
-    g.ellipse(cx, cy, r, r * FLAT).stroke({ color: HOLY_GOLD, width: 2, alpha: a });
-  }
-  // a ring of radiant spokes slowly turning around the disc — the "sacred" tick read
-  const spokeR = maxR * 0.5;
-  const outer = maxR * 0.74;
-  for (let i = 0; i < 8; i++) {
-    const ang = (i / 8) * Math.PI * 2 + elapsed / 900;
-    const c0 = Math.cos(ang), s0 = Math.sin(ang) * FLAT;
-    g.moveTo(cx + c0 * spokeR, cy + s0 * spokeR)
-      .lineTo(cx + c0 * outer, cy + s0 * outer)
-      .stroke({ color: HOLY_PALE, width: 1.5, alpha: 0.35 + 0.3 * pulse });
-  }
-  // gentle light motes rising off the halo
-  for (let i = 0; i < 5; i++) {
-    const ang = (i / 5) * Math.PI * 2 + elapsed / 600;
-    const br = spokeR;
-    const bx = cx + Math.cos(ang) * br;
-    const by = cy + Math.sin(ang) * br * FLAT;
-    const rise = ((elapsed / 22 + i * 37) % 20) * scale; // drifts upward, then loops
-    const a = (1 - rise / (20 * scale)) * 0.7;
-    if (a <= 0.03) continue;
-    g.circle(bx, by - rise, 1.4 * scale).fill({ color: HOLY_PALE, alpha: a });
-  }
-}
-
-/** Crossed-out heal crosses floating over a tank under Mortal Wound — green "+" plus signs
- *  with a red diagonal slash through each, bobbing and fading, the universal "healing
- *  denied" read. Drawn over the body's upper span (region.topY..cy). */
-export function drawMortalWoundCrosses(g: Graphics, r: AuraRegion): void {
-  const N = 3;
-  const period = 1100;
-  const arm = 4 * r.scale; // half-length of each cross arm
-  const span = r.cy - r.topY;
-  for (let i = 0; i < N; i++) {
-    const phase = (r.elapsed / period + i / N) % 1; // 0 (low) → 1 (high), rises + fades
-    const y = r.cy - span * phase - 2;
-    const x = r.cx + (i - (N - 1) / 2) * r.halfW * 0.9;
-    const a = Math.sin(phase * Math.PI); // fade in low, peak mid, out at top
-    if (a <= 0.03) continue;
-    const w = Math.max(1.5, 1.6 * r.scale);
-    // green heal cross (glow + body)
-    g.rect(x - arm, y - w / 2, arm * 2, w).fill({ color: MORTAL_GREEN, alpha: a * 0.9 });
-    g.rect(x - w / 2, y - arm, w, arm * 2).fill({ color: MORTAL_GREEN, alpha: a * 0.9 });
-    // red "no" slash across it
-    g.moveTo(x - arm * 1.2, y + arm * 1.2)
-      .lineTo(x + arm * 1.2, y - arm * 1.2)
-      .stroke({ color: MORTAL_SLASH, width: Math.max(1.5, r.scale), alpha: a });
-  }
-}
-
-// ── HP-bar absorb (shield) overlay — WoW-style ──
-// A bright yellow segment laid OVER the HP fill, anchored at the bar's RIGHT edge and
-// growing leftward with the absorb size; it shrinks back toward the right as the shield is
-// chewed down by incoming hits. Drawn after the HP fill so it always sits on top.
-export const SHIELD_BAR_YELLOW = hexToNum('#ffe14d');
-
-export function drawShieldBar(
-  g: Graphics, barLeftX: number, barY: number, barW: number, barH: number,
-  shield: number, maxHp: number, elapsed: number,
-): void {
-  if (shield <= 0 || maxHp <= 0) return;
-  const frac = Math.max(0, Math.min(1, shield / maxHp));
-  const w = Math.max(1, Math.round(barW * frac));
-  const x = barLeftX + barW - w; // anchored at the right edge, grows left
-  const pulse = 0.82 + 0.18 * Math.sin(elapsed / 160);
-  g.rect(x, barY, w, barH).fill({ color: SHIELD_BAR_YELLOW, alpha: pulse });
-  // bright top highlight + a leading edge tick so the absorb reads as a hard shell
-  g.rect(x, barY, w, Math.max(1, Math.round(barH * 0.34))).fill({ color: 0xfff7c0, alpha: 0.9 });
-  g.rect(x - 1, barY, 1.5, barH).fill({ color: WHITE, alpha: 0.85 });
 }

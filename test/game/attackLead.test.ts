@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CLASS_KEYS } from '@/data/classes';
-import { AttackLead, LEAD_GRACE_MS, MAX_RATE, abilityTakesSwing, impactMs, swingEtaMs } from '@/game/render/attackLead';
+import { AttackLead, LEAD_GRACE_MS, MAX_RATE, UNLED_WINDUP_MS, abilityTakesSwing, impactMs, swingEtaMs, unledRate, unledWaitMs } from '@/game/render/attackLead';
 import { clipMs, figureMeta } from '@/game/render/figureData';
 import { ATTACK_CLIP } from '@/game/render/heroClips';
 import figs from '@/assets/strip/figs/figs.json';
@@ -118,5 +118,26 @@ describe('abilityTakesSwing', () => {
 
   it('is false with no abilities', () => {
     expect(abilityTakesSwing({ attackTimerMs: 300, cooldowns: {}, abilities: [] })).toBe(false);
+  });
+});
+
+describe('a shot nothing announced', () => {
+  it('plays a short wind-up as drawn and waits all of it', () => {
+    expect(unledRate(200)).toBe(1);
+    expect(unledWaitMs(200)).toBe(200);
+  });
+
+  it('hurries a longer wind-up so the release comes within UNLED_WINDUP_MS', () => {
+    expect(unledRate(450)).toBeCloseTo(1.5);
+    expect(unledWaitMs(450)).toBeCloseTo(UNLED_WINDUP_MS);
+  });
+
+  it('never hurries past MAX_RATE: a long bow draw waits a little longer', () => {
+    expect(unledRate(960)).toBe(MAX_RATE);
+    expect(unledWaitMs(960)).toBeCloseTo(960 / MAX_RATE);
+  });
+
+  it('waits for nothing without a wind-up', () => {
+    expect(unledWaitMs(0)).toBe(0);
   });
 });

@@ -14,10 +14,13 @@
  */
 import { runProbe, DEFAULT_CONFIG, type ProbeResult } from '../test/sim/probe/loop';
 import { DIFFICULTY_KEYS, DIFFICULTIES } from '@/data/difficulties';
+import { WORLD_HOURS_TARGET, DIFFICULTY_HOURS_TARGET } from '../test/sim/probe/targets';
 
 // Seed count is overridable for fast tuning iterations: `PROBE_SEEDS=1 npm run probe`.
 const SEED_COUNT = Math.max(1, Number(process.env.PROBE_SEEDS ?? 5));
-const SEEDS = Array.from({ length: SEED_COUNT }, (_, i) => i + 1);
+// `PROBE_SEED_FROM=6` starts at another seed (a check on seeds the walls were not tuned on).
+const SEED_FROM = Math.max(1, Number(process.env.PROBE_SEED_FROM ?? 1));
+const SEEDS = Array.from({ length: SEED_COUNT }, (_, i) => i + SEED_FROM);
 
 function fmtHours(h: number): string {
   if (h < 24) return `${h.toFixed(1)}h`;
@@ -36,10 +39,15 @@ function median(xs: number[]): number {
   return s.length % 2 ? (s[mid] ?? 0) : ((s[mid - 1] ?? 0) + (s[mid] ?? 0)) / 2;
 }
 
-const results: ProbeResult[] = SEEDS.map((s) => runProbe(s, DEFAULT_CONFIG));
+// Partial runs for tuning: `PROBE_STOP=100 npm run probe` stops once that global stage is cleared.
+const STOP = Number(process.env.PROBE_STOP ?? 0);
+const TRACE = process.env.PROBE_TRACE === '1'; // a line per stage cleared / recruit / wall attempt
+const GEAR = process.env.PROBE_GEAR === '1'; // also measure the gear % of the zone at every wall kill (slower)
+const CONFIG = { ...DEFAULT_CONFIG, ...(GEAR ? { measureGear: true } : {}), ...(STOP > 0 ? { stopAtStage: STOP } : {}), ...(TRACE ? { trace: (line: string) => console.log(line) } : {}) };
+const results: ProbeResult[] = SEEDS.map((s) => runProbe(s, CONFIG));
 
 console.log('\n=== PROGRESSION PROBE — average player, KRP, solo-Knight start ===');
-console.log(`config: ${DEFAULT_CONFIG.activeHoursPerDay}h/day active + ${DEFAULT_CONFIG.offlineHoursPerDay}h offline · ` +
+console.log(`config: ${DEFAULT_CONFIG.activeHoursPerDay}h/day active + ${DEFAULT_CONFIG.offlineHoursPerDay}h away (the game counts its cap, 8h) · ` +
   `capture N/S/Z=${DEFAULT_CONFIG.capture.normal}/${DEFAULT_CONFIG.capture.stageBoss}/${DEFAULT_CONFIG.capture.zoneBoss} · seeds=${SEEDS.length}`);
 
 const completed = results.filter((r) => r.completed);
@@ -48,8 +56,9 @@ console.log(`completed ${completed.length}/${results.length} seeds` +
 
 // Per-difficulty headline: cumulative ACTIVE playtime + CALENDAR time to FINISH each difficulty.
 console.log('\n--- time to FINISH each difficulty (cumulative, median across seeds) ---');
-console.log('difficulty\tcap\tactive(play)\tcalendar\tΔ vs prev (calendar)');
+console.log('difficulty\tcap\tactive(play)\tcalendar\tΔ vs prev (calendar)\tactive hours: this difficulty / its target');
 let prevDays = 0;
+let prevActive = 0;
 for (const key of DIFFICULTY_KEYS) {
   const act = results.map((r) => r.difficultyActiveHours[key]).filter((x): x is number => x !== undefined);
   const day = results.map((r) => r.difficultyCalendarDays[key]).filter((x): x is number => x !== undefined);
@@ -60,8 +69,25 @@ for (const key of DIFFICULTY_KEYS) {
   }
   const mDays = median(day);
   const ratio = prevDays > 0 ? `${(mDays / prevDays).toFixed(1)}×` : '—';
-  console.log(`${def.name}\tT${def.tierCap}\t${fmtHours(median(act))}\t${fmtDays(mDays)}\t${ratio}`);
+  const own = median(act) - prevActive;
+  console.log(`${def.name}\tT${def.tierCap}\t${fmtHours(median(act))}\t${fmtDays(mDays)}\t${ratio}\t${own.toFixed(0)} h / ${(DIFFICULTY_HOURS_TARGET[def.index] ?? 0).toFixed(0)} h`);
   prevDays = mDays;
+  prevActive = median(act);
+}
+
+// What active play produced by the end of each difficulty (median across the seeds that got there): the base
+// the pet drop rates and the pet objectives are tuned on (src/data/pets.ts).
+console.log('\n--- active play, cumulative at the END of each difficulty (median across seeds) ---');
+console.log('difficulty\tkills\tbossKills\tgold\txp/hero\tchestsFound\tcommonOpened');
+for (const key of DIFFICULTY_KEYS) {
+  const tallies = results.map((r) => r.difficultyTally[key]).filter((x): x is NonNullable<typeof x> => x !== undefined);
+  if (tallies.length === 0) { console.log(`${DIFFICULTIES[key].name}\t— (not reached)`); continue; }
+  const col = (pick: (t: (typeof tallies)[number]) => number): string => Math.round(median(tallies.map(pick))).toLocaleString('en-US');
+  console.log([DIFFICULTIES[key].name, col((t) => t.kills), col((t) => t.bossKills), col((t) => t.gold), col((t) => t.xp), col((t) => t.chestsFound), col((t) => t.normalChestsOpened)].join('\t'));
+}
+{
+  const col = (pick: (r: ProbeResult) => number): string => Math.round(median(results.map(pick))).toLocaleString('en-US');
+  console.log(['(run end)', col((r) => r.tally.kills), col((r) => r.tally.bossKills), col((r) => r.tally.gold), col((r) => r.tally.xp), col((r) => r.tally.chestsFound), col((r) => r.tally.normalChestsOpened)].join('\t') + `\t· ${col((r) => r.totalActiveHours)} h active`);
 }
 
 // Per-world-boss wall report (from the median seed by total days).
@@ -74,6 +100,54 @@ if (mid !== undefined) {
     console.log([m.world, m.difficulty, m.stage, fmtHours(m.activeHours), fmtDays(m.calendarDays), fmtDays(m.daysOnWorld), m.bossFails, m.partyLevel, `T${m.topTier}`, m.bossKillSec.toFixed(0), m.bossMinHpPct.toFixed(0) + stall].join('\t'));
   }
 }
+
+// PER-WORLD report pooled across seeds (median of the seeds that cleared the world): active hours on the world,
+// how long the party waited at the wall for its first key, hours spent there with no key in hand, and attempts
+// (each attempt spends a key; a failed one loses it).
+console.log('\n--- every world, median across seeds: active hours · wait for the first key · hours without a key · attempts (range of hours) ---');
+console.log('world\tdiff\ttarget\thours(mean)\thours(median)\tfirstKey\tkeyless\tattempts(mean)\tlvl\ttopTier\t(hours range)');
+for (let w = 1; w <= 50; w++) {
+  const ms = results.map((r) => r.milestones.find((m) => m.world === w)).filter((m): m is NonNullable<typeof m> => m !== undefined);
+  if (ms.length === 0) break;
+  const hrs = ms.map((m) => m.hoursOnWorld);
+  const avg = (xs: number[]): number => xs.reduce((a, b) => a + b, 0) / xs.length;
+  console.log([w, ms[0]?.difficulty, (WORLD_HOURS_TARGET[w - 1] ?? 0).toFixed(1), avg(hrs).toFixed(1), median(hrs).toFixed(1), median(ms.map((m) => m.firstKeyHours)).toFixed(1), median(ms.map((m) => m.keylessHours)).toFixed(1),
+    avg(ms.map((m) => m.bossFails + 1)).toFixed(1), median(ms.map((m) => m.partyLevel)).toFixed(0), `T${median(ms.map((m) => m.topTier)).toFixed(0)}`,
+    `(${Math.min(...hrs).toFixed(1)}-${Math.max(...hrs).toFixed(1)}, n=${ms.length})`].join('\t'));
+}
+// WHY each difficulty is as long as it is: what the party wore when each wall fell (median across seeds, then the
+// mean over the difficulty's ten walls) — slots filled, pieces of the wall's own world, mean rarity, gems socketed.
+console.log('\n--- gear worn when the walls fell, by difficulty (mean of its ten walls; medians across seeds) ---');
+console.log('difficulty\tslots/33\tof this world\tof this difficulty\tmean rarity\ttop-rarity pieces\tgems/sockets\tlevel');
+for (let d = 0; d < 5; d++) {
+  const rowsOf: number[][] = [];
+  for (let w = d * 10 + 1; w <= d * 10 + 10; w++) {
+    const ms = results.map((r) => r.milestones.find((m) => m.world === w)).filter((m): m is NonNullable<typeof m> => m !== undefined);
+    if (ms.length === 0) continue;
+    rowsOf.push([median(ms.map((m) => m.gear.slots)), median(ms.map((m) => m.gear.ofThisWorld)), median(ms.map((m) => m.gear.ofThisDifficulty)), median(ms.map((m) => m.gear.meanTier)),
+      median(ms.map((m) => m.gear.topTierPieces)), median(ms.map((m) => m.gear.gems)), median(ms.map((m) => m.gear.sockets)), median(ms.map((m) => m.partyLevel))]);
+  }
+  if (rowsOf.length === 0) continue;
+  const avgOf = (k: number): number => rowsOf.reduce((a, r) => a + (r[k] ?? 0), 0) / rowsOf.length;
+  console.log([DIFFICULTY_KEYS[d], avgOf(0).toFixed(0), avgOf(1).toFixed(1), avgOf(2).toFixed(1), avgOf(3).toFixed(2), avgOf(4).toFixed(1), `${avgOf(5).toFixed(0)}/${avgOf(6).toFixed(0)}`, avgOf(7).toFixed(0)].join('\t'));
+}
+// THE WALLS ONE BY ONE: what the party wore when each fell and how the fight went (medians across seeds). With
+// PROBE_GEAR=1: its gear % of the zone and the wall's share of the zone set (the gear % that kills at exactly 60 s).
+console.log('\n--- each wall when it fell (medians across seeds): the fight and the gear ---');
+console.log('world\tdiff\tlevel\tattempts(mean)\tfight s\tmin HP %\tslots/33\tof this world\tof this difficulty\tmean rarity\ttop-rarity pieces\tgems/sockets\tgear % of the zone\twall = % of the zone set');
+for (let w = 1; w <= 50; w++) {
+  const ms = results.map((r) => r.milestones.find((m) => m.world === w)).filter((m): m is NonNullable<typeof m> => m !== undefined);
+  if (ms.length === 0) break;
+  const med = (pick: (m: (typeof ms)[number]) => number): number => median(ms.map(pick));
+  const opt = (pick: (m: (typeof ms)[number]) => number | undefined): string => {
+    const xs = ms.map(pick).filter((x): x is number => x !== undefined);
+    return xs.length > 0 ? median(xs).toFixed(0) : '—';
+  };
+  console.log([w, ms[0]?.difficulty, med((m) => m.partyLevel).toFixed(0), (ms.reduce((a, m) => a + m.bossFails + 1, 0) / ms.length).toFixed(1), med((m) => m.bossFightSec).toFixed(0), med((m) => m.bossMinHpPct).toFixed(0),
+    med((m) => m.gear.slots).toFixed(0), med((m) => m.gear.ofThisWorld).toFixed(0), med((m) => m.gear.ofThisDifficulty).toFixed(0), med((m) => m.gear.meanTier).toFixed(2), med((m) => m.gear.topTierPieces).toFixed(0),
+    `${med((m) => m.gear.gems).toFixed(0)}/${med((m) => m.gear.sockets).toFixed(0)}`, opt((m) => m.gearPct), opt((m) => m.wallPct)].join('\t'));
+}
+console.log('seeds, total calendar days: ' + results.map((r) => `${r.seed}:${r.completed ? r.totalCalendarDays : `stalled@${r.stalledAtStage}`}`).join(' · '));
 
 // PER-GATE report (median ACROSS seeds) — the x-10 difficulty walls. Single-seed per-world
 // days are pure RNG noise (the shared loot stream reshuffles on any upstream change), so the

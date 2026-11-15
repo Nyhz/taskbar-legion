@@ -4,7 +4,7 @@ import { getBonuses } from '@/sim/bonuses';
 import { resumeStageFor, highestUnlockedWorld, worldFirstStage } from '@/data/stageScaling';
 import { godHero } from './_helpers';
 
-const ctx: TickContext = { bonuses: getBonuses({}, []), ownedPetKeys: [] };
+const ctx: TickContext = { bonuses: getBonuses({}, {}), ownedPetKeys: [] };
 
 describe('zone-key gate (W-10)', () => {
   it('W-9 does not auto-advance to W-10 without a key', () => {

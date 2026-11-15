@@ -11,6 +11,7 @@ import { StripOverlay } from '@/ui/overlay/StripOverlay';
 import { LootToasts } from '@/ui/overlay/LootToasts';
 import { revealAllChests } from '@/ui/loot/revealLoot';
 import { OfflineSummaryModal } from '@/ui/components/OfflineSummaryModal';
+import { PetFoundNotice } from '@/ui/overlay/PetFoundNotice';
 import { RenderErrorPanel } from '@/ui/components/RenderErrorPanel';
 import { isTauri } from '@/platform/tauri';
 import { startOverlayDrag } from '@/platform/desktopOverlay';
@@ -205,6 +206,8 @@ export function GameView({ bootSave, onReady }: { bootSave: SaveV1 | null; onRea
           {/* Loot toasts live here (above the panels via their own zIndex) so an open
               menu can't hide them; anchored to the bottom of this zone, over the strip. */}
           <LootToasts />
+          {/* A new pet: its own notice over the strip (rare — not a loot line). */}
+          <PetFoundNotice />
         </div>
         {/* The whole strip — HUD bar + combat canvas + overlay — is ONE unit, authored at the
             baseline (×uiScale) size and `zoom`-scaled by gameScale so it all moves in lockstep.

@@ -41,7 +41,7 @@ export function buildSave(): SaveV1 {
     chests: world ? world.chests.map((c) => ({ ...c })) : s.chests,
     zoneKeys: { ...s.zoneKeys },
     autoOpen: s.autoOpen,
-    pets: { ownedKeys: s.ownedPets, selectedKey: s.selectedPet },
+    pets: { ownedKeys: s.ownedPets, selectedKey: s.selectedPet, progress: { ...s.petProgress } },
     settings: { uiScale: s.uiScale, dockOrientation: s.dockOrientation, autoSalvage: s.autoSalvage },
     cube: { unlocked: false },
     online: { accountId: null, premiumCurrency: 0, premiumUntil: null },

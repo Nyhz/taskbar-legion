@@ -3,17 +3,20 @@ import { buildHeroCombatant, refreshHeroLoadout } from '@/sim/loadout';
 import { heroConfig, partyCombatMods } from '@/sim/partyStats';
 import { getBonuses, type Bonuses } from '@/sim/bonuses';
 import { openType, autoOpenIntervalMs } from '@/sim/chests';
+import { petMaxRank, type PetFacts } from '@/sim/pets';
 import { countFilled } from '@/sim/slots';
 import { simulateOffline, type OfflineSummary } from '@/sim/offline';
 import type { CombatEvent } from '@/sim/combat';
 import type { WorldState } from '@/sim/world';
 import type { ItemInstance } from '@/sim/items';
 import type { GemInstance } from '@/data/gems';
-import { CHEST_CONFIG, type ChestType } from '@/data/chests';
+import { CHEST_CONFIG, chestCountOf, type ChestType } from '@/data/chests';
+import type { PetObjectiveKind } from '@/data/pets';
 import { worldOf, stageInWorld } from '@/data/stageScaling';
 import { HERO_SPACING } from '@/data/field';
+import { stageSignHeld } from './stageSign';
 import { useStore } from '@/state/store';
-import { t } from '@/i18n';
+import { petName, t } from '@/i18n';
 import { KIT_TOKENS } from '@/ui/kit/tokens';
 import { encodeLootLine } from '@/ui/loot/lootLine';
 
@@ -24,6 +27,8 @@ import { encodeLootLine } from '@/ui/loot/lootLine';
 // accrual back into the store once per frame.
 
 const MAX_CATCHUP_TICKS = 5;
+/** Play time reaches the pets' objectives in steps of this long (the other facts as they happen). */
+const PET_TIME_STEP_MS = 1000;
 
 export class GameEngine {
   private readonly sim: Simulation;
@@ -31,13 +36,14 @@ export class GameEngine {
   private appliedEpoch = -1;
   private accMs = 0;
   private lootDraws: number; // monotonic count of chests opened — the counter-based loot cursor
+  private petTimeMs = 0; // active play not yet counted towards the pets' objectives
 
   constructor() {
     const st = useStore.getState();
     // Resume the chest-open counter where the last save left off (so loot keeps rolling
     // forward instead of replaying); each open derives its rng from (seed, drawIndex).
     this.lootDraws = st.lootDrawCount;
-    this.bonuses = getBonuses(st.techRanks, st.ownedPets);
+    this.bonuses = getBonuses(st.techRanks, st.petRanks);
     const combatMods = partyCombatMods(st.roster, this.bonuses.combatMods); // the same mods the interface shows (sim/partyStats)
     const heroes = st.roster.map((h) => buildHeroCombatant(heroConfig(h), combatMods));
     const world = createWorld(st.seed, heroes);
@@ -67,6 +73,8 @@ export class GameEngine {
     const events: CombatEvent[] = [];
     let gold = 0;
     let xp = 0;
+    let bossKills = 0;
+    let chestsFound = 0;
     const pets: string[] = [];
     let steps = 0;
     while (this.accMs >= TICK_MS && steps < MAX_CATCHUP_TICKS) {
@@ -74,9 +82,14 @@ export class GameEngine {
       const p = this.sim.world.pending;
       gold += p.gold;
       xp += p.xp;
+      bossKills += p.bossKills;
+      chestsFound += p.chestsFound;
       pets.push(...p.petDrops);
       p.gold = 0;
       p.xp = 0;
+      p.kills = 0;
+      p.bossKills = 0;
+      p.chestsFound = 0;
       p.petDrops = [];
       this.accMs -= TICK_MS;
       steps += 1;
@@ -88,7 +101,13 @@ export class GameEngine {
     // Only heroes alive at the end of this batch earn XP — the dead sit it out until
     // they respawn (a fallen hero must NOT level while the rest fight on).
     if (xp > 0) store.gainExp(xp, this.sim.world.heroes.filter((h) => h.alive).map((h) => h.id));
-    for (const pet of pets) store.addPet(pet);
+    // What this frame's play adds to the owned pets' objectives — counted BEFORE a pet found this frame joins,
+    // so a pet's objective only counts what happens after it is found.
+    this.petTimeMs += steps * TICK_MS;
+    const timePlayed = this.petTimeMs >= PET_TIME_STEP_MS ? this.petTimeMs : 0;
+    this.petTimeMs -= timePlayed;
+    this.notePets({ goldEarned: gold, xpEarned: xp, bossesDefeated: bossKills, chestsFound, timePlayed });
+    for (const pet of pets) store.addPet(pet); // the store raises the "new pet" notice (ui/overlay/PetFoundNotice)
     this.autoOpen();
     this.mirror();
     this.pushHud();
@@ -103,9 +122,15 @@ export class GameEngine {
     const store = useStore.getState();
     if (summary.gold > 0) store.addGold(summary.gold);
     if (summary.xp > 0) store.gainExp(summary.xp);
-    this.sim.world.pending.gold = 0;
-    this.sim.world.pending.xp = 0;
-    this.sim.world.pending.petDrops = [];
+    // Away-time banks gold and experience only, so of the pets' objectives only those two advance.
+    this.notePets({ goldEarned: summary.gold, xpEarned: summary.xp });
+    const p = this.sim.world.pending;
+    p.gold = 0;
+    p.xp = 0;
+    p.kills = 0;
+    p.bossKills = 0;
+    p.chestsFound = 0;
+    p.petDrops = [];
     this.mirror();
     this.pushHud();
     return summary;
@@ -116,8 +141,10 @@ export class GameEngine {
    *  any KEYS are credited here (silent to the reveal) and also returned for a toast. */
   openChestType(type: ChestType): { items: ItemInstance[]; gems: GemInstance[]; keys: Record<number, number> } {
     const draw = { seed: this.sim.world.seed, n: this.lootDraws };
+    const opened = chestCountOf(this.sim.world.chests, type);
     const loot = openType(this.sim.world, type, draw, this.bonuses);
     this.lootDraws = draw.n;
+    if (type === 'normal') this.notePets({ commonChestsOpened: opened });
     // Manually cracking chests RESETS the auto-open countdown (it only runs when chests have
     // sat unopened for the full interval) — so a player who tends their loot pushes it back.
     const store = useStore.getState();
@@ -125,6 +152,19 @@ export class GameEngine {
     if (store.autoOpen.unlocked) store.setAutoOpen({ unlocked: true, lastRunAt: this.sim.world.tick * TICK_MS });
     this.mirror();
     return { items: loot.items, gems: loot.gems, keys: loot.keys };
+  }
+
+  /** Count facts towards the owned pets' objectives and announce every rank gained (a loot line over the strip). */
+  private notePets(facts: Partial<Record<PetObjectiveKind, number>>): void {
+    const store = useStore.getState();
+    if (store.ownedPets.length === 0) return;
+    const counted: PetFacts = Object.fromEntries(Object.entries(facts).filter(([, n]) => n > 0));
+    if (Object.keys(counted).length === 0) return;
+    for (const key of store.notePetFacts(counted)) {
+      const rank = useStore.getState().petRanks[key] ?? 1;
+      const text = rank >= petMaxRank(key) ? t('overlay.petRankMax', { pet: petName(key) }) : t('overlay.petRank', { pet: petName(key), rank });
+      store.pushLootToast({ text: encodeLootLine({ text, sign: 'pet_sign_paw' }), color: KIT_TOKENS.gold }); // a 16 px sign: the pet's own portrait is 36
+    }
   }
 
   private autoOpen(): void {
@@ -148,7 +188,8 @@ export class GameEngine {
     const st = useStore.getState();
     // The live game plays the full death cinematic on a wipe (fade to black, phrase, respawn).
     // Headless balance probes omit it (instant retreat) so the beat doesn't distort throughput.
-    return { bonuses: this.bonuses, ownedPetKeys: st.ownedPets, retryStage: st.retryStage, animateWipe: true };
+    // The same goes for the beat a fallen boss gets before the stage moves on (animateBossDown).
+    return { bonuses: this.bonuses, ownedPetKeys: st.ownedPets, retryStage: st.retryStage, animateWipe: true, animateBossDown: true };
   }
 
   // Consume a pending Map "travel" intent: jump the sim to the chosen stage once,
@@ -189,7 +230,7 @@ export class GameEngine {
     const st = useStore.getState();
     if (st.configEpoch === this.appliedEpoch) return;
     this.appliedEpoch = st.configEpoch;
-    this.bonuses = getBonuses(st.techRanks, st.ownedPets);
+    this.bonuses = getBonuses(st.techRanks, st.petRanks);
     const combatMods = partyCombatMods(st.roster, this.bonuses.combatMods); // the same mods the interface shows (sim/partyStats)
     const world = this.sim.world;
     const byId = new Map(world.heroes.map((h) => [h.id, h]));
@@ -204,7 +245,7 @@ export class GameEngine {
       }
       // A newly-recruited hero drops straight into its OWN formation slot behind the tank
       // (partyX - i·HERO_SPACING), not onto the lead anchor — so it materialises in place
-      // (the render layer plays the respawn teleport-in) instead of stacking on the tank
+      // (the render layer plays its arrival: render/arrival) instead of stacking on the tank
       // and walking back into line.
       const fresh = buildHeroCombatant(heroConfig(h), combatMods);
       fresh.x = world.partyX - i * HERO_SPACING;
@@ -236,6 +277,7 @@ export class GameEngine {
       clockMs: w.tick * TICK_MS,
       party: useStore.getState().roster.map((h) => ({ classKey: h.classKey, level: h.level })),
       zoneKeysHeld: useStore.getState().zoneKeysFor(w.globalStageIndex),
+      stageSignHeld: stageSignHeld(w),
     });
   }
 }

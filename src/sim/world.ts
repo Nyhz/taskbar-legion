@@ -53,7 +53,8 @@ export interface Combatant {
   enemyMagic?: boolean;
   isBoss?: boolean;
   isElite?: boolean; // a beefed-up "champion" trash mob (2× hp/dmg, 2× chest) — render bigger
-  enrageMs?: number; // enrage window for this boss (Infinity = never; zone boss = 30s)
+  backShotChance?: number; // enemy-only: share of its basic attacks that go for a hero behind the front one (data/enemies)
+  enrageMs?: number; // enrage window for this boss (Infinity = never; bosses = 60 s)
   bossUltTriggered?: boolean; // boss-only: the party's onBossEngage ults have fired for this boss
   // Channeled cast in progress (world-boss Frenzy / Mortal Wound): the ability winds up
   // `totalMs` (the cast bar) before its effect resolves. While set, the boss starts no new
@@ -91,6 +92,11 @@ export interface PendingAccrual {
   gold: number;
   xp: number;
   petDrops: string[];
+  /** Facts of active play the state layer counts (pet objectives, the balance probe): enemies and bosses
+   *  defeated and chests that dropped into storage. Away-time banks gold/xp only, so it adds none of these. */
+  kills: number;
+  bossKills: number;
+  chestsFound: number;
 }
 
 export interface WorldState {
@@ -102,7 +108,7 @@ export interface WorldState {
    *  travelling back to farm). Drives the travel-unlock set + the refresh resume
    *  point. 0 = no boss beaten yet. */
   maxClearedStage: number;
-  wavesThisStage: number; // cleared waves (0..WAVES_PER_STAGE) → each = 5% progress
+  wavesThisStage: number; // cleared waves (0..wavesPerStage of its difficulty) → the stage's progress
   stageProgress: number; // 0..1 toward boss spawn
   phase: StagePhase;
   heroes: Combatant[];
@@ -121,8 +127,11 @@ export interface WorldState {
    *  into the sequence (0 → WIPE_TOTAL_MS). The render reads it to drive the fade-to-black,
    *  phrase, and respawn beats. undefined = not wiping. */
   wipeMs?: number;
+  /** A boss lies fallen and the stage waits for its death to be seen (data/field BOSS_DOWN_MS; live game only).
+   *  `firstClear` is what the clear will do once the beat ends — the cleared stage itself is banked at the kill. */
+  bossDown?: { ms: number; totalMs: number; firstClear: boolean };
 }
 
 export function emptyPending(): PendingAccrual {
-  return { gold: 0, xp: 0, petDrops: [] };
+  return { gold: 0, xp: 0, petDrops: [], kills: 0, bossKills: 0, chestsFound: 0 };
 }

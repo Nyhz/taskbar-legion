@@ -152,4 +152,16 @@ describe('ClipPlayer', () => {
     p.act('cleave', false, 1, 5000);
     expect([p.clip, p.frame]).toEqual(['cleave', 4]);
   });
+
+  it('hurries a clip that has only just started, and no other', () => {
+    const p = new ClipPlayer(ANIMS);
+    p.act('attack');
+    expect(p.hurry('cleave', 2)).toBe(false); // not the clip on screen
+    p.advance(60, false); // one frame of the app: still "only just started"
+    expect(p.hurry('attack', 2)).toBe(true); // starts again from its first frame, at double speed
+    expect(p.frame).toBe(0);
+    p.advance(250, false); // 500 ms of clip time
+    expect(p.frame).toBe(5);
+    expect(p.hurry('attack', 1)).toBe(false); // already under way
+  });
 });

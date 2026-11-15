@@ -47,8 +47,23 @@ describe('frontSetback', () => {
         if (back > 0) moved.push(creature.key);
       }
     }
-    // The figures this exists for: the Forge Wyrm (mostly head and jaws) and the Unmaker's wings.
+    // The figure this exists for: the Forge Wyrm (mostly head and jaws). (The Unmaker's wings needed it too while
+    // he was world 10's stage boss; he is its world boss now, covered by the no-setback test below.)
     expect(moved).toContain('magmawyrm');
-    expect(moved).toContain('unmaker');
+  });
+
+  it('a world boss with a figure of its own is drawn where the simulation has it: no setback', () => {
+    // sim/stages.spawnZoneBoss gives a world boss a reach of RANGE.melee + 60, and that reach is what GameStrip
+    // passes here. Its figure is drawn to stand at its root (its feet under it, its head over the hero who closes
+    // in), so it must fit that reach untouched — a setback would pull the body away from where its blows land.
+    const reach = RANGE.melee + 60;
+    for (const world of WORLDS) {
+      if (world.worldBoss === undefined) continue;
+      const meta = figureMeta(world.worldBoss.key);
+      expect(meta, world.worldBoss.key).toBeDefined();
+      if (meta === undefined) continue;
+      expect(meta.box[2] + heroFrontReach(), world.worldBoss.key).toBeLessThanOrEqual(reach);
+      expect(frontSetback(meta, reach), world.worldBoss.key).toBe(0);
+    }
   });
 });

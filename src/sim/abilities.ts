@@ -8,7 +8,7 @@ import { applyEffect, absorbDamage, isSilenced, isInvulnerable, vulnerabilityMul
 import { dealtMult, liveStats } from './liveStats';
 import { onCrit, type TriggerCtx } from './triggers';
 import { classDef } from '@/data/classes';
-import { mitigation, MAX_DAMAGE_REDUCTION } from '@/data/stageScaling';
+import { mitigation, enrageMultiplier, MAX_DAMAGE_REDUCTION } from '@/data/stageScaling';
 import { healPowerEffectiveness } from '@/data/difficulties';
 
 // Cooldown tracking + AI cast logic. Abilities apply declarative effects; power
@@ -190,6 +190,12 @@ function hasActiveShield(c: Combatant, shieldKey: string): boolean {
   return c.effects.some((e) => e.defKey === shieldKey && e.remainingMs > 0 && e.value > 0);
 }
 
+/** The living foes other than `front` — who a shot aimed behind the front line can land on (the back line
+ *  takes damage: docs/DIFFICULTY.md §5b). */
+export function foesBehind(front: Combatant, foes: readonly Combatant[]): Combatant[] {
+  return foes.filter((f) => f.alive && f !== front);
+}
+
 function selectTargets(caster: Combatant, target: AbilityTarget, allies: Combatant[], enemies: Combatant[], rng: Rng): Combatant[] {
   switch (target) {
     case 'self':
@@ -206,6 +212,15 @@ function selectTargets(caster: Combatant, target: AbilityTarget, allies: Combata
     case 'frontEnemy': {
       const front = enemies.find((e) => e.alive && inRange(caster, e));
       return front ? [front] : [];
+    }
+    case 'backEnemy': {
+      // A shot lofted over the front line (an archer's Arcing Shot): gated on the FRONT foe being in reach,
+      // like a basic attack, then lands on one of the foes behind it, picked at random — on the front one when
+      // nobody stands behind (no roll then, so a lone hero's fight draws the same numbers as before).
+      const front = enemies.find((e) => e.alive && inRange(caster, e));
+      if (front === undefined) return [];
+      const behind = foesBehind(front, enemies);
+      return [behind.length > 0 ? rng.pick(behind) : front];
     }
     case 'meleeEnemies':
       // A melee cleave (Knight's Debilitating Cleave): hits + debuffs EVERY living enemy
@@ -323,6 +338,12 @@ function applyToTarget(
       const ts = liveStats(target);
       const defense = caster.enemyMagic === true ? ts.magicResist : ts.armor;
       dmg *= weakenMult(caster.effects); // a Debilitated enemy's spells hit softer too
+      // A blow that takes the place of the boss's swings (holdsAttack) carries, ON ITS MAIN TARGET, the enrage
+      // those swings would have had — otherwise winding it up would be a rest for the tank once the boss is
+      // enraged. The splash on the heroes behind is not enraged: the enrage stays the tank's to hold.
+      if (ability.holdsAttack === true && caster.isBoss === true && coeffOverride === undefined) {
+        dmg *= enrageMultiplier(caster.fightMs ?? 0, caster.enrageMs ?? Number.POSITIVE_INFINITY);
+      }
       dmg *= 1 - mitigation(Math.max(0, defense), S);
       dmg *= 1 - Math.min(MAX_DAMAGE_REDUCTION, Math.max(0, ts.damageReduction)) / 100; // flat % off (e.g. shields/DR buffs)
     } else {
@@ -334,7 +355,10 @@ function applyToTarget(
     target.hp -= dmg;
     // Tag the source ability so the render layer can pick the caster's ability-cast swing
     // (e.g. the knight's heavy 3rd attack) instead of a basic auto.
-    events.push({ type: 'damage', targetId: target.id, sourceId: caster.id, amount: dmg, crit, abilityKey: ability.key });
+    // An enemy's area blow reaching the heroes behind the front one is a SPLASH hit: the strip shows its number
+    // without replaying the attacker's swing (hero splashes keep their own presentation).
+    const splash = caster.side === 'enemy' && coeffOverride !== undefined ? true : undefined;
+    events.push({ type: 'damage', targetId: target.id, sourceId: caster.id, amount: dmg, crit, abilityKey: ability.key, splash });
     return;
   }
   if (kind === 'heal') {

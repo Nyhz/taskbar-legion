@@ -2,10 +2,10 @@ import { describe, it, expect } from 'vitest';
 import { Simulation, createWorld, type TickContext } from '@/sim/Simulation';
 import { getBonuses } from '@/sim/bonuses';
 import { activeHeroAbilities } from '@/sim/loadout';
-import { RESPAWN_MS, WIPE_TOTAL_MS } from '@/data/field';
+import { RESPAWN_MS, WIPE_ARRIVE_AT_MS, WIPE_TOTAL_MS } from '@/data/field';
 import { godHero } from './_helpers';
 
-const ctx: TickContext = { bonuses: getBonuses({}, []), ownedPetKeys: [] };
+const ctx: TickContext = { bonuses: getBonuses({}, {}), ownedPetKeys: [] };
 const animCtx: TickContext = { ...ctx, animateWipe: true }; // live-game wipe cinematic
 const WIPE_TICKS = WIPE_TOTAL_MS / 100; // ticks the cinematic runs before the party respawns
 const RESPAWN_TICKS = RESPAWN_MS / 100;
@@ -50,7 +50,17 @@ describe('death → respawn', () => {
     expect(a.alive).toBe(false);
     expect(world.wipeMs).toBeDefined();
 
-    for (let i = 0; i < WIPE_TICKS + 1; i++) sim.tick(animCtx); // run out the cinematic → revive together
+    // The party stays down while the strip is black and while the stage's sign has the empty stage to itself…
+    for (let i = 0; i < WIPE_ARRIVE_AT_MS / 100 - 2; i++) sim.tick(animCtx);
+    expect(a.alive).toBe(false);
+    expect(world.wipeMs).toBeLessThan(WIPE_ARRIVE_AT_MS);
+    // …is revived, in formation, when its arrival starts — the cinematic still running, no fight yet…
+    for (let i = 0; i < 3; i++) sim.tick(animCtx);
+    expect(a.alive).toBe(true);
+    expect(b.alive).toBe(true);
+    expect(world.wipeMs).toBeDefined();
+    expect(world.enemies).toEqual([]);
+    for (let i = 0; i < WIPE_TICKS + 1; i++) sim.tick(animCtx); // …and the cinematic runs out
     expect(world.wipeMs).toBeUndefined();
     expect(a.alive).toBe(true);
     expect(b.alive).toBe(true);

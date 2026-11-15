@@ -291,7 +291,7 @@ export const createInventorySlice: StateCreator<GameStore, [], [], InventorySlic
     const inputs = found.map((r) => r.entry);
 
     // Base 5% +2-tier chance + the Transmuter's Fortune tech bonus (capped at +5%).
-    const doubleChance = SYNTH_DOUBLE_TIER_CHANCE + getBonuses(s.techRanks, s.ownedPets).synthDoubleChance;
+    const doubleChance = SYNTH_DOUBLE_TIER_CHANCE + getBonuses(s.techRanks, s.petRanks).synthDoubleChance;
 
     // All-items or all-gems; mixed batches are rejected.
     let out: InvEntry | null = null;

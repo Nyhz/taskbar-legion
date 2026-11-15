@@ -13,14 +13,14 @@ import {
   BOSS_INCOME_MULT,
   ZONE_BOSS_INCOME_MULT,
   ELITE_CHEST_MULT,
-  WAVES_PER_STAGE,
+  wavesPerStage,
   isPreZoneGate,
   isZoneBossStage,
   worldOf,
   worldFirstStage,
 } from '@/data/stageScaling';
 import { isFinalStage } from '@/data/difficulties';
-import { WALK_SPEED, SPAWN_AHEAD, HERO_SPACING, TELEPORT_HOLD_MS, WIPE_RETREAT_AT_MS, WIPE_TOTAL_MS } from '@/data/field';
+import { WALK_SPEED, SPAWN_AHEAD, HERO_SPACING, TELEPORT_HOLD_MS, WIPE_RETREAT_AT_MS, WIPE_ARRIVE_AT_MS, WIPE_TOTAL_MS, BOSS_DOWN_MS } from '@/data/field';
 import type { ChestType } from '@/data/chests';
 
 // The fixed-timestep simulation loop. Owns WorldState; tick() advances combat,
@@ -38,6 +38,9 @@ export interface TickContext {
   // black + phrase, respawn) over WIPE_TOTAL_MS. Omitted (headless balance probes) ⇒ retreat
   // + revive instantly the same tick, so the animation beat doesn't skew throughput.
   animateWipe?: boolean;
+  // When true (live game), a fallen boss gets its beat before the stage moves on (data/field BOSS_DOWN_MS:
+  // the party stands while its death is seen). Omitted (headless probes, tests) ⇒ the clear is instant.
+  animateBossDown?: boolean;
   // Offline catch-up: bank gold/XP ONLY. No chests, no pet drops, and the stage is frozen
   // (clears re-farm in place; wipes hold the stage) — offline never advances or retreats the
   // frontier. Active play is the only way to progress stages or earn loot.
@@ -86,15 +89,22 @@ export class Simulation {
     this.tickRespawns(); // count down fallen heroes; revive if the party still stands
 
     if (w.wipeMs !== undefined) {
-      // A full-party-wipe cinematic is playing — no combat / no rng. Advance the sequence:
-      // RETREAT (stage drop + clear the field) the moment it goes fully black so the swap is
-      // hidden, then REVIVE + resume at the end. Heroes stay dead throughout.
+      // A full-party-wipe cinematic is playing — no combat / no rng. Advance the sequence (data/field):
+      // RETREAT (stage drop + clear the field) the moment it goes fully black so the swap is hidden; REVIVE the
+      // party in formation at WIPE_ARRIVE_AT, after the stage's sign has had the empty stage to itself (the
+      // strip then shows the heroes arriving); and let the fight resume at the end.
       const prev = w.wipeMs;
       w.wipeMs += TICK_MS;
       if (prev < WIPE_RETREAT_AT_MS && w.wipeMs >= WIPE_RETREAT_AT_MS) this.retreatAfterWipe(ctx.retryStage === true || ctx.offline === true);
-      if (w.wipeMs >= WIPE_TOTAL_MS) {
-        w.wipeMs = undefined;
-        this.resumeAfterWipe();
+      if (prev < WIPE_ARRIVE_AT_MS && w.wipeMs >= WIPE_ARRIVE_AT_MS) this.resumeAfterWipe();
+      if (w.wipeMs >= WIPE_TOTAL_MS) w.wipeMs = undefined;
+    } else if (w.bossDown !== undefined) {
+      // A boss lies fallen: no combat / no rng, the party stands. When the beat ends the clear goes through.
+      w.bossDown.ms += TICK_MS;
+      if (w.bossDown.ms >= w.bossDown.totalMs) {
+        const { firstClear } = w.bossDown;
+        w.bossDown = undefined;
+        this.handleClear(false, firstClear);
       }
     } else if (w.phase === 'advancing') {
       w.partyX += (WALK_SPEED * TICK_MS) / 1000; // walk forward (camera scrolls)
@@ -105,7 +115,7 @@ export class Simulation {
         // defensively so a stray advancing state can't run normal waves there (§14).
         if (isZoneBossStage(w.globalStageIndex)) {
           // hold (no spawn) — should be unreachable; entry sets phase='zoneBoss' directly
-        } else if (w.wavesThisStage >= WAVES_PER_STAGE) spawnStageBoss(w, this.rng);
+        } else if (w.wavesThisStage >= wavesPerStage(w.globalStageIndex)) spawnStageBoss(w, this.rng);
         else spawnWave(w, this.rng);
       }
     } else {
@@ -113,10 +123,10 @@ export class Simulation {
       events = resolveCombatTick(w, TICK_MS, this.rng);
       this.processDeaths(events, ctx);
       if (w.heroes.every((h) => !h.alive)) this.beginWipe(ctx);
-      else if (w.waveQueue.length === 0 && w.enemies.length > 0 && w.enemies.every((e) => !e.alive)) this.handleClear(ctx.offline === true);
+      else if (w.waveQueue.length === 0 && w.enemies.length > 0 && w.enemies.every((e) => !e.alive)) this.beginClear(ctx);
     }
 
-    w.stageProgress = Math.min(1, w.wavesThisStage / WAVES_PER_STAGE);
+    w.stageProgress = Math.min(1, w.wavesThisStage / wavesPerStage(w.globalStageIndex));
     w.rngState = this.rng.state();
     return events;
   }
@@ -186,15 +196,34 @@ export class Simulation {
     // Offline catch-up banks gold/XP ONLY — no loot (chests) and no pet drops.
     if (ctx.offline === true) return;
 
+    if (enemy.isBoss) w.pending.bossKills += 1;
+    else w.pending.kills += 1;
+
     const chestType: ChestType = enemy.isBoss ? (isZone ? 'zoneBoss' : 'stageBoss') : 'normal';
-    tryAccrueChest(w, chestType, this.rng, ctx.bonuses, enemy.isElite === true ? ELITE_CHEST_MULT : 1);
+    if (tryAccrueChest(w, chestType, this.rng, ctx.bonuses, enemy.isElite === true ? ELITE_CHEST_MULT : 1)) w.pending.chestsFound += 1;
 
     const pet = rollPetDrop(enemy.isBoss ? 'boss' : 'enemy', ctx.ownedPetKeys, this.rng);
     if (pet !== null) w.pending.petDrops.push(pet);
   }
 
-  // A wave or boss was fully defeated.
-  private handleClear(offline = false): void {
+  // A wave or boss was fully defeated. In the live game a fallen boss first gets its beat (BOSS_DOWN_MS): the
+  // cleared stage is banked NOW — the win must survive the game being closed mid-beat — and the rest of the
+  // clear (heal, the move to the next stage or world) waits in `world.bossDown` until tick() ends the beat.
+  private beginClear(ctx: TickContext): void {
+    const w = this.world;
+    const offline = ctx.offline === true;
+    const beatMs = ctx.animateBossDown !== true || offline ? 0 : w.phase === 'zoneBoss' ? BOSS_DOWN_MS.worldBoss : w.phase === 'boss' ? BOSS_DOWN_MS.stageBoss : 0;
+    if (beatMs <= 0) {
+      this.handleClear(offline);
+      return;
+    }
+    const firstClear = w.globalStageIndex > w.maxClearedStage;
+    w.maxClearedStage = Math.max(w.maxClearedStage, w.globalStageIndex);
+    w.bossDown = { ms: 0, totalMs: beatMs, firstClear };
+  }
+
+  // The clear itself. `firstClearKnown`: what beginClear saw before it banked the stage (after a boss-down beat).
+  private handleClear(offline = false, firstClearKnown?: boolean): void {
     const w = this.world;
     if (w.phase === 'fighting') {
       w.wavesThisStage += 1; // each cleared wave = +5% (20 waves → boss)
@@ -215,7 +244,7 @@ export class Simulation {
     }
     // FIRST clear of a stage extends the frontier → auto-advance. RE-clearing an already-
     // beaten stage (the party dropped back to farm it) LOOPS it instead (DIFFICULTY.md §2).
-    const firstClear = w.globalStageIndex > w.maxClearedStage;
+    const firstClear = firstClearKnown ?? w.globalStageIndex > w.maxClearedStage;
     w.maxClearedStage = Math.max(w.maxClearedStage, w.globalStageIndex);
 
     if (w.phase === 'boss') {
@@ -253,6 +282,7 @@ export class Simulation {
     const nineStage = worldFirstStage(world) + 8; // this world's W-9 global index
     if (w.maxClearedStage < nineStage) return false; // W-9 not beaten yet
     w.globalStageIndex = nineStage + 1; // W-10
+    w.bossDown = undefined; // a boss-down beat in progress is over (its win was banked at the kill)
     w.wavesThisStage = 0;
     w.stageProgress = 0;
     w.enemies = [];
@@ -272,6 +302,7 @@ export class Simulation {
     // onto it, which would otherwise run normal waves on an X-10. Redirect to its W-9.
     if (isZoneBossStage(target)) target -= 1;
     const worldChanged = worldOf(target) !== worldOf(w.globalStageIndex);
+    w.bossDown = undefined; // a boss-down beat in progress is over (its win was banked at the kill)
     w.globalStageIndex = target;
     w.wavesThisStage = 0;
     w.stageProgress = 0;

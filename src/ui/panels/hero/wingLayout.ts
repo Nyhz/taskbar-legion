@@ -18,10 +18,9 @@ export const TALENTS_WING_ART = {
   height: WINDOW_FRAME_ART + TALENTS_CONTENT_ART_HEIGHT + WINDOW_SHADOW_ART,
 };
 
-/** Sheet, at its tallest: the head line (20), a gap (4), the two columns of stats, a rule (10), the account
- *  figures, a rule (10), two lines of live effects (34). */
+/** Sheet: the head line (20), a gap (4), the two columns of stats, a rule (10), the account figures. */
 export const SHEET_CONTENT_ART_HEIGHT =
-  20 + 4 + SHEET_MAX_STAT_ROWS * SHEET_STAT_ROW_ART + 10 + SHEET_ACCOUNT_ART_HEIGHT + 10 + 34;
+  20 + 4 + SHEET_MAX_STAT_ROWS * SHEET_STAT_ROW_ART + 10 + SHEET_ACCOUNT_ART_HEIGHT;
 export const SHEET_WING_ART = {
   width: WING_ART_WIDTH,
   height: WINDOW_FRAME_ART + SHEET_CONTENT_ART_HEIGHT + WINDOW_SHADOW_ART,

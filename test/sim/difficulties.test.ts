@@ -12,11 +12,53 @@ import {
   isFinalStage,
   globalStageOf,
   stageLabelOf,
+  tierWeightsAt,
+  STARTER_TIER_WEIGHTS,
 } from '@/data/difficulties';
+
+// The per-world ladder (DIFFICULTY.md §4, user decision 2026-11-15): a difficulty climbs from the previous one's
+// table to its own across its ten worlds.
+describe('the per-world drop ladder', () => {
+  const sum = (ws: readonly number[]): number => ws.reduce((a, b) => a + b, 0);
+
+  it('Normal opens on the starter table: nothing epic or legendary in its first world', () => {
+    for (let S = 1; S <= 10; S++) {
+      expect(tierWeightsAt(S)).toEqual([...STARTER_TIER_WEIGHTS]);
+      expect(tierWeightsAt(S)[3]).toBe(0);
+      expect(tierWeightsAt(S)[4]).toBe(0);
+    }
+    expect(sum(STARTER_TIER_WEIGHTS)).toBe(100);
+  });
+
+  it('a difficulty reaches its own table only in its last world, and the next one starts there', () => {
+    for (let d = 0; d < DIFFICULTY_KEYS.length; d++) {
+      const key = DIFFICULTY_KEYS[d];
+      if (key === undefined) continue;
+      const own = DIFFICULTIES[key].tierWeights;
+      const lastWorld = d * 100 + 91;
+      tierWeightsAt(lastWorld).forEach((w, t) => expect(w).toBeCloseTo(own[t] ?? 0, 9));
+      if (d + 1 < DIFFICULTY_KEYS.length) tierWeightsAt((d + 1) * 100 + 1).forEach((w, t) => expect(w).toBeCloseTo(own[t] ?? 0, 9));
+    }
+  });
+
+  it('every world rolls a full table, and the top rarity climbs world by world', () => {
+    for (let G = 1; G <= MAX_GLOBAL_STAGE; G += 10) expect(sum(tierWeightsAt(G))).toBeCloseTo(100, 9);
+    for (let d = 0; d < DIFFICULTY_KEYS.length; d++) {
+      const key = DIFFICULTY_KEYS[d];
+      if (key === undefined) continue;
+      const cap = DIFFICULTIES[key].tierCap;
+      expect(tierWeightsAt(d * 100 + 1)[cap]).toBe(0); // absent in the first world
+      for (let w = 2; w <= 10; w++) {
+        expect(tierWeightsAt(d * 100 + (w - 1) * 10 + 1)[cap] ?? 0).toBeGreaterThan(tierWeightsAt(d * 100 + (w - 2) * 10 + 1)[cap] ?? 0);
+      }
+      expect(tierWeightsAt(d * 100 + 91)[cap]).toBeCloseTo(2, 9); // its 2 % in the last
+    }
+  });
+});
 
 // The finite-G decomposition (DIFFICULTY.md §2): G = d·100 + (w-1)·10 + p, G∈[1..500].
 
-describe('difficulty drop tables (LOCKED)', () => {
+describe('difficulty drop tables (each is the table of its last world)', () => {
   it('every difficulty table sums to 100', () => {
     for (const k of DIFFICULTY_KEYS) {
       const sum = DIFFICULTIES[k].tierWeights.reduce((a, b) => a + b, 0);

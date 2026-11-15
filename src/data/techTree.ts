@@ -86,11 +86,13 @@ export const TECH_NODES: TechNode[] = [
   // ───────────────────────────── Utility ─────────────────────────────
   // Auto-open: rank 1 UNLOCKS it; each rank also shaves the interval (floored at 60s in
   // chests.ts, so ranks past the floor are wasted — hence a finite cap).
-  node('auto_open', 'Utility', '⚡', 'Auto-Open', 'Unlock auto-open · 15m base, −45s / rank', [{ kind: 'unlockAutoOpen' }, { kind: 'autoOpenReduce', value: 45_000 }], 500, 2.2, 12),
+  node('auto_open', 'Utility', '⚡', 'Auto-Open', 'Unlock auto-open · 30m base, −90s / rank', [{ kind: 'unlockAutoOpen' }, { kind: 'autoOpenReduce', value: 90_000 }], 500, 2.2, 12),
   // Party size: each rank unlocks the next active slot (2 then 3). Hand-priced LOW so the
   // tank·dps·healer trio forms in early world 1 (BALANCE) — NOT behind the deep sink.
-  // costGrowth 2.5 ⇒ slot 2 = 1000g, slot 3 = 2500g.
-  node('party_size', 'Utility', '👥', 'Recruitment', 'Unlock the next party slot', [{ kind: 'partySlot' }], 1000, 2.5, 2),
+  // costGrowth 2.0 ⇒ slot 2 = 300g, slot 3 = 600g (2026-11-15 retune, round 2: Normal is a four-hour stroll of
+  // six-wave stages, so a world yields under 2,000 gold — the trio must form in its first half hour; it was
+  // 1000g/2500g).
+  node('party_size', 'Utility', '👥', 'Recruitment', 'Unlock the next party slot', [{ kind: 'partySlot' }], 300, 2.0, 2),
   // Transmuter's Fortune: each rank adds +0.25% to the Cube's "lucky" Synthesize roll (base
   // 5%), capped at +5% over 20 ranks (so the chance tops out at 10%). EXTREMELY expensive —
   // 50k base × 2.0^rank ⇒ the final ranks cost tens of billions, a true end-game gold sink.

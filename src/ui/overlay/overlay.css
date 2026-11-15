@@ -4,21 +4,17 @@
 .tk-strip > * { position: absolute; }
 .tk-ink { text-shadow: var(--ink), 1px 1px 0 var(--k0); }
 
-/* The boss in front: what it is, its life, and the clock before it enrages. */
-.tk-foe { left: 180px; top: 5px; width: 240px; }
-.tk-foe-top { display: flex; align-items: center; gap: 3px; height: 16px; }
-.tk-foe-top > .nm { font: 12px/12px var(--f-name); color: var(--gold-hi); }
-.tk-foe-clock { position: relative; margin-left: auto; display: flex; align-items: center; color: var(--k9); pointer-events: auto; }
-.tk-foe-clock.late { color: var(--bad); }
-.tk-foe-life { height: 9px; }
-.tk-foe-clock .tk-tip { text-shadow: none; }
-
 /* Corner signs: retry (bottom right), weakened healing (top right). */
 .tk-corner { right: 4px; bottom: 4px; width: 18px; height: 18px; padding: 1px; pointer-events: auto; }
 .tk-corner > img { opacity: .5; }
 .tk-corner.on > img, .tk-corner:hover > img { opacity: 1; }
 .tk-corner.on::after { content: ''; position: absolute; left: 3px; right: 3px; bottom: -1px; height: 1px; background: var(--gold); }
 .tk-corner > .tt { left: auto; right: 0; top: auto; bottom: calc(100% + 3px); }
+/* The arrow to the next stage: over the retry sign, lit (it is only there when it leads somewhere), nudging the way it points. */
+.tk-corner.next { bottom: 24px; }
+.tk-corner.next > img { opacity: 1; animation: tk-next-nudge 1.2s steps(1, end) infinite; }
+.tk-corner.next:hover > img { filter: brightness(1.2); animation: none; }
+@keyframes tk-next-nudge { 0%, 60% { transform: translateX(0); } 70%, 90% { transform: translateX(1px); } }
 .tk-badge { right: 5px; top: 5px; width: 16px; height: 16px; pointer-events: auto; }
 .tk-badge > .tt { left: auto; right: 0; top: calc(100% + 3px); }
 
@@ -51,6 +47,25 @@
 .tk-loot-line { display: flex; align-items: center; gap: 4px; height: 24px; padding-right: 6px; white-space: nowrap; background: rgba(11, 13, 23, .8); }
 .tk-loot-line > img:first-child { margin-left: 4px; }
 .tk-loot-line > .nm { font: 12px/12px var(--f-name); }
+
+/* A new pet was found: a gold-framed plate over the strip, above the loot lines and the open panels. The zone
+   lets clicks through; only the plate takes them (a click sends it away). It rises, glints, stays and fades. */
+.tk-petfound-zone { position: absolute; left: 50%; bottom: 8px; transform: translateX(-50%); z-index: 110; pointer-events: none; }
+.tk-petfound { position: relative; display: flex; align-items: center; gap: 8px; margin-bottom: 30px; padding: 2px 10px 3px 4px; text-align: left; pointer-events: auto; cursor: pointer;
+  border: 10px solid transparent; border-image: url('../../assets/ui/ui_window.png') 10 fill / 10px / 0 stretch;
+  box-shadow: 0 0 0 1px var(--gold), 0 0 0 2px var(--k0), 0 0 0 3px var(--gold-dim), 0 0 0 4px var(--k0);
+  animation: tk-petfound 9s ease-out forwards; }
+.tk-petfound > .art { position: relative; width: 72px; height: 72px; flex: none; background: radial-gradient(closest-side at 50% 62%, rgba(245, 197, 90, .5), rgba(245, 197, 90, .16) 55%, rgba(245, 197, 90, 0) 100%); }
+.tk-petfound > .art > img { position: absolute; left: 0; top: 0; width: 72px; height: 72px; }
+.tk-petfound > .txt { display: flex; flex-direction: column; align-items: flex-start; }
+.tk-petfound .hd { font: 10px/10px var(--f-num); letter-spacing: 1px; text-transform: uppercase; color: var(--gold); }
+.tk-petfound .nm { font: 24px/24px var(--f-title); color: var(--gold-hi); text-shadow: 1px 1px 0 var(--k0); white-space: nowrap; margin-top: 2px; }
+.tk-petfound .bn { display: flex; align-items: center; gap: 3px; height: 16px; margin-top: 3px; font: 10px/10px var(--f-num); color: var(--k9); white-space: nowrap; }
+.tk-petfound .bn > b { font-weight: 400; color: var(--good); }
+.tk-petfound .nt { font: 10px/10px var(--f-num); color: var(--k6); white-space: nowrap; margin-top: 1px; }
+.tk-petfound:hover { filter: brightness(1.08); }
+@keyframes tk-petfound { 0% { opacity: 0; transform: translateY(10px); filter: brightness(2.2); } 4% { opacity: 1; transform: translateY(0); filter: brightness(1.6); }
+  10% { filter: brightness(1); } 92% { opacity: 1; } 100% { opacity: 0; } }
 
 /* Dialogs that sit over everything (the summary of an absence, the graphics failure): one window on the kit's Veil. */
 .tk-away-note { color: var(--k7); line-height: 10px; margin: 2px 0 5px; }

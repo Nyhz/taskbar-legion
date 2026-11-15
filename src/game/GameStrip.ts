@@ -8,22 +8,33 @@ import { StripBackdrop } from './render/StripBackdrop';
 import { STRIP_PATH_Y } from './render/stripBackdropData';
 import { FloatingTextLayer } from './render/FloatingText';
 import { FloatingSignLayer } from './render/FloatingSigns';
-import { ProjectileLayer } from './render/Projectiles';
-import { WorldFxLayer } from './render/WorldFx';
+import { BOSS_DOWN_BLACK, TELEPORT_FROM_BLACK, bossDownBlackAlpha, smoothBeatClock } from './render/bossDown';
+import { wipeLook } from './render/wipeBeat';
+import { arrivalDelayMs } from './render/arrival';
+import { TICK_MS } from '@/sim/Simulation';
+import { ProjectileLayer, lookFlightMs } from './render/Projectiles';
 import { PortalSprite } from './render/PortalSprite';
+import { PORTAL_ENTER_FX, PORTAL_FROM_RIGHT } from './render/portalLook';
+import { ENEMY_Z } from './render/eliteLook';
 import { Delayed } from './render/delayed';
 import { KIT_FONT_PHRASE, applyKitFont } from './render/kitFont';
 import { t, type PlainTextKey } from '@/i18n';
-import { castFx, isWholeWaveCast, FX } from './render/fx';
-import { loadEffectTextures, getFireballFrames } from './render/characterFrames';
+import { castFx, FX } from './render/fx';
 import { creatureRole, enemyRank } from './render/figureData';
 import { loadHeroFigures, worldFigures } from './render/figureTextures';
+import { BLOW_SIGNS, LIGHT_SHOTS, abilityLook, bandCount, type AbilityLook, type BandLook, type CastBurst } from './render/abilityFx';
+import { BlowFxLayer } from './render/BlowFx';
+import { BLOW_PAST_PARTY, FOE_ARC_HEIGHT, FOE_SHOT, WARN_HOT_FROM, areaBlow, burstOffsets, shotGoesOver, warnTiles, waveReachMs, type AreaBlow } from './render/enemyFx';
+import { FxShots } from './render/BodyFx';
+import { loadFx } from './render/fxTextures';
+import { loadStripHud } from './render/stripHudTextures';
+import { HERO_HUD_STEP, HERO_HUD_WIDTH, stackBars } from './render/stripHud';
 import { createPixiApp } from './render/createPixiApp';
 import type { Combatant, CombatEvent, WorldState } from '@/sim/world';
 import { worldOf, stageInWorld, isZoneBossStage } from '@/data/stageScaling';
-import { worldInDifficulty } from '@/data/difficulties';
+import { isFinalStage, worldInDifficulty } from '@/data/difficulties';
 import { CLASS_KEYS } from '@/data/classes';
-import { MOVE_EPS, SPAWN_AHEAD, WALK_SPEED, TELEPORT_HOLD_MS, WIPE_DEAD_MS, WIPE_FADE_MS, WIPE_BLACK_MS, WIPE_RETREAT_AT_MS } from '@/data/field';
+import { MOVE_EPS, SPAWN_AHEAD, WALK_SPEED, TELEPORT_HOLD_MS, TELEPORT_LIFT_AT } from '@/data/field';
 import { hexToNum } from '@/styles/palette';
 import { useStore } from '@/state/store';
 import { isStripDragging } from '@/platform/dragState';
@@ -57,20 +68,7 @@ const CAM_MAX_DT = 0.05; // clamp camera step so a long/backgrounded frame can't
 
 // Death-knell lines shown over the black during a full-party wipe (one picked at random
 // per wipe). Cosmetic flavor — render-only, so Math.random here is fine.
-const TAR_BURN_MS = 5000; // how long Tar Flask's pool stays on the ground (its burn, data/branchEffects fx_tar)
 const WIPE_PHRASES: readonly PlainTextKey[] = ['overlay.wipe1', 'overlay.wipe2', 'overlay.wipe3', 'overlay.wipe4', 'overlay.wipe5'];
-
-// Blackout opacity (0..1) across the wipe cinematic, from elapsed ms: hold clear over the
-// DEAD beat, fade in, hold full black, fade back out, then clear for the bg-only beat.
-function wipeBlackAlpha(ms: number): number {
-  if (ms < WIPE_DEAD_MS) return 0;
-  const f = ms - WIPE_DEAD_MS;
-  if (f < WIPE_FADE_MS) return f / WIPE_FADE_MS; // fade in
-  if (f < WIPE_FADE_MS + WIPE_BLACK_MS) return 1; // full black
-  const o = f - WIPE_FADE_MS - WIPE_BLACK_MS;
-  if (o < WIPE_FADE_MS) return 1 - o / WIPE_FADE_MS; // fade out
-  return 0; // bg-only beat
-}
 
 // Display-position tracking (sim steps at 10fps → interpolate to 60fps). Easing toward the
 // sim value is smooth, but a plain exponential ACCELERATES to close a large gap — a hero
@@ -89,13 +87,8 @@ function trackDisplay(prev: number, target: number, dtMs: number, speedPxps: num
 
 // Crowded-HUD declutter: when party members bunch up their overhead HUDs overlap, so a
 // rear hero's HUD is lifted above the one just ahead of it (tiered upward).
-const HUD_OVERLAP_PX = 30; // horizontal gap (screen px) under which two hero HUDs collide
-const HUD_LIFT_STEP = 13; // px each successive crowded HUD is raised
-const ENEMY_BAR_OVERLAP_PX = 22; // horizontal gap under which two enemy HP bars collide
-const ENEMY_BAR_LIFT_STEP = 6; // px each successive crowded enemy bar is raised (bars are thin)
-// The Priest's holy strike is a sheet from before the redesign, drawn for bigger bodies: shown at its own size.
-const HOLY_STRIKE_SCALE = 1;
-const EXPLOSION_SCALE = 1; // Explosive Arrow's blast swells to about one figure across (the old sheet's burst is ~22 px)
+const HUD_OVERLAP_PX = HERO_HUD_WIDTH + 2; // horizontal gap (art px) under which two hero HUDs collide
+const HUD_LIFT_STEP = HERO_HUD_STEP; // px each successive crowded HUD is raised: a bar and a row of chips
 
 export class GameStrip {
   private app: Application | null = null;
@@ -104,14 +97,16 @@ export class GameStrip {
   private readonly backdrop = new StripBackdrop();
   private readonly combatants = new Container();
   private readonly projectiles = new ProjectileLayer();
-  // Big AoE ability spectacles (arrow rain, frost pool, holy nova, boss shockwaves) drawn
-  // over a target band — above the bodies, below the floating numbers.
-  private readonly worldFx = new WorldFxLayer();
-  // Ground-level FX drawn BELOW the bodies (Caltrops spikes) so the wave walks over them.
-  private readonly groundFx = new WorldFxLayer();
+  // Ability effects that lie on the ground under every fighter (a war cry's ring crossing the party): render/abilityFx.
+  private readonly fxGround = new FxShots();
+  private readonly fxAir = new FxShots(); // ability one-shots played over the fighters (a blast, arrows coming down)
+  // An enemy's area blow (render/enemyFx): the warning laid on the ground while it is wound up — under the
+  // fighters, a child of fxGround — and the front that runs back through the party, over them (a child of fxAir).
+  private readonly blowWarn = new BlowFxLayer();
+  private readonly blowFront = new BlowFxLayer();
   private readonly floating = new FloatingTextLayer();
   private readonly delayed = new Delayed(); // hits held back a beat so their number lands with the blow
-  private focusFlightMs = 0; // flight time of the last Explosive Arrow: its hits show when it bursts
+  private readonly shotLandMs = new Map<string, number>(); // per ability fired at the wave: when its last shot lands, from its cast
   private readonly signs = new FloatingSignLayer(); // the sign of an ability, over the hero that casts it
   // The world-boss portal, pinned screen-right while farming a beaten W-9 (see frame()).
   private readonly portal = new PortalSprite();
@@ -122,7 +117,11 @@ export class GameStrip {
   private readonly wipePhrase = new Text({ text: '', style: { fontFamily: 'monospace', fontSize: 20, fill: hexToNum('#e8e2d6'), align: 'center' } });
   private wipeActive = false; // a wipe cinematic is on screen (drives one-time phrase pick)
   private teleportMs = 0;
-  private respawnTpMs = 0; // counts down a teleport-IN as the revived party materialises post-wipe
+  private bossDownClock = -1; // ms into a fallen world boss's beat as drawn (-1: no beat) — render/bossDown
+  private bossDownBlack = 0; // blackout the beat has put on the strip (the teleport that follows starts from it)
+  private wipeClock = -1; // ms into the party's defeat as drawn (-1: none) — render/wipeBeat
+  private wipeArrived = false; // the defeated party's arrivals have been started (once per defeat)
+  private teleportArrived = true; // the arrivals of the world change in progress have been started
   private prevWorld = -1; // last seen zone (worldOf) — a change triggers a teleport
   private heroSprites = new Map<string, HeroSprite>();
   private heroesSeeded = false; // false until the initial party is placed; a hero sprite born AFTER is a fresh recruit → materialises in
@@ -154,15 +153,17 @@ export class GameStrip {
     this.app = app;
     // Load the heroes' figures and the shared effect textures before the first frame. A world's creatures load
     // lazily when the party gets there (reconcileEnemies); the backdrop loads its own sheet the same way.
-    await Promise.all([loadHeroFigures(CLASS_KEYS), loadEffectTextures()]);
+    await Promise.all([loadHeroFigures(CLASS_KEYS), loadFx(CLASS_KEYS), loadStripHud()]);
     this.engine = new GameEngine();
+    this.fxGround.addChild(this.blowWarn);
+    this.fxAir.addChild(this.blowFront);
     setEngine(this.engine);
 
     this.combatants.sortableChildren = true; // honour zIndex (party above enemies)
-    this.world.addChild(this.backdrop.back, this.groundFx, this.combatants, this.backdrop.front, this.worldFx, this.projectiles, this.signs, this.floating, this.portal, this.blackout, this.wipePhrase);
+    this.world.addChild(this.backdrop.back, this.fxGround, this.combatants, this.backdrop.front, this.fxAir, this.projectiles, this.signs, this.floating, this.portal, this.blackout, this.wipePhrase);
     // The portal is the ONLY interactive object — prune every other layer (and its whole
     // subtree of sprites/graphics) from pointer hit-testing so a tap walks just the portal.
-    for (const layer of [this.backdrop.back, this.groundFx, this.combatants, this.backdrop.front, this.worldFx, this.projectiles, this.signs, this.floating, this.blackout, this.wipePhrase]) {
+    for (const layer of [this.backdrop.back, this.fxGround, this.combatants, this.backdrop.front, this.fxAir, this.projectiles, this.signs, this.floating, this.blackout, this.wipePhrase]) {
       layer.eventMode = 'none';
     }
     this.wipePhrase.anchor.set(0.5);
@@ -223,47 +224,66 @@ export class GameStrip {
 
     this.backdrop.update(cameraX * pxScale, w.globalStageIndex, dtMs);
     this.world.x = this.backdrop.shakeX; // a lightning strike shakes the whole strip for an instant
-    // Wipe cinematic: the fallen party reads as freshly slain (prominent, no 60s respawn
-    // bar) for the DEAD beat, then is HIDDEN once it goes black so the world fades back in
-    // empty before the party respawns.
+    // The party's defeat (render/wipeBeat): the fallen heroes read as freshly slain (prominent, no 60 s respawn
+    // bar) until the strip is black, are GONE while it is black and while the stage they fell back to shows
+    // empty under its sign, and then come back one after another, front to back (HeroSprite.arrive).
     const wipeMs = w.wipeMs;
-    const wipeHidden = wipeMs !== undefined && wipeMs >= WIPE_RETREAT_AT_MS;
-    const wipeDead = wipeMs !== undefined && !wipeHidden;
-    // The wipe just ended this frame (wipeActive still set, but the sim cleared wipeMs): the
-    // sim has dropped the revived party back in formation. Snap displays to those new x's (no
-    // slide from the death spot) and arm a teleport-IN so they MATERIALISE in place. Done
-    // before reconcileHeroes so the very first visible frame is already dematerialised.
-    if (this.wipeActive && wipeMs === undefined) {
+    this.wipeClock = wipeMs === undefined ? -1 : smoothBeatClock(this.wipeClock, wipeMs, dtMs, TICK_MS);
+    const wipeParty = wipeMs === undefined ? null : wipeLook(wipeMs).party;
+    const wipeHidden = wipeParty === 'gone';
+    const wipeDead = wipeParty === 'fallen';
+    if (wipeParty === 'back' && !this.wipeArrived) {
+      // The sim has just revived the party in formation: snap displays to those new x's (no slide from the
+      // death spot) and give every hero its turn. Done before reconcileHeroes, so no hero shows a frame early.
+      this.wipeArrived = true;
       this.heroDisplayX.clear();
-      this.respawnTpMs = TELEPORT_HOLD_MS;
+      this.arriveParty(w.heroes);
     }
-    this.driveRespawnTeleport(dtMs);
+    if (wipeMs === undefined) this.wipeArrived = false;
     this.reconcileHeroes(w.heroes, w.enemies, groundY, dtMs, toScreen, wipeDead, wipeHidden);
     this.reconcileEnemies(w, groundY, dtMs, toScreen);
     this.delayed.tick(dtMs);
     this.applyEvents(events, groundY);
-    this.worldFx.update(dtMs);
-    this.groundFx.update(dtMs);
+    this.fxGround.update(dtMs);
+    this.fxAir.update(dtMs);
+    this.blowWarn.update(dtMs);
+    this.blowFront.update(dtMs);
     this.projectiles.update(dtMs);
     this.floating.update(dtMs);
     this.signs.update(dtMs);
     this.updatePortal(w, groundY, dtMs);
+    this.driveBossDown(w, dtMs);
     this.detectAndDriveTeleport(w, dtMs);
     this.driveWipe(w);
   }
 
-  // Drive the full-party-wipe cinematic from the sim's elapsed wipeMs: fade the strip to
-  // black, hold a random death-knell phrase, then fade the (retreated) background back in —
-  // heroes are hidden by reconcileHeroes across this, so the world reappears empty before
-  // the party respawns. The sim owns the timing; this only paints it.
+  // A world boss has fallen and the simulation gives its defeat a beat (world.bossDown): the boss plays its
+  // death in its own world (EnemySprite holds it for the whole beat) with the party standing. When the win
+  // leads on to another world, the strip fades to black over the end of the beat so the world changes unseen;
+  // the teleport that follows (detectAndDriveTeleport) then starts from black. The sim owns the timing.
+  private driveBossDown(w: WorldState, dtMs: number): void {
+    const beat = w.bossDown;
+    if (beat === undefined) {
+      this.bossDownClock = -1;
+      return; // any blackout the beat left is taken over (or cleared) by detectAndDriveTeleport this frame
+    }
+    this.bossDownClock = smoothBeatClock(this.bossDownClock, beat.ms, dtMs, TICK_MS);
+    const leavesWorld = beat.firstClear && !isFinalStage(w.globalStageIndex);
+    this.bossDownBlack = leavesWorld ? bossDownBlackAlpha(this.bossDownClock, beat.totalMs) : 0;
+    this.blackout.visible = this.bossDownBlack > 0.001;
+    this.blackout.alpha = this.bossDownBlack; // geometry built in relayout(); only the alpha animates
+  }
+
+  // Paint the party's defeat from the sim's elapsed wipeMs (render/wipeBeat says what shows when): the strip
+  // fades to black, the phrase comes up ALONE on the black, leaves, and the strip comes back on the stage the
+  // party fell back to. The heroes are hidden by reconcileHeroes meanwhile; the stage's sign (the UI's band)
+  // waits for the strip to be back (engine → hud.stageSignHeld). The sim owns the timing; this only paints it.
   private driveWipe(w: WorldState): void {
-    const ms = w.wipeMs;
-    if (ms === undefined) {
+    if (w.wipeMs === undefined) {
       if (this.wipeActive) {
         this.wipeActive = false;
         this.wipePhrase.visible = false;
         this.blackout.visible = false;
-        // (display snap + respawn teleport-in are armed in frame(), before reconcileHeroes)
       }
       return;
     }
@@ -271,38 +291,41 @@ export class GameStrip {
       this.wipeActive = true;
       this.wipePhrase.text = t(WIPE_PHRASES[Math.floor(Math.random() * WIPE_PHRASES.length)] ?? 'overlay.wipe1');
     }
-    const black = wipeBlackAlpha(ms);
-    this.blackout.visible = black > 0.001;
-    this.blackout.alpha = black; // geometry built in relayout(); only the alpha animates
-    // Phrase rides the blackness — appears as it darkens, holds, fades with the reveal.
-    this.wipePhrase.alpha = Math.max(0, (black - 0.25) / 0.75);
-    this.wipePhrase.visible = this.wipePhrase.alpha > 0.01;
+    const look = wipeLook(this.wipeClock);
+    this.blackout.visible = look.black > 0.001;
+    this.blackout.alpha = look.black; // geometry built in relayout(); only the alpha animates
+    this.wipePhrase.alpha = look.phrase;
+    this.wipePhrase.visible = look.phrase > 0.01;
     this.wipePhrase.position.set(this.logicalWidth / 2, STRIP_HEIGHT * 0.46);
   }
 
-  // Materialise-in for the party revived after a wipe. The field is already lit (the wipe's
-  // own blackout has faded) and the heroes are dropped in formation by the sim, so this only
-  // drives each hero sprite's teleportK from "gone" → "solid" (the IN half of a teleport) —
-  // no extra blackout. setTeleport(-1) the frame it ends, restoring the sprites + HUD.
-  private driveRespawnTeleport(dtMs: number): void {
-    if (this.respawnTpMs <= 0) return;
-    this.respawnTpMs -= dtMs;
-    const done = this.respawnTpMs <= 0;
-    const p = done ? 1 : 1 - this.respawnTpMs / TELEPORT_HOLD_MS; // 0→1 over the materialise
-    for (const s of this.heroSprites.values()) s.setTeleport(done ? -1 : 0.5 + p * 0.5);
+  /** Every hero of a party that comes back gets its turn to arrive: one after another, front to back. */
+  private arriveParty(heroes: readonly Combatant[]): void {
+    heroes.forEach((h, i) => this.heroSprites.get(h.id)?.arrive(arrivalDelayMs(i)));
   }
 
-  // Watch for a ZONE change (worldOf) from normal progression and play a party teleport:
-  // heroes flash up + shrink out, a full-strip blackout crests, then they drop back in.
-  // A wipe is NOT handled here — it has its own cinematic (driveWipe); we suppress the
-  // teleport while one runs so the retreat's world swap doesn't double-trigger it.
+  // Watch for a ZONE change (worldOf) from normal progression and play the party's journey: the heroes are
+  // taken up (HeroSprite.depart), a full-strip blackout crests over the swap, and they arrive one after another
+  // as it lifts (HeroSprite.arrive). After a fallen world boss's beat the strip is already black: the heroes are
+  // simply gone and only the arrival plays. A wipe is NOT handled here — it has its own cinematic (driveWipe);
+  // the journey is suppressed while one runs so the retreat's world swap doesn't double-trigger it.
   private detectAndDriveTeleport(w: WorldState, dtMs: number): void {
     const world = worldOf(w.globalStageIndex);
     const wiping = w.wipeMs !== undefined;
     if (this.prevWorld < 0) {
       this.prevWorld = world; // first frame (or post-offline catch-up) — no FX
     } else if (world !== this.prevWorld && !wiping) {
-      this.teleportMs = TELEPORT_HOLD_MS; // (re)start the sequence
+      // (Re)start the sequence — from black when a fallen world boss's beat has just faded the strip out.
+      const fromBlack = this.bossDownBlack > BOSS_DOWN_BLACK / 2;
+      this.teleportMs = TELEPORT_HOLD_MS * (fromBlack ? 1 - TELEPORT_FROM_BLACK : 1);
+      this.teleportArrived = false;
+      for (const s of this.heroSprites.values()) s.depart(!fromBlack);
+    }
+    if (w.bossDown === undefined && this.bossDownBlack > 0) {
+      // The beat is over: its blackout belongs to the teleport now — or, if no teleport follows (the player
+      // travelled away within the same world), it is lifted.
+      this.bossDownBlack = 0;
+      if (this.teleportMs <= 0) this.blackout.visible = false;
     }
     this.prevWorld = world;
     if (wiping) return; // the wipe cinematic owns the screen
@@ -310,28 +333,37 @@ export class GameStrip {
     if (this.teleportMs <= 0) return;
     this.teleportMs -= dtMs;
     const phase = Math.min(1, 1 - this.teleportMs / TELEPORT_HOLD_MS); // 0→1 across out+in
-    for (const s of this.heroSprites.values()) s.setTeleport(phase);
-    // Blackout: ramp to black across the dematerialise, hold over the swap, fade back in.
+    // Blackout: ramp to black as the party is taken, hold over the swap, lift as it arrives.
     let a = 0;
     if (phase < 0.4) a = phase / 0.4;
-    else if (phase < 0.62) a = 1;
-    else a = Math.max(0, 1 - (phase - 0.62) / 0.38);
+    else if (phase < TELEPORT_LIFT_AT) a = 1;
+    else a = Math.max(0, 1 - (phase - TELEPORT_LIFT_AT) / (1 - TELEPORT_LIFT_AT));
     this.blackout.visible = true;
     this.blackout.alpha = a * 0.9; // geometry built in relayout(); only the alpha animates
-    if (this.teleportMs <= 0) {
-      for (const s of this.heroSprites.values()) s.setTeleport(-1); // restore sprites
-      this.blackout.visible = false;
+    if (phase >= TELEPORT_LIFT_AT && !this.teleportArrived) {
+      this.teleportArrived = true;
+      this.heroDisplayX.clear();
+      this.arriveParty(w.heroes);
     }
+    if (this.teleportMs <= 0) this.blackout.visible = false;
   }
 
-  // Show the world-boss portal, pinned to the strip's right edge, ONLY while the party
-  // farms a beaten W-9 (the gate into the W-10 world boss). It now needs a zone KEY: the
-  // portal shows held/1 and greys out when key-less (tapping it still nudges via a toast).
+  // The world boss's gate (render/PortalSprite): it stands on the path near the strip's right edge ONLY while the
+  // party farms a beaten W-9 (the gate into the W-10 world boss). It needs a zone KEY: chained shut without one
+  // (tapping it still nudges via a toast), awake with one. When the party goes in, the gate flares and is gone.
   private updatePortal(w: WorldState, groundY: number, dtMs: number): void {
     const onBeatenNine = stageInWorld(w.globalStageIndex) === 9 && w.maxClearedStage >= w.globalStageIndex;
-    this.portal.visible = onBeatenNine;
-    if (!onBeatenNine) return;
-    this.portal.position.set(this.logicalWidth - 30, groundY - 12);
+    if (!onBeatenNine) {
+      if (this.portal.visible) {
+        // It was standing a frame ago: if the party is now in the boss's stage, it went IN.
+        if (isZoneBossStage(w.globalStageIndex)) this.fxAir.play(PORTAL_ENTER_FX, this.portal.x, this.portal.y);
+        this.portal.rest();
+      }
+      this.portal.visible = false;
+      return;
+    }
+    this.portal.visible = true;
+    this.portal.position.set(this.logicalWidth - PORTAL_FROM_RIGHT, groundY);
     this.portal.update(dtMs, useStore.getState().zoneKeysFor(w.globalStageIndex));
   }
 
@@ -366,10 +398,15 @@ export class GameStrip {
   }
 
   private reconcileHeroes(heroes: Combatant[], enemies: readonly Combatant[], groundY: number, dtMs: number, toScreen: (wx: number) => number, wipeDead: boolean, wipeHidden: boolean): void {
+    // A boss in the fight on which the party's engage ultimates have fired: their chips show spent (render/stripHud).
+    const bossEngaged = enemies.some((e) => e.alive && e.isBoss === true && e.bossUltTriggered === true);
     // Heroes are placed by their OWN world position (they move freely / stack); each
     // display x velocity-matches its sim x for smooth, surge-free 60fps motion.
     const live = new Set(heroes.map((h) => h.id));
     for (const id of [...this.heroDisplayX.keys()]) if (!live.has(id)) this.heroDisplayX.delete(id);
+    // The party's passive auras (the Priest's Retribution: an ability with `aura`, slotted by a living hero) have
+    // no effect in the simulation to draw from: every hero is told which reach it, and wears their look.
+    const auras = heroes.flatMap((h) => (h.alive ? h.abilities.filter((a) => a.def.aura !== undefined).map((a) => ({ abilityKey: a.def.key, sourceId: h.id })) : []));
     const placed: { sprite: HeroSprite; x: number }[] = [];
     for (const c of heroes) {
       let sprite = this.heroSprites.get(c.id);
@@ -378,7 +415,7 @@ export class GameStrip {
         sprite.zIndex = 2; // party draws ABOVE enemies
         // A hero whose sprite is born after the initial party was placed is a fresh
         // recruit — materialise it in (top-down respawn FX) rather than popping in.
-        if (this.heroesSeeded) sprite.spawnIn();
+        if (this.heroesSeeded) sprite.arrive();
         this.heroSprites.set(c.id, sprite);
         this.combatants.addChild(sprite);
       }
@@ -392,6 +429,8 @@ export class GameStrip {
       const disp = prev === undefined ? c.x : trackDisplay(prev, c.x, dtMs, WALK_SPEED);
       this.heroDisplayX.set(c.id, disp);
       const sx = toScreen(disp);
+      sprite.setPartyAuras(auras);
+      sprite.setBossEngaged(bossEngaged);
       sprite.leadAttack(c, inReach(c, enemies), dtMs);
       sprite.update(c, sx, groundY, dtMs, wipeDead);
       placed.push({ sprite, x: sx });
@@ -415,19 +454,19 @@ export class GameStrip {
     }
   }
 
-  // Same anti-overlap pass for enemy HP bars: enemies bunch at the front line on the same x,
-  // so each successive crowded bar (frontmost first) is nudged up a step instead of stacking
-  // directly on the one behind it. The bar's strip-top clamp keeps a lifted bar on-screen.
+  // The enemies' life bars: enemies bunch at the front line on the same spot, so a bar that would lie on another
+  // steps up over it — and one that finds no room is not shown (render/stripHud stackBars). Elites keep their
+  // place (they are placed first), then the common enemies from the front. Only bars that are wanted count: a
+  // common enemy wears one only while it is hurt.
   private layoutEnemyHuds(placed: { sprite: EnemySprite; x: number }[]): void {
-    const order = placed.slice().sort((a, b) => b.x - a.x); // frontmost (largest x) first
-    let prevX = Number.POSITIVE_INFINITY;
-    let prevLift = 0;
-    for (const p of order) {
-      const lift = prevX - p.x < ENEMY_BAR_OVERLAP_PX ? prevLift + ENEMY_BAR_LIFT_STEP : 0;
-      p.sprite.setBarLift(lift);
-      prevX = p.x;
-      prevLift = lift;
-    }
+    const wanted = placed.flatMap((p) => {
+      const box = p.sprite.barBox;
+      if (box === null) p.sprite.setBarLift(0);
+      return box === null ? [] : [{ sprite: p.sprite, box }];
+    });
+    wanted.sort((a, b) => Number(b.box.elite) - Number(a.box.elite) || b.box.x - a.box.x);
+    const lifts = stackBars(wanted.map((w) => w.box));
+    wanted.forEach((w, i) => w.sprite.setBarLift(lifts[i] ?? null));
   }
 
   private reconcileEnemies(w: WorldState, groundY: number, dtMs: number, toScreen: (wx: number) => number): void {
@@ -444,8 +483,11 @@ export class GameStrip {
       let sprite = this.enemySprites.get(c.id);
       if (sprite === undefined) {
         if (figures === null) continue;
-        sprite = new EnemySprite(c, figures[creatureRole(c)], enemyRank(c, worldBossStage));
-        sprite.zIndex = 1; // below the party
+        // A world boss is drawn with its world's own figure for it, when the world has one (data/worlds.ts).
+        const rank = enemyRank(c, worldBossStage);
+        const own = rank === 'worldBoss' ? figures.worldBoss : undefined;
+        sprite = new EnemySprite(c, own ?? figures[creatureRole(c)], rank, own !== undefined);
+        sprite.zIndex = rank === 'elite' ? ENEMY_Z.elite : ENEMY_Z.common; // below the party; an elite in front of the pack it stands in
         sprite.spawnIn(); // materialise (teleport-in) on first appearance
         this.enemySprites.set(c.id, sprite);
         this.combatants.addChild(sprite);
@@ -457,6 +499,7 @@ export class GameStrip {
       this.enemyDisplayX.set(c.id, disp);
       const sx = toScreen(disp);
       sprite.leadAttack(c, inReach(c, w.heroes), dtMs);
+      if (c.casting !== undefined) this.showBlowWarning(c, groundY);
       sprite.update(c, sx, groundY, dtMs);
       if (c.alive) placed.push({ sprite, x: sx });
     }
@@ -477,31 +520,16 @@ export class GameStrip {
   }
 
   private applyEvents(events: CombatEvent[], groundY: number): void {
+    const shotWait = new Map<string, number>(); // per attacker: how long this batch's hits wait for its shot
+    // The casts of this batch, by caster: the simulation resolves a spell's heals and hits in the instant of the
+    // cast (and lists them BEFORE its cast marker), so a heal looks up here whether its healer is casting.
+    const castBy = new Map<string, string>();
+    for (const ev of events) if (ev.type === 'cast' && ev.abilityKey !== undefined) castBy.set(ev.targetId, ev.abilityKey);
     for (const ev of events) {
       const heroSprite = this.heroSprites.get(ev.targetId);
       const enemySprite = this.enemySprites.get(ev.targetId);
       const sprite = heroSprite ?? enemySprite;
       const amt = ev.amount ?? 0;
-      if (ev.type === 'cast' && ev.abilityKey === 'ranger_mark') {
-        // Ranger's ultimate: a crosshair springs off the ranger's head and locks onto the
-        // boss (sourceId), where the boss's persistent mark-reticle aura then takes over.
-        const ranger = this.heroSprites.get(ev.targetId);
-        const boss = ev.sourceId === undefined ? undefined : this.enemySprites.get(ev.sourceId);
-        if (ranger !== undefined && boss !== undefined) {
-          const from = ranger.headPoint();
-          // Aimed live at the bearer (it may still be walking in); if it is gone, the crosshair ends where it was.
-          let to = boss.markPoint();
-          this.worldFx.markCrosshair(from.x, from.y, () => {
-            if (boss.parent !== null && !boss.fallen) to = boss.markPoint();
-            return to;
-          }, to.radius);
-        }
-        if (ranger !== undefined) {
-          const at = ranger.signPoint();
-          this.signs.spawn(at.x, at.y, castFx(ev.abilityKey).sign);
-        }
-        continue;
-      }
       if (ev.type === 'cast' && ev.abilityKey !== undefined) {
         // Each ability shows its OWN sign (the one the panels show) over the hero that casts it, plus a
         // coloured burst ring. Enemies and bosses have no signs: theirs is the ring alone.
@@ -509,31 +537,25 @@ export class GameStrip {
         const caster = heroCaster ?? this.enemySprites.get(ev.targetId);
         if (caster !== undefined) {
           const fx = castFx(ev.abilityKey); // total: an unknown key is a plain burst with no sign
-          // A whole-wave cast (Holy Nova, Raining Arrows) plays its spectacle over the TARGET band — the
-          // side it actually hits — so the caster's own ring would read as landing on its own party.
-          if (!isWholeWaveCast(ev.abilityKey)) caster.castBurst(fx.color);
+          // An ability with its own pixel-art look (render/abilityFx) plays that; the others still get the old
+          // coloured ring. A whole-wave cast (Holy Nova, Raining Arrows) plays its spectacle over the TARGET
+          // band — the side it actually hits — so the caster's own ring would read as landing on its own party.
+          const look = abilityLook(ev.abilityKey);
+          const blow = heroCaster === undefined ? areaBlow(ev.abilityKey) : undefined;
+          if (look === undefined && blow === undefined) caster.castBurst(fx.color);
           if (heroCaster !== undefined) {
             const at = heroCaster.signPoint();
             this.signs.spawn(at.x, at.y, fx.sign);
           }
           // The hero plays the ability's own clip (a heal, a shout, a cleave… — render/heroClips).
           heroCaster?.cast(ev.abilityKey);
-          // Big AoE spectacles that play over the whole target band (the wave / the party).
-          this.spawnAoeFx(ev.abilityKey, groundY, caster.x);
-          // Explosive Arrow: a big arrow streaks to the front of the wave and detonates on
-          // impact (the fireball strip's blast frames), timed to the arrow's flight.
-          if (heroCaster !== undefined && ev.abilityKey === 'ranger_focus') {
-            const b = this.bandOf(this.enemySprites);
-            const fb = getFireballFrames();
-            if (b !== null) {
-              const tx = b.cx - b.halfW; // front of the wave, nearest the ranger
-              const ty = groundY - 8;
-              // Same arrow as the basic auto (no size override), then a bigger detonation.
-              const flight = this.projectiles.spawn(caster.x, caster.y - 8, () => ({ x: tx, y: ty }), 'arrow');
-              this.focusFlightMs = flight; // its hits show when it lands (abilityHitWaitMs)
-              if (fb !== null) this.worldFx.fireballBurst(tx, ty - 4, fb, flight, EXPLOSION_SCALE);
-            }
+          if (heroCaster !== undefined && look?.cast !== undefined) {
+            for (const burst of look.cast) this.playCastBurst(heroCaster, burst, ev.abilityKey, groundY);
           }
+          // An enemy's area blow (Brutal Smash, Ground Slam, Shockwave) runs back through the whole party.
+          if (blow !== undefined) this.playAreaBlow(blow, caster, groundY);
+          // What the ability throws at the wave as a whole (a burning arrow, a flask) and what it scatters over it.
+          if (heroCaster !== undefined && look !== undefined) this.playWaveLook(heroCaster, look, ev.abilityKey, groundY);
         }
       } else if (ev.tick === true) {
         // DoT/HoT periodic tick → floating number, no attack animation. A HoT HEAL tick
@@ -541,7 +563,7 @@ export class GameStrip {
         // reads on the target, not just as a number.
         if (sprite !== undefined && amt > 0) {
           if (ev.type === 'heal') {
-            heroSprite?.showHealEffect(true);
+            // The heal that keeps working is seen on the body itself (its lasting look: render/abilityFx).
             this.floating.spawn(sprite.x, sprite.y - 20, `+${formatDmg(amt)}`, FX.heal, 0.9);
           } else {
             this.floating.spawn(sprite.x, sprite.y - 16, formatDmg(amt), FX.dot, 0.9);
@@ -553,18 +575,32 @@ export class GameStrip {
         // hit plays the caster's ability swing (the knight's heavy attack). AoE splash hits
         // (Priest auto) are skipped here: they only show their damage number — the holy strike
         // effect + swing fire once, on the PRIMARY target, not on every splashed enemy.
-        if (ev.splash !== true) this.playAttack(ev.sourceId, sprite, ev.abilityKey);
+        // A shot nothing announced waits for its clip's release, and its number (splash hits included) with it.
+        const source = ev.sourceId ?? '';
+        if (ev.splash !== true) shotWait.set(source, this.playAttack(ev.sourceId, sprite, ev.abilityKey));
+        const wait = shotWait.get(source) ?? 0;
+        // An enemy's area blow reaches each hero when its wave gets there, not all at once.
+        const blowWait = heroSprite === undefined ? 0 : this.areaBlowWaitMs(ev, heroSprite, groundY);
         if (ev.invuln === true) {
-          // Negated by Last Stand invulnerability: yellow callout, no number/hit-flash.
-          this.floating.spawn(sprite.x, sprite.y - 22, t('overlay.floatInvulnerable'), hexToNum('#ffe14d'), 0.95);
+          // Negated by Last Stand invulnerability: the blow glances off in gold — one sign, however many land.
+          if (heroSprite !== undefined) heroSprite.blowSign(BLOW_SIGNS.invulnerable);
         } else if (amt > 0) {
           // The number and the flash land with the blow: at once for a basic attack (its clip was started
           // early), a beat later for a hero's ability whose clip is just starting (abilityHitWaitMs).
-          this.delayed.add(this.abilityHitWaitMs(ev, enemySprite), () => this.landHit(ev, sprite, amt));
+          this.delayed.add(Math.max(wait, blowWait, this.abilityHitWaitMs(ev, enemySprite)), () => this.landHit(ev, sprite, amt));
+          // A splash of her own light (the Priest's basic attack reaches the enemies beside its target) shows on each.
+          if (ev.splash === true && enemySprite !== undefined && ev.abilityKey === undefined) this.splashLight(ev.sourceId, enemySprite, wait);
         }
       } else if (ev.type === 'heal' && heroSprite !== undefined && amt > 0) {
-        heroSprite.showHealEffect(); // green sparkle on the healed ally
-        this.floating.spawn(heroSprite.x, heroSprite.y - 20, `+${formatDmg(amt)}`, FX.heal, 1);
+        // The heal wells up on whoever it heals (render/abilityFx HEAL_BLOOM) — when the healer's gesture reaches
+        // its release, if the heal comes from a spell being cast, not while her arm is still going up.
+        const healer = ev.sourceId === undefined ? undefined : this.heroSprites.get(ev.sourceId);
+        const spell = ev.sourceId === undefined ? undefined : castBy.get(ev.sourceId);
+        this.delayed.add(healer !== undefined && spell !== undefined ? healer.castBlowMs(spell) : 0, () => {
+          if (heroSprite.parent === null) return;
+          heroSprite.healBloom();
+          this.floating.spawn(heroSprite.x, heroSprite.y - 20, `+${formatDmg(amt)}`, FX.heal, 1);
+        });
       }
     }
   }
@@ -574,76 +610,87 @@ export class GameStrip {
     const onHero = sprite instanceof HeroSprite;
     const color = onHero ? hexToNum('#ff7a7a') : ev.crit === true ? hexToNum('#ffd35d') : 0xffffff;
     sprite.flashHit();
+    // The hit of an ability with its own look leaves its mark on the enemy (render/abilityFx `hit`).
+    const hitLook = ev.abilityKey === undefined ? undefined : abilityLook(ev.abilityKey);
+    if (hitLook?.hit !== undefined && sprite instanceof EnemySprite) sprite.hitFx(hitLook.hit, hitLook.hitSpot ?? 'body');
     if (onHero) sprite.hurtReact(); // sprite heroes flinch when hit
     this.floating.spawn(sprite.x, sprite.y - 18, formatDmg(amt), color, ev.crit === true ? 1.4 : 1);
-    // Multistrike proc: a big, bright-yellow "MULTI!" pops over the ALLY that procced it
-    // (the attacker, resolved from sourceId), not over the enemy taking the hit.
+    // Multistrike proc: two crossing cuts flash over the ALLY that procced it (the attacker), not over the enemy.
     if (ev.multi === true) {
       const attacker = ev.sourceId === undefined ? undefined : this.heroSprites.get(ev.sourceId);
-      if (attacker !== undefined) this.floating.spawn(attacker.x, attacker.y - 40, t('overlay.floatMulti'), hexToNum('#ffee33'), 1.6);
+      if (attacker !== undefined) attacker.blowSign(BLOW_SIGNS.multi);
     }
-    // A blocked hit (block-stat proc) on a hero plays its shield-block reaction.
+    // A blocked hit (block-stat proc) on a hero plays its shield-block reaction, and steel rings: a spark on the shield.
     if (ev.blocked === true && onHero) {
       sprite.blockReact();
-      this.floating.spawn(sprite.x, sprite.y - 30, t('overlay.floatBlocked'), hexToNum('#5aa0ff'), 0.85); // blue, above the number
+      sprite.blowSign(BLOW_SIGNS.blocked);
+    }
+  }
+
+  // One of the one-shots of an ability's cast (render/abilityFx): on the caster, or on the ground at its feet
+  // under every fighter; at once, or when the cast clip reaches its blow.
+  private playCastBurst(caster: HeroSprite, burst: CastBurst, abilityKey: string, groundY: number): void {
+    const wait = burst.atBlow === true ? caster.castBlowMs(abilityKey) : 0;
+    this.delayed.add(wait, () => {
+      if (caster.parent === null) return; // the hero left the strip meanwhile
+      if (burst.spot === 'ground') this.fxGround.play(burst.fx, caster.x + caster.bodyCx + (burst.dx ?? 0), groundY + (burst.dy ?? 0));
+      else if (burst.spot === 'party' || burst.spot === 'wave') {
+        // Under the middle of the party, or of the wave: a ring that opens under all of them.
+        const band = burst.spot === 'party' ? this.bandOf(this.heroSprites) : this.bandOf(this.enemySprites);
+        if (band !== null) this.fxGround.play(burst.fx, band.cx + (burst.dx ?? 0), groundY + (burst.dy ?? 0));
+      } else caster.bodyFx.burst(burst.fx, burst.spot === 'caster-under' ? 'under' : 'over', burst.dx ?? 0, burst.dy ?? 0);
+    });
+  }
+
+  // The part of an ability's look that goes to the WAVE (render/abilityFx): its one shot fired at the wave's
+  // front or middle — it leaves on the clip's release and plays its `land` one-shot where it arrives — and the
+  // one-shots it scatters across the wave's band.
+  private playWaveLook(caster: HeroSprite, look: AbilityLook, abilityKey: string, groundY: number): void {
+    const band = this.bandOf(this.enemySprites);
+    if (band === null) return;
+    const release = caster.castBlowMs(abilityKey);
+    let landed = release;
+    const shot = look.shot;
+    if (shot !== undefined && look.shotTo !== undefined) {
+      const { x: fromX, y: fromY } = caster.shotPoint();
+      const to = look.shotTo === 'front' ? { x: band.cx - band.halfW, y: groundY - 8 } : { x: band.cx, y: groundY - 2 };
+      landed = release + lookFlightMs(fromX, fromY, to.x, to.y, shot.arc ?? 0);
+      this.shotLandMs.set(abilityKey, landed); // its hits show when it lands (abilityHitWaitMs)
+      this.delayed.add(release, () => {
+        this.projectiles.spawnLook(fromX, fromY, () => to, shot.fx, shot.arc ?? 0, (x) => {
+          if (shot.land !== undefined) this.fxAir.play(shot.land, x, groundY);
+        });
+      });
+    }
+    for (const scatter of look.band ?? []) this.playBand(scatter, band, groundY, scatter.afterShot === true ? landed : scatter.atBlow === true ? release : 0);
+  }
+
+  // One-shots scattered over a band of the wave: one every `every` pixels, each a little off its place, starting
+  // over `spreadMs` once `wait` (and the look's own delay) has passed.
+  private playBand(scatter: BandLook, band: { cx: number; halfW: number }, groundY: number, wait: number): void {
+    const layer = scatter.layer === 'ground' ? this.fxGround : this.fxAir;
+    const n = scatter.count ?? bandCount(band.halfW * 2, scatter.every);
+    const step = (band.halfW * 2) / n;
+    for (let i = 0; i < n; i++) {
+      const x = band.cx - band.halfW + step * (i + 0.5) + (scatter.count === undefined ? (Math.random() - 0.5) * step * 0.6 : 0);
+      // In order from the near end (a sweep) or at random over `spreadMs`.
+      const at = wait + (scatter.delayMs ?? 0) + (scatter.sweepMs !== undefined ? (scatter.sweepMs * i) / Math.max(1, n - 1) : Math.random() * (scatter.spreadMs ?? 0));
+      this.delayed.add(at, () => layer.play(scatter.fx, x, groundY));
     }
   }
 
   // How long a hit's number waits for the picture, in ms. Only a HERO's ABILITY landing on an enemy waits: its
   // clip starts on the cast, the same instant the simulation resolves the damage, so the number would pop while
   // the arm is still going back. It waits for the clip's blow (HeroSprite.abilityBlowMs — nothing when the
-  // wind-up is too long to wait for), and the Explosive Arrow's waits for the arrow to arrive and burst.
+  // wind-up is too long to wait for); an ability fired once at the wave (Explosive Arrow) waits for that shot to
+  // land, and one that rains on it (`hitDelayMs`) for the rain.
   private abilityHitWaitMs(ev: CombatEvent, enemySprite: EnemySprite | undefined): number {
     if (enemySprite === undefined || ev.abilityKey === undefined || ev.sourceId === undefined) return 0;
     const hero = this.heroSprites.get(ev.sourceId);
     if (hero === undefined) return 0;
-    if (ev.abilityKey === 'ranger_focus') return this.focusFlightMs;
-    return hero.abilityBlowMs(ev.abilityKey);
-  }
-
-  // Map an AoE ability's cast to its world spectacle, played over the target band:
-  // a hero's wave-wide ability rains on the enemies; an enemy/boss's AoE rocks the party;
-  // a party buff (Battle Cry) bursts over the heroes. Single-target abilities → no band FX.
-  private spawnAoeFx(abilityKey: string, groundY: number, casterX: number): void {
-    switch (abilityKey) {
-      case 'ranger_multishot': { // Raining Arrows → a volley onto the wave
-        const b = this.bandOf(this.enemySprites);
-        if (b !== null) this.worldFx.arrowRain(b.cx, groundY, b.halfW);
-        return;
-      }
-      case 'ranger_frozentrap': { // Caltrops → iron spikes erupt from the ranger across the ground (4s)
-        const b = this.bandOf(this.enemySprites);
-        if (b !== null) this.groundFx.groundSpikes(casterX, groundY, b.cx + b.halfW, 4000);
-        return;
-      }
-      case 'priest_nova': { // Holy Nova → a golden burst through the wave
-        const b = this.bandOf(this.enemySprites);
-        if (b !== null) this.worldFx.holyNova(b.cx, groundY, b.halfW + 8);
-        return;
-      }
-      case 'knight_battlecry': { // Battle Cry → an amber war-cry shockwave over the party
-        const b = this.bandOf(this.heroSprites);
-        if (b !== null) this.worldFx.shockwave(b.cx, groundY, b.halfW + 16, FX.offense);
-        return;
-      }
-      case 'knight_holdtheline': { // Hold the Line → a steel-blue wall of a shockwave over the party
-        const b = this.bandOf(this.heroSprites);
-        if (b !== null) this.worldFx.shockwave(b.cx, groundY, b.halfW + 12, FX.shield);
-        return;
-      }
-      case 'priest_sanctuary': { // Sanctuary → a golden ring of light settling over the party
-        const b = this.bandOf(this.heroSprites);
-        if (b !== null) this.worldFx.shockwave(b.cx, groundY, b.halfW + 12, FX.hot);
-        return;
-      }
-      case 'ranger_tarflask': { // Tar Flask → burning tar pooled under the wave for as long as it burns
-        const b = this.bandOf(this.enemySprites);
-        if (b !== null) this.groundFx.tarPool(b.cx, groundY, b.halfW, TAR_BURN_MS);
-        return;
-      }
-      default:
-        return;
-    }
+    const look = abilityLook(ev.abilityKey);
+    if (look?.shotTo !== undefined) return this.shotLandMs.get(ev.abilityKey) ?? 0;
+    return hero.abilityBlowMs(ev.abilityKey) + (look?.hitDelayMs ?? 0);
   }
 
   // The on-screen horizontal band (centre + half-width) spanning a group of sprites — used
@@ -661,44 +708,135 @@ export class GameStrip {
     return { cx: (min + max) / 2, halfW: Math.max(24, (max - min) / 2 + 18) };
   }
 
+  // The strip x of the party's front hero (the one the enemies' blows land on); −∞ with no hero standing.
+  private frontHeroX(): number {
+    let front = Number.NEGATIVE_INFINITY;
+    for (const h of this.heroSprites.values()) if (h.visible && h.standing && h.x > front) front = h.x;
+    return front;
+  }
+
+  // The stretch of ground an enemy's area blow covers: from just ahead of the front hero back past the last one.
+  private blowStretch(): { fromX: number; toX: number } | null {
+    let front = Number.NEGATIVE_INFINITY;
+    let rear = Number.POSITIVE_INFINITY;
+    for (const h of this.heroSprites.values()) {
+      if (!h.visible || !h.standing) continue;
+      front = Math.max(front, h.x);
+      rear = Math.min(rear, h.x);
+    }
+    if (!Number.isFinite(front)) return null;
+    return { fromX: front + 14, toX: rear - BLOW_PAST_PARTY };
+  }
+
+  // While an enemy winds an area blow up (render/enemyFx), the ground under the party splits: more of it, further
+  // back, as the cast fills, and burning hot over its last third. Called every frame for the enemy that casts.
+  private showBlowWarning(c: Combatant, groundY: number): void {
+    const cast = c.casting;
+    const warn = cast === undefined ? undefined : areaBlow(cast.key)?.warn;
+    const stretch = this.blowStretch();
+    if (cast === undefined || warn === undefined || stretch === null || !c.alive || cast.totalMs <= 0) return;
+    const progress = Math.max(0, Math.min(1, 1 - cast.remainingMs / cast.totalMs));
+    const count = warnTiles(stretch.fromX - stretch.toX, warn.step, progress);
+    this.blowWarn.warn(warn.fx, warn.hot, stretch.fromX, groundY, warn.step, count, progress >= WARN_HOT_FROM ? count : 0);
+  }
+
+  // An enemy's area blow lands (its cast event): its mark where it starts, and its wave running back along the
+  // ground through the whole party — a row of bursts going off one after another, or one front that travels.
+  private playAreaBlow(blow: AreaBlow, caster: HeroSprite | EnemySprite, groundY: number): void {
+    const stretch = this.blowStretch();
+    if (stretch === null) return;
+    if (blow.origin !== undefined) {
+      const at = caster instanceof EnemySprite ? caster.feetPoint().x : caster.x;
+      this.fxGround.play(blow.origin, at, groundY + 2);
+    }
+    const length = stretch.fromX - stretch.toX;
+    const wave = blow.wave;
+    if (wave.kind === 'bursts') {
+      for (const off of burstOffsets(length, wave.every)) {
+        this.delayed.add(waveReachMs(blow, off), () => this.fxAir.play(wave.fx, stretch.fromX - off, groundY, -1));
+      }
+    } else {
+      this.blowFront.run(wave.fx, stretch.fromX, stretch.toX, groundY, blow.speed, wave.trailEvery, (x) => this.fxGround.play(wave.trail, x, groundY, -1));
+    }
+  }
+
+  // How long the hit of an enemy's area blow on a hero waits to show: the time its wave takes to reach that hero
+  // from the front of the party. The ground kicks under the hero as it gets there.
+  private areaBlowWaitMs(ev: CombatEvent, hero: HeroSprite, groundY: number): number {
+    const blow = ev.sourceId !== undefined && this.enemySprites.has(ev.sourceId) ? areaBlow(ev.abilityKey) : undefined;
+    const stretch = blow === undefined ? null : this.blowStretch();
+    if (blow === undefined || stretch === null) return 0;
+    const wait = waveReachMs(blow, stretch.fromX - hero.x);
+    this.delayed.add(wait, () => {
+      if (hero.parent !== null) this.fxGround.play(blow.jolt, hero.x + hero.bodyCx, groundY);
+    });
+    return wait;
+  }
+
+  // The Priest's basic attack reaches the enemies beside its target: her light bursts on each of them too.
+  private splashLight(sourceId: string | undefined, enemy: EnemySprite, wait: number): void {
+    const hero = sourceId === undefined ? undefined : this.heroSprites.get(sourceId);
+    const own = hero?.basicShot();
+    const light = own === undefined ? undefined : LIGHT_SHOTS[own];
+    if (light === undefined) return;
+    this.delayed.add(wait + 110, () => {
+      if (enemy.parent !== null && !enemy.fallen) enemy.hitFx(light.land, 'body');
+    });
+  }
+
   // Play the attacker's animation by archetype: melee → sword swing + lunge;
   // ranged → arrow; caster → fireball, flying from the attacker to its target. A hit
   // tagged with an abilityKey is an ability cast → the melee swing uses the heavy variant.
-  private playAttack(sourceId: string | undefined, target: HeroSprite | EnemySprite, abilityKey?: string): void {
-    if (sourceId === undefined) return;
+  private playAttack(sourceId: string | undefined, target: HeroSprite | EnemySprite, abilityKey?: string): number {
+    if (sourceId === undefined) return 0;
     const heroSrc = this.heroSprites.get(sourceId);
     const enemySrc = heroSrc === undefined ? this.enemySprites.get(sourceId) : undefined;
     const src = heroSrc ?? enemySrc;
-    if (src === undefined) return;
-    if (abilityKey === 'ranger_focus') {
-      // Explosive Arrow's big arrow + blast are fired once from the cast handler; the per-hit
-      // damage events just replay the bow draw — no extra standard arrows.
-      heroSrc?.attack(abilityKey);
-      return;
+    if (src === undefined) return 0;
+    const look = abilityKey === undefined ? undefined : abilityLook(abilityKey);
+    if (heroSrc !== undefined && abilityKey !== undefined && (look?.shotTo !== undefined || look?.band !== undefined)) {
+      // An ability that goes to the wave as a whole (Explosive Arrow's one arrow, the rain of a volley) is shown
+      // from its cast (playWaveLook); its hits just keep the bow moving — no arrow of their own.
+      heroSrc.attack(abilityKey);
+      return 0;
     }
     if (src.style === 'melee') {
       if (heroSrc !== undefined) heroSrc.attack(abilityKey);
       else enemySrc?.swing();
       src.lungeAttack();
-      return;
+      return 0;
     }
     // The projectile homes on the target's LIVE position (it keeps advancing), so it
     // tracks the moving enemy instead of flying to where it stood when the shot started.
     const liveTarget = (): { x: number; y: number } => ({ x: target.x, y: target.y - 8 });
-    // A ranged/caster hero plays its own attack clip — the ability's when the hit came from one; an enemy
-    // plays its creature's attack. A caster with a holy strike (Priest) lands it on the target instead of
-    // throwing a bolt; everyone else fires a projectile.
-    if (heroSrc !== undefined) heroSrc.attack(abilityKey);
-    else enemySrc?.swing();
-    const magic = src.style === 'caster' ? (heroSrc?.projectileFrames ?? null) : null;
-    // Priest (caster hero with its own effect frames): the holy strike lands ON the target
-    // instead of flying there as a bolt. Each per-hit damage event (primary + AoE splash)
-    // replays this, so the effect pops on every enemy the auto strikes.
-    if (magic !== null) {
-      // Seat the holy strike on the enemy's FEET so the pillar rises up from the ground.
-      const feet = target instanceof EnemySprite ? target.feetPoint() : { x: target.x, y: target.y };
-      this.worldFx.strikeBurst(feet.x, feet.y, magic, HOLY_STRIKE_SCALE);
-    } else this.projectiles.spawn(src.x, src.y - 8, liveTarget, src.style === 'caster' ? 'fireball' : 'arrow');
+    // A ranged/caster hero plays its own attack clip — the ability's when the hit came from one; an enemy plays
+    // its creature's attack. An ability whose hit is its own spectacle on the target (Smite's bolt from the sky,
+    // Holy Nova's shafts) throws nothing.
+    // What leaves the attacker waits for the release when nothing announced the shot (the returned wait).
+    const wait = heroSrc !== undefined ? heroSrc.attack(abilityKey) : (enemySrc?.swing() ?? 0);
+    if (heroSrc !== undefined && look !== undefined && look.shot === undefined && look.hit !== undefined) return wait;
+    this.delayed.add(wait, () => {
+      // A hero's shot (render/abilityFx): the ability's own, or its class's — an arrow flies level, light goes
+      // straight to its target and bursts there.
+      if (heroSrc !== undefined) {
+        const own = look?.shot?.fx ?? heroSrc.basicShot();
+        const from = heroSrc.shotPoint();
+        const light = own === undefined ? undefined : LIGHT_SHOTS[own];
+        const land = light === undefined ? undefined : (x: number, y: number): void => this.fxAir.play(light.land, x, y);
+        if (own !== undefined) this.projectiles.spawnLook(from.x, from.y, liveTarget, own, 0, land, { straight: light !== undefined });
+        return;
+      }
+      // A foe's shot (render/enemyFx): level at the front hero, lofted over him at anyone standing behind.
+      if (enemySrc !== undefined && (src.style === 'ranged' || src.style === 'caster')) {
+        const shot = FOE_SHOT[src.style];
+        const over = shot.arc !== undefined && shotGoesOver(target.x, this.frontHeroX());
+        const from = enemySrc.shotPoint();
+        const land = (x: number, y: number): void => this.fxAir.play(shot.land, x, y);
+        const fx = over && shot.arc !== undefined ? shot.arc : shot.fx;
+        this.projectiles.spawnLook(from.x, from.y, liveTarget, fx, over ? FOE_ARC_HEIGHT : 0, land, { facing: -1, byPitch: over, straight: src.style === 'caster' });
+      }
+    });
+    return wait;
   }
 }
 

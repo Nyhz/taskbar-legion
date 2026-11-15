@@ -27,6 +27,8 @@ export const hud: Record<keyof typeof en, string> = {
   retryOnHelp: 'Si caéis, os quedáis en esta etapa y la repetís.',
   retryOff: 'Reintentar · apagado',
   retryOffHelp: 'Si caéis, retrocedéis una etapa. Enciéndelo para quedaros y repetir.',
+  nextStage: 'Avanzar a {place}',
+  nextStageHelp: 'La etapa siguiente ya está abierta: seguid adelante.',
   healDebuff: 'Curación mermada',
   healDebuffHelp: 'El poder de curación rinde menos en cada dificultad. Mantén equipada a la Priest.',
   healDebuffValue: '−{pct} %',

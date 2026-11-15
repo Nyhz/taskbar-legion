@@ -29,6 +29,7 @@ const TARGET_TEXT: Record<AbilityTarget, PlainTextKey> = {
   lowestAllyHp: 'talents.targetLowestAlly',
   lowestOtherAlly: 'talents.targetLowestOtherAlly',
   frontEnemy: 'talents.targetFrontEnemy',
+  backEnemy: 'talents.targetBackEnemy',
   meleeEnemies: 'talents.targetMeleeEnemies',
   allEnemies: 'talents.targetAllEnemies',
   allAllies: 'talents.targetAllAllies',

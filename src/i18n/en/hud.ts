@@ -26,6 +26,8 @@ export const hud = {
   retryOnHelp: 'If you fall, you stay on this stage and try it again.',
   retryOff: 'Retry · off',
   retryOffHelp: 'If you fall, you go back one stage. Turn it on to stay and try again.',
+  nextStage: 'Go on to {place}',
+  nextStageHelp: 'The next stage is already open. Go there now.',
   healDebuff: 'Weakened healing',
   healDebuffHelp: 'Heal power is worth less with each difficulty. Keep the Priest geared.',
   healDebuffValue: '−{pct} %',

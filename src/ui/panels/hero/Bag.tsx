@@ -46,7 +46,7 @@ export function Bag({
   const roster = useStore((s) => s.roster);
   const hero = roster.find((h) => h.id === heroId);
   const techRanks = useStore((s) => s.techRanks);
-  const ownedPets = useStore((s) => s.ownedPets);
+  const petRanks = useStore((s) => s.petRanks);
   const stage = useStore((s) => s.hud.globalStage);
   const openMenu = useContextMenu();
   const [page, setPage] = useState(0);
@@ -73,7 +73,7 @@ export function Bag({
     if (family.some((sl) => equipped[sl] === undefined)) return [];
     return family.flatMap((sl) => equipped[sl] ?? []);
   };
-  const bonuses = getBonuses(techRanks, ownedPets);
+  const bonuses = getBonuses(techRanks, petRanks);
   // The comparison weighs gear with the party's auras on, as the fight does.
   const partyMods = partyCombatMods(roster, bonuses.combatMods);
   const roleImpact =

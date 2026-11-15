@@ -72,6 +72,16 @@ export function stageStateOf(g: number, frontier: number, current: number): Stag
   return g <= frontier ? 'open' : 'locked';
 }
 
+/** The stage the strip's "go forward" arrow leads to from `current`, or null when there is none: the next stage,
+ *  when it is a travel stage (1–9 — the world boss is entered through its portal, with a key, never by walking
+ *  on) that the party has already reached. Shown after a defeat dropped the party a stage, or after travelling
+ *  back to farm. The same rule the stage keys of this map use (stageStateOf: not `locked`). */
+export function nextOpenStage(current: number, frontier: number): number | null {
+  const next = current + 1;
+  if (next % STAGES_PER_WORLD === 0) return null; // stage 10 of its world: the boss
+  return stageStateOf(next, frontier, current) === 'locked' ? null : next;
+}
+
 /** The world boss's door: shut until stage 9 falls, then it needs a key, then it can be entered (again and
  *  again, a key each time — also after the boss has fallen). */
 export type GateState = 'closed' | 'needKey' | 'open';

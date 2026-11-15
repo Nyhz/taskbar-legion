@@ -1,5 +1,5 @@
 /* The pets wing (mock-up: docs/redesign/mockups/40_pets.html, re-laid for the wing's 154 px): the companion in
-   the stone niche, its name, and the collection on plinths with each pet's bonus under it. Art pixels. */
+   the stone niche, its name, its rank line, and the collection on plinths with each pet's rank and bonus. Art pixels. */
 .tk-pets-count { position: relative; display: flex; align-items: center; gap: 2px; color: var(--k6); padding-top: 5px; }
 .tk-pets-count > img { margin-top: -5px; }
 .tk-pets-niche { margin: 5px auto 0; } /* the kit's niche, centred */
@@ -14,3 +14,14 @@
 .tk-pet.own:hover > .pt { filter: brightness(1.18); }
 .tk-pet > .val { position: absolute; left: 0; right: 0; top: 41px; height: 16px; display: flex; align-items: center; justify-content: center; gap: 1px; color: var(--k9); white-space: nowrap; }
 .tk-pet.none > .val { color: var(--k4); }
+.tk-pet.none > .val > img { opacity: .4; filter: grayscale(1); } /* what it WOULD give: dimmed with its amount */
+/* Rank: one pip per rank the pet has, the reached ones gold. Under the companion's name they sit before the bar
+   towards the next rank; on a plinth they are cut small into its front. */
+.tk-pets-rank { position: relative; display: flex; align-items: center; gap: 4px; width: 100px; height: 11px; margin: 3px auto 0; }
+.tk-pets-rank > .tk-bar { flex: 1; height: 7px; }
+.tk-pets-pips { display: flex; gap: 1px; }
+.tk-pets-pips > i { width: 4px; height: 5px; background: var(--k2); box-shadow: 0 0 0 1px var(--k0); margin: 1px; }
+.tk-pets-pips > i.on { background: var(--gold); box-shadow: inset 1px 1px 0 var(--gold-hi), inset -1px -1px 0 var(--gold-dim), 0 0 0 1px var(--k0); }
+.tk-pets-pips.on-plinth { position: absolute; left: 0; right: 0; top: 37px; justify-content: center; gap: 0; }
+.tk-pets-pips.on-plinth > i { width: 3px; height: 2px; margin: 0 1px; box-shadow: none; background: var(--k0); }
+.tk-pets-pips.on-plinth > i.on { background: var(--gold-hi); box-shadow: none; }

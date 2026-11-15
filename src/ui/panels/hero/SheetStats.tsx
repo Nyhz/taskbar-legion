@@ -4,7 +4,7 @@ import type { PartyAura } from '@/sim/partyStats';
 import { className, statLabel, talentNodeName, useT } from '@/i18n';
 import { StatRow, Tip, TipLine, TipTag, TipText, TipTitle, type TipSide } from '@/ui/kit';
 import { auraFigure, defenseAgainstStage, statFigure } from './sheetFigures';
-import { sheetColumns } from './sheetLayout';
+import { SHEET_REST_STATS, sheetColumns } from './sheetLayout';
 
 // The two stat columns of the sheet (sheetLayout): offence on the left, defence on the right (armour and magic
 // resist with what they cut in the current stage), and the other figures under the shorter one. A stat that is
@@ -21,16 +21,9 @@ export function SheetStats({
   stage: number;
   auras: readonly PartyAura[];
 }): React.JSX.Element {
-  const rest: StatKey[] = [
-    ...(stats.damageReduction > 0 ? (['damageReduction'] as const) : []),
-    'cooldownReduction',
-    'healPower',
-  ];
-  const columns = sheetColumns(
-    OFFENSIVE_STATS.filter((k) => stats[k] !== 0),
-    DEFENSIVE_STATS.filter((k) => stats[k] !== 0),
-    rest,
-  );
+  // EVERY stat is always listed, at 0 when the hero has none: a buff that grants one (Stone Skin's damage
+  // reduction, Bloodlust's lifesteal) only changes its number — a row appearing would shift the whole sheet.
+  const columns = sheetColumns(OFFENSIVE_STATS, DEFENSIVE_STATS, SHEET_REST_STATS);
   return (
     <div className="tk-sheet-cols">
       {columns.map((column, i) => (

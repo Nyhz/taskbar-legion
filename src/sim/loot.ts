@@ -11,7 +11,7 @@ import { STATS, FLEX_STATS, JEWELRY_STATS } from '@/data/stats';
 import { CLASS_KEYS } from '@/data/classes';
 import type { ChestType } from '@/data/chests';
 import { phi, EG_FLAT, GEAR_POWER, expectedLevel, pctAffixIlvlMult } from '@/data/stageScaling';
-import { difficultyOf } from '@/data/difficulties';
+import { difficultyOf, tierWeightsAt } from '@/data/difficulties';
 import { PERFECT_STAT_CHANCE, PERFECT_STAT_BONUS } from '@/data/lootTables';
 
 // The deterministic loot generator (the SPEC §4.6 contract): generateItem(origin)
@@ -25,13 +25,14 @@ export interface ItemOrigin {
   generatorVersion: number;
 }
 
-/** Per-DIFFICULTY tier roll (DIFFICULTY.md §4): the LOCKED drop table for the stage's
- *  difficulty, flat — NO depth-gate and NO chest tilt (chest type only changes gem CHANCE,
- *  never item tier). `minTier` excludes low tiers (jewelry has no T0; the gem path passes 1).
- *  The new top tier of each difficulty is the ~2% chase; tiers above the cap have weight 0. */
+/** Tier roll (DIFFICULTY.md §4): the drop table of the stage's WORLD — the per-world ladder
+ *  (data/difficulties.tierWeightsAt): a difficulty climbs from the previous one's table to its own
+ *  across its ten worlds. NO chest tilt (chest type only changes gem CHANCE, never item tier).
+ *  `minTier` excludes low tiers (jewelry has no T0; the gem path passes 1). The new top tier of each
+ *  difficulty reaches its ~2% only in the last world; tiers above the cap have weight 0. */
 export function rollTier(S: number, rng: Rng, minTier: ItemTier = 0): ItemTier {
   const def = difficultyOf(S);
-  const weights = def.tierWeights;
+  const weights = tierWeightsAt(S);
   const w: number[] = [];
   let total = 0;
   for (let t = 0; t < weights.length; t++) {

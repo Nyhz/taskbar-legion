@@ -17,10 +17,10 @@ export function StatColumn({ heroId }: { heroId: string }): React.JSX.Element | 
   const roster = useStore((s) => s.roster);
   const hero = roster.find((h) => h.id === heroId);
   const techRanks = useStore((s) => s.techRanks);
-  const ownedPets = useStore((s) => s.ownedPets);
+  const petRanks = useStore((s) => s.petRanks);
   if (hero === undefined) return null;
   const combatant = getEngine()?.world.heroes.find((h) => h.id === hero.id);
-  const stats = heroStats(hero, roster, getBonuses(techRanks, ownedPets), combatant);
+  const stats = heroStats(hero, roster, getBonuses(techRanks, petRanks), combatant);
   const { offence, defence } = dollStats(hero.classKey);
 
   const row = (key: StatKey): React.JSX.Element => {

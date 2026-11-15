@@ -1,6 +1,7 @@
 // The ten worlds of a difficulty and who lives in each (redesign: docs/redesign/REDESIGN.md §4). Every world has
 // a name and four creatures, one per ROLE: a beast (fast, weak), a melee fighter, a ranged one and the stage
-// boss. Presentation data — names and which figure stands for an enemy; the sim's enemy stats do not read it.
+// boss. A world may also have a creature of its own for its WORLD boss (the W-10 fight, the wall of the world);
+// until it has one, its stage boss stands in there. Presentation data — names and which figure stands for an enemy; the sim's enemy stats do not read it.
 // A creature's `key` is the key of its figure in the art pipeline (tools/assets/pipeline/foes).
 
 export type CreatureRole = 'beast' | 'melee' | 'ranged' | 'boss';
@@ -18,6 +19,8 @@ export interface WorldDef {
   index: number;
   name: string;
   creatures: Record<CreatureRole, CreatureDef>;
+  /** The creature of its world boss, if it has one of its own. */
+  worldBoss?: CreatureDef;
 }
 
 const creature = (role: CreatureRole, key: string, name: string): CreatureDef => ({ key, name, role });
@@ -32,6 +35,7 @@ export const WORLDS: readonly WorldDef[] = [
       ranged: creature('ranged', 'poacher', 'Crowfeather Poacher'),
       boss: creature('boss', 'king', 'Harvest King'),
     },
+    worldBoss: creature('boss', 'crowmother', 'The Crowmother'),
   },
   {
     index: 2,
@@ -42,6 +46,7 @@ export const WORLDS: readonly WorldDef[] = [
       ranged: creature('ranged', 'sporecaller', 'Sporecaller'),
       boss: creature('boss', 'warden', 'Antlered Warden'),
     },
+    worldBoss: creature('boss', 'mistletoe', 'Our Lady of Mistletoe'),
   },
   {
     index: 3,
@@ -52,6 +57,7 @@ export const WORLDS: readonly WorldDef[] = [
       ranged: creature('ranged', 'bogwitch', 'Bog Witch'),
       boss: creature('boss', 'ferryman', 'The Ferryman'),
     },
+    worldBoss: creature('boss', 'drownedmoon', 'The Drowned Moon'),
   },
   {
     index: 4,
@@ -62,6 +68,7 @@ export const WORLDS: readonly WorldDef[] = [
       ranged: creature('ranged', 'vulture', 'Carrion Harrier'),
       boss: creature('boss', 'colossus', 'Sandstone Colossus'),
     },
+    worldBoss: creature('boss', 'scapegoat', 'The Scapegoat'),
   },
   {
     index: 5,
@@ -72,6 +79,7 @@ export const WORLDS: readonly WorldDef[] = [
       ranged: creature('ranged', 'rimewraith', 'Rime Wraith'),
       boss: creature('boss', 'bellbearer', 'The Bell-Bearer'),
     },
+    worldBoss: creature('boss', 'abbot', 'The Gilded Abbot'),
   },
   {
     index: 6,
@@ -82,6 +90,7 @@ export const WORLDS: readonly WorldDef[] = [
       ranged: creature('ranged', 'siren', 'Siren'),
       boss: creature('boss', 'admiral', 'The Drowned Admiral'),
     },
+    worldBoss: creature('boss', 'ninthwave', 'The Ninth Wave'),
   },
   {
     index: 7,
@@ -92,6 +101,7 @@ export const WORLDS: readonly WorldDef[] = [
       ranged: creature('ranged', 'bat', 'Gloom Bat'),
       boss: creature('boss', 'geode', 'The Geode Titan'),
     },
+    worldBoss: creature('boss', 'amanita', 'The Destroying Angel'),
   },
   {
     index: 8,
@@ -102,6 +112,7 @@ export const WORLDS: readonly WorldDef[] = [
       ranged: creature('ranged', 'slagimp', 'Slag Imp'),
       boss: creature('boss', 'magmawyrm', 'Forge Wyrm'),
     },
+    worldBoss: creature('boss', 'quench', 'The Quench'),
   },
   {
     index: 9,
@@ -112,6 +123,7 @@ export const WORLDS: readonly WorldDef[] = [
       ranged: creature('ranged', 'cantor', 'Storm Cantor'),
       boss: creature('boss', 'archon', 'The Archon'),
     },
+    worldBoss: creature('boss', 'verdict', 'The Verdict'),
   },
   {
     index: 10,
@@ -120,8 +132,9 @@ export const WORLDS: readonly WorldDef[] = [
       beast: creature('beast', 'voidmaw', 'Void Maw'),
       melee: creature('melee', 'echo', 'Riftbound Echo'),
       ranged: creature('ranged', 'weaver', 'Star Weaver'),
-      boss: creature('boss', 'unmaker', 'The Unmaker'),
+      boss: creature('boss', 'lictor', 'The Lictor'),
     },
+    worldBoss: creature('boss', 'unmaker', 'The Unmaker'),
   },
 ];
 
@@ -130,7 +143,7 @@ export function tryWorldDef(index: number): WorldDef | undefined {
   return WORLDS[index - 1];
 }
 
-/** Every creature of every world. */
+/** Every creature of every world: its cast of four and, where it has one, the creature of its world boss. */
 export function allCreatures(): CreatureDef[] {
-  return WORLDS.flatMap((w) => CREATURE_ROLES.map((role) => w.creatures[role]));
+  return WORLDS.flatMap((w) => [...CREATURE_ROLES.map((role) => w.creatures[role]), ...(w.worldBoss === undefined ? [] : [w.worldBoss])]);
 }

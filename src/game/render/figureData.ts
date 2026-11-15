@@ -55,6 +55,12 @@ export function worldCreatureKeys(world: number): Record<CreatureRole, string> |
   return { beast: def.creatures.beast.key, melee: def.creatures.melee.key, ranged: def.creatures.ranged.key, boss: def.creatures.boss.key };
 }
 
+/** The figure of a world's WORLD boss (the W-10 fight), if that world has a creature of its own for it; otherwise
+ *  undefined, and its stage boss's figure stands in. */
+export function worldBossFigureKey(world: number): string | undefined {
+  return tryWorldDef(world)?.worldBoss?.key;
+}
+
 /** The atlas cell of an animation's frame: [column, row]. */
 export function frameCell(meta: FigureMeta, anim: FigureAnim, frame: number): [number, number] {
   return [frame % meta.cols, anim.row + Math.floor(frame / meta.cols)];

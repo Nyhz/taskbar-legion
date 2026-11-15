@@ -1,9 +1,8 @@
 import { DEFENSIVE_STATS, OFFENSIVE_STATS, type StatKey } from '@/data/stats';
 
 // The sheet wing's layout — pure, no React. The wing is narrow (six cells), so the stats stand in TWO columns:
-// offence on the left, defence on the right, and each of the remaining figures (damage reduction while a buff
-// grants it, cooldown reduction, heal power) under whichever column is shorter. Under them, the account's seven
-// figures four to a line, and the live effects.
+// offence on the left, defence on the right, and each of the remaining figures (damage reduction, cooldown
+// reduction, heal power) under whichever column is shorter. Under them, the account's seven figures four to a line.
 
 /** The two columns: `offense` and `defense` as given, then every `rest` stat under the shorter one (the left on
  *  a tie), so the columns never differ by more than the difference they started with. */
@@ -18,13 +17,12 @@ export function sheetColumns(
   return [left, right];
 }
 
-/** The most rows a column can have: every offensive and defensive stat present plus the three other figures. */
+/** The figures that are neither offence nor defence, placed under the shorter column. */
+export const SHEET_REST_STATS: readonly StatKey[] = ['damageReduction', 'cooldownReduction', 'healPower'];
+
+/** The rows of the taller column: every stat is always listed (at 0 when the hero has none), so this is fixed. */
 export const SHEET_MAX_STAT_ROWS = Math.max(
-  ...sheetColumns(OFFENSIVE_STATS, DEFENSIVE_STATS, [
-    'damageReduction',
-    'cooldownReduction',
-    'healPower',
-  ]).map((column) => column.length),
+  ...sheetColumns(OFFENSIVE_STATS, DEFENSIVE_STATS, SHEET_REST_STATS).map((column) => column.length),
 );
 /** A stat row (kit `StatRow`). */
 export const SHEET_STAT_ROW_ART = 18;

@@ -85,7 +85,7 @@ describe('what an upgrade gives', () => {
     const node = techNode('auto_open');
     expect(techFigure(node, 0)).toEqual({ kind: 'locked' });
     expect(figureText(techFigure(node, 0))).toBe('—');
-    expect(figureText(techFigure(node, 1))).toBe('14:15');
+    expect(figureText(techFigure(node, 1))).toBe('28:30'); // 30 min base − 90 s
     expect(techFigure(node, node.maxRanks)).toEqual({ kind: 'every', ms: AUTO_OPEN_FLOOR_MS });
     expect(techFigure(node, 99)).toEqual({ kind: 'every', ms: AUTO_OPEN_FLOOR_MS }); // past the cap: clamped
   });
@@ -102,13 +102,13 @@ describe('what an upgrade gives', () => {
 
 describe('where an upgrade stands for a purse', () => {
   it('mirrors the store: affordable when the gold reaches the next rank, never past the cap', () => {
-    const node = techNode('party_size'); // 1000, then 2500, two ranks
-    expect(techState(node, 0, 999)).toMatchObject({ affordable: false, maxed: false, cost: 1000, short: 1 });
-    expect(techState(node, 0, 1000)).toMatchObject({ affordable: true, short: 0 });
-    expect(techState(node, 1, 1000)).toMatchObject({
+    const node = techNode('party_size'); // 300, then 600, two ranks
+    expect(techState(node, 0, 299)).toMatchObject({ affordable: false, maxed: false, cost: 300, short: 1 });
+    expect(techState(node, 0, 300)).toMatchObject({ affordable: true, short: 0 });
+    expect(techState(node, 1, 300)).toMatchObject({
       affordable: false,
       cost: nodeCost(node, 1),
-      short: 1500,
+      short: 300,
     });
     expect(techState(node, 2, 1e9)).toMatchObject({ affordable: false, maxed: true, short: 0 });
   });

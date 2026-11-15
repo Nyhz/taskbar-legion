@@ -49,6 +49,7 @@ export const talents = {
   targetSelf: 'Self',
   targetLowestAlly: 'The ally with the least life',
   targetFrontEnemy: 'The enemy in front',
+  targetBackEnemy: 'An enemy behind the front one',
   targetMeleeEnemies: 'Enemies in melee range',
   targetAllEnemies: 'All enemies',
   targetAllAllies: 'All allies',
@@ -93,8 +94,4 @@ export const talents = {
   sheetGemsHelp: 'On top of the base chance of a chest holding a gem.',
   sheetChestPerKill: 'Chance per kill.',
   sheetChestPerBoss: 'Chance per boss.',
-  sheetNoEffects: 'No active effects',
-  sheetEffectGood: 'Active effect, in your favour.',
-  sheetEffectBad: 'Active effect, against you.',
-  sheetEffectLeft: 'Left',
 } as const;

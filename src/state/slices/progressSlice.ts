@@ -10,6 +10,8 @@ import { GENERATOR_VERSION } from '@/data/lootTables';
 import { UI_SCALE } from './uiSlice';
 import type { ItemInstance, InvEntry } from '@/sim/items';
 import { sanitizeHeroTalents } from '@/persistence/sanitizeHero';
+import { sanitizePets } from '@/persistence/sanitizePets';
+import { petRanks } from '@/sim/pets';
 import type { SaveV1 } from '@/persistence/saveSchema';
 
 // Account-wide progression: gold (the main currency), zone keys (world-boss challenge
@@ -197,8 +199,17 @@ export const createProgressSlice: StateCreator<GameStore, [], [], ProgressSlice>
       stashSlotUpgrades: save.stashSlotUpgrades ?? 0,
       chests: save.chests.map((c) => ({ ...c })),
       autoOpen: { ...save.autoOpen },
-      ownedPets: [...save.pets.ownedKeys],
-      selectedPet: save.pets.selectedKey,
+      // Pets: unknown keys dropped, objective progress read (0 for a save from before the ranks), ranks derived.
+      ...((): Pick<GameStore, 'ownedPets' | 'selectedPet' | 'petProgress' | 'petRanks' | 'petFound'> => {
+        const pets = sanitizePets(save.pets);
+        return {
+          ownedPets: pets.ownedKeys,
+          selectedPet: pets.selectedKey,
+          petProgress: pets.progress,
+          petRanks: petRanks(pets.ownedKeys, pets.progress),
+          petFound: [],
+        };
+      })(),
       uiScale: UI_SCALE, // fixed baseline — ignore any zoom stored in an old save
       dockOrientation: save.settings.dockOrientation,
       autoSalvage: save.settings.autoSalvage ?? DEFAULT_AUTO_SALVAGE, // old saves: off

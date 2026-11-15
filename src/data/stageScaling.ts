@@ -17,7 +17,6 @@ export const P_K = 600; // curve knee (stages) — larger = gentler early ramp, 
 export const P_EXP = 3.0; // polynomial degree — steepness of the accelerating tail
 
 // ── Enemy stats ──
-export const HP0 = 40;
 export const DMG0 = 6;
 // Phase 2: enemy damage = DMG0·Φ^DMG_EXP. DMG0 is the stage-1 FLOOR (kept low so the fresh
 // solo-knight bootstrap survives 1-1 — memory fresh-start-must-bootstrap); DMG_EXP is the RAMP.
@@ -37,16 +36,13 @@ export const ENEMY_BASE_ATTACK_SPEED = 0.8; // attacks/sec baseline
 export const BOSS_DMG_MULT = 6.5; // tune-pass: 5.0→6.5 — stage bosses actually pressure party HP (mildly challenging, not a faceroll)
 export const ZONE_BOSS_DMG_MULT = 7.0; // tune-pass: 5.5→7.0 — world bosses hit hard (enrage on an over-long fight forces farming) without making the deep-tail survival cliff razor-thin
 
-// Stage boss (W-1..W-9): a ~10-20s fight with DECENT (not great) gear — a real fight, NOT a wall.
-// Scales ~Φ^1.7 (a hair over party power → ~constant TTK). The early-world bossHpRamp keeps the
-// fresh-party bootstrap burstable (the 1-1 boss); STAGE_BOSS_C is the W20+ anchor.
-export const STAGE_BOSS_C = 45_000; // tune-pass: 37k→45k — a bit beefier (mildly challenging)
-export const STAGE_BOSS_EXP = 1.85; // tune-pass: 1.7→1.85 — TTK grows a touch with depth
+// Stage boss (W-1..W-9): a real fight, NOT a wall — 5–10 seconds against the on-gear party (the anchor table
+// STAGE_BOSS_HP_TUNE below; an override pins a world by hand).
 export const STAGE_BOSS_HP_OVERRIDE: Record<number, number> = {}; // world → absolute HP (rare manual pin)
 export function stageBossHp(S: number): number {
   const o = STAGE_BOSS_HP_OVERRIDE[worldOf(S)];
   if (o !== undefined) return o;
-  return STAGE_BOSS_C * phi(S) ** STAGE_BOSS_EXP * bossHpRamp(S) * enemyDiffMult(S);
+  return STAGE_BOSS_HP_TUNE[tunePoint(S)] ?? 1;
 }
 
 // Zone/world boss (W-10): THE WALL / gear-check. Scales a HAIR steeper than party power (Φ^1.8)
@@ -81,7 +77,16 @@ export function zoneBossHp(S: number): number {
 // Trash are weaker than the §12 reference enemy (TRASH_HP_FRACTION) so ~100 enemies
 // per stage clear in a reasonable, watchable time. Bosses/zone boss use the full
 // reference HP × their mult. (Pacing knobs — the §12 enemyHp/Φ/income are unchanged.)
-export const WAVES_PER_STAGE = 20; // design value (was a temporary 5 for fast testing)
+// WAVES PER STAGE, BY DIFFICULTY (Normal … Torment) — user, 2026-11-15 round 2: "Normal debería poder pasarse en
+// 3-4 horas, y luego cada dificultad extra debería ser cada vez más y más exigente". With enemies that take two or
+// three hits a wave lasts 10 s (five enemies) to 30 s (twenty-two), so twenty waves make an X-9 a ten-minute
+// stage — right for Eternal and Torment, and three times what Normal's four hours allow (100 stages in 240
+// minutes). Normal's stages are eight waves (about 1¼ minutes at X-1, 3½ at X-9: a world in some 20 minutes), and
+// the count grows with each difficulty until the full twenty.
+export const WAVES_BY_DIFFICULTY: readonly number[] = [8, 12, 16, 20, 20];
+export function wavesPerStage(S: number): number {
+  return WAVES_BY_DIFFICULTY[Math.max(0, Math.min(4, Math.floor((Math.max(1, S) - 1) / 100)))] ?? 20;
+}
 
 // Wave size ramps by the stage's position WITHIN its world (X-1 easiest → X-9 hardest),
 // so difficulty climbs across a world instead of within a single stage's waves. Indexed by
@@ -105,7 +110,7 @@ export function waveSizeForStage(globalStageIndex: number): number {
 // Rides on enemyDamage, so it stays bootstrap-safe. Tuned to sim-survival's minHP% dips.
 export const ELITE_CHANCE = 0.08; // tune-pass: 0.05→0.08 — more frequent champion spikes (the wave threat texture)
 export const ELITE_MIN_STAGE = 5; // no elites before this global stage — protects the fresh-Knight bootstrap (a single elite one-shots a naked L1); elites become the threat once you have a few drops
-export const ELITE_HP_MULT = 5;
+export const ELITE_HP_MULT = 4.5; // a grunt takes ~2.5 hits of the party's hardest hitter, so an elite about 11 (the anchor: 10–12)
 export const ELITE_DMG_MULT = 5;
 export const ELITE_CHEST_MULT = 2;
 // Trash are tuned to be "soldiers", not glass cannons: enough HP that a single auto
@@ -119,6 +124,59 @@ export const ELITE_CHEST_MULT = 2;
 // left softer (0.6) so a geared frontline still tanks the longer fight. The fresh
 // *healer* (priest, 5 dmg) is exempt from invariant #0's "not a slog" bound.
 export const TRASH_HP_FRACTION = 1.5;
+// ── THE TOUGHNESS ANCHORS and their tables (user, 2026-11-15) ──
+// Enemy toughness is anchored to HITS and SECONDS against a party with on-level gear (the probe's average
+// player at that point — test/sim/probe), not to a formula's guess of what gear should be:
+//   - a NORMAL enemy (a grunt) survives 2–3 basic hits of the party's hardest hitter: never a one-shot;
+//   - an ELITE has ELITE_HP_MULT times that (about 11 hits);
+//   - a STAGE boss (X-1 … X-9) lasts 5–10 seconds against the full party;
+//   - the WORLD boss is the wall, tuned for the length of its world (WORLD_WALL_MULT), not for seconds.
+// Each rank has its OWN table, one entry per tuning point: the ten stages of world 1 one by one (the opening,
+// where a party goes from one naked Knight to a trio in an hour), then one entry per world, 2 … 50. A party's
+// power moves while it farms at a wall, not during the fifty minutes of a pass, so inside a world the tables are
+// flat (the waves grow instead: WAVE_SIZE_BY_STAGE) and they step up at each new world. TRASH_DMG_TUNE is the
+// counterweight: enemies that live longer hit for longer, so trash damage is lowered, per point, to what the
+// arriving party clears without wiping. The tables are written by `scripts/tune-pacing.ts`, which measures the
+// probe's party at every point (a weapon is most of a hero's hit, so the numbers leap when the first ones drop:
+// from world 1 to world 2 a grunt's life grows tenfold); `scripts/measure-anchors.ts` prints the anchors along
+// the game and test/sim/anchors.test.ts pins them.
+export const TUNE_POINTS = 59;
+/** The tuning point of a global stage: 0–9 = stages 1-1 … 1-10, then 10 + (world − 2) for worlds 2 … 50. */
+export function tunePoint(S: number): number {
+  const g = Math.max(1, Math.floor(S));
+  return g <= 10 ? g - 1 : Math.min(TUNE_POINTS - 1, 8 + worldOf(g));
+}
+/** Life of a GRUNT (the plain melee enemy) at each tuning point: 2.5 basic hits of the on-gear hardest hitter. */
+export const GRUNT_HP_TUNE: number[] = [
+  31.5, 54.7, 60.7, 70.1, 74.0, 84.4, 92.1, 100, 101, 101,
+  113, 149, 342, 531, 685, 782, 821, 846, 881, 1070,
+  1560, 2350, 3310, 4050, 4700, 5490, 6070, 6620, 7260, 8140,
+  9330, 10100, 10900, 12200, 13800, 15500, 17200, 19400, 22900, 27200,
+  30800, 34500, 39300, 45600, 53300, 62700, 72100, 79700, 89600, 101000,
+  109000, 117000, 129000, 147000, 169000, 190000, 210000, 233000, 254000,
+];
+/** Life of the STAGE BOSS at each tuning point: 7.5 seconds of the on-gear party. */
+export const STAGE_BOSS_HP_TUNE: number[] = [
+  86.9, 148, 180, 194, 504, 583, 666, 845, 943, 943,
+  1100, 1560, 2990, 4720, 5900, 6720, 7080, 7430, 8180, 10300,
+  16100, 27500, 40200, 50100, 57500, 62300, 66900, 75600, 88300, 99300,
+  109000, 121000, 134000, 156000, 197000, 237000, 277000, 333000, 399000, 462000,
+  531000, 634000, 790000, 963000, 1100000, 1280000, 1510000, 1670000, 1850000, 2110000,
+  2250000, 2310000, 2600000, 3120000, 3680000, 4090000, 4490000, 5080000, 5550000,
+];
+/** Trash DAMAGE at each tuning point, as a share of the formula's (`enemyDamage`): 1 where the arriving party
+ *  clears the point's hardest stage cleanly, less where it would wipe. */
+export const TRASH_DMG_TUNE: number[] = [
+  1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 0.620, 0.750, 0.620, 1.00,
+  0.390, 0.320, 0.240, 0.220, 0.200, 0.200, 0.220, 0.240, 0.234, 0.170,
+  0.200, 0.291, 0.350, 0.390, 0.449, 0.470, 0.510, 0.560, 0.576, 0.510,
+  0.500, 0.470, 0.607, 0.715, 0.750, 0.820, 0.952, 1.00, 0.908, 0.680,
+  0.680, 0.748, 0.820, 0.952, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00,
+  1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00,
+];
+export function trashDmgTune(S: number): number {
+  return TRASH_DMG_TUNE[tunePoint(S)] ?? 1;
+}
 export const TRASH_DMG_FRACTION = 0.75; // tune-pass: 0.6→0.75 — waves chip harder (kept moderate to protect the solo-knight bootstrap)
 
 // Boss/zone-boss kills pay a multiple of per-kill income.
@@ -142,42 +200,16 @@ export const MAX_DAMAGE_REDUCTION = 80;
 // NOTE: multistrike / critChance / block / cooldownReduction are now bounded via the
 // DIMINISHING-RETURNS soft caps in data/stats.ts (ENABLER_SOFT_CAPS), not hard caps here.
 
-// Boss enrage (the DPS-race wall, DIFFICULTY.md §6). Geared boss TTK is ~constant in Φ
-// (gear flat ~Φ tracks boss HP ~Φ), so a FIXED enrage window gates every stage the
-// same way: kill the boss before it enrages, or wipe.
-//
-// Design (per design directive): ONLY the zone boss (every 10th stage, W-10) is a
-// hard DPS+survival gate, with a generous 30s window — your frontline must tank it
-// for 30s AND your DPS must kill it within 30s using ~that stage's gear. Normal
-// stage bosses (W-1..W-9) do NOT enrage; they are survival-gated (a squishy
-// frontline dies to them — the user's W1-9 rule), and you can take your time.
-// A generous 30s enrage on EVERY boss: when roughly geared you kill a normal stage
-// boss in a few seconds (well under 30s, so it never bites) and the W-10 zone boss
-// in ~20-25s (the real DPS+survival gate, via its ×35 HP / ×3 damage). It only
-// triggers when badly under-geared → a clean wipe-and-farm signal, not a 6-minute
-// grind. Same window for both keeps one tunable number (the user's "30s").
-export const ZONE_ENRAGE_MS = 30_000; // zone boss enrage window (W-10) — the gate
-export const STAGE_ENRAGE_MS = 30_000; // normal stage bosses share the 30s window
-// Boss damage doubles every RAMP ms past the enrage window. Softened 2500→5000 (2d): a slower
-// ramp means a SURVIVABLE tank buys real extra seconds to finish the kill past the window — so
-// the world-boss gate rewards survivability + DPS together, not a hard DPS cliff at exactly 30s.
-export const BOSS_ENRAGE_RAMP_MS = 5000;
-
-// ── Stage-boss HP ramp (the "easy early worlds") ──
-// REWORK: only the W-10 ZONE bosses are walls (design directive); the regular stage
-// bosses (W-1..W-9) must stay BEATABLE on the low-tier gear available early (T0-T3 until
-// tiers unlock at worlds 12-20). So the stage-boss HP scales up GENTLY across the whole
-// easy-opening band (worlds 1-20): ~4.5% of full at 1-1, reaching the full ×150 only at
-// world 20 (global 191), by when the tier ladder is fully unlocked. The W-10 zone boss is
-// NOT ramped — it stays the §14 wall.
-export const BOSS_HP_RAMP_START = 0.011; // stage-1 boss kept ~400 HP under STAGE_BOSS_C — a base solo knight bursts it inside the 30s enrage
-export const BOSS_HP_RAMP_END = 191; // full ×150 only from world 20 (global 191) onward — easy stage bosses through the opening worlds
-/** Fraction (BOSS_HP_RAMP_START..1) scaling a STAGE boss's HP in the opening. */
-export function bossHpRamp(S: number): number {
-  if (S >= BOSS_HP_RAMP_END) return 1;
-  if (S <= 1) return BOSS_HP_RAMP_START;
-  return BOSS_HP_RAMP_START + (1 - BOSS_HP_RAMP_START) * ((S - 1) / (BOSS_HP_RAMP_END - 1));
-}
+// Boss enrage (the DPS-race wall, DIFFICULTY.md §5). A boss hits as written for its window and then its damage
+// doubles every RAMP: the fight is meant to END at the window. A world boss's life is tuned so that a party geared
+// at 80-90 % of what its world offers kills it at ~60 s (user, 2026-11-15); a party below that has to hold some
+// seconds of enrage to finish, and a party far below does not make it. Stage bosses share the window and are
+// meant to die in 5-10 s, so theirs only bites a party that should not be there.
+export const ZONE_ENRAGE_MS = 60_000; // world boss (X-10) — the gate
+export const STAGE_ENRAGE_MS = 60_000; // stage bosses share the window
+// Boss damage doubles every RAMP ms past the window: ×2 after 2 s, ×6 after 5 s, ×32 after 10 s. Measured: a party
+// holds about ten seconds of it in Hell and up to fifteen in Torment (its tank is sturdier there) — "unos segundos".
+export const BOSS_ENRAGE_RAMP_MS = 2000;
 
 /** Boss damage multiplier from enrage: 1 until `windowMs`, then doubles every RAMP. */
 export function enrageMultiplier(fightMs: number, windowMs: number): number {
@@ -215,36 +247,6 @@ export function phi(S: number): number {
 export function g(S: number): number {
   if (S <= 1) return phi(1) / phi(0);
   return phi(S) / phi(S - 1);
-}
-
-// ── Gear-power tracking (the constant-hit-count anchor) ──
-// The party's DPS rides Φ × (tier inflation × gems × affix-count × level) — a multiplier that
-// Φ ALONE does not capture, so without it enemy HP (∝ Φ) falls ever further behind gear and
-// trash collapses to a one-shot at depth. gearTrack(S) folds that on-level gear-power inflation
-// into the enemy REFERENCE so trash/boss TTK stays ~constant in HIT-COUNTS at every depth
-// (the design directive — see memory enemy-scaling-decoupled). It ramps from ~1 at stage 1
-// (a FRESH, ungeared party — so the bootstrap 1-1 is untouched) up to GEARTRACK_MAX once the
-// tier ladder is fully unlocked + a progressing party is broadly geared (~W20), then plateaus
-// (deeper gear growth is the Φ factor + gems, already in Φ). The MULTS that ride the reference
-// (TRASH_HP_FRACTION / BOSS_HP_MULT / ZONE_BOSS_HP_MULT) stay INDEPENDENT per-role knobs.
-// Two regimes. RAMP (S≤W20): fresh→geared, 1 → GEARTRACK_BASE as the tier ladder unlocks and
-// a new party gears up (starts at 1 so the stage-1 bootstrap is untouched). CONTINUED GROWTH
-// (S>W20): gear keeps inflating past the T8 tier-cap via ilvl (Φ), accumulated gems, and the
-// rarity-depth tier-lift — empirically ≈ Φ^1.6 total, i.e. a Φ^~0.3 factor ON TOP of enemy HP's
-// Φ^1.0. gearTrack MUST keep tracking that or enemies fall behind deep and the late game
-// facerolls / re-accelerates (the bug). So past W20 it grows as (Φ(S)/Φ(W20))^GEARTRACK_EXP —
-// NO plateau. Tuned to hold trash at ~2-3 DPS hits at every depth (sim measurement).
-// FINITE model: gear power is BOUNDED now (ilvl tracks L≤115, not stage≈480), so the deep
-// gear-inflation these track is much smaller than the old infinite model assumed — base cut
-// 60→28 and continued-growth exponent 0.3→0.12 so deep enemy HP doesn't outrun the capped
-// gear ceiling (which bricked the agent at ~Inferno). Co-tuned via scripts/sim-worlds.ts.
-export const GEARTRACK_BASE = 28; // gear-power inflation vs a fresh party by W20 (tier×gem×affix)
-export const GEARTRACK_RAMP_END = 191; // W20 — end of the fresh→geared ramp
-export const GEARTRACK_EXP = 0.12; // continued growth past W20 (bounded finite gear)
-export function gearTrack(S: number): number {
-  if (S <= 1) return 1;
-  if (S < GEARTRACK_RAMP_END) return 1 + (GEARTRACK_BASE - 1) * ((S - 1) / (GEARTRACK_RAMP_END - 1));
-  return GEARTRACK_BASE * Math.pow(phi(S) / phi(GEARTRACK_RAMP_END), GEARTRACK_EXP);
 }
 
 // ── Per-DIFFICULTY escalation (the accelerating curve) ──
@@ -305,15 +307,11 @@ export function wallCurveMult(S: number): number {
 // progression probe (npm run probe), NOT derived analytically. Worlds past 50 fall back to the
 // S-curve generator (wallCurveMult).
 export const WORLD_WALL_MULT: readonly number[] = [
-  1.18, 1.21, 1.24, 1.28, 1.33, 1.38, 1.44, 1.51, 1.60, 1.69, //  W1-10  Normal
-  1.80, 1.93, 2.08, 2.25, 2.45, 2.65, 2.85, 3.05, 3.25, 3.45, //  W11-20 Hell (gate W20 ≤1d)
-  // Each difficulty: gentle ramp through x-1..x-9 (the ~1-2d farming worlds), then a clear
-  // STEP at x-10 (the GATE = the difficulty's climax). Sized so beating x-9 does NOT trivialize
-  // the gate. Gate day-targets (probe): Inferno W30 ~2-3d, Eternal W40 ~5-6d, Torment W50 = the
-  // final wall, needing near-perfect T8 gear (pushed toward the T8 brick ceiling ~110).
-  4.40, 4.80, 5.30, 5.80, 6.40, 6.90, 7.50, 8.40, 9.60, 13.00, //  W21-30 Inferno (gate W30 ~3-4d)
-  18.0, 20.0, 22.0, 25.0, 28.0, 31.0, 34.0, 37.0, 40.0, 44.0, //  W31-40 Eternal — firm ramp + gate step → W40 ~5-6d with a tight range (a bigger step hits 7-8d but reopens 26d+ outliers from loot-gear variance, so we keep it moderate)
-  54, 59, 64, 69, 74, 80, 86, 91, 96, 100, //  W41-50 Torment — even ramp, the hardest band (78 wipes, far above the rest); W50 toward the T8 brick = near-perfect-gear endgame climax ≈ 5-6d (T8 is the best gear in the game, so a CLEAN 7+ here would need a near-brick tail — capped for a sane range instead)
+  0.270, 0.193, 0.200, 0.160, 0.160, 0.135, 0.140, 0.160, 0.141, 0.150,
+  0.223, 0.391, 0.863, 1.25, 1.28, 1.28, 1.25, 1.25, 1.37, 1.58,
+  1.72, 1.83, 1.96, 2.08, 2.34, 2.84, 3.48, 4.17, 4.89, 5.70,
+  6.48, 7.19, 7.96, 8.91, 10.1, 11.3, 12.9, 15.1, 16.7, 18.7,
+  20.3, 22.5, 26.6, 32.3, 37.1, 42.0, 49.9, 59.6, 68.1, 72.2,
 ];
 export function wallWorldMult(S: number): number {
   return WORLD_WALL_MULT[worldOf(S) - 1] ?? wallCurveMult(S);
@@ -323,15 +321,17 @@ export function wallWorldMult(S: number): number {
 // the raised trash damage + wave swarm wore it down. Enemy DAMAGE ramps from EARLY_DMG_FLOOR at
 // stage 1 up to full by EARLY_DMG_RAMP_END (~world 2), so the opening is forgiving and full
 // difficulty arrives once you've geared a few pieces. Only touches the OPENING (≥END ⇒ ×1).
-export const EARLY_DMG_FLOOR = 0.65; // stage-1 enemy-damage multiplier
-export const EARLY_DMG_RAMP_END = 12; // global stage where enemy damage reaches full (≈ world 2, stage 2)
+export const EARLY_DMG_FLOOR = 0.28; // stage-1 enemy-damage multiplier
+export const EARLY_DMG_RAMP_END = 60; // global stage where enemy damage reaches full (≈ world 2, stage 2)
 export function earlyDmgRamp(S: number): number {
   if (S >= EARLY_DMG_RAMP_END) return 1;
   return EARLY_DMG_FLOOR + (1 - EARLY_DMG_FLOOR) * ((Math.max(1, S) - 1) / (EARLY_DMG_RAMP_END - 1));
 }
 
+/** The trash REFERENCE HP: a grunt has TRASH_HP_FRACTION times it, each enemy kind its own share (data/enemies).
+ *  Read from the anchor table (bosses have their own: stageBossHp / zoneBossHp). */
 export function enemyHp(S: number): number {
-  return HP0 * phi(S) * gearTrack(S) * enemyDiffMult(S);
+  return (GRUNT_HP_TUNE[tunePoint(S)] ?? 1) / TRASH_HP_FRACTION;
 }
 export function enemyDamage(S: number): number {
   return DMG0 * phi(S) ** DMG_EXP * enemyDiffMult(S) * earlyDmgRamp(S);
@@ -424,9 +424,22 @@ export const MAX_LEVEL = 120;
 // ~L46, far below the L≤115 the 500-stage game now needs). Cheap early (core talents/abilities
 // land fast), steepening smoothly so the climb to L115+ is a long farm spread across the deep
 // difficulties — but always reachable (no exponential brick). Co-tuned with xpPerKill.
+// RETUNE 2026-11-15 (the 3-month game, ~720 active hours): the pure 0.7·L^3.5 put a party at L72 by the end of
+// Normal and at the cap in Inferno, so levels stopped mattering for the second half. Two factors now stretch it
+// without touching the opening: `(1 + (L/XP_MID_LEVEL)^XP_MID_EXP)` makes the middle levels cost more (≈×1.6 at
+// L20, ×2.9 at L50, ×4.6 at L88), and a steep last-levels tail keeps L120 for the end of Torment. Fitted to the
+// experience the probe's player earns at the target pace (away time included): about L50 at the end of Normal,
+// L70 Hell, L88 Inferno, L107 Eternal, L119 Torment.
+export const XP_BASE = 0.7;
+export const XP_EXP = 3.5;
+export const XP_MID_LEVEL = 30;
+export const XP_MID_EXP = 1.05;
+export const XP_TAIL = 2_000_000; // experience the tail adds at the cap
+export const XP_TAIL_EXP = 20;
 export function totalExpToReach(L: number): number {
   const Lc = Math.min(L, MAX_LEVEL);
-  return Math.round(0.7 * Math.pow(Lc, 3.5));
+  if (Lc <= 1) return 0;
+  return Math.round(XP_BASE * Math.pow(Lc, XP_EXP) * (1 + Math.pow(Lc / XP_MID_LEVEL, XP_MID_EXP)) + XP_TAIL * Math.pow(Lc / MAX_LEVEL, XP_TAIL_EXP));
 }
 
 // ── World/stage helpers ──

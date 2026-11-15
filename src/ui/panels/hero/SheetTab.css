@@ -8,9 +8,3 @@
 .tk-sheet-accts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px 0; }
 .tk-sheet-acct { position: relative; display: grid; grid-template-rows: 24px 10px; justify-items: center; align-items: center; gap: 2px; }
 .tk-sheet-acct > b { font-weight: 400; color: var(--k9); white-space: nowrap; }
-.tk-sheet-fx { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 8px; min-height: 16px; }
-.tk-sheet-fx > div { position: relative; display: flex; align-items: center; gap: 2px; }
-.tk-sheet-fx > div.good { color: var(--good); }
-.tk-sheet-fx > div.bad { color: var(--bad); }
-.tk-sheet-fx > span { color: var(--k5); }
-.tk-sheet-fx .tk-tip { color: var(--k7); }

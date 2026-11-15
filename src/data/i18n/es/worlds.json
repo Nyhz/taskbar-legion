@@ -55,6 +55,10 @@
     "en": "Harvest King",
     "es": "Rey de la Cosecha"
   },
+  "creature.crowmother": {
+    "en": "The Crowmother",
+    "es": "La Madre de los Cuervos"
+  },
   "creature.spider": {
     "en": "Thornweaver",
     "es": "Tejedora de espinas"
@@ -198,5 +202,41 @@
   "creature.unmaker": {
     "en": "The Unmaker",
     "es": "El Deshacedor"
+  },
+  "creature.mistletoe": {
+    "en": "Our Lady of Mistletoe",
+    "es": "Nuestra Señora del Muérdago"
+  },
+  "creature.drownedmoon": {
+    "en": "The Drowned Moon",
+    "es": "La Luna Ahogada"
+  },
+  "creature.scapegoat": {
+    "en": "The Scapegoat",
+    "es": "El Chivo Expiatorio"
+  },
+  "creature.abbot": {
+    "en": "The Gilded Abbot",
+    "es": "El Abad Dorado"
+  },
+  "creature.ninthwave": {
+    "en": "The Ninth Wave",
+    "es": "La Novena Ola"
+  },
+  "creature.amanita": {
+    "en": "The Destroying Angel",
+    "es": "El Ángel Destructor"
+  },
+  "creature.quench": {
+    "en": "The Quench",
+    "es": "El Temple"
+  },
+  "creature.verdict": {
+    "en": "The Verdict",
+    "es": "El Veredicto"
+  },
+  "creature.lictor": {
+    "en": "The Lictor",
+    "es": "El Lictor"
   }
 }

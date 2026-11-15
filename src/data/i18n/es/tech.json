@@ -88,8 +88,8 @@
     "es": "Apertura automática"
   },
   "auto_open.description": {
-    "en": "Unlock auto-open · 15m base, −45s / rank",
-    "es": "Desbloquea la apertura automática · 15 min de base, −45 s por rango"
+    "en": "Unlock auto-open · 30m base, −90s / rank",
+    "es": "Desbloquea la apertura automática · 30 min de base, −90 s por rango"
   },
   "party_size.name": {
     "en": "Recruitment",

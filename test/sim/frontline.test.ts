@@ -3,27 +3,30 @@ import { Simulation, createWorld, type TickContext } from '@/sim/Simulation';
 import { buildHeroCombatant } from '@/sim/loadout';
 import { getBonuses } from '@/sim/bonuses';
 
-// Design directive: enemies focus the FRONTLINE (party-order, first living hero);
-// the back line (DPS/support) is protected until the front falls. So the front
-// hero's tankiness gates progression — a squishy front collapses the group.
+// Design directive: enemies focus the FRONTLINE (party-order, first living hero), so the front hero's
+// tankiness gates progression — a squishy front collapses the group. Since 2026-11-15 the back line is no
+// longer untouchable (docs/DIFFICULTY.md §5b, test/sim/backline.test.ts): shooters aim behind the front hero
+// some of the time and area blows reach everyone — but the front hero still takes most of it.
 
-const ctx: TickContext = { bonuses: getBonuses({}, []), ownedPetKeys: [] };
+const ctx: TickContext = { bonuses: getBonuses({}, {}), ownedPetKeys: [] };
 
 describe('frontline targeting model', () => {
-  it('the back line is untouched while the frontline lives', () => {
-    const knight = buildHeroCombatant({ id: 'tank', classKey: 'knight', level: 5, equipment: {}, talents: {} }, []);
-    const ranger = buildHeroCombatant({ id: 'dps', classKey: 'ranger', level: 5, equipment: {}, talents: {} }, []);
+  it('the front hero takes most of the damage; the hero behind takes some', () => {
+    const knight = buildHeroCombatant({ id: 'tank', classKey: 'knight', level: 60, equipment: {}, talents: {} }, []);
+    const ranger = buildHeroCombatant({ id: 'dps', classKey: 'ranger', level: 60, equipment: {}, talents: {} }, []);
     const world = createWorld(1, [knight, ranger]); // tank in slot 0 (front)
-    world.globalStageIndex = 6;
+    world.globalStageIndex = 16; // ranged enemies at full weight
     const sim = new Simulation(world);
-    for (let i = 0; i < 80; i++) {
-      sim.tick(ctx);
-      if (!knight.alive) break; // stop once the front falls
+    const taken = { tank: 0, dps: 0 };
+    for (let i = 0; i < 1500 && knight.alive && ranger.alive; i++) {
+      for (const ev of sim.tick(ctx)) {
+        if (ev.type !== 'damage' || ev.tick === true) continue;
+        if (ev.targetId === 'tank') taken.tank += ev.amount ?? 0;
+        else if (ev.targetId === 'dps') taken.dps += ev.amount ?? 0;
+      }
     }
-    // The column never lets a back hero overtake the front, so the ranger behind the
-    // knight stays untouched while the knight soaks the hits.
-    expect(ranger.hp).toBe(ranger.maxHp);
-    expect(knight.hp).toBeLessThan(knight.maxHp); // the front took the hits
+    expect(taken.dps).toBeGreaterThan(0); // the back line is hit…
+    expect(taken.tank).toBeGreaterThan(taken.dps); // …but the front holds the fight
   });
 
   // PHASE 2: deferred — this is a BALANCE-margin assertion (a L10 tank should out-survive a

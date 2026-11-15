@@ -1,5 +1,3 @@
-import type { ActiveEffect } from '@/data/effects';
-import { effectDef } from '@/data/effects';
 import { tryAbilityDef, type AbilityDef } from '@/data/abilities';
 import { castSignStem } from './castSign';
 import { hexToNum } from '@/styles/palette';
@@ -36,35 +34,3 @@ export function castFx(abilityKey: string): CastFx {
   const offensive = def !== undefined && hitsEnemies(def);
   return { sign: castSignStem(abilityKey), color: offensive ? FX.offense : FX.support };
 }
-
-/** True when a cast targets allies/self (a heal/buff/shield) rather than enemies — used
- *  to play the healer's heal-cast pose. Safe on unknown/renamed keys (treated as false). */
-export function isSupportCast(abilityKey: string): boolean {
-  const def = tryAbilityDef(abilityKey);
-  return def !== undefined && !hitsEnemies(def);
-}
-
-/** True when a cast hits the WHOLE wave (target 'allEnemies' — Holy Nova, Raining Arrows).
- *  Its flourish belongs over the TARGET band, not the caster, so an AoE doesn't read as
- *  landing on the caster's own side. */
-export function isWholeWaveCast(abilityKey: string): boolean {
-  return tryAbilityDef(abilityKey)?.target === 'allEnemies';
-}
-
-/** True while a total-immunity effect is up (Knight Last Stand) — drives the yellow
- *  shield bubble around the hero. */
-export function isInvulnerable(effects: readonly ActiveEffect[]): boolean {
-  return effects.some((e) => effectDef(e.defKey).kind.type === 'invulnerable');
-}
-
-/** Yellow used for the Last Stand invulnerability shield + INVULNERABLE callout. */
-export const INVULN_YELLOW = hexToNum('#ffe14d');
-
-/** True while the Priest's Battle Enrage ultimate buff is on the hero — drives the unique
- *  red aura that marks every party member caught in the enrage. */
-export function isEnraged(effects: readonly ActiveEffect[]): boolean {
-  return effects.some((e) => e.defKey === 'buff_enrage_cdr' || e.defKey === 'buff_enrage_as');
-}
-
-/** Red used for the Battle Enrage party aura. */
-export const ENRAGE_RED = hexToNum('#ff3b30');

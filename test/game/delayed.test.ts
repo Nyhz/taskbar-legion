@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { CLASS_KEYS } from '@/data/classes';
 import { ABILITIES } from '@/data/abilities';
-import { MAX_BLOW_WAIT_MS, blowWaitMs, impactMs } from '@/game/render/attackLead';
+import { MAX_BLOW_WAIT_MS, blowRate, blowWaitMs, impactMs } from '@/game/render/attackLead';
 import { Delayed } from '@/game/render/delayed';
 import { figureMeta } from '@/game/render/figureData';
 import { heroAbilityClip } from '@/game/render/heroClips';
@@ -57,7 +57,12 @@ describe('blowWaitMs', () => {
   it('waits for a short wind-up and not for a long one', () => {
     expect(blowWaitMs(undefined)).toBe(0);
     expect(blowWaitMs({ row: 0, n: 5, ms: [80, 90, 30, 90, 100], loop: false })).toBe(170);
-    expect(blowWaitMs({ row: 0, n: 4, ms: [300, 300, 40, 90], loop: false })).toBe(0); // 600 ms: too long to wait
+    // 600 ms of wind-up: the clip is hurried so its blow comes at the longest wait.
+    expect(blowRate({ row: 0, n: 4, ms: [300, 300, 40, 90], loop: false })).toBeCloseTo(600 / MAX_BLOW_WAIT_MS);
+    expect(blowWaitMs({ row: 0, n: 4, ms: [300, 300, 40, 90], loop: false })).toBeCloseTo(MAX_BLOW_WAIT_MS);
+    // 1200 ms: too long even hurried — played as drawn, not waited for.
+    expect(blowRate({ row: 0, n: 4, ms: [600, 600, 40, 90], loop: false })).toBe(1);
+    expect(blowWaitMs({ row: 0, n: 4, ms: [600, 600, 40, 90], loop: false })).toBe(0);
   });
 
   it('gives every ability of every class a wait that never trails the life bar by long', () => {
@@ -70,13 +75,16 @@ describe('blowWaitMs', () => {
         expect(anim, `${ability.key} has a clip`).toBeDefined();
         const wait = blowWaitMs(anim);
         expect(wait).toBeGreaterThanOrEqual(0);
-        expect(wait).toBeLessThanOrEqual(MAX_BLOW_WAIT_MS);
-        if (anim !== undefined && wait > 0) expect(wait).toBe(impactMs(anim));
+        expect(wait).toBeLessThanOrEqual(MAX_BLOW_WAIT_MS + 1e-6);
+        if (anim !== undefined && wait > 0) expect(wait).toBeCloseTo(impactMs(anim) / blowRate(anim));
         waits[ability.key] = wait;
       }
     }
     // The blows this exists for: the Knight's cleaves land with the blade.
     expect(waits.knight_riposte).toBeGreaterThan(0);
     expect(waits.knight_debilitate).toBeGreaterThan(0);
+    // And the shots that used to leave before the bow was drawn: they wait for the (hurried) release.
+    expect(waits.ranger_aimedshot).toBeCloseTo(MAX_BLOW_WAIT_MS);
+    expect(waits.ranger_focus).toBeCloseTo(MAX_BLOW_WAIT_MS);
   });
 });

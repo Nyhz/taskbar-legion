@@ -6,7 +6,7 @@ import { generateItem, rollTier } from './loot';
 import type { GemInstance, GemTier } from '@/data/gems';
 import { generateGem } from './gems';
 import type { ChestStack, ChestType } from '@/data/chests';
-import { CHEST_CONFIG, AUTO_OPEN_BASE_INTERVAL_MS, AUTO_OPEN_FLOOR_MS, STAGE_KEY_DROP_CHANCE, chestCountOf } from '@/data/chests';
+import { CHEST_CONFIG, AUTO_OPEN_BASE_INTERVAL_MS, AUTO_OPEN_FLOOR_MS, stageKeyDropChance, chestCountOf } from '@/data/chests';
 import { worldBossStageOf } from '@/data/difficulties';
 import { GENERATOR_VERSION } from '@/data/lootTables';
 import type { Bonuses } from './bonuses';
@@ -124,7 +124,7 @@ export function openChest(
   }
   // Challenge key: STAGE-BOSS chests only. Rolled AFTER the gem so the gear+gem stream is
   // unchanged. Credits the world boss of this chest's zone (worldBossStageOf its dropStage S).
-  if (type === 'stageBoss' && rng.chance(STAGE_KEY_DROP_CHANCE)) {
+  if (type === 'stageBoss' && rng.chance(stageKeyDropChance(S))) {
     keys[worldBossStageOf(S)] = (keys[worldBossStageOf(S)] ?? 0) + 1;
   }
 

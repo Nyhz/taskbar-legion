@@ -28,11 +28,11 @@ export function HudChests(): React.JSX.Element {
   const t = useT();
   const chests = useStore((s) => s.chests);
   const techRanks = useStore((s) => s.techRanks);
-  const ownedPets = useStore((s) => s.ownedPets);
+  const petRanks = useStore((s) => s.petRanks);
   const autoOpen = useStore((s) => s.autoOpen);
   // Whole seconds, so the countdown re-renders about once a second, not on every HUD push.
   const nowSec = useStore((s) => Math.floor(s.hud.clockMs / 1000));
-  const bonuses = getBonuses(techRanks, ownedPets);
+  const bonuses = getBonuses(techRanks, petRanks);
 
   // Mirrors engine.autoOpen(): it fires once now − (lastRunAt ?? 0) ≥ interval and sweeps every kind.
   const remaining = Math.max(0, (autoOpen.lastRunAt ?? 0) + autoOpenIntervalMs(bonuses) - nowSec * 1000);

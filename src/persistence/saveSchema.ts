@@ -2,6 +2,7 @@ import type { ItemInstance, InvEntry } from '@/sim/items';
 import type { GemInstance } from '@/data/gems';
 import type { SlotKey } from '@/data/itemSlots';
 import type { ChestType } from '@/data/chests';
+import type { SavedPets } from './sanitizePets';
 
 // SaveV1 + HeroState exactly per SPEC §8 / DATA_MODEL. Carries future-but-empty
 // fields (cube, online, researchPoints) for forward-compat — never stripped. The
@@ -55,7 +56,7 @@ export interface SaveV1 {
   chests: { type: ChestType; dropStage: number; count: number }[];
   zoneKeys?: Record<number, number>; // world-boss challenge keys: X-10 global stage → count (old saves lack it)
   autoOpen: { unlocked: boolean; lastRunAt: number | null };
-  pets: { ownedKeys: string[]; selectedKey: string | null };
+  pets: SavedPets; // owned keys, the companion, and each pet's objective progress (optional: old saves lack it)
   settings: {
     uiScale: 1 | 1.5 | 2;
     dockOrientation: 'bottom' | 'left' | 'right';

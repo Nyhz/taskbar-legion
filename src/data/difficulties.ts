@@ -27,13 +27,14 @@ export interface DifficultyDef {
   index: number; // 0..4 — position in play order; also the `G = index·100 + …` band
   /** Highest gear/gem tier this difficulty can drop (gear and gems share the cap). */
   tierCap: ItemTier;
-  /** LOCKED drop table — relative weights indexed by tier 0..8 (0 = not in this pool).
-   *  One table per difficulty, NO depth-gate: every stage of the difficulty rolls from
-   *  this same table; only enemy power changes with depth. Rows sum to 100. */
+  /** Drop table — relative weights indexed by tier 0..8 (0 = not in this pool). This is the table of the
+   *  difficulty's LAST world: the worlds climb to it from the previous difficulty's table (`tierWeightsAt`,
+   *  the per-world ladder). Rows sum to 100. */
   tierWeights: readonly number[];
 }
 
-// Drop tables — LOCKED (docs/DIFFICULTY.md §4). MIDDLE-WEIGHTED pass: the two top tiers of every
+// Drop tables (docs/DIFFICULTY.md §4) — each is the table of its difficulty's LAST world; see `tierWeightsAt`
+// for the per-world ladder that climbs to it. MIDDLE-WEIGHTED pass: the two top tiers of every
 // difficulty are fixed at 7.5 (just below the cap) and 2 (the cap chase), and the remaining weight
 // is humped on the MIDDLE tiers of each difficulty's range, tapering toward the low trash — so most
 // drops land in the mid band rather than the T0/T1 floor, while the endgame chase stays rare. Each
@@ -52,6 +53,9 @@ export const DIFFICULTIES: Readonly<Record<DifficultyKey, DifficultyDef>> = {
   eternal: { key: 'eternal', name: 'Eternal', index: 3, tierCap: 7, tierWeights: W_ETERNAL },
   torment: { key: 'torment', name: 'Torment', index: 4, tierCap: 8, tierWeights: W_TORMENT },
 };
+
+/** What drops in Normal's FIRST world, before the ladder starts climbing: plain gear, nothing epic or legendary. */
+export const STARTER_TIER_WEIGHTS: readonly number[] = [80, 18, 2, 0, 0, 0, 0, 0, 0];
 
 export const DIFFICULTY_COUNT = DIFFICULTY_KEYS.length;
 
@@ -102,6 +106,19 @@ export function localStageOf(globalStage: number): number {
 /** World within its difficulty (1..10). */
 export function worldInDifficulty(globalStage: number): number {
   return Math.floor((localStageOf(globalStage) - 1) / STAGES_PER_WORLD) + 1;
+}
+
+/** The drop table of a global stage — THE PER-WORLD LADDER (user decision, 2026-11-15; it replaces the flat
+ *  table per difficulty, under which a legendary could drop at stage 1-1). A difficulty starts where the
+ *  previous one ended and only reaches its own table in its last world: world 1 rolls the previous difficulty's
+ *  table (Normal: STARTER_TIER_WEIGHTS), world 10 the difficulty's `tierWeights`, the worlds between a straight
+ *  blend of the two. So the new top rarity of a difficulty is absent in its first world and climbs to its 2 %. */
+export function tierWeightsAt(globalStage: number): number[] {
+  const index = difficultyIndexOf(globalStage);
+  const to = difficultyByIndex(index).tierWeights;
+  const from = index === 0 ? STARTER_TIER_WEIGHTS : difficultyByIndex(index - 1).tierWeights;
+  const t = (worldInDifficulty(globalStage) - 1) / (WORLDS_PER_DIFFICULTY - 1);
+  return to.map((w, tier) => (from[tier] ?? 0) + (w - (from[tier] ?? 0)) * t);
 }
 
 /** Stage within its world (1..10; 10 = the world boss). */

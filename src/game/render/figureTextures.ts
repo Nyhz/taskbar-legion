@@ -1,11 +1,11 @@
 import { Assets, Rectangle, Texture } from 'pixi.js';
 import type { CreatureRole } from '@/data/worlds';
-import { figureMeta, frameCell, worldCreatureKeys, type FigureMeta } from './figureData';
+import { figureMeta, frameCell, worldBossFigureKey, worldCreatureKeys, type FigureMeta } from './figureData';
 import { creatureSheetLoader, heroSheetUrl } from './figureSheets';
 
 // The figures' atlases as Pixi textures, cut into frames. The three HEROES load before the first frame
-// (loadHeroFigures); a world's four CREATURES load lazily when the party gets there (worldFigures) and stay in
-// memory with the world before it — see GameStrip.reconcileEnemies.
+// (loadHeroFigures); a world's four CREATURES — and its world boss's own figure, if it has one — load lazily when
+// the party gets there (worldFigures) and stay in memory with the world before it — see GameStrip.reconcileEnemies.
 
 export interface FigureSheet {
   key: string;
@@ -50,7 +50,8 @@ export function heroFigure(classKey: string): FigureSheet | null {
   return heroes.get(classKey) ?? null;
 }
 
-export type WorldFigures = Record<CreatureRole, FigureSheet>;
+/** A world's cast by role, and the figure of its world boss when that world has one of its own. */
+export type WorldFigures = Record<CreatureRole, FigureSheet> & { worldBoss?: FigureSheet };
 
 // The world on screen and the one before it stay loaded (four small atlases each).
 const KEEP = 2;
@@ -69,8 +70,15 @@ async function loadWorld(world: number): Promise<void> {
     urls.push(url);
     return loadSheet(key, url);
   };
-  const [beast, melee, ranged, boss] = await Promise.all([load(cast.beast), load(cast.melee), load(cast.ranged), load(cast.boss)]);
-  worlds.set(world, { urls, figures: { beast, melee, ranged, boss } });
+  const own = worldBossFigureKey(world);
+  const [beast, melee, ranged, boss, worldBoss] = await Promise.all([
+    load(cast.beast),
+    load(cast.melee),
+    load(cast.ranged),
+    load(cast.boss),
+    own === undefined ? Promise.resolve(undefined) : load(own),
+  ]);
+  worlds.set(world, { urls, figures: { beast, melee, ranged, boss, ...(worldBoss === undefined ? {} : { worldBoss }) } });
   trim(world);
 }
 
@@ -82,6 +90,7 @@ function trim(current: number): void {
     worlds.delete(key);
     if (entry === undefined) continue;
     for (const sheet of Object.values(entry.figures)) {
+      if (sheet === undefined) continue;
       sheet.released = true;
       for (const frames of Object.values(sheet.clips)) for (const t of frames) t.destroy(false);
     }

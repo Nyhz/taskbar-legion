@@ -10,7 +10,7 @@
 .tk-hud-key.on::after { content: ''; position: absolute; left: 3px; right: 2px; bottom: 1px; height: 1px; background: var(--gold); }
 
 /* Where the party is: difficulty, world-stage on a pennant of the difficulty's colour, progress to the boss. */
-.tk-hud-mid { flex: 1; display: flex; align-items: center; justify-content: center; }
+.tk-hud-mid { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center; }
 .tk-hud-where { position: relative; display: flex; align-items: center; gap: 4px; }
 .tk-hud-stage { height: 12px; padding: 0 5px; line-height: 12px; color: #0b0d17; background: linear-gradient(#e6e6e8 0 1px, #97a1b3 1px 10px, #5b6880 10px);
   clip-path: var(--step); }
@@ -20,7 +20,17 @@
 .tk-hud-stage.torment { color: #ead2f0; background: linear-gradient(#a879c6 0 1px, #673d94 1px 10px, #4d2b7c 10px); }
 .tk-hud-prog { width: 132px; height: 9px; }
 .tk-hud-end { margin-left: -2px; opacity: .45; }
-.tk-hud-end.on { opacity: 1; }
+.tk-hud-at { position: relative; display: flex; align-items: center; gap: 4px; }
+
+/* The boss in front (HudBoss): the middle of the rail becomes its line — rank sign, name, life, enrage clock.
+   On the rail, so nothing is laid over a boss as tall as the strip. The name is gold for a world boss. */
+.tk-hud-where.boss { flex: 1; min-width: 0; margin: 0 10px; gap: 6px; }
+.tk-hud-foe { flex: 1; min-width: 0; display: flex; align-items: center; gap: 3px; }
+.tk-hud-foe > .nm { flex: 0 1 auto; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font: 12px/14px var(--f-name); color: var(--k9); text-shadow: 1px 1px 0 var(--k0); }
+.tk-hud-foe.world > .nm { color: var(--gold-hi); }
+.tk-hud-foe-life { flex: 1 1 70px; min-width: 70px; max-width: 170px; height: 9px; margin-left: 2px; }
+.tk-hud-foe-clock { position: relative; display: flex; align-items: center; min-width: 34px; color: var(--k9); }
+.tk-hud-foe-clock.late { color: var(--bad); }
 
 /* What the party holds: chests (one square per storage slot), keys, the purse. */
 .tk-hud-res { position: relative; display: flex; align-items: center; gap: 1px; padding-right: 5px; color: var(--k9); }

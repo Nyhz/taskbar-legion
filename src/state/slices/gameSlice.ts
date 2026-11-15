@@ -18,6 +18,9 @@ export interface HudSnapshot {
   clockMs: number; // current sim time (world.tick * TICK_MS) — drives the auto-open countdown
   party: { classKey: string; level: number }[]; // one entry per fielded hero
   zoneKeysHeld: number; // world-boss keys valid for the CURRENT zone (world+difficulty)
+  /** The strip is black, or about to be, and the party moves under it (a defeat, a journey to another world —
+   *  game/stageSign): the stage's sign waits — it shows only once the black has lifted (ui/overlay/StageBanner). */
+  stageSignHeld: boolean;
 }
 
 export const EMPTY_HUD: HudSnapshot = {
@@ -32,6 +35,7 @@ export const EMPTY_HUD: HudSnapshot = {
   clockMs: 0,
   party: [],
   zoneKeysHeld: 0,
+  stageSignHeld: false,
 };
 
 export interface GameSlice {

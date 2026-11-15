@@ -1,7 +1,7 @@
 import type { Rng } from './rng';
 import type { Combatant, WorldState } from './world';
 import type { ResolvedAbility } from './loadout';
-import { abilityDef, worldBossAbilityKeys } from '@/data/abilities';
+import { abilityDef, stageBossAbilityKeys, worldBossAbilityKeys } from '@/data/abilities';
 import { difficultyIndexOf } from '@/data/difficulties';
 import { pickEnemyKind, type EnemyKind } from '@/data/enemies';
 import { RANGE, MOVE_SPEED, SPAWN_AHEAD, WAVE_BATCHES, WAVE_BATCH_TICKS, WAVE_SPAWN_BAND } from '@/data/field';
@@ -15,6 +15,7 @@ import {
   ZONE_BOSS_DMG_MULT,
   TRASH_HP_FRACTION,
   TRASH_DMG_FRACTION,
+  trashDmgTune,
   waveSizeForStage,
   ELITE_CHANCE,
   ELITE_MIN_STAGE,
@@ -38,6 +39,7 @@ interface EnemySpec {
   isBoss: boolean;
   isElite: boolean;
   enrageMs: number;
+  backShotChance?: number; // share of its basic attacks aimed behind the front hero (shooters)
 }
 
 function makeEnemy(world: WorldState, S: number, index: number, x: number, spec: EnemySpec): Combatant {
@@ -65,13 +67,14 @@ function makeEnemy(world: WorldState, S: number, index: number, x: number, spec:
     isBoss: spec.isBoss,
     isElite: spec.isElite,
     enrageMs: spec.enrageMs,
+    backShotChance: spec.backShotChance,
   };
 }
 
-function trashSpec(kind: EnemyKind): EnemySpec {
+function trashSpec(kind: EnemyKind, S: number): EnemySpec {
   return {
     hpMult: kind.hpMult * TRASH_HP_FRACTION,
-    dmgMult: kind.dmgMult * TRASH_DMG_FRACTION,
+    dmgMult: kind.dmgMult * TRASH_DMG_FRACTION * trashDmgTune(S), // trash damage has its own tuning table (the anchors)
     magic: kind.magic,
     range: kind.range,
     moveSpeed: kind.moveSpeed,
@@ -79,14 +82,15 @@ function trashSpec(kind: EnemyKind): EnemySpec {
     isBoss: false,
     isElite: false,
     enrageMs: STAGE_ENRAGE_MS,
+    backShotChance: kind.backShotChance,
   };
 }
 
 // An ELITE is a normal trash mob of its kind, beefed: 2× HP + 2× damage (still on top of
 // the trash fractions, so an elite ≈ 2× a soldier — punchy, below boss level). The 2× chest
 // chance is applied on kill (Simulation.awardKill). Render reads `isElite` to draw it bigger.
-function eliteSpec(kind: EnemyKind): EnemySpec {
-  const base = trashSpec(kind);
+function eliteSpec(kind: EnemyKind, S: number): EnemySpec {
+  const base = trashSpec(kind, S);
   return { ...base, hpMult: base.hpMult * ELITE_HP_MULT, dmgMult: base.dmgMult * ELITE_DMG_MULT, isElite: true };
 }
 
@@ -118,7 +122,7 @@ export function spawnWave(world: WorldState, rng: Rng): void {
       // Roll the elite chance ALWAYS (keep the RNG stream stable), but gate the result so the
       // opening stages (before ELITE_MIN_STAGE) are elite-free — a fresh naked Knight can't survive
       // an early champion spike before it has any gear.
-      const spec = rng.chance(ELITE_CHANCE) && S >= ELITE_MIN_STAGE ? eliteSpec(kind) : trashSpec(kind);
+      const spec = rng.chance(ELITE_CHANCE) && S >= ELITE_MIN_STAGE ? eliteSpec(kind, S) : trashSpec(kind, S);
       const combatant = makeEnemy(world, S, index, world.partyX + SPAWN_AHEAD, spec);
       const spawnOffset = rng.int(WAVE_SPAWN_BAND); // spread within the batch's band (anti-stack)
       world.waveQueue.push({ combatant, releaseTick, spawnOffset });
@@ -150,7 +154,8 @@ export function spawnStageBoss(world: WorldState, rng: Rng): void {
       magic: rng.chance(0.4),
       range: RANGE.melee + 30, // bigger sprite → stop further from the tank so it doesn't overlap it (+15 reach)
       moveSpeed: MOVE_SPEED.melee,
-      abilities: [],
+      // A stage boss's telegraphed area blow (DIFFICULTY.md §5b): the whole party takes it.
+      abilities: stageBossAbilityKeys().map((k) => ({ def: abilityDef(k), rank: 1 })),
       isBoss: true,
       isElite: false,
       enrageMs: STAGE_ENRAGE_MS,
@@ -171,12 +176,12 @@ export function spawnZoneBoss(world: WorldState, rng: Rng): void {
       magic: rng.chance(0.4),
       range: RANGE.melee + 60, // towering sprite → stop well clear of the tank (+30 reach)
       moveSpeed: MOVE_SPEED.melee,
-      // World-boss special abilities by difficulty (DIFFICULTY.md §5): none on Normal/Hell,
-      // Frenzy from Inferno, + Mortal Wound at Torment. Empty = a pure stat wall.
+      // World-boss abilities by difficulty (DIFFICULTY.md §5 / §5b): the telegraphed area blow on every
+      // difficulty, + Frenzy from Inferno, + Mortal Wound at Torment.
       abilities: worldBossAbilityKeys(difficultyIndexOf(S)).map((k) => ({ def: abilityDef(k), rank: 1 })),
       isBoss: true,
       isElite: false,
-      enrageMs: ZONE_ENRAGE_MS, // the 30s DPS+survival gate
+      enrageMs: ZONE_ENRAGE_MS, // the DPS+survival gate
     }),
   ];
   readyAbilitiesForBoss(world);

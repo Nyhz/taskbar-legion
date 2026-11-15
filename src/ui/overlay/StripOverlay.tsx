@@ -1,7 +1,7 @@
 import { useStore } from '@/state/store';
 import { KitRoot } from '@/ui/kit';
-import { BossPlate } from './BossPlate';
 import { RetryKey } from './RetryKey';
+import { NextStageKey } from './NextStageKey';
 import { HealDebuffBadge } from './HealDebuffBadge';
 import { DangerBanner } from './DangerBanner';
 import { StageBanner } from './StageBanner';
@@ -9,8 +9,8 @@ import { SaveErrorBadge } from './SaveErrorBadge';
 import './overlay.css';
 
 // React overlay pinned over the Pixi strip (it fills the strip wrapper): ONE kit layer, authored at the art's
-// pixel like the HUD above it — the boss plate, the banners, the failed-save warning, retry and weakened healing.
-// (The chests live on the HUD rail; the floating loot lines live in the panel zone — GameView — so an open menu
+// pixel like the HUD above it — the banners, the failed-save warning, retry (with the arrow to the next stage over it) and weakened healing. (The boss's
+// name, life and clock live on the HUD rail — ui/hud/HudBoss — so nothing covers a tall boss; so do the chests; the floating loot lines live in the panel zone — GameView — so an open menu
 // can't cover them.)
 
 export function StripOverlay(): React.JSX.Element {
@@ -20,9 +20,9 @@ export function StripOverlay(): React.JSX.Element {
       <KitRoot zoom={uiScale} className="tk-strip">
         <StageBanner />
         <DangerBanner />
-        <BossPlate />
         <HealDebuffBadge />
         <SaveErrorBadge />
+        <NextStageKey />
         <RetryKey />
       </KitRoot>
     </div>

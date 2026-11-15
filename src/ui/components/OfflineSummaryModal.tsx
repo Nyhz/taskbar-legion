@@ -37,7 +37,7 @@ export function OfflineSummaryModal({
           <Head>
             <Title>{t('overlay.awayTitle')}</Title>
           </Head>
-          <p className="tk-away-note">{t('overlay.awayTime', { time: awayDuration(summary.cappedMs) })}</p>
+          <p className="tk-away-note">{t('overlay.awayTime', { time: awayDuration(summary.cappedMs), cap: Math.round(summary.capMs / 3_600_000) })}</p>
           <Row sign="ui_gold" label={t('overlay.awayGold')} value={`+${format(summary.gold)}`} gold />
           <Row sign="ui_xp" label={t('overlay.awayXp')} value={`+${format(summary.xp)}`} />
           {chests.map((c) => (

@@ -8,6 +8,10 @@ import {
   xpPerKill,
   expectedLevel,
   totalExpToReach,
+  zoneBossHp,
+  WORLD_WALL_MULT,
+  earlyDmgRamp,
+  EARLY_DMG_RAMP_END,
 } from '@/data/stageScaling';
 import { MAX_GLOBAL_STAGE } from '@/data/difficulties';
 
@@ -24,8 +28,8 @@ describe('finite stage scaling', () => {
   });
 
   it('difficulty accelerates in absolute increments (convex); ratio gently eases', () => {
-    // ABSOLUTE per-stage HP jump grows with depth (50→51 is a bigger raw jump than 1→2)…
-    expect(enemyHp(51) - enemyHp(50)).toBeGreaterThan(enemyHp(2) - enemyHp(1));
+    // ABSOLUTE HP jumps grow with depth (a world deep in the game steps up by far more than an early one)…
+    expect(enemyHp(451) - enemyHp(441)).toBeGreaterThan(enemyHp(31) - enemyHp(21));
     // …while the RATIO decreases toward 1 (the polynomial, not the old exponential).
     expect(g(400)).toBeLessThan(g(50));
     expect(g(50)).toBeGreaterThan(1);
@@ -33,7 +37,7 @@ describe('finite stage scaling', () => {
 
   it('enemy stats, income, and expected level are monotonic in S', () => {
     for (let S = 1; S < MAX_GLOBAL_STAGE; S++) {
-      expect(enemyHp(S + 1)).toBeGreaterThan(enemyHp(S));
+      expect(enemyHp(S + 1)).toBeGreaterThanOrEqual(enemyHp(S)); // flat inside a world, a step at each new one (the anchor tables)
       expect(enemyDamage(S + 1)).toBeGreaterThan(enemyDamage(S));
       expect(goldPerKill(S + 1)).toBeGreaterThanOrEqual(goldPerKill(S));
       expect(xpPerKill(S + 1)).toBeGreaterThanOrEqual(xpPerKill(S));
@@ -60,5 +64,30 @@ describe('finite stage scaling', () => {
     // strictly increasing, hard-capped at MAX_LEVEL.
     expect(totalExpToReach(120)).toBeGreaterThan(totalExpToReach(119));
     expect(totalExpToReach(121)).toBe(totalExpToReach(120));
+  });
+});
+
+// The 2026-11-15 retune (DIFFICULTY.md §8): the 3-month game.
+describe('the retuned curves', () => {
+  it('every world-boss wall is tougher than the one before, all fifty', () => {
+    for (let w = 2; w <= 50; w++) expect(zoneBossHp(w * 10), `world ${w}`).toBeGreaterThan(zoneBossHp((w - 1) * 10));
+    expect(WORLD_WALL_MULT).toHaveLength(50);
+  });
+
+  it('the opening is gentle: enemy damage starts low and is whole only several worlds in', () => {
+    expect(earlyDmgRamp(1)).toBeLessThan(0.4);
+    expect(earlyDmgRamp(10)).toBeLessThan(0.5);
+    expect(earlyDmgRamp(EARLY_DMG_RAMP_END)).toBe(1);
+    expect(EARLY_DMG_RAMP_END).toBeGreaterThanOrEqual(40);
+  });
+
+  it('levels last the whole game: the middle costs several times the old curve, the cap is for the end', () => {
+    const old = (L: number): number => 0.7 * Math.pow(L, 3.5);
+    expect(totalExpToReach(1)).toBe(0);
+    expect(totalExpToReach(12) / old(12)).toBeLessThan(1.5); // the opening is as cheap as it was
+    expect(totalExpToReach(50) / old(50)).toBeGreaterThan(2.5);
+    expect(totalExpToReach(88) / old(88)).toBeGreaterThan(3.5);
+    expect(totalExpToReach(120)).toBeGreaterThan(5e7); // the cap is for the very end of the game
+    for (let L = 1; L < 120; L++) expect(totalExpToReach(L + 1)).toBeGreaterThan(totalExpToReach(L));
   });
 });

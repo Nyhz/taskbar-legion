@@ -16,6 +16,9 @@ export const DEATH = 'death';
 /** An action can be cut by the next one once this share of it has played (its blow has landed by then). */
 export const ACTION_CUT_AFTER = 0.6;
 
+/** A clip that has played no more than this has "only just started": one long frame of the app (see `hurry`). */
+export const FRESH_MS = 80;
+
 type State = 'loop' | 'action' | 'reaction' | 'dead';
 
 export class ClipPlayer {
@@ -68,6 +71,17 @@ export class ClipPlayer {
     this.start(clip, 'action');
     this.rate = rate > 0 ? rate : 1;
     if (fromMs > 0) this.skip(fromMs);
+    return true;
+  }
+
+  /** Take over `clip` if it is the action on screen and has only just started (at most FRESH_MS of it played):
+   *  it starts again from its first frame at `rate`. A clip started a moment ago — by the cast, or early for the
+   *  NEXT basic attack — becomes the clip of an ability's hit, which must reach its blow in time. Returns
+   *  whether it applied. */
+  hurry(clip: string, rate: number): boolean {
+    if (this.state !== 'action' || this.name !== clip || this.playedMs > FRESH_MS) return false;
+    this.start(clip, 'action');
+    this.rate = rate > 0 ? rate : 1;
     return true;
   }
 

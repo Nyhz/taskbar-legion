@@ -12,11 +12,12 @@ import {
   weakenMult,
   healReceivedMult,
 } from './effects';
-import { tickCooldowns, castReadyAbilities, resolveChanneledCast } from './abilities';
+import { tickCooldowns, castReadyAbilities, foesBehind, resolveChanneledCast } from './abilities';
 import { dealtMult, liveStats } from './liveStats';
 import { checkLowHp, onBlock, onCrit, onEffectsEnded, onEnemyDeath, onEnemyEngage, tryRescue, type TriggerCtx } from './triggers';
 import { mitigation, enrageMultiplier, MAX_DAMAGE_REDUCTION } from '@/data/stageScaling';
 import { WALK_SPEED, HERO_SPACING, MOVE_EPS, RANGE, RESPAWN_MS } from '@/data/field';
+import { tryAbilityDef } from '@/data/abilities';
 
 // Deterministic lane-pusher combat. The party holds a formation around `partyX`
 // (which only ever increases — they walk forward); enemies advance left from the
@@ -200,13 +201,15 @@ export function resolveCombatTick(world: WorldState, deltaMs: number, rng: Rng):
     for (const key of castReadyAbilities(e, enemies, heroes, S, rng, events)) events.push({ type: 'cast', targetId: e.id, abilityKey: key });
   }
 
-  // 6. Enemy attacks (range-gated).
+  // 6. Enemy attacks (range-gated). An enemy channelling an ability that holds its attack (a boss winding up
+  //    its area blow) does not swing meanwhile — its swing timer simply waits.
   for (const e of enemies) {
     if (!e.alive) continue;
+    if (e.casting !== undefined && tryAbilityDef(e.casting.key)?.holdsAttack === true) continue;
     advanceAttack(e, (e.enemyAttackSpeed ?? 0.8) * enemySpeedFactor(e), deltaMs, () => {
       if (frontHero === undefined || !frontHero.alive) return false;
       if (e.x - frontHero.x > e.range + MOVE_EPS) return false; // not in range yet (MOVE_EPS: same anti-deadband as nearestEnemyInRange)
-      enemyAttack(e, frontHero, S, rng, ctx);
+      enemyAttack(e, attackTarget(e, frontHero, heroes, rng), S, rng, ctx);
       return true;
     });
   }
@@ -275,6 +278,18 @@ function frontmostHero(heroes: Combatant[]): Combatant | undefined {
     if (best === undefined || h.x > best.x) best = h;
   }
   return best;
+}
+
+/** Who an enemy's basic attack lands on: the front hero — or, for a shooter (`backShotChance`, data/enemies),
+ *  a hero BEHIND it that share of the time, picked at random: the arrow flies over the tank. The reach gate
+ *  stays the front hero's. With nobody behind there is no roll, so a lone hero's fight draws the same numbers
+ *  as before. (The back line takes damage: docs/DIFFICULTY.md §5b.) */
+function attackTarget(e: Combatant, front: Combatant, heroes: Combatant[], rng: Rng): Combatant {
+  const chance = e.backShotChance ?? 0;
+  if (chance <= 0) return front;
+  const behind = foesBehind(front, heroes);
+  if (behind.length === 0) return front;
+  return rng.chance(chance) ? rng.pick(behind) : front;
 }
 
 function nearestEnemyInRange(hero: Combatant, enemies: Combatant[]): Combatant | undefined {

@@ -17,7 +17,7 @@ function unit(over: Partial<Combatant> & { id: string; side: 'hero' | 'enemy' })
   };
 }
 
-const ctx: TickContext = { bonuses: getBonuses({}, []), ownedPetKeys: [] };
+const ctx: TickContext = { bonuses: getBonuses({}, {}), ownedPetKeys: [] };
 
 function snapshot(sim: Simulation): string {
   const w = sim.world;

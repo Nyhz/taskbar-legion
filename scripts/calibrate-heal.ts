@@ -11,7 +11,7 @@ import { getBonuses } from '@/sim/bonuses';
 import { expectedLevel } from '@/data/stageScaling';
 import { DIFFICULTY_KEYS, DIFFICULTIES, HEAL_POWER_EFFECTIVENESS } from '@/data/difficulties';
 
-const bonuses = getBonuses({}, []);
+const bonuses = getBonuses({}, {});
 const MEND_COEFF = 0.25; // rank 5
 // Fraction of tank maxHP a Mend heals over 6s, WITH the per-difficulty heal-power debuff applied.
 const healPct = (hp: number, key: string): number => MEND_COEFF * (1 + (hp * HEAL_POWER_EFFECTIVENESS[key as 'normal']) / 100);

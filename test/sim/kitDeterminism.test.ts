@@ -9,7 +9,7 @@ import { buildTalents } from './_kit';
 // The whole first wave in a real simulation: every branch ability, modifier and capstone in play, twice from
 // the same seed. Same seed + same builds ⇒ the same stream, to the last event (golden rule #2).
 
-const ctx: TickContext = { bonuses: getBonuses({}, []), ownedPetKeys: [] };
+const ctx: TickContext = { bonuses: getBonuses({}, {}), ownedPetKeys: [] };
 
 /** Two parties that between them hold every branch ability, 16 of the 18 modifiers and all six capstones. */
 const PARTIES: Record<string, Record<string, string[]>> = {
@@ -32,7 +32,7 @@ function run(wanted: Record<string, string[]>, seed: number, ticks: number): { t
   for (const c of configs) expect(spentPoints(c.talents)).toBeLessThanOrEqual(120);
   const auras = partyAuraMods(configs);
   const sim = new Simulation(createWorld(seed, configs.map((c) => buildHeroCombatant(c, auras))));
-  sim.travelTo(141); // Hell, world 5: where naked level-120 heroes get hurt (so the heals fire) without wiping
+  sim.travelTo(201); // Inferno, world 1: where naked level-120 heroes get hurt (so the heals fire) without wiping
   const casts = new Set<string>();
   const trace: string[] = [];
   for (let i = 0; i < ticks; i++) {

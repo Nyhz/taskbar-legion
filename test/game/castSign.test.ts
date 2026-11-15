@@ -6,7 +6,7 @@ import { CLASS_KEYS } from '@/data/classes';
 import { TALENT_TREES } from '@/data/talents';
 import { ULTIMATES, ultimateTriggers } from '@/data/ultimates';
 import { castSignStem } from '@/game/render/castSign';
-import { castFx, isSupportCast, isWholeWaveCast } from '@/game/render/fx';
+import { castFx } from '@/game/render/fx';
 import { figureMeta } from '@/game/render/figureData';
 import { heroAbilityClip } from '@/game/render/heroClips';
 
@@ -60,8 +60,6 @@ describe('a cast event of any key', () => {
     expect(markerKeys).toContain('ranger_mark');
     for (const key of everyCastKey) {
       expect(() => castFx(key), key).not.toThrow();
-      expect(() => isSupportCast(key), key).not.toThrow();
-      expect(() => isWholeWaveCast(key), key).not.toThrow();
       expect(typeof castFx(key).color).toBe('number');
     }
   });

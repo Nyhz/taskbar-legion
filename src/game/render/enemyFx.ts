@@ -1,0 +1,86 @@
+// What the ENEMIES' attacks look like on the strip (no Pixi here — pure, unit-tested): what their shooters and
+// casters fly at the party, and the AREA BLOWS that reach the whole of it (docs/DIFFICULTY.md §5b: the brute's
+// Brutal Smash, a stage boss's Ground Slam, a world boss's Shockwave). The art is the pipeline's
+// (tools/assets/pipeline/fx/enemy.py → render/fxData), drawn going right and mirrored for a foe.
+
+/** What a foe's ranged attack flies, by its style. `arc`: the same shot lofted — one frame per pitch, from
+ *  climbing to falling — used when it goes over the front line; `land`: a one-shot where it lands. */
+export interface FoeShot {
+  fx: string;
+  arc?: string;
+  land: string;
+}
+
+export const FOE_SHOT: Readonly<Record<'ranged' | 'caster', FoeShot>> = {
+  ranged: { fx: 'foe_arrow', arc: 'foe_arrow_arc', land: 'foe_hit' },
+  caster: { fx: 'foe_bolt', land: 'foe_hit' },
+};
+
+/** How high a shot is lofted over the front line (art pixels): clear of a hero's head and his life bar. */
+export const FOE_ARC_HEIGHT = 34;
+
+/** A shot aimed at a hero standing behind the front one goes OVER the front one, in an arc; a shot at the front
+ *  hero flies level. `frontX` is where the party's front hero stands; both are strip x. */
+export function shotGoesOver(targetX: number, frontX: number): boolean {
+  return targetX < frontX - 6;
+}
+
+/** How a blow travels back through the party. */
+export type BlowWave =
+  | { kind: 'bursts'; fx: string; every: number } // a one-shot every `every` pixels, one after another
+  | { kind: 'front'; fx: string; trail: string; trailEvery: number }; // one thing that runs along the ground, leaving a trail
+
+export interface AreaBlow {
+  /** The ground under the party while the blow is wound up (`warn`), and over the last part of the cast
+   *  (`warnHot`). A blow with no cast time (the brute's) has no warning. */
+  warn?: { fx: string; hot: string; step: number };
+  /** A one-shot on the ground where the blow starts. */
+  origin?: string;
+  wave: BlowWave;
+  /** How fast the wave runs along the ground, in pixels per ms. */
+  speed: number;
+  /** The one-shot under each hero it reaches. */
+  jolt: string;
+}
+
+const WARN = { fx: 'warn_crack', hot: 'warn_crack_hot', step: 22 };
+
+export const AREA_BLOWS: Readonly<Record<string, AreaBlow>> = {
+  // Brutal Smash: instant — the ground jumps in a low run of dust and stones.
+  enemy_smash: { wave: { kind: 'bursts', fx: 'smash_burst', every: 17 }, speed: 0.34, jolt: 'jolt' },
+  // Ground Slam: rock driven up out of the path, tooth after tooth, through the whole party.
+  boss_slam: { warn: WARN, wave: { kind: 'bursts', fx: 'slam_spike', every: 19 }, speed: 0.3, jolt: 'jolt' },
+  // Shockwave: a ring where it is let go, and a wall of force as tall as a hero running back through everyone.
+  boss_shockwave: { warn: WARN, origin: 'shock_ring', wave: { kind: 'front', fx: 'shock_front', trail: 'shock_trail', trailEvery: 20 }, speed: 0.26, jolt: 'jolt' },
+};
+
+export function areaBlow(abilityKey: string | undefined): AreaBlow | undefined {
+  return abilityKey === undefined ? undefined : AREA_BLOWS[abilityKey];
+}
+
+/** The warning turns hot over this last share of the cast. */
+export const WARN_HOT_FROM = 0.66;
+
+/** How far past the last hero the warning and the wave run (art pixels). */
+export const BLOW_PAST_PARTY = 16;
+
+/** How many warning tiles lie on the ground at `progress` (0…1) of the cast, for a stretch `length` pixels long
+ *  laid in tiles `step` apart: it grows from the foe back through the party, and covers all of it by 60 % of the
+ *  cast so the whole stretch is seen burning before the blow. At least one once the cast has begun. */
+export function warnTiles(length: number, step: number, progress: number): number {
+  const total = Math.max(1, Math.ceil(length / Math.max(1, step)));
+  const k = Math.max(0, Math.min(1, progress / 0.6));
+  return Math.max(1, Math.min(total, Math.ceil(total * k)));
+}
+
+/** How long after the blow lands in front its wave reaches a point `dist` pixels further back (ms). */
+export function waveReachMs(blow: AreaBlow, dist: number): number {
+  return Math.max(0, dist) / blow.speed;
+}
+
+/** Where the bursts of a `bursts` wave go off along a stretch `length` pixels long: distances from its start,
+ *  the first right at it. */
+export function burstOffsets(length: number, every: number): number[] {
+  const n = Math.max(1, Math.floor(Math.max(0, length) / Math.max(1, every)) + 1);
+  return Array.from({ length: n }, (_, i) => i * every);
+}

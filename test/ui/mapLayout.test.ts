@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { resumeStageFor } from '@/data/stageScaling';
 import { WING_ART_WIDTH, WING_MAX_ART_HEIGHT } from '@/ui/panels/panelLayout';
-import { MAP_WING_ART, bossGateOf, defaultWorld, stageStateOf, worldsOf } from '@/ui/panels/map/mapLayout';
+import { MAP_WING_ART, bossGateOf, defaultWorld, nextOpenStage, stageStateOf, worldsOf } from '@/ui/panels/map/mapLayout';
 import { worldArt } from '@/ui/panels/map/mapWorldNames';
 import { tryWorldDef } from '@/data/worlds';
 
@@ -113,5 +113,29 @@ describe('map wing — its box and its art', () => {
     expect(names.has('')).toBe(false);
     expect(tryWorldDef(99)).toBeUndefined(); // out of range never throws
     expect(worldArt(0, 'day')).toBe('map_w01');
+  });
+});
+
+describe('the arrow to the next stage (over the Retry sign)', () => {
+  it('leads one stage on when that stage is already open', () => {
+    // 1-8 was the frontier (1-7 beaten): a defeat dropped the party to 1-7.
+    expect(nextOpenStage(7, resumeStageFor(7))).toBe(8);
+    // Farming far behind the frontier: every step forward is open.
+    expect(nextOpenStage(3, resumeStageFor(27))).toBe(4);
+  });
+
+  it('is not there at the frontier, nor past it', () => {
+    expect(nextOpenStage(8, resumeStageFor(7))).toBeNull();
+    expect(nextOpenStage(1, resumeStageFor(0))).toBeNull(); // a new game
+  });
+
+  it('never leads onto a world boss: stage 9 keeps its portal and its key', () => {
+    expect(nextOpenStage(9, resumeStageFor(9))).toBeNull(); // 1-9 beaten, the gate
+    expect(nextOpenStage(9, resumeStageFor(40))).toBeNull(); // even with the boss long dead
+    expect(nextOpenStage(19, resumeStageFor(40))).toBeNull();
+  });
+
+  it('crosses into the next world from a boss stage that has fallen', () => {
+    expect(nextOpenStage(10, resumeStageFor(40))).toBe(11);
   });
 });

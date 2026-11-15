@@ -54,7 +54,7 @@ export const CLASSES: Record<string, ClassDef> = {
     key: 'ranger', name: 'Ranger', role: 'dps',
     baseStats: { health: 94, armor: 8, magicResist: 6, attackDamage: 9, attackSpeed: 1.5, critChance: 18, critDamage: 70 },
     statGrowthPerLevel: { health: 3, armor: 0.3, attackDamage: 2.6, critChance: 0.15 },
-    unlock: { type: 'gold', cost: 500 },
+    unlock: { type: 'gold', cost: 150 },
     signatureAbility: 'ranger_fast_fire',
     style: 'ranged', range: RANGE.ranged,
   },
@@ -62,7 +62,7 @@ export const CLASSES: Record<string, ClassDef> = {
     key: 'priest', name: 'Priest', role: 'healer',
     baseStats: { health: 115, armor: 10, magicResist: 13, attackDamage: 5, attackSpeed: 1.0, critChance: 6, critDamage: 50, hpRegen: 2 },
     statGrowthPerLevel: { health: 4, armor: 0.3, magicResist: 0.4, attackDamage: 1.5 }, // hpRegen stays flat (2) — not a scaling stat
-    unlock: { type: 'gold', cost: 500 },
+    unlock: { type: 'gold', cost: 150 },
     signatureAbility: 'priest_mend',
     style: 'caster', range: RANGE.caster,
     // The priest's holy strike lands ON the target and splashes nearby enemies for 50% (45

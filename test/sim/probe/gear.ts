@@ -57,17 +57,19 @@ export function openCaptured(
   drawCursor: { n: number },
   bonuses: Bonuses,
   allowedClasses: string[],
-): { items: ItemInstance[]; gems: GemInstance[] } {
+): { items: ItemInstance[]; gems: GemInstance[]; keys: number } {
   const items: ItemInstance[] = [];
   const gems: GemInstance[] = [];
+  let keys = 0; // world-boss keys the chests held (stage-boss chests only; all for this drop stage's world)
   for (let i = 0; i < count; i++) {
     const rng = makeRng(deriveSeed(seed, drawCursor.n));
     drawCursor.n += 1;
     const r = openChest(type, dropStage, rng, bonuses, allowedClasses);
     items.push(...r.items);
     gems.push(...r.gems);
+    for (const n of Object.values(r.keys)) keys += n;
   }
-  return { items, gems };
+  return { items, gems, keys };
 }
 
 /** Greedily equip each item on the hero+slot where it adds the most score (must be a strict

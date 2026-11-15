@@ -26,11 +26,14 @@ export interface FarmSample {
   chests: Record<ChestType, number>; // GROSS drops per clear (cap-free)
   minHpFrac: number; // worst party HP fraction during the stage-boss fight (0 = someone died)
   wipes: number; // wipes suffered before the clear
+  kills: number; // normal enemies (elites included) defeated in the sample
+  bossKills: number; // stage bosses defeated in the sample (1 on a clean clear)
 }
 
 export interface BossResult {
   win: boolean;
-  killSec: number; // time-to-kill on a win (0 on a loss)
+  killSec: number; // time-to-kill on a win (0 on a loss), the walk to the boss included
+  fightSec: number; // the boss's own fight clock when it died — or when the party did (its enrage starts at ZONE_ENRAGE_MS)
   minHpFrac: number; // worst party HP fraction reached (survival margin)
 }
 
@@ -54,15 +57,17 @@ function minHeroHpFrac(w: WorldState): number {
 
 /** Drain accrued gold/xp/chests off the world each tick and return the gold/xp drained,
  *  accumulating gross chest drops into `gross` so storage caps never block the count. */
-function drain(w: WorldState, gross: Record<ChestType, number>): { gold: number; xp: number } {
-  const gold = w.pending.gold;
-  const xp = w.pending.xp;
+function drain(w: WorldState, gross: Record<ChestType, number>): { gold: number; xp: number; kills: number; bossKills: number } {
+  const { gold, xp, kills, bossKills } = w.pending;
   w.pending.gold = 0;
   w.pending.xp = 0;
+  w.pending.kills = 0;
+  w.pending.bossKills = 0;
+  w.pending.chestsFound = 0;
   w.pending.petDrops.length = 0;
   for (const c of w.chests) gross[c.type] += c.count;
   w.chests = [];
-  return { gold, xp };
+  return { gold, xp, kills, bossKills };
 }
 
 /** One full stage clear (20 waves + stage boss) at the party's current power. `S` must be a
@@ -72,7 +77,7 @@ export function measureFarm(
   S: number,
   seed: number,
   bonuses: Bonuses,
-  budgetSec = 900,
+  budgetSec = 1800, // a stage is 20 waves of enemies that take two or three hits each: ten minutes is ordinary
 ): FarmSample {
   const world = createWorld(seed, buildParty(configs));
   world.globalStageIndex = S;
@@ -83,6 +88,8 @@ export function measureFarm(
   const gross = ZERO_CHESTS();
   let gold = 0;
   let xp = 0;
+  let kills = 0;
+  let bossKills = 0;
   let minHpFrac = 1;
   let bossSpawnWipes = -1; // world.wipes captured when the stage boss appeared (>=0 ⇒ tracking)
   const startWipes = world.wipes;
@@ -94,6 +101,8 @@ export function measureFarm(
     const d = drain(world, gross);
     gold += d.gold;
     xp += d.xp;
+    kills += d.kills;
+    bossKills += d.bossKills;
 
     if (world.phase === 'boss') {
       const boss = world.enemies.find((e) => e.isBoss === true && e.alive);
@@ -121,6 +130,8 @@ export function measureFarm(
     chests: gross,
     minHpFrac,
     wipes: world.wipes - startWipes,
+    kills,
+    bossKills,
   };
 }
 
@@ -139,32 +150,34 @@ export function measureBoss(
   world.maxClearedStage = S - 1; // this world's W-9 is beaten (the gate to the portal)
   world.globalStageIndex = S - 1;
   const sim = new Simulation(world);
-  if (!sim.enterZoneBoss(W)) return { win: false, killSec: 0, minHpFrac: 0 };
+  if (!sim.enterZoneBoss(W)) return { win: false, killSec: 0, fightSec: 0, minHpFrac: 0 };
 
   const ctx: TickContext = { bonuses, ownedPetKeys: [], retryStage: true };
   const gross = ZERO_CHESTS();
   let minHpFrac = 1;
   let tracking = false;
+  let fightSec = 0;
   const startWipes = world.wipes;
   const maxTicks = Math.floor((capSec * 1000) / TICK_MS);
 
   for (let t = 0; t < maxTicks; t++) {
     sim.tick(ctx);
     drain(world, gross);
-    if (world.wipes > startWipes) return { win: false, killSec: 0, minHpFrac }; // wiped → loss
+    if (world.wipes > startWipes) return { win: false, killSec: 0, fightSec, minHpFrac }; // wiped → loss
 
     if (world.phase === 'zoneBoss') {
       const boss = world.enemies.find((e) => e.isBoss === true && e.alive);
       if (boss !== undefined) {
         tracking = true;
+        fightSec = (boss.fightMs ?? 0) / 1000 + TICK_MS / 1000;
         const f = minHeroHpFrac(world);
         if (f < minHpFrac) minHpFrac = f;
       } else if (tracking) {
-        return { win: true, killSec: ((t + 1) * TICK_MS) / 1000, minHpFrac };
+        return { win: true, killSec: ((t + 1) * TICK_MS) / 1000, fightSec, minHpFrac };
       }
     } else if (tracking) {
-      return { win: true, killSec: ((t + 1) * TICK_MS) / 1000, minHpFrac };
+      return { win: true, killSec: ((t + 1) * TICK_MS) / 1000, fightSec, minHpFrac };
     }
   }
-  return { win: false, killSec: 0, minHpFrac }; // enrage cap reached without a kill → loss
+  return { win: false, killSec: 0, fightSec, minHpFrac }; // enrage cap reached without a kill → loss
 }

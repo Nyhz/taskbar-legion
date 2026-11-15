@@ -31,7 +31,7 @@ export function TalentsTab({ heroId }: { heroId: string }): React.JSX.Element | 
   const roster = useStore((s) => s.roster);
   const hero = roster.find((h) => h.id === heroId);
   const techRanks = useStore((s) => s.techRanks);
-  const ownedPets = useStore((s) => s.ownedPets);
+  const petRanks = useStore((s) => s.petRanks);
   const spendTalent = useStore((s) => s.spendTalent);
   const refundTalent = useStore((s) => s.refundTalent);
   const respec = useStore((s) => s.respec);
@@ -40,7 +40,7 @@ export function TalentsTab({ heroId }: { heroId: string }): React.JSX.Element | 
   const layout = layoutTalentTree(talentTree(hero.classKey));
   const spent = spentPoints(hero.talents);
   const learned = learnedAbilityNodes(hero.classKey, hero.talents).length;
-  const stats = heroStats(hero, roster, getBonuses(techRanks, ownedPets), undefined);
+  const stats = heroStats(hero, roster, getBonuses(techRanks, petRanks), undefined);
   const nextTier = layout.tiers.find((tier) => tier.need > spent);
   const crest = classCrestStem(hero.classKey);
 

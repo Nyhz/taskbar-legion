@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { simulateOffline } from '@/sim/offline';
+import { offlineCapMs, simulateOffline } from '@/sim/offline';
 import { Simulation, createWorld, type TickContext } from '@/sim/Simulation';
 import { buildHeroCombatant } from '@/sim/loadout';
 import { getBonuses } from '@/sim/bonuses';
@@ -15,7 +15,7 @@ function makeSim(): Simulation {
 }
 
 const baseCtx = (offlineMult: number): TickContext => ({
-  bonuses: { ...getBonuses({}, []), offlineMult },
+  bonuses: { ...getBonuses({}, {}), offlineMult },
   ownedPetKeys: [],
 });
 
@@ -31,6 +31,8 @@ describe('offline catch-up', () => {
     expect(summary.chests).toEqual([]);
     expect(summary.petDrops).toEqual([]);
     expect(sim.world.chests).toEqual([]); // no chests accrued into the world stash
+    // ...and counts none of the facts of active play (pet objectives: bosses defeated, chests found).
+    expect(sim.world.pending).toMatchObject({ kills: 0, bossKills: 0, chestsFound: 0 });
     expect(summary.fromStage).toBe(4);
     expect(summary.toStage).toBe(4); // stage frozen across the whole window
     expect(sim.world.maxClearedStage).toBe(0); // frontier untouched offline
@@ -48,8 +50,11 @@ describe('offline catch-up', () => {
     expect(doubled.gold).toBeGreaterThan(single.gold * 1.9);
   });
 
-  it('caps elapsed time at 12 hours', () => {
+  it('caps elapsed time at 8 hours, and at 18 with the Time Imp at its last rank', () => {
     const summary = simulateOffline(makeSim(), baseCtx(1), 100 * 60 * 60 * 1000);
-    expect(summary.cappedMs).toBe(12 * 60 * 60 * 1000);
+    expect(summary.cappedMs).toBe(8 * 60 * 60 * 1000);
+    expect(summary.capMs).toBe(8 * 60 * 60 * 1000);
+    expect(offlineCapMs(getBonuses({}, { time_imp: 1 }))).toBe(10 * 60 * 60 * 1000);
+    expect(offlineCapMs(getBonuses({}, { time_imp: 5 }))).toBe(18 * 60 * 60 * 1000);
   });
 });

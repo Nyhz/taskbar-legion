@@ -1,22 +1,29 @@
-import { Container, Graphics } from 'pixi.js';
+import { Container, Graphics, Sprite, Texture } from 'pixi.js';
 import type { Combatant } from '@/sim/world';
 import type { AttackStyle } from '@/data/field';
-import { RANGE } from '@/data/field';
+import { BOSS_DOWN_MS, RANGE } from '@/data/field';
 import { hexToNum } from '@/styles/palette';
-import { auraCategories, drawCategoryAuras, totalShield, drawShieldBar, crosshairRadius, drawFrenzyGround, hasFrenzy, SMALL_MARK_RADIUS, type AuraRegion } from './effectAuras';
+import { auraCategories, drawCategoryAuras, totalShield, type AuraRegion } from './effectAuras';
+import { BodyFx, fxLoop, type FxLoop } from './BodyFx';
+import { ELITE_ARRIVE_FX, ELITE_CREST_FX, ELITE_FIGURE_SCALE, ELITE_RIM_INNER, ELITE_RIM_OFFSETS, ELITE_SPARKS_FX, eliteAuraFx, eliteAuraSpots, eliteRimOuter } from './eliteLook';
+import { figureMask } from './figureMask';
 import { FigureBody } from './FigureBody';
 import { DEATH } from './figureClip';
 import { clipMs, FEET_BELOW_ORIGIN, frontSetback, type EnemyRank } from './figureData';
-import { AttackLead, impactMs, swingEtaMs } from './attackLead';
+import { AttackLead, impactMs, swingEtaMs, unledRate, unledWaitMs } from './attackLead';
 import { TICK_MS } from '@/sim/Simulation';
 import type { FigureSheet } from './figureTextures';
 import { ATTACK_CLIP, HURT_CLIP } from './heroClips';
+import { LifeBar } from './LifeBar';
+import { BARS, foeBarAlpha, type BarSpec } from './stripHud';
 
 // An enemy display object: a creature of the world the party is in (the redesign's figures — FigureBody), drawn
 // 1 art pixel = 1 strip pixel and mirrored to face the heroes, with its feet on the ground line it is given.
-// What an enemy IS is told by its figure; its RANK is told by its marking, never by scaling the art: an elite
-// pulses white rings on the ground, a stage boss has its own large figure and a long life bar, a world boss
-// (which has no figure of its own yet) is the stage boss's figure with gold rings and a gold-framed bar.
+// What an enemy IS is told by its figure; its RANK is told by its marking: an elite stands in cold ghost-fire,
+// wears a crown at the end of its life bar and is drawn a size up (render/eliteLook — the one place the art is
+// scaled, and why), a stage boss has its own large figure, a world boss its own larger one (or, in a world that
+// has none yet, the stage boss's figure with gold rings). A boss wears no life bar: its name,
+// life and enrage clock are on the HUD rail (ui/hud/HudBoss), so nothing is drawn over a boss as tall as the strip.
 // Reads sim state only. Each enemy MATERIALISES (teleport-in) on first appearance, and on death plays its death
 // animation to the end before the driver removes it.
 
@@ -36,21 +43,23 @@ const GOLD = hexToNum('#e8c34c');
 
 // Container-local y of the feet (the ground line).
 const FEET_Y = FEET_BELOW_ORIGIN;
-const BAR_H = 3;
-// The HUD's boss plate (name, timer, life) covers the top of the strip: a life bar stays below it.
-const STRIP_TOP_CLEAR = 32;
+const ELITE_CROWN_H = 7; // the crown over an elite's bar
+// A life bar never leaves the strip by its top edge.
+const STRIP_TOP_CLEAR = 3;
 
-// Per-rank marking: the life bar's width and the ground rings (colour, reach) that mark the enemy.
+// Per-rank marking: the life bar over the figure (its width; none for a boss — its life is on the HUD rail, with
+// its name: ui/hud/HudBoss — one bar, not two, and nothing on a tall boss's head), the ground rings (colour,
+// reach) that mark the enemy, and the width of its cast bar.
 interface RankLook {
-  barW: number;
+  bar: BarSpec; // the casing of its life bar (render/stripHud BARS)
+  ownBar: boolean;
   rings: { color: number; reach: number } | null;
-  barFrame: number | null;
 }
 const RANK: Record<EnemyRank, RankLook> = {
-  normal: { barW: 20, rings: null, barFrame: null },
-  elite: { barW: 20, rings: { color: 0xffffff, reach: 22 }, barFrame: null },
-  stageBoss: { barW: 40, rings: null, barFrame: null },
-  worldBoss: { barW: 56, rings: { color: GOLD, reach: 46 }, barFrame: GOLD },
+  normal: { bar: BARS.foe, ownBar: true, rings: null },
+  elite: { bar: BARS.elite, ownBar: true, rings: null }, // the rest of its marks: render/eliteLook
+  stageBoss: { bar: BARS.foe, ownBar: false, rings: null },
+  worldBoss: { bar: BARS.foe, ownBar: false, rings: { color: GOLD, reach: 46 } },
 };
 
 export class EnemySprite extends Container {
@@ -58,14 +67,25 @@ export class EnemySprite extends Container {
   private readonly figure: FigureBody;
   private readonly aura = new Graphics();
   private readonly enrageAura = new Graphics();
-  private readonly frenzyAura = new Graphics(); // red ground pool while the boss is Frenzied
-  private readonly castBar = new Graphics(); // under-boss cast bar while channeling a special
-  private readonly rankAura = new Graphics(); // ground pulse marking an elite / a world boss
+  private readonly castBar = new LifeBar(BARS.cast, 'hud_s_fill_cast'); // under-boss cast bar while channeling a special
+  private readonly rankAura = new Graphics(); // ground pulse marking a world boss that has no figure of its own
+  private readonly eliteFire = new Container(); // an elite's fire, behind everything of the body (render/eliteLook)
+  private readonly eliteLoops: FxLoop[] = [];
+  private eliteCrest: FxLoop | null = null; // the crown over an elite's life bar
+  private readonly eliteRim = new Container(); // an elite's rim: tinted copies of its shape, a pixel or two off, behind the figure
+  private readonly rimOuter: Sprite[] = [];
+  private readonly rimInner: Sprite[] = [];
+  private readonly elite: boolean;
+  private readonly sheet: FigureSheet;
+  private arrived = false; // the elite's arrival burst has played
   private readonly look: RankLook;
   private readonly lead: AttackLead; // starts the attack clip ahead of the swing, so the blow lands with the hit
-  private readonly smallMark: boolean; // a vulnerability mark is a small reticle, not one framing the body
-  private readonly hpBg = new Graphics();
-  private readonly hpBar = new Graphics();
+  private readonly bodyFx: BodyFx; // the ability effects on this enemy: debuffs it wears, hits landing on it
+  private readonly lifeBar: LifeBar; // its life bar (render/stripHud: a common enemy shows it only while hurt)
+  private sinceHitMs = Number.POSITIVE_INFINITY; // ms since its life last went down
+  private lastFrac = 1;
+  private barWanted = false; // hurt lately (or an elite): it would show its bar
+  private barShown = false; // …and there is room for it
   private readonly tpRing = new Graphics();
   private readonly cx: number; // the body's horizontal centre (container-local; the art is mirrored)
   private readonly barY: number; // HP-bar y (above the figure), container-local
@@ -73,6 +93,9 @@ export class EnemySprite extends Container {
   private readonly halfW: number; // half the body's width
   private readonly auraScale: number;
   private readonly deathHoldMs: number;
+  private readonly boss: boolean; // a stage boss or a world boss
+  private readonly attackMs: number; // length of the attack clip
+  private swingTimerMs = 0; // the sim's swing timer as last seen (a jump up = a swing just happened)
   private flash = 0;
   private castMs = 0;
   private castColor = 0xffffff;
@@ -83,16 +106,24 @@ export class EnemySprite extends Container {
   private deathMs = 0; // >0 once dying — counts the corpse hold down to removal
   private dying = false;
   private prevAlive = true;
-  private hpBgY = Number.NaN; // y the static HP-bar backdrop was last drawn at (rebuild only on change)
   private barLift = 0; // px the HP bar is raised to dodge a crowded neighbour's bar (set by GameStrip)
+  private barCrowded = false; // no room for its bar among its neighbours' (set by GameStrip): it shows none
 
-  constructor(c: Combatant, sheet: FigureSheet, rank: EnemyRank) {
+  /** `ownFigure`: the sheet is a figure drawn for this rank alone (a world boss with a creature of its own). It
+   *  needs no ground rings to be told from the stage boss — its body does that — and keeps the gold bar. */
+  constructor(c: Combatant, sheet: FigureSheet, rank: EnemyRank, ownFigure = false) {
     super();
-    this.style = c.enemyMagic === true ? 'caster' : c.range >= RANGE.ranged ? 'ranged' : 'melee';
-    this.look = RANK[rank];
-    this.smallMark = rank === 'normal' || rank === 'elite';
+    // A boss is shown by its own figure's attack — a slam, a peck — whatever its damage type: it throws no generic
+    // bolt (a "magic" boss used to launch the old fireball from its feet). Presentation only.
+    this.boss = rank === 'stageBoss' || rank === 'worldBoss';
+    this.elite = rank === 'elite';
+    this.sheet = sheet;
+    this.style = this.boss ? 'melee' : c.enemyMagic === true ? 'caster' : c.range >= RANGE.ranged ? 'ranged' : 'melee';
+    this.look = ownFigure ? { ...RANK[rank], rings: null } : RANK[rank];
     // The standing figure's box, mirrored (the art faces right; enemies face the party on their left).
-    const [left, top, right] = sheet.meta.box;
+    // An elite is drawn a size up (render/eliteLook): its box grows with it, from the feet.
+    const size = rank === 'elite' ? ELITE_FIGURE_SCALE : 1;
+    const [left, top, right] = sheet.meta.box.map((v) => v * size) as [number, number, number, number];
     const height = -top;
     // A melee figure too wide for the gap the fight leaves is drawn set back, so its body stands behind the
     // point where it meets the hero instead of over him (figureData.frontSetback). Everything hung on the body
@@ -100,19 +131,97 @@ export class EnemySprite extends Container {
     const setback = this.style === 'melee' ? frontSetback(sheet.meta, c.range) : 0;
     this.cx = setback - Math.round((left + right) / 2);
     this.halfW = (right - left) / 2;
-    this.barY = FEET_Y + top - BAR_H - 3;
+    this.barY = FEET_Y + top - this.look.bar.h - (rank === 'elite' ? 5 : 2);
+    this.lifeBar = new LifeBar(this.look.bar, 'hud_s_fill_foe');
+    this.lifeBar.visible = false;
+    this.castBar.visible = false;
     this.cy = FEET_Y + Math.round(top / 2);
     this.auraScale = Math.max(0.8, Math.min(2.2, height / 40));
     const death = sheet.meta.anims[DEATH];
-    this.deathHoldMs = death === undefined ? DEATH_FADE_MS : clipMs(death);
+    // A fallen world boss lies there for the whole beat the simulation gives its defeat (data/field
+    // BOSS_DOWN_MS): its death clip plays to the end, its last frame is held, and it dissolves as the beat ends.
+    const beatMs = rank === 'worldBoss' ? BOSS_DOWN_MS.worldBoss : rank === 'stageBoss' ? BOSS_DOWN_MS.stageBoss : 0;
+    this.deathHoldMs = Math.max(death === undefined ? DEATH_FADE_MS : clipMs(death), beatMs);
+    const attack = sheet.meta.anims[ATTACK_CLIP];
+    this.attackMs = attack === undefined ? 0 : clipMs(attack);
 
     this.figure = new FigureBody(sheet, -1);
     const attackAnim = sheet.meta.anims[ATTACK_CLIP];
     this.lead = new AttackLead(attackAnim === undefined ? 0 : impactMs(attackAnim));
     this.figure.position.set(setback, FEET_Y);
+    this.figure.scale.set(size);
+    this.eliteRim.position.copyFrom(this.figure.position);
+    this.eliteRim.scale.set(size);
     // The rank rings + frenzy pool sit on the ground UNDER the feet, then enrageAura behind the
     // body; HP bar + cast bar on top.
-    this.addChild(this.rankAura, this.frenzyAura, this.enrageAura, this.figure, this.aura, this.hpBg, this.hpBar, this.castBar, this.tpRing);
+    this.bodyFx = new BodyFx({ cx: this.cx, feetY: FEET_Y, height, halfW: this.halfW, facing: -1 });
+    if (rank === 'elite') this.wearElite(height);
+    this.addChild(this.eliteFire, this.rankAura, this.enrageAura, this.bodyFx.under, this.eliteRim, this.figure, this.bodyFx.over, this.aura, this.lifeBar, this.castBar, this.tpRing);
+    if (this.eliteCrest !== null) this.addChild(this.eliteCrest.sprite);
+  }
+
+  // An elite's marks (render/eliteLook): fire standing behind the body and well above it (as many drawings side
+  // by side as the body is wide, each a little out of step), motes of it climbing in front, the rim on its
+  // silhouette and the crown over its life bar.
+  private wearElite(height: number): void {
+    const fx = eliteAuraFx(height);
+    eliteAuraSpots(this.halfW).forEach((dx, i) => {
+      const loop = fxLoop(fx, i * 230);
+      if (loop === null) return;
+      loop.sprite.position.set(Math.round(this.cx + dx), FEET_Y);
+      this.eliteFire.addChild(loop.sprite);
+      this.eliteLoops.push(loop);
+    });
+    const sparks = fxLoop(ELITE_SPARKS_FX);
+    if (sparks !== null) {
+      sparks.sprite.position.set(Math.round(this.cx), FEET_Y);
+      this.bodyFx.over.addChild(sparks.sprite);
+      this.eliteLoops.push(sparks);
+    }
+    this.eliteCrest = fxLoop(ELITE_CREST_FX);
+    // The rim: the figure's own shape, white (render/figureMask), tinted and drawn off by a pixel or two.
+    const { root, ground, w, h } = this.sheet.meta;
+    const make = (dx: number, dy: number, into: Sprite[]): void => {
+      const copy = new Sprite(Texture.EMPTY);
+      copy.anchor.set(root / w, ground / h);
+      copy.scale.set(-1, 1); // mirrored like the figure
+      copy.position.set(dx, dy);
+      this.eliteRim.addChild(copy);
+      into.push(copy);
+    };
+    for (const [dx, dy] of ELITE_RIM_OFFSETS.outer) make(dx, dy, this.rimOuter);
+    for (const [dx, dy] of ELITE_RIM_OFFSETS.inner) make(dx, dy, this.rimInner);
+    for (const copy of this.rimInner) copy.tint = ELITE_RIM_INNER;
+  }
+
+  private advanceElite(dtMs: number, alive: boolean): void {
+    if (!this.elite) return;
+    const shown = alive && !this.dying;
+    this.eliteFire.visible = shown;
+    for (const loop of this.eliteLoops) {
+      loop.advance(dtMs);
+      loop.sprite.visible = shown;
+    }
+    this.eliteCrest?.advance(dtMs);
+    if (this.eliteCrest !== null) this.eliteCrest.sprite.visible = this.barShown;
+    // The rim follows the figure's frame; it leaves with the life (a corpse wears none).
+    this.eliteRim.visible = shown;
+    if (shown) {
+      const mask = figureMask(this.sheet);
+      const { clip, frame } = this.figure.clips;
+      const shape = mask?.clips[clip]?.[frame] ?? Texture.EMPTY;
+      const outer = eliteRimOuter(this.elapsed);
+      for (const copy of this.rimOuter) {
+        copy.texture = shape;
+        copy.tint = outer;
+      }
+      for (const copy of this.rimInner) copy.texture = shape;
+    }
+    // The burst as it steps into the wave: once, when it has materialised enough to be seen.
+    if (!this.arrived && shown && this.materializeMs < SPAWN_FX_MS * 0.5) {
+      this.arrived = true;
+      this.bodyFx.burst(ELITE_ARRIVE_FX, 'over');
+    }
   }
 
   /** True once this enemy has fallen (its corpse is still on screen): a spectacle aimed at the wave leaves it out. */
@@ -132,25 +241,47 @@ export class EnemySprite extends Container {
     this.figure.clips.react(HURT_CLIP, HURT_GAP_MS);
   }
 
+  /** An ability's hit lands on this enemy: its one-shot, centred on the body (render/abilityFx `hit`). */
+  hitFx(fx: string, spot: 'body' | 'ground' = 'body'): void {
+    if (spot === 'ground') this.bodyFx.burst(fx, 'over');
+    else this.bodyFx.burstOnBody(fx);
+  }
+
+  /** Where this enemy's shots leave from (parent coords): ahead of its body, a little above its middle. */
+  shotPoint(): { x: number; y: number } {
+    return { x: this.x + this.cx - Math.min(this.halfW, 10), y: this.y + this.cy - 3 };
+  }
+
   /** Raise this enemy's HP bar by `px` so it doesn't sit on top of a neighbour's bar when
    *  enemies bunch at the same x (GameStrip computes the crowding, like it does for heroes). */
-  setBarLift(px: number): void {
-    this.barLift = px;
+  setBarLift(px: number | null): void {
+    this.barCrowded = px === null;
+    this.barLift = px ?? 0;
   }
 
   // The attack clip carries its own motion (kept so the API matches HeroSprite).
   lungeAttack(): void { /* the attack clip carries the motion */ }
 
-  /** Play the creature's attack animation. */
-  swing(): void {
-    // Unless it was started early (leadAttack); a hit nothing announced starts the clip at its blow (see HeroSprite.attack).
-    if (!this.lead.claim()) this.figure.clips.act(ATTACK_CLIP, false, 1, this.lead.windupMs);
+  /** Play the creature's attack animation. Returns how long its hit should wait to show (see HeroSprite.attack):
+   *  a blow nothing announced starts at the blow; a shot plays its whole wind-up, hurried, and the shot waits. */
+  swing(): number {
+    if (this.lead.claim()) return 0; // its clip was started early (leadAttack)
+    const windup = this.lead.windupMs;
+    if (this.style === 'melee') {
+      this.figure.clips.act(ATTACK_CLIP, false, 1, windup);
+      return 0;
+    }
+    return this.figure.clips.act(ATTACK_CLIP, false, unledRate(windup)) ? unledWaitMs(windup) : 0;
   }
 
   /** Start the attack clip EARLY so its blow lands with the hit (render/attackLead). Called every frame with
    *  the sim's enemy and whether a hero is within its reach. */
   leadAttack(c: Combatant, heroInReach: boolean, dtMs: number): void {
     this.lead.tick(dtMs);
+    // The timer jumping up means a swing just happened and shows the time to the next one: a clip drawn longer
+    // than that (a boss's slam) is played a little faster, so its recovery is seen instead of being cut.
+    if (c.attackTimerMs > this.swingTimerMs + TICK_MS) this.lead.setPace(this.attackMs, c.attackTimerMs);
+    this.swingTimerMs = c.attackTimerMs;
     const eta = swingEtaMs(c.attackTimerMs, TICK_MS);
     if (!c.alive || !heroInReach || c.movedThisTick === true || c.casting !== undefined || !this.lead.due(eta)) return;
     if (this.figure.clips.act(ATTACK_CLIP, false, this.lead.rate(eta))) this.lead.started();
@@ -185,15 +316,19 @@ export class EnemySprite extends Container {
     this.flash = Math.max(0, this.flash - dtMs / 220);
     const enraged = c.isBoss === true && c.alive && (c.fightMs ?? 0) > (c.enrageMs ?? Number.POSITIVE_INFINITY);
     this.figure.setTint(this.flash > 0 ? 0xffd0d0 : enraged ? 0xff9a86 : 0xffffff);
+    // A boss also lightens towards white — a tint only multiplies, and does nothing on a black figure — for the
+    // first half of the flash only: under the whole party's fire it must blink, not stay pale.
+    if (this.boss) this.figure.setFlash(this.flash * 2 - 1);
 
     this.figure.update(dtMs, moving);
-    this.drawHpBar(c, groundY);
+    this.bodyFx.sync(c.effects, { id: c.id }, dtMs, c.alive);
+    this.drawHpBar(c, groundY, dtMs);
     this.castMs = Math.max(0, this.castMs - dtMs);
     this.drawAura(c);
     this.drawEnrage(enraged);
-    this.drawFrenzy(c);
     this.drawCastBar(c);
     this.drawRankAura(c.alive);
+    this.advanceElite(dtMs, c.alive);
     this.applyMaterialize(dtMs);
     this.tickDeath(dtMs);
   }
@@ -211,7 +346,10 @@ export class EnemySprite extends Container {
       this.hideLifeBar();
       this.rankAura.clear();
     }
+    this.figure.setFlash(0);
     this.figure.update(dtMs, false);
+    this.advanceElite(dtMs, false);
+    this.bodyFx.sync([], { id: '' }, dtMs, false);
     this.tickDeath(dtMs);
   }
 
@@ -230,8 +368,17 @@ export class EnemySprite extends Container {
   }
 
   private hideLifeBar(): void {
-    this.hpBg.visible = false;
-    this.hpBar.visible = false;
+    this.lifeBar.visible = false;
+    this.barWanted = false;
+    this.barShown = false;
+  }
+
+  /** The box its life bar wants on the strip right now (art px; an elite's crown counted), or null while it
+   *  wants none — the strip stacks the bars of enemies that stand on one spot (render/stripHud stackBars). */
+  get barBox(): { x: number; y: number; w: number; h: number; elite: boolean } | null {
+    if (!this.barWanted) return null;
+    const crown = this.elite ? ELITE_CROWN_H : 0;
+    return { x: this.x + this.cx, y: this.barY - crown, w: this.look.bar.w, h: this.look.bar.h + crown, elite: this.elite };
   }
 
   // Count the corpse hold down; fade out over the final stretch so it dissolves rather than
@@ -242,30 +389,26 @@ export class EnemySprite extends Container {
     this.alpha = Math.min(this.alpha, this.deathMs > DEATH_FADE_MS ? 1 : Math.max(0, this.deathMs / DEATH_FADE_MS));
   }
 
-  private drawHpBar(c: Combatant, groundY: number): void {
-    if (this.dying) { this.hideLifeBar(); return; }
-    this.hpBg.visible = true;
-    this.hpBar.visible = true;
-    const { barW, barFrame } = this.look;
-    const x = this.cx - barW / 2;
-    // Clamp inside the strip: the strip's top edge is at container-local -(groundY - FEET_Y) —
-    // a very tall boss's bar pins below the HUD's boss plate instead of slipping under it or off
-    // the strip. barLift raises the bar (more negative y) to dodge a crowded neighbour; the same
-    // clamp keeps a lifted bar on-screen.
-    const y = Math.max(this.barY - this.barLift, -(groundY - FEET_Y) + STRIP_TOP_CLEAR);
+  private drawHpBar(c: Combatant, groundY: number, dtMs: number): void {
+    if (this.dying || !this.look.ownBar) { this.hideLifeBar(); return; }
     const frac = c.maxHp > 0 ? Math.max(0, Math.min(1, c.hp / c.maxHp)) : 0;
-    // The backdrop is static geometry — only re-tessellate it when its y actually moves
-    // (a tall boss's bar pinned against the strip top as the camera shifts).
-    if (y !== this.hpBgY) {
-      this.hpBgY = y;
-      this.hpBg.clear();
-      if (barFrame !== null) this.hpBg.rect(x - 1, y - 1, barW + 2, BAR_H + 2).fill({ color: barFrame });
-      this.hpBg.rect(x, y, barW, BAR_H).fill({ color: hexToNum('#3a2030') });
-    }
-    this.hpBar.clear();
-    this.hpBar.rect(x, y, Math.round(barW * frac), BAR_H).fill({ color: hexToNum('#c0473a') });
-    // WoW-style absorb overlay (drawn over the HP fill), should an enemy ever be shielded.
-    drawShieldBar(this.hpBar, x, y, barW, BAR_H, totalShield(c.effects), c.maxHp, this.elapsed);
+    this.sinceHitMs = frac < this.lastFrac ? 0 : this.sinceHitMs + dtMs;
+    this.lastFrac = frac;
+    const alpha = foeBarAlpha({ elite: this.elite, frac, sinceHitMs: this.sinceHitMs });
+    this.barWanted = alpha > 0;
+    this.barShown = this.barWanted && !this.barCrowded;
+    this.lifeBar.visible = this.barShown;
+    if (!this.barShown) return;
+    this.lifeBar.alpha = alpha;
+    const { w } = this.look.bar;
+    // Clamp inside the strip: the strip's top edge is at container-local -(groundY - FEET_Y) — a tall creature's
+    // bar stays on the strip instead of slipping off it. barLift raises the bar to dodge a crowded neighbour; the
+    // same clamp keeps a lifted bar on-screen.
+    const y = Math.max(this.barY - this.barLift, -(groundY - FEET_Y) + STRIP_TOP_CLEAR);
+    this.lifeBar.position.set(Math.round(this.cx - w / 2), Math.round(y));
+    this.lifeBar.set(frac, 0, c.maxHp > 0 ? totalShield(c.effects) / c.maxHp : 0);
+    // An elite's crown sits over the middle of its bar (its attach point is the middle of its bottom edge).
+    if (this.eliteCrest !== null) this.eliteCrest.sprite.position.set(Math.round(this.cx), Math.round(y));
   }
 
   private applyMaterialize(dtMs: number): void {
@@ -333,34 +476,21 @@ export class EnemySprite extends Container {
     }
   }
 
-  // Frenzy: a red aura pooled on the ground at the boss's feet while the attack-speed buff
-  // is up (distinct from the body-centred enrage flames above).
-  private drawFrenzy(c: Combatant): void {
-    this.frenzyAura.clear();
-    if (!c.alive || !hasFrenzy(c.effects)) return;
-    drawFrenzyGround(this.frenzyAura, this.cx, FEET_Y, this.auraScale, this.elapsed);
-  }
-
   // A fast cast bar UNDER the boss while it channels a special (Frenzy / Mortal Wound),
   // filling over the cast's windup — telegraphs the incoming ability. Colored per ability.
   private drawCastBar(c: Combatant): void {
-    this.castBar.clear();
     const ch = c.casting;
-    if (!c.alive || this.dying || ch === undefined || ch.totalMs <= 0) return;
-    const frac = Math.max(0, Math.min(1, 1 - ch.remainingMs / ch.totalMs));
-    const w = Math.max(this.look.barW, 34);
-    const x = this.cx - w / 2;
-    const y = FEET_Y + 3; // just below the feet, on the ground in front of the boss
-    const col = ch.key === 'boss_mortal_wound' ? hexToNum('#c061ff') : hexToNum('#ff7a2a');
-    this.castBar.rect(x - 1, y - 1, w + 2, 5).fill({ color: hexToNum('#160b12'), alpha: 0.9 }); // backdrop
-    const fillW = Math.max(1, Math.round(w * frac));
-    this.castBar.rect(x, y, fillW, 3).fill({ color: col });
-    this.castBar.rect(x, y, fillW, 1).fill({ color: 0xffffff, alpha: 0.5 }); // top sheen
-    this.castBar.rect(x + fillW - 1, y, 1, 3).fill({ color: 0xffffff, alpha: 0.85 }); // leading edge
+    if (!c.alive || this.dying || ch === undefined || ch.totalMs <= 0) {
+      this.castBar.visible = false;
+      return;
+    }
+    this.castBar.visible = true;
+    this.castBar.setFill(ch.key === 'boss_mortal_wound' ? 'hud_s_fill_cast_wound' : 'hud_s_fill_cast');
+    this.castBar.position.set(Math.round(this.cx - BARS.cast.w / 2), FEET_Y + 2); // just below the feet, on the ground in front of the boss
+    this.castBar.set(Math.max(0, Math.min(1, 1 - ch.remainingMs / ch.totalMs)));
   }
 
-  // The vertical band auras play over, in container-local coords. Shared by drawAura and
-  // markPoint so the ranger's ultimate fly-in lands exactly on the persistent reticle.
+  // The vertical band auras play over, in container-local coords.
   private auraRegion(): AuraRegion {
     return {
       cx: this.cx,
@@ -370,15 +500,7 @@ export class EnemySprite extends Container {
       halfW: Math.max(9, Math.min(this.halfW * 0.7, 26)),
       scale: this.auraScale,
       elapsed: this.elapsed,
-      ...(this.smallMark ? { mark: { cy: this.cy, radius: SMALL_MARK_RADIUS } } : {}),
     };
-  }
-
-  /** Where the Mark-of-the-Hunter reticle sits on this body (parent coords) and its radius —
-   *  the ranger's ult crosshair flies in and locks onto this exact spot. */
-  markPoint(): { x: number; y: number; radius: number } {
-    const r = this.auraRegion();
-    return { x: this.x + r.cx, y: this.y + (r.mark?.cy ?? r.cy), radius: crosshairRadius(r) };
   }
 
   /** This enemy's feet on the ground line (parent coords) — where an on-target effect such as

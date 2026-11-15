@@ -28,10 +28,10 @@ export function HeroWindow(): React.JSX.Element {
   const selectHero = useStore((s) => s.selectHero);
   const closePanel = useStore((s) => s.closePanel);
   const techRanks = useStore((s) => s.techRanks);
-  const ownedPets = useStore((s) => s.ownedPets);
+  const petRanks = useStore((s) => s.petRanks);
   const [recruitAt, setRecruitAt] = useState<number | null>(null); // index of the free place whose picker is open
   const hero = roster.find((h) => h.id === selectedId) ?? roster[0];
-  const maxPlaces = getBonuses(techRanks, ownedPets).partySlots;
+  const maxPlaces = getBonuses(techRanks, petRanks).partySlots;
 
   const places: WindowPlace[] = Array.from({ length: PARTY_PLACES }, (_, i): WindowPlace => {
     const h = roster[i];

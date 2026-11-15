@@ -1,8 +1,6 @@
-import { ABILITIES } from '@/data/abilities';
 import { STATS, type StatKey } from '@/data/stats';
 import { expectedDefense, mitigation } from '@/data/stageScaling';
 import { format } from '@/sim/num';
-import { abilityArtStem } from '@/ui/abilityArt';
 
 // Figures of the sheet tab, as text — pure, no React. The numbers are the ones combat uses (the caller passes
 // the aggregate of gear + talents + account + live effects); this only says how each is written.
@@ -55,22 +53,4 @@ export function shareFigure(share: number): string {
 export function chanceFigure(chance: number): string {
   const pct = chance * 100;
   return `${pct.toFixed(pct < 10 ? 2 : 1)} %`;
-}
-
-// Which ability lays each effect: an active effect borrows that ability's sign.
-const EFFECT_ABILITY: ReadonlyMap<string, string> = (() => {
-  const map = new Map<string, string>();
-  for (const ability of Object.values(ABILITIES)) {
-    if (!/^(knight|ranger|priest)_/.test(ability.key)) continue; // hero abilities only: they are the ones with signs
-    for (const applied of ability.applies)
-      if (!map.has(applied.effectKey)) map.set(applied.effectKey, ability.key);
-  }
-  return map;
-})();
-
-/** The sign of an active effect: its ability's when a hero ability lays it, otherwise a generic good / bad mark. */
-export function effectArtStem(effectKey: string, beneficial: boolean): string {
-  const abilityKey = EFFECT_ABILITY.get(effectKey);
-  if (abilityKey !== undefined) return abilityArtStem(abilityKey);
-  return beneficial ? 'ui_up' : 'hud_debuff';
 }

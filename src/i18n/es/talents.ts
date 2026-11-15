@@ -45,6 +45,7 @@ export const talents: Record<keyof typeof en, string> = {
   targetSelf: 'Quien la usa',
   targetLowestAlly: 'El aliado con menos vida',
   targetFrontEnemy: 'El enemigo de delante',
+  targetBackEnemy: 'Un enemigo tras el de delante',
   targetMeleeEnemies: 'Enemigos cuerpo a cuerpo',
   targetAllEnemies: 'Todos los enemigos',
   targetAllAllies: 'Todos los aliados',
@@ -87,8 +88,4 @@ export const talents: Record<keyof typeof en, string> = {
   sheetGemsHelp: 'Sobre la probabilidad base de que un cofre traiga una gema.',
   sheetChestPerKill: 'Probabilidad por baja.',
   sheetChestPerBoss: 'Probabilidad por jefe.',
-  sheetNoEffects: 'Sin efectos activos',
-  sheetEffectGood: 'Efecto activo, a favor.',
-  sheetEffectBad: 'Efecto activo, en contra.',
-  sheetEffectLeft: 'Queda',
 };

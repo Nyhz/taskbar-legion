@@ -7,7 +7,6 @@ import {
   PET_SHELF_COLS,
   PET_SHELF_GAP_ART,
   companionOf,
-  oneIn,
   petBonusView,
   petShelfRows,
   petsWingArt,
@@ -40,7 +39,7 @@ describe('pets wing layout', () => {
       if (def === undefined) throw new Error(key);
       expect(art(`pet_${def.sprite}`), `pet_${def.sprite}`).toBe(true);
       expect(art(`pet_${def.sprite}_dark`), `pet_${def.sprite}_dark`).toBe(true);
-      expect(art(petBonusView(def.bonus).sign), key).toBe(true);
+      for (const bonus of def.ranks) expect(art(petBonusView(bonus).sign), key).toBe(true);
     }
     expect(art('pet_plinth') && art('pet_plinth_on') && art('pet_sign_paw') && art('ui_alcove')).toBe(true);
   });
@@ -69,10 +68,10 @@ describe('pets wing layout', () => {
       what: 'storeStageBoss',
       amount: 1,
     });
-    expect(petBonusView({ kind: 'autoOpenReduce', value: 90_000 })).toMatchObject({
-      what: 'autoOpen',
-      unit: 'seconds',
-      amount: 90,
+    expect(petBonusView({ kind: 'awayHours', value: 10 })).toMatchObject({
+      what: 'away',
+      unit: 'hours',
+      amount: 10,
     });
   });
 
@@ -82,11 +81,5 @@ describe('pets wing layout', () => {
     expect(companionOf(['scholar_owl', 'lucky_cat'], 'lucky_cat')).toBe('lucky_cat');
     expect(companionOf(['scholar_owl', 'lucky_cat'], null)).toBe('scholar_owl');
     expect(companionOf(['scholar_owl'], 'hoarder')).toBe('scholar_owl'); // a stale choice falls back
-  });
-
-  it('drop odds read as "1 in N"', () => {
-    expect(oneIn(0.00002)).toBe(50_000);
-    expect(oneIn(0.0001)).toBe(10_000);
-    expect(oneIn(0)).toBe(0);
   });
 });

@@ -5,7 +5,7 @@ import { CLASS_KEYS } from '@/data/classes';
 import { RANGE } from '@/data/field';
 import { ENEMY_KINDS } from '@/data/enemies';
 import { CREATURE_ROLES, WORLDS } from '@/data/worlds';
-import { HERO_FIGURES, clipMs, creatureRole, enemyRank, figureMeta, frameCell, worldCreatureKeys } from '@/game/render/figureData';
+import { HERO_FIGURES, clipMs, creatureRole, enemyRank, figureMeta, frameCell, worldBossFigureKey, worldCreatureKeys } from '@/game/render/figureData';
 
 const FIGS = join(__dirname, '../../src/assets/strip/figs');
 const CREATURE_CLIPS = ['idle', 'run', 'attack', 'hurt', 'death'];
@@ -39,8 +39,33 @@ describe('figure catalogue (figs.json)', () => {
     expect(worldCreatureKeys(11)).toBeUndefined();
   });
 
+  it('has a figure and an atlas for every world boss that has a creature of its own', () => {
+    const own = WORLDS.filter((w) => w.worldBoss !== undefined);
+    expect(own.map((w) => w.index)).toContain(1); // Golden Meadows: the Crowmother
+    for (const world of own) {
+      const key = worldBossFigureKey(world.index);
+      expect(key).toBe(world.worldBoss?.key);
+      // its own creature: not one of the world's cast of four
+      expect(CREATURE_ROLES.map((r) => world.creatures[r].key)).not.toContain(key);
+      const meta = figureMeta(key ?? '');
+      expect(meta, `${key} (world ${world.index})`).toBeDefined();
+      for (const clip of CREATURE_CLIPS) expect(meta?.anims[clip], `${key}.${clip}`).toBeDefined();
+      expect(existsSync(join(FIGS, `${key}.png`)), `${key}.png`).toBe(true);
+      // a world boss towers: taller than its world's stage boss
+      const stage = figureMeta(world.creatures.boss.key);
+      expect(-(meta?.box[1] ?? 0)).toBeGreaterThan(-(stage?.box[1] ?? 0));
+    }
+  });
+
+  it('a world without a world-boss creature has no figure for it (its stage boss stands in)', () => {
+    for (const world of WORLDS) if (world.worldBoss === undefined) expect(worldBossFigureKey(world.index)).toBeUndefined();
+    expect(worldBossFigureKey(0)).toBeUndefined();
+    expect(worldBossFigureKey(11)).toBeUndefined();
+  });
+
   it('describes atlases every GPU can hold, with consistent animations', () => {
-    for (const key of [...CLASS_KEYS, ...WORLDS.flatMap((w) => CREATURE_ROLES.map((r) => w.creatures[r].key))]) {
+    const worldBosses = WORLDS.flatMap((w) => (w.worldBoss === undefined ? [] : [w.worldBoss.key]));
+    for (const key of [...CLASS_KEYS, ...WORLDS.flatMap((w) => CREATURE_ROLES.map((r) => w.creatures[r].key)), ...worldBosses]) {
       const meta = figureMeta(key);
       if (meta === undefined) throw new Error(key);
       expect(meta.w * meta.cols, key).toBeLessThanOrEqual(2048);

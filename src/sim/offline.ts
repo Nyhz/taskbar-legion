@@ -7,11 +7,19 @@ import type { ChestType } from '@/data/chests';
 // gold/XP ONLY (scaled by offlineMult) — NO loot (chests), NO pet drops, and NO stage
 // advancement (the frontier moves only during active play). Enforced by ctx.offline.
 
-export const OFFLINE_CAP_MS = 12 * 60 * 60 * 1000; // 12 hours (BALANCE)
+/** Away time that counts without any bonus: 8 hours (BALANCE). The Time Imp adds to it (bonuses.awayCapBonusMs),
+ *  up to 18 hours at its last rank. */
+export const OFFLINE_CAP_MS = 8 * 60 * 60 * 1000;
+
+/** The away time that counts with these bonuses. */
+export function offlineCapMs(bonuses: { awayCapBonusMs: number }): number {
+  return OFFLINE_CAP_MS + Math.max(0, bonuses.awayCapBonusMs);
+}
 
 export interface OfflineSummary {
   elapsedMs: number;
   cappedMs: number;
+  capMs: number; // the cap that applied (base + bonuses)
   ticks: number;
   gold: number;
   xp: number;
@@ -27,7 +35,8 @@ export function simulateOffline(
   ctx: TickContext,
   elapsedMs: number,
 ): OfflineSummary {
-  const cappedMs = Math.min(Math.max(0, elapsedMs), OFFLINE_CAP_MS);
+  const capMs = offlineCapMs(ctx.bonuses);
+  const cappedMs = Math.min(Math.max(0, elapsedMs), capMs);
   const ticks = Math.floor(cappedMs / TICK_MS);
   const w = sim.world;
   const fromStage = w.globalStageIndex;
@@ -43,6 +52,7 @@ export function simulateOffline(
   return {
     elapsedMs,
     cappedMs,
+    capMs,
     ticks,
     gold: Math.round(w.pending.gold * ctx.bonuses.offlineMult),
     xp: Math.round(w.pending.xp * ctx.bonuses.offlineMult),
