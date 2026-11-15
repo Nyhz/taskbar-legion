@@ -143,7 +143,8 @@ export class EnemySprite extends Container {
 
   /** Play the creature's attack animation. */
   swing(): void {
-    if (!this.lead.claim()) this.figure.clips.act(ATTACK_CLIP); // unless it was started early (leadAttack)
+    // Unless it was started early (leadAttack); a hit nothing announced starts the clip at its blow (see HeroSprite.attack).
+    if (!this.lead.claim()) this.figure.clips.act(ATTACK_CLIP, false, 1, this.lead.windupMs);
   }
 
   /** Start the attack clip EARLY so its blow lands with the hit (render/attackLead). Called every frame with

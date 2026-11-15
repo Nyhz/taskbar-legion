@@ -6,7 +6,8 @@ import type { FigureAnim } from './figureData';
 //   - an ACTION (an attack or an ability: a one-shot that then returns to the loop);
 //   - a REACTION (hurt, a block: a one-shot that only starts from a loop — it never interrupts an action);
 //   - DEAD (the death one-shot, then its last frame is held until `revive`).
-// A clip either plays to its end or is CUT cleanly: the next one starts from its first frame, never mid-pose.
+// A clip either plays to its end or is CUT cleanly: the next one starts from its first frame, never mid-pose —
+// except an attack whose hit has ALREADY landed (nothing started it early), which starts at its blow (`fromMs`).
 
 export const IDLE = 'idle';
 export const RUN = 'run';
@@ -54,9 +55,11 @@ export class ClipPlayer {
    * Ask for an action clip. It starts at once from a loop or a reaction. Over another action it starts only if
    * that one has played past ACTION_CUT_AFTER — or, with `urgent` (an ability over a basic attack), if it is a
    * different clip. `rate` plays it faster or slower than drawn (a quick attacker's wind-up is hurried so the blow
-   * lands with the hit — render/attackLead). Returns whether the clip started.
+   * lands with the hit — render/attackLead). `fromMs` skips that much of the clip: a hit that nothing announced
+   * (a fighter that strikes the instant it arrives) starts at its blow, not at a wind-up that would land late.
+   * Returns whether the clip started.
    */
-  act(clip: string, urgent = false, rate = 1): boolean {
+  act(clip: string, urgent = false, rate = 1, fromMs = 0): boolean {
     if (this.state === 'dead' || !this.has(clip)) return false;
     if (this.state === 'action') {
       const landed = this.playedMs >= this.totalMs * ACTION_CUT_AFTER;
@@ -64,6 +67,7 @@ export class ClipPlayer {
     }
     this.start(clip, 'action');
     this.rate = rate > 0 ? rate : 1;
+    if (fromMs > 0) this.skip(fromMs);
     return true;
   }
 
@@ -114,6 +118,18 @@ export class ClipPlayer {
         this.playedMs = spill;
       }
     }
+  }
+
+  /** Jump into the clip just started: to the frame that holds `ms`, at its beginning (never past the last frame). */
+  private skip(ms: number): void {
+    const anim = this.anims[this.name];
+    if (anim === undefined) return;
+    let before = 0;
+    while (this.index + 1 < anim.n && before + (anim.ms[this.index] ?? 0) <= ms) {
+      before += anim.ms[this.index] ?? 0;
+      this.index += 1;
+    }
+    this.playedMs = before;
   }
 
   private start(clip: string, state: State): void {

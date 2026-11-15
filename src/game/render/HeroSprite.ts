@@ -258,7 +258,10 @@ export class HeroSprite extends Container {
 
   attack(abilityKey?: string): void {
     if (abilityKey !== undefined) this.figure.clips.act(heroAbilityClip(this.classKey, abilityKey), true);
-    else if (!this.lead.claim()) this.figure.clips.act(ATTACK_CLIP); // unless it was started early (leadAttack)
+    // Unless it was started early (leadAttack). A hit nothing announced — the hero strikes the instant it
+    // arrives — starts the clip AT its blow: from its first frame the blow would land after its own number and
+    // just before the next swing's, and read as two blows for one hit.
+    else if (!this.lead.claim()) this.figure.clips.act(ATTACK_CLIP, false, 1, this.lead.windupMs);
   }
 
   /** Start the basic attack clip EARLY so its blow lands with the hit (render/attackLead). Called every frame

@@ -155,6 +155,10 @@
 .tk-btn { position: relative; width: 24px; height: 24px; border: 4px solid transparent; border-image: url('../../assets/ui/ui_btn.png') 4 fill / 4px / 0 stretch; }
 .tk-btn > img { margin-top: -1px; }
 .tk-btn:not(.off):hover, .tk-key:not(.off):hover { filter: brightness(1.15); }
+/* A key that brightens under the pointer becomes a layer of its own (its `filter`), and its tooltip with it:
+   without a rank it would be painted under whatever comes later in the window (the talent nodes under the
+   "give every point back" key). So the key under the pointer rises with its tooltip. */
+.tk-btn:hover, .tk-key:hover, .tk-seg > button:hover, .tk-switch:hover, .tk-slimkey:hover { z-index: 40; }
 .tk-btn.gold, .tk-key.gold { border-image-source: url('../../assets/ui/ui_btn_gold.png'); }
 .tk-btn.danger, .tk-key.danger { border-image-source: url('../../assets/ui/opt_btn_danger.png'); }
 .tk-btn.off, .tk-key.off { border-image-source: url('../../assets/ui/ui_btn_off.png'); cursor: default; }

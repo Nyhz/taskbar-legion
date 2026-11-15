@@ -136,4 +136,20 @@ describe('ClipPlayer', () => {
     p.advance(250, false);
     expect(p.frame).toBe(2);
   });
+
+  it('an attack whose hit already landed starts at its blow, and still ends on time', () => {
+    const p = new ClipPlayer(ANIMS);
+    expect(p.act('attack', false, 1, 300)).toBe(true); // three 100 ms frames of wind-up are skipped
+    expect([p.clip, p.frame]).toEqual(['attack', 3]);
+    p.advance(650, false);
+    expect([p.clip, p.frame]).toEqual(['attack', 9]);
+    p.advance(100, false); // 750 ms after a start at 300 ms: the 1000 ms clip is over
+    expect(p.acting).toBe(false);
+  });
+
+  it('a skip longer than the clip stops at its last frame', () => {
+    const p = new ClipPlayer(ANIMS);
+    p.act('cleave', false, 1, 5000);
+    expect([p.clip, p.frame]).toEqual(['cleave', 4]);
+  });
 });
