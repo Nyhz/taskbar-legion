@@ -37,7 +37,12 @@ def main(argv: list[str]) -> int:
 
         export_strip()
         return 0
-    print("commands: chars [names…], scene, lab, icons, export-ui, export-strip")
+    if cmd == "export-figs":
+        from .export_figs import main as export_figs
+
+        export_figs()
+        return 0
+    print("commands: chars [names…], scene, lab, icons, export-ui, export-strip, export-figs")
     return 1
 
 

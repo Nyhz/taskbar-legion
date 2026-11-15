@@ -4,19 +4,22 @@ import { GameEngine } from './engine';
 import { setEngine } from './engineRef';
 import { HeroSprite } from './render/HeroSprite';
 import { EnemySprite } from './render/EnemySprite';
-import { StageBackground } from './render/StageBackground';
+import { StripBackdrop } from './render/StripBackdrop';
+import { STRIP_PATH_Y } from './render/stripBackdropData';
 import { FloatingTextLayer } from './render/FloatingText';
 import { ProjectileLayer } from './render/Projectiles';
 import { WorldFxLayer } from './render/WorldFx';
 import { PortalSprite } from './render/PortalSprite';
-import { castFx, isSupportCast, isWholeWaveCast, FX } from './render/fx';
-import { loadCharacterTextures, getFireballFrames } from './render/characterFrames';
-import { loadEnemyTextures, resolveEnemySprite, getEnemyFrames } from './render/enemyFrames';
-import { loadBackgroundTextures } from './render/backgroundLayers';
+import { castFx, isWholeWaveCast, FX } from './render/fx';
+import { loadEffectTextures, getFireballFrames } from './render/characterFrames';
+import { creatureRole, enemyRank } from './render/figureData';
+import { loadHeroFigures, worldFigures } from './render/figureTextures';
 import { createPixiApp } from './render/createPixiApp';
 import type { Combatant, CombatEvent, WorldState } from '@/sim/world';
 import { worldOf, stageInWorld, isZoneBossStage } from '@/data/stageScaling';
-import { SPAWN_AHEAD, RANGE, WALK_SPEED, TELEPORT_HOLD_MS, WIPE_DEAD_MS, WIPE_FADE_MS, WIPE_BLACK_MS, WIPE_RETREAT_AT_MS } from '@/data/field';
+import { worldInDifficulty } from '@/data/difficulties';
+import { CLASS_KEYS } from '@/data/classes';
+import { SPAWN_AHEAD, WALK_SPEED, TELEPORT_HOLD_MS, WIPE_DEAD_MS, WIPE_FADE_MS, WIPE_BLACK_MS, WIPE_RETREAT_AT_MS } from '@/data/field';
 import { hexToNum } from '@/styles/palette';
 import { useStore } from '@/state/store';
 import { isStripDragging } from '@/platform/dragState';
@@ -29,7 +32,9 @@ import { isStripDragging } from '@/platform/dragState';
 const STRIP_HEIGHT = 160; // must match App.STRIP_LOGICAL_HEIGHT
 const STRIP_WIDTH = 600; // must match App.STRIP_LOGICAL_WIDTH — the canvas is a FIXED logical size
                          // (rendered at ×uiScale); Game Scale zooms the whole strip in the DOM.
-const GROUND_FRAC = 0.72;
+// The fighters stand on the backdrop art's path line: the figures anchor exactly on their ground row, so the
+// ground line every sprite and ground effect is given IS the path (y = 123 of the 160).
+const GROUND_Y = STRIP_PATH_Y;
 // Deadzone + spring camera. The lead (melee) hero sits ~ANCHOR_FRAC across when settled —
 // around mid-screen — and the camera only tracks (as an underdamped SPRING) once the party
 // drifts past the DEADZONE of that anchor, so it lags and REBOUNDS instead of locking on.
@@ -85,15 +90,18 @@ function trackDisplay(prev: number, target: number, dtMs: number, speedPxps: num
 
 // Crowded-HUD declutter: when party members bunch up their overhead HUDs overlap, so a
 // rear hero's HUD is lifted above the one just ahead of it (tiered upward).
-const HUD_OVERLAP_PX = 38; // horizontal gap (screen px) under which two hero HUDs collide
-const HUD_LIFT_STEP = 16; // px each successive crowded HUD is raised
+const HUD_OVERLAP_PX = 30; // horizontal gap (screen px) under which two hero HUDs collide
+const HUD_LIFT_STEP = 13; // px each successive crowded HUD is raised
 const ENEMY_BAR_OVERLAP_PX = 22; // horizontal gap under which two enemy HP bars collide
 const ENEMY_BAR_LIFT_STEP = 6; // px each successive crowded enemy bar is raised (bars are thin)
+// The Priest's holy strike is a sheet from before the redesign, drawn for bigger bodies: shown at its own size.
+const HOLY_STRIKE_SCALE = 1;
 
 export class GameStrip {
   private app: Application | null = null;
   private readonly world = new Container();
-  private readonly background = new StageBackground();
+  // The world's backdrop (parallax layers + atmosphere): `back` under the fighters, `front` over them.
+  private readonly backdrop = new StripBackdrop();
   private readonly combatants = new Container();
   private readonly projectiles = new ProjectileLayer();
   // Big AoE ability spectacles (arrow rain, frost pool, holy nova, boss shockwaves) drawn
@@ -141,18 +149,17 @@ export class GameStrip {
     const app = await createPixiApp({ width: STRIP_WIDTH * uiScale, height: STRIP_HEIGHT * uiScale, transparent });
     container.appendChild(app.canvas);
     this.app = app;
-    // Load the character sprite sheets (+ arrow) and the background layers before the
-    // first frame so sprite heroes pick up their animated body immediately and the
-    // backdrop builds with its sun/cloud sprites (otherwise it falls back to gradient).
-    await Promise.all([loadCharacterTextures(), loadEnemyTextures(), loadBackgroundTextures()]);
+    // Load the heroes' figures and the shared effect textures before the first frame. A world's creatures load
+    // lazily when the party gets there (reconcileEnemies); the backdrop loads its own sheet the same way.
+    await Promise.all([loadHeroFigures(CLASS_KEYS), loadEffectTextures()]);
     this.engine = new GameEngine();
     setEngine(this.engine);
 
     this.combatants.sortableChildren = true; // honour zIndex (party above enemies)
-    this.world.addChild(this.background, this.groundFx, this.combatants, this.worldFx, this.projectiles, this.floating, this.portal, this.blackout, this.wipePhrase);
+    this.world.addChild(this.backdrop.back, this.groundFx, this.combatants, this.backdrop.front, this.worldFx, this.projectiles, this.floating, this.portal, this.blackout, this.wipePhrase);
     // The portal is the ONLY interactive object — prune every other layer (and its whole
     // subtree of sprites/graphics) from pointer hit-testing so a tap walks just the portal.
-    for (const layer of [this.background, this.groundFx, this.combatants, this.worldFx, this.projectiles, this.floating, this.blackout, this.wipePhrase]) {
+    for (const layer of [this.backdrop.back, this.groundFx, this.combatants, this.backdrop.front, this.worldFx, this.projectiles, this.floating, this.blackout, this.wipePhrase]) {
       layer.eventMode = 'none';
     }
     this.wipePhrase.anchor.set(0.5);
@@ -186,7 +193,6 @@ export class GameStrip {
   private relayout(): void {
     if (this.app === null) return;
     this.logicalWidth = this.app.screen.width / this.uiScale;
-    this.background.build(this.logicalWidth, STRIP_HEIGHT);
     // The full-strip blackout is static geometry — tessellate it once here (and on each
     // resize) so the wipe/teleport cinematics only animate its alpha, never re-build the
     // GPU geometry per frame (Graphics are meant to be stable, not redrawn every frame).
@@ -198,7 +204,7 @@ export class GameStrip {
     if (engine === null) return;
     const events = engine.update(dtMs);
     const w = engine.world;
-    const groundY = Math.round(STRIP_HEIGHT * GROUND_FRAC);
+    const groundY = GROUND_Y;
     // Interpolate the 100ms sim steps into smooth 60fps motion, velocity-matched to each
     // unit's sim speed so it tracks at constant on-screen speed rather than surging.
     this.displayPartyX = this.displayPartyX < 0 ? w.partyX : trackDisplay(this.displayPartyX, w.partyX, dtMs, WALK_SPEED);
@@ -211,7 +217,8 @@ export class GameStrip {
     const cameraX = this.updateCamera(this.displayPartyX, pxScale, anchorScreen, dtMs);
     const toScreen = (wx: number): number => (wx - cameraX) * pxScale;
 
-    this.background.update(cameraX * pxScale, worldOf(w.globalStageIndex));
+    this.backdrop.update(cameraX * pxScale, w.globalStageIndex, dtMs);
+    this.world.x = this.backdrop.shakeX; // a lightning strike shakes the whole strip for an instant
     // Wipe cinematic: the fallen party reads as freshly slain (prominent, no 60s respawn
     // bar) for the DEAD beat, then is HIDDEN once it goes black so the world fades back in
     // empty before the party respawns.
@@ -419,16 +426,18 @@ export class GameStrip {
   private reconcileEnemies(w: WorldState, groundY: number, dtMs: number, toScreen: (wx: number) => number): void {
     const enemies = w.enemies;
     const live = new Set(enemies.map((e) => e.id));
-    // Context for choosing a boss's sprite: which world (cycles the world bosses) and whether
-    // this is the W-10 zone-boss fight (a world boss) vs a normal stage boss.
-    const ctx = { world: worldOf(w.globalStageIndex), isWorldBoss: isZoneBossStage(w.globalStageIndex) };
+    // The creatures of the world the party is in (data/worlds.ts by role). They load when the world is entered:
+    // until they are ready (a few frames) a new enemy's sprite is not created yet; the sprites already on screen
+    // keep the figures they were made with.
+    const figures = worldFigures(worldInDifficulty(w.globalStageIndex));
+    const worldBossStage = isZoneBossStage(w.globalStageIndex);
 
     const placed: { sprite: EnemySprite; x: number }[] = [];
     for (const c of enemies) {
       let sprite = this.enemySprites.get(c.id);
       if (sprite === undefined) {
-        const spec = resolveEnemySprite(c, ctx);
-        sprite = new EnemySprite(c, enemyTint(c), { frames: getEnemyFrames(spec.spriteKey), sizeClass: spec.sizeClass });
+        if (figures === null) continue;
+        sprite = new EnemySprite(c, figures[creatureRole(c)], enemyRank(c, worldBossStage));
         sprite.zIndex = 1; // below the party
         sprite.spawnIn(); // materialise (teleport-in) on first appearance
         this.enemySprites.set(c.id, sprite);
@@ -493,8 +502,8 @@ export class GameStrip {
             caster.castBurst(fx.color);
             this.floating.spawn(caster.x, caster.y - 26, fx.glyph, fx.color, 1.15);
           }
-          // A supportive cast by a sprite hero (Priest heal) plays its heal-cast pose.
-          if (heroCaster !== undefined && isSupportCast(ev.abilityKey)) heroCaster.supportCast();
+          // The hero plays the ability's own clip (a heal, a shout, a cleave… — render/heroClips).
+          heroCaster?.cast(ev.abilityKey);
           // Big AoE spectacles that play over the whole target band (the wave / the party).
           this.spawnAoeFx(ev.abilityKey, groundY, caster.x);
           // Explosive Arrow: a big arrow streaks to the front of the wave and detonates on
@@ -615,33 +624,29 @@ export class GameStrip {
   private playAttack(sourceId: string | undefined, target: HeroSprite | EnemySprite, abilityKey?: string): void {
     if (sourceId === undefined) return;
     const heroSrc = this.heroSprites.get(sourceId);
-    const src = heroSrc ?? this.enemySprites.get(sourceId);
+    const enemySrc = heroSrc === undefined ? this.enemySprites.get(sourceId) : undefined;
+    const src = heroSrc ?? enemySrc;
     if (src === undefined) return;
     if (abilityKey === 'ranger_focus') {
       // Explosive Arrow's big arrow + blast are fired once from the cast handler; the per-hit
-      // damage events just replay the bow draw — no extra standard arrows. It's an ATTACK
-      // ability, so swing(true) plays the ranger's reserved attack02 sheet.
-      heroSrc?.swing(true);
+      // damage events just replay the bow draw — no extra standard arrows.
+      heroSrc?.attack(abilityKey);
       return;
     }
-    const viaAbility = abilityKey !== undefined;
     if (src.style === 'melee') {
-      if (heroSrc !== undefined) heroSrc.swing(viaAbility);
-      else src.swing();
+      if (heroSrc !== undefined) heroSrc.attack(abilityKey);
+      else enemySrc?.swing();
       src.lungeAttack();
       return;
     }
     // The projectile homes on the target's LIVE position (it keeps advancing), so it
     // tracks the moving enemy instead of flying to where it stood when the shot started.
     const liveTarget = (): { x: number; y: number } => ({ x: target.x, y: target.y - 8 });
-    // A sprite-bodied ranged/caster hero (ranger, priest) plays its own attack frames;
-    // a sprite enemy (skeleton-archer draw / slime cast) plays its attack too; everyone
-    // else lunges. A caster with its own bolt frames (Priest) throws that animated bolt;
-    // generic casters fall back to the procedural fireball. `viaAbility` selects the ranger's
-    // reserved attack02 sheet for ATTACK abilities (only damage hits reach here, never buffs).
-    if (heroSrc !== undefined && heroSrc.usesSpriteBody) heroSrc.swing(viaAbility);
-    else if (heroSrc === undefined) src.swing(); // enemy: play its ranged/caster attack frames
-    else src.lungeAttack();
+    // A ranged/caster hero plays its own attack clip — the ability's when the hit came from one; an enemy
+    // plays its creature's attack. A caster with a holy strike (Priest) lands it on the target instead of
+    // throwing a bolt; everyone else fires a projectile.
+    if (heroSrc !== undefined) heroSrc.attack(abilityKey);
+    else enemySrc?.swing();
     const magic = src.style === 'caster' ? (heroSrc?.projectileFrames ?? null) : null;
     // Priest (caster hero with its own effect frames): the holy strike lands ON the target
     // instead of flying there as a bolt. Each per-hit damage event (primary + AoE splash)
@@ -649,16 +654,9 @@ export class GameStrip {
     if (magic !== null) {
       // Seat the holy strike on the enemy's FEET so the pillar rises up from the ground.
       const feet = target instanceof EnemySprite ? target.feetPoint() : { x: target.x, y: target.y };
-      this.worldFx.strikeBurst(feet.x, feet.y, magic);
+      this.worldFx.strikeBurst(feet.x, feet.y, magic, HOLY_STRIKE_SCALE);
     } else this.projectiles.spawn(src.x, src.y - 8, liveTarget, src.style === 'caster' ? 'fireball' : 'arrow');
   }
-}
-
-// Tint by archetype (drawEnemy renders magic/casters purple regardless): ranged
-// amber, melee red. Bosses keep the red base + their crown.
-function enemyTint(c: Combatant): number {
-  if (c.range >= RANGE.ranged) return hexToNum('#b8863a');
-  return hexToNum('#c0473a');
 }
 
 function formatDmg(n: number): string {

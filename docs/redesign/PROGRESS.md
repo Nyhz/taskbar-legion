@@ -563,3 +563,19 @@ conservadora, marcada como provisional; si salta el límite de uso, dejar anotad
       usan el tooltip de etapa del HUD, la banda de etapa (nombre del mundo en gótica), la placa del jefe (nombre
       del jefe de etapa de ese mundo) y el mapa (que deja de tener los nombres en su espacio de textos). Los
       jefes de mundo siguen sin criatura ni nombre propios.
+- [x] **Bloque 3 — arte de la tira al juego** (lab v47). Solo presentación, sin tocar reglas.
+      - Fondos: `sh run.sh export-strip` → `src/assets/strip/` (20 láminas de capas y `backdrops.json`);
+        `StripBackdrop`, `StripAtmosphere` (rayos, partículas, ojos, pulso, parpadeo), carga perezosa por mundo.
+        Tormento usa su grado; Normal, Infierno, Averno y Eterno usan el normal (PROVISIONAL: no tienen arte).
+      - Figuras: `sh run.sh export-figs` → `src/assets/strip/figs/` (43 atlas y `figs.json`); héroes con idle, run,
+        attack, hurt, death y sus clips de habilidad; cada enemigo se dibuja como criatura de su mundo según
+        `src/data/worlds.ts` (jefe → jefe de etapa; a distancia o mágico → criatura a distancia; cuerpo a cuerpo →
+        cuerpo a cuerpo o bestia, alternando por id — PROVISIONAL, la simulación no distingue bestias). Élites:
+        misma criatura con sus anillos. Jefes de mundo: la figura del jefe de etapa con anillos dorados
+        (PROVISIONAL: no tienen arte). El nicho del héroe y el título usan el idle nuevo.
+      - Se borran los sprites y fondos descargados (`src/assets/enemies`, `backgrounds`, hojas viejas de héroe) y
+        `SpriteBody`, `enemyFrames`, `textures`, `swing`, `StageBackground`, `backgroundLayers`.
+      - Flojo: los efectos de `WorldFx` (lluvia de flechas…) están dimensionados para los sprites viejos y se ven
+        grandes; los jefes muy anchos se solapan con el Knight; el golpe cae al empezar el clip, no en su
+        fotograma de impacto; textos flotantes y la escena de derrota siguen en inglés; rayos, ojos y pulso no
+        los he visto en captura; sin probar en Tauri.

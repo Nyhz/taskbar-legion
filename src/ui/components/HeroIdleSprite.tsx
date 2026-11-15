@@ -1,32 +1,37 @@
 import { useEffect, useState } from 'react';
-import knightIdle from '@/assets/characters/knight/actions/knight-idle.png';
-import rangerIdle from '@/assets/characters/ranger/actions/ranger-idle.png';
-import priestIdle from '@/assets/characters/priest/actions/priest-idle.png';
-import mageIdle from '@/assets/characters/mage/actions/mage-idle.png';
+import { figureMeta, frameCell, type FigureMeta } from '@/game/render/figureData';
+import { heroSheetUrl } from '@/game/render/figureSheets';
+import { IDLE } from '@/game/render/figureClip';
 import { PALETTE } from '@/styles/palette';
 
-// An animated IDLE sprite for a class, rendered as a pure-DOM CSS background sprite (the
-// React party menu can't use the Pixi sprites). The sheets are horizontal strips of
-// 100×100 frames (see game/render/characterFrames.ts); the character sits centred at
-// x≈52, feet at y60, head ~y38 (≈22px tall). We scale uniformly so the FIGURE fills the
-// box (cover-fit, anchored on the character centre) and let overflow crop the rest, with
-// a transparent background by default. Frame count is read from the loaded sheet width.
+// A class's hero, standing and breathing: the IDLE animation of the strip's own figure (the redesign's art —
+// src/assets/strip/figs), drawn in the DOM as a CSS background sprite, since the React panels cannot use the Pixi
+// sprites. The art is never stretched: it is shown at a WHOLE number of box pixels per art pixel — the largest
+// that lets the tallest hero stand inside the box (×2 in the hero window's niche, ×1 on the title's path).
+// The figure stands with its feet FEET_FROM_BOTTOM above the box's bottom edge and its body centred across the
+// box; it is not clipped, so a plume or a staff may rise past a box that is lower than the figure.
 
-const FRAME = 100; // source frame is 100×100
-const BODY_CX = 52; // character centre x within a frame
-const CHAR_CY = 49; // character centre y within a frame (midpoint of head y38 → feet y60)
-const CHAR_H = 26; // source px the figure (+ small margin) occupies vertically — lower = bigger
+/** The tallest hero's standing figure, in art pixels (the knight's plume, the priest's staff). */
+const HERO_HEIGHT = 40;
+/** The ground line sits this far above the box's bottom edge (both callers seat the feet 3 px up: the title's
+ *  box puts them on the path, the niche's on its stone slab). */
+const FEET_FROM_BOTTOM = 3;
 
-interface IdleDef { url: string; fps: number }
-const IDLE: Record<string, IdleDef> = {
-  knight: { url: knightIdle, fps: 7 },
-  ranger: { url: rangerIdle, fps: 7 },
-  priest: { url: priestIdle, fps: 6 },
-  mage: { url: mageIdle, fps: 7 },
-};
+interface IdleSheet {
+  url: string;
+  meta: FigureMeta;
+  /** Columns and rows of the whole atlas, to size the background. */
+  rows: number;
+}
 
-// url → frame count (sheet width / 100), cached after the image loads once.
-const frameCounts = new Map<string, number>();
+function idleSheet(classKey: string): IdleSheet | undefined {
+  const url = heroSheetUrl(classKey);
+  const meta = figureMeta(classKey);
+  if (url === undefined || meta === undefined || meta.anims[IDLE] === undefined) return undefined;
+  let rows = 0;
+  for (const anim of Object.values(meta.anims)) rows = Math.max(rows, anim.row + Math.ceil(anim.n / meta.cols));
+  return { url, meta, rows };
+}
 
 export function HeroIdleSprite({
   classKey, width, height, border, boxShadow, background,
@@ -38,49 +43,47 @@ export function HeroIdleSprite({
   boxShadow?: string;
   background?: string; // box background (default transparent — the figure stands free)
 }): React.JSX.Element {
-  const def = IDLE[classKey];
-  const [frames, setFrames] = useState(() => frameCounts.get(def?.url ?? '') ?? 1);
+  const sheet = idleSheet(classKey);
   const [frame, setFrame] = useState(0);
 
+  // Step through the idle at each frame's own duration.
+  const idle = sheet?.meta.anims[IDLE];
   useEffect(() => {
-    if (def === undefined) return;
-    const cached = frameCounts.get(def.url);
-    if (cached !== undefined) { setFrames(cached); return; }
-    const img = new Image();
-    img.onload = () => {
-      const n = Math.max(1, Math.floor(img.naturalWidth / FRAME));
-      frameCounts.set(def.url, n);
-      setFrames(n);
-    };
-    img.src = def.url;
-  }, [def]);
-
-  useEffect(() => {
-    if (def === undefined || frames <= 1) return;
-    const id = window.setInterval(() => setFrame((f) => (f + 1) % frames), 1000 / def.fps);
-    return () => window.clearInterval(id);
-  }, [def, frames]);
+    if (idle === undefined || idle.n <= 1) return;
+    const id = window.setTimeout(() => setFrame((f) => (f + 1) % idle.n), idle.ms[frame % idle.n] ?? 170);
+    return () => window.clearTimeout(id);
+  }, [idle, frame]);
 
   const borderStyle = border ?? 'none';
-  if (def === undefined) {
+  if (sheet === undefined || idle === undefined) {
     return <div style={{ width, height, background: PALETTE.bgInset, border: borderStyle, boxShadow }} />;
   }
 
-  // Scale so the figure fills the box height; anchor (BODY_CX, CHAR_CY) at the box centre.
-  const scale = height / CHAR_H;
+  const { meta, url, rows } = sheet;
+  const scale = Math.max(1, Math.floor(height / HERO_HEIGHT));
+  const [col, row] = frameCell(meta, idle, frame % idle.n);
+  // Centre the standing body across the box; seat the ground row above the bottom edge.
+  const bodyCx = meta.root + (meta.box[0] + meta.box[2]) / 2;
+  const left = Math.round(width / 2 - bodyCx * scale);
+  const top = height - FEET_FROM_BOTTOM - meta.ground * scale;
 
   return (
-    <div
-      style={{
-        width, height, overflow: 'hidden', border: borderStyle, boxShadow,
-        background: background ?? 'transparent',
-        backgroundImage: `url(${def.url})`,
-        backgroundRepeat: 'no-repeat',
-        backgroundSize: `${frames * FRAME * scale}px ${FRAME * scale}px`,
-        backgroundPositionX: `${width / 2 - (frame * FRAME + BODY_CX) * scale}px`,
-        backgroundPositionY: `${height / 2 - CHAR_CY * scale}px`,
-        imageRendering: 'pixelated',
-      }}
-    />
+    <div style={{ position: 'relative', width, height, border: borderStyle, boxShadow, background: background ?? 'transparent' }}>
+      <div
+        style={{
+          position: 'absolute',
+          left,
+          top,
+          width: meta.w * scale,
+          height: meta.h * scale,
+          backgroundImage: `url(${url})`,
+          backgroundRepeat: 'no-repeat',
+          backgroundSize: `${meta.cols * meta.w * scale}px ${rows * meta.h * scale}px`,
+          backgroundPosition: `${-col * meta.w * scale}px ${-row * meta.h * scale}px`,
+          imageRendering: 'pixelated',
+          pointerEvents: 'none',
+        }}
+      />
+    </div>
   );
 }

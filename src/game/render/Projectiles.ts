@@ -28,7 +28,7 @@ interface Projectile {
 }
 
 const SPEED = 760; // px/s
-const ARROW_SCALE = 1.8; // chunky arrow that reads clearly against the ~42px bodies (Explosive Arrow scales off this ×1.9)
+const ARROW_SCALE = 1; // the arrow (19 px long) at the figures' own scale: 1 art pixel = 1 strip pixel (Explosive Arrow scales off this)
 const MAGIC_SCALE = 0.55; // the spell-effect frames are full 100px — shrink to a compact bolt
 
 /** Travel time (ms) for a projectile between two points — exported so callers can land

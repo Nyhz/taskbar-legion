@@ -5,28 +5,30 @@ import { effectDef } from '@/data/effects';
 import { classDef } from '@/data/classes';
 import { type AttackStyle, RESPAWN_MS } from '@/data/field';
 import { hexToNum } from '@/styles/palette';
-import { drawHero } from './textures';
-import { drawSwing, SWING_MS } from './swing';
 import { isInvulnerable, INVULN_YELLOW, isEnraged } from './fx';
 import { auraCategories, drawCategoryAuras, totalShield, drawShieldBar, drawMortalWoundCrosses, hasMortalWound, drawHolyGround } from './effectAuras';
-import { SpriteBody } from './SpriteBody';
+import { FigureBody } from './FigureBody';
 import type { Texture } from 'pixi.js';
-import type { CharFrames } from './characterFrames';
-import { getCharacterFrames, getHealEffectFrames, getBattleEnrageFrames } from './characterFrames';
+import { getHealEffectFrames, getBattleEnrageFrames, getHolyStrikeFrames } from './characterFrames';
+import { FEET_BELOW_ORIGIN } from './figureData';
+import { heroFigure } from './figureTextures';
+import { ATTACK_CLIP, BLOCK_CLIP, HURT_CLIP, heroAbilityClip } from './heroClips';
 
 const MS_PER_FRAME = 1000 / 60; // Pixi AnimatedSprite.update expects ticker-frame units
 const HEAL_FX_FPS = 14;
 const ENRAGE_FX_FPS = 14; // cadence of the looping Battle Enrage swirl
 // Mend + Battle Enrage share the same 128px on-ally sheet geometry, so they share a transform:
 // seated with the sheet's BASE at the hero's feet (anchorY 1) and the same scale — so the ult
-// swirl reads at the same size/height as the heal it tops up. Slightly smaller than before.
-const ALLY_FX_SCALE = 0.78;
+// swirl reads at the same size/height as the heal it tops up. These are sheets from before the
+// redesign, drawn for bigger bodies: halved to rise about one and a half heroes high.
+const ALLY_FX_SCALE = 0.5;
 const ALLY_FX_ANCHOR_Y = 1; // frame bottom sits on the feet → the effect rises from the feet up
 
-// A hero display object: procedural body + HP bar + effect aura (twinkling stars for
-// HoTs/buffs) + buff/debuff pips + two ability cooldown pips (top-left) + a cast burst
-// + a death/respawn countdown + a melee sword-swing arc. Reads sim state; never mutates
-// it. Animation is cheap transform/draw tricks — deterministic-safe.
+// A hero display object: its figure (the redesign's art, one per class — FigureBody) + HP bar +
+// effect aura (twinkling stars for HoTs/buffs) + buff/debuff pips + two ability cooldown pips
+// (top-left) + a cast burst + a death/respawn countdown. Reads sim state; never mutates it.
+// The container's origin is FEET_BELOW_ORIGIN above the feet (GameStrip aims at it); the figure
+// stands with its feet exactly on the ground line it is given.
 
 // How long the walk animation keeps playing after the last tick the hero actually moved.
 // A bit over one sim tick (100ms) so a single hold-position tick mid-travel doesn't snap
@@ -48,14 +50,12 @@ const GHOST_RED = hexToNum('#ff3b3b'); // the about-to-be-lost slice
 const GHOST_HOLD_MS = 240; // pause before the red slice starts draining
 const GHOST_DRAIN_PER_MS = 0.0016; // bar-fractions drained per ms (~full bar in ~625ms)
 
-// Overhead HUD geometry (HP bar, buff/debuff pips, ability-cooldown pips). The bigger
-// sprite knight needs a larger HUD lifted clear of its head; the small procedural
-// bodies keep the original tight layout. All coords are container-local (origin at the
-// ground line; negative y = up). bodyCx ≈ horizontal centre of the body.
-// `bodyCx` is the horizontal centre of the body; the HP bar and the buff-pip row are
-// both centred on it (the pip row is centred by count), so the cluster sits squarely
-// over the sprite regardless of how many buffs are active. Cooldown pips tuck just to
-// the left of the bar.
+// Overhead HUD geometry (HP bar, buff/debuff pips, ability-cooldown pips), in container-local
+// coords (negative y = up). The heroes' figures stand 35–40 px tall with their feet at FEET_Y, so
+// one HUD seated over the tallest head fits every class. `bodyCx` is the single horizontal centre
+// for the whole cluster — the HP bar, the pip row (centred by count) and the effect aura all
+// centre on it — and it is where the figures' bodies are (a little ahead of their root column).
+// Cooldown pips tuck just to the left of the bar.
 interface HudLayout {
   bodyCx: number; barY: number; barW: number; barH: number;
   pipY: number; pipSize: number; pipStep: number;
@@ -63,30 +63,26 @@ interface HudLayout {
   labelY: number; labelSize: number;
 }
 
-const CD_GAP = 3; // px between the cooldown pips and the HP bar's left edge
+const CD_GAP = 2; // px between the cooldown pips and the HP bar's left edge
 
-const PROC_HUD: HudLayout = {
-  bodyCx: 6, barY: -16, barW: 16, barH: 3,
-  pipY: -22, pipSize: 3, pipStep: 4,
-  cdY: -28, cdStep: 8, cdW: 3, cdH: 6,
-  labelY: -18, labelSize: 9,
+// Container-local y of the hero's feet (the ground line).
+const FEET_Y = FEET_BELOW_ORIGIN;
+const HERO_HEIGHT = 40; // the tallest hero's standing figure (the knight's plume, the priest's staff)
+const BODY_MID_Y = FEET_Y - 18; // the middle of the body: cast ring, shield bubble, teleport ring
+
+const HUD: HudLayout = {
+  bodyCx: 4, barY: FEET_Y - HERO_HEIGHT - 6, barW: 20, barH: 3,
+  pipY: FEET_Y - HERO_HEIGHT - 14, pipSize: 3, pipStep: 5,
+  cdY: FEET_Y - HERO_HEIGHT - 12, cdStep: 6, cdW: 3, cdH: 5,
+  labelY: FEET_Y - HERO_HEIGHT - 7, labelSize: 9,
 };
-
-// Sprite heroes (knight, ranger, priest) all render to ~55px tall with feet at SPRITE_FEET_Y,
-// so their head tops align and one raised HUD fits every class. `bodyCx` is the single
-// horizontal centre for the whole cluster: the sprite body is positioned on it, and the
-// HP bar, pips and effect aura all centre on it — so they can never drift apart. Lifted +
-// enlarged to clear the bigger, more zoomed-in bodies.
-const SPRITE_HUD: HudLayout = {
-  bodyCx: 5, barY: -54, barW: 36, barH: 6,
-  pipY: -66, pipSize: 7, pipStep: 9,
-  cdY: -66, cdStep: 9, cdW: 5, cdH: 7,
-  labelY: -56, labelSize: 15,
-};
-
-// Container-local y where a sprite hero's feet sit (below the ground-line origin). Bumped
-// for the taller strip + bigger bodies so they seat naturally on the grass.
-const SPRITE_FEET_Y = 26;
+const AURA_SCALE = 0.8; // glyph size of the category auras / holy ground for a ~40 px body
+// A hurt flinch plays at most this often, so a hero under a hail of blows still reads as fighting.
+const HURT_GAP_MS = 700;
+// A fallen hero stays solid this long (the heroes' death clips run 2.2–2.4 s), then fades to a ghost.
+const DEATH_SHOWN_MS = 2400;
+// The classes whose basic attack lands a holy strike ON the target instead of flying there.
+const HOLY_STRIKE_CLASSES: ReadonlySet<string> = new Set(['priest']);
 
 /** Left x of the HP bar — centred on the body. */
 function barLeft(h: HudLayout): number {
@@ -95,14 +91,9 @@ function barLeft(h: HudLayout): number {
 
 export class HeroSprite extends Container {
   readonly style: AttackStyle;
-  // Sprite-sheet classes (knight, ranger, priest) render from a SpriteBody; everything
-  // else stays procedural. Null when no sheet exists for the class / it isn't loaded yet.
-  private readonly spriteBody: SpriteBody | null;
-  private readonly frames: CharFrames | null; // the class's loaded sheets (for its projectile)
-  private readonly hud: HudLayout;
-  private readonly body = new Graphics();
-  private readonly feet = new Graphics();
-  private readonly swingG = new Graphics();
+  private readonly classKey: string;
+  private readonly figure: FigureBody;
+  private readonly hud: HudLayout = HUD;
   private readonly hpBg = new Graphics();
   private readonly hpBar = new Graphics();
   private readonly holyGround = new Graphics(); // Retribution Aura: golden ground halo at the feet
@@ -113,39 +104,38 @@ export class HeroSprite extends Container {
   private readonly respawnLabel = new Text({ text: '', style: { fontFamily: 'monospace', fontSize: 9, fill: hexToNum('#bcd2ff'), fontWeight: 'bold' } });
   // Knight-only ultimate indicator: a "U" badge that reads gold when the Last Stand
   // charge is up and grey + crossed-out once it's been spent this stage.
-  private readonly ultLabel = new Text({ text: 'U', style: { fontFamily: 'monospace', fontSize: 12, fill: hexToNum('#e8c34c'), fontWeight: 'bold' } });
+  private readonly ultLabel = new Text({ text: 'U', style: { fontFamily: 'monospace', fontSize: 8, fill: hexToNum('#e8c34c'), fontWeight: 'bold' } });
   private readonly ultCross = new Graphics();
   private readonly isKnight: boolean;
-  // Heal sparkle shown ON this hero whenever a Priest heals it (shared effect frames,
-  // authored on the same 100px grid as the bodies, so it overlays the sprite squarely).
+  // Heal sparkle shown ON this hero whenever a Priest heals it.
   private readonly healFx: AnimatedSprite | null;
   // Battle Enrage swirl looped over this hero while the Priest ult buff is on it.
   private readonly enrageFx: AnimatedSprite | null;
   private readonly fxShim = { deltaTime: 0 } as unknown as Ticker;
   private prevAlive = true; // tracks the alive→dead / dead→alive edge to drive death/revive
   private flash = 0;
-  private lunge = 0;
-  private swingMs = 0;
   private castMs = 0;
   private castColor = 0xffffff;
   private elapsed = 0;
   private hpGhost = 1; // lagging HP fraction → the red "about to lose" slice trails the real bar
   private prevHpFrac = 1; // last frame's real HP fraction → detects the exact frame a hit lands
   private ghostHoldMs = 0; // >0 while the red slice is held still before it starts draining
-  private moveGraceMs = 0; // >0 while recently moving → play walk; 0 → hold idle pose
+  private moveGraceMs = 0; // >0 while recently moving → play run; 0 → idle
   private teleporting = false;
   private teleportK = 1; // 1 = fully present, 0 = fully dematerialised (mid-teleport)
   private spawnMs = 0; // >0 while a freshly-recruited hero is materialising in (drops top-down into formation)
+  private deadMs = 0; // time since this hero fell (0 while alive)
   private hudLift = 0; // px the overhead HUD is raised to dodge a crowded neighbour
 
   constructor(classKey: string) {
     super();
+    this.classKey = classKey;
     this.style = classDef(classKey).style;
     this.isKnight = classKey === 'knight';
-    const frames = getCharacterFrames(classKey);
-    this.frames = frames;
-    this.spriteBody = frames !== null ? new SpriteBody(frames) : null;
-    this.hud = this.spriteBody === null ? PROC_HUD : SPRITE_HUD;
+    // Every class has a figure, loaded before the first frame (GameStrip.init → loadHeroFigures).
+    const sheet = heroFigure(classKey);
+    if (sheet === null) throw new Error(`No figure loaded for the hero class ${classKey}`);
+    this.figure = new FigureBody(sheet);
     const h = this.hud;
     this.hpBg.rect(barLeft(h), h.barY, h.barW, h.barH).fill({ color: hexToNum('#3a2030') });
     this.respawnLabel.anchor.set(0.5, 1);
@@ -154,22 +144,16 @@ export class HeroSprite extends Container {
     this.respawnLabel.style.fontSize = h.labelSize;
     // Ult badge sits just to the RIGHT of the HP bar, level with the cooldown pips.
     this.ultLabel.anchor.set(0.5, 0.5);
-    this.ultLabel.position.set(barLeft(h) + h.barW + 7, h.cdY + h.cdH / 2);
+    this.ultLabel.position.set(barLeft(h) + h.barW + 5, h.cdY + h.cdH / 2);
     this.ultCross.position.set(this.ultLabel.x, this.ultLabel.y);
     this.ultLabel.visible = false;
     this.ultCross.visible = false;
     this.healFx = this.makeHealFx(h.bodyCx);
     this.enrageFx = this.makeEnrageFx(h.bodyCx);
-    if (this.spriteBody !== null) {
-      // Anchored at its feet/body-centre so the torso centre lands exactly on the HUD's
-      // bodyCx (HP bar + aura share it) and the feet sit ~y22 below the container origin.
-      this.spriteBody.position.set(h.bodyCx, SPRITE_FEET_Y);
-      // holyGround sits UNDER the body so the halo pools on the ground beneath the priest.
-      this.addChild(this.hpBg, this.hpBar, this.holyGround, this.spriteBody, this.aura, this.pips, this.cdPips, this.respawnLabel, this.ultLabel, this.ultCross, this.tpRing);
-    } else {
-      drawHero(this.body, classKey);
-      this.addChild(this.hpBg, this.hpBar, this.holyGround, this.feet, this.body, this.aura, this.swingG, this.pips, this.cdPips, this.respawnLabel, this.ultLabel, this.ultCross, this.tpRing);
-    }
+    // The figure's root column and ground row sit at (0, FEET_Y): its feet are on the ground line.
+    this.figure.position.set(0, FEET_Y);
+    // holyGround sits UNDER the body so the halo pools on the ground beneath the priest.
+    this.addChild(this.hpBg, this.hpBar, this.holyGround, this.figure, this.aura, this.pips, this.cdPips, this.respawnLabel, this.ultLabel, this.ultCross, this.tpRing);
     if (this.enrageFx !== null) this.addChild(this.enrageFx); // enrage swirl over the body
     if (this.healFx !== null) this.addChild(this.healFx); // sparkle on top of everything
     this.tpRing.visible = false;
@@ -227,47 +211,38 @@ export class HeroSprite extends Container {
     this.flash = 1;
   }
 
-  /** True when this hero draws from a sprite sheet (knight, ranger, priest). */
-  get usesSpriteBody(): boolean {
-    return this.spriteBody !== null;
-  }
-
-  /** The class's animated projectile frames (Priest's magic bolt), or null — lets the
-   *  driver throw the class's own bolt instead of the generic procedural fireball. */
+  /** The holy strike that lands on the target of this hero's basic attack (Priest), or null —
+   *  the driver plays it on the enemy instead of throwing a projectile. */
   get projectileFrames(): Texture[] | null {
-    return this.frames?.projectile ?? null;
+    return HOLY_STRIKE_CLASSES.has(this.classKey) ? getHolyStrikeFrames() : null;
   }
 
-  /** Play the shield-block reaction (sprite heroes with a block sheet) — fired only when
-   *  an attack is actually blocked (block-stat proc), and never interrupts a swing. */
+  /** Play the shield-block reaction (the Knight has one) — fired only when an attack is
+   *  actually blocked (block-stat proc), and never interrupts an attack or an ability. */
   blockReact(): void {
-    this.spriteBody?.block();
+    this.figure.clips.react(BLOCK_CLIP);
   }
 
-  /** Step forward into a target when attacking (melee lunge / shooting recoil). Skipped
-   *  for sprite heroes — their attack frames already carry the forward motion, so an
-   *  added lunge reads as the whole sprite rebounding off the enemy. */
-  lungeAttack(): void {
-    if (this.spriteBody !== null) return;
-    this.lunge = 1;
+  /** The figures' attack frames carry their own forward motion: nothing to add. Kept so the
+   *  driver can treat heroes and enemies alike. */
+  lungeAttack(): void { /* the attack clip carries the motion */ }
+
+  /** Play the attack animation for a hit this hero landed: its basic `attack`, or — when the
+   *  hit came from an ability — that ability's clip (heroClips). An ability cuts a basic attack
+   *  in progress; otherwise a clip in progress finishes first (figureClip). */
+  attack(abilityKey?: string): void {
+    if (abilityKey === undefined) this.figure.clips.act(ATTACK_CLIP);
+    else this.figure.clips.act(heroAbilityClip(this.classKey, abilityKey), true);
   }
 
-  /** Play the attack animation. Sprite heroes play their own attack frames (sword swing
-   *  / bow draw); procedural heroes draw the swing arc. `special` selects the reserved
-   *  melee-ability swing (the knight's heavy attack) over an alternating basic auto. */
-  swing(special = false): void {
-    if (this.spriteBody !== null) this.spriteBody.attack(special);
-    else this.swingMs = SWING_MS;
+  /** Play the clip of an ability this hero just cast (a heal, a buff, a shout, a blow). */
+  cast(abilityKey: string): void {
+    this.figure.clips.act(heroAbilityClip(this.classKey, abilityKey), true);
   }
 
-  /** Play a take-a-hit flinch (sprite heroes with a hurt sheet). Won't interrupt a swing. */
+  /** Play a take-a-hit flinch. Never interrupts an attack or an ability. */
   hurtReact(): void {
-    this.spriteBody?.hurt();
-  }
-
-  /** Play the healer's heal-cast pose (no-op unless the class has a heal sheet — Priest). */
-  supportCast(): void {
-    this.spriteBody?.heal();
+    this.figure.clips.react(HURT_CLIP, HURT_GAP_MS);
   }
 
   /** Show the heal sparkle ON this hero (it's the one being healed by a Priest). */
@@ -282,16 +257,15 @@ export class HeroSprite extends Container {
   /** Build the on-ally heal overlay from the Mend effect frames (a 5×3 grid of 128px cells —
    *  see characterFrames). The pillar content nearly fills the frame with its base at the very
    *  bottom, so we anchor the frame bottom on the feet (ALLY_FX_ANCHOR_Y) and the effect rises
-   *  from there; ALLY_FX_SCALE keeps it a touch smaller (shared with the enrage swirl). Null if
-   *  not loaded. */
+   *  from there, at ALLY_FX_SCALE (shared with the enrage swirl). Null if not loaded. */
   private makeHealFx(bodyCx: number): AnimatedSprite | null {
     const frames = getHealEffectFrames();
     if (frames === null || frames.length === 0) return null;
     const fx = new AnimatedSprite(frames);
     fx.autoUpdate = false;
     fx.anchor.set(0.5, ALLY_FX_ANCHOR_Y); // seat the sheet's base on the hero's feet
-    fx.scale.set(ALLY_FX_SCALE); // slightly smaller than before; matches the enrage swirl
-    fx.position.set(bodyCx, SPRITE_FEET_Y);
+    fx.scale.set(ALLY_FX_SCALE); // matches the enrage swirl
+    fx.position.set(bodyCx, FEET_Y);
     fx.loop = false;
     fx.animationSpeed = HEAL_FX_FPS / 60;
     fx.visible = false;
@@ -305,44 +279,34 @@ export class HeroSprite extends Container {
     this.elapsed += dtMs;
     this.visible = true;
     // Moving = closed distance on a recent sim tick (movedThisTick), held briefly past the
-    // last move so a momentary hold doesn't stutter to idle. Standing heroes don't animate
-    // their walk/feet/bob — they settle into a still stance between attacks.
+    // last move so a momentary hold doesn't stutter to idle. Standing heroes play their idle.
     if (c.alive && c.movedThisTick === true) this.moveGraceMs = MOVE_GRACE_MS;
     else this.moveGraceMs = Math.max(0, this.moveGraceMs - dtMs);
     const moving = c.alive && this.moveGraceMs > 0;
-    // Sprite heroes carry their own walk bob in their frames, so we don't add the
-    // procedural sine bob on top (it would double up and jitter).
-    const bob = this.spriteBody !== null ? 0 : moving ? Math.round(Math.sin(this.elapsed / 120) * 1.5) : 0; // walking bob
-    this.lunge = Math.max(0, this.lunge - dtMs / 180);
-    this.x = x + Math.round(this.lunge * 6); // dart toward the enemy on attack
-    this.y = groundY + (c.alive ? bob : 6);
+    // Whole art pixels: the figure is drawn 1 art pixel = 1 strip pixel, on the backdrop's grid.
+    this.x = Math.round(x);
+    this.y = groundY - FEET_BELOW_ORIGIN;
     // Faded when dead — but a reviving hero stays a touch brighter so its respawn
     // bar + countdown read clearly through the fade. During a full-party wipe hold the
     // fallen hero is NOT reviving (the teleport whisks it away in ~2s, not 60s): keep it
     // prominent so the death animation reads, and suppress the misleading respawn bar.
     const reviving = !c.alive && c.respawnMs !== undefined && !wipeHold;
-    this.alpha = c.alive ? 1 : wipeHold ? 0.9 : reviving ? 0.55 : 0.25;
+    // The fall itself is shown solid: the fade only sets in once the death clip has played.
+    this.deadMs = c.alive ? 0 : this.deadMs + dtMs;
+    const falling = !c.alive && this.deadMs < DEATH_SHOWN_MS;
+    this.alpha = c.alive || falling ? 1 : wipeHold ? 0.9 : reviving ? 0.55 : 0.25;
 
     // hit flash → brief darkening tint pulse (tint multiplies, so it dims)
     this.flash = Math.max(0, this.flash - dtMs / 220);
     const tint = this.flash > 0 ? 0xff7777 : 0xffffff;
 
-    if (this.spriteBody !== null) {
-      // Drive the death → revive edges so the body plays its death one-shot (then holds
-      // its last frame) and resets to idle on respawn, instead of just freezing.
-      if (this.prevAlive && !c.alive) this.spriteBody.die();
-      else if (!this.prevAlive && c.alive) this.spriteBody.revive();
-      this.spriteBody.setTint(tint);
-      this.spriteBody.setBodyAlpha(c.alive || wipeHold ? 1 : 0.5); // keep the corpse solid through a wipe hold
-      this.spriteBody.update(dtMs, moving); // death anim advances + holds; idle/walk when alive
-    } else {
-      this.drawFeet(c.alive, moving);
-      // sword swing arc (in front of the body, facing the enemies on the right)
-      this.swingMs = Math.max(0, this.swingMs - dtMs);
-      drawSwing(this.swingG, this.swingMs, hexToNum('#e7e1d6'));
-      this.body.tint = tint;
-      this.body.alpha = c.alive ? 1 : 0.5;
-    }
+    // Drive the death → revive edges so the body plays its death one-shot (then holds its
+    // last frame) and resets to idle on respawn.
+    if (this.prevAlive && !c.alive) this.figure.clips.die();
+    else if (!this.prevAlive && c.alive) this.figure.clips.revive();
+    this.figure.setTint(tint);
+    this.figure.setBodyAlpha(c.alive || wipeHold || falling ? 1 : 0.5); // keep the corpse solid through a wipe hold
+    this.figure.update(dtMs, moving); // death anim advances + holds; idle/run when alive
 
     // HP bar — while dead-and-reviving it becomes a respawn-progress bar instead.
     const h = this.hud;
@@ -413,7 +377,7 @@ export class HeroSprite extends Container {
     fx.autoUpdate = false;
     fx.anchor.set(0.5, ALLY_FX_ANCHOR_Y); // same as Mend: seat the sheet's base on the feet
     fx.scale.set(ALLY_FX_SCALE); // same height as the Mend effect (shared on-ally geometry)
-    fx.position.set(bodyCx, SPRITE_FEET_Y); // seated at the feet, matching Mend's positioning
+    fx.position.set(bodyCx, FEET_Y); // seated at the feet, matching Mend's positioning
     fx.loop = true;
     fx.animationSpeed = ENRAGE_FX_FPS / 60;
     fx.visible = false;
@@ -455,7 +419,7 @@ export class HeroSprite extends Container {
     if (ready) {
       this.ultCross.visible = false;
     } else {
-      const r = 7;
+      const r = 4;
       this.ultCross.moveTo(-r, -r).lineTo(r, r).stroke({ color: hexToNum('#c0473a'), width: 1.5 });
       this.ultCross.visible = true;
     }
@@ -481,12 +445,7 @@ export class HeroSprite extends Container {
     const s = Math.max(0.04, k);
     this.scale.set(s, s);
     this.y -= (1 - k) * 24; // lifts up as it (de)materialises
-    const bodyA = k;
-    if (this.spriteBody !== null) this.spriteBody.setBodyAlpha(bodyA);
-    else {
-      this.body.alpha = bodyA;
-      this.feet.alpha = bodyA;
-    }
+    this.figure.setBodyAlpha(k);
     // The overhead HUD reads as noise mid-teleport — hide it.
     this.hpBg.visible = false;
     this.hpBar.visible = false;
@@ -499,7 +458,7 @@ export class HeroSprite extends Container {
     g.scale.set(1 / s); // cancel the container shrink so the ring stays full size
     g.clear();
     const cx = this.hud.bodyCx;
-    const cy = this.spriteBody !== null ? -20 : -8; // rough body centre, container-local
+    const cy = BODY_MID_Y;
     const pulse = 0.55 + 0.45 * Math.sin(this.elapsed / 35);
     // upward beam — brightest as the body vanishes
     const beamA = (1 - k) * 0.85;
@@ -522,9 +481,7 @@ export class HeroSprite extends Container {
     this.holyGround.clear();
     const active = c.alive && !this.teleporting && c.abilities.some((a) => a.def.aura?.stat === 'damageIncrease');
     if (!active) return;
-    const sprite = this.spriteBody !== null;
-    const feetY = sprite ? SPRITE_FEET_Y : 20;
-    drawHolyGround(this.holyGround, this.hud.bodyCx, feetY, sprite ? 1.1 : 0.75, this.elapsed);
+    drawHolyGround(this.holyGround, this.hud.bodyCx, FEET_Y, AURA_SCALE, this.elapsed);
   }
 
   // Effect aura: twinkling diamond "stars" orbiting the hero while an ongoing effect
@@ -533,7 +490,7 @@ export class HeroSprite extends Container {
   private drawAura(c: Combatant): void {
     this.aura.clear();
     const cx = this.hud.bodyCx; // centre the shield/stars on the same line as the body + HP bar
-    const cy = 2;
+    const cy = BODY_MID_Y;
     if (this.castMs > 0) {
       const t = this.castMs / CAST_MS;
       this.aura.circle(cx, cy, (1 - t) * 15 + 5).stroke({ color: this.castColor, width: 2, alpha: t });
@@ -542,22 +499,21 @@ export class HeroSprite extends Container {
     // Last Stand: a translucent yellow shield bubble around the hero while invulnerable.
     if (isInvulnerable(c.effects)) {
       const pulse = 0.16 + 0.1 * Math.abs(Math.sin(this.elapsed / 200));
-      this.aura.circle(cx, cy, 16).fill({ color: INVULN_YELLOW, alpha: pulse });
-      this.aura.circle(cx, cy, 16).stroke({ color: INVULN_YELLOW, width: 1.5, alpha: 0.75 });
+      this.aura.circle(cx, cy, 22).fill({ color: INVULN_YELLOW, alpha: pulse });
+      this.aura.circle(cx, cy, 22).stroke({ color: INVULN_YELLOW, width: 1.5, alpha: 0.75 });
     }
     // Battle Enrage (Priest ult) is NOT an aura: every buffed ally rhythmically SWELLS and
     // reddens (drawn in applyEnrage, after teleport, so it owns the body's scale + tint).
     // Bold category overlays: green up-arrows (offense buff), dancing shields (defense
     // buff), red down-arrows (debuff) — drawn over the body's vertical span.
     const cats = auraCategories(c.effects);
-    const sprite = this.spriteBody !== null;
     const region = {
       cx,
-      topY: this.hud.barY * 0.78,
-      botY: 4,
-      cy: (this.hud.barY * 0.78 + 4) / 2, // heroes never wear the mark; midpoint is fine
-      halfW: this.hud.barW * 0.4,
-      scale: sprite ? 1.1 : 0.7,
+      topY: FEET_Y - HERO_HEIGHT + 4,
+      botY: FEET_Y - 2,
+      cy: BODY_MID_Y, // heroes never wear the mark; the body's middle is fine
+      halfW: this.hud.barW * 0.45,
+      scale: AURA_SCALE,
       elapsed: this.elapsed,
     };
     drawCategoryAuras(this.aura, cats, region);
@@ -601,17 +557,6 @@ export class HeroSprite extends Container {
       const fillH = Math.max(1, Math.round(lay.cdH * fillFrac));
       this.cdPips.rect(cdX, baseY + (lay.cdH - fillH), lay.cdW, fillH).fill({ color: ready ? CD_READY : buildColor });
     });
-  }
-
-  // Two feet shuffling out of phase → a simple walk cycle (sells the treadmill). Planted
-  // side-by-side when standing still so the hero doesn't shuffle in place between attacks.
-  private drawFeet(alive: boolean, moving: boolean): void {
-    this.feet.clear();
-    if (!alive) return;
-    const swing = moving ? Math.sin(this.elapsed / 120) * 3 : 0;
-    const ink = hexToNum('#0d0b12');
-    this.feet.rect(1 + Math.round(swing), 20, 4, 3).fill({ color: ink });
-    this.feet.rect(6 - Math.round(swing), 20, 4, 3).fill({ color: ink });
   }
 
   // Buff/debuff pips double as DURATION gauges: each is a dark cell with a colored

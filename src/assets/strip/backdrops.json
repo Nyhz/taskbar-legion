@@ -1,0 +1,1308 @@
+{
+ "width": 600,
+ "height": 160,
+ "pathY": 123,
+ "grades": [
+  "normal",
+  "torment"
+ ],
+ "worlds": {
+  "w01": {
+   "layers": [
+    {
+     "name": "sky",
+     "factor": 0.0,
+     "drift": false
+    },
+    {
+     "name": "clouds",
+     "factor": 0.05,
+     "drift": true
+    },
+    {
+     "name": "far",
+     "factor": 0.12,
+     "drift": false
+    },
+    {
+     "name": "hills",
+     "factor": 0.25,
+     "drift": false
+    },
+    {
+     "name": "meadow",
+     "factor": 0.45,
+     "drift": false
+    },
+    {
+     "name": "ground",
+     "factor": 1.0,
+     "drift": false
+    },
+    {
+     "name": "fore",
+     "factor": 1.35,
+     "drift": false
+    }
+   ],
+   "atmosphere": {
+    "normal": [
+     {
+      "fx": "particles",
+      "count": 22,
+      "color": [
+       "#fff4c6",
+       "#f8f2e4"
+      ],
+      "vx": 7,
+      "vy": -3,
+      "sway": 3,
+      "alpha": 0.5,
+      "ymax": 118
+     }
+    ],
+    "torment": [
+     {
+      "fx": "pulse",
+      "color": "#8f2433",
+      "period": 2600,
+      "alpha": 0.14
+     },
+     {
+      "fx": "particles",
+      "count": 52,
+      "color": [
+       "#8e7c74",
+       "#0b0d17",
+       "#6b5a59",
+       "#8f2433"
+      ],
+      "vx": -13,
+      "vy": 25,
+      "sway": 4,
+      "alpha": 0.55
+     },
+     {
+      "fx": "lightning",
+      "every": [
+       4500,
+       11000
+      ],
+      "flash": "#f08a62",
+      "alpha": 0.24
+     },
+     {
+      "fx": "eyes",
+      "every": [
+       2200,
+       6000
+      ],
+      "hold": 1500,
+      "color": "#f8dc84",
+      "zones": [
+       [
+        0,
+        99,
+        600,
+        108
+       ],
+       [
+        0,
+        134,
+        600,
+        154
+       ]
+      ],
+      "max": 3,
+      "size": 2,
+      "gap": 4
+     }
+    ]
+   }
+  },
+  "w02": {
+   "layers": [
+    {
+     "name": "sky",
+     "factor": 0.0,
+     "drift": false
+    },
+    {
+     "name": "far",
+     "factor": 0.1,
+     "drift": false
+    },
+    {
+     "name": "mid",
+     "factor": 0.22,
+     "drift": false
+    },
+    {
+     "name": "mist",
+     "factor": 0.3,
+     "drift": true
+    },
+    {
+     "name": "near",
+     "factor": 0.5,
+     "drift": false
+    },
+    {
+     "name": "ground",
+     "factor": 1.0,
+     "drift": false
+    },
+    {
+     "name": "fore",
+     "factor": 1.35,
+     "drift": false
+    }
+   ],
+   "atmosphere": {
+    "normal": [
+     {
+      "fx": "particles",
+      "count": 26,
+      "color": [
+       "#fff4c6",
+       "#dde49c"
+      ],
+      "vx": 4,
+      "vy": -6,
+      "sway": 4,
+      "alpha": 0.6,
+      "ymax": 110,
+      "front": false
+     },
+     {
+      "fx": "particles",
+      "count": 9,
+      "color": [
+       "#d08f34",
+       "#bb3a3a",
+       "#86ab5a"
+      ],
+      "vx": -9,
+      "vy": 17,
+      "sway": 7,
+      "size": 2,
+      "alpha": 0.8,
+      "ymax": 124
+     }
+    ],
+    "torment": [
+     {
+      "fx": "eyes",
+      "every": [
+       1400,
+       4200
+      ],
+      "hold": 1500,
+      "color": "#dde49c",
+      "zones": [
+       [
+        0,
+        16,
+        600,
+        40
+       ],
+       [
+        0,
+        40,
+        600,
+        66
+       ]
+      ],
+      "max": 4,
+      "size": 1,
+      "gap": 3
+     },
+     {
+      "fx": "eyes",
+      "every": [
+       9000,
+       17000
+      ],
+      "hold": 2400,
+      "color": "#f08a62",
+      "zones": [
+       [
+        20,
+        24,
+        580,
+        58
+       ]
+      ],
+      "max": 1,
+      "size": 2,
+      "gap": 5
+     },
+     {
+      "fx": "particles",
+      "count": 46,
+      "color": [
+       "#b3c873",
+       "#cfc1af",
+       "#86ab5a"
+      ],
+      "vx": -3,
+      "vy": 9,
+      "sway": 5,
+      "alpha": 0.5,
+      "ymax": 126
+     },
+     {
+      "fx": "lightning",
+      "every": [
+       9000,
+       19000
+      ],
+      "flash": "#b3c873",
+      "alpha": 0.3
+     }
+    ]
+   }
+  },
+  "w03": {
+   "layers": [
+    {
+     "name": "sky",
+     "factor": 0.0,
+     "drift": false
+    },
+    {
+     "name": "far",
+     "factor": 0.1,
+     "drift": false
+    },
+    {
+     "name": "mist",
+     "factor": 0.2,
+     "drift": true
+    },
+    {
+     "name": "huts",
+     "factor": 0.4,
+     "drift": false
+    },
+    {
+     "name": "reeds",
+     "factor": 0.65,
+     "drift": false
+    },
+    {
+     "name": "ground",
+     "factor": 1.0,
+     "drift": false
+    },
+    {
+     "name": "fore",
+     "factor": 1.35,
+     "drift": false
+    }
+   ],
+   "atmosphere": {
+    "normal": [
+     {
+      "fx": "particles",
+      "count": 80,
+      "color": [
+       "#5a8bc2",
+       "#82b0da"
+      ],
+      "vx": -48,
+      "vy": 250,
+      "len": 5,
+      "alpha": 0.5,
+      "ymax": 126
+     },
+     {
+      "fx": "particles",
+      "count": 16,
+      "color": [
+       "#dde49c",
+       "#fff4c6"
+      ],
+      "vx": 4,
+      "vy": -7,
+      "sway": 5,
+      "alpha": 0.9,
+      "ymax": 112,
+      "front": false
+     }
+    ],
+    "torment": [
+     {
+      "fx": "particles",
+      "count": 90,
+      "color": [
+       "#45998f",
+       "#a6d8c2"
+      ],
+      "vx": -120,
+      "vy": 310,
+      "len": 7,
+      "alpha": 0.45,
+      "ymax": 126
+     },
+     {
+      "fx": "lightning",
+      "every": [
+       3500,
+       9000
+      ],
+      "flash": "#d9f1e3",
+      "alpha": 0.42,
+      "bolt": "#fffaf0",
+      "x": [
+       30,
+       570
+      ],
+      "y": [
+       8,
+       96
+      ],
+      "shake": 2
+     },
+     {
+      "fx": "eyes",
+      "every": [
+       1600,
+       4200
+      ],
+      "hold": 1700,
+      "color": "#d9f1e3",
+      "zones": [
+       [
+        0,
+        100,
+        600,
+        110
+       ],
+       [
+        0,
+        134,
+        600,
+        152
+       ]
+      ],
+      "max": 3,
+      "size": 1,
+      "gap": 3
+     }
+    ]
+   }
+  },
+  "w04": {
+   "layers": [
+    {
+     "name": "sky",
+     "factor": 0.0,
+     "drift": false
+    },
+    {
+     "name": "far",
+     "factor": 0.08,
+     "drift": false
+    },
+    {
+     "name": "buttes",
+     "factor": 0.18,
+     "drift": false
+    },
+    {
+     "name": "mist",
+     "factor": 0.26,
+     "drift": true
+    },
+    {
+     "name": "walls",
+     "factor": 0.45,
+     "drift": false
+    },
+    {
+     "name": "ground",
+     "factor": 1.0,
+     "drift": false
+    },
+    {
+     "name": "fore",
+     "factor": 1.35,
+     "drift": false
+    }
+   ],
+   "atmosphere": {
+    "normal": [
+     {
+      "fx": "particles",
+      "count": 22,
+      "color": "#fff4c6",
+      "vx": 7,
+      "vy": -9,
+      "sway": 3,
+      "alpha": 0.4,
+      "front": false
+     },
+     {
+      "fx": "particles",
+      "count": 16,
+      "color": "#f8c48a",
+      "vx": -64,
+      "vy": 5,
+      "len": 3,
+      "alpha": 0.3,
+      "ymax": 126
+     }
+    ],
+    "torment": [
+     {
+      "fx": "particles",
+      "count": 64,
+      "color": [
+       "#a96628",
+       "#8c5e3e"
+      ],
+      "vx": -260,
+      "vy": 20,
+      "len": 6,
+      "alpha": 0.5,
+      "ymax": 126,
+      "front": false
+     },
+     {
+      "fx": "particles",
+      "count": 24,
+      "color": [
+       "#d08f34",
+       "#ebb94f"
+      ],
+      "vx": -350,
+      "vy": 26,
+      "len": 9,
+      "alpha": 0.4,
+      "ymax": 132
+     },
+     {
+      "fx": "lightning",
+      "every": [
+       3200,
+       8500
+      ],
+      "flash": "#f8dc84",
+      "alpha": 0.38,
+      "bolt": "#fff4c6",
+      "x": [
+       30,
+       570
+      ],
+      "y": [
+       0,
+       88
+      ],
+      "shake": 1
+     },
+     {
+      "fx": "flicker",
+      "every": [
+       5000,
+       11000
+      ],
+      "dur": 420,
+      "color": "#1e1520",
+      "alpha": 0.28
+     }
+    ]
+   }
+  },
+  "w05": {
+   "layers": [
+    {
+     "name": "sky",
+     "factor": 0.0,
+     "drift": false
+    },
+    {
+     "name": "far",
+     "factor": 0.08,
+     "drift": false
+    },
+    {
+     "name": "ridge",
+     "factor": 0.2,
+     "drift": false
+    },
+    {
+     "name": "mist",
+     "factor": 0.3,
+     "drift": true
+    },
+    {
+     "name": "slopes",
+     "factor": 0.48,
+     "drift": false
+    },
+    {
+     "name": "ground",
+     "factor": 1.0,
+     "drift": false
+    },
+    {
+     "name": "fore",
+     "factor": 1.35,
+     "drift": false
+    }
+   ],
+   "atmosphere": {
+    "normal": [
+     {
+      "fx": "particles",
+      "count": 46,
+      "color": [
+       "#f8f2e4",
+       "#b4d4ee"
+      ],
+      "vx": -12,
+      "vy": 24,
+      "sway": 3,
+      "alpha": 0.6,
+      "ymax": 128
+     },
+     {
+      "fx": "particles",
+      "count": 30,
+      "color": "#82b0da",
+      "vx": -7,
+      "vy": 15,
+      "sway": 2,
+      "alpha": 0.5,
+      "ymax": 116,
+      "front": false
+     }
+    ],
+    "torment": [
+     {
+      "fx": "particles",
+      "count": 70,
+      "color": [
+       "#e6e6e8",
+       "#f8f2e4"
+      ],
+      "vx": -160,
+      "vy": 52,
+      "len": 3,
+      "alpha": 0.5,
+      "ymax": 122,
+      "front": false
+     },
+     {
+      "fx": "particles",
+      "count": 80,
+      "color": [
+       "#fffaf0",
+       "#e6e6e8"
+      ],
+      "vx": -250,
+      "vy": 76,
+      "len": 6,
+      "alpha": 0.5,
+      "ymax": 150
+     },
+     {
+      "fx": "lightning",
+      "every": [
+       3500,
+       9000
+      ],
+      "flash": "#212a40",
+      "alpha": 0.38,
+      "bolt": "#0b0d17",
+      "x": [
+       40,
+       560
+      ],
+      "y": [
+       0,
+       84
+      ],
+      "shake": 1
+     },
+     {
+      "fx": "eyes",
+      "every": [
+       2200,
+       6000
+      ],
+      "hold": 1700,
+      "color": "#0b0d17",
+      "zones": [
+       [
+        0,
+        30,
+        600,
+        78
+       ]
+      ],
+      "max": 3,
+      "size": 2,
+      "gap": 4
+     }
+    ]
+   }
+  },
+  "w06": {
+   "layers": [
+    {
+     "name": "sky",
+     "factor": 0.0,
+     "drift": false
+    },
+    {
+     "name": "far",
+     "factor": 0.06,
+     "drift": false
+    },
+    {
+     "name": "mid",
+     "factor": 0.18,
+     "drift": false
+    },
+    {
+     "name": "mist",
+     "factor": 0.26,
+     "drift": true
+    },
+    {
+     "name": "near",
+     "factor": 0.5,
+     "drift": false
+    },
+    {
+     "name": "ground",
+     "factor": 1.0,
+     "drift": false
+    },
+    {
+     "name": "fore",
+     "factor": 1.35,
+     "drift": false
+    }
+   ],
+   "atmosphere": {
+    "normal": [
+     {
+      "fx": "particles",
+      "count": 28,
+      "color": [
+       "#a6d8c2",
+       "#e8ddca"
+      ],
+      "vx": 16,
+      "vy": -4,
+      "sway": 2,
+      "alpha": 0.4,
+      "ymax": 112,
+      "front": false
+     }
+    ],
+    "torment": [
+     {
+      "fx": "lightning",
+      "every": [
+       3500,
+       9000
+      ],
+      "flash": "#b4d4ee",
+      "alpha": 0.36,
+      "bolt": "#fffaf0",
+      "x": [
+       320,
+       590
+      ],
+      "y": [
+       34,
+       84
+      ],
+      "shake": 1
+     },
+     {
+      "fx": "particles",
+      "count": 80,
+      "color": [
+       "#5a8bc2",
+       "#82b0da"
+      ],
+      "vx": -80,
+      "vy": 250,
+      "len": 5,
+      "alpha": 0.38
+     },
+     {
+      "fx": "eyes",
+      "every": [
+       4000,
+       9000
+      ],
+      "hold": 1700,
+      "color": "#e1f0fb",
+      "zones": [
+       [
+        300,
+        87,
+        596,
+        93
+       ],
+       [
+        4,
+        87,
+        150,
+        93
+       ]
+      ],
+      "max": 2,
+      "size": 1,
+      "gap": 4
+     },
+     {
+      "fx": "pulse",
+      "color": "#0b0d17",
+      "period": 5400,
+      "alpha": 0.18
+     }
+    ]
+   }
+  },
+  "w07": {
+   "layers": [
+    {
+     "name": "sky",
+     "factor": 0.0,
+     "drift": false
+    },
+    {
+     "name": "far",
+     "factor": 0.08,
+     "drift": false
+    },
+    {
+     "name": "mid",
+     "factor": 0.22,
+     "drift": false
+    },
+    {
+     "name": "mist",
+     "factor": 0.34,
+     "drift": true
+    },
+    {
+     "name": "near",
+     "factor": 0.5,
+     "drift": false
+    },
+    {
+     "name": "ground",
+     "factor": 1.0,
+     "drift": false
+    },
+    {
+     "name": "fore",
+     "factor": 1.35,
+     "drift": false
+    }
+   ],
+   "atmosphere": {
+    "normal": [
+     {
+      "fx": "particles",
+      "count": 44,
+      "color": [
+       "#a6d8c2",
+       "#b3c873",
+       "#45998f",
+       "#f8dc84"
+      ],
+      "vx": -4,
+      "vy": 6,
+      "sway": 3,
+      "alpha": 0.6,
+      "ymax": 116,
+      "front": false
+     },
+     {
+      "fx": "particles",
+      "count": 9,
+      "color": [
+       "#d9f1e3",
+       "#dde49c"
+      ],
+      "vx": -7,
+      "vy": 9,
+      "sway": 4,
+      "alpha": 0.5,
+      "ymax": 122
+     },
+     {
+      "fx": "particles",
+      "count": 7,
+      "color": "#6fb9a6",
+      "vx": 0,
+      "vy": 120,
+      "len": 2,
+      "alpha": 0.45,
+      "ymax": 118,
+      "front": false
+     }
+    ],
+    "torment": [
+     {
+      "fx": "flicker",
+      "every": [
+       3600,
+       9000
+      ],
+      "dur": 520,
+      "color": "#0b0d17",
+      "alpha": 0.32
+     },
+     {
+      "fx": "pulse",
+      "color": "#6a3559",
+      "period": 4400,
+      "alpha": 0.15
+     },
+     {
+      "fx": "particles",
+      "count": 78,
+      "color": [
+       "#da7b66",
+       "#93455f",
+       "#b09f91",
+       "#ee9f72"
+      ],
+      "vx": -3,
+      "vy": 15,
+      "sway": 4,
+      "alpha": 0.5,
+      "ymax": 126
+     },
+     {
+      "fx": "eyes",
+      "every": [
+       1500,
+       4200
+      ],
+      "hold": 1500,
+      "color": "#f8c48a",
+      "zones": [
+       [
+        0,
+        24,
+        600,
+        44
+       ]
+      ],
+      "max": 3,
+      "size": 1,
+      "gap": 3
+     },
+     {
+      "fx": "eyes",
+      "every": [
+       2600,
+       7000
+      ],
+      "hold": 1900,
+      "color": "#f8c48a",
+      "zones": [
+       [
+        0,
+        142,
+        600,
+        154
+       ]
+      ],
+      "max": 2,
+      "size": 2,
+      "gap": 4
+     }
+    ]
+   }
+  },
+  "w08": {
+   "layers": [
+    {
+     "name": "sky",
+     "factor": 0.0,
+     "drift": false
+    },
+    {
+     "name": "clouds",
+     "factor": 0.04,
+     "drift": true
+    },
+    {
+     "name": "far",
+     "factor": 0.1,
+     "drift": false
+    },
+    {
+     "name": "forges",
+     "factor": 0.28,
+     "drift": false
+    },
+    {
+     "name": "mist",
+     "factor": 0.6,
+     "drift": true
+    },
+    {
+     "name": "ground",
+     "factor": 1.0,
+     "drift": false
+    },
+    {
+     "name": "fore",
+     "factor": 1.35,
+     "drift": false
+    }
+   ],
+   "atmosphere": {
+    "normal": [
+     {
+      "fx": "particles",
+      "count": 34,
+      "color": [
+       "#f8dc84",
+       "#ebb94f",
+       "#dc5f48"
+      ],
+      "vx": 7,
+      "vy": -24,
+      "sway": 3,
+      "alpha": 0.85,
+      "ymax": 112,
+      "front": false
+     },
+     {
+      "fx": "particles",
+      "count": 26,
+      "color": [
+       "#b09f91",
+       "#6b5a59"
+      ],
+      "vx": -9,
+      "vy": 13,
+      "sway": 4,
+      "alpha": 0.5
+     }
+    ],
+    "torment": [
+     {
+      "fx": "particles",
+      "count": 84,
+      "color": [
+       "#cfc1af",
+       "#8e7c74",
+       "#77839a"
+      ],
+      "vx": -13,
+      "vy": 27,
+      "sway": 5,
+      "alpha": 0.55
+     },
+     {
+      "fx": "lightning",
+      "every": [
+       3800,
+       9500
+      ],
+      "flash": "#e1f0fb",
+      "alpha": 0.32,
+      "shake": 1
+     },
+     {
+      "fx": "flicker",
+      "every": [
+       2800,
+       7500
+      ],
+      "dur": 260,
+      "color": "#0b0d17",
+      "alpha": 0.28
+     },
+     {
+      "fx": "pulse",
+      "color": "#2e4a88",
+      "period": 4400,
+      "alpha": 0.1
+     }
+    ]
+   }
+  },
+  "w09": {
+   "layers": [
+    {
+     "name": "sky",
+     "factor": 0.0,
+     "drift": false
+    },
+    {
+     "name": "clouds",
+     "factor": 0.04,
+     "drift": true
+    },
+    {
+     "name": "far",
+     "factor": 0.1,
+     "drift": false
+    },
+    {
+     "name": "citadel",
+     "factor": 0.22,
+     "drift": false
+    },
+    {
+     "name": "terrace",
+     "factor": 0.5,
+     "drift": false
+    },
+    {
+     "name": "ground",
+     "factor": 1.0,
+     "drift": false
+    },
+    {
+     "name": "fore",
+     "factor": 1.35,
+     "drift": false
+    }
+   ],
+   "atmosphere": {
+    "normal": [
+     {
+      "fx": "particles",
+      "count": 16,
+      "color": [
+       "#fffaf0",
+       "#fff4c6"
+      ],
+      "vx": -5,
+      "vy": -3,
+      "sway": 3,
+      "alpha": 0.55,
+      "ymax": 112,
+      "front": false
+     },
+     {
+      "fx": "particles",
+      "count": 5,
+      "color": "#fffaf0",
+      "vx": -16,
+      "vy": 10,
+      "sway": 7,
+      "len": 2,
+      "alpha": 0.6,
+      "ymax": 122
+     }
+    ],
+    "torment": [
+     {
+      "fx": "particles",
+      "count": 64,
+      "color": [
+       "#151a2b",
+       "#cfc1af",
+       "#151a2b",
+       "#b09f91"
+      ],
+      "vx": -12,
+      "vy": 24,
+      "sway": 4,
+      "len": 2,
+      "alpha": 0.55,
+      "ymax": 126
+     },
+     {
+      "fx": "pulse",
+      "color": "#0b0d17",
+      "period": 5600,
+      "alpha": 0.2
+     },
+     {
+      "fx": "lightning",
+      "every": [
+       3800,
+       9500
+      ],
+      "flash": "#d08f34",
+      "alpha": 0.3
+     },
+     {
+      "fx": "flicker",
+      "every": [
+       7000,
+       15000
+      ],
+      "dur": 240,
+      "color": "#0b0d17",
+      "alpha": 0.3
+     }
+    ]
+   }
+  },
+  "w10": {
+   "layers": [
+    {
+     "name": "sky",
+     "factor": 0.0,
+     "drift": false
+    },
+    {
+     "name": "fragments",
+     "factor": 0.06,
+     "drift": false
+    },
+    {
+     "name": "islands",
+     "factor": 0.16,
+     "drift": false
+    },
+    {
+     "name": "mist",
+     "factor": 0.3,
+     "drift": true
+    },
+    {
+     "name": "near",
+     "factor": 0.5,
+     "drift": false
+    },
+    {
+     "name": "ground",
+     "factor": 1.0,
+     "drift": false
+    },
+    {
+     "name": "fore",
+     "factor": 1.35,
+     "drift": false
+    }
+   ],
+   "atmosphere": {
+    "normal": [
+     {
+      "fx": "particles",
+      "count": 44,
+      "color": [
+       "#cba2dd",
+       "#f8f2e4",
+       "#8556ad"
+      ],
+      "vx": 5,
+      "vy": -13,
+      "sway": 2,
+      "alpha": 0.55,
+      "ymax": 126,
+      "front": false
+     },
+     {
+      "fx": "pulse",
+      "color": "#371e62",
+      "period": 5600,
+      "alpha": 0.1
+     }
+    ],
+    "torment": [
+     {
+      "fx": "lightning",
+      "every": [
+       2600,
+       6400
+      ],
+      "flash": "#f8f2e4",
+      "alpha": 0.42,
+      "bolt": "#fffaf0",
+      "x": [
+       20,
+       430
+      ],
+      "y": [
+       0,
+       58
+      ],
+      "shake": 2
+     },
+     {
+      "fx": "lightning",
+      "every": [
+       1500,
+       4200
+      ],
+      "flash": "#97a1b3",
+      "alpha": 0.14
+     },
+     {
+      "fx": "particles",
+      "count": 54,
+      "color": [
+       "#f8f2e4",
+       "#77839a",
+       "#cfc1af"
+      ],
+      "vx": 9,
+      "vy": -92,
+      "len": 3,
+      "alpha": 0.5,
+      "ymax": 126,
+      "front": false
+     },
+     {
+      "fx": "particles",
+      "count": 14,
+      "color": "#e8ddca",
+      "vx": 12,
+      "vy": -120,
+      "len": 4,
+      "alpha": 0.4,
+      "ymax": 150
+     },
+     {
+      "fx": "eyes",
+      "every": [
+       1400,
+       3800
+      ],
+      "hold": 1300,
+      "color": "#ead2f0",
+      "zones": [
+       [
+        0,
+        136,
+        600,
+        152
+       ],
+       [
+        10,
+        14,
+        420,
+        52
+       ]
+      ],
+      "max": 4,
+      "size": 2,
+      "gap": 4
+     },
+     {
+      "fx": "flicker",
+      "every": [
+       5200,
+       11000
+      ],
+      "dur": 260,
+      "color": "#0b0d17",
+      "alpha": 0.3
+     }
+    ]
+   }
+  }
+ }
+}

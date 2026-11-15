@@ -1,151 +1,27 @@
 import { Assets, Rectangle, Texture } from 'pixi.js';
-// Knight (tank) — full action set + per-attack slash effect overlays.
-import knightIdle from '@/assets/characters/knight/actions/knight-idle.png';
-import knightWalk from '@/assets/characters/knight/actions/knight-walk.png';
-import knightAttack1 from '@/assets/characters/knight/actions/knight-attack01.png';
-import knightAttack2 from '@/assets/characters/knight/actions/knight-attack02.png';
-import knightAttack3 from '@/assets/characters/knight/actions/knight-attack03.png';
-import knightBlock from '@/assets/characters/knight/actions/knight-block.png';
-import knightHurt from '@/assets/characters/knight/actions/knight-hurt.png';
-import knightDeath from '@/assets/characters/knight/actions/knight-death.png';
-import knightAtk1Fx from '@/assets/characters/knight/attack-effects/knight-attack01-effect.png';
-import knightAtk2Fx from '@/assets/characters/knight/attack-effects/knight-attack02-effect.png';
-import knightAtk3Fx from '@/assets/characters/knight/attack-effects/knight-attack03-effect.png';
-// Ranger (dps) — bow draws + the shared arrow projectile.
-import rangerIdle from '@/assets/characters/ranger/actions/ranger-idle.png';
-import rangerWalk from '@/assets/characters/ranger/actions/ranger-walk.png';
-import rangerAttack1 from '@/assets/characters/ranger/actions/ranger-attack01.png';
-import rangerAttack2 from '@/assets/characters/ranger/actions/ranger-attack02.png';
-import rangerHurt from '@/assets/characters/ranger/actions/ranger-hurt.png';
-import rangerDeath from '@/assets/characters/ranger/actions/ranger-death.png';
 import arrowUrl from '@/assets/characters/ranger/projectiles/arrow.png';
-// Priest (healer) — caster attack + a dedicated heal cast + its flying bolt / heal sparkle.
-import priestIdle from '@/assets/characters/priest/actions/priest-idle.png';
-import priestWalk from '@/assets/characters/priest/actions/priest-walk.png';
-import priestAttack from '@/assets/characters/priest/actions/priest-attack.png';
-import priestHeal from '@/assets/characters/priest/actions/priest-heal.png';
-import priestHurt from '@/assets/characters/priest/actions/priest-hurt.png';
-import priestDeath from '@/assets/characters/priest/actions/priest-death.png';
 import priestAtkFx from '@/assets/characters/priest/effects/priest-attack-effect.png';
 import priestMendFx from '@/assets/characters/priest/effects/priest-mend-effect.png';
 import priestEnrageFx from '@/assets/characters/priest/effects/priest-battle-enrage.png';
-// Reused for Explosive Arrow's detonation (the Mage class is gone, but its fireball sheet
-// remains): a 7-frame 100px strip — last frames are the orange burst + pale flash.
 import fireballFx from '@/assets/characters/mage/projectiles/mage-attack02-effect.png';
 
-// Sprite-sheet character bodies (a deliberate override of ART.md's procedural-only rule,
-// at the user's request). Each sheet is a horizontal strip of 100×100 frames; we load it
-// once, force nearest-neighbour scaling for crisp pixels, and slice it into per-frame
-// Textures sharing the single source. The whole action package is wired: idle, walk, up
-// to three attacks (alternated on successive strikes, with frame-aligned slash effects),
-// block, hurt, death, and a healer-only heal cast. Per class we carry the geometry needed
-// to land every class at a matching on-screen size (~42px tall, feet at local y22).
-// Memoized; safe to call loadCharacterTextures() repeatedly.
+// The EFFECT art that survives from before the redesign: the arrow, the heal sparkle, the Battle Enrage swirl, the
+// holy strike and the fireball blast. The fighters themselves are the redesign's figures (figureTextures.ts);
+// these effects keep their old sheets until the redesign draws its own. Loaded once, before the first frame.
 
-export interface CharFps {
-  idle: number;
-  walk: number;
-  attack: number;
-  block: number;
-  hurt: number;
-  death: number;
-  heal: number;
-}
+const STRIP_FRAME = 100; // the old horizontal strips: square 100 px frames
+const GRID_FRAME = 128; // the on-ally effects: a 5×3 grid of 128 px cells, read left→right, top→bottom
+const MEND_FRAME_COUNT = 11; // the grid's 15th cell row is only partly used
+const ENRAGE_FRAME_COUNT = 12;
 
-export interface CharSpriteConfig {
-  frameSize: number; // px per (square) frame in the sheet
-  bodyCx: number; // body centre x within a frame (px) — the horizontal anchor
-  feetY: number; // feet baseline y within a frame (px) — the vertical anchor
-  scale: number; // render scale so the body matches the others on screen
-  fps: CharFps;
-  // Index into `attacks` reserved for MELEE ABILITY casts (the knight's heavy 3rd swing);
-  // basic auto-attacks alternate through the *other* sheets. Undefined ⇒ all sheets are
-  // basic autos (ranger alternates its two; priest has one).
-  abilityAttackIndex?: number;
-}
-
-export interface CharFrames {
-  idle: Texture[];
-  walk: Texture[];
-  attacks: Texture[][]; // one or more attack sheets (alternated on successive strikes)
-  attackFx: (Texture[] | null)[]; // per-attack slash-effect overlay (frame-aligned), or null
-  block: Texture[] | null;
-  hurt: Texture[] | null;
-  death: Texture[] | null;
-  heal: Texture[] | null; // healer-only heal-cast pose
-  projectile: Texture[] | null; // animated bolt the caster throws (priest), else null
-  config: CharSpriteConfig;
-}
-
-interface SheetSpec {
-  idle: string;
-  walk: string;
-  attacks: string[];
-  attackFx?: (string | null)[]; // parallel to attacks
-  block?: string;
-  hurt?: string;
-  death?: string;
-  heal?: string;
-  projectile?: string;
-  config: CharSpriteConfig;
-}
-
-// All three classes share the 100px frame geometry (figures ~22px tall, feet at y60,
-// body centre ~x52); only fps cadence varies a touch per role. scale lands each at ~55px
-// on a more zoomed-in strip (bigger heroes — see GameStrip STRIP dims).
-const COMMON = { frameSize: 100, feetY: 60 } as const;
-
-const SHEETS: Record<string, SheetSpec> = {
-  knight: {
-    idle: knightIdle,
-    walk: knightWalk,
-    attacks: [knightAttack1, knightAttack2, knightAttack3],
-    attackFx: [knightAtk1Fx, knightAtk2Fx, knightAtk3Fx],
-    block: knightBlock,
-    hurt: knightHurt,
-    death: knightDeath,
-    // attacks[0]/[1] are the alternating auto-attack swings; attacks[2] (the big overhead)
-    // is reserved for melee ability casts.
-    config: { ...COMMON, bodyCx: 53, scale: 2.9, abilityAttackIndex: 2, fps: { idle: 7, walk: 12, attack: 16, block: 13, hurt: 12, death: 9, heal: 12 } },
-  },
-  ranger: {
-    idle: rangerIdle,
-    walk: rangerWalk,
-    attacks: [rangerAttack1, rangerAttack2],
-    hurt: rangerHurt,
-    death: rangerDeath,
-    // attacks[0] (attack01) is the basic auto-attack draw; attacks[1] (attack02) is reserved
-    // for ATTACK ability casts (Aimed Shot, Explosive Arrow) — swing(special) selects it.
-    config: { ...COMMON, bodyCx: 51, scale: 3.05, abilityAttackIndex: 1, fps: { idle: 7, walk: 12, attack: 19, block: 14, hurt: 12, death: 9, heal: 12 } },
-  },
-  priest: {
-    idle: priestIdle,
-    walk: priestWalk,
-    attacks: [priestAttack],
-    hurt: priestHurt,
-    death: priestDeath,
-    heal: priestHeal,
-    projectile: priestAtkFx,
-    config: { ...COMMON, bodyCx: 52, scale: 2.9, fps: { idle: 6, walk: 12, attack: 14, block: 14, hurt: 12, death: 9, heal: 13 } },
-  },
-};
-
-const cache = new Map<string, CharFrames>();
 let arrowTex: Texture | null = null;
 let healFxTex: Texture[] | null = null;
 let enrageFxTex: Texture[] | null = null;
 let fireballTex: Texture[] | null = null;
+let holyStrikeTex: Texture[] | null = null;
 let loading: Promise<void> | null = null;
 
-// The Battle Enrage + Mend sheets are 5×3 grids of 128px frames with a few empty trailing
-// cells, so we slice exactly the populated ones.
-const GRID_FRAME = 128;
-const ENRAGE_FRAME_COUNT = 12;
-const MEND_FRAME_COUNT = 11;
-
-// Slice a horizontal sheet into one Texture per frame. Frame count is derived from the
-// texture width so the data drives it.
-function slice(base: Texture, frameSize: number): Texture[] {
+function sliceStrip(base: Texture, frameSize: number): Texture[] {
   base.source.scaleMode = 'nearest';
   const count = Math.floor(base.width / frameSize);
   const out: Texture[] = [];
@@ -155,8 +31,6 @@ function slice(base: Texture, frameSize: number): Texture[] {
   return out;
 }
 
-/** Slice a multi-row GRID sheet into the first `count` frames, read left-to-right then
- *  top-to-bottom (skips empty trailing cells the caller knows about). */
 function sliceGrid(base: Texture, frameSize: number, count: number): Texture[] {
   base.source.scaleMode = 'nearest';
   const cols = Math.max(1, Math.floor(base.width / frameSize));
@@ -169,58 +43,25 @@ function sliceGrid(base: Texture, frameSize: number, count: number): Texture[] {
   return out;
 }
 
-/** Load + slice a sheet URL (or pass through null for an absent optional action). */
-async function loadSheet(url: string | undefined, frameSize: number): Promise<Texture[] | null> {
-  if (url === undefined) return null;
-  return slice(await Assets.load<Texture>(url), frameSize);
-}
-
-/** Load + slice every character sheet (+ the shared arrow & heal-sparkle). Idempotent. */
-export async function loadCharacterTextures(): Promise<void> {
+/** Load the shared effect textures. Idempotent. */
+export async function loadEffectTextures(): Promise<void> {
   if (loading !== null) return loading;
   loading = (async () => {
-    const arrow = await Assets.load<Texture>(arrowUrl);
+    const [arrow, mend, enrage, fireball, strike] = await Promise.all([
+      Assets.load<Texture>(arrowUrl),
+      Assets.load<Texture>(priestMendFx),
+      Assets.load<Texture>(priestEnrageFx),
+      Assets.load<Texture>(fireballFx),
+      Assets.load<Texture>(priestAtkFx),
+    ]);
     arrow.source.scaleMode = 'nearest';
     arrowTex = arrow;
-    // The Priest's on-ally heal effect now uses the bigger Mend sheet (5×3 grid of 128px).
-    healFxTex = sliceGrid(await Assets.load<Texture>(priestMendFx), GRID_FRAME, MEND_FRAME_COUNT);
-    enrageFxTex = sliceGrid(await Assets.load<Texture>(priestEnrageFx), GRID_FRAME, ENRAGE_FRAME_COUNT);
-    const fb = await Assets.load<Texture>(fireballFx);
-    fb.source.scaleMode = 'nearest';
-    fireballTex = slice(fb, COMMON.frameSize);
-    for (const [key, spec] of Object.entries(SHEETS)) {
-      const fs = spec.config.frameSize;
-      const [idle, walk, attacks, attackFx, block, hurt, death, heal, projectile] = await Promise.all([
-        loadSheet(spec.idle, fs),
-        loadSheet(spec.walk, fs),
-        Promise.all(spec.attacks.map((u) => loadSheet(u, fs))),
-        Promise.all((spec.attackFx ?? []).map((u) => loadSheet(u ?? undefined, fs))),
-        loadSheet(spec.block, fs),
-        loadSheet(spec.hurt, fs),
-        loadSheet(spec.death, fs),
-        loadSheet(spec.heal, fs),
-        loadSheet(spec.projectile, fs),
-      ]);
-      cache.set(key, {
-        idle: idle ?? [],
-        walk: walk ?? [],
-        attacks: attacks.map((a) => a ?? []),
-        attackFx,
-        block,
-        hurt,
-        death,
-        heal,
-        projectile,
-        config: spec.config,
-      });
-    }
+    healFxTex = sliceGrid(mend, GRID_FRAME, MEND_FRAME_COUNT);
+    enrageFxTex = sliceGrid(enrage, GRID_FRAME, ENRAGE_FRAME_COUNT);
+    fireballTex = sliceStrip(fireball, STRIP_FRAME);
+    holyStrikeTex = sliceStrip(strike, STRIP_FRAME);
   })();
   return loading;
-}
-
-/** The loaded frames for a class, or null if it has no sheet / isn't ready yet. */
-export function getCharacterFrames(classKey: string): CharFrames | null {
-  return cache.get(classKey) ?? null;
 }
 
 /** The shared arrow projectile texture, or null if not loaded yet. */
@@ -241,4 +82,9 @@ export function getBattleEnrageFrames(): Texture[] | null {
 /** The 7-frame fireball/blast strip (reused for Explosive Arrow's detonation). */
 export function getFireballFrames(): Texture[] | null {
   return fireballTex;
+}
+
+/** The Priest's holy strike: the pillar that lands on the enemy her basic attack hits. */
+export function getHolyStrikeFrames(): Texture[] | null {
+  return holyStrikeTex;
 }

@@ -23,6 +23,10 @@
 /* Rows are packed: the rank pips sit on the node's bottom edge instead of hanging under it. */
 .tk-tal-tree > .tk-node > .tk-pips { top: calc(100% - 1px); }
 
+/* A role talent is a seal with a ring (stand-in: the follow-up gives it the class colour). */
+.tk-tal-tree > .tk-node.role { border-radius: 50%; box-shadow: 0 0 0 1px var(--gold-dim); }
+.tk-tal-tree > .tk-node.role.lock { box-shadow: 0 0 0 1px var(--k3); }
+
 /* Tooltip lines of an ability: what it does at a rank, one effect per line. */
 .tk-tip .tk-tal-at { padding-top: 5px; color: var(--k6); }
 .tk-tip .tk-tal-fx { padding-top: 2px; color: var(--k9); line-height: 10px; }

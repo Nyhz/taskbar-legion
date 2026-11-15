@@ -21,8 +21,9 @@ function fixture(): SaveV1 {
     unlockedClasses: ['knight', 'ranger'],
     partySlots: ['h0', 'h1', null],
     roster: [
-      { id: 'h0', classKey: 'knight', level: 12, exp: 5000, equipment: {}, talentPoints: 2, talents: { knight_guard: 3 }, activeAbilities: ['knight_guard'] },
-      { id: 'h1', classKey: 'ranger', level: 9, exp: 3000, equipment: {}, talentPoints: 0, talents: {}, activeAbilities: [] },
+      // One talent point per level: spent + to spend = level (the load-time sanitiser recomputes it so).
+      { id: 'h0', classKey: 'knight', level: 12, exp: 5000, equipment: {}, talentPoints: 9, talents: { knight_guard: 3 }, activeAbilities: ['knight_guard'] },
+      { id: 'h1', classKey: 'ranger', level: 9, exp: 3000, equipment: {}, talentPoints: 9, talents: {}, activeAbilities: [] },
     ],
     inventory: [],
     inventoryGems: [],
