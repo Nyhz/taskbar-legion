@@ -1,0 +1,31 @@
+// What shows on and around the battle strip: the banners, the loot lines, the failed-save warning, the
+// "while you were away" summary and the panel shown when the graphics cannot start.
+export const overlay = {
+  danger: 'Danger',
+  dangerLabel: 'A boss is here',
+  stage: '{difficulty} · {place}',
+  entering: 'Entering {difficulty} {place}',
+  saveFailed: 'Not saving',
+  saveFailedTitle: 'Progress is not being saved',
+  saveFailedHelp: 'The last save could not be written. Tell the developer.',
+  lootItem: '{kind} · {rarity}',
+  lootGem: '{gem} · {rarity}',
+  lootMelted: 'Melted: {rarity} · +{gold}',
+  lootKey: 'World-boss key · {zone}',
+  lootKeyMany: 'World-boss key · {zone} ×{n}',
+  bagFullOne: 'Bag full: free 1 slot and try again',
+  bagFullMany: 'Bag full: free {n} slots and try again',
+  awayTitle: 'While you were away',
+  awayTime: '{time} of expedition (it counts up to 12 h).',
+  awayGold: 'Gold',
+  awayXp: 'Experience',
+  awayStage: 'Stage',
+  awayPets: 'Pets found',
+  awayCollect: 'Collect',
+  gfxTitle: 'Graphics failed to start',
+  gfxHelp:
+    "The game canvas couldn't start on this machine. Copy these details and send them to the developer.",
+  gfxCopy: 'Copy details',
+  gfxCopied: 'Copied',
+  gfxReload: 'Reload',
+} as const;

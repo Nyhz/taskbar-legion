@@ -10,3 +10,5 @@ export { cube } from './cube';
 export { map } from './map';
 export { pets } from './pets';
 export { tech } from './tech';
+export { title } from './title';
+export { overlay } from './overlay';

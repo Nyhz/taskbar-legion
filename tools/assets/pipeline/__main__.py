@@ -32,7 +32,12 @@ def main(argv: list[str]) -> int:
 
         export_ui()
         return 0
-    print("commands: chars [names…], scene, lab, icons, export-ui")
+    if cmd == "export-strip":
+        from .export_strip import main as export_strip
+
+        export_strip()
+        return 0
+    print("commands: chars [names…], scene, lab, icons, export-ui, export-strip")
     return 1
 
 

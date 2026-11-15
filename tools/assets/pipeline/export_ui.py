@@ -23,6 +23,8 @@ PREFIXES = (
     "mark_",
     # the map and pets wings (world thumbnails, boss doors, difficulty signs, pets and their plinths)
     "map_", "pet_",
+    # the title screen (logo, play sign, its backdrop)
+    "title_",
 )
 SKIP = ("hud_scene_", "raw_tier_")
 

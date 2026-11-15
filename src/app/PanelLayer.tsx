@@ -7,15 +7,9 @@ import {
   fitPanelPixels,
   screenPixelsPerArtPixel,
 } from '@/state/pixelScale';
-import { PixelWindow } from '@/ui/components/PixelWindow';
-import { TechTreePanel } from '@/ui/panels/TechTreePanel';
-import { PetsPanel } from '@/ui/panels/PetsPanel';
-import { CubePanel, CubeHelpButton } from '@/ui/panels/CubePanel';
-import { MapPanel } from '@/ui/panels/MapPanel';
-import { Bookmarks, KitRoot } from '@/ui/kit';
+import { KitRoot } from '@/ui/kit';
 import { PanelSpaceContext } from '@/ui/panels/panelSpace';
 import { PANELS_NEED_ART } from '@/ui/panels/panelFit';
-import { useWingTabs } from '@/ui/panels/wingTabs';
 import { KIT_PANELS } from './kitPanels';
 
 // The panels above the strip. The HERO WINDOW (`party`) is the main panel: centred over the strip, and nothing
@@ -27,23 +21,10 @@ import { KIT_PANELS } from './kitPanels';
 // panels can ever be (hero + a wing on EACH side + the bookmarks, ui/panels/panelFit) fits the window, otherwise
 // the largest lower one. It does not depend on which wings are open, so opening or swapping one never rescales.
 //
-// The right-side panels (cube, map, pets, upgrades) are still the OLD ones, drawn through PixelWindow at their
-// old size; they stand in the right wing's place until each is rebuilt to the wing width, and they may overflow.
-//
 // Open/close is animated: each panel mounts with an `-in` class and, when closed, plays an `-out` class before it
 // actually unmounts (the entry lifecycle below).
 
 const KIT_MARGIN_CSS = 8; // air between the panels and the window's edges
-
-// The old panels, until they are rebuilt: their title and size in CSS px (× the old menu scale).
-const OLD_TITLE: Partial<Record<PanelKey, string>> = {
-  cube: 'Cube',
-  map: 'Map',
-  pets: 'Pets',
-  tech: 'Tech Tree',
-};
-const OLD_WIDTH: Partial<Record<PanelKey, number>> = { cube: 340, map: 340, pets: 340, tech: 520 };
-const OLD_HEIGHT: Partial<Record<PanelKey, number>> = { tech: 540, cube: 470 };
 
 type Side = 'left' | 'right';
 function sideOf(key: PanelKey): Side {
@@ -59,8 +40,6 @@ interface Entry {
 
 export function PanelLayer(): React.JSX.Element {
   const openPanels = useStore((s) => s.openPanels);
-  const closePanel = useStore((s) => s.closePanel);
-  const menuScale = useStore((s) => s.menuScale);
   const gameScale = useStore((s) => s.gameScale);
 
   // Mounted panels with their animation phase. A panel removed from `openPanels`
@@ -170,25 +149,10 @@ export function PanelLayer(): React.JSX.Element {
                   pointerEvents: 'auto',
                 }}
               >
-                {kit !== undefined ? (
+                {kit !== undefined && (
                   <PanelSpaceContext.Provider value={panelSpace}>
                     <KitRoot zoom={kitZoom}>{kit()}</KitRoot>
                   </PanelSpaceContext.Provider>
-                ) : (
-                  <>
-                    <PixelWindow
-                      id={`panel-${key}`}
-                      title={OLD_TITLE[key] ?? key}
-                      width={OLD_WIDTH[key] ?? 340}
-                      height={OLD_HEIGHT[key]}
-                      scale={menuScale}
-                      headerActions={key === 'cube' ? <CubeHelpButton /> : undefined}
-                      onClose={() => closePanel(key)}
-                    >
-                      {renderOldPanel(key)}
-                    </PixelWindow>
-                    {phase !== 'out' && <OldWingBookmarks side={side} zoom={kitZoom} />}
-                  </>
                 )}
               </div>
             );
@@ -197,40 +161,4 @@ export function PanelLayer(): React.JSX.Element {
       )}
     </div>
   );
-}
-
-// An old panel is not a kit window, so it cannot carry the side's bookmarks itself: the layer hangs the column on
-// its outer edge, at the height the kit windows keep theirs (10 art px above the bottom).
-function OldWingBookmarks({ side, zoom }: { side: Side; zoom: number }): React.JSX.Element {
-  const { tabs, onTab } = useWingTabs(side);
-  return (
-    <div
-      style={{
-        position: 'absolute',
-        bottom: 10 * zoom,
-        [side === 'left' ? 'right' : 'left']: `calc(100% - ${3 * zoom}px)`,
-        zIndex: -1,
-      }}
-    >
-      <KitRoot zoom={zoom}>
-        <Bookmarks tabs={tabs} onTab={onTab} side={side} solo />
-      </KitRoot>
-    </div>
-  );
-}
-
-// Only the panels still on the old window reach this.
-function renderOldPanel(key: PanelKey): React.JSX.Element | null {
-  switch (key) {
-    case 'tech':
-      return <TechTreePanel />;
-    case 'pets':
-      return <PetsPanel />;
-    case 'cube':
-      return <CubePanel />;
-    case 'map':
-      return <MapPanel />;
-    default:
-      return null;
-  }
 }

@@ -1,0 +1,31 @@
+import type { overlay as en } from '../en/overlay';
+
+export const overlay: Record<keyof typeof en, string> = {
+  danger: 'Peligro',
+  dangerLabel: 'Ha llegado un jefe',
+  stage: '{difficulty} · {place}',
+  entering: 'Entrando en {difficulty} {place}',
+  saveFailed: 'No se guarda',
+  saveFailedTitle: 'El progreso no se está guardando',
+  saveFailedHelp: 'El último guardado no se ha podido escribir. Avisa al desarrollador.',
+  lootItem: '{kind} · {rarity}',
+  lootGem: '{gem} · {rarity}',
+  lootMelted: 'Fundido: {rarity} · +{gold}',
+  lootKey: 'Llave de jefe de mundo · {zone}',
+  lootKeyMany: 'Llave de jefe de mundo · {zone} ×{n}',
+  bagFullOne: 'Bolsa llena: libera 1 hueco e inténtalo otra vez',
+  bagFullMany: 'Bolsa llena: libera {n} huecos e inténtalo otra vez',
+  awayTitle: 'Mientras no estabas',
+  awayTime: '{time} de expedición (cuenta hasta 12 h).',
+  awayGold: 'Oro',
+  awayXp: 'Experiencia',
+  awayStage: 'Etapa',
+  awayPets: 'Mascotas encontradas',
+  awayCollect: 'Recoger',
+  gfxTitle: 'Los gráficos no han arrancado',
+  gfxHelp:
+    'El lienzo del juego no ha podido arrancar en esta máquina. Copia estos detalles y envíaselos al desarrollador.',
+  gfxCopy: 'Copiar detalles',
+  gfxCopied: 'Copiado',
+  gfxReload: 'Recargar',
+};

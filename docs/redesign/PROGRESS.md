@@ -521,3 +521,28 @@ debajo del paperdoll? ¿Y centradito?". Hecho así:
       espacios de texto `cube` / `map` / `pets` / `tech`, arte `map_` y `pet_` exportado. Al terminar: borrar
       `CubePanel`, `MapPanel`, `PetsPanel`, `TechTreePanel`, `tech/TechCard` y los componentes viejos sin uso
       (`PixelWindow`, `ItemSlot`, `ItemTooltip`, `GemTooltip`…), y quitar la rama antigua de `PanelLayer`.
+
+## Plan de la noche del 15 al 16 de noviembre de 2026 (trabajo autónomo, aprobado por el usuario)
+
+Bloques aprobados, en este orden y hasta donde se llegue: (1) cerrar los paneles laterales; (2) resto de la
+interfaz — ajustes, título, avisos y botín sobre la tira, resumen de ausencia; (3) arte de la tira al juego —
+héroes, fondos con atmósfera, bestiario, solo presentación; (4) clases en la simulación según `CLASSES.md`, con
+nombres provisionales.
+
+Reglas dadas por el usuario para esta noche: un commit de control por bloque en `redesign/foundations`, sin
+push; Tauri solo compilar, sin abrir la app; hasta cuatro trabajos en paralelo. Reglas propias: no reajustar el
+ritmo; no fijar nombres ni cambiar reglas fuera de lo acordado; ante una decisión suya, la opción más
+conservadora, marcada como provisional; si salta el límite de uso, dejar anotado lo que quede a medias.
+
+- [x] Commit de control `ee32919` con todo lo acumulado (interfaz en el juego, iconos a 2/3, disposición).
+- [x] **Bloque 1 — paneles laterales cerrados** (lab v45). Cubo, mapa, mascotas y mejoras son alas del kit de 168 px
+      de ancho: cubo 301 de alto (tres recetas, selector propio de piezas), mapa 278 (dificultades, mundos con
+      recorte de su fondo — los no alcanzados en silueta —, etapas 3 × 3, puerta del jefe, nombres de mundo en el
+      espacio `map` de i18n), mascotas 297 (compañera en el nicho, repisa 3 × 2), mejoras 304 (doce sellos con
+      valor y tecla de precio). Borrados: `CubePanel`, `MapPanel`, `PetsPanel`, `TechTreePanel`, `tech/TechCard`,
+      `techDisplay`, `techMeta`, `PixelWindow`, `ItemSlot`, `ItemTooltip`, `GemTooltip`, `StatRow` viejo y la rama
+      antigua de `PanelLayer`. Vistos en el juego los cuatro junto al héroe (MacBook) y el cubo en 1080p y 720p.
+      Flojo anotado por cada panel: el Cubo carga desde su selector, no desde la bolsa real; la puerta del mapa
+      usa la cara del jefe de etapa (los jefes de mundo no tienen arte); frases de mascotas provisionales;
+      «Upgrades» en gótica se lee «Jpgrades»; reglas locales que van al kit (tecla fina de precio, paginador,
+      insignia de paso, fila seleccionable, tooltip desplazado).
