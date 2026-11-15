@@ -1,19 +1,5 @@
 {
-  "updated": "15 nov 2026",
-  "intro": "Solo lo que está por confirmar. Lo ya aprobado sale de aquí (sigue en el juego y en docs/redesign/lab/index.html, que es el archivo completo). Confirmado el 15 nov: el HUD sobre los personajes, la derrota escalonada y la reaparición, la flecha de avanzar, los élites, el portal, los efectos del Ranger y de la Priest, los ataques enemigos y los jefes de mundo 2 a 9 con el Lictor.",
-  "sections": [
-    {
-      "id": "balance",
-      "title": "Balance: decisiones pendientes",
-      "eyebrow": "Reajuste de ritmo · segundo punto de control",
-      "text": "Informe completo en docs/redesign/PACING_REPORT.md (sección «Ronda 2»). Medido con cuatro partidas simuladas a 8 h diarias. Normal 3,4 h (objetivo 4): 0,3–0,5 h por mundo, sin espera de llave, jefes al primer intento. Infierno 42 h (objetivo 40): 3–7 h por mundo, 2–4 intentos por muro, llave cada 1½–2½ h. Averno 121 h (objetivo 120), sin validar en otras partidas. Eterno ≈ 240 h y Tormento ≈ 325 h, todavía a brocha gorda. Los jefes de mundo mueren con el reloj en 65–75 s, aguantando 5–15 s de furia. Lo que piden de equipo: un 10 % de lo que da la zona en Normal, un 85 % a mitad de Infierno y un 105 % desde el final de Infierno. Primera hora: Ranger al minuto 8, Priest al 18, jefe del mundo 1 al 26. El ajuste fino de las dificultades altas se hará una sola vez, cuando estén dentro los pasivos, los afijos y las mecánicas de jefe.",
-      "questions": [
-        "Llave en Normal: pediste 25 %, pero con 25 % Normal se va a 12–15 horas. La he dejado al 100 % solo en Normal (25 % desde Infierno) para que dure 3½ h. ¿Vale?",
-        "Qué significa «equipado al 100 % de la zona»: hoy es el mejor conjunto que sale de 240 cofres de jefe de etapa de ese mundo, y los muros acaban pidiendo un 105 % de eso. Con un conjunto más exigente (400 cofres) pedirían en torno al 85 %, que es tu regla. ¿Cambio la vara de medir?",
-        "La furia dobla el daño del jefe cada 2 s una vez pasados los 60 s. ¿Así, más suave (cada 3 s) o más dura (cada 1,5 s)?",
-        "En Normal el grupo juega casi sin equipo (nunca pasa del 23 % de lo que da la zona) porque hay pocos cofres en tan pocas horas. ¿Lo dejo, o subo los cofres de jefe de etapa en Normal?",
-        "Oleadas por etapa: ahora son 8 en Normal, 12 en Infierno, 16 en Averno y 20 en Eterno y Tormento (antes 20 siempre). ¿Te vale?"
-      ]
-    }
-  ]
+  "updated": "15 nov 2026, noche",
+  "intro": "Ahora mismo no hay nada pendiente de confirmar. Confirmado entre el 15 y el 16 nov: los diez Apoyos, los enemigos separados, los rasgos, el tooltip de dificultad del mapa, las mecánicas de los diez jefes de mundo (con los seis espejos y el reflejo del Deshacedor), las formas de Certero y las seis mascotas acompañantes. Queda una ronda corta de ajustes del Deshacedor (Espejos cada 8 s, reflejo más duro y a media distancia); después, el commit y el aviso para la pasada final de balance.",
+  "sections": []
 }

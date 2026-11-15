@@ -103,6 +103,25 @@
         "hurt": "Golpe recibido",
         "death": "Muerte"
       }
+    },
+    {
+      "key": "stiltwalker",
+      "kind": "support",
+      "name_es": "Zancudo de la carpa",
+      "name_en": "Marsh Carp-Bearer",
+      "role_es": "Apoyo · lleva las auras de su oleada",
+      "bullets_es": [
+        "Va sobre zancos, una cabeza por encima del grupo, con una caña de bambú que lleva una manga de viento en forma de carpa blanca y roja",
+        "Marca el paso sobre los zancos mientras la carpa nada en el viento",
+        "Al morir cae de bruces y la carpa queda plana en el camino"
+      ],
+      "anims_es": {
+        "idle": "Reposo (aura encendida)",
+        "run": "Avanzar",
+        "attack": "Toque",
+        "hurt": "Golpe recibido",
+        "death": "Muerte"
+      }
     }
   ]
 }

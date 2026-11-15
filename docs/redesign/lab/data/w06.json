@@ -103,6 +103,25 @@
         "hurt": "Golpe recibido",
         "death": "Muerte"
       }
+    },
+    {
+      "key": "tideaugur",
+      "kind": "support",
+      "name_es": "Augur de la marea",
+      "name_en": "Tide Augur",
+      "role_es": "Apoyo · lleva las auras de su oleada",
+      "bullets_es": [
+        "Un sacerdote ahogado con toga descolorida por la sal y barba de algas; su asta lleva una gran caracola",
+        "De la boca de la caracola sube una cinta de bruma marina brillante",
+        "Al morir la bruma se corta y la caracola queda en el camino con la boca oscura"
+      ],
+      "anims_es": {
+        "idle": "Reposo (aura encendida)",
+        "run": "Avanzar",
+        "attack": "Toque",
+        "hurt": "Golpe recibido",
+        "death": "Muerte"
+      }
     }
   ]
 }

@@ -103,6 +103,25 @@
         "hurt": "Golpe recibido",
         "death": "Muerte"
       }
+    },
+    {
+      "key": "stoker",
+      "kind": "support",
+      "name_es": "Fogonero",
+      "name_en": "Ember Stoker",
+      "role_es": "Apoyo · lleva las auras de su oleada",
+      "bullets_es": [
+        "Lleva a la espalda un cayado del que cuelga una cesta de hierro con fuego de núcleo blanco, y un fuelle en las manos",
+        "Aprieta el fuelle y la llama salta con chispas y un penacho de humo",
+        "Al morir la cesta cae volcada y las brasas se apagan"
+      ],
+      "anims_es": {
+        "idle": "Reposo (aura encendida)",
+        "run": "Avanzar",
+        "attack": "Toque",
+        "hurt": "Golpe recibido",
+        "death": "Muerte"
+      }
     }
   ],
   "slots": [

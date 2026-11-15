@@ -105,6 +105,25 @@
         "hurt": "Golpe recibido",
         "death": "Muerte"
       }
+    },
+    {
+      "key": "kiteflyer",
+      "kind": "support",
+      "name_es": "Acólito de la Cometa",
+      "name_en": "Kite Acolyte",
+      "role_es": "Apoyo · lleva las auras de su oleada",
+      "bullets_es": [
+        "Vuela una cometa roja de oración por encima del grupo, con un sello de luz en el centro y dos cintas",
+        "La cometa dibuja un ocho y el sello destella cuando tira del hilo",
+        "Al morir la cometa cae con las cintas ondeando y se clava de punta en el camino"
+      ],
+      "anims_es": {
+        "idle": "Reposo (aura encendida)",
+        "run": "Avanzar",
+        "attack": "Toque",
+        "hurt": "Golpe recibido",
+        "death": "Muerte"
+      }
     }
   ]
 }

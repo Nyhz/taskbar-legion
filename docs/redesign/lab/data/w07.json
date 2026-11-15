@@ -103,6 +103,25 @@
         "hurt": "Golpe recibido",
         "death": "Muerte"
       }
+    },
+    {
+      "key": "lightangler",
+      "kind": "support",
+      "name_es": "Pescador de luz",
+      "name_en": "Light Angler",
+      "role_es": "Apoyo · lleva las auras de su oleada",
+      "bullets_es": [
+        "Un olm que camina, pálido y sin ojos, con las branquias encendidas en verde; sostiene una caña recta",
+        "Hace girar el señuelo en círculo sobre su cabeza: un aro de luz verde por encima del grupo",
+        "Al morir el hilo se enrolla, la caña se parte y el flotador revienta contra la piedra"
+      ],
+      "anims_es": {
+        "idle": "Reposo (aura encendida)",
+        "run": "Avanzar",
+        "attack": "Toque",
+        "hurt": "Golpe recibido",
+        "death": "Muerte"
+      }
     }
   ]
 }

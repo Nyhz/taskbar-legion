@@ -103,6 +103,25 @@
         "hurt": "Golpe recibido",
         "death": "Muerte"
       }
+    },
+    {
+      "key": "wheelturner",
+      "kind": "support",
+      "name_es": "Girador de plegarias",
+      "name_en": "Wheel-Turner",
+      "role_es": "Apoyo · lleva las auras de su oleada",
+      "bullets_es": [
+        "Un peregrino rechoncho con abrigo acolchado y gorro de piel que hace girar una rueda de oración de latón en lo alto de un palo",
+        "La banda roja de la rueda da vueltas, con cintas y tres chispas en órbita",
+        "Al morir la rueda cae, se para y se apaga"
+      ],
+      "anims_es": {
+        "idle": "Reposo (aura encendida)",
+        "run": "Avanzar",
+        "attack": "Toque",
+        "hurt": "Golpe recibido",
+        "death": "Muerte"
+      }
     }
   ]
 }

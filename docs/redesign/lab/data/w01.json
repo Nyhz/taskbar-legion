@@ -107,6 +107,25 @@
         "hurt": "Golpe recibido",
         "death": "Muerte"
       }
+    },
+    {
+      "key": "drummer",
+      "kind": "support",
+      "name_es": "Tamborilero de la siega",
+      "name_en": "Reaping Drummer",
+      "role_es": "Apoyo · lleva las auras de su oleada",
+      "bullets_es": [
+        "Mantiene en pie a los suyos: un tamborilero con un tambor de aros de latón en la barriga y, a la espalda, un mástil con un gallardete azul largo con un sol de latón",
+        "Golpea el tambor subiendo cada baqueta por encima de la cabeza; el gallardete salta con cada golpe",
+        "Al morir cae de espaldas y el mástil se vuelca: el gallardete queda tendido en el camino"
+      ],
+      "anims_es": {
+        "idle": "Reposo (aura encendida)",
+        "run": "Avanzar",
+        "attack": "Toque",
+        "hurt": "Golpe recibido",
+        "death": "Muerte"
+      }
     }
   ]
 }

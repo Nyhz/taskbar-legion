@@ -103,6 +103,25 @@
         "hurt": "Golpe recibido",
         "death": "Muerte"
       }
+    },
+    {
+      "key": "hornblower",
+      "kind": "support",
+      "name_es": "Portador del cuerno",
+      "name_en": "War-Horn Bearer",
+      "role_es": "Apoyo · lleva las auras de su oleada",
+      "bullets_es": [
+        "Túnica clara, turbante oscuro y una trompeta de guerra larga de bronce levantada sobre el grupo, con un estandarte blanco hueso colgando del tubo",
+        "Toma aire y sopla: dos anillos de sonido salen de la boca de la trompeta",
+        "Al morir cae de espaldas y la trompeta queda tendida en el camino, muda"
+      ],
+      "anims_es": {
+        "idle": "Reposo (aura encendida)",
+        "run": "Avanzar",
+        "attack": "Toque",
+        "hurt": "Golpe recibido",
+        "death": "Muerte"
+      }
     }
   ]
 }

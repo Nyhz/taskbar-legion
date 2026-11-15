@@ -103,6 +103,25 @@
         "hurt": "Golpe recibido",
         "death": "Muerte"
       }
+    },
+    {
+      "key": "bellringer",
+      "kind": "support",
+      "name_es": "Campanero del musgo",
+      "name_en": "Moss Bell-Ringer",
+      "role_es": "Apoyo · lleva las auras de su oleada",
+      "bullets_es": [
+        "Una figura con capa verde musgo y máscara de corteza, con una rama torcida de la que cuelga una campana de cristal violeta rodeada de luciérnagas",
+        "La campana se balancea y tañe dos veces por ciclo, con anillos de luz",
+        "Al morir la rama cae y la campana queda de lado, apagada"
+      ],
+      "anims_es": {
+        "idle": "Reposo (aura encendida)",
+        "run": "Avanzar",
+        "attack": "Toque",
+        "hurt": "Golpe recibido",
+        "death": "Muerte"
+      }
     }
   ]
 }

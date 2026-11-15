@@ -103,6 +103,25 @@
         "hurt": "Golpe recibido",
         "death": "Muerte"
       }
+    },
+    {
+      "key": "hourbearer",
+      "kind": "support",
+      "name_es": "Portador de las Horas",
+      "name_en": "Hour Bearer",
+      "role_es": "Apoyo · lleva las auras de su oleada",
+      "bullets_es": [
+        "Carga en un armazón un reloj de arena de plata pálida con arena violácea encendida",
+        "La arena baja en un hilo brillante y de vez en cuando voltea el reloj",
+        "Al morir el reloj revienta contra el suelo y queda de rodillas bajo la horquilla vacía"
+      ],
+      "anims_es": {
+        "idle": "Reposo (aura encendida)",
+        "run": "Avanzar",
+        "attack": "Toque",
+        "hurt": "Golpe recibido",
+        "death": "Muerte"
+      }
     }
   ],
   "slots": [
