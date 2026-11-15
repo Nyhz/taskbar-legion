@@ -87,6 +87,9 @@ export interface AuraRegion {
   halfW: number;
   scale: number;
   elapsed: number;
+  /** Where the mark reticle sits and how big it is, when it should not frame the whole body: an ordinary
+   *  enemy wears a small one over its chest (a whole wave can be marked at once); a boss keeps the big one. */
+  mark?: { cy: number; radius: number };
 }
 
 /** Draw whichever arrow/shield overlays the active categories call for. The caller passes
@@ -103,23 +106,27 @@ export function drawCategoryAuras(g: Graphics, cats: Set<AuraCategory>, r: AuraR
 // reads as a crosshair framing the whole target. Exported so the fly-in FX (WorldFxLayer)
 // lands exactly on the persistent reticle the aura then keeps drawing.
 export function crosshairRadius(r: AuraRegion): number {
-  return Math.max(r.halfW * 1.15, (r.botY - r.topY) * 0.34);
+  return r.mark?.radius ?? Math.max(r.halfW * 1.15, (r.botY - r.topY) * 0.34);
 }
+
+/** Radius of the small reticle an ordinary (non-boss) marked enemy wears. */
+export const SMALL_MARK_RADIUS = 7;
 
 /** A red targeting reticle: a glow, a slowly-spinning 4-arc ring, fixed N/E/S/W ticks
  *  crossing toward a center gap, an inner ring and a center dot. Shared by the persistent
  *  mark aura and the ranger's ultimate fly-in so they read as one continuous lock-on. */
 export function drawCrosshair(g: Graphics, cx: number, cy: number, radius: number, alpha: number, spin: number, color: number = ARROW_RED): void {
   if (alpha <= 0.02 || radius <= 0) return;
+  const w = radius < 12 ? 1 : 2; // a small reticle is drawn with hairlines
   // outer glow ring
-  g.circle(cx, cy, radius * 1.06).stroke({ color, width: 3, alpha: alpha * 0.18 });
+  g.circle(cx, cy, radius * 1.06).stroke({ color, width: w + 1, alpha: alpha * 0.18 });
   // spinning ring drawn as four gapped arcs
   const seg = (Math.PI / 2) * 0.6;
   for (let i = 0; i < 4; i++) {
     const a0 = spin + (i * Math.PI) / 2 - seg / 2;
     g.moveTo(cx + Math.cos(a0) * radius, cy + Math.sin(a0) * radius)
       .arc(cx, cy, radius, a0, a0 + seg)
-      .stroke({ color, width: 2, alpha });
+      .stroke({ color, width: w, alpha });
   }
   // fixed crosshair ticks (top/bottom/left/right), leaving a clear gap in the middle
   const gap = radius * 0.42;
@@ -127,17 +134,17 @@ export function drawCrosshair(g: Graphics, cx: number, cy: number, radius: numbe
   for (const [dx, dy] of [[0, -1], [0, 1], [-1, 0], [1, 0]] as const) {
     g.moveTo(cx + dx * gap, cy + dy * gap)
       .lineTo(cx + dx * outer, cy + dy * outer)
-      .stroke({ color, width: 2, alpha });
+      .stroke({ color, width: w, alpha });
   }
   // inner ring + bright center pip
-  g.circle(cx, cy, radius * 0.3).stroke({ color: WHITE, width: 1, alpha: alpha * 0.55 });
-  g.circle(cx, cy, 1.8).fill({ color, alpha });
+  if (radius >= 12) g.circle(cx, cy, radius * 0.3).stroke({ color: WHITE, width: 1, alpha: alpha * 0.55 });
+  g.circle(cx, cy, radius < 12 ? 1 : 1.8).fill({ color, alpha });
 }
 
 // The persistent reticle the marked boss wears for the whole fight — a soft pulse and a
 // slow spin so it reads as "actively locked on" rather than a static decal.
 function drawMarkCrosshair(g: Graphics, r: AuraRegion): void {
-  const cy = r.cy;
+  const cy = r.mark?.cy ?? r.cy;
   const pulse = 0.72 + 0.28 * Math.sin(r.elapsed / 320);
   drawCrosshair(g, r.cx, cy, crosshairRadius(r), pulse, r.elapsed / 1100);
 }

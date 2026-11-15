@@ -23,6 +23,7 @@ const CLASS_CLIPS: Readonly<Record<string, ClassClips>> = {
       knight_battlecry: 'shout', // Battle Cry
       knight_bloodlust: 'shout', // Bloodlust: a roar that whips him up, not a blow
       knight_holdtheline: 'shout', // Hold the Line: he rallies the party
+      knight_riposte: 'cleave', // Riposte: the blow back after enough blocks
     },
     otherwise: ATTACK_CLIP,
   },
@@ -30,12 +31,14 @@ const CLASS_CLIPS: Readonly<Record<string, ClassClips>> = {
     abilities: {
       ranger_multishot: 'volley', // Raining Arrows
       ranger_fast_fire: 'quick', // Rapid Fire
+      ranger_weakspot: 'quick', // Weak Spot: a snap shot at the opening
+      ranger_tarflask: 'volley', // Tar Flask: lobbed high over the wave
     },
     otherwise: ATTACK_CLIP, // Aimed Shot, Explosive Arrow, Caltrops, Mark of the Hunter
   },
   priest: {
     abilities: {},
-    otherwise: 'cast', // every heal, buff, shield and Holy Nova; her basic attack is `attack`
+    otherwise: 'cast', // every heal, buff, shield, Holy Nova, Sanctuary and Smite; her basic attack is `attack`
   },
 };
 

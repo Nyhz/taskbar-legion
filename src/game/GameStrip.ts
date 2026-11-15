@@ -7,6 +7,7 @@ import { EnemySprite } from './render/EnemySprite';
 import { StripBackdrop } from './render/StripBackdrop';
 import { STRIP_PATH_Y } from './render/stripBackdropData';
 import { FloatingTextLayer } from './render/FloatingText';
+import { FloatingSignLayer } from './render/FloatingSigns';
 import { ProjectileLayer } from './render/Projectiles';
 import { WorldFxLayer } from './render/WorldFx';
 import { PortalSprite } from './render/PortalSprite';
@@ -21,7 +22,7 @@ import type { Combatant, CombatEvent, WorldState } from '@/sim/world';
 import { worldOf, stageInWorld, isZoneBossStage } from '@/data/stageScaling';
 import { worldInDifficulty } from '@/data/difficulties';
 import { CLASS_KEYS } from '@/data/classes';
-import { SPAWN_AHEAD, WALK_SPEED, TELEPORT_HOLD_MS, WIPE_DEAD_MS, WIPE_FADE_MS, WIPE_BLACK_MS, WIPE_RETREAT_AT_MS } from '@/data/field';
+import { MOVE_EPS, SPAWN_AHEAD, WALK_SPEED, TELEPORT_HOLD_MS, WIPE_DEAD_MS, WIPE_FADE_MS, WIPE_BLACK_MS, WIPE_RETREAT_AT_MS } from '@/data/field';
 import { hexToNum } from '@/styles/palette';
 import { useStore } from '@/state/store';
 import { isStripDragging } from '@/platform/dragState';
@@ -55,6 +56,7 @@ const CAM_MAX_DT = 0.05; // clamp camera step so a long/backgrounded frame can't
 
 // Death-knell lines shown over the black during a full-party wipe (one picked at random
 // per wipe). Cosmetic flavor — render-only, so Math.random here is fine.
+const TAR_BURN_MS = 5000; // how long Tar Flask's pool stays on the ground (its burn, data/branchEffects fx_tar)
 const WIPE_PHRASES: readonly PlainTextKey[] = ['overlay.wipe1', 'overlay.wipe2', 'overlay.wipe3', 'overlay.wipe4', 'overlay.wipe5'];
 
 // Blackout opacity (0..1) across the wipe cinematic, from elapsed ms: hold clear over the
@@ -92,6 +94,7 @@ const ENEMY_BAR_OVERLAP_PX = 22; // horizontal gap under which two enemy HP bars
 const ENEMY_BAR_LIFT_STEP = 6; // px each successive crowded enemy bar is raised (bars are thin)
 // The Priest's holy strike is a sheet from before the redesign, drawn for bigger bodies: shown at its own size.
 const HOLY_STRIKE_SCALE = 1;
+const EXPLOSION_SCALE = 1; // Explosive Arrow's blast swells to about one figure across (the old sheet's burst is ~22 px)
 
 export class GameStrip {
   private app: Application | null = null;
@@ -106,6 +109,7 @@ export class GameStrip {
   // Ground-level FX drawn BELOW the bodies (Caltrops spikes) so the wave walks over them.
   private readonly groundFx = new WorldFxLayer();
   private readonly floating = new FloatingTextLayer();
+  private readonly signs = new FloatingSignLayer(); // the sign of an ability, over the hero that casts it
   // The world-boss portal, pinned screen-right while farming a beaten W-9 (see frame()).
   private readonly portal = new PortalSprite();
   // Full-strip blackout for the teleport sequence + the wipe cinematic; teleportMs counts
@@ -152,10 +156,10 @@ export class GameStrip {
     setEngine(this.engine);
 
     this.combatants.sortableChildren = true; // honour zIndex (party above enemies)
-    this.world.addChild(this.backdrop.back, this.groundFx, this.combatants, this.backdrop.front, this.worldFx, this.projectiles, this.floating, this.portal, this.blackout, this.wipePhrase);
+    this.world.addChild(this.backdrop.back, this.groundFx, this.combatants, this.backdrop.front, this.worldFx, this.projectiles, this.signs, this.floating, this.portal, this.blackout, this.wipePhrase);
     // The portal is the ONLY interactive object — prune every other layer (and its whole
     // subtree of sprites/graphics) from pointer hit-testing so a tap walks just the portal.
-    for (const layer of [this.backdrop.back, this.groundFx, this.combatants, this.backdrop.front, this.worldFx, this.projectiles, this.floating, this.blackout, this.wipePhrase]) {
+    for (const layer of [this.backdrop.back, this.groundFx, this.combatants, this.backdrop.front, this.worldFx, this.projectiles, this.signs, this.floating, this.blackout, this.wipePhrase]) {
       layer.eventMode = 'none';
     }
     this.wipePhrase.anchor.set(0.5);
@@ -231,13 +235,14 @@ export class GameStrip {
       this.respawnTpMs = TELEPORT_HOLD_MS;
     }
     this.driveRespawnTeleport(dtMs);
-    this.reconcileHeroes(w.heroes, groundY, dtMs, toScreen, wipeDead, wipeHidden);
+    this.reconcileHeroes(w.heroes, w.enemies, groundY, dtMs, toScreen, wipeDead, wipeHidden);
     this.reconcileEnemies(w, groundY, dtMs, toScreen);
     this.applyEvents(events, groundY);
     this.worldFx.update(dtMs);
     this.groundFx.update(dtMs);
     this.projectiles.update(dtMs);
     this.floating.update(dtMs);
+    this.signs.update(dtMs);
     this.updatePortal(w, groundY, dtMs);
     this.detectAndDriveTeleport(w, dtMs);
     this.driveWipe(w);
@@ -356,7 +361,7 @@ export class GameStrip {
     return this.cameraX;
   }
 
-  private reconcileHeroes(heroes: Combatant[], groundY: number, dtMs: number, toScreen: (wx: number) => number, wipeDead: boolean, wipeHidden: boolean): void {
+  private reconcileHeroes(heroes: Combatant[], enemies: readonly Combatant[], groundY: number, dtMs: number, toScreen: (wx: number) => number, wipeDead: boolean, wipeHidden: boolean): void {
     // Heroes are placed by their OWN world position (they move freely / stack); each
     // display x velocity-matches its sim x for smooth, surge-free 60fps motion.
     const live = new Set(heroes.map((h) => h.id));
@@ -383,6 +388,7 @@ export class GameStrip {
       const disp = prev === undefined ? c.x : trackDisplay(prev, c.x, dtMs, WALK_SPEED);
       this.heroDisplayX.set(c.id, disp);
       const sx = toScreen(disp);
+      sprite.leadAttack(c, inReach(c, enemies), dtMs);
       sprite.update(c, sx, groundY, dtMs, wipeDead);
       placed.push({ sprite, x: sx });
     }
@@ -446,6 +452,7 @@ export class GameStrip {
       const disp = prev === undefined ? c.x : trackDisplay(prev, c.x, dtMs, c.moveSpeed > 0 ? c.moveSpeed : WALK_SPEED);
       this.enemyDisplayX.set(c.id, disp);
       const sx = toScreen(disp);
+      sprite.leadAttack(c, inReach(c, w.heroes), dtMs);
       sprite.update(c, sx, groundY, dtMs);
       if (c.alive) placed.push({ sprite, x: sx });
     }
@@ -481,23 +488,25 @@ export class GameStrip {
           const to = boss.markPoint();
           this.worldFx.markCrosshair(from.x, from.y, to.x, to.y, to.radius);
         }
+        if (ranger !== undefined) {
+          const at = ranger.signPoint();
+          this.signs.spawn(at.x, at.y, castFx(ev.abilityKey).sign);
+        }
         continue;
       }
       if (ev.type === 'cast' && ev.abilityKey !== undefined) {
-        // Each ability shows its OWN icon + a colored burst ring (its visual identity).
+        // Each ability shows its OWN sign (the one the panels show) over the hero that casts it, plus a
+        // coloured burst ring. Enemies and bosses have no signs: theirs is the ring alone.
         const heroCaster = this.heroSprites.get(ev.targetId);
         const caster = heroCaster ?? this.enemySprites.get(ev.targetId);
         if (caster !== undefined) {
-          const fx = castFx(ev.abilityKey);
-          // A whole-wave cast (Holy Nova, Raining Arrows) puts its flourish over the TARGET
-          // band — the side it actually hits — so it never reads as landing on the caster's
-          // own party. Everything else (incl. single-target boss specials) rises from the caster.
-          const band = isWholeWaveCast(ev.abilityKey) ? this.targetBand(heroCaster !== undefined) : null;
-          if (band !== null) {
-            this.floating.spawn(band.cx, groundY - 40, fx.glyph, fx.color, 1.3);
-          } else {
-            caster.castBurst(fx.color);
-            this.floating.spawn(caster.x, caster.y - 26, fx.glyph, fx.color, 1.15);
+          const fx = castFx(ev.abilityKey); // total: an unknown key is a plain burst with no sign
+          // A whole-wave cast (Holy Nova, Raining Arrows) plays its spectacle over the TARGET band — the
+          // side it actually hits — so the caster's own ring would read as landing on its own party.
+          if (!isWholeWaveCast(ev.abilityKey)) caster.castBurst(fx.color);
+          if (heroCaster !== undefined) {
+            const at = heroCaster.signPoint();
+            this.signs.spawn(at.x, at.y, fx.sign);
           }
           // The hero plays the ability's own clip (a heal, a shout, a cleave… — render/heroClips).
           heroCaster?.cast(ev.abilityKey);
@@ -513,7 +522,7 @@ export class GameStrip {
               const ty = groundY - 8;
               // Same arrow as the basic auto (no size override), then a bigger detonation.
               const flight = this.projectiles.spawn(caster.x, caster.y - 8, () => ({ x: tx, y: ty }), 'arrow');
-              if (fb !== null) this.worldFx.fireballBurst(tx, ty - 4, fb, flight, 1.8);
+              if (fb !== null) this.worldFx.fireballBurst(tx, ty - 4, fb, flight, EXPLOSION_SCALE);
             }
           }
         }
@@ -523,7 +532,7 @@ export class GameStrip {
         // reads on the target, not just as a number.
         if (sprite !== undefined && amt > 0) {
           if (ev.type === 'heal') {
-            heroSprite?.showHealEffect();
+            heroSprite?.showHealEffect(true);
             this.floating.spawn(sprite.x, sprite.y - 20, `+${formatDmg(amt)}`, FX.heal, 0.9);
           } else {
             this.floating.spawn(sprite.x, sprite.y - 16, formatDmg(amt), FX.dot, 0.9);
@@ -538,7 +547,7 @@ export class GameStrip {
         if (ev.splash !== true) this.playAttack(ev.sourceId, sprite, ev.abilityKey);
         if (ev.invuln === true) {
           // Negated by Last Stand invulnerability: yellow callout, no number/hit-flash.
-          this.floating.spawn(sprite.x, sprite.y - 22, 'INVULNERABLE', hexToNum('#ffe14d'), 0.95);
+          this.floating.spawn(sprite.x, sprite.y - 22, t('overlay.floatInvulnerable'), hexToNum('#ffe14d'), 0.95);
         } else if (amt > 0) {
           // Land the number + flash immediately.
           const color = enemySprite !== undefined ? (ev.crit ? hexToNum('#ffd35d') : 0xffffff) : hexToNum('#ff7a7a');
@@ -549,12 +558,12 @@ export class GameStrip {
           // (the attacker, resolved from sourceId), not over the enemy taking the hit.
           if (ev.multi === true) {
             const attacker = ev.sourceId === undefined ? undefined : this.heroSprites.get(ev.sourceId);
-            if (attacker !== undefined) this.floating.spawn(attacker.x, attacker.y - 40, 'MULTI!', hexToNum('#ffee33'), 1.6);
+            if (attacker !== undefined) this.floating.spawn(attacker.x, attacker.y - 40, t('overlay.floatMulti'), hexToNum('#ffee33'), 1.6);
           }
           // A blocked hit (block-stat proc) on a hero plays its shield-block reaction.
           if (ev.blocked === true && heroSprite !== undefined) {
             heroSprite.blockReact();
-            this.floating.spawn(sprite.x, sprite.y - 30, 'BLOCKED', hexToNum('#5aa0ff'), 0.85); // blue, above the number
+            this.floating.spawn(sprite.x, sprite.y - 30, t('overlay.floatBlocked'), hexToNum('#5aa0ff'), 0.85); // blue, above the number
           }
         }
       } else if (ev.type === 'heal' && heroSprite !== undefined && amt > 0) {
@@ -581,7 +590,7 @@ export class GameStrip {
       }
       case 'priest_nova': { // Holy Nova → a golden burst through the wave
         const b = this.bandOf(this.enemySprites);
-        if (b !== null) this.worldFx.holyNova(b.cx, groundY - 20, b.halfW + 20);
+        if (b !== null) this.worldFx.holyNova(b.cx, groundY, b.halfW + 8);
         return;
       }
       case 'knight_battlecry': { // Battle Cry → an amber war-cry shockwave over the party
@@ -589,16 +598,24 @@ export class GameStrip {
         if (b !== null) this.worldFx.shockwave(b.cx, groundY, b.halfW + 16, FX.offense);
         return;
       }
+      case 'knight_holdtheline': { // Hold the Line → a steel-blue wall of a shockwave over the party
+        const b = this.bandOf(this.heroSprites);
+        if (b !== null) this.worldFx.shockwave(b.cx, groundY, b.halfW + 12, FX.shield);
+        return;
+      }
+      case 'priest_sanctuary': { // Sanctuary → a golden ring of light settling over the party
+        const b = this.bandOf(this.heroSprites);
+        if (b !== null) this.worldFx.shockwave(b.cx, groundY, b.halfW + 12, FX.hot);
+        return;
+      }
+      case 'ranger_tarflask': { // Tar Flask → burning tar pooled under the wave for as long as it burns
+        const b = this.bandOf(this.enemySprites);
+        if (b !== null) this.groundFx.tarPool(b.cx, groundY, b.halfW, TAR_BURN_MS);
+        return;
+      }
       default:
         return;
     }
-  }
-
-  // The band a whole-wave cast actually HITS: a hero casting allEnemies hits the enemy
-  // wave; an enemy/boss casting allEnemies hits the party. Used to place the AoE flourish
-  // on the side it lands on, not on the caster.
-  private targetBand(heroCaster: boolean): { cx: number; halfW: number } | null {
-    return this.bandOf(heroCaster ? this.enemySprites : this.heroSprites);
   }
 
   // The on-screen horizontal band (centre + half-width) spanning a group of sprites — used
@@ -608,6 +625,7 @@ export class GameStrip {
     let max = Number.NEGATIVE_INFINITY;
     for (const s of group.values()) {
       if (!s.visible) continue;
+      if (s instanceof EnemySprite && s.fallen) continue; // a corpse is not part of the wave any more
       if (s.x < min) min = s.x;
       if (s.x > max) max = s.x;
     }
@@ -654,6 +672,12 @@ export class GameStrip {
       this.worldFx.strikeBurst(feet.x, feet.y, magic, HOLY_STRIKE_SCALE);
     } else this.projectiles.spawn(src.x, src.y - 8, liveTarget, src.style === 'caster' ? 'fireball' : 'arrow');
   }
+}
+
+/** True when a living foe stands within `c`'s reach — the same test the simulation makes before a basic
+ *  attack. Read-only: it only decides whether the attack clip may start ahead of the swing. */
+function inReach(c: Combatant, foes: readonly Combatant[]): boolean {
+  return foes.some((f) => f.alive && Math.abs(f.x - c.x) <= c.range + MOVE_EPS);
 }
 
 function formatDmg(n: number): string {

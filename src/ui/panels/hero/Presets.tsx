@@ -2,7 +2,7 @@ import { useStore } from '@/state/store';
 import { LOADOUT_COUNT } from '@/state/slices/partySlice';
 import type { Loadout } from '@/persistence/saveSchema';
 import { tryAbilityDef } from '@/data/abilities';
-import { className, useT, type TextKey } from '@/i18n';
+import { abilityName, className, useT, type TextKey } from '@/i18n';
 import { useContextMenu } from '@/ui/components/ContextMenu';
 import { Key, Tip, TipLine, TipText, TipTitle, TipWarn } from '@/ui/kit';
 
@@ -73,7 +73,7 @@ export function Presets({ heroId }: { heroId: string }): React.JSX.Element {
 function Saved({ preset, heroClass }: { preset: Loadout; heroClass: string | undefined }): React.JSX.Element {
   const t = useT();
   const points = Object.values(preset.talents).reduce((a, b) => a + b, 0);
-  const abilities = preset.activeAbilities.flatMap((key) => tryAbilityDef(key)?.name ?? []);
+  const abilities = preset.activeAbilities.flatMap((key) => (tryAbilityDef(key) === undefined ? [] : [abilityName(key)]));
   return (
     <>
       <TipLine label={t('hero.presetPoints')} value={points} />

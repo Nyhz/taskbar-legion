@@ -1,17 +1,17 @@
 /* The talents wing: narrow and tall (154 art px of content). The tree reads top to bottom — a tier is a row, the
    bar down the left edge is the points spent that open the tiers. Authored at 1× art pixel. */
-.tk-tal-line { display: flex; align-items: center; gap: 4px; height: 20px; }
+.tk-tal-line { display: flex; align-items: center; gap: 4px; height: 14px; }
 .tk-tal-line > .end { margin-left: auto; }
 .tk-tal-slots { position: relative; display: flex; align-items: center; gap: 2px; }
 .tk-tal-slots > u { width: 7px; height: 7px; background: var(--k2); box-shadow: 0 0 0 1px var(--k0); }
 .tk-tal-slots > u.on { background: var(--gold); box-shadow: inset 1px 1px 0 var(--gold-hi), inset -1px -1px 0 var(--gold-dim), 0 0 0 1px var(--k0); }
-.tk-tal-free { position: relative; display: flex; align-items: center; gap: 2px; font: 20px/20px var(--f-big); color: var(--gold-hi); text-shadow: 1px 1px 0 var(--k0); }
+.tk-tal-free { position: relative; display: flex; align-items: center; gap: 2px; font: 20px/14px var(--f-big); color: var(--gold-hi); text-shadow: 1px 1px 0 var(--k0); }
 .tk-tal-free.none { color: var(--k5); }
 .tk-tal-free.none > img { opacity: .45; }
 .tk-tal-free .tk-tip { text-shadow: none; }
 
 /* The tree: in the gutter the points a closed tier needs and the bar; then the nodes. */
-.tk-tal-tree { position: relative; margin-top: 3px; }
+.tk-tal-tree { position: relative; margin-top: 1px; }
 .tk-tal-tree > * { position: absolute; }
 .tk-tal-need { left: 0; width: 12px; height: 10px; line-height: 10px; text-align: right; color: var(--k5); }
 .tk-tal-need.next { color: var(--k9); }
@@ -23,9 +23,31 @@
 /* Rows are packed: the rank pips sit on the node's bottom edge instead of hanging under it. */
 .tk-tal-tree > .tk-node > .tk-pips { top: calc(100% - 1px); }
 
-/* A role talent is a seal with a ring (stand-in: the follow-up gives it the class colour). */
-.tk-tal-tree > .tk-node.role { border-radius: 50%; box-shadow: 0 0 0 1px var(--gold-dim); }
-.tk-tal-tree > .tk-node.role.lock { box-shadow: 0 0 0 1px var(--k3); }
+/* A role talent: a seal with four points, on an ability plate's footprint. KIT GAP: the kit's Node has no
+   such kind, so TalentsTabNode writes the node's markup itself and these rules stand in for the kit's. */
+.tk-tal-tree > .tk-tal-role.can { cursor: pointer; }
+
+/* A branch: its head (the sign, centred on the lane, a rule either side, the points spent in it at the lane's
+   end), and the spine that runs from it down the lane to the capstone. Lit once the branch holds points. */
+.tk-tal-head { height: 16px; }
+.tk-tal-head > img { position: absolute; left: 50%; top: 0; margin-left: -8px; opacity: .55; }
+.tk-tal-head.on > img, .tk-tal-head.full > img { opacity: 1; }
+.tk-tal-head::before, .tk-tal-head::after { content: ''; position: absolute; top: 8px; height: 1px; background: var(--k3); }
+.tk-tal-head::before { left: 3px; right: calc(50% + 10px); }
+.tk-tal-head::after { left: calc(50% + 10px); right: 15px; }
+.tk-tal-head > b { position: absolute; right: 2px; top: 3px; width: 12px; height: 10px; line-height: 10px; text-align: right; font-weight: normal; color: var(--k5); }
+.tk-tal-head.on > b { color: var(--k9); }
+.tk-tal-head.full > b { color: var(--gold-hi); }
+.tk-tal-head.on::before, .tk-tal-head.on::after, .tk-tal-head.full::before, .tk-tal-head.full::after { background: var(--gold-dim); }
+.tk-tal-spine { width: 1px; background: var(--k3); }
+.tk-tal-spine.on { background: var(--gold-dim); }
+
+/* "Choose one": a line between the two nodes of the pair with the either-or diamond on it. */
+.tk-tal-link { height: 1px; background: var(--k4); }
+.tk-tal-link.on { background: var(--gold-dim); }
+.tk-tal-link > i { position: absolute; width: 5px; height: 5px; }
+.tk-tal-link > i > img { display: block; opacity: .6; }
+.tk-tal-link.on > i > img { opacity: 1; }
 
 /* Tooltip lines of an ability: what it does at a rank, one effect per line. */
 .tk-tip .tk-tal-at { padding-top: 5px; color: var(--k6); }

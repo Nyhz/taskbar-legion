@@ -13,9 +13,13 @@ import { getHealEffectFrames, getBattleEnrageFrames, getHolyStrikeFrames } from 
 import { FEET_BELOW_ORIGIN } from './figureData';
 import { heroFigure } from './figureTextures';
 import { ATTACK_CLIP, BLOCK_CLIP, HURT_CLIP, heroAbilityClip } from './heroClips';
+import { AttackLead, abilityTakesSwing, impactMs, swingEtaMs } from './attackLead';
+import { TICK_MS } from '@/sim/Simulation';
 
 const MS_PER_FRAME = 1000 / 60; // Pixi AnimatedSprite.update expects ticker-frame units
 const HEAL_FX_FPS = 14;
+const HEAL_FX_ALPHA = 0.7; // a heal landing on the hero
+const HEAL_FX_TICK_ALPHA = 0.32; // one tick of a heal over time
 const ENRAGE_FX_FPS = 14; // cadence of the looping Battle Enrage swirl
 // Mend + Battle Enrage share the same 128px on-ally sheet geometry, so they share a transform:
 // seated with the sheet's BASE at the hero's feet (anchorY 1) and the same scale — so the ult
@@ -107,6 +111,7 @@ export class HeroSprite extends Container {
   private readonly ultLabel = new Text({ text: 'U', style: { fontFamily: 'monospace', fontSize: 8, fill: hexToNum('#e8c34c'), fontWeight: 'bold' } });
   private readonly ultCross = new Graphics();
   private readonly isKnight: boolean;
+  private readonly lead: AttackLead; // starts the attack clip ahead of the swing, so the blow lands with the hit
   // Heal sparkle shown ON this hero whenever a Priest heals it.
   private readonly healFx: AnimatedSprite | null;
   // Battle Enrage swirl looped over this hero while the Priest ult buff is on it.
@@ -136,6 +141,8 @@ export class HeroSprite extends Container {
     const sheet = heroFigure(classKey);
     if (sheet === null) throw new Error(`No figure loaded for the hero class ${classKey}`);
     this.figure = new FigureBody(sheet);
+    const attackAnim = sheet.meta.anims[ATTACK_CLIP];
+    this.lead = new AttackLead(attackAnim === undefined ? 0 : impactMs(attackAnim));
     const h = this.hud;
     this.hpBg.rect(barLeft(h), h.barY, h.barW, h.barH).fill({ color: hexToNum('#3a2030') });
     this.respawnLabel.anchor.set(0.5, 1);
@@ -182,6 +189,12 @@ export class HeroSprite extends Container {
    *  crosshair spawns before it flies off to lock onto the boss. */
   headPoint(): { x: number; y: number } {
     return { x: this.x, y: this.y + this.hud.barY };
+  }
+
+  /** Where the sign of an ability this hero casts appears (parent coords): centred over the body, its
+   *  bottom edge just above the overhead HUD. */
+  signPoint(): { x: number; y: number } {
+    return { x: this.x + this.hud.bodyCx, y: this.y + this.hud.pipY - 1 - this.hudLift };
   }
 
   /** Raise the whole overhead HUD by `px` (0 = default). GameStrip lifts a rear hero's
@@ -231,8 +244,19 @@ export class HeroSprite extends Container {
    *  hit came from an ability — that ability's clip (heroClips). An ability cuts a basic attack
    *  in progress; otherwise a clip in progress finishes first (figureClip). */
   attack(abilityKey?: string): void {
-    if (abilityKey === undefined) this.figure.clips.act(ATTACK_CLIP);
-    else this.figure.clips.act(heroAbilityClip(this.classKey, abilityKey), true);
+    if (abilityKey !== undefined) this.figure.clips.act(heroAbilityClip(this.classKey, abilityKey), true);
+    else if (!this.lead.claim()) this.figure.clips.act(ATTACK_CLIP); // unless it was started early (leadAttack)
+  }
+
+  /** Start the basic attack clip EARLY so its blow lands with the hit (render/attackLead). Called every frame
+   *  with the sim's hero and whether an enemy is within its reach; does nothing while the hero moves, while
+   *  the swing is still far, or when an ability is about to take the swing (its own clip plays on the cast). */
+  leadAttack(c: Combatant, enemyInReach: boolean, dtMs: number): void {
+    this.lead.tick(dtMs);
+    const eta = swingEtaMs(c.attackTimerMs, TICK_MS);
+    if (!c.alive || !enemyInReach || c.movedThisTick === true || !this.lead.due(eta)) return;
+    if (abilityTakesSwing(c)) return;
+    if (this.figure.clips.act(ATTACK_CLIP, false, this.lead.rate(eta))) this.lead.started();
   }
 
   /** Play the clip of an ability this hero just cast (a heal, a buff, a shout, a blow). */
@@ -246,11 +270,15 @@ export class HeroSprite extends Container {
   }
 
   /** Show the heal sparkle ON this hero (it's the one being healed by a Priest). */
-  showHealEffect(): void {
+  /** The effect is translucent — the hero must stay readable inside the light. A heal cast on the hero plays
+   *  it in full; a heal-over-time `tick` (Mend, Sanctuary: one every second on the whole party) only plays a
+   *  faint one, and never restarts one already playing, so a rolling heal does not bury the party in pillars. */
+  showHealEffect(tick = false): void {
     const fx = this.healFx;
     if (fx === null) return;
+    if (tick && fx.visible) return;
     fx.visible = true;
-    fx.alpha = 1;
+    fx.alpha = tick ? HEAL_FX_TICK_ALPHA : HEAL_FX_ALPHA;
     fx.gotoAndPlay(0);
   }
 

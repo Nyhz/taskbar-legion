@@ -1,0 +1,290 @@
+{
+  "branch.knight.bastion": {
+    "en": "Bastion",
+    "es": "Bastión"
+  },
+  "branch.knight.scourge": {
+    "en": "Scourge",
+    "es": "Azote"
+  },
+  "knight_vanguard.name": {
+    "en": "Vanguard",
+    "es": "Vanguardia"
+  },
+  "knight_vanguard.desc": {
+    "en": "The whole party takes 1% less damage per rank.",
+    "es": "Todo el grupo recibe un 1 % menos de daño por rango."
+  },
+  "knight_unyielding.name": {
+    "en": "Unyielding",
+    "es": "Inquebrantable"
+  },
+  "knight_unyielding.desc": {
+    "en": "Under 40% of his life, he takes 3% less damage per rank.",
+    "es": "Por debajo del 40 % de su vida, recibe un 3 % menos de daño por rango."
+  },
+  "knight_warden.name": {
+    "en": "Warden",
+    "es": "Guardián"
+  },
+  "knight_warden.desc": {
+    "en": "The whole party has 2% more max life per rank.",
+    "es": "Todo el grupo tiene un 2 % más de vida máxima por rango."
+  },
+  "knight_mod_shared_skin.name": {
+    "en": "Shared Skin",
+    "es": "Piel compartida"
+  },
+  "knight_mod_shared_skin.desc": {
+    "en": "Stone Skin also covers the ally with the least life.",
+    "es": "Piel de piedra cubre también al aliado con menos vida."
+  },
+  "knight_mod_mending_bulwark.name": {
+    "en": "Mending Bulwark",
+    "es": "Baluarte reparador"
+  },
+  "knight_mod_mending_bulwark.desc": {
+    "en": "When Bulwark breaks or runs out, it heals the party for 6% of their life.",
+    "es": "Cuando Baluarte se rompe o se agota, cura al grupo un 6 % de su vida."
+  },
+  "knight_mod_crippling_cleave.name": {
+    "en": "Crippling Cleave",
+    "es": "Tajo lisiante"
+  },
+  "knight_mod_crippling_cleave.desc": {
+    "en": "Enemies hit by the Cleave attack and advance 20% slower for 6s.",
+    "es": "Los enemigos alcanzados por el Tajo atacan y avanzan un 20 % más despacio durante 6 s."
+  },
+  "knight_mod_thirst_for_battle.name": {
+    "en": "Thirst for Battle",
+    "es": "Sed de batalla"
+  },
+  "knight_mod_thirst_for_battle.desc": {
+    "en": "Every blocked hit lengthens Bloodlust by 1s.",
+    "es": "Cada golpe bloqueado alarga Sed de sangre 1 s."
+  },
+  "knight_mod_standard_bearer.name": {
+    "en": "Standard Bearer",
+    "es": "Portaestandarte"
+  },
+  "knight_mod_standard_bearer.desc": {
+    "en": "While Hold the Line lasts, the Knight has +10 block and +10% armour.",
+    "es": "Mientras dura Mantener la línea, el Knight tiene +10 de bloqueo y +10 % de armadura."
+  },
+  "knight_mod_punishing_riposte.name": {
+    "en": "Punishing Riposte",
+    "es": "Réplica castigadora"
+  },
+  "knight_mod_punishing_riposte.desc": {
+    "en": "Riposte fires at 3 blocked hits instead of 4.",
+    "es": "Réplica salta a los 3 golpes bloqueados en lugar de 4."
+  },
+  "knight_cap_living_wall.name": {
+    "en": "Living Wall",
+    "es": "Muro viviente"
+  },
+  "knight_cap_living_wall.desc": {
+    "en": "The Last Stand charge also saves an ally about to fall: left at 1 life and invulnerable for 3s.",
+    "es": "La carga de Última resistencia salva también a un aliado a punto de caer: se queda con 1 de vida e invulnerable 3 s."
+  },
+  "knight_cap_vengeance.name": {
+    "en": "Vengeance",
+    "es": "Venganza"
+  },
+  "knight_cap_vengeance.desc": {
+    "en": "When Last Stand fires, every enemy in reach deals 30% less damage and is 30% slower for its 6s.",
+    "es": "Cuando salta Última resistencia, los enemigos a su alcance hacen un 30 % menos de daño y van un 30 % más lentos durante sus 6 s."
+  },
+  "branch.ranger.marksman": {
+    "en": "Marksman",
+    "es": "Tirador"
+  },
+  "branch.ranger.stalker": {
+    "en": "Stalker",
+    "es": "Acechador"
+  },
+  "ranger_predator.name": {
+    "en": "Predator",
+    "es": "Depredador"
+  },
+  "ranger_predator.desc": {
+    "en": "+2% damage per rank to enemies under 30% of their life.",
+    "es": "+2 % de daño por rango a los enemigos por debajo del 30 % de su vida."
+  },
+  "ranger_long_shot.name": {
+    "en": "Long Shot",
+    "es": "Tiro largo"
+  },
+  "ranger_long_shot.desc": {
+    "en": "+1.5% damage per rank to enemies that have not reached the fight yet.",
+    "es": "+1,5 % de daño por rango a los enemigos que aún no han llegado al combate."
+  },
+  "ranger_hunters_focus.name": {
+    "en": "Hunter's Focus",
+    "es": "Foco del cazador"
+  },
+  "ranger_hunters_focus.desc": {
+    "en": "+2% damage per rank to elites and bosses.",
+    "es": "+2 % de daño por rango a élites y jefes."
+  },
+  "ranger_mod_heartseeker.name": {
+    "en": "Heartseeker",
+    "es": "Buscacorazones"
+  },
+  "ranger_mod_heartseeker.desc": {
+    "en": "Aimed Shot always crits.",
+    "es": "Disparo certero siempre es crítico."
+  },
+  "ranger_mod_focused_fire.name": {
+    "en": "Focused Fire",
+    "es": "Fuego concentrado"
+  },
+  "ranger_mod_focused_fire.desc": {
+    "en": "Rapid Fire also gives +20 crit damage.",
+    "es": "Fuego rápido da además +20 de daño crítico."
+  },
+  "ranger_mod_scorched_earth.name": {
+    "en": "Scorched Earth",
+    "es": "Tierra quemada"
+  },
+  "ranger_mod_scorched_earth.desc": {
+    "en": "Explosive Arrow's targets burn: 60% attack damage over 4s.",
+    "es": "Los objetivos de Flecha explosiva arden: 60 % del daño de ataque en 4 s."
+  },
+  "ranger_mod_barbed_caltrops.name": {
+    "en": "Barbed Caltrops",
+    "es": "Abrojos con púas"
+  },
+  "ranger_mod_barbed_caltrops.desc": {
+    "en": "The Caltrops' bleed lasts 6s and deals 50% more in total.",
+    "es": "El sangrado de los Abrojos dura 6 s y hace un 50 % más en total."
+  },
+  "ranger_mod_open_wound.name": {
+    "en": "Open Wound",
+    "es": "Herida abierta"
+  },
+  "ranger_mod_open_wound.desc": {
+    "en": "Weak Spot lasts 9s instead of 6.",
+    "es": "Punto débil dura 9 s en lugar de 6."
+  },
+  "ranger_mod_burning_tar.name": {
+    "en": "Burning Tar",
+    "es": "Brea ardiente"
+  },
+  "ranger_mod_burning_tar.desc": {
+    "en": "The tar's damage rises 50% and it lasts 2s longer.",
+    "es": "El daño de la brea sube un 50 % y dura 2 s más."
+  },
+  "ranger_cap_relentless_mark.name": {
+    "en": "Relentless Mark",
+    "es": "Marca implacable"
+  },
+  "ranger_cap_relentless_mark.desc": {
+    "en": "Mark of the Hunter also goes on elites, and when its bearer dies it jumps to the enemy in front.",
+    "es": "Marca del cazador se pone también a los élites y, cuando muere quien la lleva, salta al enemigo de delante."
+  },
+  "ranger_cap_killing_field.name": {
+    "en": "Killing Field",
+    "es": "Campo de muerte"
+  },
+  "ranger_cap_killing_field.desc": {
+    "en": "On engaging each wave, every enemy takes +10% damage and is 30% slower for 6s.",
+    "es": "Al trabar combate con cada oleada, todos los enemigos reciben +10 % de daño y van un 30 % más lentos durante 6 s."
+  },
+  "branch.priest.devotion": {
+    "en": "Devotion",
+    "es": "Devoción"
+  },
+  "branch.priest.zeal": {
+    "en": "Zeal",
+    "es": "Celo"
+  },
+  "priest_triage.name": {
+    "en": "Triage",
+    "es": "Triaje"
+  },
+  "priest_triage.desc": {
+    "en": "Her heals are 3% stronger per rank on allies under 40% of their life.",
+    "es": "Sus curas son un 3 % más fuertes por rango sobre aliados por debajo del 40 % de su vida."
+  },
+  "priest_vigil.name": {
+    "en": "Vigil",
+    "es": "Vigilia"
+  },
+  "priest_vigil.desc": {
+    "en": "While she lives, the whole party regenerates 0.05% of its max life per second per rank.",
+    "es": "Mientras siga con vida, todo el grupo regenera un 0,05 % de su vida máxima por segundo y por rango."
+  },
+  "priest_sacred_ward.name": {
+    "en": "Sacred Ward",
+    "es": "Custodia sagrada"
+  },
+  "priest_sacred_ward.desc": {
+    "en": "The whole party has 1.5% more magic resist per rank.",
+    "es": "Todo el grupo tiene un 1,5 % más de resistencia mágica por rango."
+  },
+  "priest_mod_swift_mend.name": {
+    "en": "Swift Mend",
+    "es": "Sanar veloz"
+  },
+  "priest_mod_swift_mend.desc": {
+    "en": "30% of Mend heals at once; the rest rolls as before.",
+    "es": "El 30 % de Sanar cura al instante; el resto sigue como antes."
+  },
+  "priest_mod_aegis.name": {
+    "en": "Aegis",
+    "es": "Égida"
+  },
+  "priest_mod_aegis.desc": {
+    "en": "Holy Shield also gives 10% less damage taken while it lasts.",
+    "es": "Escudo sagrado da además un 10 % menos de daño recibido mientras dura."
+  },
+  "priest_mod_radiant_nova.name": {
+    "en": "Radiant Nova",
+    "es": "Nova radiante"
+  },
+  "priest_mod_radiant_nova.desc": {
+    "en": "Holy Nova also heals each ally for 3% of its life.",
+    "es": "Nova sagrada cura además a cada aliado un 3 % de su vida."
+  },
+  "priest_mod_twin_infusion.name": {
+    "en": "Twin Infusion",
+    "es": "Infusión gemela"
+  },
+  "priest_mod_twin_infusion.desc": {
+    "en": "Power Infusion reaches two heroes.",
+    "es": "Infusión de poder alcanza a dos héroes."
+  },
+  "priest_mod_deep_sanctuary.name": {
+    "en": "Deep Sanctuary",
+    "es": "Santuario profundo"
+  },
+  "priest_mod_deep_sanctuary.desc": {
+    "en": "Sanctuary also gives each ally a shield of 4% of its life.",
+    "es": "Santuario da además a cada aliado un escudo del 4 % de su vida."
+  },
+  "priest_mod_mending_light.name": {
+    "en": "Mending Light",
+    "es": "Luz reparadora"
+  },
+  "priest_mod_mending_light.desc": {
+    "en": "Smite's heal also leaves a heal of 4% of the ally's life over 4s.",
+    "es": "La cura de Castigo deja además una cura del 4 % de la vida del aliado en 4 s."
+  },
+  "priest_cap_second_wind.name": {
+    "en": "Second Wind",
+    "es": "Segundo aliento"
+  },
+  "priest_cap_second_wind.desc": {
+    "en": "Once per stage, the first time an ally drops under 25% of its life, the whole party heals 30% and gets a 10% shield.",
+    "es": "Una vez por etapa, la primera vez que un aliado baja del 25 % de su vida, todo el grupo se cura un 30 % y recibe un escudo del 10 %."
+  },
+  "priest_cap_crusade.name": {
+    "en": "Crusade",
+    "es": "Cruzada"
+  },
+  "priest_cap_crusade.desc": {
+    "en": "Battle Enrage also fires against elites and lasts 15s.",
+    "es": "Furia de batalla salta también contra élites y dura 15 s."
+  }
+}

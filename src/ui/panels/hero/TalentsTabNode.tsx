@@ -1,22 +1,25 @@
 import type { TalentNode } from '@/data/talents';
-import { MAX_ACTIVE_ABILITIES, type SpendCheck } from '@/sim/talentRules';
-import { spendBlockLine } from '@/sim/talentText';
+import type { SpendCheck } from '@/sim/talentRules';
 import type { EffectiveStats } from '@/sim/stats';
-import { useT } from '@/i18n';
-import { Node, type NodeKind, type NodeState, type TipSide } from '@/ui/kit';
+import { talentNodeName } from '@/i18n';
+import { Node, Sign, type NodeKind, type NodeState, type TipSide } from '@/ui/kit';
 import { talentNodeArtStem } from '@/ui/abilityArt';
 import { TalentsTip } from './TalentsTip';
 import { hasPips, type PlacedNode } from './talentsLayout';
+import { spendBlockLine } from './talentWords';
 
-// One node of the talents wing. The frame says the kind (kit `Node`): a plate for an ability, a seal for a
-// passive or a role talent (a role talent wears a ring), the teal plate for a modifier, the octagon for a
-// capstone. Its sign comes from ui/abilityArt.talentNodeArtStem (stand-ins for role talents, modifiers and
-// capstones until theirs are drawn).
+// One node of the talents wing. The frame says the kind: a plate for an ability, a round seal for a passive,
+// a seal with four points for a ROLE talent, the teal plate for a modifier, the octagon for a capstone. Its
+// sign comes from ui/abilityArt.talentNodeArtStem (stand-ins for role talents, modifiers and capstones until
+// theirs are drawn).
+//
+// A node that cannot take a point now (its tier is closed, two abilities are already learned, its ability is
+// missing, the other of its pair is taken, its branch is short of points) is dimmed and does not answer a
+// click; its tooltip says why — sim/talentRules.canSpend gives the reason, ./talentWords the sentence.
 
-const FRAME: Record<TalentNode['kind'], NodeKind> = {
+const FRAME: Record<Exclude<TalentNode['kind'], 'role'>, NodeKind> = {
   ability: 'ability',
   passive: 'passive',
-  role: 'passive',
   modifier: 'modifier',
   capstone: 'ultimate',
 };
@@ -34,36 +37,59 @@ export interface TalentsTabNodeProps {
 }
 
 export function TalentsTabNode({ classKey, talents, placed, check, stats, side, onSpend, onRefund }: TalentsTabNodeProps): React.JSX.Element {
-  const t = useT();
   const node = placed.node;
   const rank = talents[node.key] ?? 0;
   const state: NodeState = rank >= node.maxRank ? 'max' : rank > 0 ? 'on' : 'off';
   // Why it cannot be raised, in words. Having no points to spend, or being full, is not worth a warning.
-  const blocked =
-    check.ok || check.reason === 'noPoints' || check.reason === 'maxRank'
-      ? undefined
-      : check.reason === 'tierLocked'
-        ? t('talents.tierNeeds', { n: check.need })
-        : check.reason === 'abilityCap'
-          ? t('talents.capFull', { max: MAX_ACTIVE_ABILITIES })
-          : spendBlockLine(classKey, check, node);
+  const why = check.ok ? '' : spendBlockLine(classKey, check, node);
+  const blocked = why === '' ? undefined : why;
+  const locked = blocked !== undefined;
+  const sign = talentNodeArtStem(classKey, node);
+  const name = talentNodeName(classKey, node.key);
+  const pips = hasPips(node) ? { rank, max: node.maxRank } : undefined;
+  const style = { left: placed.x, top: placed.y };
+  const refund = (e: React.MouseEvent): void => {
+    e.preventDefault();
+    onRefund();
+  };
+  const tip = <TalentsTip classKey={classKey} talents={talents} node={node} rank={rank} stats={stats} side={side} blocked={blocked} />;
+
+  if (node.kind === 'role') {
+    // The kit's Node has no role frame: the same markup, with the pointed seal (KIT GAP — see TalentsTab.css).
+    const can = check.ok && !locked;
+    return (
+      <div
+        className={`tk-node tk-tal-role has${locked ? ' lock' : ''}${can ? ' can' : ''}`}
+        style={style}
+        onClick={can ? onSpend : undefined}
+        onContextMenu={refund}
+      >
+        <Sign name={`tal_role_${state}`} className="f" />
+        <Sign name={sign} alt={name} className="g" />
+        {pips !== undefined && (
+          <div className="tk-pips">
+            {Array.from({ length: pips.max }, (_, i) => (
+              <i key={i} className={i < pips.rank ? 'on' : undefined} />
+            ))}
+          </div>
+        )}
+        {tip}
+      </div>
+    );
+  }
   return (
     <Node
       kind={FRAME[node.kind]}
       state={state}
-      sign={talentNodeArtStem(classKey, node)}
-      alt={node.name}
-      locked={blocked !== undefined}
-      pips={hasPips(node) ? { rank, max: node.maxRank } : undefined}
+      sign={sign}
+      alt={name}
+      locked={locked}
+      pips={pips}
       onClick={check.ok ? onSpend : undefined}
-      onContextMenu={(e) => {
-        e.preventDefault();
-        onRefund();
-      }}
-      className={node.kind === 'role' ? 'role' : undefined}
-      style={{ left: placed.x, top: placed.y }}
+      onContextMenu={refund}
+      style={style}
     >
-      <TalentsTip classKey={classKey} talents={talents} node={node} rank={rank} stats={stats} side={side} blocked={blocked} />
+      {tip}
     </Node>
   );
 }

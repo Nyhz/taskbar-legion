@@ -11,18 +11,22 @@ describe('heroAbilityClip', () => {
     expect(heroAbilityClip('knight', 'knight_bulwark')).toBe('block');
     expect(heroAbilityClip('knight', 'knight_battlecry')).toBe('shout');
     expect(heroAbilityClip('knight', 'knight_bloodlust')).toBe('shout');
+    expect(heroAbilityClip('knight', 'knight_holdtheline')).toBe('shout');
+    expect(heroAbilityClip('knight', 'knight_riposte')).toBe('cleave');
   });
 
   it('maps the Ranger\'s abilities to her clips, attack for the rest', () => {
     expect(heroAbilityClip('ranger', 'ranger_multishot')).toBe('volley');
     expect(heroAbilityClip('ranger', 'ranger_fast_fire')).toBe('quick');
+    expect(heroAbilityClip('ranger', 'ranger_weakspot')).toBe('quick');
+    expect(heroAbilityClip('ranger', 'ranger_tarflask')).toBe('volley');
     for (const key of ['ranger_aimedshot', 'ranger_focus', 'ranger_frozentrap', 'ranger_mark']) {
       expect(heroAbilityClip('ranger', key)).toBe('attack');
     }
   });
 
   it('has the Priest cast every ability', () => {
-    for (const key of ['priest_mend', 'priest_powerinfusion', 'priest_holyshield', 'priest_nova', 'priest_enrage']) {
+    for (const key of ['priest_mend', 'priest_powerinfusion', 'priest_holyshield', 'priest_nova', 'priest_enrage', 'priest_sanctuary', 'priest_smite']) {
       expect(heroAbilityClip('priest', key)).toBe('cast');
     }
   });

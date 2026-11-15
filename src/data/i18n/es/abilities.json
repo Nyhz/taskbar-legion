@@ -1,0 +1,194 @@
+{
+  "knight_guard.name": {
+    "en": "Stone Skin",
+    "es": "Piel de piedra"
+  },
+  "knight_guard.desc": {
+    "en": "Harden his skin to stone — flat damage reduction to soak incoming hits.",
+    "es": "Endurece la piel como la piedra: reduce el daño de los golpes que recibe."
+  },
+  "knight_debilitate.name": {
+    "en": "Debilitating Cleave",
+    "es": "Tajo debilitante"
+  },
+  "knight_debilitate.desc": {
+    "en": "A sweeping blow — heavy damage to every enemy in melee range, sapping the damage they deal.",
+    "es": "Un tajo amplio: mucho daño a todos los enemigos cuerpo a cuerpo, y merma el daño que hacen."
+  },
+  "knight_bulwark.name": {
+    "en": "Bulwark",
+    "es": "Baluarte"
+  },
+  "knight_bulwark.desc": {
+    "en": "Brace behind a bulwark — a heavy absorb shield on himself.",
+    "es": "Se cubre tras un baluarte: un gran escudo de absorción propio."
+  },
+  "knight_battlecry.name": {
+    "en": "Battle Cry",
+    "es": "Grito de guerra"
+  },
+  "knight_battlecry.desc": {
+    "en": "A war cry that sharpens the whole party’s offense.",
+    "es": "Un grito de guerra que afila la ofensiva de todo el grupo."
+  },
+  "knight_bloodlust.name": {
+    "en": "Bloodlust",
+    "es": "Sed de sangre"
+  },
+  "knight_bloodlust.desc": {
+    "en": "Fly into a bloodlust — faster swings that leech life from every hit.",
+    "es": "Entra en sed de sangre: golpes más rápidos que roban vida con cada impacto."
+  },
+  "knight_holdtheline.name": {
+    "en": "Hold the Line",
+    "es": "Mantener la línea"
+  },
+  "knight_holdtheline.desc": {
+    "en": "Plant the shield: the whole party takes less damage for a short window.",
+    "es": "Planta el escudo: todo el grupo recibe menos daño durante un momento."
+  },
+  "knight_riposte.name": {
+    "en": "Riposte",
+    "es": "Réplica"
+  },
+  "knight_riposte.desc": {
+    "en": "No cooldown: every blocked hit banks a charge. At full charge he strikes back and leaves the enemy weakened.",
+    "es": "Sin recarga: cada golpe bloqueado suma una carga. Con la carga completa devuelve el golpe y deja al enemigo debilitado."
+  },
+  "ranger_fast_fire.name": {
+    "en": "Rapid Fire",
+    "es": "Fuego rápido"
+  },
+  "ranger_fast_fire.desc": {
+    "en": "A sustained burst of attack speed.",
+    "es": "Una ráfaga sostenida de velocidad de ataque."
+  },
+  "ranger_aimedshot.name": {
+    "en": "Aimed Shot",
+    "es": "Disparo certero"
+  },
+  "ranger_aimedshot.desc": {
+    "en": "A heavy charged shot — banks 1 charge per auto-attack, fires at 10.",
+    "es": "Un disparo cargado y potente: suma 1 carga por ataque básico y dispara a las 10."
+  },
+  "ranger_multishot.name": {
+    "en": "Raining Arrows",
+    "es": "Lluvia de flechas"
+  },
+  "ranger_multishot.desc": {
+    "en": "A volley spread across the whole wave.",
+    "es": "Una andanada repartida por toda la oleada."
+  },
+  "ranger_focus.name": {
+    "en": "Explosive Arrow",
+    "es": "Flecha explosiva"
+  },
+  "ranger_focus.desc": {
+    "en": "A detonating arrow: a heavy hit on the front enemy that blasts nearby enemies for less.",
+    "es": "Una flecha que detona: un golpe fuerte al enemigo de delante y una explosión menor a los cercanos."
+  },
+  "ranger_frozentrap.name": {
+    "en": "Caltrops",
+    "es": "Abrojos"
+  },
+  "ranger_frozentrap.desc": {
+    "en": "Hurl a spray of caltrops that spread across the ground ahead — bleeding every enemy in the field for 4s.",
+    "es": "Lanza un puñado de abrojos que cubren el suelo de delante: hacen sangrar 4 s a todos los enemigos del campo."
+  },
+  "ranger_weakspot.name": {
+    "en": "Weak Spot",
+    "es": "Punto débil"
+  },
+  "ranger_weakspot.desc": {
+    "en": "A shot at the front enemy that leaves it marked: it takes more damage from everyone.",
+    "es": "Un disparo al enemigo de delante que lo deja señalado: recibe más daño de todos."
+  },
+  "ranger_tarflask.name": {
+    "en": "Tar Flask",
+    "es": "Frasco de brea"
+  },
+  "ranger_tarflask.desc": {
+    "en": "Burning tar over the whole wave: damage over time, and the tarred attack and advance slower.",
+    "es": "Brea ardiente sobre toda la oleada: daño en el tiempo, y los embreados atacan y avanzan más despacio."
+  },
+  "priest_mend.name": {
+    "en": "Mend",
+    "es": "Sanar"
+  },
+  "priest_mend.desc": {
+    "en": "A rolling heal on whoever is hurt — amplified by heal power.",
+    "es": "Una cura progresiva sobre quien esté herido; el poder de curación la aumenta."
+  },
+  "priest_powerinfusion.name": {
+    "en": "Power Infusion",
+    "es": "Infusión de poder"
+  },
+  "priest_powerinfusion.desc": {
+    "en": "Infuse a damage-dealer with frenzied speed and cooldown reduction. Prefers a DPS; if the party has none, infuses the tank instead.",
+    "es": "Infunde a un héroe de daño velocidad frenética y reducción de recarga. Prefiere a uno de daño; si el grupo no tiene, infunde al tanque."
+  },
+  "priest_holyshield.name": {
+    "en": "Holy Shield",
+    "es": "Escudo sagrado"
+  },
+  "priest_holyshield.desc": {
+    "en": "A divine barrier on the tank — absorbs a burst of the hits it’s taking.",
+    "es": "Una barrera divina sobre el tanque: absorbe parte de los golpes que está recibiendo."
+  },
+  "priest_nova.name": {
+    "en": "Holy Nova",
+    "es": "Nova sagrada"
+  },
+  "priest_nova.desc": {
+    "en": "A burst of holy light damaging the whole wave.",
+    "es": "Un estallido de luz sagrada que daña a toda la oleada."
+  },
+  "priest_retribution.name": {
+    "en": "Retribution Aura",
+    "es": "Aura de represalia"
+  },
+  "priest_retribution.desc": {
+    "en": "Passive: while slotted, the whole party deals +5%→+15% damage.",
+    "es": "Pasiva: mientras está activa, todo el grupo hace +5 %→+15 % de daño."
+  },
+  "priest_sanctuary.name": {
+    "en": "Sanctuary",
+    "es": "Santuario"
+  },
+  "priest_sanctuary.desc": {
+    "en": "When someone is hurt, a rolling heal on the whole party.",
+    "es": "Cuando alguien está herido, una cura progresiva sobre todo el grupo."
+  },
+  "priest_smite.name": {
+    "en": "Smite",
+    "es": "Castigo"
+  },
+  "priest_smite.desc": {
+    "en": "An instant heal on whoever is hurt most and, with it, a strike of light on the enemy in front.",
+    "es": "Una cura inmediata a quien esté más herido y, con ella, un golpe de luz al enemigo de delante."
+  },
+  "knight_laststand.name": {
+    "en": "Last Stand",
+    "es": "Última resistencia"
+  },
+  "knight_laststand.desc": {
+    "en": "A would-be-lethal blow leaves the knight at a sliver of HP, healing him and granting 6s of total invulnerability. Recharges each stage.",
+    "es": "Un golpe que sería mortal deja al Knight con un hilo de vida, lo cura y le da 6 s de invulnerabilidad total. Se recarga en cada etapa."
+  },
+  "priest_enrage.name": {
+    "en": "Battle Enrage",
+    "es": "Furia de batalla"
+  },
+  "priest_enrage.desc": {
+    "en": "On engaging a stage or world boss, the whole party gains +25% cooldown reduction and +25% attack speed for 10s.",
+    "es": "Al trabar combate con un jefe de etapa o de mundo, todo el grupo gana +25 % de reducción de recarga y +25 % de velocidad de ataque durante 10 s."
+  },
+  "ranger_mark.name": {
+    "en": "Mark of the Hunter",
+    "es": "Marca del cazador"
+  },
+  "ranger_mark.desc": {
+    "en": "On engaging a stage or world boss, the ranger marks it — the boss takes +25% damage from all sources for the fight.",
+    "es": "Al trabar combate con un jefe de etapa o de mundo, el Ranger lo marca: el jefe recibe +25 % de daño de todas las fuentes durante el combate."
+  }
+}

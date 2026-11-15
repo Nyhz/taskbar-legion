@@ -3,7 +3,7 @@ import { getEngine } from '@/game/engineRef';
 import { MAX_ACTIVE_ABILITIES, heroAbilities } from '@/sim/loadout';
 import { tryAbilityDef, type AbilityDef } from '@/data/abilities';
 import { ULTIMATES } from '@/data/ultimates';
-import { useT, type TextKey } from '@/i18n';
+import { abilityDescription, abilityName, ultimateDescription, ultimateName, useT, type TextKey } from '@/i18n';
 import { abilityArtStem, ultimateArtStem } from '@/ui/abilityArt';
 import { Node, Sign, Tip, TipLine, TipName, TipSub, TipText, TipTitle } from '@/ui/kit';
 
@@ -36,12 +36,12 @@ export function AbilityRow({ heroId }: { heroId: string }): React.JSX.Element | 
           state={ultOn ? 'on' : 'off'}
           locked={!ultOn}
           sign={ultimateArtStem(ult.key)}
-          alt={ult.name}
+          alt={ultimateName(hero.classKey)}
         >
           <Tip side="above" size="item" tier={3}>
-            <TipName>{ult.name}</TipName>
+            <TipName>{ultimateName(hero.classKey)}</TipName>
             <TipSub>{t('hero.ultimate')}</TipSub>
-            <TipText>{ult.desc}</TipText>
+            <TipText>{ultimateDescription(hero.classKey)}</TipText>
             {trigger !== undefined && <TipText>{t(trigger)}</TipText>}
             <TipText>{ultOn ? t('hero.ultUnlocked') : t('hero.ultLocked', { n: ult.unlockLevel })}</TipText>
           </Tip>
@@ -90,16 +90,16 @@ function AbilityNode({
       ? `${charge.cur}/${charge.max}`
       : seconds(remainingMs);
   return (
-    <Node kind="ability" state="on" sign={abilityArtStem(def.key)} alt={def.name} cooldown={corner}>
+    <Node kind="ability" state="on" sign={abilityArtStem(def.key)} alt={abilityName(def.key)} cooldown={corner}>
       <Tip side="above" size="item">
-        <TipName tone="gold">{def.name}</TipName>
+        <TipName tone="gold">{abilityName(def.key)}</TipName>
         <TipSub>{t('hero.ability')}</TipSub>
-        <TipText>{def.desc}</TipText>
+        <TipText>{abilityDescription(def.key)}</TipText>
         {passive && <TipText>{t('hero.abilityPassive')}</TipText>}
         {charge !== undefined && (
           <TipLine label={t('hero.abilityCharges')} value={`${charge.cur} / ${charge.max}`} />
         )}
-        {charge !== undefined && <TipText>{t('hero.abilityChargesHelp')}</TipText>}
+        {charge !== undefined && (def.charge?.perAttack ?? 0) > 0 && <TipText>{t('hero.abilityChargesHelp')}</TipText>}
         {!passive && charge === undefined && (
           <TipLine label={t('hero.cooldown')} value={`${Number((def.cooldownMs / 1000).toFixed(1))} s`} />
         )}

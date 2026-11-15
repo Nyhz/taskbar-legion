@@ -25,6 +25,7 @@ export class ClipPlayer {
   private playedMs = 0; // time spent in the current clip
   private totalMs = 0; // length of the current clip
   private sinceReactionMs = Number.POSITIVE_INFINITY;
+  private rate = 1; // playback speed of the current action (an attack hurried to land with its hit); loops play at 1
 
   constructor(private readonly anims: Readonly<Record<string, FigureAnim>>) {
     this.start(IDLE, 'loop');
@@ -52,15 +53,17 @@ export class ClipPlayer {
   /**
    * Ask for an action clip. It starts at once from a loop or a reaction. Over another action it starts only if
    * that one has played past ACTION_CUT_AFTER — or, with `urgent` (an ability over a basic attack), if it is a
-   * different clip. Returns whether the clip started.
+   * different clip. `rate` plays it faster or slower than drawn (a quick attacker's wind-up is hurried so the blow
+   * lands with the hit — render/attackLead). Returns whether the clip started.
    */
-  act(clip: string, urgent = false): boolean {
+  act(clip: string, urgent = false, rate = 1): boolean {
     if (this.state === 'dead' || !this.has(clip)) return false;
     if (this.state === 'action') {
       const landed = this.playedMs >= this.totalMs * ACTION_CUT_AFTER;
       if (!landed && !(urgent && clip !== this.name)) return false;
     }
     this.start(clip, 'action');
+    this.rate = rate > 0 ? rate : 1;
     return true;
   }
 
@@ -87,8 +90,9 @@ export class ClipPlayer {
     const loop = moving && this.has(RUN) ? RUN : IDLE;
     if (this.state === 'loop' && loop !== this.name) this.start(loop, 'loop');
     if (dtMs <= 0) return;
-    this.playedMs += dtMs;
-    this.inFrameMs += dtMs;
+    const step = dtMs * this.rate; // clip time: an action may run faster than the clock
+    this.playedMs += step;
+    this.inFrameMs += step;
     // Step through as many frames as the time covers (bounded: a long frame of the app cannot spin here).
     for (let step = 0; step < 256; step++) {
       const anim = this.anims[this.name];
@@ -104,7 +108,7 @@ export class ClipPlayer {
         this.inFrameMs = hold; // the last frame is held
         return;
       } else {
-        const spill = this.inFrameMs - hold; // the one-shot ended: back to the loop, keeping the leftover time
+        const spill = (this.inFrameMs - hold) / this.rate; // the one-shot ended: back to the loop, keeping the leftover clock time
         this.start(loop, 'loop');
         this.inFrameMs = spill;
         this.playedMs = spill;
@@ -118,6 +122,7 @@ export class ClipPlayer {
     this.index = 0;
     this.inFrameMs = 0;
     this.playedMs = 0;
+    this.rate = 1;
     const anim = this.anims[clip];
     this.totalMs = 0;
     if (anim !== undefined) for (const ms of anim.ms) this.totalMs += ms;

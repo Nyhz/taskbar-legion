@@ -1,20 +1,23 @@
 import { useStore } from '@/state/store';
-import { talentTree } from '@/data/talents';
+import { CAPSTONE_BRANCH_POINTS, rowUnlockThreshold, talentTree } from '@/data/talents';
 import { MAX_LEVEL } from '@/data/stageScaling';
 import { aggregate } from '@/sim/stats';
 import { equipmentMods, heroBaseStats, talentPassiveMods } from '@/sim/loadout';
-import { MAX_ACTIVE_ABILITIES, canSpend, learnedAbilityNodes, spentPoints } from '@/sim/talentRules';
+import { MAX_ACTIVE_ABILITIES, branchPoints, canSpend, learnedAbilityNodes, spentPoints } from '@/sim/talentRules';
 import { getBonuses } from '@/sim/bonuses';
-import { useT } from '@/i18n';
-import { Head, Key, Sign, Tip, TipLine, TipText, TipTitle, Title, type TipSide } from '@/ui/kit';
+import { talentBranchName, useT } from '@/i18n';
+import { Head, Key, Sign, Tip, TipLine, TipName, TipSub, TipText, TipTitle, Title, type TipSide } from '@/ui/kit';
+import { branchArtStem } from '@/ui/abilityArt';
 import { classCrestStem } from '@/ui/itemArt';
 import { TalentsTabNode } from './TalentsTabNode';
-import { layoutTalentTree, spentBarFill, type PlacedNode } from './talentsLayout';
+import { EITHER, layoutTalentTree, spentBarFill, type PlacedNode } from './talentsLayout';
 import './TalentsTab.css';
 
 // The talents wing's content. It shows the class tree (data/talents: ten tiers, tier N opens at (N−1)·10 points
 // spent; a common trunk, then two branches side by side and their capstones) laid out top to bottom, one row
-// per tier — see talentsLayout. Left-click raises a node, right-click lowers it; the ranked abilities ARE the
+// per tier — see talentsLayout. Each branch opens with its sign (its name, and the points spent in it, are in
+// the tooltip) and a spine runs down its lane to its capstone; the two nodes of a "choose one" are joined by a
+// link with the either-or diamond. Left-click raises a node, right-click lowers it; the ranked abilities ARE the
 // active ones, at most MAX_ACTIVE_ABILITIES: once that many are learned, every other ability is disabled.
 // Giving every point back is free. Nothing here decides a rule: sim/talentRules.canSpend says whether a node
 // can be raised (and why not), and the store's spendTalent / refundTalent apply it.
@@ -121,6 +124,51 @@ export function TalentsTab({ heroId }: { heroId: string }): React.JSX.Element | 
             <i key={tier.tier} style={{ top: tier.y }} />
           ))}
         </div>
+        {layout.spines.map((spine) => {
+          const have = branchPoints(hero.classKey, hero.talents, spine.branchKey);
+          return (
+            <span
+              key={spine.branchKey}
+              className={`tk-tal-spine${have > 0 ? ' on' : ''}`}
+              style={{ left: spine.x, top: spine.y, height: spine.height }}
+            />
+          );
+        })}
+        {layout.heads.map((head) => {
+          const have = branchPoints(hero.classKey, hero.talents, head.branch.key);
+          const name = talentBranchName(hero.classKey, head.branch.key);
+          const firstTier = Math.min(...layout.nodes.filter((p) => p.node.lane === head.branch.key).map((p) => p.tier));
+          return (
+            <div
+              key={head.branch.key}
+              className={`tk-tal-head has${have >= CAPSTONE_BRANCH_POINTS ? ' full' : have > 0 ? ' on' : ''}`}
+              style={{ left: head.laneX, top: head.y, width: head.laneWidth }}
+            >
+              <Sign name={branchArtStem(hero.classKey, head.branch.key)} alt={name} />
+              <b>{have}</b>
+              <Tip side="right" size="wide">
+                <TipName tone="gold">{name}</TipName>
+                <TipSub>{t('talents.branch')}</TipSub>
+                <TipLine label={t('talents.branchSpent')} value={have} />
+                <TipText>{t('talents.branchHelp', { n: rowUnlockThreshold(firstTier), need: CAPSTONE_BRANCH_POINTS })}</TipText>
+              </Tip>
+            </div>
+          );
+        })}
+        {layout.links.map((link) => {
+          const taken = link.keys.some((key) => (hero.talents[key] ?? 0) > 0);
+          return (
+            <span
+              key={link.group}
+              className={`tk-tal-link${taken ? ' on' : ''}`}
+              style={{ left: link.x, top: link.y, width: link.width }}
+            >
+              <i style={{ left: Math.floor((link.width - EITHER) / 2), top: -Math.floor(EITHER / 2) }}>
+                <Sign name="tal_either" />
+              </i>
+            </span>
+          );
+        })}
         {layout.nodes.map(renderNode)}
       </div>
     </div>

@@ -1,10 +1,10 @@
 import type { ActiveEffect } from '@/data/effects';
 import { effectDef } from '@/data/effects';
-import { abilityDef, tryAbilityDef } from '@/data/abilities';
-import { abilityIcon } from '@/ui/icons';
+import { tryAbilityDef, type AbilityDef } from '@/data/abilities';
+import { castSignStem } from './castSign';
 import { hexToNum } from '@/styles/palette';
 
-// Shared visual vocabulary for combat FX: what color/glyph a cast or an ongoing
+// Shared visual vocabulary for combat FX: what colour and sign a cast or an ongoing
 // effect reads as on the strip. Render-only (reads data, never mutates the sim).
 
 export const FX = {
@@ -19,24 +19,29 @@ export const FX = {
 } as const;
 
 export interface CastFx {
-  glyph: string;
+  /** Art stem of the ability's sign (src/assets/ui), or null when the cast has none (enemies, unknown keys). */
+  sign: string | null;
   color: number;
 }
 
-/** A cast's flourish: the ability's OWN icon (its visual identity), tinted by whether
- *  it targets enemies (offense) or allies/self (support). */
+function hitsEnemies(def: AbilityDef): boolean {
+  return def.target === 'frontEnemy' || def.target === 'meleeEnemies' || def.target === 'allEnemies';
+}
+
+/** A cast's flourish: the ability's OWN sign (its visual identity) and a burst tinted by whether it targets
+ *  enemies (offense) or allies/self (support). Total: a key the data does not know — a trigger's marker, a
+ *  renamed ability from an old save — reads as a plain supportive burst with no sign; it never throws. */
 export function castFx(abilityKey: string): CastFx {
-  const def = abilityDef(abilityKey);
-  const offensive = def.target === 'frontEnemy' || def.target === 'meleeEnemies' || def.target === 'allEnemies';
-  return { glyph: abilityIcon(def), color: offensive ? FX.offense : FX.support };
+  const def = tryAbilityDef(abilityKey);
+  const offensive = def !== undefined && hitsEnemies(def);
+  return { sign: castSignStem(abilityKey), color: offensive ? FX.offense : FX.support };
 }
 
 /** True when a cast targets allies/self (a heal/buff/shield) rather than enemies — used
  *  to play the healer's heal-cast pose. Safe on unknown/renamed keys (treated as false). */
 export function isSupportCast(abilityKey: string): boolean {
   const def = tryAbilityDef(abilityKey);
-  if (def === undefined) return false;
-  return def.target !== 'frontEnemy' && def.target !== 'meleeEnemies' && def.target !== 'allEnemies';
+  return def !== undefined && !hitsEnemies(def);
 }
 
 /** True when a cast hits the WHOLE wave (target 'allEnemies' — Holy Nova, Raining Arrows).

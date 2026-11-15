@@ -7,10 +7,12 @@ import { SHEET_ACCOUNT_ART_HEIGHT, SHEET_MAX_STAT_ROWS, SHEET_STAT_ROW_ART } fro
 // The boxes of the talents and sheet wings, in art pixels (drop shadow included). Pure. Both are WING_ART_WIDTH
 // wide like every wing; only their heights differ.
 
-/** Talents: the head line (20), the line of the active abilities and the points (20), a gap (3), then the tree
- *  (the tallest of the classes). */
+/** Talents: the head line (20), the line of the active abilities and the points (TALENTS_LINE_ART), a gap
+ *  (TALENTS_TREE_GAP_ART), then the tree (the tallest of the classes). */
+export const TALENTS_LINE_ART = 14;
+export const TALENTS_TREE_GAP_ART = 1;
 export const TALENTS_CONTENT_ART_HEIGHT =
-  20 + 20 + 3 + Math.max(...CLASS_KEYS.map((c) => layoutTalentTree(talentTree(c)).height));
+  20 + TALENTS_LINE_ART + TALENTS_TREE_GAP_ART + Math.max(...CLASS_KEYS.map((c) => layoutTalentTree(talentTree(c)).height));
 export const TALENTS_WING_ART = {
   width: WING_ART_WIDTH,
   height: WINDOW_FRAME_ART + TALENTS_CONTENT_ART_HEIGHT + WINDOW_SHADOW_ART,

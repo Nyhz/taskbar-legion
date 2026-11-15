@@ -1,0 +1,162 @@
+{
+  "fx_damage": {
+    "en": "Damage",
+    "es": "Daño"
+  },
+  "fx_heal": {
+    "en": "Heal",
+    "es": "Cura"
+  },
+  "fx_shield": {
+    "en": "Shield",
+    "es": "Escudo"
+  },
+  "fx_dot": {
+    "en": "Bleed",
+    "es": "Sangrado"
+  },
+  "fx_hot": {
+    "en": "Renew",
+    "es": "Renovación"
+  },
+  "buff_fast_fire": {
+    "en": "Rapid Fire",
+    "es": "Fuego rápido"
+  },
+  "buff_infusion_as": {
+    "en": "Power Infusion",
+    "es": "Infusión de poder"
+  },
+  "buff_infusion_cdr": {
+    "en": "Power Infusion",
+    "es": "Infusión de poder"
+  },
+  "buff_guard_block": {
+    "en": "Stone Skin",
+    "es": "Piel de piedra"
+  },
+  "buff_battlecry_ad": {
+    "en": "Battle Cry",
+    "es": "Grito de guerra"
+  },
+  "buff_battlecry_crit": {
+    "en": "Battle Cry",
+    "es": "Grito de guerra"
+  },
+  "buff_bloodlust_as": {
+    "en": "Bloodlust",
+    "es": "Sed de sangre"
+  },
+  "buff_bloodlust_ls": {
+    "en": "Bloodlust",
+    "es": "Sed de sangre"
+  },
+  "debuff_weaken": {
+    "en": "Debilitated",
+    "es": "Debilitado"
+  },
+  "fx_invuln": {
+    "en": "Last Stand",
+    "es": "Última resistencia"
+  },
+  "fx_mark": {
+    "en": "Mark of the Hunter",
+    "es": "Marca del cazador"
+  },
+  "buff_enrage_cdr": {
+    "en": "Battle Enrage",
+    "es": "Furia de batalla"
+  },
+  "buff_enrage_as": {
+    "en": "Battle Enrage",
+    "es": "Furia de batalla"
+  },
+  "buff_boss_frenzy": {
+    "en": "Frenzy",
+    "es": "Frenesí"
+  },
+  "debuff_mortal_wound": {
+    "en": "Mortal Wound",
+    "es": "Herida mortal"
+  },
+  "debuff_expose": {
+    "en": "Expose",
+    "es": "Expuesto"
+  },
+  "debuff_silence": {
+    "en": "Silence",
+    "es": "Silencio"
+  },
+  "buff_holdline_dr": {
+    "en": "Hold the Line",
+    "es": "Mantener la línea"
+  },
+  "buff_standard_block": {
+    "en": "Standard Bearer",
+    "es": "Portaestandarte"
+  },
+  "buff_standard_armor": {
+    "en": "Standard Bearer",
+    "es": "Portaestandarte"
+  },
+  "debuff_riposte_weaken": {
+    "en": "Riposte",
+    "es": "Réplica"
+  },
+  "debuff_cripple": {
+    "en": "Crippled",
+    "es": "Lisiado"
+  },
+  "debuff_vengeance_weaken": {
+    "en": "Vengeance",
+    "es": "Venganza"
+  },
+  "debuff_vengeance_slow": {
+    "en": "Vengeance",
+    "es": "Venganza"
+  },
+  "debuff_weakspot": {
+    "en": "Weak Spot",
+    "es": "Punto débil"
+  },
+  "fx_tar": {
+    "en": "Burning Tar",
+    "es": "Brea ardiente"
+  },
+  "debuff_tar_slow": {
+    "en": "Tarred",
+    "es": "Embreado"
+  },
+  "buff_focused_fire": {
+    "en": "Focused Fire",
+    "es": "Fuego concentrado"
+  },
+  "fx_burn": {
+    "en": "Scorched",
+    "es": "Abrasado"
+  },
+  "debuff_field_vuln": {
+    "en": "Killing Field",
+    "es": "Campo de muerte"
+  },
+  "debuff_field_slow": {
+    "en": "Killing Field",
+    "es": "Campo de muerte"
+  },
+  "fx_sanctuary": {
+    "en": "Sanctuary",
+    "es": "Santuario"
+  },
+  "fx_light": {
+    "en": "Mending Light",
+    "es": "Luz reparadora"
+  },
+  "fx_ward": {
+    "en": "Ward",
+    "es": "Custodia"
+  },
+  "buff_aegis_dr": {
+    "en": "Aegis",
+    "es": "Égida"
+  }
+}

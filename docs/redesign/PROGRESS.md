@@ -604,3 +604,19 @@ conservadora, marcada como provisional; si salta el límite de uso, dejar anotad
         llegado al combate"; Guardián alcanza a todo el grupo, Knight incluido.
       - Flojo: Muro Viviente casi nunca salta con Knight–Ranger–Priest; `switchClass` sigue borrando talentos sin
         devolver puntos (ya era así); `sim/abilities.ts` ronda las 600 líneas.
+- [x] **Bloque 4b — panel de talentos, textos de clases y la tira** (lab v48).
+      - Panel de talentos para el árbol nuevo: 168 × 313 px de arte en las tres clases (tope 314); fila de ramas con
+        signo y puntos, línea hasta el remate, enlace "elige una", marco propio para talentos de rol, nodos apagados
+        con su motivo en el tooltip (dos habilidades, nivel cerrado, modificador sin habilidad, remate sin puntos).
+      - Signos PROVISIONALES (`icon_sets/s9d_classes.py`, 22 piezas): seis habilidades nuevas, cuatro ramas, nueve
+        talentos de rol, tres marcos. Modificadores y remates siguen usando el signo de su habilidad o definitiva.
+      - Textos EN/ES: diccionarios `src/data/i18n/es/{abilities,talents,effects}.json`; la simulación devuelve hechos
+        (`sim/talentFacts.ts`, `sim/abilityFacts.ts`) y la interfaz escribe la frase (`talentWords.ts`, ~30 claves
+        `talents.*`). TODOS los nombres son provisionales (Réplica, Sanar, Castigo, Remate, Acechador, Celo…).
+      - Tira: clips para las seis habilidades nuevas; `castFx` ya no lanza con claves desconocidas; el emoji al
+        lanzar es ahora el signo de píxel de la habilidad; efectos de área reescalados a las figuras nuevas y
+        efectos nuevos (Mantener la línea, Santuario, Frasco de brea); el clip del ataque básico se adelanta para
+        que el golpe caiga en su fotograma de impacto (solo presentación); palabras flotantes traducidas.
+      - Sin ver: tooltips bajo puntero real en captura (solo 2 de 8 intentos), reglas del Ranger y la Priest por la
+        tienda (solo abiertos y leídos), Réplica y varias definitivas en la tira, nada en Tauri. Las auras de grupo
+        no salen aún en las cifras del héroe ni de la hoja. Queda sin uso `TARGET_LABEL` en `data/abilities.ts`.

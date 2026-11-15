@@ -1,5 +1,4 @@
 import type { AbilityDef, AbilityPower, AbilityTarget, AppliedEffect } from '@/data/abilities';
-import { TARGET_LABEL } from '@/data/abilities';
 import type { EffectDef } from '@/data/effects';
 import { effectDef } from '@/data/effects';
 import type { Combatant, CombatEvent } from './world';
@@ -8,11 +7,9 @@ import type { EffectiveStats } from './stats';
 import { applyEffect, absorbDamage, isSilenced, isInvulnerable, vulnerabilityMult, weakenMult, healReceivedMult } from './effects';
 import { dealtMult, liveStats } from './liveStats';
 import { onCrit, type TriggerCtx } from './triggers';
-import { STATS } from '@/data/stats';
 import { classDef } from '@/data/classes';
 import { mitigation, MAX_DAMAGE_REDUCTION } from '@/data/stageScaling';
 import { healPowerEffectiveness } from '@/data/difficulties';
-import { format } from './num';
 
 // Cooldown tracking + AI cast logic. Abilities apply declarative effects; power
 // effects (damage/heal/shield/dot/hot) scale off the caster/target stats, stat
@@ -56,12 +53,12 @@ export function normalAttackDamage(caster: Combatant, cs: EffectiveStats): numbe
 }
 
 /** The power an applied effect resolves against: its own, or the ability's. */
-function powerOf(ability: AbilityDef, applied: AppliedEffect): AbilityPower | undefined {
+export function powerOf(ability: AbilityDef, applied: AppliedEffect): AbilityPower | undefined {
   return applied.power ?? ability.power;
 }
 
 /** The effect's coefficient at a rank: (coeff + per-rank growth) × the share of it this effect takes. */
-function effectCoeff(ability: AbilityDef, applied: AppliedEffect, steps: number): number | undefined {
+export function effectCoeff(ability: AbilityDef, applied: AppliedEffect, steps: number): number | undefined {
   const p = powerOf(ability, applied);
   if (p === undefined) return undefined;
   return (p.coeff + (p.coeffPerRank ?? 0) * steps) * (applied.powerScale ?? 1);
@@ -73,7 +70,7 @@ function effectCoeff(ability: AbilityDef, applied: AppliedEffect, steps: number)
  *  duration, divided into per-second in applyToTarget). Heal/HoT/Shield are a
  *  fraction of the target's max HP (HoT = TOTAL over its duration). Each effect resolves
  *  against its OWN power when it has one, else the ability's (docs/redesign/CLASSES.md, F3). */
-function effectMagnitude(ability: AbilityDef, applied: AppliedEffect, def: EffectDef, rank: number, cs: EffectiveStats, target: Combatant, caster: Combatant, coeffOverride?: number, healEff = 1): number {
+export function effectMagnitude(ability: AbilityDef, applied: AppliedEffect, def: EffectDef, rank: number, cs: EffectiveStats, target: Combatant, caster: Combatant, coeffOverride?: number, healEff = 1): number {
   const steps = Math.max(0, rank - 1);
   const t = def.kind.type;
   if (t === 'damage' || t === 'dot') {
@@ -101,7 +98,7 @@ function effectMagnitude(ability: AbilityDef, applied: AppliedEffect, def: Effec
   return base + perRank * steps;
 }
 
-function effectDuration(ability: AbilityDef, def: EffectDef, rank: number, override?: number): number {
+export function effectDuration(ability: AbilityDef, def: EffectDef, rank: number, override?: number): number {
   const steps = Math.max(0, rank - 1);
   return (override ?? def.durationMs) + (ability.rankScaling?.perRank.durationMs ?? 0) * steps;
 }
@@ -510,93 +507,10 @@ export function resolveChanneledCast(
   return resolved.def.key;
 }
 
-// ── Tooltip helpers (pure; UI reads these to show scaled values at a hero's stats) ──
+// ── Tooltip helpers (pure; UI reads these to show scaled values at a hero's stats). What each effect of an
+// ability does at a rank, as data for the interface to word, is sim/abilityFacts.ts. ──
 
 /** Effective cooldown (ms) of an ability at a rank given the caster's stats. */
 export function abilityCooldownMs(ability: AbilityDef, rank: number, cs: EffectiveStats): number {
   return effectiveCooldown(ability, Math.max(1, rank), cs);
-}
-
-/** Party-aura line for an aura ability at a rank (e.g. "+5% Attack Damage to the whole
- *  party"), or null if the ability has no aura. Mirrors sim/loadout.partyAuraMods so the
- *  tooltip shows exactly what the slotted aura grants. */
-export function abilityAuraLine(ability: AbilityDef, rank: number): string | null {
-  const a = ability.aura;
-  if (a === undefined) return null;
-  const r = Math.max(1, rank);
-  const value = a.baseValue + a.valuePerRank * (r - 1);
-  const pct = STATS[a.stat].kind === 'percent';
-  const sign = value >= 0 ? '+' : '−';
-  const mag = pct ? Math.round(Math.abs(value)) : Math.abs(value).toFixed(1);
-  return `${sign}${mag}${pct ? '%' : ''} ${STATS[a.stat].label} to the whole party`;
-}
-
-/** Human-readable line per applied effect, with magnitudes resolved at the given
- *  rank + stats. `refMaxHp` stands in for the target's max HP (heal/shield basis). An effect with a
- *  target of its own says who it lands on. */
-export function abilityEffectLines(ability: AbilityDef, rank: number, cs: EffectiveStats, refMaxHp: number, healEff = 1): string[] {
-  const r = Math.max(1, rank);
-  const refTarget = { maxHp: refMaxHp } as Combatant;
-  const refCaster = { side: 'hero' } as Combatant;
-  const pf = (x: number): string => `${+x.toFixed(1)}%`;
-  const n = (x: number): string => format(Math.round(x));
-  const lines: string[] = [];
-  for (const applied of ability.applies) {
-    const def = effectDef(applied.effectKey);
-    const k = def.kind;
-    const who = applied.target ?? ability.target;
-    const dur = effectDuration(ability, def, r, applied.durationMsOverride);
-    const durS = (dur / 1000).toFixed(dur % 1000 === 0 ? 0 : 1);
-    // DoT magnitudes are TOTALS over the duration (see effectMagnitude); damage/dot scale
-    // with the caster's own attack, so the displayed hero's stats give the real number.
-    const v = effectMagnitude(ability, applied, def, r, cs, refTarget, refCaster);
-    // Heal/HoT/Shield scale with the TARGET's max HP (× heal power), so a flat number is
-    // meaningless in a tooltip — the target varies and isn't the caster. Show the % of max
-    // HP it actually grants (heal-power-amplified AND zone-debuffed via healEff, matching the
-    // combat formula), labelled by whose HP it's a fraction of.
-    const healPct = (effectCoeff(ability, applied, r - 1) ?? 0) * (1 + (cs.healPower * healEff) / 100) * 100;
-    const hpBasis = who === 'self' ? 'your max HP' : who === 'tank' ? "the tank's max HP" : "the target's max HP";
-    const pre = applied.chance !== undefined ? `${Math.round(applied.chance * 100)}% chance: ` : '';
-    const at = applied.target !== undefined ? ` (${TARGET_LABEL[applied.target].toLowerCase()})` : '';
-    const power = powerOf(ability, applied);
-    switch (k.type) {
-      case 'damage':
-        lines.push(`${pre}Damage ~${n(v)}${power?.alwaysCrit === true ? ' (always crits)' : power?.canCrit === true ? ' (can crit)' : ''}${at}`);
-        break;
-      case 'dot':
-        lines.push(`${pre}~${n(v)} damage over ${durS}s${at}`);
-        break;
-      case 'heal':
-        lines.push(`${pre}Heal ${pf(healPct)} of ${hpBasis}${at}`);
-        break;
-      case 'hot':
-        lines.push(`${pre}Heal ${pf(healPct)} of ${hpBasis} over ${durS}s${at}`);
-        break;
-      case 'shield':
-        lines.push(`${pre}Shield ${pf(healPct)} of ${hpBasis} for ${durS}s${at}`);
-        break;
-      case 'statMod': {
-        const pct = k.mode === 'percent';
-        const sign = v >= 0 ? '+' : '−';
-        const mag = Math.abs(v);
-        lines.push(`${pre}${sign}${pct ? +mag.toFixed(1) : mag.toFixed(1)}${pct ? '%' : ''} ${STATS[k.stat].label} for ${durS}s${at}`);
-        break;
-      }
-      case 'weaken':
-        lines.push(`${pre}−${+v.toFixed(1)}% damage dealt for ${durS}s${at}`);
-        break;
-      case 'vulnerable':
-        lines.push(`${pre}+${+v.toFixed(1)}% damage taken for ${durS}s${at}`);
-        break;
-      case 'root':
-        lines.push(`${pre}Root ${durS}s`);
-        break;
-      case 'silence':
-        lines.push(`${pre}Silence ${durS}s`);
-        break;
-      default:
-        break;
-    }
-  }
-  return lines;
 }

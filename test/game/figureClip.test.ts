@@ -121,4 +121,19 @@ describe('ClipPlayer', () => {
     expect(p.clip).toBe('idle');
     expect(p.frame).toBeLessThan(4);
   });
+
+  it('plays an action faster when asked to, and its loop at the normal pace again', () => {
+    const p = new ClipPlayer(ANIMS);
+    expect(p.act('attack', false, 2)).toBe(true); // 1000 ms of clip in 500 ms of clock
+    p.advance(250, false);
+    expect([p.clip, p.frame]).toEqual(['attack', 5]);
+    p.advance(300, false); // 50 ms of clock past its end spill into the loop, unhurried
+    expect(p.acting).toBe(false);
+    expect([p.clip, p.frame]).toEqual(['idle', 0]);
+    p.advance(60, false);
+    expect(p.frame).toBe(1);
+    expect(p.act('attack')).toBe(true); // the next one is back to the drawn pace
+    p.advance(250, false);
+    expect(p.frame).toBe(2);
+  });
 });

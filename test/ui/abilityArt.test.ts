@@ -5,11 +5,12 @@ import {
   FALLBACK_ABILITY_ART,
   FALLBACK_ULTIMATE_ART,
   abilityArtStem,
+  branchArtStem,
   talentNodeArtStem,
   ultimateArtStem,
 } from '@/ui/abilityArt';
 import { CLASS_KEYS } from '@/data/classes';
-import { talentNodes } from '@/data/talents';
+import { talentNodes, talentTree } from '@/data/talents';
 import { ULTIMATES } from '@/data/ultimates';
 
 // Every stem the mapping can produce must be a file the pipeline exported (src/assets/ui).
@@ -43,6 +44,27 @@ describe('ability art', () => {
   it('every node of every talent tree has a sign whose file exists', () => {
     for (const c of CLASS_KEYS) {
       for (const n of talentNodes(c)) expect(EXPORTED.has(talentNodeArtStem(c, n)), `${n.key} → ${talentNodeArtStem(c, n)}`).toBe(true);
+    }
+  });
+
+  it('every branch has a sign of its own, and the file exists', () => {
+    const stems = CLASS_KEYS.flatMap((c) => talentTree(c).branches.map((b) => branchArtStem(c, b.key)));
+    expect(stems).toHaveLength(6);
+    for (const stem of stems) expect(EXPORTED.has(stem), stem).toBe(true);
+    expect(new Set(stems).size).toBe(stems.length);
+    expect(stems).not.toContain(FALLBACK_ULTIMATE_ART);
+    expect(EXPORTED.has(branchArtStem('knight', 'no_such_branch'))).toBe(true);
+    // A role talent's frame is drawn in its three states.
+    for (const state of ['off', 'on', 'max']) expect(EXPORTED.has(`tal_role_${state}`)).toBe(true);
+  });
+
+  it('every role talent has a sign no other node of its tree uses', () => {
+    for (const c of CLASS_KEYS) {
+      const nodes = talentNodes(c);
+      for (const n of nodes.filter((x) => x.kind === 'role')) {
+        const stem = talentNodeArtStem(c, n);
+        expect(nodes.filter((x) => talentNodeArtStem(c, x) === stem).map((x) => x.key), stem).toEqual([n.key]);
+      }
     }
   });
 

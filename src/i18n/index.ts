@@ -24,3 +24,7 @@ export {
   techDescription, techName, tierName, weaponTypeName,
 } from './names';
 export { creatureName, worldName } from './names';
+export {
+  abilityDescription, abilityName, effectName, talentBranchName, talentNodeDescription, talentNodeName, ultimateDescription,
+  ultimateName,
+} from './names';

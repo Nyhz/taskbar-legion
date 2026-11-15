@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { CLASS_KEYS } from '@/data/classes';
 import { talentNodes, talentTree } from '@/data/talents';
-import { GUTTER, layoutTalentTree, nodeSize, spentBarFill } from '@/ui/panels/hero/talentsLayout';
+import { EITHER, GUTTER, HEAD_ROW, HEAD_SIGN, layoutTalentTree, nodeSize, spentBarFill } from '@/ui/panels/hero/talentsLayout';
 import { TALENTS_WING_ART } from '@/ui/panels/hero/wingLayout';
 import { WING_CONTENT_ART, WING_MAX_ART_HEIGHT } from '@/ui/panels/panelLayout';
 
@@ -51,17 +51,81 @@ describe('talents wing layout (vertical: a tier is a row)', () => {
     }
   });
 
-  it('tiers run top to bottom without gaps, one row each', () => {
+  it('tiers run top to bottom, one row each, with the branch heads in a row of their own under the trunk', () => {
     for (const classKey of CLASS_KEYS) {
       const tree = talentTree(classKey);
       const layout = layoutTalentTree(tree);
       expect(layout.tiers).toHaveLength(tree.rows.length);
       let y = 0;
-      for (const tier of layout.tiers) {
+      layout.tiers.forEach((tier, i) => {
+        if (i === 4) y += HEAD_ROW; // tier 5 is the first of the branches
         expect(tier.y).toBe(y);
         y += tier.height;
-      }
+      });
       expect(layout.height).toBe(y);
+    }
+  });
+
+  it('each branch has a head centred on its lane, between the trunk and its first tier', () => {
+    for (const classKey of CLASS_KEYS) {
+      const tree = talentTree(classKey);
+      const layout = layoutTalentTree(tree);
+      expect(layout.heads.map((h) => h.branch.key)).toEqual(tree.branches.map((b) => b.key));
+      const trunkEnd = Math.max(...layout.nodes.filter((p) => p.tier < 4).map((p) => p.y + nodeSize(p.node)));
+      const branchTop = layout.tiers[4]?.y ?? 0;
+      layout.heads.forEach((head, i) => {
+        expect(head.laneX).toBe(GUTTER + i * head.laneWidth);
+        expect(head.x + HEAD_SIGN / 2).toBe(head.laneX + head.laneWidth / 2);
+        expect(head.y).toBeGreaterThanOrEqual(trunkEnd - 1); // it may stand on the pips' line, never on a node
+        expect(head.y + HEAD_SIGN).toBeLessThanOrEqual(branchTop + 1); // its last row is the sign's empty margin
+        // The sign stands in the gap between the two trunk nodes above it and the two branch nodes under it.
+        for (const p of layout.nodes.filter((q) => q.node.lane === head.branch.key)) {
+          const size = nodeSize(p.node);
+          const overlaps = p.x < head.x + HEAD_SIGN - 1 && head.x + 1 < p.x + size && p.y < head.y + HEAD_SIGN - 1 && head.y + 1 < p.y + size;
+          expect(overlaps, p.node.key).toBe(false);
+        }
+      });
+    }
+  });
+
+  it('a spine runs down the middle of each lane from its head to its capstone, between the nodes', () => {
+    for (const classKey of CLASS_KEYS) {
+      const layout = layoutTalentTree(talentTree(classKey));
+      expect(layout.spines).toHaveLength(2);
+      for (const spine of layout.spines) {
+        const cap = layout.nodes.find((p) => p.node.lane === spine.branchKey && p.node.kind === 'capstone');
+        expect(cap).toBeDefined();
+        if (cap === undefined) continue;
+        expect(spine.y + spine.height).toBe(cap.y); // it ends on the capstone
+        expect(spine.x).toBeGreaterThan(cap.x);
+        expect(spine.x).toBeLessThan(cap.x + nodeSize(cap.node));
+        // No other node of the lane sits on the spine.
+        for (const p of layout.nodes.filter((q) => q.node.lane === spine.branchKey && q !== cap)) {
+          expect(spine.x < p.x || spine.x >= p.x + nodeSize(p.node), p.node.key).toBe(true);
+        }
+      }
+    }
+  });
+
+  it('every "choose one" pair is linked: a branch’s two modifiers and the two capstones', () => {
+    for (const classKey of CLASS_KEYS) {
+      const layout = layoutTalentTree(talentTree(classKey));
+      const groups = new Set(talentNodes(classKey).flatMap((n) => (n.chooseGroup === undefined ? [] : [n.chooseGroup])));
+      expect(layout.links.map((l) => l.group).sort()).toEqual([...groups].sort());
+      expect(layout.links).toHaveLength(3);
+      for (const link of layout.links) {
+        const [a, b] = link.keys.map((key) => layout.nodes.find((p) => p.node.key === key));
+        expect(a).toBeDefined();
+        expect(b).toBeDefined();
+        if (a === undefined || b === undefined) continue;
+        expect(a.node.chooseGroup).toBe(link.group);
+        expect(b.node.chooseGroup).toBe(link.group);
+        expect(link.x).toBe(a.x + nodeSize(a.node)); // from the left node's edge…
+        expect(link.x + link.width).toBe(b.x); // …to the right node's
+        expect(link.width).toBeGreaterThanOrEqual(EITHER); // room for the diamond
+        expect(link.y).toBeGreaterThan(a.y);
+        expect(link.y).toBeLessThan(a.y + nodeSize(a.node));
+      }
     }
   });
 

@@ -3,10 +3,12 @@ import type { Combatant } from '@/sim/world';
 import type { AttackStyle } from '@/data/field';
 import { RANGE } from '@/data/field';
 import { hexToNum } from '@/styles/palette';
-import { auraCategories, drawCategoryAuras, totalShield, drawShieldBar, crosshairRadius, drawFrenzyGround, hasFrenzy, type AuraRegion } from './effectAuras';
+import { auraCategories, drawCategoryAuras, totalShield, drawShieldBar, crosshairRadius, drawFrenzyGround, hasFrenzy, SMALL_MARK_RADIUS, type AuraRegion } from './effectAuras';
 import { FigureBody } from './FigureBody';
 import { DEATH } from './figureClip';
 import { clipMs, FEET_BELOW_ORIGIN, type EnemyRank } from './figureData';
+import { AttackLead, impactMs, swingEtaMs } from './attackLead';
+import { TICK_MS } from '@/sim/Simulation';
 import type { FigureSheet } from './figureTextures';
 import { ATTACK_CLIP, HURT_CLIP } from './heroClips';
 
@@ -60,6 +62,8 @@ export class EnemySprite extends Container {
   private readonly castBar = new Graphics(); // under-boss cast bar while channeling a special
   private readonly rankAura = new Graphics(); // ground pulse marking an elite / a world boss
   private readonly look: RankLook;
+  private readonly lead: AttackLead; // starts the attack clip ahead of the swing, so the blow lands with the hit
+  private readonly smallMark: boolean; // a vulnerability mark is a small reticle, not one framing the body
   private readonly hpBg = new Graphics();
   private readonly hpBar = new Graphics();
   private readonly tpRing = new Graphics();
@@ -86,6 +90,7 @@ export class EnemySprite extends Container {
     super();
     this.style = c.enemyMagic === true ? 'caster' : c.range >= RANGE.ranged ? 'ranged' : 'melee';
     this.look = RANK[rank];
+    this.smallMark = rank === 'normal' || rank === 'elite';
     // The standing figure's box, mirrored (the art faces right; enemies face the party on their left).
     const [left, top, right] = sheet.meta.box;
     const height = -top;
@@ -98,10 +103,17 @@ export class EnemySprite extends Container {
     this.deathHoldMs = death === undefined ? DEATH_FADE_MS : clipMs(death);
 
     this.figure = new FigureBody(sheet, -1);
+    const attackAnim = sheet.meta.anims[ATTACK_CLIP];
+    this.lead = new AttackLead(attackAnim === undefined ? 0 : impactMs(attackAnim));
     this.figure.position.set(0, FEET_Y);
     // The rank rings + frenzy pool sit on the ground UNDER the feet, then enrageAura behind the
     // body; HP bar + cast bar on top.
     this.addChild(this.rankAura, this.frenzyAura, this.enrageAura, this.figure, this.aura, this.hpBg, this.hpBar, this.castBar, this.tpRing);
+  }
+
+  /** True once this enemy has fallen (its corpse is still on screen): a spectacle aimed at the wave leaves it out. */
+  get fallen(): boolean {
+    return this.dying;
   }
 
   /** Begin the teleport-in materialise (grow + fade-in + ring). */
@@ -127,7 +139,16 @@ export class EnemySprite extends Container {
 
   /** Play the creature's attack animation. */
   swing(): void {
-    this.figure.clips.act(ATTACK_CLIP);
+    if (!this.lead.claim()) this.figure.clips.act(ATTACK_CLIP); // unless it was started early (leadAttack)
+  }
+
+  /** Start the attack clip EARLY so its blow lands with the hit (render/attackLead). Called every frame with
+   *  the sim's enemy and whether a hero is within its reach. */
+  leadAttack(c: Combatant, heroInReach: boolean, dtMs: number): void {
+    this.lead.tick(dtMs);
+    const eta = swingEtaMs(c.attackTimerMs, TICK_MS);
+    if (!c.alive || !heroInReach || c.movedThisTick === true || c.casting !== undefined || !this.lead.due(eta)) return;
+    if (this.figure.clips.act(ATTACK_CLIP, false, this.lead.rate(eta))) this.lead.started();
   }
 
   castBurst(color: number): void {
@@ -344,6 +365,7 @@ export class EnemySprite extends Container {
       halfW: Math.max(9, Math.min(this.halfW * 0.7, 26)),
       scale: this.auraScale,
       elapsed: this.elapsed,
+      ...(this.smallMark ? { mark: { cy: this.cy, radius: SMALL_MARK_RADIUS } } : {}),
     };
   }
 
@@ -351,7 +373,7 @@ export class EnemySprite extends Container {
    *  the ranger's ult crosshair flies in and locks onto this exact spot. */
   markPoint(): { x: number; y: number; radius: number } {
     const r = this.auraRegion();
-    return { x: this.x + r.cx, y: this.y + r.cy, radius: crosshairRadius(r) };
+    return { x: this.x + r.cx, y: this.y + (r.mark?.cy ?? r.cy), radius: crosshairRadius(r) };
   }
 
   /** This enemy's feet on the ground line (parent coords) — where an on-target effect such as

@@ -17,7 +17,9 @@ interface Fx {
   tick: (t: number) => void;
 }
 
-const ARROW_SCALE = 1.7;
+const ARROW_SCALE = 1; // the arrow at the figures' own scale: 1 art pixel = 1 strip pixel
+// The path is seen from the side: a ring lying on it is this flat (its height ÷ its width).
+const GROUND_RING_FLAT = 0.1;
 const ARROW_FALL = hexToNum('#e9e2d0');
 
 export class WorldFxLayer extends Container {
@@ -138,6 +140,47 @@ export class WorldFxLayer extends Container {
     });
   }
 
+  /** Tar Flask: a slick of tar spreads along the path under the [cx±halfW] band and burns — a row of flames
+   *  with bright cores, embers lifting off — for `dur`. Drawn on the GROUND layer (below the enemies). */
+  tarPool(cx: number, groundY: number, halfW: number, dur: number): void {
+    const g = new Graphics();
+    const TAR = hexToNum('#120c10');
+    const FLAME_DEEP = hexToNum('#d8431f');
+    const FLAME = hexToNum('#ff8a3a');
+    const FLAME_HI = hexToNum('#ffe27a');
+    const cy = groundY + 1;
+    const W = halfW + 8;
+    const flames = Math.max(5, Math.round(W / 6));
+    const seeds = Array.from({ length: flames }, () => Math.random());
+    this.push(g, dur, (t) => {
+      g.clear();
+      const grow = Math.min(1, t / 240); // splash out
+      const a = t > dur - 500 ? Math.max(0, (dur - t) / 500) : 1; // burn out
+      const rx = W * grow;
+      // the slick: a flat black band on the path with a ragged edge
+      g.rect(Math.round(cx - rx), cy - 1, Math.round(rx * 2), 3).fill({ color: TAR, alpha: 0.85 * a });
+      g.rect(Math.round(cx - rx * 0.92), cy + 2, Math.round(rx * 1.84), 1).fill({ color: TAR, alpha: 0.6 * a });
+      for (let i = 0; i < flames; i++) {
+        const seed = seeds[i] ?? 0;
+        const fx = Math.round(cx + ((i + 0.5) / flames * 2 - 1) * rx * 0.94);
+        const flick = 0.5 + 0.5 * Math.sin(t / (60 + seed * 50) + seed * 9);
+        const h = Math.round((5 + seed * 6) * (0.65 + 0.35 * flick) * grow * (0.5 + 0.5 * a));
+        if (h < 2) continue;
+        const lean = flick > 0.5 ? 1 : 0;
+        // a flame in three stacked steps: wide red base, orange body, a yellow core
+        g.rect(fx - 2, cy - Math.ceil(h * 0.4), 4, Math.ceil(h * 0.4)).fill({ color: FLAME_DEEP, alpha: 0.9 * a });
+        g.rect(fx - 1, cy - Math.ceil(h * 0.8), 3, Math.ceil(h * 0.8)).fill({ color: FLAME, alpha: 0.95 * a });
+        g.rect(fx - 1 + lean, cy - h, 1, h).fill({ color: FLAME, alpha: 0.95 * a });
+        g.rect(fx - 1, cy - Math.ceil(h * 0.45), 2, Math.ceil(h * 0.45)).fill({ color: FLAME_HI, alpha: a });
+        // an ember drifting up off every other flame
+        if (i % 2 === 0) {
+          const p = (t / 700 + seed) % 1;
+          g.rect(Math.round(fx + Math.sin(p * 6 + seed * 4) * 2), Math.round(cy - h - 2 - p * 14), 1, 1).fill({ color: FLAME_HI, alpha: (1 - p) * 0.9 * a });
+        }
+      }
+    });
+  }
+
   /** Caltrops: a spray of iron spikes erupts from `originX` (the ranger) and sweeps forward
    *  along the ground to `endX`, popping up in sequence then holding for `dur` and retracting.
    *  Drawn on the GROUND layer (below the enemies) so the wave walks over the spikes. */
@@ -223,29 +266,36 @@ export class WorldFxLayer extends Container {
     });
   }
 
-  /** Holy Nova: a golden ring + radiating rays + sparkles bursting through the wave. */
-  holyNova(cx: number, cy: number, radius: number): void {
+  /** Holy Nova: light bursts along the path through the [cx±halfW] band — a golden ring rolling out on the
+   *  ground and shafts of light rising from it, each a little later than the one before, then sparks. Sized to
+   *  the fighters: the shafts rise about one figure high, the ring stays on the ground line. */
+  holyNova(cx: number, groundY: number, halfW: number): void {
     const g = new Graphics();
     const GOLD = hexToNum('#ffe9a0');
     const WHITE = 0xfffbe8;
     const dur = 620;
+    const shafts = Math.max(5, Math.round(halfW / 9));
+    const seeds = Array.from({ length: shafts }, () => Math.random());
     this.push(g, dur, (t) => {
       g.clear();
       const k = Math.min(1, t / dur);
       const a = 1 - k;
-      const rr = radius * (0.2 + k * 0.95);
-      g.circle(cx, cy, rr).stroke({ color: WHITE, width: 4 * (1 - k) + 1, alpha: a });
-      g.circle(cx, cy, rr * 0.7).stroke({ color: GOLD, width: 3, alpha: a * 0.8 });
-      g.circle(cx, cy, rr * 0.35).fill({ color: WHITE, alpha: a * 0.4 });
-      const rays = 12;
-      for (let i = 0; i < rays; i++) {
-        const ang = (i / rays) * Math.PI * 2 + t / 800;
-        const r0 = rr * 0.55;
-        const r1 = rr * (1.05 + 0.12 * Math.sin(t / 90 + i));
-        g.moveTo(cx + Math.cos(ang) * r0, cy + Math.sin(ang) * r0)
-          .lineTo(cx + Math.cos(ang) * r1, cy + Math.sin(ang) * r1)
-          .stroke({ color: GOLD, width: 2, alpha: a * 0.9 });
-        g.circle(cx + Math.cos(ang) * r1, cy + Math.sin(ang) * r1, 1.6).fill({ color: WHITE, alpha: a });
+      const rx = halfW * (0.25 + k * 0.85);
+      const ry = Math.max(2, rx * GROUND_RING_FLAT);
+      g.ellipse(cx, groundY, rx, ry).stroke({ color: WHITE, width: 2, alpha: a });
+      g.ellipse(cx, groundY, rx * 0.7, ry * 0.7).stroke({ color: GOLD, width: 1, alpha: a * 0.8 });
+      for (let i = 0; i < shafts; i++) {
+        const seed = seeds[i] ?? 0;
+        const f = (i + 0.5) / shafts * 2 - 1; // -1 … 1 across the band
+        const local = t - Math.abs(f) * 180; // the burst travels outward from the middle
+        if (local < 0) continue;
+        const kk = Math.min(1, local / 380);
+        const h = Math.round((18 + seed * 16) * Math.sin(kk * Math.PI)); // rises, then sinks back
+        if (h < 1) continue;
+        const x = Math.round(cx + f * halfW);
+        g.rect(x - 1, groundY - h, 3, h).fill({ color: GOLD, alpha: 0.55 * (1 - kk * 0.5) });
+        g.rect(x, groundY - h, 1, h).fill({ color: WHITE, alpha: 0.95 * (1 - kk * 0.4) });
+        g.rect(x + (i % 2 === 0 ? 3 : -3), Math.round(groundY - h - 3 - kk * 8), 1, 1).fill({ color: WHITE, alpha: 1 - kk });
       }
     });
   }
@@ -279,8 +329,9 @@ export class WorldFxLayer extends Container {
     });
   }
 
-  /** A ground shockwave ring (boss AoE / war cry): expanding flattened ring + rising motes,
-   *  in `color`. Reads as an impact rolling out across the [cx±halfW] band. */
+  /** A ground shockwave ring (boss AoE / war cry / a party-wide call): a ring rolling out along the path over
+   *  the [cx±halfW] band with motes lifting off it, in `color`. The path is seen side-on, so the ring is a thin
+   *  ellipse hugging the ground line (GROUND_RING_FLAT) — it never climbs over the fighters. */
   shockwave(cx: number, groundY: number, halfW: number, color: number): void {
     const g = new Graphics();
     const dur = 560;
@@ -288,17 +339,15 @@ export class WorldFxLayer extends Container {
       g.clear();
       const k = Math.min(1, t / dur);
       const a = 1 - k;
-      const cy = groundY - 4;
-      const rx = halfW * (0.3 + k * 1.2);
-      const ry = rx * 0.32;
-      g.ellipse(cx, cy, rx, ry).stroke({ color, width: 4 * (1 - k) + 1, alpha: a });
-      g.ellipse(cx, cy, rx * 0.66, ry * 0.66).stroke({ color, width: 2, alpha: a * 0.7 });
+      const cy = groundY;
+      const rx = halfW * (0.3 + k * 0.8);
+      const ry = Math.max(2, rx * GROUND_RING_FLAT);
+      g.ellipse(cx, cy, rx, ry).stroke({ color, width: 2, alpha: a });
+      g.ellipse(cx, cy, rx * 0.66, ry * 0.66).stroke({ color, width: 1, alpha: a * 0.7 });
       for (let i = 0; i < 9; i++) {
-        const ang = (i / 9) * Math.PI * 2;
-        const rr = rx * 0.9;
-        const mx = cx + Math.cos(ang) * rr;
-        const my = cy + Math.sin(ang) * ry * 0.9 - k * 14;
-        g.circle(mx, my, 1.8 * (1 - k) + 0.5).fill({ color, alpha: a });
+        const mx = Math.round(cx + ((i + 0.5) / 9 * 2 - 1) * rx * 0.95);
+        const my = Math.round(cy - 2 - k * (8 + (i % 3) * 4));
+        g.rect(mx, my, 1, 2).fill({ color, alpha: a });
       }
     });
   }

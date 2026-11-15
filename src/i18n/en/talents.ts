@@ -1,5 +1,6 @@
-// The talents tab and the sheet tab of the hero window. Ability names, descriptions and effect lines are NOT
-// here: they still come in English from data/ and sim/ until the class redesign (docs/redesign/CLASSES.md).
+// The talents wing and the sheet wing of the hero window. The NAMES and descriptions of abilities, talents,
+// branches and effects are data texts (src/data/i18n/es, asked through i18n/names); what is here are the wing's
+// own words and the templates of the lines the interface writes from the simulation's facts.
 export const talents = {
   close: 'Close',
   // ── Talents tab: header ──
@@ -15,8 +16,21 @@ export const talents = {
   // ── Talents tab: nodes ──
   ability: 'Ability',
   passive: 'Passive',
+  kindRole: 'Role talent',
+  kindModifier: 'Modifier',
+  kindCapstone: 'Capstone',
   tierNeeds: 'Opens at {n} points spent.',
   capFull: 'Already has {max} abilities. Give back the points of one to learn another.',
+  blockGone: 'This talent no longer exists.',
+  needsAbility: 'Needs {name}.',
+  chooseOneTaken: 'Choose one: {name} is already taken.',
+  branchPointsShort: 'Needs {need} points in {branch} (has {have}).',
+  capstoneNeeds: 'Needs {n} points in {branch}. Only one capstone.',
+  chooseOnePair: 'Choose one of the pair.',
+  // ── Talents tab: the two branches ──
+  branch: 'Branch',
+  branchSpent: 'Points in this branch',
+  branchHelp: 'Opens at {n} points spent. Its capstone asks for {need} points in the branch, and only one capstone can be taken.',
   target: 'Target',
   cooldown: 'Cooldown',
   cooldownReduced: '{s} s (base {base} s)',
@@ -40,6 +54,26 @@ export const talents = {
   targetAllAllies: 'All allies',
   targetRandomDps: 'A random damage dealer',
   targetTank: 'The tank',
+  targetLowestOtherAlly: 'The other ally with the least life',
+  targetTwoHeroes: 'Two heroes',
+  // ── Talents tab: what an ability does, one line per effect (sim/abilityFacts) ──
+  fxDamage: 'Damage ~{n}',
+  fxDamageCrit: 'Damage ~{n} (can crit)',
+  fxDamageAlwaysCrit: 'Damage ~{n} (always crits)',
+  fxDot: '~{n} damage over {s} s',
+  fxHeal: 'Heals {pct} % of {life}',
+  fxHot: 'Heals {pct} % of {life} over {s} s',
+  fxShield: 'Shield of {pct} % of {life} for {s} s',
+  fxStat: '{value} {stat} for {s} s',
+  fxWeaken: '−{pct} % damage dealt for {s} s',
+  fxVulnerable: '+{pct} % damage taken for {s} s',
+  fxRoot: 'Roots for {s} s',
+  fxSilence: 'Silences for {s} s',
+  fxChance: '{pct} % chance: {line}',
+  fxAura: '{value} {stat} to the whole party',
+  lifeSelf: 'your max life',
+  lifeTank: 'the tank’s max life',
+  lifeTarget: 'the target’s max life',
   // ── Sheet tab ──
   sheetLifeNow: 'Life right now',
   sheetCeiling: 'Ceiling',

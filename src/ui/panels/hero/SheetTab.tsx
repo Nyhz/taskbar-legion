@@ -8,7 +8,7 @@ import { chestDropChance } from '@/sim/chests';
 import { format } from '@/sim/num';
 import { CHEST_TYPES, type ChestType } from '@/data/chests';
 import { effectDef } from '@/data/effects';
-import { chestName, useT } from '@/i18n';
+import { chestName, effectName, useT } from '@/i18n';
 import { Head, Rule, Sign, Tip, TipLine, TipTag, TipText, TipTitle, Title, type TipSide } from '@/ui/kit';
 import { classCrestStem } from '@/ui/itemArt';
 import { SheetStats } from './SheetStats';
@@ -111,10 +111,10 @@ export function SheetTab({ heroId }: { heroId: string }): React.JSX.Element | nu
           const left = `${(e.remainingMs / 1000).toFixed(1)} s`;
           return (
             <div key={`${e.defKey}-${i}`} className={`has ${def.beneficial ? 'good' : 'bad'}`}>
-              <Sign name={effectArtStem(e.defKey, def.beneficial)} alt={def.name} />
+              <Sign name={effectArtStem(e.defKey, def.beneficial)} alt={effectName(e.defKey)} />
               {left}
               <Tip side="above">
-                <TipTitle>{def.name}</TipTitle>
+                <TipTitle>{effectName(e.defKey)}</TipTitle>
                 <TipText>
                   {def.beneficial ? t('talents.sheetEffectGood') : t('talents.sheetEffectBad')}
                 </TipText>
