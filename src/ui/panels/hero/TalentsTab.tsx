@@ -1,8 +1,7 @@
 import { useStore } from '@/state/store';
 import { CAPSTONE_BRANCH_POINTS, rowUnlockThreshold, talentTree } from '@/data/talents';
 import { MAX_LEVEL } from '@/data/stageScaling';
-import { aggregate } from '@/sim/stats';
-import { equipmentMods, heroBaseStats, talentPassiveMods } from '@/sim/loadout';
+import { heroStats } from './heroStats';
 import { MAX_ACTIVE_ABILITIES, branchPoints, canSpend, learnedAbilityNodes, spentPoints } from '@/sim/talentRules';
 import { getBonuses } from '@/sim/bonuses';
 import { talentBranchName, useT } from '@/i18n';
@@ -29,7 +28,8 @@ function tipSide(p: PlacedNode, height: number): TipSide {
 
 export function TalentsTab({ heroId }: { heroId: string }): React.JSX.Element | null {
   const t = useT();
-  const hero = useStore((s) => s.roster.find((h) => h.id === heroId));
+  const roster = useStore((s) => s.roster);
+  const hero = roster.find((h) => h.id === heroId);
   const techRanks = useStore((s) => s.techRanks);
   const ownedPets = useStore((s) => s.ownedPets);
   const spendTalent = useStore((s) => s.spendTalent);
@@ -40,12 +40,7 @@ export function TalentsTab({ heroId }: { heroId: string }): React.JSX.Element | 
   const layout = layoutTalentTree(talentTree(hero.classKey));
   const spent = spentPoints(hero.talents);
   const learned = learnedAbilityNodes(hero.classKey, hero.talents).length;
-  const mods = [
-    ...equipmentMods(hero.equipment),
-    ...talentPassiveMods(hero.classKey, hero.talents),
-    ...getBonuses(techRanks, ownedPets).combatMods,
-  ];
-  const stats = aggregate(heroBaseStats(hero.classKey, hero.level), mods);
+  const stats = heroStats(hero, roster, getBonuses(techRanks, ownedPets), undefined);
   const nextTier = layout.tiers.find((tier) => tier.need > spent);
   const crest = classCrestStem(hero.classKey);
 

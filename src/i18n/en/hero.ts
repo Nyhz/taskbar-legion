@@ -21,6 +21,7 @@ export const hero = {
   gearUnder: 'Under-geared for this stage: farm more drops before pushing on.',
   vsStage: 'Against this stage',
   softCap: 'Ceiling',
+  partyAuras: 'From the party’s auras:',
   ultimate: 'Ultimate',
   triggerLethal: 'It fires when a lethal blow would land.',
   triggerBoss: 'It fires on engaging a stage or world boss.',

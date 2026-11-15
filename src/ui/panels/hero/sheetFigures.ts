@@ -14,6 +14,15 @@ export function statFigure(key: StatKey, value: number): string {
   return STATS[key].kind === 'percent' ? `${value.toFixed(1)} %` : format(Math.round(value));
 }
 
+/** What a party aura adds to a stat, as the sheet writes it: "+10 %" for a share of the stat or for points of a
+ *  percent stat, "+120" for a flat amount. */
+export function auraFigure(mod: { key: StatKey; mode: 'flat' | 'percent'; value: number }): string {
+  const sign = mod.value < 0 ? '−' : '+';
+  const size = Math.abs(mod.value);
+  if (mod.mode === 'percent' || STATS[mod.key].kind === 'percent') return `${sign}${Number(size.toFixed(1))} %`;
+  return `${sign}${format(Math.round(size))}`;
+}
+
 export type DefenseVerdict = 'under' | 'onLevel' | 'over';
 
 const DEF_UNDER = 0.9; // more than 10 % below the on-level defence → under-defended

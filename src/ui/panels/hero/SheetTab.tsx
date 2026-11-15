@@ -1,8 +1,6 @@
 import { useStore } from '@/state/store';
 import { getEngine } from '@/game/engineRef';
-import { aggregate } from '@/sim/stats';
-import { equipmentMods, heroBaseStats, talentPassiveMods } from '@/sim/loadout';
-import { effectStatMods } from '@/sim/effects';
+import { partyAuras } from '@/sim/partyStats';
 import { getBonuses } from '@/sim/bonuses';
 import { chestDropChance } from '@/sim/chests';
 import { format } from '@/sim/num';
@@ -11,12 +9,13 @@ import { effectDef } from '@/data/effects';
 import { chestName, effectName, useT } from '@/i18n';
 import { Head, Rule, Sign, Tip, TipLine, TipTag, TipText, TipTitle, Title, type TipSide } from '@/ui/kit';
 import { classCrestStem } from '@/ui/itemArt';
+import { heroStats } from './heroStats';
 import { SheetStats } from './SheetStats';
 import { bonusFigure, chanceFigure, effectArtStem, shareFigure } from './sheetFigures';
 import './SheetTab.css';
 
 // The sheet wing's content (two columns: the wing is narrow): everything the hero and the account have, as figures. Effective stats are
-// derived (never stored) exactly like combat does — gear + talents + account bonuses + the LIVE effects on the
+// derived (never stored) exactly like combat does — gear + talents + account bonuses + the party's auras + the LIVE effects on the
 // sim combatant, so a buff such as Stone Skin shows while it is up — then the account-wide economy and chest
 // figures (upgrades + pets), and the effects running now. It follows the sim clock a few times a second.
 
@@ -30,7 +29,8 @@ export function SheetTab({ heroId }: { heroId: string }): React.JSX.Element | nu
   const t = useT();
   useStore((s) => Math.floor(s.hud.clockMs / 250)); // live life and effects: refresh four times a second
   const stage = useStore((s) => s.hud.globalStage);
-  const hero = useStore((s) => s.roster.find((h) => h.id === heroId));
+  const roster = useStore((s) => s.roster);
+  const hero = roster.find((h) => h.id === heroId);
   const techRanks = useStore((s) => s.techRanks);
   const ownedPets = useStore((s) => s.ownedPets);
   if (hero === undefined) return null;
@@ -38,12 +38,8 @@ export function SheetTab({ heroId }: { heroId: string }): React.JSX.Element | nu
   const combatant = getEngine()?.world.heroes.find((h) => h.id === hero.id);
   const effects = combatant?.effects ?? [];
   const bonuses = getBonuses(techRanks, ownedPets);
-  const stats = aggregate(heroBaseStats(hero.classKey, hero.level), [
-    ...equipmentMods(hero.equipment),
-    ...talentPassiveMods(hero.classKey, hero.talents),
-    ...bonuses.combatMods,
-    ...effectStatMods(effects),
-  ]);
+  const stats = heroStats(hero, roster, bonuses, combatant);
+  const auras = partyAuras(roster);
   const crest = classCrestStem(hero.classKey);
 
   return (
@@ -61,7 +57,7 @@ export function SheetTab({ heroId }: { heroId: string }): React.JSX.Element | nu
           </div>
         )}
       </Head>
-      <SheetStats stats={stats} stage={stage} />
+      <SheetStats stats={stats} stage={stage} auras={auras} />
       <Rule />
       <div className="tk-sheet-accts">
         <Account

@@ -69,8 +69,13 @@ describe('sanitizeHeroTalents', () => {
       ],
     }));
     // Battle Cry is kept first (it was active)… but with the old passives gone only 10 points are left spent,
-    // and its tier opens at 20: it goes too, and its points come back. What is left is a build the tree accepts.
-    expect(out.loadouts?.[0]).toEqual({ classKey: 'knight', talents: { knight_guard: 5 }, activeAbilities: ['knight_guard'] });
+    // and its tier opens at 20: it goes, and the ability that had been left out for the two-ability cap takes
+    // its place. What is left is a build the tree accepts.
+    expect(out.loadouts?.[0]).toEqual({
+      classKey: 'knight',
+      talents: { knight_guard: 5, knight_debilitate: 5 },
+      activeAbilities: ['knight_guard', 'knight_debilitate'],
+    });
     expect(out.loadouts?.[1]).toBeNull(); // a preset of a removed class can never apply: dropped
     expect('loadouts' in sanitizeHeroTalents(hero({}))).toBe(false);
     expect(sanitizeHeroTalents(hero({ loadouts: [null, null] })).loadouts).toEqual([null, null]);

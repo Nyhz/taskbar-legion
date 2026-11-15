@@ -145,21 +145,42 @@ export function sanitizeTalents(
   } catch {
     return { talents: {}, talentPoints: earned };
   }
-  const out: Record<string, number> = {};
+  const ranked: Record<string, number> = {};
   for (const n of nodes) {
     const raw = source[n.key];
     if (typeof raw !== 'number' || !Number.isFinite(raw)) continue;
     const rank = Math.min(n.maxRank, Math.floor(raw));
-    if (rank >= 1) out[n.key] = rank;
+    if (rank >= 1) ranked[n.key] = rank;
   }
-  // Two abilities at most: the hero's active ones first, then tree order.
-  const abilities = nodes.filter((n) => n.kind === 'ability' && out[n.key] !== undefined);
+  // Two abilities at most: the hero's active ones first, then tree order. An ability chosen here can still
+  // fall to the tier or point rules below; when one does and another was left out for the cap, the build is
+  // made again without the fallen one, so the next candidate takes its place instead of being lost.
   const order = (n: TalentNode): number => {
     const i = preferred.indexOf(n.key);
     return i < 0 ? preferred.length : i;
   };
-  const kept = new Set([...abilities].sort((a, b) => order(a) - order(b)).slice(0, MAX_ACTIVE_ABILITIES).map((n) => n.key));
-  for (const n of abilities) if (!kept.has(n.key)) delete out[n.key];
+  let candidates = nodes.filter((n) => n.kind === 'ability' && ranked[n.key] !== undefined).sort((x, y) => order(x) - order(y));
+  for (;;) {
+    const kept = candidates.slice(0, MAX_ACTIVE_ABILITIES);
+    const out = trimToRules(classKey, nodes, ranked, new Set(kept.map((n) => n.key)), earned);
+    const fallen = kept.filter((n) => out[n.key] === undefined);
+    if (fallen.length === 0 || candidates.length <= MAX_ACTIVE_ABILITIES) {
+      return { talents: out, talentPoints: Math.max(0, earned - spentPoints(out)) };
+    }
+    candidates = candidates.filter((n) => !fallen.includes(n));
+  }
+}
+
+/** `ranked` (known nodes, clamped ranks) cut down to what the rules hold, with only the `kept` abilities. */
+function trimToRules(
+  classKey: string,
+  nodes: readonly TalentNode[],
+  ranked: Readonly<Record<string, number>>,
+  kept: ReadonlySet<string>,
+  earned: number,
+): Record<string, number> {
+  const out: Record<string, number> = { ...ranked };
+  for (const n of nodes) if (n.kind === 'ability' && !kept.has(n.key)) delete out[n.key];
   // Modifiers need their ability; a "choose one" keeps its first option.
   const groups = new Set<string>();
   for (const n of nodes) {
@@ -186,5 +207,5 @@ export function sanitizeTalents(
     delete out[stranded.nodeKey];
     for (const n of nodes) if (n.modifies === stranded.nodeKey) delete out[n.key];
   }
-  return { talents: out, talentPoints: Math.max(0, earned - spentPoints(out)) };
+  return out;
 }

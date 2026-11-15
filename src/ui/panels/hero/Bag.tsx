@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useStore } from '@/state/store';
 import { getBonuses } from '@/sim/bonuses';
+import { partyCombatMods } from '@/sim/partyStats';
 import { roleDeltaPct, visibleRoles, type RoleScores } from '@/sim/roleScore';
 import { format } from '@/sim/num';
 import { countFilled } from '@/sim/slots';
@@ -42,7 +43,8 @@ export function Bag({
   const buySlot = useStore((s) => s.buyInventorySlot);
   const sortInventory = useStore((s) => s.sortInventory);
   const stashAllGems = useStore((s) => s.stashAllGems);
-  const hero = useStore((s) => s.roster.find((h) => h.id === heroId));
+  const roster = useStore((s) => s.roster);
+  const hero = roster.find((h) => h.id === heroId);
   const techRanks = useStore((s) => s.techRanks);
   const ownedPets = useStore((s) => s.ownedPets);
   const stage = useStore((s) => s.hud.globalStage);
@@ -71,6 +73,8 @@ export function Bag({
     return family.flatMap((sl) => equipped[sl] ?? []);
   };
   const bonuses = getBonuses(techRanks, ownedPets);
+  // The comparison weighs gear with the party's auras on, as the fight does.
+  const partyMods = partyCombatMods(roster, bonuses.combatMods);
   const roleImpact =
     hero === undefined
       ? undefined
@@ -82,7 +86,7 @@ export function Bag({
             swapSlot: worn.slot,
             swapItem: newItem,
             talents: hero.talents,
-            extraMods: bonuses.combatMods,
+            extraMods: partyMods,
             stage,
             ignoreGems,
           });

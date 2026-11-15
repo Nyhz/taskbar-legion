@@ -14,12 +14,13 @@ export function StatColumn({ heroId }: { heroId: string }): React.JSX.Element | 
   const t = useT();
   const stage = useStore((s) => s.hud.globalStage);
   useStore((s) => s.hud.clockMs); // live effects on the combatant change the numbers
-  const hero = useStore((s) => s.roster.find((h) => h.id === heroId));
+  const roster = useStore((s) => s.roster);
+  const hero = roster.find((h) => h.id === heroId);
   const techRanks = useStore((s) => s.techRanks);
   const ownedPets = useStore((s) => s.ownedPets);
   if (hero === undefined) return null;
   const combatant = getEngine()?.world.heroes.find((h) => h.id === hero.id);
-  const stats = heroStats(hero, getBonuses(techRanks, ownedPets), combatant);
+  const stats = heroStats(hero, roster, getBonuses(techRanks, ownedPets), combatant);
   const { offence, defence } = dollStats(hero.classKey);
 
   const row = (key: StatKey): React.JSX.Element => {

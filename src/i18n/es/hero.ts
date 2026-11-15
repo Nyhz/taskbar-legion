@@ -22,6 +22,7 @@ export const hero: Record<keyof typeof en, string> = {
   gearUnder: 'Mal equipado para esta etapa: consigue más botín antes de seguir.',
   vsStage: 'Contra esta etapa',
   softCap: 'Techo',
+  partyAuras: 'De las auras del grupo:',
   ultimate: 'Definitiva',
   triggerLethal: 'Salta cuando va a recibir un golpe mortal.',
   triggerBoss: 'Salta al trabar combate con un jefe de etapa o de mundo.',

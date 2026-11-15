@@ -1,6 +1,4 @@
-import { aggregate } from '@/sim/stats';
-import { equipmentMods, heroBaseStats, talentPassiveMods } from '@/sim/loadout';
-import { effectStatMods } from '@/sim/effects';
+import { heroStatsNow, partyCombatMods } from '@/sim/partyStats';
 import type { Bonuses } from '@/sim/bonuses';
 import type { Combatant } from '@/sim/world';
 import { classDef } from '@/data/classes';
@@ -8,21 +6,17 @@ import { STATS, type StatKey } from '@/data/stats';
 import { format } from '@/sim/num';
 import type { HeroState } from '@/persistence/saveSchema';
 
-// The hero's effective stats, as the sim's combat aggregate computes them: gear + talents + account bonuses,
-// plus the live effects on the combatant (so a buff like Stone Skin shows while it is up). Derived, never stored.
+// The hero's effective stats, exactly as the party fights with them (sim/partyStats): gear + talents + account
+// bonuses + the PARTY's auras (a slotted aura ability, a role talent that gives the whole party a stat), plus the
+// live effects on the combatant (so a buff like Stone Skin shows while it is up). Derived, never stored.
 
 export function heroStats(
   hero: HeroState,
+  roster: readonly HeroState[],
   bonuses: Bonuses,
   combatant: Combatant | undefined,
 ): Record<StatKey, number> {
-  const mods = [
-    ...equipmentMods(hero.equipment),
-    ...talentPassiveMods(hero.classKey, hero.talents),
-    ...bonuses.combatMods,
-    ...effectStatMods(combatant?.effects ?? []),
-  ];
-  return aggregate(heroBaseStats(hero.classKey, hero.level), mods);
+  return heroStatsNow(hero, partyCombatMods(roster, bonuses.combatMods), combatant);
 }
 
 const OFFENCE: readonly StatKey[] = ['attackDamage', 'attackSpeed', 'critChance', 'critDamage'];

@@ -143,6 +143,20 @@ describe('sanitizeTalents (old or damaged saves)', () => {
     expect(learnedAbilityNodes('knight', byActive.talents).map((n) => n.key)).toEqual(['knight_guard', 'knight_bulwark']);
   });
 
+  it('an ability left out for the cap takes the place of a chosen one that the other rules drop', () => {
+    // Bulwark (tier 2) is preferred, but with 7 points spent its tier is closed: Cleave, cut for the cap, stays.
+    const few = sanitizeTalents('knight', { knight_guard: 2, knight_bulwark: 5, knight_debilitate: 5 }, 120, ['knight_bulwark', 'knight_guard']);
+    expect(few.talents).toEqual({ knight_guard: 2, knight_debilitate: 5 });
+    expect(few.talentPoints).toBe(113);
+    // The same when the chosen one falls for lack of earned points.
+    const poor = sanitizeTalents('knight', { knight_guard: 5, knight_bulwark: 5, knight_debilitate: 5 }, 8, ['knight_bulwark', 'knight_guard']);
+    expect(poor.talents).toEqual({ knight_guard: 5, knight_debilitate: 3 });
+    expect(poor.talentPoints).toBe(0);
+    // Nothing changes when the chosen two hold.
+    const fine = sanitizeTalents('knight', { knight_guard: 5, knight_bulwark: 5, knight_debilitate: 5, knight_t1_health: 5 }, 120, ['knight_bulwark', 'knight_guard']);
+    expect(fine.talents).toEqual({ knight_guard: 5, knight_bulwark: 5, knight_t1_health: 5 });
+  });
+
   it('clamps ranks, and ignores ranks that are not whole positive numbers', () => {
     const bad = { knight_guard: 99, knight_t1_health: -3, knight_t1_armor: Number.NaN, knight_debilitate: 2.9, knight_bulwark: '5' };
     const out = sanitizeTalents('knight', bad, 40);

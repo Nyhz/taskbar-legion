@@ -293,7 +293,15 @@ export const createPartySlice: StateCreator<GameStore, [], [], PartySlice> = (se
     const s = get();
     if (!s.unlockedClasses.includes(classKey)) return;
     set((st) => ({
-      roster: mapHero(st.roster, heroId, (h) => ({ ...h, classKey, talents: {}, activeAbilities: [] })),
+      // The old class's talents cannot follow the hero: its points all come back (respec is free), so nothing
+      // is lost by trying another class.
+      roster: mapHero(st.roster, heroId, (h) => ({
+        ...h,
+        classKey,
+        talents: {},
+        activeAbilities: [],
+        talentPoints: h.talentPoints + spentPoints(h.talents),
+      })),
       configEpoch: st.configEpoch + 1,
     }));
   },
