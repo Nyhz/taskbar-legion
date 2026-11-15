@@ -1,0 +1,202 @@
+{
+  "world.1": {
+    "en": "Golden Meadows",
+    "es": "Praderas doradas"
+  },
+  "world.2": {
+    "en": "Old Moss Forest",
+    "es": "Bosque viejo de musgo"
+  },
+  "world.3": {
+    "en": "The Stilt Marshes",
+    "es": "Marismas de los Pilotes"
+  },
+  "world.4": {
+    "en": "Red Rock Canyons",
+    "es": "Cañones de Roca Roja"
+  },
+  "world.5": {
+    "en": "Monastery Peaks",
+    "es": "Cumbres del Monasterio"
+  },
+  "world.6": {
+    "en": "Coast of Sunken Ruins",
+    "es": "Costa de las Ruinas Hundidas"
+  },
+  "world.7": {
+    "en": "Caverns of Crystal and Fungus",
+    "es": "Cavernas de cristal y hongos"
+  },
+  "world.8": {
+    "en": "Ash Lands and Forges",
+    "es": "Tierras de ceniza y forjas"
+  },
+  "world.9": {
+    "en": "Citadel among the Clouds",
+    "es": "Ciudadela entre las nubes"
+  },
+  "world.10": {
+    "en": "The Rift",
+    "es": "La Grieta"
+  },
+  "creature.boar": {
+    "en": "Bristleback Boar",
+    "es": "Jabalí cerdoso"
+  },
+  "creature.scarecrow": {
+    "en": "Hollow Scarecrow",
+    "es": "Espantapájaros hueco"
+  },
+  "creature.poacher": {
+    "en": "Crowfeather Poacher",
+    "es": "Furtivo plumacuervo"
+  },
+  "creature.king": {
+    "en": "Harvest King",
+    "es": "Rey de la Cosecha"
+  },
+  "creature.spider": {
+    "en": "Thornweaver",
+    "es": "Tejedora de espinas"
+  },
+  "creature.revenant": {
+    "en": "Mossbound Revenant",
+    "es": "Aparecido musgoso"
+  },
+  "creature.sporecaller": {
+    "en": "Sporecaller",
+    "es": "Invocaesporas"
+  },
+  "creature.warden": {
+    "en": "Antlered Warden",
+    "es": "Guardián Astado"
+  },
+  "creature.toad": {
+    "en": "Mire Toad",
+    "es": "Sapo del cieno"
+  },
+  "creature.drowned": {
+    "en": "Drowned Fisher",
+    "es": "Pescador ahogado"
+  },
+  "creature.bogwitch": {
+    "en": "Bog Witch",
+    "es": "Bruja de la ciénaga"
+  },
+  "creature.ferryman": {
+    "en": "The Ferryman",
+    "es": "El Barquero"
+  },
+  "creature.scorpion": {
+    "en": "Dune Scorpion",
+    "es": "Escorpión de las dunas"
+  },
+  "creature.raider": {
+    "en": "Canyon Raider",
+    "es": "Saqueador del cañón"
+  },
+  "creature.vulture": {
+    "en": "Carrion Harrier",
+    "es": "Buitre carroñero"
+  },
+  "creature.colossus": {
+    "en": "Sandstone Colossus",
+    "es": "Coloso de arenisca"
+  },
+  "creature.frostwolf": {
+    "en": "Rime Wolf",
+    "es": "Lobo de escarcha"
+  },
+  "creature.monk": {
+    "en": "Fallen Monk",
+    "es": "Monje caído"
+  },
+  "creature.rimewraith": {
+    "en": "Rime Wraith",
+    "es": "Espectro de escarcha"
+  },
+  "creature.bellbearer": {
+    "en": "The Bell-Bearer",
+    "es": "El Portacampana"
+  },
+  "creature.crab": {
+    "en": "Tide Crab",
+    "es": "Cangrejo de marea"
+  },
+  "creature.legionary": {
+    "en": "Barnacled Legionary",
+    "es": "Legionario de percebes"
+  },
+  "creature.siren": {
+    "en": "Siren",
+    "es": "Sirena"
+  },
+  "creature.admiral": {
+    "en": "The Drowned Admiral",
+    "es": "El Almirante Ahogado"
+  },
+  "creature.beetle": {
+    "en": "Geode Beetle",
+    "es": "Escarabajo geoda"
+  },
+  "creature.shardling": {
+    "en": "Shardling",
+    "es": "Esquirlado"
+  },
+  "creature.bat": {
+    "en": "Gloom Bat",
+    "es": "Murciélago lóbrego"
+  },
+  "creature.geode": {
+    "en": "The Geode Titan",
+    "es": "Titán Geoda"
+  },
+  "creature.salamander": {
+    "en": "Magma Salamander",
+    "es": "Salamandra de magma"
+  },
+  "creature.smith": {
+    "en": "Forge Brute",
+    "es": "Bruto de la forja"
+  },
+  "creature.slagimp": {
+    "en": "Slag Imp",
+    "es": "Diablillo de escoria"
+  },
+  "creature.magmawyrm": {
+    "en": "Forge Wyrm",
+    "es": "Sierpe de la Fragua"
+  },
+  "creature.gryphon": {
+    "en": "Citadel Gryphon",
+    "es": "Grifo de la Ciudadela"
+  },
+  "creature.templar": {
+    "en": "Sky Templar",
+    "es": "Templario del Cielo"
+  },
+  "creature.cantor": {
+    "en": "Storm Cantor",
+    "es": "Cantor de la Tormenta"
+  },
+  "creature.archon": {
+    "en": "The Archon",
+    "es": "El Arconte"
+  },
+  "creature.voidmaw": {
+    "en": "Void Maw",
+    "es": "Fauces del Vacío"
+  },
+  "creature.echo": {
+    "en": "Riftbound Echo",
+    "es": "Eco de la Grieta"
+  },
+  "creature.weaver": {
+    "en": "Star Weaver",
+    "es": "Tejedora de Estrellas"
+  },
+  "creature.unmaker": {
+    "en": "The Unmaker",
+    "es": "El Deshacedor"
+  }
+}

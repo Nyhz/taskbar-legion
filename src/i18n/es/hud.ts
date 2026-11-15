@@ -9,7 +9,6 @@ export const hud: Record<keyof typeof en, string> = {
   panelCube: 'Cubo',
   panelMap: 'Mapa',
   panelPets: 'Mascotas',
-  world: 'Mundo {n}',
   stageOf: 'etapa {n} de {total}',
   bossComing: 'Al llenarse la barra llega el jefe de la etapa.',
   bossHere: 'El jefe de la etapa está delante.',

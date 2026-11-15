@@ -557,3 +557,9 @@ conservadora, marcada como provisional; si salta el límite de uso, dejar anotad
       resumen de ausencia en su arranque real (en navegador el guardado es en memoria). Pendiente menor: reglas
       muertas en `global.css` (`tl-title-exit`, `tl-logo`, `tl-menu-in`, `tl-fade-late`, `tl-danger`,
       `tl-stage-banner`); el texto flotante de combate sigue en inglés y con emoji (`FloatingText`, `GameStrip`).
+- [x] **Mundos y criaturas en los datos**: `src/data/worlds.ts` (los diez mundos con su nombre y sus cuatro
+      criaturas por papel: bestia, cuerpo a cuerpo, distancia, jefe de etapa; la clave es la de su figura en el
+      pipeline) y su diccionario `src/data/i18n/es/worlds.json`; `worldName` y `creatureName` en `@/i18n`. Los
+      usan el tooltip de etapa del HUD, la banda de etapa (nombre del mundo en gótica), la placa del jefe (nombre
+      del jefe de etapa de ese mundo) y el mapa (que deja de tener los nombres en su espacio de textos). Los
+      jefes de mundo siguen sin criatura ni nombre propios.

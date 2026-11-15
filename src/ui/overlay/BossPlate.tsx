@@ -1,7 +1,9 @@
 import { useStore } from '@/state/store';
 import { getEngine } from '@/game/engineRef';
 import { BOSS_ENRAGE_RAMP_MS } from '@/data/stageScaling';
-import { useT } from '@/i18n';
+import { creatureName, useT } from '@/i18n';
+import { worldInDifficulty } from '@/data/difficulties';
+import { tryWorldDef } from '@/data/worlds';
 import { Bar, Sign, Tip, TipText, TipTitle } from '@/ui/kit';
 
 // With a boss in front (stage boss or world boss): what it is, its life, and the clock before it enrages —
@@ -17,6 +19,7 @@ export function BossPlate(): React.JSX.Element | null {
   const t = useT();
   useStore((s) => s.hud); // refresh with every push: life and clock move each frame
   const phase = useStore((s) => s.hud.phase);
+  const globalStage = useStore((s) => s.hud.globalStage);
   if (phase !== 'boss' && phase !== 'zoneBoss') return null;
   const boss = getEngine()?.world.enemies.find((e) => e.isBoss === true && e.alive);
   if (boss === undefined) return null;
@@ -27,11 +30,21 @@ export function BossPlate(): React.JSX.Element | null {
   const enraged = timed && fight > windowMs;
   const stacks = enraged ? Math.floor((fight - windowMs) / BOSS_ENRAGE_RAMP_MS) + 1 : 0;
 
+  // A stage boss is its world's boss creature and carries its name; the world boss (the W-10 wall) has no
+  // creature of its own yet, so it keeps the plain title.
+  const worldBoss = tryWorldDef(worldInDifficulty(globalStage))?.creatures.boss;
+  const title =
+    phase === 'zoneBoss'
+      ? t('hud.worldBoss')
+      : worldBoss !== undefined
+        ? creatureName(worldBoss.key)
+        : t('hud.stageBoss');
+
   return (
     <div className="tk-foe">
       <div className="tk-foe-top tk-ink">
         <Sign name="hud_boss" />
-        <div className="nm">{phase === 'zoneBoss' ? t('hud.worldBoss') : t('hud.stageBoss')}</div>
+        <div className="nm">{title}</div>
         {timed && (
           <div className={`tk-foe-clock has${enraged ? ' late' : ''}`}>
             <Sign name="hud_enrage" alt={t('hud.enrage')} />

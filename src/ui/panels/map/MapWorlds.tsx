@@ -1,8 +1,8 @@
-import { useT } from '@/i18n';
+import { useT, worldName } from '@/i18n';
 import { Sign, Tip, TipLine, TipName, TipText, TipTitle, art } from '@/ui/kit';
 import { TILE_ART, WORLD_COLS, type WorldView } from './mapLayout';
 import { offStyle } from './mapOff';
-import { worldArt, worldNameKey } from './mapWorldNames';
+import { worldArt } from './mapWorldNames';
 
 // The ten worlds of the chosen difficulty, three across (the last one alone, in the middle): a crop of each
 // world's real backdrop with its number, and ten marks under it — nine stages and the boss (gold when it has
@@ -27,7 +27,7 @@ export function MapWorlds({
       {worlds.map((w, i) => {
         const alone = i === worlds.length - 1 && worlds.length % WORLD_COLS === 1;
         const col = alone ? 1 : i % WORLD_COLS;
-        const name = w.reached ? t(worldNameKey(w.local)) : t('map.worldN', { n: w.local });
+        const name = w.reached ? worldName(w.local) : t('map.worldN', { n: w.local });
         return (
           <button
             key={w.local}

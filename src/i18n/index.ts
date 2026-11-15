@@ -23,3 +23,4 @@ export {
   armorFamilyName, chestName, className, dataText, difficultyName, gemName, petName, slotLabel, statLabel, techCategoryName,
   techDescription, techName, tierName, weaponTypeName,
 } from './names';
+export { creatureName, worldName } from './names';

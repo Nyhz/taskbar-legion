@@ -8,7 +8,6 @@ export const hud = {
   panelCube: 'Cube',
   panelMap: 'Map',
   panelPets: 'Pets',
-  world: 'World {n}',
   stageOf: 'stage {n} of {total}',
   bossComing: 'When the bar fills, the stage boss arrives.',
   bossHere: 'The stage boss is in front of you.',

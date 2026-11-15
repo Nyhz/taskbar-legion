@@ -12,10 +12,11 @@ import { PETS } from '@/data/pets';
 import { STATS } from '@/data/stats';
 import { TECH_CATEGORIES, TECH_NODES } from '@/data/techTree';
 import { TIERS } from '@/data/tiers';
+import { WORLDS, allCreatures } from '@/data/worlds';
 
-export type DataGroup = 'stats' | 'tiers' | 'slots' | 'gems' | 'classes' | 'difficulties' | 'tech' | 'pets';
+export type DataGroup = 'stats' | 'tiers' | 'slots' | 'gems' | 'classes' | 'difficulties' | 'tech' | 'pets' | 'worlds';
 
-export const DATA_GROUPS: readonly DataGroup[] = ['stats', 'tiers', 'slots', 'gems', 'classes', 'difficulties', 'tech', 'pets'];
+export const DATA_GROUPS: readonly DataGroup[] = ['stats', 'tiers', 'slots', 'gems', 'classes', 'difficulties', 'tech', 'pets', 'worlds'];
 
 /** How a text is keyed inside its group when the group holds more than one kind of text. */
 export const dataKey = {
@@ -25,6 +26,8 @@ export const dataKey = {
   techName: (node: string): string => `${node}.name`,
   techDescription: (node: string): string => `${node}.description`,
   techCategory: (category: string): string => `category.${category}`,
+  world: (index: number): string => `world.${index}`,
+  creature: (key: string): string => `creature.${key}`,
 } as const;
 
 function fromEntries(pairs: Iterable<readonly [string, string]>): Record<string, string> {
@@ -51,5 +54,9 @@ export function visibleDataTexts(): Record<DataGroup, Record<string, string>> {
       ]),
     ]),
     pets: fromEntries(Object.values(PETS).map((p) => [p.key, p.name] as const)),
+    worlds: fromEntries([
+      ...WORLDS.map((w) => [dataKey.world(w.index), w.name] as const),
+      ...allCreatures().map((c) => [dataKey.creature(c.key), c.name] as const),
+    ]),
   };
 }

@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { useStore } from '@/state/store';
 import { difficultyOf, stageInWorldOf, worldInDifficulty } from '@/data/difficulties';
-import { difficultyName, useT } from '@/i18n';
+import { difficultyName, useT, worldName } from '@/i18n';
 import { Sign } from '@/ui/kit';
 import { placeLabel } from './overlayText';
 
 // A quiet steel band that fades over the strip whenever the party moves to a new stage / world (a change of
-// hud.globalStage): the difficulty's sign, its name in blackletter and the world-stage in plain numerals. Cosmetic, render-only — the same shape
+// hud.globalStage): the difficulty's sign, the WORLD's name in blackletter and the world-stage in plain numerals. Cosmetic, render-only — the same shape
 // as the DangerBanner, but informational rather than alarming (a single fade). On the strip's kit layer.
 
 export function StageBanner(): React.JSX.Element | null {
@@ -26,9 +26,10 @@ export function StageBanner(): React.JSX.Element | null {
 
   if (shown === null) return null;
   const difficulty = difficultyOf(shown);
+  const world = worldInDifficulty(shown);
   const names = {
     difficulty: difficultyName(difficulty.key),
-    place: placeLabel(worldInDifficulty(shown), stageInWorldOf(shown)),
+    place: placeLabel(world, stageInWorldOf(shown)),
   };
   return (
     <div
@@ -38,8 +39,8 @@ export function StageBanner(): React.JSX.Element | null {
       aria-label={t('overlay.entering', names)}
       onAnimationEnd={() => setShown(null)}
     >
-      <Sign name={`map_diff_${difficulty.key}`} />
-      <span className="nm tk-ink">{names.difficulty}</span>
+      <Sign name={`map_diff_${difficulty.key}`} alt={names.difficulty} />
+      <span className="nm tk-ink">{worldName(world)}</span>
       <b className="tk-ink">{names.place}</b>
     </div>
   );

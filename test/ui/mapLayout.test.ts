@@ -3,7 +3,8 @@ import { describe, expect, it } from 'vitest';
 import { resumeStageFor } from '@/data/stageScaling';
 import { WING_ART_WIDTH, WING_MAX_ART_HEIGHT } from '@/ui/panels/panelLayout';
 import { MAP_WING_ART, bossGateOf, defaultWorld, stageStateOf, worldsOf } from '@/ui/panels/map/mapLayout';
-import { worldArt, worldNameKey } from '@/ui/panels/map/mapWorldNames';
+import { worldArt } from '@/ui/panels/map/mapWorldNames';
+import { tryWorldDef } from '@/data/worlds';
 
 // Hell (difficulty 1) with worlds 1–5 cleared and 6-9 beaten: maxCleared 159, the frontier stays on 6-9 (the key
 // gate), the party farming 6-4.
@@ -100,16 +101,17 @@ describe('map wing — its box and its art', () => {
     expect(MAP_WING_ART.height).toBeLessThanOrEqual(WING_MAX_ART_HEIGHT);
   });
 
-  it('every world has a name key and its three pictures on disk', () => {
-    const keys = new Set<string>();
+  it('every world has a name in data and its three pictures on disk', () => {
+    const names = new Set<string>();
     for (let world = 1; world <= 10; world++) {
-      keys.add(worldNameKey(world));
+      names.add(tryWorldDef(world)?.name ?? '');
       for (const kind of ['day', 'night', 'boss'] as const) {
         expect(existsSync(`src/assets/ui/${worldArt(world, kind)}.png`), worldArt(world, kind)).toBe(true);
       }
     }
-    expect(keys.size).toBe(10);
-    expect(worldNameKey(99)).toBe('map.world1'); // out of range never throws
+    expect(names.size).toBe(10);
+    expect(names.has('')).toBe(false);
+    expect(tryWorldDef(99)).toBeUndefined(); // out of range never throws
     expect(worldArt(0, 'day')).toBe('map_w01');
   });
 });

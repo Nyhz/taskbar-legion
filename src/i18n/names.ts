@@ -22,7 +22,9 @@ import petsEs from '@/data/i18n/es/pets.json';
 import slotsEs from '@/data/i18n/es/slots.json';
 import statsEs from '@/data/i18n/es/stats.json';
 import techEs from '@/data/i18n/es/tech.json';
+import { allCreatures, tryWorldDef } from '@/data/worlds';
 import tiersEs from '@/data/i18n/es/tiers.json';
+import worldsEs from '@/data/i18n/es/worlds.json';
 import { getLanguage, t } from './core';
 import type { PlainTextKey } from './core';
 import { dataKey } from './dataTexts';
@@ -36,6 +38,7 @@ export interface DataTextEntry {
 export const DATA_DICTIONARIES: Readonly<Record<DataGroup, Readonly<Record<string, DataTextEntry | undefined>>>> = {
   stats: statsEs,
   tiers: tiersEs,
+  worlds: worldsEs,
   slots: slotsEs,
   gems: gemsEs,
   classes: classesEs,
@@ -110,4 +113,16 @@ const CHEST_NAME: Readonly<Record<ChestType, PlainTextKey>> = {
 
 export function chestName(type: ChestType): string {
   return t(CHEST_NAME[type]);
+}
+
+/** The name of world `index` (1–10) of a difficulty. An unknown number falls back to the number itself. */
+export function worldName(index: number): string {
+  const world = tryWorldDef(index);
+  return world === undefined ? String(index) : dataText('worlds', dataKey.world(index), world.name);
+}
+
+/** The name of a creature by its figure key (see data/worlds). Unknown keys come back as they are. */
+export function creatureName(key: string): string {
+  const found = allCreatures().find((c) => c.key === key);
+  return found === undefined ? key : dataText('worlds', dataKey.creature(key), found.name);
 }

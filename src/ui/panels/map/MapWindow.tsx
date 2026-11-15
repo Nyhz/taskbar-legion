@@ -9,7 +9,7 @@ import {
   worldInDifficulty,
 } from '@/data/difficulties';
 import { resumeStageFor } from '@/data/stageScaling';
-import { difficultyName, useT } from '@/i18n';
+import { difficultyName, useT, worldName } from '@/i18n';
 import { Head, Sign, Tip, TipLine, TipText, TipTitle, Title, Window } from '@/ui/kit';
 import { WING_CONTENT_ART } from '../panelLayout';
 import { useWingTabs } from '../wingTabs';
@@ -17,7 +17,6 @@ import { MapDifficulties } from './MapDifficulties';
 import { MapWorlds } from './MapWorlds';
 import { MapStages } from './MapStages';
 import { defaultWorld, worldsOf } from './mapLayout';
-import { worldNameKey } from './mapWorldNames';
 import './map.css';
 
 // The travel map: a RIGHT WING of the hero window — narrow and tall like every wing. Killing a boss opens travel
@@ -91,7 +90,7 @@ export function MapWindow(): React.JSX.Element {
       <MapWorlds worlds={worlds} chosen={world?.local ?? 1} onPick={setPickedWorld} />
       {world !== undefined && (
         <>
-          <div className="tk-map-name">{t(worldNameKey(world.local))}</div>
+          <div className="tk-map-name">{worldName(world.local)}</div>
           <MapStages
             world={world}
             frontier={frontier}
