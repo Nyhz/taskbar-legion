@@ -13,6 +13,9 @@ import { worldOf, stageInWorld } from '@/data/stageScaling';
 import { HERO_SPACING } from '@/data/field';
 import { useStore } from '@/state/store';
 import type { HeroState } from '@/persistence/saveSchema';
+import { t } from '@/i18n';
+import { KIT_TOKENS } from '@/ui/kit/tokens';
+import { encodeLootLine } from '@/ui/loot/lootLine';
 
 // The store-driven bridge. The STORE owns player config (roster equipment/level/
 // talents, tech, pets, gold, inventory); the SIM world owns transient combat +
@@ -170,7 +173,7 @@ export class GameEngine {
     const bossStage = world * 10; // this world's global X-10 stage (= worldBossStageOf any of its stages)
     // Gate: a world-boss challenge needs a key for THIS zone. Refuse (with a nudge) if none.
     if (store.zoneKeysFor(bossStage) <= 0) {
-      store.pushLootToast({ text: 'No key — clear this zone\'s stage bosses to earn one', color: '#e8c34c' });
+      store.pushLootToast({ text: encodeLootLine({ text: t('overlay.noKey'), sign: 'hud_key' }), color: KIT_TOKENS.gold });
       return;
     }
     if (this.sim.enterZoneBoss(world)) {

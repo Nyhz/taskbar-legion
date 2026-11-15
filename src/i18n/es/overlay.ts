@@ -27,4 +27,10 @@ export const overlay: Record<keyof typeof en, string> = {
   gfxCopy: 'Copiar detalles',
   gfxCopied: 'Copiado',
   gfxReload: 'Recargar',
+  noKey: 'Sin llave: vence a los jefes de etapa de este mundo para ganar una',
+  wipe1: 'Está claro que aún no eres lo bastante fuerte…',
+  wipe2: 'No estabais preparados…',
+  wipe3: 'La legión cae. Reagrupa a los tuyos.',
+  wipe4: 'La muerte es solo una lección. Apréndela.',
+  wipe5: 'Aplastados. Volved más fuertes.',
 };

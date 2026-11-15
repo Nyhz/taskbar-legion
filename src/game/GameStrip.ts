@@ -10,6 +10,8 @@ import { FloatingTextLayer } from './render/FloatingText';
 import { ProjectileLayer } from './render/Projectiles';
 import { WorldFxLayer } from './render/WorldFx';
 import { PortalSprite } from './render/PortalSprite';
+import { KIT_FONT_PHRASE, applyKitFont } from './render/kitFont';
+import { t, type PlainTextKey } from '@/i18n';
 import { castFx, isWholeWaveCast, FX } from './render/fx';
 import { loadEffectTextures, getFireballFrames } from './render/characterFrames';
 import { creatureRole, enemyRank } from './render/figureData';
@@ -53,13 +55,7 @@ const CAM_MAX_DT = 0.05; // clamp camera step so a long/backgrounded frame can't
 
 // Death-knell lines shown over the black during a full-party wipe (one picked at random
 // per wipe). Cosmetic flavor — render-only, so Math.random here is fine.
-const WIPE_PHRASES = [
-  "You're clearly not strong enough…",
-  'You were not prepared…',
-  'The legion falls. Regroup, commander.',
-  'Death is only a lesson. Learn it.',
-  'Crushed. Come back stronger.',
-];
+const WIPE_PHRASES: readonly PlainTextKey[] = ['overlay.wipe1', 'overlay.wipe2', 'overlay.wipe3', 'overlay.wipe4', 'overlay.wipe5'];
 
 // Blackout opacity (0..1) across the wipe cinematic, from elapsed ms: hold clear over the
 // DEAD beat, fade in, hold full black, fade back out, then clear for the bg-only beat.
@@ -116,7 +112,7 @@ export class GameStrip {
   // down the zone-teleport sequence. The wipe cinematic is driven instead by the sim's wipeMs.
   private readonly blackout = new Graphics();
   // The death-knell phrase shown over the black during a wipe.
-  private readonly wipePhrase = new Text({ text: '', style: { fontFamily: 'monospace', fontSize: 13, fontStyle: 'italic', fontWeight: 'bold', fill: hexToNum('#e8e2d6'), align: 'center' } });
+  private readonly wipePhrase = new Text({ text: '', style: { fontFamily: 'monospace', fontSize: 20, fill: hexToNum('#e8e2d6'), align: 'center' } });
   private wipeActive = false; // a wipe cinematic is on screen (drives one-time phrase pick)
   private teleportMs = 0;
   private respawnTpMs = 0; // counts down a teleport-IN as the revived party materialises post-wipe
@@ -163,6 +159,7 @@ export class GameStrip {
       layer.eventMode = 'none';
     }
     this.wipePhrase.anchor.set(0.5);
+    applyKitFont(this.wipePhrase, KIT_FONT_PHRASE, 20);
     this.wipePhrase.visible = false;
     this.portal.visible = false;
     this.blackout.visible = false;
@@ -263,7 +260,7 @@ export class GameStrip {
     }
     if (!this.wipeActive) {
       this.wipeActive = true;
-      this.wipePhrase.text = WIPE_PHRASES[Math.floor(Math.random() * WIPE_PHRASES.length)] ?? WIPE_PHRASES[0] ?? '';
+      this.wipePhrase.text = t(WIPE_PHRASES[Math.floor(Math.random() * WIPE_PHRASES.length)] ?? 'overlay.wipe1');
     }
     const black = wipeBlackAlpha(ms);
     this.blackout.visible = black > 0.001;

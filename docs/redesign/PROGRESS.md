@@ -579,3 +579,8 @@ conservadora, marcada como provisional; si salta el límite de uso, dejar anotad
         grandes; los jefes muy anchos se solapan con el Knight; el golpe cae al empezar el clip, no en su
         fotograma de impacto; textos flotantes y la escena de derrota siguen en inglés; rayos, ojos y pulso no
         los he visto en captura; sin probar en Tauri.
+- [x] **Textos de la tira** (tras el bloque 3). Las frases de derrota y el aviso de "sin llave" pasan por i18n
+      (`overlay.wipe1…5`, `overlay.noKey`) y se dibujan con la fuente del kit (`game/render/kitFont.ts`); el portal
+      del jefe de mundo lleva los signos de jefe y de llave en lugar de la palabra BOSS y un emoji. Visto en
+      captura: portal con y sin llave, frase de derrota en español. El aviso de "sin llave" no lo he visto en
+      captura. Quedan en inglés o con emoji: los glifos de habilidad que flotan al lanzar (`render/fx.ts`).

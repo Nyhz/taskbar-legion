@@ -27,4 +27,10 @@ export const overlay = {
   gfxCopy: 'Copy details',
   gfxCopied: 'Copied',
   gfxReload: 'Reload',
+  noKey: "No key: beat this world's stage bosses to earn one",
+  wipe1: "You're clearly not strong enough…",
+  wipe2: 'You were not prepared…',
+  wipe3: 'The legion falls. Regroup, commander.',
+  wipe4: 'Death is only a lesson. Learn it.',
+  wipe5: 'Crushed. Come back stronger.',
 } as const;

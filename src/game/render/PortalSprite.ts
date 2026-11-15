@@ -1,10 +1,13 @@
-import { Container, Graphics, Rectangle, Text } from 'pixi.js';
+import { Assets, Container, Graphics, Rectangle, Sprite, Text, Texture } from 'pixi.js';
 import { hexToNum } from '@/styles/palette';
+import bossSignUrl from '@/assets/ui/hud_boss.png?url';
+import keySignUrl from '@/assets/ui/hud_key.png?url';
+import { KIT_FONT_TEXT, applyKitFont } from './kitFont';
 
 // A red, swirling world-boss portal pinned to the right edge of the strip while the
 // party farms a beaten W-9. Tapping it enters the W-10 world boss — which costs ONE zone
-// key (one spent per attempt, even on a wipe). The portal shows held/1 keys and greys out
-// when key-less. Cosmetic + an interactive affordance — GameStrip drives its key count + tap.
+// key (one spent per attempt, even on a wipe). The portal wears the boss sign and shows the keys held
+// (the key sign and held/1), and greys out when key-less. Signs, not words: nothing here needs translating. Cosmetic + an interactive affordance — GameStrip drives its key count + tap.
 
 const RING = hexToNum('#c0473a');
 const RING_HI = hexToNum('#ff7a7a');
@@ -17,30 +20,28 @@ const RY = 27;
 export class PortalSprite extends Container {
   private readonly frame = new Graphics();
   private readonly swirl = new Graphics();
-  private readonly bossText: Text;
-  private readonly keyText: Text; // "🗝 held/1" — keys held vs the 1 needed to enter
+  private readonly bossSign = new Sprite(Texture.EMPTY);
+  private readonly keySign = new Sprite(Texture.EMPTY);
+  private readonly keyText: Text; // "held/1" — keys held vs the 1 needed to enter
   private elapsed = 0;
   private enabled = false;
 
   constructor() {
     super();
-    this.bossText = new Text({
-      text: 'BOSS',
-      style: { fontFamily: 'monospace', fontSize: 10, fontWeight: '700', fill: hexToNum('#ff7a7a') },
-    });
-    this.bossText.anchor.set(0.5);
-    this.bossText.y = -RY - 21;
-    this.keyText = new Text({
-      text: '🗝 0/1',
-      style: { fontFamily: 'monospace', fontSize: 10, fontWeight: '700', fill: hexToNum('#e8c34c') },
-    });
-    this.keyText.anchor.set(0.5);
-    this.keyText.y = -RY - 9; // just above the vortex, under the BOSS label
-    this.addChild(this.frame, this.swirl, this.bossText, this.keyText);
+    this.bossSign.anchor.set(0.5);
+    this.bossSign.y = -RY - 30;
+    this.keySign.anchor.set(0.5);
+    this.keySign.position.set(-9, -RY - 13); // the key and its count sit just above the vortex
+    this.keyText = new Text({ text: '0/1', style: { fontFamily: 'monospace', fontSize: 10, fill: hexToNum('#f8dc84'), stroke: { color: STONE, width: 2, join: 'miter' } } });
+    this.keyText.anchor.set(0, 0.5);
+    this.keyText.position.set(1, -RY - 13);
+    applyKitFont(this.keyText, KIT_FONT_TEXT, 10);
+    void this.loadSigns();
+    this.addChild(this.frame, this.swirl, this.bossSign, this.keySign, this.keyText);
     // A generous, fixed hit area so the whole portal (and its labels) is reliably tappable.
     this.eventMode = 'static';
     this.cursor = 'pointer';
-    this.hitArea = new Rectangle(-RX - 6, -RY - 28, (RX + 6) * 2, RY * 2 + 38);
+    this.hitArea = new Rectangle(-RX - 6, -RY - 40, (RX + 6) * 2, RY * 2 + 50);
   }
 
   /** Driven each frame with the zone's keys held: ≥1 → enterable (lit, the count gold);
@@ -49,11 +50,26 @@ export class PortalSprite extends Container {
   update(dtMs: number, keysHeld: number): void {
     this.elapsed += dtMs;
     this.enabled = keysHeld > 0;
-    this.keyText.text = `🗝 ${keysHeld}/1`;
-    this.keyText.style.fill = this.enabled ? hexToNum('#e8c34c') : hexToNum('#9a8f80');
+    const count = `${keysHeld}/1`;
+    if (this.keyText.text !== count) this.keyText.text = count;
+    this.keyText.tint = this.enabled ? 0xffffff : 0xa89c8c;
     this.cursor = this.enabled ? 'pointer' : 'default';
     this.alpha = this.enabled ? 1 : 0.5;
     this.draw();
+  }
+
+  // The two signs are interface art (src/assets/ui). If one cannot be loaded the portal simply goes without it.
+  private async loadSigns(): Promise<void> {
+    try {
+      const [boss, key] = await Promise.all([Assets.load<Texture>(bossSignUrl), Assets.load<Texture>(keySignUrl)]);
+      boss.source.scaleMode = 'nearest';
+      key.source.scaleMode = 'nearest';
+      if (this.destroyed) return;
+      this.bossSign.texture = boss;
+      this.keySign.texture = key;
+    } catch {
+      /* cosmetic */
+    }
   }
 
   private draw(): void {
