@@ -103,9 +103,9 @@ export const createPartySlice: StateCreator<GameStore, [], [], PartySlice> = (se
     const found = findEntry(s.inventory, itemId);
     const hero = s.roster.find((h) => h.id === heroId);
     if (found === undefined || hero === undefined || !isItem(found)) return; // gems aren't equipped
-    // No level gate: ilvl is a pure power stat now — gear (not level) carries content, so any
-    // hero may equip any item. Only the class lock on weapons/off-hands remains.
-    if (found.classKey !== undefined && found.classKey !== hero.classKey) return; // class-locked weapon/off-hand
+    // No level gate: ilvl is a pure power stat now — gear (not level) carries content. The only gate is the
+    // class lock: weapons/off-hands (by type) and armour (by family) belong to one class; jewelry is free.
+    if (found.classKey !== undefined && found.classKey !== hero.classKey) return; // class-locked item
     const item = found;
     const slot = resolveEquipSlot(item.slot, hero.equipment, targetSlot);
     const previous = hero.equipment[slot];

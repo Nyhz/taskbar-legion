@@ -118,6 +118,31 @@ export function GameView({ bootSave, onReady }: { bootSave: SaveV1 | null; onRea
     gameRef.current?.applyScale(uiScale);
   }, [uiScale]);
 
+  // The game scale is a whole number of screen pixels per art pixel FOR THIS DISPLAY. When the window lands on a
+  // display with another pixel ratio (dragged to another monitor, OS zoom changed), snap it again.
+  useEffect(() => {
+    if (typeof window.matchMedia !== 'function') return;
+    let query = window.matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`);
+    const resnap = (): void => {
+      const store = useStore.getState();
+      store.setGameScale(store.gameScale);
+      query.removeEventListener('change', resnap);
+      query = window.matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`);
+      query.addEventListener('change', resnap);
+    };
+    query.addEventListener('change', resnap);
+    // The stops also depend on the window's height (the strip may not take too much of it).
+    const onResize = (): void => {
+      const store = useStore.getState();
+      store.setGameScale(store.gameScale);
+    };
+    window.addEventListener('resize', onResize);
+    return () => {
+      query.removeEventListener('change', resnap);
+      window.removeEventListener('resize', onResize);
+    };
+  }, []);
+
   // Auto-open: when the engine signals its interval is due (autoOpenPending), reveal every
   // chest with the same staggered floating toasts as a manual click — never a silent dump.
   useEffect(() => {

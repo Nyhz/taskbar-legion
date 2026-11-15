@@ -1,0 +1,51 @@
+/* The map wing (ui/panels/panelLayout: 154 art px of content, as tall as it needs; mapLayout.ts keeps the
+   measures). Art pixels, like the kit. Top to bottom: title + frontier key (20), the five difficulties (20), the
+   ten worlds three across (4 rows of 31), the chosen world's name, its nine stages and the boss's door (64).
+   Tooltips open to the LEFT of the wing, over the hero window: `--off` is how far an element sits from the
+   wing's left edge, so its tooltip clears the whole wing instead of covering its neighbours. */
+.tk .tk-map-tip > .tt.left { right: calc(100% + 5px + var(--off, 0px)); }
+
+.tk-map-diffs { display: flex; align-items: center; gap: 2px; height: 20px; }
+.tk-map-diff { position: relative; width: 18px; height: 20px; padding: 2px 1px; }
+.tk-map-diff:not(.shut):hover > img { filter: brightness(1.2); }
+.tk-map-diff.on { box-shadow: inset 0 -1px 0 var(--gold); }
+.tk-map-diff.shut { cursor: default; }
+
+.tk-map-worlds { display: grid; grid-template-columns: repeat(3, 50px); gap: 3px 2px; margin-top: 3px; }
+.tk-map-w { position: relative; display: block; width: 50px; }
+.tk-map-w.last { grid-column: 2; }
+.tk-map-w.shut { cursor: default; }
+.tk-map-w > .pic { position: relative; display: block; width: 50px; height: 28px; background-position: -3px -7px; box-shadow: inset 0 0 0 1px var(--k0); }
+.tk-map-w:not(.shut):hover > .pic { filter: brightness(1.15); }
+.tk-map-w.sel > .pic { box-shadow: inset 0 0 0 1px var(--gold-hi), 0 0 0 1px var(--k0); }
+.tk-map-w > .pic > b { position: absolute; left: 3px; top: 2px; font-weight: 400; color: var(--k9); text-shadow: 1px 0 0 var(--k0), -1px 0 0 var(--k0), 0 1px 0 var(--k0), 0 -1px 0 var(--k0); }
+.tk-map-w.shut > .pic > b { color: var(--k5); }
+.tk-map-w > .pic > .lock { position: absolute; right: 2px; top: 2px; }
+.tk-map-w > .pips { display: flex; justify-content: center; gap: 1px; height: 2px; margin-top: 1px; }
+.tk-map-w > .pips > i { width: 3px; height: 2px; background: var(--k3); }
+.tk-map-w > .pips > i.done { background: var(--k7); }
+.tk-map-w > .pips > i.here { background: var(--xp-hi); }
+.tk-map-w > .pips > i.boss-done { background: var(--gold); }
+.tk-map-w > .pips > i.boss-wall { background: var(--bad); }
+.tk-map-w.shut > .pips > i { background: var(--k2); }
+
+.tk-map-name { margin-top: 6px; min-height: 12px; font: 12px/12px var(--f-name); color: var(--gold-hi); text-shadow: 1px 1px 0 var(--k0); }
+
+.tk-map-stages { display: flex; align-items: center; height: 64px; margin-top: 4px; }
+.tk-map-pad { display: grid; grid-template-columns: repeat(3, 24px); gap: 2px; }
+.tk-key.tk-map-st { width: 24px; justify-content: center; padding: 0; }
+.tk-key.tk-map-st > .pin { position: absolute; right: -8px; top: -9px; z-index: 1; margin: 0; pointer-events: none; }
+.tk-map-link { flex: 1; height: 2px; margin: 0 3px; background: repeating-linear-gradient(90deg, var(--k4) 0 2px, transparent 2px 4px); }
+.tk-map-link.lit { background: repeating-linear-gradient(90deg, var(--gold-dim) 0 2px, transparent 2px 4px); }
+.tk-map-gate { display: grid; justify-items: center; gap: 1px; }
+.tk-map-door { position: relative; width: 36px; height: 36px; }
+.tk-map-door.closed, .tk-map-door.needKey { cursor: default; }
+.tk-map-door.closed > img:first-child { opacity: .35; filter: grayscale(1); }
+.tk-map-door.needKey > img:first-child { opacity: .7; }
+.tk-map-door.open:hover > img:first-child { filter: brightness(1.2); }
+.tk-map-door.open::after { content: ''; position: absolute; inset: -1px; pointer-events: none; box-shadow: 0 0 0 1px var(--gold-hi); }
+.tk-map-door > .chk { position: absolute; right: -5px; bottom: -4px; }
+.tk-map-door > .pin { position: absolute; right: -8px; top: -11px; pointer-events: none; }
+.tk-map-keys { position: relative; display: flex; align-items: center; gap: 1px; height: 16px; color: var(--k9); }
+.tk-map-keys.none { color: var(--k5); }
+.tk-map-keys.none > img { opacity: .4; }

@@ -31,8 +31,8 @@ export interface ItemInstance {
   baseAffix: AffixRoll[];
   stats: AffixRoll[]; // rolled substats, length = tierDef.extraStats (<=4)
   sockets: SocketState[]; // length = tierDef.sockets (<=4)
-  /** Class lock for weapon/off-hand items (the class whose weapon TYPE this is). Only
-   *  that class can equip it; absent for armor/jewelry (any hero). */
+  /** Class lock: the class whose weapon TYPE (weapon/off-hand) or armour FAMILY (the five armour slots)
+   *  this is. Only that class can equip it; absent for jewelry (any hero). */
   classKey?: string;
   origin: {
     rollSeed: number;

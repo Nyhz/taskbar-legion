@@ -17,7 +17,16 @@ def hand(ic: Icon, ramp: str, lo: int, mid: int, hi: int, *, fw: int = 3, x0: in
     """The back of a hand: four fingers of width `fw` starting at x0 (one pixel apart), a palm block down to
     `wrist`, and a thumb. Lit from the left. Returns the palm's left and right x."""
     left, right = x0 - 1, x0 + 4 * (fw + 1) - 1
-    for i, top in enumerate(tops):
+    if ic.small:
+        # Scaled down, a finger and its gap no longer fall on whole pixels and neighbours fuse. Laid out on the
+        # real grid instead: each finger two pixels wide (lit, shaded), one empty pixel between them.
+        f0, kn = ic.at(x0), ic.at(knuckle)
+        for i, top in enumerate(tops):
+            fx, ft = f0 + i * 3, ic.at(top + 0.6)
+            for j in range(ft, kn + 1):
+                ic.cell(fx, j, (ramp, hi))
+                ic.cell(fx + 1, j, (ramp, mid if j == ft else lo))
+    for i, top in enumerate(tops if not ic.small else ()):
         x = x0 + i * (fw + 1)
         ic.rect(x, top + 1, x + fw - 1, knuckle, (ramp, mid))
         ic.rect(x, top + 1, x, knuckle, (ramp, hi))  # the lit edge of each finger

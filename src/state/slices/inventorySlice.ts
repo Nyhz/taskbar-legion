@@ -295,7 +295,9 @@ export const createInventorySlice: StateCreator<GameStore, [], [], InventorySlic
 
     // All-items or all-gems; mixed batches are rejected.
     let out: InvEntry | null = null;
-    if (inputs.every(isItem)) out = canSynthesize(inputs) ? synthesize(inputs, doubleChance) : null;
+    // A class-locked result is born for a class of the party, like chest loot.
+    const partyClasses = [...new Set(s.roster.map((h) => h.classKey))];
+    if (inputs.every(isItem)) out = canSynthesize(inputs) ? synthesize(inputs, doubleChance, partyClasses) : null;
     else if (inputs.every(isGem)) out = canSynthesizeGems(inputs) ? synthesizeGems(inputs, doubleChance) : null;
     if (out === null) return null;
 

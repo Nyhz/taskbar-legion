@@ -1,0 +1,29 @@
+/* The talents wing: narrow and tall (154 art px of content). The tree reads top to bottom — a tier is a row, the
+   bar down the left edge is the points spent that open the tiers. Authored at 1× art pixel. */
+.tk-tal-line { display: flex; align-items: center; gap: 4px; height: 20px; }
+.tk-tal-line > .end { margin-left: auto; }
+.tk-tal-slots { position: relative; display: flex; align-items: center; gap: 2px; }
+.tk-tal-slots > u { width: 7px; height: 7px; background: var(--k2); box-shadow: 0 0 0 1px var(--k0); }
+.tk-tal-slots > u.on { background: var(--gold); box-shadow: inset 1px 1px 0 var(--gold-hi), inset -1px -1px 0 var(--gold-dim), 0 0 0 1px var(--k0); }
+.tk-tal-free { position: relative; display: flex; align-items: center; gap: 2px; font: 20px/20px var(--f-big); color: var(--gold-hi); text-shadow: 1px 1px 0 var(--k0); }
+.tk-tal-free.none { color: var(--k5); }
+.tk-tal-free.none > img { opacity: .45; }
+.tk-tal-free .tk-tip { text-shadow: none; }
+
+/* The tree: in the gutter the points a closed tier needs and the bar; then the nodes. */
+.tk-tal-tree { position: relative; margin-top: 3px; }
+.tk-tal-tree > * { position: absolute; }
+.tk-tal-need { left: 0; width: 12px; height: 10px; line-height: 10px; text-align: right; color: var(--k5); }
+.tk-tal-need.next { color: var(--k9); }
+.tk-tal-bar { left: 14px; top: 0; width: 5px; background: var(--k0); }
+.tk-tal-bar > u { position: absolute; left: 1px; top: 0; width: 3px; background: linear-gradient(90deg, var(--gold-hi) 0 1px, var(--gold) 1px 2px, var(--gold-dim) 2px); }
+.tk-tal-bar > i { position: absolute; left: 0; width: 5px; height: 1px; background: var(--k3); }
+.tk-tal-tree > .tk-node { position: absolute; }
+.tk-tal-tree > .tk-node.can { cursor: pointer; }
+/* Rows are packed: the rank pips sit on the node's bottom edge instead of hanging under it. */
+.tk-tal-tree > .tk-node > .tk-pips { top: calc(100% - 1px); }
+
+/* Tooltip lines of an ability: what it does at a rank, one effect per line. */
+.tk-tip .tk-tal-at { padding-top: 5px; color: var(--k6); }
+.tk-tip .tk-tal-fx { padding-top: 2px; color: var(--k9); line-height: 10px; }
+.tk-tip .tk-tal-fx.next { color: var(--good); }

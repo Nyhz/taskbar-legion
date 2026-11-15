@@ -17,7 +17,8 @@ export default defineConfig({
     // taint), so the sprites + backdrops load identically everywhere. Browser/dev unaffected.
     // See src/game/render/configurePixiLoader.ts for the matching loader hardening.
     assetsInlineLimit(filePath) {
-      if (filePath.endsWith('.png')) return true;
+      // The interface's pixel fonts are inlined for the same reason: no fetch over tauri://, no flash of fallback type.
+      if (filePath.endsWith('.png') || filePath.endsWith('.ttf')) return true;
       return undefined; // everything else keeps Vite's default 4KB threshold
     },
   },

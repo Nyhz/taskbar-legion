@@ -1,0 +1,31 @@
+/* Items bound to the game, on the interface kit (src/ui/kit). Only what the kit does not carry: the socket pips
+   on a cell, gem rows being ignored in a comparison, the layers portaled to <body> (context menu, socket dialogs,
+   drag ghost) and the rows of a socket dialog. Art pixels, like the kit. */
+
+/* Sockets of a piece, read at a glance: one pip each along the cell's bottom-left, lit when it holds a gem.
+   (Top-left is the perfect-roll star, bottom-right the small class crest or a count.) Sized for the 24 px cell. */
+.tk-cell-sockets { position: absolute; left: 2px; bottom: 2px; z-index: 1; display: flex; gap: 1px; pointer-events: none; }
+.tk-cell-sockets > i { width: 2px; height: 2px; background: var(--k0); box-shadow: 0 0 0 1px var(--k5); margin: 1px; }
+.tk-cell-sockets > i.on { background: #f08a62; box-shadow: 0 0 0 1px var(--k0); }
+.tk-slot.no > .tk-cell-sockets, .tk-slot.gone > .tk-cell-sockets { opacity: .3; }
+
+/* A comparison that leaves the gems out (Shift): their rows step back. */
+.tk-tip .tk-cell-gems.off { opacity: .35; }
+/* The card of the hovered piece keeps its place beside the worn one whatever their heights. */
+.tk-cmp > .tk-tip { flex: none; }
+
+/* Layers portaled to <body>: each carries its own KitRoot at the panel's zoom (kitZoom.ts). */
+.tk-layer-menu { position: fixed; z-index: 10001; }
+.tk-layer-back { position: fixed; inset: 0; z-index: 10000; }
+.tk-layer-dialog { position: fixed; inset: 0; z-index: 10002; display: flex; align-items: center; justify-content: center; background: rgba(11, 13, 23, .6); }
+
+/* Socket dialogs: what the gem grants, the warning, the keys. */
+.tk-socket-pair { display: flex; align-items: center; gap: 6px; margin-top: 5px; }
+.tk-socket-row { display: grid; grid-template-columns: 16px auto 1fr; gap: 3px; align-items: center; height: 15px; color: var(--k7); }
+.tk-socket-row > b { font-weight: 400; color: #f08a62; }
+.tk-socket-text { margin-top: 5px; color: var(--k7); line-height: 10px; }
+.tk-socket-warn { margin-top: 5px; color: var(--bad); line-height: 10px; }
+.tk-socket-keys { display: flex; align-items: center; margin-top: 6px; }
+.tk-socket-keys > .end { margin-left: auto; }
+.tk-socket-picks { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.tk-socket-pick { display: grid; justify-items: center; gap: 3px; }

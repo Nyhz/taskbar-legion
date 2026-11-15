@@ -1,0 +1,65 @@
+/* The Cube wing (ui/panels/panelLayout: 154 art px of content, as tall as its recipe needs). Art pixels, like the
+   kit. Every recipe reads top to bottom: its name, the three recipes, what it does (the equation), the Cube's
+   face with what comes out, the keys, then where the pieces come from. */
+.tk-cube-modes { display: flex; align-items: center; gap: 3px; height: 20px; }
+.tk-cube-eq { position: relative; display: flex; align-items: center; gap: 3px; height: 16px; color: var(--k8); white-space: nowrap; }
+.tk-cube-eq > img.pip { width: 9px; height: 9px; }
+.tk-cube-eq > .end { position: relative; margin-left: auto; display: flex; align-items: center; gap: 1px; color: var(--k6); }
+
+/* The face: nine cells, and beside them what comes out and how much is loaded. */
+.tk-cube-work { display: grid; grid-template-columns: 76px 16px 1fr; gap: 0 3px; align-items: center; margin-top: 3px; }
+.tk-cube-out { position: relative; display: grid; justify-items: center; gap: 5px; }
+.tk-cube-out > .q { position: relative; width: 24px; height: 24px; display: grid; place-items: center; color: var(--k5); font: 12px/12px var(--f-name); }
+.tk-cube-out > .q > img { position: absolute; left: 0; top: 0; }
+.tk-cube-out > .q > span { position: relative; }
+/* The gold that comes out: the coin over the one big number (six characters fit the column). */
+.tk-cube-total { position: relative; display: grid; justify-items: center; gap: 1px; font: 20px/20px var(--f-big); color: var(--gold-hi); text-shadow: 1px 1px 0 var(--k0); white-space: nowrap; }
+.tk-cube-count { position: relative; color: var(--k6); }
+.tk-cube-count.full { color: var(--good); }
+
+.tk-cube-keys { display: flex; align-items: center; gap: 4px; height: 20px; margin-top: 4px; }
+.tk-cube-keys > .end { margin-left: auto; }
+.tk-cube-opt { position: relative; display: flex; align-items: center; gap: 3px; height: 18px; }
+.tk-cube-opt > .end { margin-left: auto; }
+.tk-cube-pop { position: absolute; right: 0; top: 100%; z-index: 30; }
+.tk-cube-pop .tk-check { height: 14px; }
+.tk-cube-note { margin-top: 3px; color: var(--k6); line-height: 10px; }
+.tk-cube-note.warn { color: var(--bad); }
+.tk-cube-note.good { color: var(--good); }
+
+/* Where the pieces come from: the bag (and the stash), six cells across, a few rows a page. */
+.tk-cube-pick-head { display: flex; align-items: center; gap: 3px; height: 16px; color: var(--k6); }
+.tk-cube-pick-head > .end { margin-left: auto; display: flex; align-items: center; gap: 3px; }
+.tk-cube-pick-head button { min-width: 7px; height: 12px; line-height: 12px; text-align: center; color: var(--k8); }
+.tk-cube-pick-head button:disabled { color: var(--k4); cursor: default; }
+.tk-cube-pick-head .at { color: var(--gold-hi); }
+.tk-cube-pick { margin-top: 2px; min-height: 24px; }
+.tk-cube-off { display: contents; }
+.tk-cube-off .tk-slot > :first-child { opacity: .3; }
+
+/* The result of a synthesis, in place of the face. */
+.tk-cube-made { display: grid; justify-items: center; gap: 6px; padding: 12px 0 6px; text-align: center; }
+.tk-cube-made > .say { color: var(--k9); line-height: 10px; }
+.tk-cube-made > .say.lucky { color: var(--gold-hi); }
+.tk-cube-made > .what { color: var(--k6); line-height: 10px; }
+.tk-cube-made > .lit { box-shadow: 0 0 0 1px var(--k0), 0 0 0 2px var(--gold-hi), 0 0 0 3px var(--k0); }
+
+/* Transfigure: three numbered steps, stacked. */
+.tk-cube-step { display: flex; align-items: center; gap: 4px; height: 15px; margin-top: 3px; color: var(--k7); }
+.tk-cube-step > u { width: 9px; height: 9px; line-height: 9px; text-align: center; text-decoration: none; color: var(--gold-dk); background: var(--gold); box-shadow: 0 0 0 1px var(--k0); }
+.tk-cube-piece { display: flex; align-items: center; gap: 5px; min-height: 24px; }
+.tk-cube-piece > .name { font: 12px/12px var(--f-name); }
+.tk-cube-aff { position: relative; display: grid; grid-template-columns: 16px auto 1fr; gap: 3px; align-items: center; width: 100%; height: 15px; padding: 0 2px; color: var(--k7); text-align: left; white-space: nowrap; }
+.tk-cube-aff > b { font-weight: 400; color: var(--k9); }
+.tk-cube-aff:hover { background: var(--k2); }
+.tk-cube-aff.on { background: var(--k2); box-shadow: inset 1px 0 0 var(--gold); }
+.tk-cube-aff.still { cursor: default; }
+.tk-cube-aff.still:hover { background: none; }
+.tk-cube-aff > .tag { color: var(--k5); }
+.tk-cube-pays { display: flex; gap: 3px; }
+.tk-cube-pay { flex: 1; height: 26px; padding: 2px 3px; color: var(--k7); background: var(--k0); box-shadow: inset 0 0 0 1px var(--k3); text-align: left; line-height: 10px; white-space: nowrap; }
+.tk-cube-pay > span { display: flex; align-items: center; gap: 2px; color: var(--k9); }
+.tk-cube-pay > span > img { width: 9px; height: 9px; }
+.tk-cube-pay > i { display: block; font-style: normal; color: var(--bad); }
+.tk-cube-pay.ok > i { color: var(--good); }
+.tk-cube-pay.on { box-shadow: inset 0 0 0 1px var(--gold); background: var(--k2); }

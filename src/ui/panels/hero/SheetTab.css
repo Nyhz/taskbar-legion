@@ -1,0 +1,16 @@
+/* The sheet wing (154 art px of content): every stat as sign + number in two columns, the account's figures four
+   to a line, the live effects. Authored at 1× art pixel. */
+.tk-sheet { width: 154px; }
+.tk-sheet-hp { position: relative; display: flex; align-items: center; gap: 2px; color: var(--k8); white-space: nowrap; }
+.tk-sheet-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 0 6px; margin-top: 4px; align-items: start; }
+.tk-sheet-cols .tk-stat em > .under { color: var(--bad); }
+.tk-sheet-cols .tk-stat em > .over { color: var(--good); }
+.tk-sheet-accts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px 0; }
+.tk-sheet-acct { position: relative; display: grid; grid-template-rows: 24px 10px; justify-items: center; align-items: center; gap: 2px; }
+.tk-sheet-acct > b { font-weight: 400; color: var(--k9); white-space: nowrap; }
+.tk-sheet-fx { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 8px; min-height: 16px; }
+.tk-sheet-fx > div { position: relative; display: flex; align-items: center; gap: 2px; }
+.tk-sheet-fx > div.good { color: var(--good); }
+.tk-sheet-fx > div.bad { color: var(--bad); }
+.tk-sheet-fx > span { color: var(--k5); }
+.tk-sheet-fx .tk-tip { color: var(--k7); }

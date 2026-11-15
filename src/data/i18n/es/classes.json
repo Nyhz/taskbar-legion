@@ -1,0 +1,14 @@
+{
+  "knight": {
+    "en": "Knight",
+    "es": "Knight"
+  },
+  "ranger": {
+    "en": "Ranger",
+    "es": "Ranger"
+  },
+  "priest": {
+    "en": "Priest",
+    "es": "Priest"
+  }
+}

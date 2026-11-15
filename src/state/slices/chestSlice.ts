@@ -3,7 +3,7 @@ import type { GameStore } from '../store';
 import type { ChestType, ChestStack } from '@/data/chests';
 
 // Mirror of the sim's unopened-chest stacks (the sim owns caps/accrual) + auto-open
-// state. The engine pushes `setChests`; the chest popups (ChestPopups) read these
+// state. The engine pushes `setChests`; the HUD rail (HudChests) reads these
 // counts and open a type via the engine.
 
 export interface ChestSlice {

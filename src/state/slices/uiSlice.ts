@@ -1,35 +1,46 @@
 import type { StateCreator } from 'zustand';
+import { getLanguage, isLang, setLanguage, subscribeLanguage } from '@/i18n/core';
+import type { Lang } from '@/i18n/core';
 import { loadSettings, saveSettings } from '../settingsShim';
+import { UI_SCALE, snapGameScale } from '../pixelScale';
 
 export type PanelKey =
-  | 'party' // the persistent host, anchored above the strip
+  | 'party' // the hero window: the main panel, fixed and centred above the strip
   | 'stash' // left wing
-  | 'talents' // left wing (Stats + Talents tabs)
+  | 'talents' // left wing
+  | 'sheet' // left wing: every stat of the hero and the account
   | 'cube' // right wing
   | 'map' // right wing
-  | 'pets' // right wing (opened from the paper-doll button)
-  | 'tech'; // full overlay that slides up over the party menu
+  | 'pets' // right wing
+  | 'tech'; // right wing (upgrades)
 
-// At most one panel may be open per side of the party menu. Opening a second one
-// on the same side closes the first (the "one menu per side" rule).
-export const LEFT_PANELS: readonly PanelKey[] = ['stash', 'talents'];
-export const RIGHT_PANELS: readonly PanelKey[] = ['cube', 'map', 'pets'];
+// The hero window (`party`) is the anchor. Every other panel is a WING that opens glued to one of its edges, at
+// most one per side: opening a second one on the same side closes the first. A wing can only be open while the
+// hero window is — opening one opens it, and closing the hero window closes its wings.
+export const LEFT_PANELS: readonly PanelKey[] = ['stash', 'talents', 'sheet'];
+export const RIGHT_PANELS: readonly PanelKey[] = ['cube', 'map', 'pets', 'tech'];
 
 function sideOf(key: PanelKey): readonly PanelKey[] | null {
   if (LEFT_PANELS.includes(key)) return LEFT_PANELS;
   if (RIGHT_PANELS.includes(key)) return RIGHT_PANELS;
-  return null; // party / tech are independent of the wing exclusivity
+  return null; // the hero window itself
+}
+
+/** `open` with `key` added: its sibling on the same side dropped, the hero window opened if it was not. */
+function withPanel(open: readonly PanelKey[], key: PanelKey): PanelKey[] {
+  const side = sideOf(key);
+  const kept = side === null ? [...open] : open.filter((k) => !side.includes(k));
+  if (side !== null && !kept.includes('party')) kept.unshift('party');
+  return [...kept, key];
 }
 
 export type UiScale = 1 | 1.5 | 2; // kept for save-schema back-compat; the live value is fixed
-/** Baseline UI sizing baked into the layout (the strip canvas + panel base scales). The user
- *  zoom multiplies ON TOP of this, so uiZoom = 1 reproduces the original 1.5×/1.3×… look. */
-export const UI_SCALE = 1.5;
-/** The slider stops for the two independent scales (× on top of the baseline). */
+// The baseline (UI_SCALE) and the whole-pixel game-scale stops live in ../pixelScale (pure, tested).
+export { UI_SCALE } from '../pixelScale';
+/** The stops of the MENU scale (× on top of the baseline). The game scale has its own, per display. */
 export const SCALE_MIN = 0.75;
 export const SCALE_STEP = 0.25;
 export const MENU_SCALE_MAX = 1; // menus only 0.75 / 1.00 (1.25 outgrows the capped overlay height)
-export const GAME_SCALE_MAX = 1.25; // game 0.75 / 1.00 / 1.25
 export type DockOrientation = 'bottom' | 'left' | 'right';
 
 export interface WindowPos {
@@ -56,7 +67,7 @@ export interface UiSlice {
   togglePanel: (key: PanelKey) => void;
   openPanel: (key: PanelKey) => void;
   closePanel: (key: PanelKey) => void;
-  toggleMenu: () => void; // Menu button: open the party host, or close everything if already open
+  toggleMenu: () => void; // the HUD's sign: open the hero window, or close it and its wings
   closeAllPanels: () => void;
   setWindowPos: (key: PanelKey, pos: WindowPos) => void;
   setDockOrientation: (orientation: DockOrientation) => void;
@@ -66,8 +77,22 @@ export interface UiSlice {
   setGameScale: (scale: number) => void;
 }
 
+/** Screen pixels per CSS pixel of the display the window is on (1 outside a browser). */
+export function displayPixelRatio(): number {
+  return typeof window === 'undefined' ? 1 : window.devicePixelRatio || 1;
+}
+
+/** Height of the window the game lives in, in CSS px (undefined outside a browser). */
+export function displayViewportHeight(): number | undefined {
+  return typeof window === 'undefined' ? undefined : window.innerHeight;
+}
+
 export const createUiSlice: StateCreator<UiSlice, [], [], UiSlice> = (set, get) => {
   const persisted = loadSettings();
+  // The language lives in @/i18n (so `t()` works outside React and the store); this slice only persists it.
+  // It is written to the shim ONLY once chosen — until then the game follows the system language.
+  let chosenLanguage: Lang | undefined = isLang(persisted.language) ? persisted.language : undefined;
+  if (chosenLanguage !== undefined) setLanguage(chosenLanguage);
   // Persist every shim-backed UI setting from the current store snapshot.
   const persist = (): void =>
     saveSettings({
@@ -77,7 +102,12 @@ export const createUiSlice: StateCreator<UiSlice, [], [], UiSlice> = (set, get) 
       dockOrientation: get().dockOrientation,
       retryStage: get().retryStage,
       hideSocketWarning: get().hideSocketWarning,
+      ...(chosenLanguage !== undefined ? { language: chosenLanguage } : {}),
     });
+  subscribeLanguage(() => {
+    chosenLanguage = getLanguage();
+    persist();
+  });
   return {
     screen: 'title',
     setScreen: (screen) => set({ screen }),
@@ -85,41 +115,33 @@ export const createUiSlice: StateCreator<UiSlice, [], [], UiSlice> = (set, get) 
     windowPos: {},
     uiScale: UI_SCALE, // fixed baseline — the user knobs are menuScale / gameScale
     menuScale: Math.min(MENU_SCALE_MAX, persisted.menuScale ?? 1), // clamp a stale 1.25 down
-    gameScale: persisted.gameScale ?? 1,
+    gameScale: snapGameScale(persisted.gameScale ?? 1, displayPixelRatio(), displayViewportHeight()), // whole screen pixels per art pixel
     dockOrientation: persisted.dockOrientation ?? 'bottom',
     retryStage: persisted.retryStage ?? false,
     hideSocketWarning: persisted.hideSocketWarning ?? false,
 
     togglePanel: (key) =>
-      set((s) => {
-        if (s.openPanels.includes(key)) {
-          return { openPanels: s.openPanels.filter((k) => k !== key) };
-        }
-        // Opening: drop any sibling already open on the same wing.
-        const side = sideOf(key);
-        const kept = side === null ? s.openPanels : s.openPanels.filter((k) => !side.includes(k));
-        return { openPanels: [...kept, key] };
-      }),
+      set((s) =>
+        s.openPanels.includes(key)
+          ? { openPanels: key === 'party' ? [] : s.openPanels.filter((k) => k !== key) }
+          : { openPanels: withPanel(s.openPanels, key) },
+      ),
 
     openPanel: (key) =>
-      set((s) => {
-        if (s.openPanels.includes(key)) return s;
-        const side = sideOf(key);
-        const kept = side === null ? s.openPanels : s.openPanels.filter((k) => !side.includes(k));
-        return { openPanels: [...kept, key] };
-      }),
+      set((s) => (s.openPanels.includes(key) ? s : { openPanels: withPanel(s.openPanels, key) })),
 
-    // Closing the party host tears down the whole menu (its wings + tech overlay).
+    // Closing the hero window closes its wings with it.
     closePanel: (key) =>
-      set((s) => (key === 'party' ? { openPanels: [] } : { openPanels: s.openPanels.filter((k) => k !== key) })),
+      set((s) =>
+        key === 'party' ? { openPanels: [] } : { openPanels: s.openPanels.filter((k) => k !== key) },
+      ),
 
     toggleMenu: () =>
       set((s) => (s.openPanels.includes('party') ? { openPanels: [] } : { openPanels: ['party'] })),
 
     closeAllPanels: () => set({ openPanels: [] }),
 
-    setWindowPos: (key, pos) =>
-      set((s) => ({ windowPos: { ...s.windowPos, [key]: pos } })),
+    setWindowPos: (key, pos) => set((s) => ({ windowPos: { ...s.windowPos, [key]: pos } })),
 
     setDockOrientation: (orientation) => {
       set({ dockOrientation: orientation });
@@ -141,8 +163,9 @@ export const createUiSlice: StateCreator<UiSlice, [], [], UiSlice> = (set, get) 
       persist();
     },
 
+    // Always lands on a whole-pixel stop for the display the window is on (also called when that display changes).
     setGameScale: (scale) => {
-      set({ gameScale: scale });
+      set({ gameScale: snapGameScale(scale, displayPixelRatio(), displayViewportHeight()) });
       persist();
     },
   };

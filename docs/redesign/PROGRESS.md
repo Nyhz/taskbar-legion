@@ -311,3 +311,213 @@ Los iconos de habilidades y talentos esperan al rediseño de kits y árboles, qu
 - Flojo conocido de la maqueta 2: los títulos van al doble de tamaño que el resto del texto (píxel gordo, como el
   héroe del nicho); el emblema de "todas las clases" es poco claro; no hay vista de comparación lado a lado;
   solo se ha visto en capturas del navegador sin cabeza a 1280 px, no en móvil.
+
+## Interfaz en el juego (2026-11-15)
+
+El usuario aprobó el orden: kit en código + iconos + idiomas → paneles reales uno a uno (HUD primero) → kits de
+clase (`CLASSES.md`, en paralelo) → armadura por clase → arte de la tira al juego.
+
+- [x] **Idiomas (R3)**: `src/i18n/` (catálogos `en`/`es` tipados, `t()`, `useT()`, idioma del sistema por
+      defecto, guardado con los ajustes), diccionarios de datos en `src/data/i18n/es/` con `src/i18n/names.ts`,
+      pruebas en `test/i18n/`, glosario en `docs/redesign/I18N.md`. Selector mínimo en el popover de opciones
+      actual. DESVIACIÓN de R3: no se traducen los paneles viejos; cada panel recibe sus textos al rehacerse.
+      Dificultades en español: Normal · Infierno · Averno · Eterno · Tormento (la maqueta del mapa aún las
+      tiene en inglés). Habilidades, talentos y definitivas, fuera hasta cerrar `CLASSES.md`.
+- [x] **Kit en código**: `src/ui/kit/` — `tokens.ts` (tonos de la paleta como variables CSS), `kit.css` (las
+      recetas de `00_kit.html` con prefijo `tk-`), `KitRoot` (zoom al píxel del arte), `Sign`, `Tip*`, `Bar`,
+      `art()`. Fuentes dentro de la app (`src/assets/fonts`, OFL) e incrustadas en la build (`vite.config.ts`).
+      Arte de interfaz en `src/assets/ui` vía `sh run.sh export-ui` (`tools/assets/pipeline/export_ui.py`;
+      cada panel añade sus prefijos al portarse).
+- [x] **HUD real** (`src/ui/hud/StripHud.tsx` + `HudDock`, `HudStage`, `HudChests`, `hud.css`): lanzadores de
+      paneles, dificultad + etapa + barra + calavera, cofres con un cuadradito por hueco (clic para abrir),
+      llaves, oro. Sobre la tira (`src/ui/overlay/`): `BossPlate` (sustituye a la barra de furia: jefe, vida,
+      reloj), `RetryKey`, `HealDebuffBadge`. Se van `ChestPopups`, `BossEnrageBar`, `RetryToggle`,
+      `ZoneDebuffBadge`. Textos en `src/i18n/{en,es}/hud.ts`. typecheck, lint, 225 pruebas y `vite build` en
+      verde; visto en el juego en navegador sin cabeza, en español, con tooltips (captura en el lab v38).
+      - Sin ver todavía: la placa de jefe en el juego (no llegué a un jefe en la captura), el overlay de Tauri
+        y la build empaquetada (las fuentes y el arte van incrustados para evitar el fallo de `tauri://`).
+      - Se quita del HUD: el rótulo «TASKBAR LEGION» y los niveles del grupo (van en el panel de héroe).
+      - Provisional: el botón de escala sigue siendo el viejo (se sustituye con el panel de Ajustes); el
+        tooltip de etapa dice «Mundo N» (los nombres de mundo entran con los datos del contenido nuevo); la
+        placa de jefe dice «Jefe de etapa / de mundo» (los nombres de jefe entran con el bestiario).
+- [x] **Escala de píxel entero** (pregunta del usuario: "¿Podemos pasar a bases enteras sin mover las cosas de
+      sitio?"). Sí: la disposición no cambia (tira anclada abajo al centro, paneles encima); solo cambian los
+      tamaños disponibles. `src/state/pixelScale.ts` (puro, con pruebas): la escala del juego solo admite valores
+      que dan un número entero de píxeles de pantalla por píxel del arte en la pantalla donde está la ventana
+      (retina: ×2, ×3, ×4, el ×3 es el tamaño de siempre; pantalla normal: ×1 y ×2, por defecto ×2 = tira de
+      1200 px en vez de los 900 de antes, que no podían ser nítidos). El valor guardado se ajusta al cargar y al
+      cambiar de pantalla. El lienzo de Pixi usa siempre resolución 2 (3 píxeles de respaldo por píxel de arte).
+      Visto nítido en capturas a densidad 1 y 2. La escala de MENÚS no se toca hasta rehacer los paneles.
+      Sin ver: Tauri en Windows a 100 % (con ×2 la tira + HUD ocupan 364 px de alto; el panel de mejoras viejo,
+      de ~700 px, roza el alto de la ventana overlay).
+- [x] **`docs/redesign/CLASSES.md`** (propuesta, 395 líneas): reglas del árbol sobre la maqueta aceptada, 9
+      habilidades por clase (las 5 actuales + 2 por rama), dos ramas por clase, funciones de simulación
+      necesarias (F1–F9), migración, sondeo, arte. Ocho preguntas para el usuario al final (§11).
+- [ ] Decisiones del usuario sobre `CLASSES.md` §11.
+- [ ] Siguiente panel real: héroe + alijo (pide exportar iconos de objeto sin marco y decidir cómo se asigna
+      la categoría de dibujo 1–5 a cada objeto), luego mapa, mejoras, mascotas, cubo, ajustes, título.
+
+## Armadura por clase y ritmo (2026-11-15)
+
+- [x] **Armadura por clase** (adelantada con el visto bueno del usuario: el panel de héroe necesita la familia para
+      dibujar cada pieza). `ARMOR_FAMILIES` en `src/data/itemSlots.ts` (Knight placas · Ranger cuero · Priest
+      tela); `composeItem` sortea una clase para la armadura entre las del grupo (igual que las armas), así que
+      un Knight solo nunca ve cuero ni tela; la familia NO decide la mitigación (armadura / resistencia mágica /
+      mitad y mitad en las tres). Equipar ya rechazaba un `classKey` ajeno. El Cubo crea piezas para una clase del
+      grupo. `GENERATOR_VERSION` 7 (limpia el equipo anterior; no habrá partidas previas). Pruebas nuevas en
+      `test/sim/loot`, `itemSlots`, `cube` y `test/state/inventoryGems`. `docs/AFFIXES.md` y `CLAUDE.md` al día.
+      Pendiente al portar el panel: nombre de familia en los diccionarios de idioma.
+- [x] **Efecto en el ritmo** (`npm run probe`, misma configuración antigua de 2 h/día): terminar Tormento pasa de
+      8,1 a 12,0 días de juego activo (mediana; 4/5 → 5/5 semillas completan). Cada pieza de armadura sirve ahora
+      a un héroe de tres.
+- [x] **Referencia de ritmo fijada por el usuario**: el probe supone 8 h de juego al día
+      (`DEFAULT_CONFIG.activeHoursPerDay = 8`) y el objetivo es ~3 meses de calendario para acabar todas las
+      dificultades (~720 h activas). El usuario se pasó el balance anterior en ~3 semanas. El reajuste (subir
+      muros, enemigos más fuertes, menos botín, clases más flojas) se hace cuando el contenido del rediseño esté
+      listo, midiendo con el probe; no antes ni a trozos.
+
+- [x] **Maqueta completa de héroe + bolsa + alijo** (lab v39, `10_hero_stash.html` + `icon_sets/s99_bag.py`): nueve
+      momentos rotulados que cubren lo que hace el juego hoy — cambiar de héroe y reclutar (marcapáginas en el
+      borde superior), dos habilidades + definitiva, preajustes Farmeo / Jefe, la bolsa dentro de la ventana del
+      héroe con su capacidad y la casilla que compra un hueco, el alijo con páginas, menús de clic derecho,
+      comparar, engastar, arrastrar, bolsa llena y la pestaña «Hoja». Se van (no existen en el juego): vender,
+      abrir cofres desde el alijo, filtro por clase, flechas de mejora y «poder de equipo» (ahora nivel medio de
+      objeto). Flojo: héroe + bolsa mide ~515 px de arte; con el alijo al lado no cabe en pantalla normal a ×2.
+- [x] El usuario pide pasarla a código ya ("Pásala a código ya"); los cambios se harán sobre el panel real.
+- [x] `CLASSES.md` actualizado con las ocho decisiones y con las tres que quedaban (2026-11-15): talentos de rol
+      sí; el par «elige uno» es de dos habilidades distintas; la pestaña Habilidades desaparece (la tercera
+      pestaña del héroe es la hoja de estadísticas). Pendiente: nombres y la sustituta «Mantener la línea».
+
+## Pantallas objetivo y ritmo de referencia (2026-11-15)
+
+- [x] **Pantallas en las que el juego tiene que caber** (requisito del usuario): 1280×720, 1920×1080, 2560×1440 y
+      el MacBook Pro M4 (1512×982 @2x el de 14", 1728×1117 @2x el de 16"). Lista y ayuda de encaje en
+      `src/state/pixelScale.ts` (`TARGET_SCREENS`, `wholePixelFit`), con pruebas: en todas, la tira cabe a su
+      escala por defecto y la ventana más ancha (héroe + bolsa, ~520 × 240 px de arte) cabe encima.
+      Calculado: 1280×720 → tira ×2, paneles ×1 · 1920×1080 → tira ×2, paneles ×2 (con el alijo al lado) ·
+      2560×1440 → tira ×2, paneles hasta ×3 · MacBook 14" → tira ×3, paneles ×3.
+- [ ] Al rehacer la capa de paneles: elegir sola la escala de paneles según la pantalla, y dimensionar la ventana
+      overlay de Tauri según el monitor (hoy es fija, 1280×1060 px lógicos: más alta que una pantalla de 720 y
+      más estrecha que héroe + bolsa + alijo a ×2).
+- [x] **Probe a 8 h/día, con armadura por clase** (punto de partida del reajuste): Normal 1,0 d activos (3 d de
+      calendario) · Infierno 2,0 d (6 d) · Averno 5,0 d (15 d) · Eterno 8,3 d (25 d) · Tormento 16,0 d activos
+      (1,6 meses). Objetivo: ~3 meses. Falta alargar el juego cerca de ×1,9.
+- [x] Maqueta de héroe + bolsa + alijo: el usuario acepta la bolsa dentro de la ventana del héroe "de momento".
+
+## Héroe + bolsa + alijo en código (2026-11-15, en curso)
+
+- [x] **Kit ampliado** (`src/ui/kit`): `Window` (pestañas, plazas, cabecera), `Slot` + `ItemIcon` + `SlotGrid`,
+      `Key` / `Chip` / `Check` / `Gold`, `Menu`, familia `Tip*` (incluida la tarjeta de objeto y de comparación),
+      `StatRow`, `Node` (placas de habilidad / pasiva / modificador / definitiva), `Rule`. Galería de desarrollo en
+      `/#kit`. Arte de objeto por pieza: `src/ui/itemArt.ts` (familia por clase; dibujo 1–5 por rareza:
+      T0→1, T1–T2→2, T3–T4→3, T5–T7→4, T8→5), con prueba de que cada combinación tiene archivo.
+- [x] **Capa de paneles** (`src/app/PanelLayer.tsx`, `kitPanels.tsx`): los paneles del kit van en una fila centrada
+      sobre la tira, a píxel entero: la escala de la tira si caben, una menor si no (`panelPixelsPerArtPixel`,
+      con pruebas en las pantallas objetivo). Los paneles antiguos siguen por su camino viejo.
+- [x] **Ventana overlay de Tauri** ajustada al monitor (`desktopOverlay.ts`): ancho del monitor hasta 1920 y alto
+      del monitor menos el margen del dock, hasta 1060. SIN PROBAR en Tauri.
+- [x] Estado `heroTab` (equipo / talentos / hoja); el HUD abre la ventana de héroe en su pestaña.
+- [x] Herramientas: `scripts/shot-app.mjs` (capturar el juego en marcha) y `scripts/dev-seed.js` (estado de prueba
+      con dos héroes, equipo, bolsa y alijo).
+- [x] **Casillas de objeto** (`src/ui/panels/items`): `ItemCell` (mismas props que el viejo `ItemSlot`), tarjeta
+      de objeto y de gema, comparación lado a lado con lo puesto (diferencias, estadística perdida, daño y
+      aguante, Mayús sin gemas), menú contextual con el `Menu` del kit (`MenuItem.sign`), fantasma de arrastre,
+      `DropSlot`, diálogos de engaste como ventanas del kit. Nombres de familia de armadura y de gema en los
+      diccionarios.
+- [x] **Ventana de héroe + bolsa** (`src/ui/panels/hero`): plazas (cambiar de héroe, reclutar, plaza cerrada),
+      pestañas equipo / talentos / hoja, muñeco en el nicho (figura antigua de momento), nivel, experiencia,
+      nivel medio de objeto con su flecha, columna de estadísticas, definitiva + dos habilidades con recarga,
+      preajustes, bolsa con páginas de 6 × 5, casilla de comprar hueco, ordenar, gemas al alijo.
+- [x] **Alijo** (`src/ui/panels/stash`): páginas como marcapáginas (la siguiente se compra, las demás cerradas),
+      cinco filtros, ordenar, «+1 hueco», mover con la bolsa por clic / clic derecho / arrastre.
+- [x] **Talentos y hoja** (`hero/TalentsTab`, `SheetTab`): el árbol ACTUAL como diez columnas (habilidades arriba,
+      pasivas abajo), barra de puntos gastados, tope de 2 habilidades, devolver puntos; hoja con estadísticas,
+      cifras de cuenta y efectos activos. Signos provisionales de las 15 habilidades y 3 definitivas
+      (`icon_sets/s9b_abilities.py`, `src/ui/abilityArt.ts`).
+- [x] **Integración**: se borran `PartyPanel`, `StashPanel`, `panels/party/*`, `HoverTip` y los dos bancos de
+      pruebas; ajustes y salir pasan provisionalmente al HUD (eran botones de la cabecera vieja); la ventana de
+      héroe toma el ancho de su pestaña; `window.__tlStore` en desarrollo para las capturas; `shot-app.mjs`
+      mueve un ratón real. typecheck, lint, 270 pruebas y `vite build` en verde. Visto en el juego (lab v40):
+      héroe + bolsa + alijo en español, comparación con ratón real, menú de clic derecho, talentos, y 1280×720.
+- Flojo / pendiente conocido: nombres y descripciones de habilidades y efectos siguen en inglés (esperan a
+  `CLASSES.md`); los objetos no tienen nombre propio (la tarjeta dice el tipo: «Yelmo · Épico · Placas»);
+  decimales del nivel medio a la inglesa; la figura del nicho es la antigua y sobresale del arco; arrastrar
+  entre páginas de la bolsa no es posible (se ordena); el destello al equipar no está; sin probar en Tauri ni
+  con la build empaquetada; los botones de ajustes / escala / salir del HUD son los viejos.
+- [ ] Siguientes paneles reales: mapa, mejoras, mascotas, cubo, ajustes, título.
+
+## Disposición de los paneles (2026-11-15)
+
+El usuario, al ver héroe + bolsa lado a lado con el alijo: "Me incomoda que la ventana de pj + inventario no esté
+centrada"; no quiso una ventana única ni un menú cada vez ("la de héroe/inventario… debería ser fija"), y propuso:
+"los iconos del inventario y alijo son muy grandes. Podrían reducirse alrededor de 1/3… ¿nos cabe el inventario
+debajo del paperdoll? ¿Y centradito?". Hecho así:
+
+- [x] **Ventana de héroe fija y centrada** sobre la tira; no se mueve ni se cierra al abrir otra. El muñeco queda
+      en medio y la **bolsa debajo**, a lo ancho del bloque del muñeco.
+- [x] **Casillas pequeñas** (kit `SlotGrid small`, `KitScale.small`): bolsa y alijo se dibujan un píxel de pantalla
+      por píxel de arte menos que su ventana (2/3 a ×3, 1/2 a ×2; a ×1 no hay paso menor). No es un escalado
+      borroso: siguen en la rejilla de píxeles. Sus tooltips vuelven a la escala de la ventana.
+- [x] La bolsa toma las columnas que caben bajo el muñeco (9 a ×3, 12 a ×2, 6 a ×1) y las filas que caben sobre
+      la tira (entre 2 y 5; el resto, en páginas). `src/ui/panels/hero/heroLayout.ts`, `smallGrid.ts`,
+      `panelSpace.ts`.
+- [x] **Alas**: una ventana a cada lado del héroe (izquierda: alijo; derecha: el menú que se abra). La capa calcula
+      la escala contando el ala más ancha a AMBOS lados, para que el héroe no se descentre (`fitPanelPixels`).
+- [x] El alijo enseña solo sus páginas compradas y la siguiente (antes, ocho marcapáginas con candado).
+- [x] **La tira ocupa como mucho el 42 % del alto de la pantalla** (`STRIP_MAX_HEIGHT_SHARE`): en 1280×720 solo
+      queda ×1 (×2 era media pantalla). Pruebas nuevas sobre las pantallas objetivo: tira ×1 / paneles ×1 en
+      720p; ×2 / ×2 en 1080p y 1440p; ×3 / ×3 en los MacBook; el héroe cabe solo y con el alijo en todas.
+- Visto en el juego en las cuatro pantallas (lab v42) y el tooltip de comparación con ratón real sobre una casilla
+  pequeña. typecheck, lint y 270 pruebas en verde.
+- Flojo: en 1080p la bolsa enseña solo 2 filas (24 huecos a la vista); en 720p las casillas no pueden encogerse;
+  dos tamaños de píxel conviven en la misma ventana (equipo grande, bolsa pequeña); los demás menús (mapa,
+  mejoras, mascotas, cubo) aún son los viejos y no usan el ala derecha nueva.
+
+- [x] **Segunda vuelta de la disposición** (2026-11-15, hecha — lab v43), a petición del usuario al ver lo anterior:
+      ventanas PEGADAS ("como antes"; el hueco era un fallo: se reservaba el ancho de la pestaña más ancha);
+      alijo de ancho FIJO, exactamente sus columnas; iconos de objeto a 2/3 EN TODAS PARTES (equipo, bolsa,
+      alijo) y con la misma proporción en cualquier pantalla y escala — el paso de píxel menor daba 1/2 en 1080p
+      y "son muy pequeños"; la ventana de héroe es la principal y las demás son alas que se despliegan desde
+      etiquetas en sus bordes: izquierda alijo / talentos / estadísticas, derecha cubo / mapa / mascotas /
+      mejoras, una por lado. Para los 2/3 fijos el pipeline dibuja los iconos NATIVAMENTE a 22 px en marco de 24
+      (`sm_*`, `smframe_*`); probado: espadas, yelmos, guantes, botas, arcos, varas y tomos salen bien a la
+      primera, pecheras, anillos y escudos hay que repasarlos. Se retira el mecanismo de "casillas pequeñas" por
+      zoom. Talentos y hoja dejan de ser pestañas del héroe y pasan a alas izquierdas.
+- [x] **Un solo ancho para todos los paneles laterales** (usuario, 2026-11-15): alijo, talentos, estadísticas,
+      cubo, mapa, mascotas y mejoras se diseñan al MISMO ancho en px de arte (alto variable). Héroe + un ala a
+      cada lado tiene que caber en todas las pantallas objetivo a la escala de la tira (la más justa:
+      1920×1080 a ×2, 960 px de arte de ancho). Las tres alas del kit (alijo, talentos, hoja) lo adoptan ya; cubo,
+      mapa, mascotas y mejoras se rehacen a ese ancho al portarlas.
+- [x] Resultado (lab v43; typecheck, lint y 271 pruebas en verde):
+      - Iconos de objeto dibujados NATIVAMENTE a 22 px en marco de 24 (`sm_*`, `smframe_*`): `Icon` tiene escala
+        real (`at_scale`), los 32 px no cambian ni un byte; repasados uno a uno. Flojos a 22 px: abalorio de la
+        Grieta, anillo de sello, marco T7 pesado.
+      - Todas las casillas del juego son de 24 px de arte (equipo, bolsa, alijo); se retira el zoom de "casillas
+        pequeñas". Marcas de casilla a su medida (`icon_sets/s9c_marks.py`).
+      - Un solo ancho: **298 px de arte** para el héroe y cada ala (11 casillas). Héroe + dos alas + etiquetas =
+        934 px de arte; cabe en 1920×1080 a ×2 (952 disponibles). Escala de paneles = la de la tira en todas las
+        pantallas objetivo (720p ×1, 1080p ×2, 1440p ×2, MacBook ×3).
+      - Ventana de héroe: muñeco con casillas de 24, nombre, estadísticas y experiencia al lado; fila de
+        definitiva + habilidades + nivel de objeto + preajustes; bolsa debajo (2–5 filas según el alto).
+      - Alas pegadas y alineadas abajo, desde etiquetas: izquierda alijo / talentos / hoja; derecha cubo / mapa /
+        mascotas / mejoras. Una por lado (abrir una cierra la otra). Las etiquetas van en el borde exterior del
+        ala abierta. Las páginas del alijo pasan a su pie. El HUD lleva un solo signo de menú.
+      - Los cuatro paneles de la derecha siguen siendo los ANTIGUOS (aspecto y ancho viejos): hay que rehacerlos
+        a 298 px. En 1280×720 mejoras se sale por la derecha y por arriba.
+      - Sin probar: overlay de Tauri (clic a través de las etiquetas que cuelgan fuera), arrastre con ratón real.
+- [ ] Siguiente: cubo, mapa, mascotas y mejoras como alas del kit a 168 px de ancho (6 casillas) (alto libre, ≤ ~314 px de
+      arte para caber en 1080p a ×2).
+- [x] **Alas estrechas y altas** (usuario, 2026-11-15: "Las pestañas laterales deberian ser mas estrechas y mas
+      altas. Todo lo altas que necesiten ser… Pero no tan anchas"; leído como los paneles laterales, no las
+      etiquetas). Ancho común nuevo: 6 casillas (~168 px de arte); el héroe conserva sus 298. Alijo 6 × 5,
+      talentos con el árbol en vertical, estadísticas en dos columnas. HECHO (lab v44): ancho único 168 px de
+      arte (`WING_COLS` en `src/ui/panels/panelLayout.ts`); héroe + dos alas + etiquetas = 674 px de arte. Altos
+      máximos: alijo 314 (9 filas, todos los huecos comprados; 210 en la página base), talentos 307, hoja 314 en
+      su peor caso declarado. El tope es 314 (1080p a ×2 en Tauri): alijo y hoja lo tocan sin holgura. 277
+      pruebas en verde. Sin ver: hoja con más de dos líneas de efectos, pie del alijo con 5–7 páginas, Tauri.
+- [ ] **Cubo, mapa, mascotas y mejoras como alas del kit** (usuario, 2026-11-15: "a por esos paneles que faltan y
+      las mejoras. Ya haremos ajustes"), en curso en paralelo. Cada una a 154 px de contenido (6 casillas) y como
+      mucho 314 de alto. Preparado: ventanas provisionales registradas (`src/ui/panels/{cube,map,pets,tech}`),
+      espacios de texto `cube` / `map` / `pets` / `tech`, arte `map_` y `pet_` exportado. Al terminar: borrar
+      `CubePanel`, `MapPanel`, `PetsPanel`, `TechTreePanel`, `tech/TechCard` y los componentes viejos sin uso
+      (`PixelWindow`, `ItemSlot`, `ItemTooltip`, `GemTooltip`…), y quitar la rama antigua de `PanelLayer`.

@@ -19,7 +19,7 @@ const hero = (): HeroState => ({ id: 'h0', classKey: 'knight', level: 99, exp: 0
 
 describe('unified gem inventory', () => {
   it('addLoot puts items and gems into the same inventory array', () => {
-    const item = composeItem('helmet', 4, itemOrigin(1, 20), makeRng(1)); // T4 → 2 sockets
+    const item = composeItem('helmet', 4, itemOrigin(1, 20), makeRng(1), undefined, 'knight'); // T4 → 2 sockets
     const gem = generateGem({ rollSeed: 7, stageIndex: 20, generatorVersion: 1 }, 3);
     useStore.setState({ inventory: [], stash: [], roster: [hero()], selectedHeroId: 'h0' });
 
@@ -33,8 +33,8 @@ describe('unified gem inventory', () => {
   it('mints unique ids on insert even when two items share a roll-seed id', () => {
     // Same origin ⇒ composeItem produces the SAME rollSeed-derived id for both — the exact
     // collision the old design hit. The minter must hand each a distinct id on insert.
-    const a = composeItem('helmet', 4, itemOrigin(5, 20), makeRng(5));
-    const b = composeItem('helmet', 4, itemOrigin(5, 20), makeRng(5));
+    const a = composeItem('helmet', 4, itemOrigin(5, 20), makeRng(5), undefined, 'knight');
+    const b = composeItem('helmet', 4, itemOrigin(5, 20), makeRng(5), undefined, 'knight');
     expect(a.id).toBe(b.id); // identical content → identical roll-seed id (pre-minter hazard)
     useStore.setState({ inventory: [], stash: [], roster: [hero()], selectedHeroId: 'h0', nextEntryId: 1 });
 
@@ -47,7 +47,7 @@ describe('unified gem inventory', () => {
   });
 
   it('socketing consumes the gem from the inventory without binding the item', () => {
-    const item = composeItem('helmet', 4, itemOrigin(2, 20), makeRng(2));
+    const item = composeItem('helmet', 4, itemOrigin(2, 20), makeRng(2), undefined, 'knight');
     const gem = generateGem({ rollSeed: 9, stageIndex: 20, generatorVersion: 1 }, 3);
     useStore.setState({ inventory: [item, gem], stash: [], roster: [hero()], selectedHeroId: 'h0' });
 
@@ -62,7 +62,7 @@ describe('unified gem inventory', () => {
   });
 
   it('auto-salvage melts a marked-tier item but never the gem from the same chest', () => {
-    const item = composeItem('helmet', 4, itemOrigin(11, 20), makeRng(11)); // T4 item
+    const item = composeItem('helmet', 4, itemOrigin(11, 20), makeRng(11), undefined, 'knight'); // T4 item
     const gem = generateGem({ rollSeed: 13, stageIndex: 20, generatorVersion: 1 }, 4); // T4 gem (same marked tier)
     useStore.setState({
       inventory: [], stash: [], roster: [hero()], selectedHeroId: 'h0', gold: 0,
@@ -98,7 +98,7 @@ describe('unified gem inventory', () => {
   it('opening one chest (1 gear of a marked tier + 1 gem) salvages the gear but BAGS the gem', () => {
     // Mirrors the reported scenario through the real reveal path (addItem one entry at a time,
     // gear then gem) to prove only ONE thing is recycled — the gem is always kept.
-    const item = composeItem('chest', 4, itemOrigin(31, 20), makeRng(31)); // T4 gear (marked)
+    const item = composeItem('chest', 4, itemOrigin(31, 20), makeRng(31), undefined, 'knight'); // T4 gear (marked)
     const gem = generateGem({ rollSeed: 33, stageIndex: 20, generatorVersion: 1 }, 4); // T4 gem (marked)
     useStore.setState({
       inventory: [], stash: [], roster: [hero()], selectedHeroId: 'h0', gold: 0,
@@ -110,6 +110,17 @@ describe('unified gem inventory', () => {
     expect(entries(st.inventory).filter(isItem)).toHaveLength(0); // the gear was melted
     expect(entries(st.inventory).filter(isGem)).toHaveLength(1); // the gem is in the bag
     expect(st.gold).toBeGreaterThan(0); // exactly one salvage (the gear)
+  });
+
+  it("armour of another class cannot be equipped (the knight wears plate, not the priest's cloth)", () => {
+    const cloth = composeItem('helmet', 4, itemOrigin(71, 20), makeRng(71), undefined, 'priest');
+    const plate = composeItem('helmet', 4, itemOrigin(72, 20), makeRng(72), undefined, 'knight');
+    useStore.setState({ roster: [hero()], inventory: [cloth, plate] });
+    useStore.getState().equip('h0', cloth.id);
+    expect(useStore.getState().roster[0]?.equipment.helmet).toBeUndefined(); // refused, still in the bag
+    expect(entries(useStore.getState().inventory).some((e) => e.id === cloth.id)).toBe(true);
+    useStore.getState().equip('h0', plate.id);
+    expect(useStore.getState().roster[0]?.equipment.helmet?.id).toBe(plate.id);
   });
 
   it('a gem cannot be equipped as gear', () => {

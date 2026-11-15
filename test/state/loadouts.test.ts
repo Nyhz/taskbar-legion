@@ -10,8 +10,8 @@ import type { HeroState } from '@/persistence/saveSchema';
 // can swap back to. Loading restores the build and never touches gear/inventory/stash.
 
 const origin = (seed: number): ItemOrigin => ({ rollSeed: seed, stageIndex: 20, chestType: 'normal', generatorVersion: 1 });
-// Armor (no class lock) with an explicit id so we can equip/look it up deterministically.
-const mkItem = (id: string, slot: 'helmet' | 'chest', seed: number): ItemInstance => ({ ...composeItem(slot, 4, origin(seed), makeRng(seed)), id });
+// Knight armour (plate) with an explicit id so we can equip/look it up deterministically.
+const mkItem = (id: string, slot: 'helmet' | 'chest', seed: number): ItemInstance => ({ ...composeItem(slot, 4, origin(seed), makeRng(seed), undefined, 'knight'), id });
 const hero = (over?: Partial<HeroState>): HeroState => ({
   id: 'h0', classKey: 'knight', level: 50, exp: 0, equipment: {}, talentPoints: 0, talents: {}, activeAbilities: [], loadouts: [null, null], ...over,
 });

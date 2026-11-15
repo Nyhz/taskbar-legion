@@ -11,8 +11,9 @@ from __future__ import annotations
 
 import json
 import math
+from contextlib import contextmanager
 from pathlib import Path
-from typing import Callable, Sequence
+from typing import Callable, Iterator, Sequence
 
 from PIL import Image
 
@@ -20,20 +21,166 @@ from .rig import Cel, Pt, Tone
 
 OUT = Path(__file__).resolve().parents[1] / "out" / "icons"
 S = 32
+#: The SMALL item icon: 22×22 on a 24×24 frame — two thirds of the 32-on-36 one. It is what every slot in the
+#: game shows. It is not the big icon shrunk: the same drawing code runs with every coordinate scaled, so
+#: polygons are rasterised afresh at 22 px and lines, dots and outlines stay one pixel wide.
+SMALL = 22
+SMALL_FRAME = 24
+
+_scale = 1.0  # the scale an `Icon()` of the standard size is born with (see `at_scale`)
+
+
+@contextmanager
+def at_scale(k: float) -> Iterator[None]:
+    """Icons created inside draw at `k` times their size. The icon functions never change: they keep writing
+    coordinates on the 32-unit grid."""
+    global _scale
+    before, _scale = _scale, k
+    try:
+        yield
+    finally:
+        _scale = before
 
 
 class Icon(Cel):
+    """A square icon. The drawing code always works on the DESIGN grid (32 units for an item icon); `k` is how
+    many pixels a design unit is. At k = 1 every method is exactly what it was before scale existed (the 32 px
+    icons are byte-identical); at any other k the shapes are scaled and then rasterised:
+
+    * polygons, rects and limbs are continuous shapes: their corners scale and the result is filled afresh;
+    * points, dots, lines and paths name design PIXELS: each maps to the pixel under its centre, so a line stays
+      one pixel wide;
+    * `poly_mask` and `pixels` hand back the pixels of the REAL grid, expressed in design units, for code that
+      shades pixel by pixel (`x + 0.5` is the pixel's centre on the design grid; `put(x, y)` lands on it exactly).
+    """
+
     def __init__(self, size: int = S):
-        super().__init__(size, size)
+        k = _scale if size == S else 1.0
+        n = int(round(size * k))
+        super().__init__(n, n)
+        self.k = k
+        self._exact: dict[tuple[float, float], tuple[int, int]] = {}
+
+    @property
+    def small(self) -> bool:
+        """True while drawing below the design size: branch on it where a detail has to be simplified."""
+        return self.k != 1.0
+
+    # -- design → pixel -------------------------------------------------------------------------------------
+    def _pixel(self, x: float, y: float) -> tuple[int, int]:
+        """The pixel a design pixel (or a point handed out by `poly_mask` / `pixels`) lands on."""
+        hit = self._exact.get((x, y))
+        if hit is not None:
+            return hit
+        return (int(math.floor((math.floor(x) + 0.5) * self.k)), int(math.floor((math.floor(y) + 0.5) * self.k)))
+
+    def _grid(self, cells: Sequence[tuple[int, int]]) -> list[Pt]:
+        out: list[Pt] = []
+        for i, j in cells:
+            d = ((i + 0.5) / self.k - 0.5, (j + 0.5) / self.k - 0.5)
+            self._exact[d] = (i, j)
+            out.append(d)
+        return out
+
+    # -- primitives -----------------------------------------------------------------------------------------
+    def put(self, x: float, y: float, t: Tone) -> None:
+        if self.k == 1.0:
+            super().put(x, y, t)
+        else:
+            i, j = self._pixel(x, y)
+            super().put(i, j, t)
+
+    def soft(self, x: float, y: float, t: Tone) -> None:
+        if self.k == 1.0:
+            super().soft(x, y, t)
+        else:
+            i, j = self._pixel(x, y)
+            if (i, j) not in self.px:
+                super().put(i, j, t)
+
+    def line(self, a: Pt, b: Pt, t: Tone) -> None:
+        if self.k == 1.0:
+            super().line(a, b, t)
+            return
+        (ax, ay), (bx, by) = self._pixel(*a), self._pixel(*b)
+        dx, dy = abs(bx - ax), -abs(by - ay)
+        sx, sy = (1 if ax < bx else -1), (1 if ay < by else -1)
+        err = dx + dy
+        while True:
+            Cel.put(self, ax, ay, t)
+            if ax == bx and ay == by:
+                return
+            e2 = 2 * err
+            if e2 >= dy:
+                err += dy
+                ax += sx
+            if e2 <= dx:
+                err += dx
+                ay += sy
+
+    def limb(self, a: Pt, b: Pt, w0: float, w1: float, ramp: str, idx: tuple[int, int, int], far: bool = False) -> None:
+        if self.k == 1.0:
+            super().limb(a, b, w0, w1, ramp, idx, far)
+            return
+        k = self.k
+        # Drawn on a scratch cel in real pixels, then copied over (a stroke never thins below about one pixel).
+        probe = Cel(self.w, self.h)
+        probe.limb((a[0] * k, a[1] * k), (b[0] * k, b[1] * k), max(1.3, w0 * k), max(1.3, w1 * k), ramp, idx, far)
+        for (i, j), tone in probe.px.items():
+            Cel.put(self, i, j, tone)
+
+    def poly_mask(self, pts: Sequence[Pt]) -> list:
+        if self.k == 1.0:
+            return super().poly_mask(pts)
+        return self._grid(super().poly_mask([(x * self.k, y * self.k) for x, y in pts]))
+
+    def pixels(self) -> list:
+        """Every pixel of the icon, row by row, in design units: for code that decides each pixel with maths
+        written on the design grid (`dx = x + 0.5 - cx`)."""
+        cells = [(i, j) for j in range(self.h) for i in range(self.w)]
+        return cells if self.k == 1.0 else self._grid(cells)
+
+    def at(self, v: float) -> int:
+        """The real pixel a design coordinate rounds to: with `cell`, for the few places where a SMALL icon has to
+        be laid out on its own pixel grid (four fingers and the three gaps between them)."""
+        return int(round(v * self.k))
+
+    def cell(self, i: int, j: int, t: Tone) -> None:
+        """Paint one REAL pixel (no scaling)."""
+        Cel.put(self, i, j, t)
+
+    def on(self, v: float, *cells: int) -> bool:
+        """Is the coordinate `v` of a pixel from `poly_mask` / `pixels` on one of these design columns (or rows)?
+        At full size it is `v in cells`; drawn smaller, the nearest real pixel answers yes, so a one-unit stripe
+        never falls between two pixels."""
+        reach = 0.5 / self.k
+        return any(abs(v - c) < reach for c in cells)
 
     def poly(self, pts: Sequence[Pt], tone: Tone) -> None:
-        for xy in self.poly_mask(list(pts)):
-            self.put(xy[0], xy[1], tone)
+        if self.k == 1.0:
+            for xy in self.poly_mask(list(pts)):
+                self.put(xy[0], xy[1], tone)
+            return
+        for i, j in Cel.poly_mask(self, [(x * self.k, y * self.k) for x, y in pts]):
+            Cel.put(self, i, j, tone)
 
     def rect(self, x0: float, y0: float, x1: float, y1: float, tone: Tone) -> None:
-        for y in range(int(y0), int(y1) + 1):
-            for x in range(int(x0), int(x1) + 1):
-                self.put(x, y, tone)
+        if self.k == 1.0:
+            for y in range(int(y0), int(y1) + 1):
+                for x in range(int(x0), int(x1) + 1):
+                    self.put(x, y, tone)
+            return
+        # Design pixels x0…x1 cover [x0, x1 + 1): the real pixels whose centre falls inside, and never fewer than one.
+        k = self.k
+
+        def span(lo: float, hi: float) -> range:
+            first = int(math.ceil(int(lo) * k - 0.5))
+            last = int(math.floor((int(hi) + 1) * k - 0.5 - 1e-9))
+            return range(first, max(first, last) + 1)
+
+        for j in span(y0, y1):
+            for i in span(x0, x1):
+                Cel.put(self, i, j, tone)
 
     def path(self, pts: Sequence[Pt], tone: Tone) -> None:
         for a, b in zip(pts, pts[1:]):
@@ -503,6 +650,55 @@ def frame(tier: int) -> Icon:
     return ic
 
 
+def small_frame(tier: int) -> Icon:
+    """The 24×24 slot of a small icon. Redrawn for its size, not the big frame shrunk; every tier keeps its
+    sign: one line (T0–T1), a second line inside (from T2), a tick in each corner (from T4), a mark at the middle
+    of each side (from T6), and for the two highest a glow inside the plate and white-tipped corner brackets."""
+    n = SMALL_FRAME
+    e = n - 1
+    ic = Icon(n)
+    ic.rect(1, 1, e - 1, e - 1, ("ink", 1))
+    ic.rect(2, 2, e - 2, e - 2, ("ink", 2) if tier < 5 else ("ink", 1))
+    ic.path([(2, e - 2), (e - 2, e - 2), (e - 2, 2)], ("ink", 0))  # inner shadow, bottom-right
+
+    def tone(x: int, y: int, bright: bool) -> Tone:
+        if tier == 8:
+            ramp = IRIS[((x + y) // 4) % len(IRIS)]
+            return (ramp, 7 if bright else 5)
+        ramp, dark, hi = TIER_TONES[tier]
+        return (ramp, hi if bright else dark)
+
+    for i in range(n):
+        for x, y in ((i, 0), (i, e), (0, i), (e, i)):
+            ic.put(x, y, tone(x, y, x == 0 or y == 0))  # lit on top and left
+    if tier >= 2:  # a second line inside
+        for i in range(1, e):
+            for x, y in ((i, 1), (i, e - 1), (1, i), (e - 1, i)):
+                ic.put(x, y, tone(x, y, False))
+    if tier >= 4:  # a tick in each corner
+        for cx, cy, sx, sy in ((2, 2, 1, 1), (e - 2, 2, -1, 1), (2, e - 2, 1, -1), (e - 2, e - 2, -1, -1)):
+            for dx, dy in ((0, 0), (sx, 0), (0, sy)):
+                ic.put(cx + dx, cy + dy, tone(cx, cy, True))
+    if tier >= 6:  # marks at the middle of each side
+        m = n // 2
+        for cx, cy in ((m - 1, 1), (m, 1), (m - 1, e - 1), (m, e - 1), (1, m - 1), (1, m), (e - 1, m - 1), (e - 1, m)):
+            ic.put(cx, cy, tone(cx, cy, True))
+        for cx, cy in ((m - 1, 2), (m, 2), (m - 1, e - 2), (m, e - 2), (2, m - 1), (2, m), (e - 2, m - 1), (e - 2, m)):
+            ic.put(cx, cy, tone(cx, cy, False))
+    if tier >= 7:  # the two highest: a glow inside the plate and white-tipped corner brackets
+        glow = ("brass", 2) if tier == 7 else ("violet", 2)
+        for i in range(4, e - 3):
+            for x, y in ((i, 3), (i, e - 3), (3, i), (e - 3, i)):
+                ic.put(x, y, glow)
+        for cx, cy, sx, sy in ((0, 0, 1, 1), (e, 0, -1, 1), (0, e, 1, -1), (e, e, -1, -1)):
+            for k in range(4):  # short arms: at this size longer ones would turn the whole border into a slab
+                for t in range(2):
+                    ic.put(cx + sx * k, cy + sy * t, tone(cx, cy, True))
+                    ic.put(cx + sx * t, cy + sy * k, tone(cx, cy, True))
+            ic.put(cx + sx * 2, cy + sy * 2, ("light", 0))
+    return ic
+
+
 #: A piece of the Rift keeps something of its family: plate stays cold dark steel, leather becomes dark hide and
 #: cloth a plum-dark weave (ink tone → tone of the family's ramp). Without it the three rank-5 pieces of a slot are
 #: the same dark-and-violet object in three shapes.
@@ -520,8 +716,13 @@ def family_tint(icon: Icon, family: str, rank: int) -> Icon:
 
 
 def framed(icon: Icon, tier: int) -> Image.Image:
-    img = frame(tier).image()
-    img.alpha_composite(icon.image(), (2, 2))
+    """The icon on the frame of a tier: 36×36 for a full-size icon (how the catalogue shows it), 24×24 for a small
+    one. The bare icon rides along as `_raw` so `main` can also save it unframed (`raw_<stem>.png`, `sm_<stem>.png`):
+    the game draws the frame of the item's own tier."""
+    raw = icon.image()
+    img = (small_frame(tier) if icon.small else frame(tier)).image()
+    img.alpha_composite(raw, (1, 1) if icon.small else (2, 2))
+    img._raw = raw  # type: ignore[attr-defined]
     return img
 
 
@@ -540,6 +741,48 @@ CHESTS_ES = {"normal": "Cofre común", "stageBoss": "Cofre de jefe de etapa", "z
 RANK_TIER = {1: 0, 2: 1, 3: 3, 4: 5, 7: 7, 5: 8}
 
 
+def small_pass(sets: list[str]) -> None:
+    """The item icons again, drawn SMALL (22×22): `sm_<stem>.png` for every item kind that has a `raw_<stem>.png`,
+    the nine `smframe_<tier>.png`, and a contact sheet of all of them on their frames (`_sheet_small.png`). The
+    stems are the full-size ones, so a slot swaps `raw_`/`frame_` for `sm_`/`smframe_` and nothing else."""
+    import importlib
+    import re
+
+    rows: list[tuple[str, list[Image.Image]]] = []
+    with at_scale(SMALL / S):
+        def keep(key: str, items: list[tuple[str, Image.Image]]) -> None:
+            shown = []
+            for stem, img in items:
+                raw = getattr(img, "_raw", None)
+                if raw is None:
+                    continue
+                raw.save(OUT / f"sm_{stem}.png")
+                shown.append(img)
+            if shown:
+                rows.append((key, shown))
+
+        for fam in HELMETS:
+            keep(f"helmets_{fam}", [(f"helmet_{fam}_{r}", framed(family_tint(helmet(fam, r), fam, r), RANK_TIER[r])) for r in range(1, 6)])
+        for stem in sets:
+            if not re.match(r"s[1-7]\d_", stem):  # the item sets; glyphs, chrome and scenes have one size
+                continue
+            mod = importlib.import_module(f".icon_sets.{stem}", __package__)
+            for g in mod.build():
+                keep(g["key"], [(n, img) for n, _label, img in g["items"]])
+        keep("swords", [(f"sword_{r}", framed(sword(r), RANK_TIER[r])) for r in range(1, 6)])
+        keep("gems", [(f"gem_{k}", framed(gem(k), 2)) for k in GEM_CUTS])
+        keep("chests", [(f"chest_{k}", framed(chest(k), 0)) for k in CHESTS_ES])
+    for t in range(9):
+        small_frame(t).image().save(OUT / f"smframe_{t}.png")
+    cell, zoom = SMALL_FRAME + 4, 4
+    sheet = Image.new("RGBA", (max(len(r) for _k, r in rows) * cell + 4, len(rows) * cell + 4), (26, 22, 40, 255))
+    for j, (_key, imgs) in enumerate(rows):
+        for i, img in enumerate(imgs):
+            sheet.alpha_composite(img, (4 + i * cell, 4 + j * cell))
+    sheet.resize((sheet.width * zoom, sheet.height * zoom), Image.Resampling.NEAREST).save(OUT / "_sheet_small.png")
+    print(f"small: {sum(len(r) for _k, r in rows)} icons at {SMALL} px → {OUT / '_sheet_small.png'}")
+
+
 def main(only: list[str] | None = None) -> None:
     """`icons` builds everything and the manifest; `icons <set>` builds just that set of `icon_sets/` (its PNGs and
     a contact sheet `_sheet_<set>.png`) and leaves the manifest alone, so sets can be worked on side by side."""
@@ -550,6 +793,9 @@ def main(only: list[str] | None = None) -> None:
 
     def save(name: str, img: Image.Image) -> str:
         img.save(OUT / f"{name}.png")
+        raw = getattr(img, "_raw", None)
+        if raw is not None:
+            raw.save(OUT / f"raw_{name}.png")
         return f"{name}.png"
 
     def contact(name: str, gs: list[dict]) -> None:
@@ -595,6 +841,7 @@ def main(only: list[str] | None = None) -> None:
                    "items": [{"file": save(f"gem_{k}", framed(gem(k), 2)), "name": GEMS_ES[k]} for k in GEM_CUTS]})
     groups.append({"key": "chests", "title": "Cofres", "note": "Los tres tipos de cofre, del más común al del jefe de mundo.",
                    "items": [{"file": save(f"chest_{k}", framed(chest(k), 0)), "name": CHESTS_ES[k]} for k in CHESTS_ES]})
+    small_pass(sets)
     (OUT / "manifest.json").write_text(json.dumps(groups, ensure_ascii=False, indent=1))
     contact("_sheet", [g for g in groups if g["key"] in ("tiers", "helmets_plate", "helmets_leather", "helmets_cloth", "swords", "gems", "chests")])
     print(f"wrote {OUT}: {sum(len(g['items']) for g in groups)} icons in {len(groups)} groups")

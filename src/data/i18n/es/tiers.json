@@ -1,0 +1,38 @@
+{
+  "0": {
+    "en": "Normal",
+    "es": "Normal"
+  },
+  "1": {
+    "en": "Uncommon",
+    "es": "Poco común"
+  },
+  "2": {
+    "en": "Rare",
+    "es": "Raro"
+  },
+  "3": {
+    "en": "Epic",
+    "es": "Épico"
+  },
+  "4": {
+    "en": "Legendary",
+    "es": "Legendario"
+  },
+  "5": {
+    "en": "Mythic",
+    "es": "Mítico"
+  },
+  "6": {
+    "en": "Ancestral",
+    "es": "Ancestral"
+  },
+  "7": {
+    "en": "Divine",
+    "es": "Divino"
+  },
+  "8": {
+    "en": "Primordial",
+    "es": "Primordial"
+  }
+}

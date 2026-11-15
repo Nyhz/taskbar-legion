@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { slotFamily, SLOT_KEYS, SLOTS, weaponTypeFor, WEAPON_TYPES } from '@/data/itemSlots';
+import { ARMOR_FAMILIES, slotFamily, SLOT_KEYS, SLOTS, tryArmorFamilyFor, weaponTypeFor, WEAPON_TYPES } from '@/data/itemSlots';
+import { CLASS_KEYS } from '@/data/classes';
 
 describe('slots & weapon types', () => {
   it('every slot is solo now (rings/trinket no longer share a family)', () => {
@@ -27,5 +28,13 @@ describe('slots & weapon types', () => {
       expect(t.base).toBeTruthy();
       expect(t.pool.length).toBeGreaterThan(0);
     }
+  });
+
+  it('every launch class wears exactly one armour family: Knight plate, Ranger leather, Priest cloth', () => {
+    expect(tryArmorFamilyFor('knight')?.key).toBe('plate');
+    expect(tryArmorFamilyFor('ranger')?.key).toBe('leather');
+    expect(tryArmorFamilyFor('priest')?.key).toBe('cloth');
+    expect(Object.values(ARMOR_FAMILIES).map((f) => f.classKey).sort()).toEqual([...CLASS_KEYS].sort());
+    expect(tryArmorFamilyFor('nobody')).toBeUndefined(); // a stale class key must not throw
   });
 });

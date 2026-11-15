@@ -1,9 +1,10 @@
 /**
  * THE standardized progression probe (run: `npx vite-node scripts/sim-progression.ts`).
  *
- * Simulates an "average player" (KRP party, starts as a solo naked Knight; not very active —
- * captures ~50% of normal chests, ~90%/100% of boss chests via storage overflow; 2h/day active
- * + offline gold/xp) all the way from Normal 1-1 to Torment 10-10, and reports how long it takes
+ * Simulates an "average player" (KRP party, starts as a solo naked Knight; the game open 8h/day
+ * as a desktop overlay — captures ~50% of normal chests, ~90%/100% of boss chests via storage
+ * overflow — + offline gold/xp) all the way from Normal 1-1 to Torment 10-10, and reports how long
+ * it takes. TARGET: about 3 months of calendar time at that rate (see DEFAULT_CONFIG)
  * — BOTH active playtime (matches "Normal ≈ 4h") and calendar time (matches "Torment ≈ months").
  *
  * Combat is the REAL deterministic sim (no analytic combat); the farming treadmill is integrated

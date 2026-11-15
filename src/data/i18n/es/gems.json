@@ -1,0 +1,26 @@
+{
+  "ruby": {
+    "en": "Ruby",
+    "es": "Rubí"
+  },
+  "sapphire": {
+    "en": "Sapphire",
+    "es": "Zafiro"
+  },
+  "amethyst": {
+    "en": "Amethyst",
+    "es": "Amatista"
+  },
+  "emerald": {
+    "en": "Emerald",
+    "es": "Esmeralda"
+  },
+  "topaz": {
+    "en": "Topaz",
+    "es": "Topacio"
+  },
+  "diamond": {
+    "en": "Diamond",
+    "es": "Diamante"
+  }
+}

@@ -60,7 +60,7 @@ def shield(rank: int) -> Icon:
         for x, y in field:
             ic.put(x, y, ("leather", 5 if x < 13 else 4 if x < 19 else 3))
         for x, y in field:
-            if x in (12, 19):  # seams between the planks
+            if ic.on(x, 12, 19):  # seams between the planks
                 ic.put(x, y, ("leather", 2))
         _boss(ic, 16, 16, 3.7, "ink", 7, 5, 3)
         ic.dots([(15, 15)], ("ink", 8))
@@ -77,8 +77,8 @@ def shield(rank: int) -> Icon:
             if 9.0 <= k < 12.5:
                 ic.put(x, y, ("bone", 6 if x < 16 else 4))
         for x, y in field:  # an iron spine
-            if x in (15, 16) and y > 16:
-                ic.put(x, y, ("ink", 6 if x == 15 else 4))
+            if ic.on(x, 15, 16) and y > 16:
+                ic.put(x, y, ("ink", 6 if x < 15.5 else 4))
         _boss(ic, 16, 17, 3.4, "ink", 8, 6, 3)
         ic.dots([(15, 16)], ("ink", 9))
         ic.dots([(8, 5), (24, 5), (8, 24), (24, 24), (16, 28)], ("ink", 8))  # rivets
@@ -89,8 +89,9 @@ def shield(rank: int) -> Icon:
         for x, y in field:
             ic.put(x, y, ("azure", (5 if x < 16 else 4) - (1 if y > 19 else 0)))
         for x, y in field:  # the cross
-            if x in (15, 16) or y in (12, 13):
-                ic.put(x, y, ("brass", 6 if (x == 15 and y not in (12, 13)) or (y == 12 and x not in (15, 16)) else 4))
+            upright, bar = ic.on(x, 15, 16), ic.on(y, 12, 13)
+            if upright or bar:  # lit on the left of the upright and along the top of the bar
+                ic.put(x, y, ("brass", 6 if (upright and not bar and x < 15.5) or (bar and not upright and y < 12.5) else 4))
         ic.rect(15, 12, 16, 13, ("crimson", 5))
         ic.dots([(15, 12)], ("crimson", 6))
         ic.path([(9, 7), (14, 7)], ("azure", 7))  # a sheen across the top of the field

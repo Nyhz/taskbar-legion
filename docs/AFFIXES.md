@@ -37,13 +37,17 @@ talents + buffs together. They are RESTRICTED to specific slots so their raw can
 
 | Category | Slots | Base affix | Substat pool |
 |---|---|---|---|
-| **armor** | helmet, chest, gloves, legs, boots | MITIGATION: pure `armor`, pure `magicResist`, or a 50-50 split | **`FLEX_STATS`** (scalers only — NO enablers) |
+| **armor** | helmet, chest, gloves, legs, boots | MITIGATION: pure `armor`, pure `magicResist`, or a 50-50 split | **`FLEX_STATS`** (scalers only — NO enablers); CLASS-LOCKED by family (below) |
 | **weapon** | weapon, offhand | per class TYPE (below) | per class TYPE (CLASS-LOCKED) |
 | **jewelry** | ring, trinket, amulet | freestyle from `JEWELRY_STATS` | **`JEWELRY_STATS`** = FLEX + `critChance` + `cooldownReduction` |
 
 - **`FLEX_STATS` (7 scalers):** attackDamage, attackSpeed, critDamage, armor, magicResist, health, healPower.
 - **`JEWELRY_STATS` (9):** FLEX + critChance + cooldownReduction (jewelry is the home of crit + CDR).
 - Armor is scalers-only → it's your **raw-power/mitigation** gear; enablers live on weapons + jewelry.
+- **Armor families (`data/itemSlots.ts → ARMOR_FAMILIES`, redesign 2026-11-15):** every piece of armor is born
+  for ONE class and only that class wears it — **Knight plate · Ranger leather · Priest cloth**. The family is
+  who wears it and how it is drawn, **never what it mitigates**: all three families roll the same three bases
+  (armor / magic resist / split) and the same substat pool, so a magic-resist tank still wears plate.
 
 ### The six weapon types (`data/itemSlots.ts → WEAPON_TYPES`)
 
@@ -67,7 +71,9 @@ For tier `T`, roll exactly `tierDef.extraStats` substats (0,1,1,2,2,3,3,4,4 for 
 3. **Value** by `kind`: **flat** scales with item level; **percent** is bounded by tier. *(The exact flat
    curve is the Φ-vs-polynomial Phase 2 rework — see DIFFICULTY.md.)* Enabler percents are summed raw and
    soft-capped in `aggregate`, never per-roll.
-4. **Class lock:** weapon/off-hand roll a launch class → their TYPE, set `classKey`; only that class equips.
+4. **Class lock:** weapon/off-hand roll a launch class → their TYPE; armor rolls a launch class → its FAMILY.
+   Both set `classKey` and only that class equips. The class comes from the party's classes (a knight alone
+   never drops bows, leather or cloth). Jewelry has no class.
 
 ## Gems (`data/gems.ts`) — SCALER-ONLY
 

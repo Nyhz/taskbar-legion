@@ -64,7 +64,8 @@ export function generateItem(origin: ItemOrigin, allowedClasses?: string[]): Ite
 
 /** Build the item body for a known slot+tier (used by generateItem and by tests
  *  that need a specific slot/tier). Affix values continue the given rng stream.
- *  Weapon/off-hand items roll a CLASS (→ their type) unless `forcedClass` is given. */
+ *  Weapon/off-hand items roll a CLASS (→ their type) and armour rolls a CLASS (→ its family) unless
+ *  `forcedClass` is given; jewelry has no class. */
 export function composeItem(
   slot: SlotKey,
   tier: ItemTier,
@@ -88,20 +89,25 @@ export function composeItem(
 
   // Route base affix(es) + substat pool by category (AFFIXES.md gear overhaul):
   //   • weapon/off-hand: CLASS-LOCKED type (Sword/Bow/Wand …) — tailored base + pool.
-  //   • armor: MITIGATION base (armor / MR / 50-50 split) + fully-flexible substats.
+  //   • armor: CLASS-LOCKED family (plate / leather / cloth) — MITIGATION base (armor / MR / 50-50 split,
+  //     whatever the family) + fully-flexible substats.
   //   • jewelry: freestyle — base is ANY stat, substats from the full flex pool.
   let baseAffix: AffixRoll[];
   let pool: StatKey[];
   let classKey: string | undefined;
   if (category === 'weapon') {
-    // Pool of classes this weapon/off-hand may be born for: the party's classes when
-    // given (so a knight-only party never drops bows/wands), else any launch class.
-    const classes = classPool !== undefined && classPool.length > 0 ? classPool : WEAPON_CLASS_KEYS;
+    // Pool of classes this item may be born for: the party's classes when given (so a
+    // knight-only party never drops bows/wands — or leather and cloth), else any launch class.
+    const classes = classPool !== undefined && classPool.length > 0 ? classPool : ITEM_CLASS_KEYS;
     classKey = forcedClass ?? rng.pick(classes);
     const wtype = weaponTypeFor(classKey, slot as 'weapon' | 'offhand');
     baseAffix = [{ key: wtype.base, value: rollStatValue(wtype.base, mult, itemLevel, rng) }];
     pool = wtype.pool;
   } else if (category === 'armor') {
+    // Armour is born into ONE class's family (plate / leather / cloth) from the same pool as weapons. The
+    // family never decides the mitigation: the base stays armour / MR / split for every class.
+    const classes = classPool !== undefined && classPool.length > 0 ? classPool : ITEM_CLASS_KEYS;
+    classKey = forcedClass ?? rng.pick(classes);
     baseAffix = rollArmorBase(rng, mult, itemLevel);
     pool = FLEX_STATS;
   } else {
@@ -136,8 +142,8 @@ export function composeItem(
   };
 }
 
-// Classes a weapon/off-hand can be born for (exactly the 3 launch classes).
-const WEAPON_CLASS_KEYS = CLASS_KEYS;
+// Classes a weapon, off-hand or piece of armour can be born for (exactly the 3 launch classes).
+const ITEM_CLASS_KEYS = CLASS_KEYS;
 
 /** Armor's intrinsic = mitigation: ~40% pure armor, ~40% pure MR, ~20% a 50-50 split
  *  (half each). The split is a genuine DUAL base affix (two entries). */

@@ -1,0 +1,78 @@
+{
+  "slot.helmet": {
+    "en": "Helmet",
+    "es": "Yelmo"
+  },
+  "slot.chest": {
+    "en": "Chest",
+    "es": "Pechera"
+  },
+  "slot.gloves": {
+    "en": "Gloves",
+    "es": "Guantes"
+  },
+  "slot.legs": {
+    "en": "Legs",
+    "es": "Perneras"
+  },
+  "slot.boots": {
+    "en": "Boots",
+    "es": "Botas"
+  },
+  "slot.weapon": {
+    "en": "Weapon",
+    "es": "Arma"
+  },
+  "slot.offhand": {
+    "en": "Off-hand",
+    "es": "Mano secundaria"
+  },
+  "slot.ring": {
+    "en": "Ring",
+    "es": "Anillo"
+  },
+  "slot.trinket": {
+    "en": "Trinket",
+    "es": "Abalorio"
+  },
+  "slot.amulet": {
+    "en": "Amulet",
+    "es": "Amuleto"
+  },
+  "weapon.sword": {
+    "en": "Sword",
+    "es": "Espada"
+  },
+  "weapon.shield": {
+    "en": "Shield",
+    "es": "Escudo"
+  },
+  "weapon.bow": {
+    "en": "Bow",
+    "es": "Arco"
+  },
+  "weapon.quiver": {
+    "en": "Quiver",
+    "es": "Carcaj"
+  },
+  "weapon.wand": {
+    "en": "Wand",
+    "es": "Vara"
+  },
+  "weapon.tome": {
+    "en": "Tome",
+    "es": "Tomo"
+  },
+  "armor.plate": {
+    "en": "Plate",
+    "es": "Placas"
+  },
+  "armor.leather": {
+    "en": "Leather",
+    "es": "Cuero"
+  },
+  "armor.cloth": {
+    "en": "Cloth",
+    "es": "Tela"
+  }
+}

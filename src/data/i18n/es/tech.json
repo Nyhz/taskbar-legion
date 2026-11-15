@@ -1,0 +1,110 @@
+{
+  "category.Economy": {
+    "en": "Economy",
+    "es": "Economía"
+  },
+  "category.Chests": {
+    "en": "Chests",
+    "es": "Cofres"
+  },
+  "category.Utility": {
+    "en": "Utility",
+    "es": "Utilidad"
+  },
+  "eco_gold.name": {
+    "en": "Profiteering",
+    "es": "Mercadeo"
+  },
+  "eco_gold.description": {
+    "en": "+2.5% gold per kill",
+    "es": "+2,5 % de oro por baja"
+  },
+  "eco_xp.name": {
+    "en": "Scholarship",
+    "es": "Erudición"
+  },
+  "eco_xp.description": {
+    "en": "+2.5% XP per kill",
+    "es": "+2,5 % de experiencia por baja"
+  },
+  "eco_offline.name": {
+    "en": "Expedition",
+    "es": "Expedición"
+  },
+  "eco_offline.description": {
+    "en": "+2.5% offline yield (50% base)",
+    "es": "+2,5 % de rendimiento en ausencia (50 % de base)"
+  },
+  "chest_drop_normal.name": {
+    "en": "Common Hauls",
+    "es": "Botín común"
+  },
+  "chest_drop_normal.description": {
+    "en": "+0.25% normal chest drop",
+    "es": "+0,25 % de cofres comunes"
+  },
+  "chest_drop_stage.name": {
+    "en": "Boss Spoils",
+    "es": "Despojos de jefe"
+  },
+  "chest_drop_stage.description": {
+    "en": "+0.5% stage-boss chest drop",
+    "es": "+0,5 % de cofres de jefe de etapa"
+  },
+  "chest_gem.name": {
+    "en": "Gem Sense",
+    "es": "Ojo de gemas"
+  },
+  "chest_gem.description": {
+    "en": "+2.5% gem drop chance",
+    "es": "+2,5 % de probabilidad de gema"
+  },
+  "store_normal.name": {
+    "en": "Stockpile",
+    "es": "Almacén"
+  },
+  "store_normal.description": {
+    "en": "+1 normal chest storage",
+    "es": "+1 hueco de cofre común"
+  },
+  "store_stage.name": {
+    "en": "Vault",
+    "es": "Cámara"
+  },
+  "store_stage.description": {
+    "en": "+1 stage-boss chest storage",
+    "es": "+1 hueco de cofre de jefe de etapa"
+  },
+  "store_zone.name": {
+    "en": "Reliquary",
+    "es": "Relicario"
+  },
+  "store_zone.description": {
+    "en": "+1 zone-boss chest storage",
+    "es": "+1 hueco de cofre de jefe de mundo"
+  },
+  "auto_open.name": {
+    "en": "Auto-Open",
+    "es": "Apertura automática"
+  },
+  "auto_open.description": {
+    "en": "Unlock auto-open · 15m base, −45s / rank",
+    "es": "Desbloquea la apertura automática · 15 min de base, −45 s por rango"
+  },
+  "party_size.name": {
+    "en": "Recruitment",
+    "es": "Reclutamiento"
+  },
+  "party_size.description": {
+    "en": "Unlock the next party slot",
+    "es": "Desbloquea el siguiente hueco del grupo"
+  },
+  "synth_luck.name": {
+    "en": "Transmuter's Fortune",
+    "es": "Fortuna del transmutador"
+  },
+  "synth_luck.description": {
+    "en": "+0.25% Synthesize +2-tier chance (5% base)",
+    "es": "+0,25 % de probabilidad de saltar +2 rarezas al sintetizar (5 % de base)"
+  }
+}

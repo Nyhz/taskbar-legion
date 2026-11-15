@@ -31,11 +31,32 @@ describe('loot generation (gear overhaul)', () => {
     expect(tome.baseAffix[0]?.key).toBe('healPower');
   });
 
-  it('every generated weapon/off-hand is class-locked; armor/jewelry are class-agnostic', () => {
+  it('weapons, off-hands AND armour are class-locked; jewelry is class-agnostic', () => {
     for (let seed = 0; seed < 2500; seed++) {
       const it = generateItem(origin(seed, 60));
-      if (it.category === 'weapon') expect(['knight', 'ranger', 'priest']).toContain(it.classKey);
-      else expect(it.classKey).toBeUndefined();
+      if (it.category === 'jewelry') expect(it.classKey).toBeUndefined();
+      else expect(['knight', 'ranger', 'priest']).toContain(it.classKey);
+    }
+  });
+
+  it('armour is born for a class of the party only (a knight alone never sees leather or cloth)', () => {
+    for (let seed = 0; seed < 600; seed++) {
+      const solo = generateItem(origin(seed, 60), ['knight']);
+      if (solo.category !== 'jewelry') expect(solo.classKey).toBe('knight');
+      const duo = generateItem(origin(seed, 60), ['knight', 'priest']);
+      if (duo.category !== 'jewelry') expect(['knight', 'priest']).toContain(duo.classKey);
+    }
+  });
+
+  it("the family never decides the mitigation: every class's armour rolls armour, magic resist and the split", () => {
+    for (const classKey of ['knight', 'ranger', 'priest']) {
+      const shapes = new Set<string>();
+      for (let seed = 0; seed < 400; seed++) {
+        const it = composeItem('chest', 4, origin(seed, 40), makeRng(seed), undefined, classKey);
+        expect(it.classKey).toBe(classKey);
+        shapes.add(it.baseAffix.map((b) => b.key).sort().join('+'));
+      }
+      expect([...shapes].sort()).toEqual(['armor', 'armor+magicResist', 'magicResist']);
     }
   });
 

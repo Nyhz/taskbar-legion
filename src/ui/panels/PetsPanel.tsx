@@ -9,12 +9,18 @@ import { PALETTE } from '@/styles/palette';
 function bonusText(key: string): string {
   const b = petDef(key).bonus;
   switch (b.kind) {
-    case 'goldMult': return `+${b.value * 100}% gold`;
-    case 'xpMult': return `+${b.value * 100}% XP`;
-    case 'chestDropMult': return `+${b.value * 100}% chest drop`;
-    case 'chestStorage': return `+${b.value} ${b.type} storage`;
-    case 'autoOpenReduce': return `-${b.value / 1000}s auto-open`;
-    default: return '';
+    case 'goldMult':
+      return `+${b.value * 100}% gold`;
+    case 'xpMult':
+      return `+${b.value * 100}% XP`;
+    case 'chestDropMult':
+      return `+${b.value * 100}% chest drop`;
+    case 'chestStorage':
+      return `+${b.value} ${b.type} storage`;
+    case 'autoOpenReduce':
+      return `-${b.value / 1000}s auto-open`;
+    default:
+      return '';
   }
 }
 
@@ -40,16 +46,30 @@ export function PetsPanel(): React.JSX.Element {
               onClick={() => selectPet(key)}
               title={have ? `${def.name} — ${bonusText(key)}` : 'Undiscovered pet'}
               style={{
-                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1,
-                height: 50, padding: 2,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 1,
+                height: 50,
+                padding: 2,
                 background: sel ? PALETTE.titleRed : PALETTE.bgInset,
                 border: `2px solid ${sel ? PALETTE.gold : PALETTE.ink}`,
                 boxShadow: sel ? `0 0 6px ${PALETTE.gold}` : undefined,
                 color: have ? PALETTE.textLight : PALETTE.textMute,
               }}
             >
-              <span style={{ fontSize: 20, opacity: have ? 1 : 0.3, filter: have ? 'none' : 'grayscale(1)' }}>🐾</span>
-              <span style={{ fontSize: 8, color: have ? PALETTE.gold : PALETTE.textMute, lineHeight: 1, textAlign: 'center' }}>
+              <span style={{ fontSize: 20, opacity: have ? 1 : 0.3, filter: have ? 'none' : 'grayscale(1)' }}>
+                🐾
+              </span>
+              <span
+                style={{
+                  fontSize: 8,
+                  color: have ? PALETTE.gold : PALETTE.textMute,
+                  lineHeight: 1,
+                  textAlign: 'center',
+                }}
+              >
                 {have ? def.name : '???'}
               </span>
             </button>

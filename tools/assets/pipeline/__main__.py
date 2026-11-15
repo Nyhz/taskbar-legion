@@ -27,7 +27,12 @@ def main(argv: list[str]) -> int:
 
         icons(argv[1:] or None)
         return 0
-    print("commands: chars [names…], scene, lab, icons")
+    if cmd == "export-ui":
+        from .export_ui import main as export_ui
+
+        export_ui()
+        return 0
+    print("commands: chars [names…], scene, lab, icons, export-ui")
     return 1
 
 

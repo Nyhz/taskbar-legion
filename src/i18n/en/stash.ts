@@ -1,0 +1,23 @@
+// The stash window: paged overflow storage beside the bag.
+export const stash = {
+  title: 'Stash',
+  close: 'Close',
+  howTo: 'Click a piece, or drag it, to take it to the bag.',
+  full: 'The stash is full.',
+  page: 'Page {n}',
+  pageBuy: 'Click to buy it.',
+  price: 'Price',
+  goldAmount: '{amount} gold',
+  short: 'You are {amount} gold short.',
+  filterAll: 'Everything',
+  filterArmor: 'Armour',
+  filterWeapon: 'Weapons',
+  filterJewelry: 'Jewelry',
+  filterGems: 'Gems',
+  sort: 'Sort by rarity',
+  slotMax: 'Max',
+  slotTitle: 'One more slot on every page',
+  slotsPerPage: 'Slots per page',
+  toBag: 'Send to the bag',
+  bagFull: 'Bag full',
+} as const;

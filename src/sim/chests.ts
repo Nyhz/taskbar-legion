@@ -81,9 +81,9 @@ function seedFrom(rng: Rng): number {
   return Math.floor(rng.next() * 0x1_0000_0000) >>> 0;
 }
 
-/** Distinct class keys currently in the party — the only classes a weapon/off-hand
- *  may drop for (a knight-only party never sees bows/quivers/wands/tomes). Order
- *  follows roster order (deterministic). Empty ⇒ loot falls back to any launch class. */
+/** Distinct class keys currently in the party — the only classes a class-locked item (weapon,
+ *  off-hand, armour) may drop for: a knight-only party never sees bows/quivers/wands/tomes, nor
+ *  leather or cloth. Order follows roster order (deterministic). Empty ⇒ any launch class. */
 function partyClassKeys(world: WorldState): string[] {
   const set = new Set<string>();
   for (const h of world.heroes) if (h.classKey !== undefined) set.add(h.classKey);

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { setItemDragging } from '@/platform/dragState';
 import { PALETTE } from '@/styles/palette';
@@ -88,6 +88,21 @@ export function beginItemDrag(payload: string, ghost: ReactNode, e: { clientX: n
   window.addEventListener('pointerup', up);
 }
 
+function subscribeDrag(onChange: () => void): () => void {
+  subs.add(onChange);
+  return () => {
+    subs.delete(onChange);
+  };
+}
+const currentPayload = (): string | null => drag?.payload ?? null;
+
+/** The payload being dragged right now, or null. Re-renders only when a drag starts or ends (not on every
+ *  pointer move), so every cell of a grid can ask: the origin dims itself ("gone") and the places that would
+ *  accept the piece light up ("target") — see ui/panels/items/ItemCell + DropSlot. */
+export function useDragPayload(): string | null {
+  return useSyncExternalStore(subscribeDrag, currentPayload, currentPayload);
+}
+
 /** Register a div as a drop zone. Returns a ref to attach + a live `over` highlight flag. */
 export function useDropZone(
   accept: (payload: string) => boolean,
@@ -142,7 +157,9 @@ export function DropCell({
   );
 }
 
-/** The floating ghost that follows the cursor while dragging. Mount once near the app root. */
+/** The floating ghost that follows the cursor while dragging. Mount once near the app root. The ghost is whatever
+ *  the drag source handed to `beginItemDrag`: a kit cell passes its own `ItemIcon` inside a `KitRoot` at the zoom
+ *  of the panel it came from (ui/panels/items/ItemCell), so the piece in the hand is the piece that left the slot. */
 export function DragOverlay(): React.JSX.Element | null {
   const [, force] = useState(0);
   useEffect(() => {
@@ -154,7 +171,7 @@ export function DragOverlay(): React.JSX.Element | null {
   }, []);
   if (drag === null) return null;
   return createPortal(
-    <div style={{ position: 'fixed', left: drag.x, top: drag.y, transform: 'translate(-50%, -50%)', pointerEvents: 'none', zIndex: 100000, opacity: 0.9 }}>
+    <div style={{ position: 'fixed', left: drag.x, top: drag.y, transform: 'translate(-50%, -50%)', pointerEvents: 'none', zIndex: 100000, opacity: 0.92 }}>
       {drag.ghost}
     </div>,
     document.body,

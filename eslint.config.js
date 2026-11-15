@@ -49,13 +49,36 @@ export default tseslint.config(
                 '**/ui/**',
                 '**/state/**',
                 '**/app/**',
+                '@/i18n',
+                '@/i18n/*',
+                '../i18n/*',
+                '**/i18n/**',
                 'pixi.js',
                 'react',
                 'react-dom',
                 'zustand',
               ],
               message:
-                'sim/ and data/ are a PURE library (SPEC §2). They must not import from game/, ui/, state/, app/, Pixi, React, or Zustand. Move shared types into sim/ or data/.',
+                'sim/ and data/ are a PURE library (SPEC §2). They must not import from game/, ui/, state/, app/, i18n/, Pixi, React, or Zustand (the simulation knows nothing about languages). Move shared types into sim/ or data/.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+
+  // ── i18n/ is a leaf the whole interface leans on: catalogues, `t()` and the names of data things. It may read
+  //    data/ (and React, for its hook) and nothing above. ──
+  {
+    files: ['src/i18n/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@/game/*', '@/ui/*', '@/state/*', '@/app/*', '@/sim/*', '**/game/**', '**/ui/**', '**/state/**', '**/app/**', '**/sim/**', 'pixi.js', 'zustand'],
+              message: 'i18n/ only knows texts: it may import data/ and React, never game/, ui/, state/, app/, sim/, Pixi or Zustand.',
             },
           ],
         },

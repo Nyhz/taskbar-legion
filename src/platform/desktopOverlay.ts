@@ -22,12 +22,19 @@ import { saveGame } from '@/persistence/saveManager';
 
 const POLL_MS = 20;
 
-// Fixed, non-maximized footprint in LOGICAL px (constant across monitor DPI). Height holds
-// the tallest panel above the HUD + strip even at Menu Scale 1.25 (tech ≈ 700 rendered at 1.0
-// → ~875 at 1.25, plus the strip+HUD ≈ 270). Width holds the ~1200 band with a small margin.
-// On screens shorter than this the top may still clip — the strip always stays at the bottom.
-const OVERLAY_W = 1280;
-const OVERLAY_H = 1060;
+// Non-maximized footprint in LOGICAL px, FITTED TO THE MONITOR it boots on: as wide as the monitor up to
+// OVERLAY_MAX_W (room for the hero + bag window with the stash beside it at the strip's scale) and as tall as
+// the monitor minus the dock margin, up to OVERLAY_MAX_H. The game must fit 1280×720, 1920×1080, 2560×1440 and
+// the MacBook Pro (state/pixelScale TARGET_SCREENS): a fixed 1280×1060 was taller than a 720p screen and
+// narrower than the panels on a big one. Most of the window is transparent; only the strip + open panels paint,
+// and the panel layer picks its scale from this window's size. If the monitor cannot be read, the old fixed
+// footprint is used.
+const OVERLAY_FALLBACK_W = 1280;
+const OVERLAY_FALLBACK_H = 1060;
+const OVERLAY_MAX_W = 1920;
+const OVERLAY_MAX_H = 1060;
+let overlayW = OVERLAY_FALLBACK_W;
+let overlayH = OVERLAY_FALLBACK_H;
 // Lift the whole window off the screen's bottom edge so the strip clears the OS Dock/taskbar
 // (and the title band, centred in the window, rises with it). The window's top simply runs a
 // little further off-screen — that region is transparent margin, so nothing is lost.
@@ -71,7 +78,8 @@ export async function setupTitleWindow(): Promise<void> {
   try {
     // Non-maximized fixed footprint. LogicalSize keeps the footprint constant across DPI, so
     // moving to a higher-DPI monitor re-renders crisply at the same logical size.
-    await win.setSize(new LogicalSize(OVERLAY_W, OVERLAY_H));
+    await fitOverlayToMonitor(win, currentMonitor);
+    await win.setSize(new LogicalSize(overlayW, overlayH));
 
     // ALWAYS dock bottom-centre of the current monitor (NOT a remembered prior position).
     const target = await dockBottomPosition(win, currentMonitor);
@@ -125,11 +133,25 @@ export async function startOverlayDrag(): Promise<void> {
 
 type CurrentMonitor = () => Promise<{ position: { x: number; y: number }; size: { width: number; height: number } } | null>;
 
+// Size the footprint from the monitor the window is on (logical px = physical ÷ its scale factor).
+async function fitOverlayToMonitor(win: Window, currentMonitor: CurrentMonitor): Promise<void> {
+  try {
+    const mon = await currentMonitor();
+    if (mon === null) return;
+    const scale = await win.scaleFactor();
+    if (!(scale > 0)) return;
+    overlayW = Math.round(Math.min(OVERLAY_MAX_W, mon.size.width / scale));
+    overlayH = Math.round(Math.min(OVERLAY_MAX_H, mon.size.height / scale - BOTTOM_DOCK_MARGIN));
+  } catch {
+    // keep the fallback footprint
+  }
+}
+
 // Bottom-centre of the current monitor for the overlay footprint (logical → physical via DPI).
 async function dockBottomPosition(win: Window, currentMonitor: CurrentMonitor): Promise<WinPos | null> {
   const scale = await win.scaleFactor();
-  const physW = Math.round(OVERLAY_W * scale);
-  const physH = Math.round(OVERLAY_H * scale);
+  const physW = Math.round(overlayW * scale);
+  const physH = Math.round(overlayH * scale);
   const mon = await currentMonitor();
   if (mon === null) return null; // best effort if the monitor query fails
   return {

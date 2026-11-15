@@ -33,8 +33,13 @@ export interface ProbeConfig {
   stallDays: number; // give up on a wall after this many days of no frontier progress
 }
 
+// THE PACING REFERENCE (set by the user, 2026-11-15): the game is a desktop overlay that stays open — assume
+// an average of 8 hours of active play a day, and the whole game (Normal 1-1 → Torment 10-10) should take about
+// 3 MONTHS of calendar time at that rate (~720 active hours). The user finished the previous balance in about
+// 3 weeks of real play, so reaching the target means retuning (walls, enemies, drops, class power) once the
+// redesign's content is in place — measure with this probe then; do not retune piecemeal before.
 export const DEFAULT_CONFIG: ProbeConfig = {
-  activeHoursPerDay: 2,
+  activeHoursPerDay: 8,
   offlineHoursPerDay: 12,
   capture: { normal: 0.5, stageBoss: 0.9, zoneBoss: 1.0 },
   chunkSec: 1800,

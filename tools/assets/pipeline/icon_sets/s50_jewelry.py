@@ -14,35 +14,50 @@ from ..rig import Pt, Tone
 
 
 # ------------------------------------------------------------------------------------------ helpers
+def settle(ic: Icon, c: float, r: float) -> tuple[float, float]:
+    """Centre and radius of a round thing, nudged for a SMALL icon so that it sits on the pixel grid: the centre
+    on a pixel edge or a pixel centre, the rim four tenths of a pixel past the last one it covers. Without it a
+    small ellipse leaves a lone pixel sticking out at each of its four extremes. Full size: untouched."""
+    if not ic.small:
+        return c, r
+    k = ic.k
+    centre = round(c * k * 2) / 2  # in real pixels: a multiple of one half
+    edge = centre + r * k
+    last = math.floor(edge - 0.5)  # index of the last pixel whose centre the rim reaches
+    return centre / k, (last + 0.5 + 0.4 - centre) / k
+
+
 def hoop(ic: Icon, cx: float, cy: float, rx: float, ry: float, t: float, ramp: str, lo: int, mid: int, hi: int) -> None:
     """A band seen three-quarters: the hoop itself, lit top-left, and the inside of its far wall showing as a
     dark crescent on the left of the hole."""
-    for y in range(ic.h):
-        for x in range(ic.w):
-            dx, dy = x + 0.5 - cx, y + 0.5 - cy
-            outer = (dx / rx) ** 2 + (dy / ry) ** 2
-            inner = (dx / (rx - t)) ** 2 + (dy / (ry - t)) ** 2
-            if outer <= 1.0 and inner > 1.0:
-                k = (-dx * 0.6 - dy * 0.8) / (math.hypot(dx, dy) or 1.0)
-                ic.put(x, y, (ramp, hi if k > 0.5 else lo if k < -0.3 else mid))
-            elif inner <= 1.0:
-                far = ((dx - 2.4) / (rx - t)) ** 2 + (dy / (ry - t)) ** 2
-                if far > 1.0:
-                    ic.put(x, y, (ramp, max(lo - 1, 0)))
+    cx, rx = settle(ic, cx, rx)
+    cy, ry = settle(ic, cy, ry)
+    for x, y in ic.pixels():
+        dx, dy = x + 0.5 - cx, y + 0.5 - cy
+        outer = (dx / rx) ** 2 + (dy / ry) ** 2
+        inner = (dx / (rx - t)) ** 2 + (dy / (ry - t)) ** 2
+        if outer <= 1.0 and inner > 1.0:
+            k = (-dx * 0.6 - dy * 0.8) / (math.hypot(dx, dy) or 1.0)
+            ic.put(x, y, (ramp, hi if k > 0.5 else lo if k < -0.3 else mid))
+        elif inner <= 1.0:
+            far = ((dx - 2.4) / (rx - t)) ** 2 + (dy / (ry - t)) ** 2
+            if far > 1.0:
+                ic.put(x, y, (ramp, max(lo - 1, 0)))
 
 
 def disc(ic: Icon, cx: float, cy: float, rx: float, ry: float, ramp: str, lo: int, mid: int, hi: int, rim: float = 1.6) -> None:
     """A flat medal: a face with a raised rim, the rim lit on the top-left and dark on the bottom-right."""
-    for y in range(ic.h):
-        for x in range(ic.w):
-            dx, dy = x + 0.5 - cx, y + 0.5 - cy
-            if (dx / rx) ** 2 + (dy / ry) ** 2 > 1.0:
-                continue
-            k = (-dx * 0.6 - dy * 0.8) / (math.hypot(dx, dy) or 1.0)
-            if (dx / (rx - rim)) ** 2 + (dy / (ry - rim)) ** 2 > 1.0:
-                ic.put(x, y, (ramp, hi if k > 0.2 else lo))
-            else:
-                ic.put(x, y, (ramp, mid))
+    cx, rx = settle(ic, cx, rx)
+    cy, ry = settle(ic, cy, ry)
+    for x, y in ic.pixels():
+        dx, dy = x + 0.5 - cx, y + 0.5 - cy
+        if (dx / rx) ** 2 + (dy / ry) ** 2 > 1.0:
+            continue
+        k = (-dx * 0.6 - dy * 0.8) / (math.hypot(dx, dy) or 1.0)
+        if (dx / (rx - rim)) ** 2 + (dy / (ry - rim)) ** 2 > 1.0:
+            ic.put(x, y, (ramp, hi if k > 0.2 else lo))
+        else:
+            ic.put(x, y, (ramp, mid))
 
 
 def stone(ic: Icon, cx: float, cy: float, rx: float, ry: float, ramp: str, n: int = 6, lo: int = 1) -> None:
@@ -62,7 +77,7 @@ def stone(ic: Icon, cx: float, cy: float, rx: float, ry: float, ramp: str, n: in
 
 def chain(ic: Icon, a: Pt, b: Pt, dark: Tone, bright: Tone, heavy: bool = False) -> None:
     """A chain as alternating links from a to b; `heavy` doubles it for the richer pieces."""
-    steps = int(max(abs(b[0] - a[0]), abs(b[1] - a[1])))
+    steps = int(max(abs(b[0] - a[0]), abs(b[1] - a[1])) * ic.k)  # one link per real pixel
     for i in range(steps + 1):
         x, y = a[0] + (b[0] - a[0]) * i / steps, a[1] + (b[1] - a[1]) * i / steps
         ic.put(x, y, bright if i % 2 == 0 else dark)
@@ -305,11 +320,11 @@ def trinket(rank: int) -> Icon:
             x = 16 + 14.0 * math.cos(t) * math.cos(phi) - 4.6 * math.sin(t) * math.sin(phi)
             y = 16 + 14.0 * math.cos(t) * math.sin(phi) + 4.6 * math.sin(t) * math.cos(phi)
             if math.sin(t) > 0:
-                ic.px[(int(x), int(y))] = ("violet", 8)
+                ic.put(x, y, ("violet", 8))
             else:
                 ic.soft(x, y, ("violet", 6))
-        ic.px[(6, 8)] = ("violet", 7)
-        ic.px[(26, 25)] = ("violet", 7)
+        ic.put(6, 8, ("violet", 7))
+        ic.put(26, 25, ("violet", 7))
     ic.glow(glow, ("light", 0))
     return ic
 

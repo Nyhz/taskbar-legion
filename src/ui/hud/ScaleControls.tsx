@@ -1,31 +1,44 @@
 import { useState } from 'react';
 import { useStore } from '@/state/store';
-import { SCALE_MIN, SCALE_STEP, MENU_SCALE_MAX, GAME_SCALE_MAX } from '@/state/slices/uiSlice';
+import { SCALE_MIN, SCALE_STEP, MENU_SCALE_MAX, displayPixelRatio, displayViewportHeight } from '@/state/slices/uiSlice';
+import { gameScaleStops, screenPixelsPerArtPixel } from '@/state/pixelScale';
 import { PALETTE } from '@/styles/palette';
 
-// The scale button on the RIGHT of the strip top bar. Opens a small popover with two
-// independent rows of buttons — Menu Scale (the floating menus, 0.75/1.00) and Game Scale
-// (the strip + its top bar, 0.75/1.00/1.25).
+// The scale button on the RIGHT of the strip top bar. Opens a small popover with two independent rows of
+// buttons — Menu Scale (the floating menus, 0.75/1.00) and Game Scale (the strip + its top bar). The game's
+// stops are whole screen pixels per art pixel for the display the window is on (state/pixelScale), labelled ×N.
 
-// The discrete stops from SCALE_MIN up to `max`, in SCALE_STEP increments (rounded to dodge
-// float drift): max 1.0 → [0.75, 1.00]; max 1.25 → [0.75, 1.00, 1.25].
-function stopsTo(max: number): number[] {
-  const out: number[] = [];
-  for (let s = SCALE_MIN; s <= max + 1e-6; s += SCALE_STEP) out.push(Math.round(s * 100) / 100);
+interface Stop {
+  value: number;
+  label: string;
+}
+
+// The menu's stops from SCALE_MIN up to MENU_SCALE_MAX in SCALE_STEP increments (rounded to dodge float drift).
+function menuStops(): Stop[] {
+  const out: Stop[] = [];
+  for (let s = SCALE_MIN; s <= MENU_SCALE_MAX + 1e-6; s += SCALE_STEP) {
+    const value = Math.round(s * 100) / 100;
+    out.push({ value, label: `${value.toFixed(2)}×` });
+  }
   return out;
 }
 
-function ScaleRow({ label, value, max, onChange }: { label: string; value: number; max: number; onChange: (v: number) => void }): React.JSX.Element {
+function gameStops(): Stop[] {
+  const dpr = displayPixelRatio();
+  return gameScaleStops(dpr, displayViewportHeight()).map((value) => ({ value, label: `×${Math.round(screenPixelsPerArtPixel(value, dpr))}` }));
+}
+
+function ScaleRow({ label, value, stops, onChange }: { label: string; value: number; stops: Stop[]; onChange: (v: number) => void }): React.JSX.Element {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
       <span style={{ color: PALETTE.parchment }}>{label}</span>
       <div style={{ display: 'flex', gap: 4 }}>
-        {stopsTo(max).map((s) => {
-          const active = Math.abs(value - s) < 0.001;
+        {stops.map((stop) => {
+          const active = Math.abs(value - stop.value) < 0.001;
           return (
             <button
-              key={s}
-              onClick={() => onChange(s)}
+              key={stop.value}
+              onClick={() => onChange(stop.value)}
               style={{
                 flex: 1,
                 padding: '3px 0',
@@ -35,7 +48,7 @@ function ScaleRow({ label, value, max, onChange }: { label: string; value: numbe
                 fontWeight: 700,
               }}
             >
-              {s.toFixed(2)}×
+              {stop.label}
             </button>
           );
         })}
@@ -105,8 +118,8 @@ export function ScaleControls(): React.JSX.Element {
           >
             Experimental
           </span>
-          <ScaleRow label="Menu Scale" value={menuScale} max={MENU_SCALE_MAX} onChange={setMenuScale} />
-          <ScaleRow label="Game Scale" value={gameScale} max={GAME_SCALE_MAX} onChange={setGameScale} />
+          <ScaleRow label="Menu Scale" value={menuScale} stops={menuStops()} onChange={setMenuScale} />
+          <ScaleRow label="Game Scale" value={gameScale} stops={gameStops()} onChange={setGameScale} />
         </div>
       )}
     </div>

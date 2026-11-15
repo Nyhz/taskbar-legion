@@ -1,58 +1,52 @@
 import { useEffect, useRef, useState } from 'react';
 import { useStore } from '@/state/store';
-import { LEFT_PANELS, type PanelKey } from '@/state/slices/uiSlice';
+import { LEFT_PANELS, displayPixelRatio, type PanelKey } from '@/state/slices/uiSlice';
+import {
+  HUD_ART_HEIGHT,
+  STRIP_ART_HEIGHT,
+  fitPanelPixels,
+  screenPixelsPerArtPixel,
+} from '@/state/pixelScale';
 import { PixelWindow } from '@/ui/components/PixelWindow';
-import { PartyPanel } from '@/ui/panels/PartyPanel';
-import { StashPanel } from '@/ui/panels/StashPanel';
 import { TechTreePanel } from '@/ui/panels/TechTreePanel';
 import { PetsPanel } from '@/ui/panels/PetsPanel';
 import { CubePanel, CubeHelpButton } from '@/ui/panels/CubePanel';
 import { MapPanel } from '@/ui/panels/MapPanel';
-import { HeroTabsPanel } from '@/ui/panels/party/HeroTabsPanel';
-import { SettingsHeaderButton } from '@/ui/hud/OptionsPopover';
-import { QuitGameButton } from '@/ui/components/QuitGameButton';
-import { isTauri } from '@/platform/tauri';
+import { Bookmarks, KitRoot } from '@/ui/kit';
+import { PanelSpaceContext } from '@/ui/panels/panelSpace';
+import { PANELS_NEED_ART } from '@/ui/panels/panelFit';
+import { useWingTabs } from '@/ui/panels/wingTabs';
+import { KIT_PANELS } from './kitPanels';
 
-// Renders the open panels as a fixed, ANCHORED constellation laid out across a band
-// the SAME WIDTH as the strip (measured at runtime). The party menu is centered and
-// keeps a fixed size; the side panels FILL the leftover space on each side of it —
-// stash/talents to the LEFT, cube/map/pets to the RIGHT. The tech tree is a full
-// overlay that slides up from below to cover the party menu. Open/close is animated:
-// each panel mounts with an `-in` class and, when closed, plays an `-out` class
-// before it actually unmounts (see the entry lifecycle below).
+// The panels above the strip. The HERO WINDOW (`party`) is the main panel: centred over the strip, and nothing
+// ever moves it. Every other panel is a WING that opens GLUED to its left or right edge (frames touching),
+// bottom-aligned with it and unfolding outwards — at most one per side (uiSlice). The wings are children of the
+// hero's own wrapper, positioned from its real edges, so there is nothing to measure and no gap to get wrong.
+//
+// Scale: one whole number of screen pixels per art pixel for all of them — the strip's own when the widest the
+// panels can ever be (hero + a wing on EACH side + the bookmarks, ui/panels/panelFit) fits the window, otherwise
+// the largest lower one. It does not depend on which wings are open, so opening or swapping one never rescales.
+//
+// The right-side panels (cube, map, pets, upgrades) are still the OLD ones, drawn through PixelWindow at their
+// old size; they stand in the right wing's place until each is rebuilt to the wing width, and they may overflow.
+//
+// Open/close is animated: each panel mounts with an `-in` class and, when closed, plays an `-out` class before it
+// actually unmounts (the entry lifecycle below).
 
-const GAP = 6; // px between the party menu and a flanking side panel
-const EDGE = 4; // px margin from the band's left/right edge
-const PARTY_W = 380; // logical party width (kept fixed — "the dominant frame")
-const PARTY_SCALE = 1.35; // party is enlarged so it dominates
-const TECH_W = 520;
-const TECH_SCALE = 1.3;
-// The panel band is DECOUPLED from the (narrow) game strip: it targets BAND_TARGET px
-// centered on the viewport so the party + its two flanking side panels can grow into the
-// empty page margins (≈ party 513 + 2×340 ≈ 1200). Capped to the viewport on small screens.
-const BAND_TARGET = 1200;
-const BAND_MARGIN = 16; // keep the band off the screen edges
-// Clamp the computed side-panel width so it can't collapse on a tiny band nor balloon
-// on an ultra-wide one. Side panels are unscaled (scale 1.0) so their width fills px.
-const SIDE_MIN = 120;
-const SIDE_MAX = 360;
+const KIT_MARGIN_CSS = 8; // air between the panels and the window's edges
 
-const PANEL_TITLES: Record<PanelKey, string> = {
-  party: 'Party',
-  stash: 'Stash',
-  talents: 'Hero',
+// The old panels, until they are rebuilt: their title and size in CSS px (× the old menu scale).
+const OLD_TITLE: Partial<Record<PanelKey, string>> = {
   cube: 'Cube',
   map: 'Map',
   pets: 'Pets',
   tech: 'Tech Tree',
 };
+const OLD_WIDTH: Partial<Record<PanelKey, number>> = { cube: 340, map: 340, pets: 340, tech: 520 };
+const OLD_HEIGHT: Partial<Record<PanelKey, number>> = { tech: 540, cube: 470 };
 
-const PANEL_HEIGHT: Partial<Record<PanelKey, number>> = { tech: 540, cube: 470 };
-
-type Side = 'up' | 'left' | 'right' | 'tech';
-function sideGroup(key: PanelKey): Side {
-  if (key === 'party') return 'up';
-  if (key === 'tech') return 'tech';
+type Side = 'left' | 'right';
+function sideOf(key: PanelKey): Side {
   return LEFT_PANELS.includes(key) ? 'left' : 'right';
 }
 
@@ -66,6 +60,8 @@ interface Entry {
 export function PanelLayer(): React.JSX.Element {
   const openPanels = useStore((s) => s.openPanels);
   const closePanel = useStore((s) => s.closePanel);
+  const menuScale = useStore((s) => s.menuScale);
+  const gameScale = useStore((s) => s.gameScale);
 
   // Mounted panels with their animation phase. A panel removed from `openPanels`
   // lingers in `out` until its exit animation ends, then it's dropped.
@@ -95,99 +91,137 @@ export function PanelLayer(): React.JSX.Element {
   // Open animation finished → settle to 'steady', dropping the animation class (and with it the
   // composited layer) so the scaled panel re-rasterizes sharp instead of staying a blurry bitmap.
   const onEnterEnd = (key: PanelKey): void => {
-    setEntries((prev) => prev.map((e) => (e.key === key && e.phase === 'in' ? { ...e, phase: 'steady' } : e)));
+    setEntries((prev) =>
+      prev.map((e) => (e.key === key && e.phase === 'in' ? { ...e, phase: 'steady' } : e)),
+    );
   };
+  const animEnd =
+    (key: PanelKey, phase: Entry['phase']) =>
+    (e: React.AnimationEvent): void => {
+      if (e.target !== e.currentTarget) return; // ignore animations bubbling up from children
+      if (phase === 'out') onExitEnd(key);
+      else if (phase === 'in') onEnterEnd(key);
+    };
 
-  // The band targets BAND_TARGET px (centered on the viewport), capped to the viewport on
-  // small screens — so the side panels fill the leftover space beside the fixed party menu.
-  // The band is laid out in BASE px and then transform-scaled by menuScale, so the rendered width
-  // is bandW * menuScale. Cap bandW so that scaled width still fits the viewport (÷ menuScale).
-  const menuScale = useStore((s) => s.menuScale);
-  const [bandW, setBandW] = useState(BAND_TARGET);
+  const [viewport, setViewport] = useState(() => ({ width: window.innerWidth, height: window.innerHeight }));
   useEffect(() => {
-    const update = (): void => setBandW(Math.min(BAND_TARGET, window.innerWidth / menuScale - BAND_MARGIN));
-    update();
+    const update = (): void => setViewport({ width: window.innerWidth, height: window.innerHeight });
     window.addEventListener('resize', update);
     return () => window.removeEventListener('resize', update);
-  }, [menuScale]);
+  }, []);
 
-  // Party is fixed and centered; each side panel fills its half of the leftover space.
-  const partyRendered = PARTY_W * PARTY_SCALE;
-  const techRendered = TECH_W * TECH_SCALE;
-  const partyLeft = (bandW - partyRendered) / 2;
-  const sideW = Math.max(SIDE_MIN, Math.min(SIDE_MAX, partyLeft - GAP - EDGE));
-
-  const layoutOf = (key: PanelKey, group: Side): { left: number; width: number; scale: number; height?: number } => {
-    if (key === 'party') return { left: partyLeft, width: PARTY_W, scale: PARTY_SCALE };
-    if (key === 'tech') return { left: (bandW - techRendered) / 2, width: TECH_W, scale: TECH_SCALE, height: PANEL_HEIGHT.tech };
-    if (group === 'left') return { left: EDGE, width: sideW, scale: 1, height: PANEL_HEIGHT[key] };
-    return { left: bandW - EDGE - sideW, width: sideW, scale: 1, height: PANEL_HEIGHT[key] }; // right
+  // One scale for every kit panel, whatever is open: the strip's if the whole constellation fits, else lower.
+  const dpr = displayPixelRatio();
+  const stripPixels = Math.round(screenPixelsPerArtPixel(gameScale, dpr));
+  const stripCssHeight = ((STRIP_ART_HEIGHT + HUD_ART_HEIGHT) * stripPixels) / dpr;
+  const panelPixels = fitPanelPixels({
+    dpr,
+    viewport,
+    stripCssHeight,
+    stripPixels,
+    needArtAt: () => PANELS_NEED_ART,
+    marginCss: KIT_MARGIN_CSS,
+  });
+  const kitZoom = panelPixels / dpr;
+  const panelSpace = {
+    availArtHeight: ((viewport.height - stripCssHeight - KIT_MARGIN_CSS) * dpr) / panelPixels,
   };
+
+  const hero = entries.find((e) => e.key === 'party');
+  const wings = entries.filter((e) => e.key !== 'party');
 
   return (
     <div
       style={{
-        // Centre via left:50% + a margin (LAYOUT) so it stays exactly concentric with the strip;
-        // keep the transform purely scale so it can't drift the centre the way translateX(-50%)
-        // combined with scale did.
-        position: 'absolute', left: '50%', marginLeft: -bandW / 2, top: 0, bottom: 0, width: bandW, pointerEvents: 'none',
-        // Menu Scale: scale the band from its BOTTOM-CENTRE so it grows UPWARD from the strip
-        // baseline at its full size (no cap / scroll). Independent of Game Scale — the band is
-        // anchored to the (gameScale-sized) strip top and scaled by menuScale on top, so it always
-        // sits glued above the strip whatever the strip's size. At menuScale=1 this is identity.
-        transform: `scale(${menuScale})`,
-        transformOrigin: 'bottom center',
+        position: 'absolute',
+        inset: 0,
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'flex-end',
+        pointerEvents: 'none',
       }}
     >
-      {entries.map(({ key, phase }) => {
-        const group = sideGroup(key);
-        const z = group === 'tech' ? 50 : key === 'party' ? 10 : 20;
-        const anim = phase === 'steady' ? undefined : group === 'tech' ? `tl-tech-${phase}` : `tl-panel-${group}-${phase}`;
-        const { left, width, scale, height } = layoutOf(key, group);
-        return (
-          <div
-            key={key}
-            className={anim}
-            onAnimationEnd={(e) => {
-              if (e.target !== e.currentTarget) return; // ignore animations bubbling up from children
-              if (phase === 'out') onExitEnd(key);
-              else if (phase === 'in') onEnterEnd(key);
-            }}
-            style={{ position: 'absolute', left, bottom: 0, zIndex: z, pointerEvents: 'auto' }}
-          >
-            <PixelWindow
-              id={`panel-${key}`}
-              title={PANEL_TITLES[key]}
-              width={width}
-              height={height}
-              scale={scale}
-              headerActions={
-                key === 'party' ? (
-                  <>
-                    <SettingsHeaderButton />
-                    {isTauri() && <QuitGameButton />}
-                  </>
-                ) : key === 'cube' ? (
-                  <CubeHelpButton />
-                ) : undefined
-              }
-              onClose={() => closePanel(key)}
-            >
-              {renderPanel(key)}
-            </PixelWindow>
+      {hero !== undefined && (
+        // The hero's wrapper is as wide as the hero window's frame and is centred by the row: its edges ARE
+        // the hero's edges, and the wings hang from them.
+        <div
+          className={hero.phase === 'steady' ? undefined : `tl-panel-up-${hero.phase}`}
+          onAnimationEnd={animEnd('party', hero.phase)}
+          style={{ position: 'relative', pointerEvents: 'none' }}
+        >
+          <div className="tk-raise" style={{ position: 'relative', zIndex: 10, pointerEvents: 'auto' }}>
+            <PanelSpaceContext.Provider value={panelSpace}>
+              <KitRoot zoom={kitZoom}>{KIT_PANELS.party?.()}</KitRoot>
+            </PanelSpaceContext.Provider>
           </div>
-        );
-      })}
+          {wings.map(({ key, phase }) => {
+            const side = sideOf(key);
+            const kit = KIT_PANELS[key];
+            return (
+              <div
+                key={key}
+                className={`tk-raise${phase === 'steady' ? '' : ` tl-panel-${side}-${phase}`}`}
+                onAnimationEnd={animEnd(key, phase)}
+                style={{
+                  position: 'absolute',
+                  bottom: 0,
+                  [side === 'left' ? 'right' : 'left']: '100%',
+                  zIndex: 20,
+                  pointerEvents: 'auto',
+                }}
+              >
+                {kit !== undefined ? (
+                  <PanelSpaceContext.Provider value={panelSpace}>
+                    <KitRoot zoom={kitZoom}>{kit()}</KitRoot>
+                  </PanelSpaceContext.Provider>
+                ) : (
+                  <>
+                    <PixelWindow
+                      id={`panel-${key}`}
+                      title={OLD_TITLE[key] ?? key}
+                      width={OLD_WIDTH[key] ?? 340}
+                      height={OLD_HEIGHT[key]}
+                      scale={menuScale}
+                      headerActions={key === 'cube' ? <CubeHelpButton /> : undefined}
+                      onClose={() => closePanel(key)}
+                    >
+                      {renderOldPanel(key)}
+                    </PixelWindow>
+                    {phase !== 'out' && <OldWingBookmarks side={side} zoom={kitZoom} />}
+                  </>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
 
-function renderPanel(key: PanelKey): React.JSX.Element {
+// An old panel is not a kit window, so it cannot carry the side's bookmarks itself: the layer hangs the column on
+// its outer edge, at the height the kit windows keep theirs (10 art px above the bottom).
+function OldWingBookmarks({ side, zoom }: { side: Side; zoom: number }): React.JSX.Element {
+  const { tabs, onTab } = useWingTabs(side);
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        bottom: 10 * zoom,
+        [side === 'left' ? 'right' : 'left']: `calc(100% - ${3 * zoom}px)`,
+        zIndex: -1,
+      }}
+    >
+      <KitRoot zoom={zoom}>
+        <Bookmarks tabs={tabs} onTab={onTab} side={side} solo />
+      </KitRoot>
+    </div>
+  );
+}
+
+// Only the panels still on the old window reach this.
+function renderOldPanel(key: PanelKey): React.JSX.Element | null {
   switch (key) {
-    case 'party':
-      return <PartyPanel />;
-    case 'stash':
-      return <StashPanel />;
     case 'tech':
       return <TechTreePanel />;
     case 'pets':
@@ -196,7 +230,7 @@ function renderPanel(key: PanelKey): React.JSX.Element {
       return <CubePanel />;
     case 'map':
       return <MapPanel />;
-    case 'talents':
-      return <HeroTabsPanel />;
+    default:
+      return null;
   }
 }

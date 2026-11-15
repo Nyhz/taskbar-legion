@@ -1,0 +1,36 @@
+/* The strip's HUD: a rail on top of the battle strip (mock-up: docs/redesign/mockups/05_hud.html).
+   Everything on it is a sign and, at most, a number; names and rules live in the tooltips. 600 art px wide. */
+.tk-hud { position: relative; z-index: 2; width: 600px; height: 22px; border-style: solid; border-width: 0 4px;
+  border-image: url('../../assets/ui/hud_rail.png') 0 4 fill / 0 4px / 0 stretch; display: flex; align-items: center; padding: 0 2px; }
+
+/* Panel launchers: a sign each; the open one is lit and underlined. */
+.tk-hud-key { position: relative; width: 19px; height: 22px; padding: 3px 0 0 2px; }
+.tk-hud-key > img { opacity: .6; }
+.tk-hud-key:hover > img, .tk-hud-key.on > img { opacity: 1; }
+.tk-hud-key.on::after { content: ''; position: absolute; left: 3px; right: 2px; bottom: 1px; height: 1px; background: var(--gold); }
+
+/* Where the party is: difficulty, world-stage on a pennant of the difficulty's colour, progress to the boss. */
+.tk-hud-mid { flex: 1; display: flex; align-items: center; justify-content: center; }
+.tk-hud-where { position: relative; display: flex; align-items: center; gap: 4px; }
+.tk-hud-stage { height: 12px; padding: 0 5px; line-height: 12px; color: #0b0d17; background: linear-gradient(#e6e6e8 0 1px, #97a1b3 1px 10px, #5b6880 10px);
+  clip-path: polygon(1px 0, calc(100% - 1px) 0, calc(100% - 1px) 1px, 100% 1px, 100% calc(100% - 1px), calc(100% - 1px) calc(100% - 1px), calc(100% - 1px) 100%, 1px 100%, 1px calc(100% - 1px), 0 calc(100% - 1px), 0 1px, 1px 1px); }
+.tk-hud-stage.hell { color: #fbb68a; background: linear-gradient(#dc5f48 0 1px, #8f2433 1px 10px, #63192e 10px); }
+.tk-hud-stage.inferno { color: #2b1a1f; background: linear-gradient(#f8dc84 0 1px, #d08f34 1px 10px, #a96628 10px); }
+.tk-hud-stage.eternal { color: #e1f0fb; background: linear-gradient(#82b0da 0 1px, #3f68a6 1px 10px, #2e4a88 10px); }
+.tk-hud-stage.torment { color: #ead2f0; background: linear-gradient(#a879c6 0 1px, #673d94 1px 10px, #4d2b7c 10px); }
+.tk-hud-prog { width: 132px; height: 9px; }
+.tk-hud-end { margin-left: -2px; opacity: .45; }
+.tk-hud-end.on { opacity: 1; }
+
+/* What the party holds: chests (one square per storage slot), keys, the purse. */
+.tk-hud-res { position: relative; display: flex; align-items: center; gap: 1px; padding-right: 5px; color: var(--k9); }
+.tk-hud-res.zero { color: var(--k5); }
+.tk-hud-res.zero > img { opacity: .4; }
+.tk-hud-res.can:hover > img { filter: brightness(1.25); }
+.tk-hud-pips { display: grid; grid-template-rows: repeat(2, 3px); grid-auto-flow: column; grid-auto-columns: 3px; gap: 1px; margin-left: 2px; }
+.tk-hud-pips > i { background: var(--k3); }
+.tk-hud-pips.normal > i.on { background: #cb9a63; }
+.tk-hud-pips.stageBoss > i.on { background: #bcc3cf; }
+.tk-hud-pips.zoneBoss > i.on { background: #cba2dd; }
+.tk-hud-res.full .tk-hud-pips > i.on { background: var(--bad); }
+.tk-hud .tk-gold { position: relative; margin-left: 2px; padding-right: 4px; }

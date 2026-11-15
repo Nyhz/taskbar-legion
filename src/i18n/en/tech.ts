@@ -1,0 +1,21 @@
+// Texts of the upgrades wing (the tech panel): twelve non-combat upgrades bought with gold, rank by rank.
+export const tech = {
+  title: 'Upgrades',
+  close: 'Close',
+  gold: 'Gold',
+  groupDrops: 'Chests · loot',
+  groupStorage: 'Chests · storage',
+  rank: 'Rank',
+  now: 'Now',
+  next: 'Next rank',
+  cost: 'Cost',
+  short: 'You are {amount} gold short.',
+  growth: 'Each rank costs ×{factor} the one before.',
+  buyHint: 'Click the price to buy a rank.',
+  complete: 'Complete',
+  locked: 'Locked',
+  buy: 'Buy a rank of {name} for {amount} gold',
+  unitSlots: '{n} slots',
+  unitHeroes: '{n} heroes',
+  unitEvery: 'every {time}',
+} as const;

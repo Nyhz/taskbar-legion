@@ -1,0 +1,26 @@
+{
+  "coin_sprite": {
+    "en": "Coin Sprite",
+    "es": "Duende de las monedas"
+  },
+  "scholar_owl": {
+    "en": "Scholar Owl",
+    "es": "Búho erudito"
+  },
+  "pack_mule": {
+    "en": "Pack Mule",
+    "es": "Mula de carga"
+  },
+  "lucky_cat": {
+    "en": "Lucky Cat",
+    "es": "Gato de la suerte"
+  },
+  "time_imp": {
+    "en": "Time Imp",
+    "es": "Diablillo del tiempo"
+  },
+  "hoarder": {
+    "en": "Hoarder",
+    "es": "Acaparador"
+  }
+}

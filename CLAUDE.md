@@ -21,9 +21,11 @@ they win. The standing overrides are:
 - **PROGRESSION OVERHAUL (current model — see `docs/DIFFICULTY.md`, the canonical scaling doc).** Combat power
   lives in **ITEMS** (ilvl × tier × affixes × gems) + talents + level + ultimates — *not* tech. **Tech is
   NON-COMBAT only** (Economy/Chests/Utility). **No equip-gate** (ilvl is pure power; any hero equips any item
-  bar the class lock). **Level is hard-capped at 120** (cheap-early/steep-tail XP curve). **Tier multipliers
+  bar the class lock — weapons/off-hands by type AND armour by family: Knight plate, Ranger leather, Priest
+  cloth; jewelry is free). **Level is hard-capped at 120** (cheap-early/steep-tail XP curve). **Tier multipliers
   widened** (T8 = 9×) so drops feel impactful and gate the deep walls. The **walls are the W-10 world bosses**,
-  HP per-world via the hand-tuned `WORLD_WALL_MULT` table, tuned for **~2-3 months to Torment 10-10**. Normal
+  HP per-world via the hand-tuned `WORLD_WALL_MULT` table, to be tuned for **~3 months to Torment 10-10 at 8 h of play a day** (the probe's assumption since
+  2026-11-15; the retune happens once the redesign's content is in place). Normal
   chests **2%**/kill; gem is EXTRA; keys come from stage-boss chests. `WAVES_PER_STAGE = 20`. Naked party walls
   by world 2. Validated by `npm run probe`.
 - **`docs/DIFFICULTY.md` supersedes SPEC §4.6 / §5.3 scaling** — gear power and difficulty are *gear-checked
@@ -34,6 +36,7 @@ they win. The standing overrides are:
   *both* offensive and defensive stats mixed (armor also rolls its base affix from a mixed pool, so it can be
   fully offensive/defensive/hybrid — pick offensive armor for DPS, defensive for tanks). Weapon stays
   offensive-only.
+  Armor is class-locked by FAMILY (redesign): the family never decides the mitigation type.
 - **Tech tree is the main v1 GOLD sink (overrides SPEC §6's research-points currency) — and is NON-COMBAT
   ONLY now** (Economy/Chests/Utility; the combat `cmb_*` nodes were removed — combat power is items). A
   **flat catalogue of ONE endlessly-rankable node per type** (no DAG/rings/prereqs) — `cost = baseCost ·

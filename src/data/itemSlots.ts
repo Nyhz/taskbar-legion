@@ -43,6 +43,31 @@ export const SLOT_KEYS: SlotKey[] = [
   'helmet', 'chest', 'gloves', 'legs', 'boots', 'weapon', 'offhand', 'ring', 'trinket', 'amulet',
 ];
 
+/** An armour FAMILY — the class-specific identity of the five armour slots. A piece of armour is born into
+ *  the family of ONE class and only that class can wear it (Knight plate, Ranger leather, Priest cloth). The
+ *  family says who wears it and how it is drawn — NOT what it mitigates: every family rolls the same bases
+ *  (pure armour, pure magic resist, or the split) and the same substat pool (AFFIXES.md). */
+export type ArmorFamilyKey = 'plate' | 'leather' | 'cloth';
+
+export interface ArmorFamily {
+  key: ArmorFamilyKey;
+  name: string;
+  classKey: string;
+}
+
+export const ARMOR_FAMILIES: Record<ArmorFamilyKey, ArmorFamily> = {
+  plate: { key: 'plate', name: 'Plate', classKey: 'knight' },
+  leather: { key: 'leather', name: 'Leather', classKey: 'ranger' },
+  cloth: { key: 'cloth', name: 'Cloth', classKey: 'priest' },
+};
+
+const ARMOR_FAMILY_LIST = Object.values(ARMOR_FAMILIES);
+
+/** The armour family a class wears, or undefined for an unknown class (a stale key must not crash the UI). */
+export function tryArmorFamilyFor(classKey: string): ArmorFamily | undefined {
+  return ARMOR_FAMILY_LIST.find((f) => f.classKey === classKey);
+}
+
 /** A weapon/off-hand TYPE — class-specific identity for the two weapon-category slots.
  *  An item born to a type is CLASS-LOCKED (only that class can equip it). `base` is the
  *  guaranteed intrinsic affix; `pool` is the tailored substat pool (base may repeat in

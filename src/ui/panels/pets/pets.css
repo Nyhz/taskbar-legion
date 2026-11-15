@@ -1,0 +1,16 @@
+/* The pets wing (mock-up: docs/redesign/mockups/40_pets.html, re-laid for the wing's 154 px): the companion in
+   the stone niche, its name, and the collection on plinths with each pet's bonus under it. Art pixels. */
+.tk-pets-count { position: relative; display: flex; align-items: center; gap: 2px; color: var(--k6); padding-top: 5px; }
+.tk-pets-count > img { margin-top: -5px; }
+.tk-pets-niche { position: relative; width: 100px; height: 116px; margin: 5px auto 0; background: url('../../../assets/ui/ui_alcove.png'); }
+/* The companion at twice its size, standing on the slab (the hero's niche does the same with its figure). */
+.tk-pets-niche > img { position: absolute; left: 14px; top: 35px; width: 72px; height: 72px; }
+.tk-pets-name { height: 12px; margin-top: 5px; text-align: center; font: 12px/12px var(--f-name); color: var(--gold-hi); text-shadow: 1px 1px 0 var(--k0); white-space: nowrap; }
+.tk-pets-name.none { font: 10px/12px var(--f-num); color: var(--k5); text-shadow: none; }
+.tk-pets-shelf { display: grid; grid-template-columns: repeat(var(--cols, 3), 48px); gap: 2px 5px; margin-top: 7px; }
+.tk-pet { position: relative; width: 48px; height: 57px; display: block; }
+.tk-pet > .pl { position: absolute; left: 6px; top: 32px; }
+.tk-pet > .pt { position: absolute; left: 6px; top: 0; }
+.tk-pet.own:hover > .pt { filter: brightness(1.18); }
+.tk-pet > .val { position: absolute; left: 0; right: 0; top: 41px; height: 16px; display: flex; align-items: center; justify-content: center; gap: 1px; color: var(--k9); white-space: nowrap; }
+.tk-pet.none > .val { color: var(--k4); }

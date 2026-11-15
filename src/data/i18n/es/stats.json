@@ -1,0 +1,62 @@
+{
+  "attackDamage": {
+    "en": "Attack Damage",
+    "es": "Daño de ataque"
+  },
+  "attackSpeed": {
+    "en": "Attack Speed",
+    "es": "Velocidad de ataque"
+  },
+  "critChance": {
+    "en": "Crit Chance",
+    "es": "Probabilidad de crítico"
+  },
+  "critDamage": {
+    "en": "Crit Multiplier",
+    "es": "Daño crítico"
+  },
+  "multistrike": {
+    "en": "Multistrike",
+    "es": "Golpe múltiple"
+  },
+  "damageIncrease": {
+    "en": "Damage Increase",
+    "es": "Aumento de daño"
+  },
+  "lifesteal": {
+    "en": "Lifesteal",
+    "es": "Robo de vida"
+  },
+  "armor": {
+    "en": "Armor",
+    "es": "Armadura"
+  },
+  "magicResist": {
+    "en": "Magic Resist",
+    "es": "Resistencia mágica"
+  },
+  "health": {
+    "en": "Health",
+    "es": "Vida"
+  },
+  "hpRegen": {
+    "en": "HP Regen",
+    "es": "Regeneración"
+  },
+  "block": {
+    "en": "Block",
+    "es": "Bloqueo"
+  },
+  "cooldownReduction": {
+    "en": "Cooldown Reduction",
+    "es": "Reducción de recarga"
+  },
+  "healPower": {
+    "en": "Heal Power",
+    "es": "Poder de curación"
+  },
+  "damageReduction": {
+    "en": "Damage Reduction",
+    "es": "Reducción de daño"
+  }
+}

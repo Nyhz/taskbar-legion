@@ -1,0 +1,16 @@
+/* The stash wing (ui/panels/panelLayout: 154 art px of content, six cells edge to edge, as tall as its rows).
+   Art pixels, like the kit. Head line (20), filters line (20), grid, footer line (20). */
+.tk-stash-count { position: relative; }
+.tk-stash-bagfull { position: relative; display: flex; align-items: center; color: var(--bad); padding-top: 3px; }
+.tk-stash-filters { display: flex; align-items: center; gap: 2px; height: 20px; }
+.tk-stash-filters > .end { margin-left: auto; }
+.tk-stash-grid { margin-top: 3px; }
+.tk-stash-grid.over { outline: 1px solid var(--gold-hi); outline-offset: 1px; }
+.tk-stash-foot { display: flex; align-items: center; gap: 4px; height: 20px; margin-top: 3px; }
+.tk-stash-foot > .end { margin-left: auto; }
+.tk-stash-pages { display: flex; align-items: center; gap: 3px; color: var(--k6); }
+.tk-stash-pages > button { min-width: 9px; height: 12px; line-height: 12px; text-align: center; }
+.tk-stash-pages > button.on { color: var(--gold-hi); box-shadow: inset 0 -1px 0 var(--gold); }
+.tk-stash-pages > button.step { color: var(--k8); }
+.tk-stash-pages > button.step:disabled { color: var(--k4); cursor: default; }
+.tk-stash-pages > .at { color: var(--gold-hi); white-space: nowrap; }

@@ -1,9 +1,10 @@
 // Lightweight localStorage persistence for UI-only prefs (uiScale, dockOrientation,
-// retryStage, hideSocketWarning). Separate from the main save (persistence/saveManager.ts)
+// retryStage, hideSocketWarning, language). Separate from the main save (persistence/saveManager.ts)
 // because these are device-local UI choices, and some — retryStage, hideSocketWarning —
 // aren't part of SaveV1. localStorage persists in the Tauri webview, so this works on
 // desktop too.
 
+import type { Lang } from '@/i18n/core';
 import type { DockOrientation, UiScale } from './slices/uiSlice';
 
 const KEY = 'taskbar-legion.settings.v0';
@@ -15,6 +16,7 @@ export interface UiSettings {
   dockOrientation: DockOrientation;
   retryStage: boolean; // keep the party on its stage after a wipe instead of retreating
   hideSocketWarning: boolean; // skip the "gem can't be recovered" confirm when socketing
+  language?: Lang; // only once the player has CHOSEN one; absent = follow the system language
 }
 
 // Some non-browser runtimes (e.g. vitest under node's --localstorage-file flag)

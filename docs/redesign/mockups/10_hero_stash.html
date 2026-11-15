@@ -1,6 +1,6 @@
-<!-- mock: Panel de héroe y alijo | Signos en lugar de palabras, y las palabras solo en los tooltips (pasa el ratón por casillas, estadísticas, pestañas y botones). El Knight del nicho es su animación de reposo. -->
+<!-- mock: Panel de héroe, bolsa y alijo | El panel de héroe completo, con todo lo que el juego hace hoy: las tres plazas del grupo arriba, el equipo, las dos habilidades y la definitiva, los dos preajustes y la bolsa al lado; el alijo aparte, con sus páginas. Debajo, como momentos sueltos: el menú de clic derecho, reclutar, comparar con lo puesto, engastar una gema, arrastrar y la bolsa llena. Pasa el ratón por todo. -->
 <style>
-/* Hero panel. */
+/* Hero panel (the approved paper doll). */
 .gm-hero { display: grid; grid-template-columns: 36px 100px 36px 50px; gap: 0 6px; }
 .gm-col { display: grid; gap: 2px; align-content: start; }
 .gm-mid { display: grid; align-content: start; justify-items: center; }
@@ -14,7 +14,7 @@
 .gm-line { display: grid; grid-template-columns: 16px 1fr; gap: 3px; align-items: center; width: 100px; margin-top: 5px; }
 .gm-power { display: flex; align-items: center; gap: 4px; margin-top: 5px; font: 20px/20px var(--f-big); color: var(--gold-hi); text-shadow: 1px 1px 0 var(--k0); }
 
-/* Stash. */
+/* Stash (approved). */
 .gm-top { display: flex; align-items: center; gap: 5px; height: 22px; margin-top: -2px; }
 .gm-top > span { color: var(--k6); padding-top: 5px; }
 .gm-filter { margin-left: auto; display: flex; gap: 1px; padding-right: 8px; }
@@ -25,18 +25,181 @@
 .gm-filter > div.on > img { opacity: 1; }
 .gm-grid { display: grid; grid-template-columns: repeat(6, 36px); gap: 2px; margin-top: 5px; }
 .gm-foot { display: flex; align-items: center; gap: 3px; margin-top: 6px; }
+
+/* What completing the mock-up added. One state per caption, like the Cube. */
+.gm-hb { display: grid; grid-template-columns: repeat(12, auto); justify-content: start; gap: 16px 14px; }
+.gm-hb-state { display: grid; gap: 5px; align-content: start; justify-items: start; }
+.gm-hb-cap { color: var(--k5); }
+.gm-hb-sub { color: var(--k5); padding-bottom: 3px; }
+.gm-hb-sub.in { padding-bottom: 4px; }
+.gm-hb b.up, .gm-hb em.up { color: var(--good); }
+.gm-hb b.dn, .gm-hb em.dn { color: var(--bad); }
+.gm-hb .gm-tip .ln b.gold { color: var(--gold-hi); }
+.gm-hb em { font-style: normal; }
+
+/* The party: one bookmark per place, on the window's top edge. */
+.gm-hb-book { position: relative; padding-top: 16px; }
+.gm-hb-book > .gm-tabs { top: 28px; }
+.gm-hb-places { position: absolute; left: 31px; top: 0; display: flex; gap: 2px; }
+.gm-hb-places.still { position: relative; left: 0; }
+.gm-hb-place { position: relative; width: 36px; height: 19px; background: url(img/icons/bag_place.png); display: flex; align-items: flex-start; gap: 2px; padding: 2px 0 0 4px; color: var(--k6); }
+.gm-hb-place > b { font-weight: 400; line-height: 16px; }
+.gm-hb-place > img { opacity: .6; }
+.gm-hb-place:hover > img { opacity: 1; }
+.gm-hb-place.on { z-index: 2; background-image: url(img/icons/bag_place_on.png); color: var(--gold-hi); }
+.gm-hb-place.on > img, .gm-hb-place.lit > img { opacity: 1; }
+.gm-hb-place.free, .gm-hb-place.shut { justify-content: center; padding-left: 0; }
+.gm-hb-place.shut > img { opacity: .35; }
+.gm-hb-place.lit { box-shadow: inset 0 -1px 0 var(--gold); }
+.gm-hb-place > .tt.above { left: 0; top: calc(100% + 3px); bottom: auto; }
+.gm-hb-place > u { position: absolute; right: 3px; top: 3px; width: 3px; height: 3px; background: var(--gold-hi); box-shadow: 0 0 0 1px var(--k0); }
+
+/* Hero window: the doll on the left, the bag on the right. */
+.gm-hb-main { display: grid; grid-template-columns: 240px 226px; gap: 0 10px; }
+.gm-hb-kit { display: flex; align-items: center; gap: 4px; height: 30px; margin-top: 6px; }
+.gm-hb-ab { position: relative; width: 24px; height: 24px; }
+.gm-hb-ab > img { position: absolute; left: 0; top: 0; }
+.gm-hb-ab > img + img { left: 4px; top: 4px; }
+.gm-hb-ab.ult { width: 30px; height: 30px; margin-right: 2px; }
+.gm-hb-ab.ult > img + img { left: 7px; top: 7px; }
+.gm-hb-ab.cd > img + img { opacity: .35; }
+.gm-hb-ab > i { position: absolute; right: 3px; bottom: 3px; font-style: normal; color: var(--k9); text-shadow: 1px 0 0 var(--k0), -1px 0 0 var(--k0), 0 1px 0 var(--k0), 0 -1px 0 var(--k0); }
+.gm-hb-ab:hover > img:first-child { filter: brightness(1.4); }
+.gm-hb-pre { margin-left: auto; }
+.gm-hb-bh { display: flex; align-items: center; gap: 3px; height: 22px; margin-top: -2px; }
+.gm-hb-sign { position: relative; }
+.gm-hb-bh > .n { color: var(--k6); padding-top: 1px; }
+.gm-hb-bh > .n.full { color: var(--bad); }
+.gm-hb-acts { margin-left: auto; display: flex; gap: 2px; padding-right: 8px; }
+.gm-hb-acts > div { position: relative; width: 18px; height: 20px; padding: 2px 1px; }
+.gm-hb-acts > div > img { opacity: .65; }
+.gm-hb-acts > div:hover > img { opacity: 1; }
+.gm-hb-acts .tt.above { left: auto; right: 0; top: calc(100% + 3px); bottom: auto; }
+.gm-hb-bag .gm-grid { margin-top: 3px; }
+.gm-slot.no > img:first-child { opacity: .3; }
+.gm-slot > .cls { position: absolute; right: 1px; bottom: 1px; width: 16px; height: 16px; }
+.gm-slot.gone > img:first-child { opacity: .18; }
+.gm-hb-buy > img { opacity: .8; }
+.gm-hb-buy:hover > img { opacity: 1; }
+.gm-hb-count { position: relative; }
+
+/* Stash pages: the bookmarks carry a number, or a lock until bought. */
+.gm-hb-stash { position: relative; padding-left: 19px; }
+.gm-hb-stash .gm-tab > span { display: block; width: 16px; line-height: 16px; text-align: center; color: var(--k6); }
+.gm-hb-stash .gm-tab.on > span { color: var(--gold-hi); }
+.gm-hb-stash .gm-tab > img { margin: 4px 0 0 4px; }
+.gm-hb-stash .gm-tab.next > img { opacity: 1; }
+.gm-hb-stash .gm-tab.shut > img { opacity: .3; }
+
+/* A key that carries a word (and sometimes a price). */
+.gm-hb-key { position: relative; display: flex; align-items: center; gap: 2px; height: 20px; border: 4px solid transparent; border-image: url(img/icons/ui_btn.png) 4 fill / 4px / 0 stretch; padding: 0 5px; line-height: 11px; color: var(--k9); white-space: nowrap; }
+.gm-hb-key > b { font-weight: 400; color: var(--gold-hi); }
+.gm-hb-key > img { margin: -3px 0 -2px 2px; }
+.gm-hb-key:hover { filter: brightness(1.15); }
+.gm-hb-key.gold { border-image-source: url(img/icons/ui_btn_gold.png); color: var(--gold-dk); }
+.gm-hb-key.danger { border-image-source: url(img/icons/opt_btn_danger.png); }
+.gm-hb-key.r { margin-left: auto; }
+.gm-hb-key .gm-tip { white-space: normal; }
+
+/* Right-click menu: a dark plate, one line per action. */
+.gm-hb-menus { display: grid; grid-template-columns: repeat(2, auto); gap: 8px 12px; justify-content: start; }
+.gm-hb-menu { width: max-content; min-width: 96px; border: 4px solid transparent; border-image: url(img/icons/ui_tip.png) 4 fill / 4px / 0 stretch; filter: drop-shadow(2px 2px 0 rgba(11, 13, 23, .55)); }
+.gm-hb-menu > .it { display: flex; align-items: center; gap: 4px; height: 18px; padding: 0 6px 0 1px; color: var(--k8); }
+.gm-hb-menu > .it.on { background: var(--k2); color: var(--k9); }
+.gm-hb-menu > .it.off { color: var(--k5); }
+.gm-hb-menu > .it.off > img { opacity: .35; }
+.gm-hb-menu > .it.bad { color: var(--bad); }
+
+/* Recruiting. */
+.gm-hb-rec { display: grid; gap: 0; justify-items: start; }
+.gm-hb-pick { margin-left: 22px; min-width: 150px; }
+.gm-hb-pick > .it { height: 20px; }
+.gm-hb-pick .nm { font: 12px/12px var(--f-name); color: var(--gold-hi); }
+.gm-hb-pick .act { margin-left: auto; display: flex; align-items: center; gap: 1px; padding-left: 10px; color: var(--gold-hi); }
+.gm-hb-pick .it:not(.on) .act { color: var(--k8); }
+.gm-hb-note { margin: 8px 0 0 60px; }
+
+/* Comparing: the worn piece and the hovered one, side by side. */
+.gm-hb-cmp { display: flex; gap: 4px; align-items: flex-start; }
+.gm-hb-cmp .gm-tip.wide { width: 172px; }
+.gm-hb-cmp .gm-tip.wide .aff { grid-template-columns: 16px auto 1fr auto; }
+.gm-hb-cmp .aff > span { display: flex; align-items: center; }
+.gm-hb-cmp .aff > span > img { margin: -3px 0 -3px 1px; }
+.gm-hb-cmp .aff.lost { color: var(--k5); }
+.gm-hb-cmp .aff.lost > img, .gm-hb-cmp .aff.empty > img { opacity: .35; }
+.gm-hb-cmp .aff.empty { color: var(--k5); }
+.gm-hb-cmp .sub .r > em { padding-left: 3px; }
+
+/* Socketing. */
+.gm-hb-sock { display: flex; gap: 12px; align-items: flex-start; }
+.gm-hb-sock .gm-in { width: 150px; }
+.gm-hb-eq { display: flex; align-items: center; gap: 6px; margin-top: 5px; }
+.gm-hb-gain { display: flex; align-items: center; gap: 3px; height: 18px; margin-top: 3px; }
+.gm-hb-gain > b { font-weight: 400; color: var(--k9); }
+.gm-hb-warn { color: var(--bad); line-height: 10px; padding-top: 4px; }
+.gm-hb-warn.calm { color: var(--k7); }
+.gm-hb-tick { display: flex; align-items: center; gap: 4px; height: 16px; margin-top: 5px; color: var(--k8); }
+.gm-hb-keys { display: flex; margin-top: 6px; }
+.gm-hb-socks { display: flex; gap: 12px; margin-top: 6px; }
+.gm-hb-socks > div { display: grid; gap: 4px; justify-items: center; }
+
+/* Dragging: the piece in the hand, where it came from, and where it may go. */
+.gm-hb-main.narrow { grid-template-columns: 36px 226px; }
+.gm-hero.short { grid-template-columns: 36px; }
+.gm-hb-drag { position: relative; }
+.gm-hb-ok { box-shadow: inset 0 0 0 1px var(--gold-hi); }
+.gm-hb-ghost { position: absolute; left: 31px; top: 40px; width: 36px; height: 36px; z-index: 5; filter: drop-shadow(2px 2px 0 rgba(11, 13, 23, .55)); }
+.gm-hb-ghost > img:first-child { opacity: .88; }
+.gm-hb-ghost > img + img { position: absolute; right: -9px; bottom: -10px; }
+
+/* A full bag. */
+.gm-hb-full { display: grid; gap: 6px; justify-items: start; }
+.gm-hb-toast { color: var(--bad); text-shadow: 1px 0 0 var(--k0), -1px 0 0 var(--k0), 0 1px 0 var(--k0), 0 -1px 0 var(--k0), 1px 1px 0 var(--k0); }
+.gm-hb-full .gm-in { width: 226px; }
+
+/* The sheet tab: every stat as sign + number, in three columns; the account's figures; live effects. */
+.gm-hb-sheet { width: 226px; }
+.gm-hb-sheet .gm-who { margin-top: -2px; }
+.gm-hb-hp { position: relative; margin-left: auto; display: flex; align-items: center; gap: 2px; color: var(--k8); padding-right: 10px; }
+.gm-hb-cols { display: grid; grid-template-columns: 60px 86px 50px; gap: 0 14px; margin-top: 4px; }
+.gm-hb-cols .gm-stat > b > em { color: var(--k6); padding-left: 4px; }
+.gm-hb-sheet .gm-rule { margin: 5px 0 4px; }
+.gm-hb-accts { display: grid; grid-template-columns: repeat(6, 1fr); gap: 2px; }
+.gm-hb-acct { position: relative; display: grid; justify-items: center; gap: 2px; }
+.gm-hb-acct > b { font-weight: 400; color: var(--k9); }
+.gm-hb-accts > .gm-hb-acct:nth-child(n+4) > .tt { left: auto; right: 0; }
+.gm-hb-fx { display: flex; gap: 8px; }
+.gm-hb-fx > div { position: relative; display: flex; align-items: center; gap: 2px; }
+.gm-hb-fx > .good { color: var(--good); }
+.gm-hb-fx > .bad { color: var(--bad); }
+
+/* Layout of the stage: what goes on each row (12 columns, so rows can split unevenly). */
+.gm-hb > .s1 { grid-column: 1 / -1; }
+.gm-hb-row { display: flex; flex-wrap: wrap; gap: 16px 18px; align-items: flex-start; grid-column: 1 / -1; }
+.gm-hb-row > * { position: relative; z-index: 1; }
+.gm-hb-row > *:hover { z-index: 9; }
+.gm-hb-colm { display: grid; gap: 16px; align-content: start; }
 </style>
 
-<div class="gm" role="group" aria-label="Maqueta de la interfaz: panel de héroe del Knight con su equipo y estadísticas, un tooltip de objeto y el alijo.">
-  <div class="gm-book">
+<div class="gm gm-hb" role="group" aria-label="Maqueta del panel de héroe con su bolsa, el alijo y las interacciones con los objetos.">
+  <div class="gm-hb-state s1">
+    <div class="gm-hb-cap">Héroe y bolsa</div>
+    <div class="gm-book gm-hb-book">
+    <div class="gm-hb-places">
+      <div class="gm-hb-place on has"><img src="img/icons/crest_knight.png" alt="Knight"><b>47</b><div class="gm-tip tag tt above"><div class="hd" style="padding:0">Knight · nivel 47</div></div></div>
+      <div class="gm-hb-place has"><img src="img/icons/crest_ranger.png" alt="Ranger"><b>45</b><u></u><div class="gm-tip mini tt above"><div class="hd">Ranger · nivel 45</div><p>Tiene 2 puntos de talento sin gastar.</p></div></div>
+      <div class="gm-hb-place free has"><img src="img/icons/bag_recruit.png" alt="Reclutar"><div class="gm-tip mini tt above"><div class="hd">Plaza libre</div><p>Clic para reclutar a otro héroe.</p></div></div>
+    </div>
     <div class="gm-tabs">
       <div class="gm-tab on has"><img src="img/icons/tab_gear.png" alt="Equipo"><div class="gm-tip tag tt"><div class="hd" style="padding:0">Equipo</div></div></div>
       <div class="gm-tab has"><img src="img/icons/tab_talents.png" alt="Talentos"><div class="gm-tip tag tt"><div class="hd" style="padding:0">Talentos</div></div></div>
-      <div class="gm-tab has"><img src="img/icons/tab_skills.png" alt="Habilidades"><div class="gm-tip tag tt"><div class="hd" style="padding:0">Habilidades</div></div></div>
+      <div class="gm-tab has"><img src="img/icons/bag_sheet.png" alt="Hoja"><div class="gm-tip mini tt"><div class="hd">Hoja</div><p>Todas las estadísticas con su mitigación en esta etapa, las cifras de la cuenta (oro, experiencia, cofres) y los efectos activos ahora mismo.</p></div></div>
     </div>
     <div class="gm-win">
       <img class="gm-close" src="img/icons/ui_x.png" alt="Cerrar">
-      <div class="gm-in gm-hero">
+      <div class="gm-in gm-hb-main">
+        <div>
+        <div class="gm-hero">
         <div class="gm-col">
           <div class="gm-slot has"><img src="img/icons/helmet_plate_3.png" alt="Gran yelmo de acero">
             <div class="gm-tip tt t3"><div class="nm">Gran yelmo de acero</div><div class="sub"><span>Yelmo</span><span class="r"><img src="img/icons/ui_power.png" alt="Poder">82</span><img src="img/icons/crest_knight.png" alt="Knight"></div><div class="gm-rule"><i></i><img src="img/icons/ui_rule.png" alt=""><i></i></div>
@@ -54,19 +217,17 @@
             <div class="gm-tip tt t0"><div class="nm">Canillera de hierro</div><div class="sub"><span>Botas</span><span class="r"><img src="img/icons/ui_power.png" alt="Poder">61</span><img src="img/icons/crest_knight.png" alt="Knight"></div><div class="gm-rule"><i></i><img src="img/icons/ui_rule.png" alt=""><i></i></div>
               <div class="aff"><img src="img/icons/stat_armor.png" alt=""><b>+148</b><span>Armadura</span></div></div></div>
         </div>
-
         <div class="gm-mid">
           <div class="gm-who"><img src="img/icons/crest_knight.png" alt=""><div class="gm-title">Knight</div></div>
           <div class="gm-doll">
-            <div class="gm-lvl has">47<div class="gm-tip mini tt"><div class="hd">Nivel 47</div><p>Tope: 120. Cada nivel sube la vida y el daño base.</p></div></div>
+            <div class="gm-lvl has">47<div class="gm-tip mini tt"><div class="hd">Nivel 47</div><p>Tope: 120. Cada nivel sube la vida y el daño base y da un punto de talento.</p></div></div>
             <div class="fig"><canvas class="px anim" data-char="knight" data-anim="idle" width="96" height="70" role="img" aria-label="El Knight en reposo."></canvas></div>
           </div>
           <div class="gm-line has"><img src="img/icons/ui_xp.png" alt="Experiencia"><div class="gm-bar"><u style="width:62%"></u><b>62 %</b></div>
             <div class="gm-tip mini tt above"><div class="hd">Experiencia</div><div class="ln" style="padding-top:0"><span>Para el nivel 48</span><b>184 300</b></div></div></div>
-          <div class="gm-power has"><img src="img/icons/ui_power.png" alt="Poder de equipo">1 284
-            <div class="gm-tip mini tt above"><div class="hd">Poder de equipo</div><p>Lo que vale todo lo que lleva puesto, en un número.</p></div></div>
+          <div class="gm-power has"><img src="img/icons/ui_power.png" alt="Nivel de equipo">86,3<img src="img/icons/ui_up.png" alt="Por encima de la etapa">
+            <div class="gm-tip mini tt above"><div class="hd">Nivel de equipo</div><p>La media del nivel de objeto de las diez casillas; una vacía cuenta cero.</p><div class="ln"><span>Para esta etapa</span><b class="up">por encima</b></div><p style="padding-top:4px">Flecha verde: vas sobrado. Barra dorada: a la altura. Flecha roja: falta equipo.</p></div></div>
         </div>
-
         <div class="gm-col">
           <div class="gm-slot sel"><img src="img/icons/sword_3.png" alt="Hoja de caballero"></div>
           <div class="gm-slot has"><img src="img/icons/shield_4.png" alt="Égida alada">
@@ -81,7 +242,6 @@
           <div class="gm-slot empty has"><img src="img/icons/ui_well.png" alt="Abalorio: vacío"><img class="ghost" src="img/icons/trinket_1.png" alt="">
             <div class="gm-tip tag tt"><div class="hd" style="padding:0">Abalorio</div></div></div>
         </div>
-
         <div class="gm-stats">
           <div class="gm-stat has"><img src="img/icons/stat_attackDamage.png" alt="Daño de ataque"><b>1 842</b>
             <div class="gm-tip mini tt"><div class="hd">Daño de ataque</div><p>Lo que quita cada golpe antes de la armadura del enemigo.</p><div class="ln"><span>Equipo</span><b>1 420</b></div><div class="ln"><span>Nivel</span><b>310</b></div><div class="ln"><span>Talentos</span><b>+6 %</b></div></div></div>
@@ -104,54 +264,97 @@
           <div class="gm-stat has"><img src="img/icons/stat_damageReduction.png" alt="Reducción de daño"><b>18 %</b>
             <div class="gm-tip mini tt"><div class="hd">Reducción de daño</div><p>Se resta de todo el daño, después de armadura y resistencia.</p></div></div>
         </div>
+        </div>
+        <div class="gm-hb-kit">
+          <div class="gm-hb-ab ult has"><img src="img/icons/tal_ult_on.png" alt=""><img src="img/icons/tal_crown.png" alt="Definitiva"><div class="gm-tip tt above t3"><div class="nm">Última resistencia</div><div class="sub"><span>Definitiva · sola, sin recarga</span></div><p style="padding-top:3px">Un golpe que lo mataría lo deja con un hilo de vida, lo cura y lo hace invulnerable 6 s. Una vez por etapa.</p><div class="ln"><span>Se abre</span><b>nivel 30</b></div></div></div>
+          <div class="gm-hb-ab cd has"><img src="img/icons/tal_plate_on.png" alt=""><img src="img/icons/tal_stone_skin.png" alt="Piel de piedra"><i>12</i><div class="gm-tip tt above"><div class="nm" style="color:var(--gold-hi)">Piel de piedra</div><div class="sub"><span>Habilidad · rango 3 / 5</span></div><p style="padding-top:3px">Endurece la piel: recibe menos daño durante 6 s.</p><div class="ln"><span>Recarga</span><b>12 s de 20</b></div></div></div>
+          <div class="gm-hb-ab has"><img src="img/icons/tal_plate_max.png" alt=""><img src="img/icons/tal_cleave.png" alt="Tajo debilitante"><div class="gm-tip tt above"><div class="nm" style="color:var(--gold-hi)">Tajo debilitante</div><div class="sub"><span>Habilidad · rango 5 / 5</span></div><p style="padding-top:3px">Un barrido a todos los enemigos cuerpo a cuerpo, que además merma el daño que hacen.</p><div class="ln"><span>Recarga</span><b>lista</b></div><p style="padding-top:4px">Las habilidades se aprenden en Talentos; caben dos.</p></div></div>
+          <div class="gm-btn gm-hb-pre has"><img src="img/icons/bag_farm.png" alt="Preajuste de farmeo"><div class="gm-tip mini tt above"><div class="hd">Preajuste · Farmeo</div><p>Guarda 10 piezas y 43 puntos de talento.</p><p style="padding-top:4px">Clic: se lo pone entero. Clic derecho: guardar lo que lleva ahora, o borrarlo.</p></div></div>
+          <div class="gm-btn off has"><img src="img/icons/hud_boss.png" alt="Preajuste de jefe"><div class="gm-tip mini tt above" style="left:auto;right:0"><div class="hd">Preajuste · Jefe</div><p>Vacío. Clic derecho para guardar el equipo y los talentos que lleva ahora.</p></div></div>
+        </div>
+        </div>
+        <div class="gm-hb-bag">
+          <div class="gm-hb-bh">
+            <div class="has gm-hb-sign"><img src="img/icons/bag_pack.png" alt="Bolsa"><div class="gm-tip mini tt"><div class="hd">Bolsa</div><p>De aquí se viste el grupo: la comparten los tres héroes.</p><p style="padding-top:4px">Clic en una pieza: se la pone. Clic derecho: su menú. También puedes arrastrarla a su casilla o a otro hueco.</p></div></div>
+            <span class="n">21 / 26</span>
+            <div class="gm-hb-acts">
+              <div class="has"><img src="img/icons/btn_sort.png" alt="Ordenar"><div class="gm-tip tag tt above"><div class="hd" style="padding:0">Ordenar por rareza</div></div></div>
+              <div class="has"><img src="img/icons/bag_gems_out.png" alt="Guardar las gemas"><div class="gm-tip mini tt above" style="left:auto;right:0"><div class="hd">Guardar las gemas</div><p>Manda todas las gemas de la bolsa al alijo.</p></div></div>
+            </div>
+          </div>
+          <div class="gm-grid">
+            <div class="gm-slot has"><img src="img/icons/helmet_plate_4.png" alt="Yelmo alado dorado"><div class="gm-tip tt t5"><div class="nm">Yelmo alado dorado</div><div class="sub"><span>Yelmo</span><span class="r"><img src="img/icons/ui_power.png" alt="Nivel de objeto">93</span><img src="img/icons/crest_knight.png" alt="Knight"></div><div class="gm-rule"><i></i><img src="img/icons/ui_rule.png" alt=""><i></i></div>
+              <div class="aff"><img src="img/icons/stat_armor.png" alt=""><b>+802</b><span>Armadura</span></div><div class="aff"><img src="img/icons/stat_health.png" alt=""><b>+3 940</b><span>Vida</span></div><div class="aff"><img src="img/icons/stat_critChance.png" alt=""><b>+2,6 %</b><span>Crítico</span></div>
+              <div class="ln" style="padding-top:5px"><span>Aguante</span><b class="up">+3,8 %</b></div><div class="ln"><span>Daño</span><b class="dn">−0,6 %</b></div></div></div>
+            <div class="gm-slot has"><img src="img/icons/boots_plate_3.png" alt="Greba acanalada"><div class="gm-tip tag tt t3"><div class="nm" style="padding:0">Greba acanalada</div></div></div>
+            <div class="gm-slot has no"><img src="img/icons/chest_cloth_3.png" alt="Casulla blanca"><img class="cls" src="img/icons/crest_priest.png" alt="Solo Priest"><div class="gm-tip tag tt t3"><div class="nm" style="padding:0">Casulla blanca · solo Priest</div></div></div>
+            <div class="gm-slot has no"><img src="img/icons/bow_4.png" alt="Gran arco dorado"><img class="cls" src="img/icons/crest_ranger.png" alt="Solo Ranger"><div class="gm-tip tag tt t5"><div class="nm" style="padding:0">Gran arco dorado · solo Ranger</div></div></div>
+            <div class="gm-slot has"><img src="img/icons/gem_ruby.png" alt="Rubí"><div class="gm-tip tag tt t2"><div class="nm" style="padding:0">Rubí</div></div></div>
+            <div class="gm-slot has"><img src="img/icons/gem_emerald.png" alt="Esmeralda"><div class="gm-tip tag tt t2"><div class="nm" style="padding:0">Esmeralda</div></div></div>
+            <div class="gm-slot has no"><img src="img/icons/tome_5.png" alt="Tomo de la Grieta"><img class="cls" src="img/icons/crest_priest.png" alt="Solo Priest"><div class="gm-tip tag tt t8"><div class="nm" style="padding:0">Tomo de la Grieta · solo Priest</div></div></div>
+            <div class="gm-slot has no"><img src="img/icons/quiver_3.png" alt="Carcaj repujado"><img class="cls" src="img/icons/crest_ranger.png" alt="Solo Ranger"><div class="gm-tip tag tt t3"><div class="nm" style="padding:0">Carcaj repujado · solo Ranger</div></div></div>
+            <div class="gm-slot has no"><img src="img/icons/legs_cloth_4.png" alt="Falda solar"><img class="cls" src="img/icons/crest_priest.png" alt="Solo Priest"><div class="gm-tip tag tt t5"><div class="nm" style="padding:0">Falda solar · solo Priest</div></div></div>
+            <div class="gm-slot has"><img src="img/icons/amulet_4.png" alt="Colgante solar"><div class="gm-tip tag tt t5"><div class="nm" style="padding:0">Colgante solar</div></div></div>
+            <div class="gm-slot has no"><img src="img/icons/gloves_leather_4.png" alt="Guante de lobero"><img class="cls" src="img/icons/crest_ranger.png" alt="Solo Ranger"><div class="gm-tip tag tt t5"><div class="nm" style="padding:0">Guante de lobero · solo Ranger</div></div></div>
+            <div class="gm-slot has"><img src="img/icons/shield_2.png" alt="Escudo de infante"><div class="gm-tip tag tt t1"><div class="nm" style="padding:0">Escudo de infante</div></div></div>
+            <div class="gm-slot has"><img src="img/icons/gem_diamond.png" alt="Diamante"><div class="gm-tip tag tt t2"><div class="nm" style="padding:0">Diamante</div></div></div>
+            <div class="gm-slot has"><img src="img/icons/ring_3.png" alt="Anillo de rubí"><div class="gm-tip tag tt t3"><div class="nm" style="padding:0">Anillo de rubí</div></div></div>
+            <div class="gm-slot has"><img src="img/icons/gloves_plate_3.png" alt="Guantelete acanalado"><div class="gm-tip tag tt t3"><div class="nm" style="padding:0">Guantelete acanalado</div></div></div>
+            <div class="gm-slot has no"><img src="img/icons/wand_2.png" alt="Vara de acólito"><img class="cls" src="img/icons/crest_priest.png" alt="Solo Priest"><div class="gm-tip tag tt t1"><div class="nm" style="padding:0">Vara de acólito · solo Priest</div></div></div>
+            <div class="gm-slot has"><img src="img/icons/trinket_2.png" alt="Reloj de arena"><div class="gm-tip tag tt t1"><div class="nm" style="padding:0">Reloj de arena</div></div></div>
+            <div class="gm-slot has"><img src="img/icons/sword_2.png" alt="Espada larga de acero"><div class="gm-tip tag tt t1"><div class="nm" style="padding:0">Espada larga de acero</div></div></div>
+            <div class="gm-slot has no"><img src="img/icons/helmet_leather_2.png" alt="Sombrero de montero"><img class="cls" src="img/icons/crest_ranger.png" alt="Solo Ranger"><div class="gm-tip tag tt t1"><div class="nm" style="padding:0">Sombrero de montero · solo Ranger</div></div></div>
+            <div class="gm-slot has"><img src="img/icons/legs_plate_2.png" alt="Quijotes de acero"><div class="gm-tip tag tt t1"><div class="nm" style="padding:0">Quijotes de acero</div></div></div>
+            <div class="gm-slot has"><img src="img/icons/gem_topaz.png" alt="Topacio"><div class="gm-tip tag tt t2"><div class="nm" style="padding:0">Topacio</div></div></div>
+            <div class="gm-slot"><img src="img/icons/ui_well.png" alt=""></div>
+            <div class="gm-slot"><img src="img/icons/ui_well.png" alt=""></div>
+            <div class="gm-slot"><img src="img/icons/ui_well.png" alt=""></div>
+            <div class="gm-slot"><img src="img/icons/ui_well.png" alt=""></div>
+            <div class="gm-slot"><img src="img/icons/ui_well.png" alt=""></div>
+            <div class="gm-slot has gm-hb-buy"><img src="img/icons/bag_buy_cell.png" alt="Comprar un hueco"><div class="gm-tip mini tt left"><div class="hd">Un hueco más</div><div class="ln" style="padding-top:0"><span>Precio</span><b class="gold">572 de oro</b></div><div class="ln"><span>Huecos</span><b>26 / 80</b></div></div></div>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
-
-  <div class="gm-side">
-    <div class="gm-tip t3">
-      <div class="nm">Hoja de caballero</div>
-      <div class="sub"><span>Espada</span><span class="r"><img src="img/icons/ui_power.png" alt="Poder">86</span><img src="img/icons/crest_knight.png" alt="Knight"></div>
-      <div class="gm-rule"><i></i><img src="img/icons/ui_rule.png" alt=""><i></i></div>
-      <div class="aff"><img src="img/icons/stat_attackDamage.png" alt=""><b>+412</b><span>Daño de ataque</span></div>
-      <div class="aff"><img src="img/icons/stat_critDamage.png" alt=""><b>+18,4 %</b><span>Daño crítico</span></div>
-      <div class="aff"><img src="img/icons/stat_armor.png" alt=""><b>+96</b><span>Armadura</span></div>
-      <div class="aff gem"><img src="img/icons/ui_gem.png" alt="Gema"><b>+38</b><span>Daño de ataque</span></div>
-      <div class="lore">«Forjada para un juramento que ya nadie recuerda.»</div>
     </div>
-
+  </div>
+  <div class="gm-hb-row s1">
+  <div class="gm-hb-state">
+    <div class="gm-hb-cap">Alijo · lo que no cabe en la bolsa</div>
+    <div class="gm-book gm-hb-stash">
+    <div class="gm-tabs">
+      <div class="gm-tab on has"><span>1</span><div class="gm-tip tag tt"><div class="hd" style="padding:0">Página 1</div></div></div><div class="gm-tab has"><span>2</span><div class="gm-tip tag tt"><div class="hd" style="padding:0">Página 2</div></div></div><div class="gm-tab next has"><img src="img/icons/map_lock_s.png" alt="Cerrada"><div class="gm-tip mini tt"><div class="hd">Página 3</div><div class="ln" style="padding-top:0"><span>Precio</span><b class="gold">48 000 de oro</b></div><p style="padding-top:4px">Clic para comprarla: 30 huecos más.</p></div></div><div class="gm-tab shut has"><img src="img/icons/map_lock_s.png" alt="Cerrada"><div class="gm-tip mini tt"><div class="hd">Página 4</div><div class="ln" style="padding-top:0"><span>Precio</span><b>288 000 de oro</b></div><p style="padding-top:4px">Se compran en orden: antes, la 3.</p></div></div><div class="gm-tab shut has"><img src="img/icons/map_lock_s.png" alt="Cerrada"><div class="gm-tip mini tt"><div class="hd">Página 5</div><div class="ln" style="padding-top:0"><span>Precio</span><b>1,73 M de oro</b></div><p style="padding-top:4px">Se compran en orden: antes, la 4.</p></div></div><div class="gm-tab shut has"><img src="img/icons/map_lock_s.png" alt="Cerrada"><div class="gm-tip mini tt"><div class="hd">Página 6</div><div class="ln" style="padding-top:0"><span>Precio</span><b>10,4 M de oro</b></div><p style="padding-top:4px">Se compran en orden: antes, la 5.</p></div></div><div class="gm-tab shut has"><img src="img/icons/map_lock_s.png" alt="Cerrada"><div class="gm-tip mini tt"><div class="hd">Página 7</div><div class="ln" style="padding-top:0"><span>Precio</span><b>62,2 M de oro</b></div><p style="padding-top:4px">Se compran en orden: antes, la 6.</p></div></div><div class="gm-tab shut has"><img src="img/icons/map_lock_s.png" alt="Cerrada"><div class="gm-tip mini tt"><div class="hd">Página 8</div><div class="ln" style="padding-top:0"><span>Precio</span><b>373 M de oro</b></div><p style="padding-top:4px">Se compran en orden: antes, la 7.</p></div></div>
+    </div>
     <div class="gm-win">
       <img class="gm-close" src="img/icons/ui_x.png" alt="Cerrar">
       <div class="gm-in">
         <div class="gm-top">
-          <div class="gm-title">Alijo</div><span>18 / 60</span>
-          <div class="gm-filter">
-            <div class="on has"><img src="img/icons/ui_all.png" alt="Todo"><div class="gm-tip tag tt above"><div class="hd" style="padding:0">Todo</div></div></div>
-            <div class="has"><img src="img/icons/crest_knight.png" alt="Knight"><div class="gm-tip tag tt above"><div class="hd" style="padding:0">Knight</div></div></div>
-            <div class="has"><img src="img/icons/crest_ranger.png" alt="Ranger"><div class="gm-tip tag tt above"><div class="hd" style="padding:0">Ranger</div></div></div>
-            <div class="has"><img src="img/icons/crest_priest.png" alt="Priest"><div class="gm-tip tag tt above"><div class="hd" style="padding:0">Priest</div></div></div>
-          </div>
+          <div class="gm-title">Alijo</div><span class="has gm-hb-count">52 / 60<div class="gm-tip mini tt"><div class="hd">Alijo</div><p>Guarda lo que no llevas encima: dos páginas de 30 huecos.</p><p style="padding-top:4px">Clic en una pieza: va a la bolsa. Arrastrando la dejas en el hueco que quieras.</p><p style="padding-top:4px">Con un filtro se ven juntas las de todas las páginas.</p></div></span>
+          <div class="gm-filter"><div class="on has"><img src="img/icons/bag_f_all.png" alt="Todo"><div class="gm-tip tag tt above"><div class="hd" style="padding:0">Todo</div></div></div><div class="has"><img src="img/icons/stat_armor.png" alt="Armadura"><div class="gm-tip tag tt above"><div class="hd" style="padding:0">Armadura</div></div></div><div class="has"><img src="img/icons/stat_attackDamage.png" alt="Armas"><div class="gm-tip tag tt above"><div class="hd" style="padding:0">Armas</div></div></div><div class="has"><img src="img/icons/bag_f_jewel.png" alt="Joyas"><div class="gm-tip tag tt above"><div class="hd" style="padding:0">Joyas</div></div></div><div class="has"><img src="img/icons/ui_gem.png" alt="Gemas"><div class="gm-tip tag tt above"><div class="hd" style="padding:0">Gemas</div></div></div></div>
         </div>
         <div class="gm-grid">
-          <div class="gm-slot has"><img src="img/icons/helmet_plate_4.png" alt="Yelmo alado"><img class="up" src="img/icons/ui_up.png" alt="Mejora">
-            <div class="gm-tip tt t5"><div class="nm">Yelmo alado</div><div class="sub"><span>Yelmo</span><span class="r"><img src="img/icons/ui_power.png" alt="Poder">93</span><img src="img/icons/crest_knight.png" alt="Knight"></div><div class="gm-rule"><i></i><img src="img/icons/ui_rule.png" alt=""><i></i></div>
-              <div class="aff"><img src="img/icons/stat_armor.png" alt=""><b>+802</b><span>Armadura</span></div><div class="aff"><img src="img/icons/stat_health.png" alt=""><b>+3 940</b><span>Vida</span></div><div class="aff"><img src="img/icons/stat_critChance.png" alt=""><b>+2,6 %</b><span>Crítico</span></div>
-              <div class="cmp"><img src="img/icons/ui_up.png" alt="Mejora"><b>+126</b><img src="img/icons/ui_power.png" alt="de poder"></div></div></div>
-          <div class="gm-slot has"><img src="img/icons/chest_cloth_3.png" alt="Casulla blanca"><div class="gm-tip tag tt t3"><div class="nm" style="padding:0">Casulla blanca</div></div></div>
-          <div class="gm-slot has"><img src="img/icons/bow_4.png" alt="Gran arco dorado"><div class="gm-tip tag tt t5"><div class="nm" style="padding:0">Gran arco dorado</div></div></div>
-          <div class="gm-slot has"><img src="img/icons/tome_5.png" alt="Tomo de la Grieta"><div class="gm-tip tag tt t8"><div class="nm" style="padding:0">Tomo de la Grieta</div></div></div>
-          <div class="gm-slot has"><img src="img/icons/boots_plate_3.png" alt="Escarpe acanalado"><img class="up" src="img/icons/ui_up.png" alt="Mejora"><div class="gm-tip tag tt t3"><div class="nm" style="padding:0">Escarpe acanalado</div></div></div>
-          <div class="gm-slot has"><img src="img/icons/wand_2.png" alt="Vara de acólito"><div class="gm-tip tag tt t1"><div class="nm" style="padding:0">Vara de acólito</div></div></div>
-          <div class="gm-slot has"><img src="img/icons/gem_ruby.png" alt="Rubí"><b>3</b><div class="gm-tip tag tt t2"><div class="nm" style="padding:0">Rubí</div></div></div>
-          <div class="gm-slot has"><img src="img/icons/gem_emerald.png" alt="Esmeralda"><b>2</b><div class="gm-tip tag tt t2"><div class="nm" style="padding:0">Esmeralda</div></div></div>
+          <div class="gm-slot has"><img src="img/icons/chest_plate_3.png" alt="Coraza acanalada"><div class="gm-tip tag tt t3"><div class="nm" style="padding:0">Coraza acanalada</div></div></div>
+          <div class="gm-slot has"><img src="img/icons/sword_4.png" alt="Mandoble rúnico"><div class="gm-tip tag tt t5"><div class="nm" style="padding:0">Mandoble rúnico</div></div></div>
+          <div class="gm-slot has no"><img src="img/icons/helmet_cloth_3.png" alt="Mitra"><img class="cls" src="img/icons/crest_priest.png" alt="Solo Priest"><div class="gm-tip tag tt t3"><div class="nm" style="padding:0">Mitra · solo Priest</div></div></div>
+          <div class="gm-slot has no"><img src="img/icons/bow_3.png" alt="Arco recurvo de asta"><img class="cls" src="img/icons/crest_ranger.png" alt="Solo Ranger"><div class="gm-tip tag tt t3"><div class="nm" style="padding:0">Arco recurvo de asta · solo Ranger</div></div></div>
+          <div class="gm-slot has"><img src="img/icons/ring_4.png" alt="Sortija de zafiro"><div class="gm-tip tag tt t5"><div class="nm" style="padding:0">Sortija de zafiro</div></div></div>
+          <div class="gm-slot has"><img src="img/icons/amulet_3.png" alt="Guardapelo de oro"><div class="gm-tip tag tt t3"><div class="nm" style="padding:0">Guardapelo de oro</div></div></div>
+          <div class="gm-slot has"><img src="img/icons/gem_sapphire.png" alt="Zafiro"><div class="gm-tip tag tt t2"><div class="nm" style="padding:0">Zafiro</div></div></div>
+          <div class="gm-slot has"><img src="img/icons/gem_amethyst.png" alt="Amatista"><div class="gm-tip tag tt t2"><div class="nm" style="padding:0">Amatista</div></div></div>
+          <div class="gm-slot has"><img src="img/icons/gem_ruby.png" alt="Rubí"><div class="gm-tip tag tt t2"><div class="nm" style="padding:0">Rubí</div></div></div>
+          <div class="gm-slot has no"><img src="img/icons/boots_leather_3.png" alt="Bota de montar tachonada"><img class="cls" src="img/icons/crest_ranger.png" alt="Solo Ranger"><div class="gm-tip tag tt t3"><div class="nm" style="padding:0">Bota de montar tachonada · solo Ranger</div></div></div>
+          <div class="gm-slot has no"><img src="img/icons/tome_3.png" alt="Tomo de piel blanca"><img class="cls" src="img/icons/crest_priest.png" alt="Solo Priest"><div class="gm-tip tag tt t3"><div class="nm" style="padding:0">Tomo de piel blanca · solo Priest</div></div></div>
+          <div class="gm-slot has"><img src="img/icons/trinket_4.png" alt="Esfera armilar"><div class="gm-tip tag tt t5"><div class="nm" style="padding:0">Esfera armilar</div></div></div>
+          <div class="gm-slot has"><img src="img/icons/shield_3.png" alt="Escudo de caballero"><div class="gm-tip tag tt t3"><div class="nm" style="padding:0">Escudo de caballero</div></div></div>
+          <div class="gm-slot has no"><img src="img/icons/chest_leather_4.png" alt="Manto de lobo"><img class="cls" src="img/icons/crest_ranger.png" alt="Solo Ranger"><div class="gm-tip tag tt t5"><div class="nm" style="padding:0">Manto de lobo · solo Ranger</div></div></div>
+          <div class="gm-slot has"><img src="img/icons/legs_plate_4.png" alt="Arnés alado dorado"><div class="gm-tip tag tt t5"><div class="nm" style="padding:0">Arnés alado dorado</div></div></div>
+          <div class="gm-slot has no"><img src="img/icons/wand_4.png" alt="Cetro solar"><img class="cls" src="img/icons/crest_priest.png" alt="Solo Priest"><div class="gm-tip tag tt t5"><div class="nm" style="padding:0">Cetro solar · solo Priest</div></div></div>
+          <div class="gm-slot has"><img src="img/icons/gem_emerald.png" alt="Esmeralda"><div class="gm-tip tag tt t2"><div class="nm" style="padding:0">Esmeralda</div></div></div>
+          <div class="gm-slot has"><img src="img/icons/boots_plate_4.png" alt="Escarpe alado dorado"><div class="gm-tip tag tt t5"><div class="nm" style="padding:0">Escarpe alado dorado</div></div></div>
+          <div class="gm-slot has no"><img src="img/icons/quiver_4.png" alt="Carcaj de lobo"><img class="cls" src="img/icons/crest_ranger.png" alt="Solo Ranger"><div class="gm-tip tag tt t5"><div class="nm" style="padding:0">Carcaj de lobo · solo Ranger</div></div></div>
+          <div class="gm-slot has"><img src="img/icons/amulet_5.png" alt="Cristal enjaulado"><div class="gm-tip tag tt t8"><div class="nm" style="padding:0">Cristal enjaulado</div></div></div>
           <div class="gm-slot has"><img src="img/icons/gem_diamond.png" alt="Diamante"><div class="gm-tip tag tt t2"><div class="nm" style="padding:0">Diamante</div></div></div>
-          <div class="gm-slot has"><img src="img/icons/quiver_3.png" alt="Carcaj repujado"><div class="gm-tip tag tt t3"><div class="nm" style="padding:0">Carcaj repujado</div></div></div>
-          <div class="gm-slot has"><img src="img/icons/legs_cloth_4.png" alt="Falda solar"><div class="gm-tip tag tt t5"><div class="nm" style="padding:0">Falda solar</div></div></div>
-          <div class="gm-slot has"><img src="img/icons/amulet_4.png" alt="Colgante solar"><div class="gm-tip tag tt t5"><div class="nm" style="padding:0">Colgante solar</div></div></div>
-          <div class="gm-slot has"><img src="img/icons/gloves_leather_4.png" alt="Guante de lobero"><div class="gm-tip tag tt t5"><div class="nm" style="padding:0">Guante de lobero</div></div></div>
-          <div class="gm-slot has"><img src="img/icons/shield_2.png" alt="Escudo de infante"><div class="gm-tip tag tt t1"><div class="nm" style="padding:0">Escudo de infante</div></div></div>
-          <div class="gm-slot has"><img src="img/icons/key_world.png" alt="Llave de jefe de mundo"><b>1</b><div class="gm-tip tag tt"><div class="hd" style="padding:0">Llave de jefe de mundo</div></div></div>
-          <div class="gm-slot"><img src="img/icons/ui_well.png" alt=""></div>
+          <div class="gm-slot has"><img src="img/icons/helmet_plate_2.png" alt="Capacete con nasal"><div class="gm-tip tag tt t1"><div class="nm" style="padding:0">Capacete con nasal</div></div></div>
           <div class="gm-slot"><img src="img/icons/ui_well.png" alt=""></div>
           <div class="gm-slot"><img src="img/icons/ui_well.png" alt=""></div>
           <div class="gm-slot"><img src="img/icons/ui_well.png" alt=""></div>
@@ -162,12 +365,232 @@
           <div class="gm-slot"><img src="img/icons/ui_well.png" alt=""></div>
         </div>
         <div class="gm-foot">
-          <div class="gm-btn gold has"><img src="img/icons/btn_open.png" alt="Abrir cofres"><b>7</b><div class="gm-tip tag tt above"><div class="hd" style="padding:0">Abrir cofres</div></div></div>
-          <div class="gm-btn has"><img src="img/icons/btn_sort.png" alt="Ordenar"><div class="gm-tip tag tt above"><div class="hd" style="padding:0">Ordenar</div></div></div>
-          <div class="gm-btn off has"><img src="img/icons/btn_sell.png" alt="Vender"><div class="gm-tip mini tt above"><div class="hd">Vender</div><p>Marca objetos para venderlos.</p></div></div>
-          <div class="gm-gold has"><img src="img/icons/ui_gold.png" alt="Oro">12 480<div class="gm-tip tag tt above" style="left:auto;right:0"><div class="hd" style="padding:0">Oro</div></div></div>
+          <div class="gm-btn has"><img src="img/icons/btn_sort.png" alt="Ordenar"><div class="gm-tip tag tt above"><div class="hd" style="padding:0">Ordenar por rareza</div></div></div>
+          <div class="gm-hb-key r has">+1 hueco<img src="img/icons/ui_gold.png" alt="oro"><b>380</b><div class="gm-tip mini tt above" style="left:auto;right:0"><div class="hd">Un hueco más por página</div><div class="ln" style="padding-top:0"><span>Precio</span><b class="gold">380 de oro</b></div><div class="ln"><span>Huecos por página</span><b>30 / 50</b></div></div></div>
         </div>
       </div>
     </div>
+    </div>
+  </div>
+  <div class="gm-hb-colm">
+  <div class="gm-hb-state">
+    <div class="gm-hb-cap">Clic derecho · el menú de cada cosa</div>
+    <div class="gm-hb-menus">
+      <div class="gm-hb-mwrap"><div class="gm-hb-sub">Una pieza de la bolsa</div><div class="gm-hb-menu"><div class="it on"><img src="img/icons/tab_gear.png" alt="">Equipar</div><div class="it"><img src="img/icons/hud_stash.png" alt="">Enviar al alijo</div></div></div>
+      <div class="gm-hb-mwrap"><div class="gm-hb-sub">Una pieza de otra clase</div><div class="gm-hb-menu"><div class="it off"><img src="img/icons/tab_gear.png" alt="">No es de su clase</div><div class="it"><img src="img/icons/hud_stash.png" alt="">Enviar al alijo</div></div></div>
+      <div class="gm-hb-mwrap"><div class="gm-hb-sub">Una gema de la bolsa</div><div class="gm-hb-menu"><div class="it on"><img src="img/icons/ui_gem.png" alt="">Engastar en Yelmo</div><div class="it"><img src="img/icons/ui_gem.png" alt="">Engastar en Arma</div><div class="it"><img src="img/icons/hud_stash.png" alt="">Enviar al alijo</div></div></div>
+      <div class="gm-hb-mwrap"><div class="gm-hb-sub">Una pieza puesta</div><div class="gm-hb-menu"><div class="it on"><img src="img/icons/bag_pack.png" alt="">Quitar</div></div></div>
+      <div class="gm-hb-mwrap"><div class="gm-hb-sub">Algo del alijo, con la bolsa llena</div><div class="gm-hb-menu"><div class="it off"><img src="img/icons/bag_pack.png" alt="">Enviar a la bolsa</div></div></div>
+      <div class="gm-hb-mwrap"><div class="gm-hb-sub">Un preajuste</div><div class="gm-hb-menu"><div class="it on"><img src="img/icons/opt_export.png" alt="">Guardar lo que lleva ahora</div><div class="it bad"><img src="img/icons/opt_new.png" alt="">Borrar el preajuste</div></div></div>
+    </div>
+  </div>
+  <div class="gm-hb-state">
+    <div class="gm-hb-cap">Reclutar · las tres plazas del grupo</div>
+    <div class="gm-hb-rec">
+      <div class="gm-hb-places still">
+        <div class="gm-hb-place on"><img src="img/icons/crest_knight.png" alt="Knight"><b>12</b></div>
+        <div class="gm-hb-place free lit"><img src="img/icons/bag_recruit.png" alt="Reclutar"></div>
+        <div class="gm-hb-place shut"><img src="img/icons/map_lock.png" alt="Plaza cerrada"></div>
+      </div>
+      <div class="gm-hb-menu gm-hb-pick">
+        <div class="it on"><img src="img/icons/crest_ranger.png" alt=""><span class="nm">Ranger</span><span class="act">Reclutar</span></div>
+        <div class="it"><img src="img/icons/crest_priest.png" alt=""><span class="nm">Priest</span><span class="act"><img src="img/icons/map_lock_s.png" alt="Cerrada"><img src="img/icons/ui_gold.png" alt="oro">500</span></div>
+      </div>
+      <div class="gm-tip mini gm-hb-note"><div class="hd">Plaza cerrada</div><p>La tercera plaza se abre en Mejoras.</p></div>
+    </div>
+  </div>
+  </div>
+  </div>
+  <div class="gm-hb-row s1">
+  <div class="gm-hb-state">
+    <div class="gm-hb-cap">Comparar · al pasar por una pieza de la bolsa sale la puesta al lado</div>
+    <div class="gm-hb-cmp">
+      <div class="gm-tip t3"><div class="gm-hb-sub in">Puesto</div><div class="nm">Gran yelmo de acero</div><div class="sub"><span>Yelmo</span><span class="r"><img src="img/icons/ui_power.png" alt="Nivel de objeto">82</span><img src="img/icons/crest_knight.png" alt="Knight"></div><div class="gm-rule"><i></i><img src="img/icons/ui_rule.png" alt=""><i></i></div>
+        <div class="aff"><img src="img/icons/stat_armor.png" alt=""><b>+624</b><span>Armadura</span></div>
+        <div class="aff"><img src="img/icons/stat_health.png" alt=""><b>+3 180</b><span>Vida</span></div>
+        <div class="aff"><img src="img/icons/stat_block.png" alt=""><b>+4,2 %</b><span>Bloqueo</span></div>
+        <div class="aff gem"><img src="img/icons/ui_gem.png" alt="Gema"><b>+38</b><span>Daño de ataque</span></div>
+      </div>
+      <div class="gm-tip wide t5"><div class="nm">Yelmo alado dorado</div><div class="sub"><span>Yelmo</span><span class="r"><img src="img/icons/ui_power.png" alt="Nivel de objeto">93<em class="up">+11</em></span><img src="img/icons/crest_knight.png" alt="Knight"></div><div class="gm-rule"><i></i><img src="img/icons/ui_rule.png" alt=""><i></i></div>
+        <div class="aff"><img src="img/icons/stat_armor.png" alt=""><b>+802</b><span>Armadura</span><em class="up">+178</em></div>
+        <div class="aff"><img src="img/icons/stat_health.png" alt=""><b>+3 940</b><span>Vida<img src="img/icons/cube_star.png" alt="Tirada perfecta"></span><em class="up">+760</em></div>
+        <div class="aff"><img src="img/icons/stat_critChance.png" alt=""><b>+2,6 %</b><span>Crítico</span><em class="up">+2,6 %</em></div>
+        <div class="aff lost"><img src="img/icons/stat_block.png" alt=""><b></b><span>Bloqueo</span><em class="dn">−4,2 %</em></div>
+        <div class="aff gem empty"><img src="img/icons/ui_gem.png" alt="Engaste"><b></b><span>Engaste vacío</span></div>
+        <div class="gm-rule"><i></i><img src="img/icons/ui_rule.png" alt=""><i></i></div>
+        <div class="ln" style="padding-top:0"><span>Aguante</span><b class="up">+3,8 %</b></div>
+        <div class="ln"><span>Daño</span><b class="dn">−0,6 %</b></div>
+        <div class="lore">Mayús: comparar sin contar las gemas.</div>
+      </div>
+    </div>
+  </div>
+  <div class="gm-hb-state">
+    <div class="gm-hb-cap">Engastar · soltar una gema sobre una pieza puesta</div>
+    <div class="gm-hb-sock">
+      <div class="gm-win"><div class="gm-in">
+        <div class="gm-title">Engastar</div>
+        <div class="gm-hb-eq"><div class="gm-slot"><img src="img/icons/gem_ruby.png" alt="Rubí"></div><img src="img/icons/cube_arrow.png" alt="en"><div class="gm-slot"><img src="img/icons/sword_3.png" alt="Hoja de caballero"></div></div>
+        <div class="gm-hb-gain"><img src="img/icons/stat_attackDamage.png" alt=""><b>+38</b> Daño de ataque</div>
+        <p class="gm-hb-warn">La gema se queda en la pieza: no se puede recuperar.</p>
+        <div class="gm-hb-tick"><img src="img/icons/cube2_tick_off.png" alt="No">No volver a preguntar</div>
+        <div class="gm-hb-keys"><div class="gm-hb-key">Volver</div><div class="gm-hb-key gold r">Engastar</div></div>
+      </div></div>
+      <div class="gm-win"><div class="gm-in">
+        <div class="gm-title">Engastes</div>
+        <p class="gm-hb-warn calm">La pieza ya lleva una gema: elige dónde va el Rubí.</p>
+        <div class="gm-hb-socks">
+          <div><div class="gm-slot"><img src="img/icons/ui_well.png" alt=""></div><div class="gm-hb-key gold">Engastar</div></div>
+          <div><div class="gm-slot"><img src="img/icons/gem_sapphire.png" alt="Zafiro"></div><div class="gm-hb-key danger">Cambiar</div></div>
+        </div>
+        <p class="gm-hb-warn">Cambiar destruye el Zafiro que hay puesto.</p>
+        <div class="gm-hb-keys"><div class="gm-hb-key">Volver</div></div>
+      </div></div>
+    </div>
+  </div>
+  </div>
+  <div class="gm-hb-row s1">
+  <div class="gm-hb-state">
+    <div class="gm-hb-cap">Arrastrar · la casilla donde vale se enciende</div>
+    <div class="gm-win gm-hb-drag"><div class="gm-in gm-hb-main narrow">
+      <div class="gm-hero short">
+        <div class="gm-col">
+          <div class="gm-slot has sel gm-hb-ok"><img src="img/icons/helmet_plate_3.png" alt="Gran yelmo de acero">
+            <div class="gm-tip tt t3"><div class="nm">Gran yelmo de acero</div><div class="sub"><span>Yelmo</span><span class="r"><img src="img/icons/ui_power.png" alt="Poder">82</span><img src="img/icons/crest_knight.png" alt="Knight"></div><div class="gm-rule"><i></i><img src="img/icons/ui_rule.png" alt=""><i></i></div>
+              <div class="aff"><img src="img/icons/stat_armor.png" alt=""><b>+624</b><span>Armadura</span></div><div class="aff"><img src="img/icons/stat_health.png" alt=""><b>+3 180</b><span>Vida</span></div><div class="aff"><img src="img/icons/stat_block.png" alt=""><b>+4,2 %</b><span>Bloqueo</span></div></div></div>
+          <div class="gm-slot has"><img src="img/icons/chest_plate_4.png" alt="Coraza dorada alada">
+            <div class="gm-tip tt t5"><div class="nm">Coraza dorada alada</div><div class="sub"><span>Pechera</span><span class="r"><img src="img/icons/ui_power.png" alt="Poder">91</span><img src="img/icons/crest_knight.png" alt="Knight"></div><div class="gm-rule"><i></i><img src="img/icons/ui_rule.png" alt=""><i></i></div>
+              <div class="aff"><img src="img/icons/stat_armor.png" alt=""><b>+1 140</b><span>Armadura</span></div><div class="aff"><img src="img/icons/stat_magicResist.png" alt=""><b>+410</b><span>Resistencia mágica</span></div><div class="aff"><img src="img/icons/stat_health.png" alt=""><b>+5 020</b><span>Vida</span></div><div class="aff"><img src="img/icons/stat_damageReduction.png" alt=""><b>+3,1 %</b><span>Reducción de daño</span></div></div></div>
+          <div class="gm-slot has"><img src="img/icons/gloves_plate_2.png" alt="Guantelete articulado">
+            <div class="gm-tip tt t1"><div class="nm">Guantelete articulado</div><div class="sub"><span>Guantes</span><span class="r"><img src="img/icons/ui_power.png" alt="Poder">74</span><img src="img/icons/crest_knight.png" alt="Knight"></div><div class="gm-rule"><i></i><img src="img/icons/ui_rule.png" alt=""><i></i></div>
+              <div class="aff"><img src="img/icons/stat_attackSpeed.png" alt=""><b>+0,08</b><span>Velocidad de ataque</span></div><div class="aff"><img src="img/icons/stat_armor.png" alt=""><b>+212</b><span>Armadura</span></div></div></div>
+          <div class="gm-slot has"><img src="img/icons/legs_plate_3.png" alt="Arnés acanalado">
+            <div class="gm-tip tt t3"><div class="nm">Arnés acanalado</div><div class="sub"><span>Perneras</span><span class="r"><img src="img/icons/ui_power.png" alt="Poder">80</span><img src="img/icons/crest_knight.png" alt="Knight"></div><div class="gm-rule"><i></i><img src="img/icons/ui_rule.png" alt=""><i></i></div>
+              <div class="aff"><img src="img/icons/stat_magicResist.png" alt=""><b>+538</b><span>Resistencia mágica</span></div><div class="aff"><img src="img/icons/stat_health.png" alt=""><b>+2 960</b><span>Vida</span></div><div class="aff"><img src="img/icons/stat_hpRegen.png" alt=""><b>+84</b><span>Regeneración</span></div></div></div>
+          <div class="gm-slot has"><img src="img/icons/boots_plate_1.png" alt="Canillera de hierro">
+            <div class="gm-tip tt t0"><div class="nm">Canillera de hierro</div><div class="sub"><span>Botas</span><span class="r"><img src="img/icons/ui_power.png" alt="Poder">61</span><img src="img/icons/crest_knight.png" alt="Knight"></div><div class="gm-rule"><i></i><img src="img/icons/ui_rule.png" alt=""><i></i></div>
+              <div class="aff"><img src="img/icons/stat_armor.png" alt=""><b>+148</b><span>Armadura</span></div></div></div>
+        </div>
+      </div>
+      <div class="gm-hb-bag">
+          <div class="gm-hb-bh">
+            <div class="has gm-hb-sign"><img src="img/icons/bag_pack.png" alt="Bolsa"><div class="gm-tip mini tt"><div class="hd">Bolsa</div><p>De aquí se viste el grupo: la comparten los tres héroes.</p><p style="padding-top:4px">Clic en una pieza: se la pone. Clic derecho: su menú. También puedes arrastrarla a su casilla o a otro hueco.</p></div></div>
+            <span class="n">12 / 12</span>
+            <div class="gm-hb-acts">
+              <div class="has"><img src="img/icons/btn_sort.png" alt="Ordenar"><div class="gm-tip tag tt above"><div class="hd" style="padding:0">Ordenar por rareza</div></div></div>
+              <div class="has"><img src="img/icons/bag_gems_out.png" alt="Guardar las gemas"><div class="gm-tip mini tt above" style="left:auto;right:0"><div class="hd">Guardar las gemas</div><p>Manda todas las gemas de la bolsa al alijo.</p></div></div>
+            </div>
+          </div>
+          <div class="gm-grid">
+            <div class="gm-slot has gone"><img src="img/icons/helmet_plate_4.png" alt="Yelmo alado dorado"><div class="gm-tip tag tt t5"><div class="nm" style="padding:0">Yelmo alado dorado</div></div></div>
+            <div class="gm-slot has"><img src="img/icons/boots_plate_3.png" alt="Greba acanalada"><div class="gm-tip tag tt t3"><div class="nm" style="padding:0">Greba acanalada</div></div></div>
+            <div class="gm-slot has no"><img src="img/icons/chest_cloth_3.png" alt="Casulla blanca"><img class="cls" src="img/icons/crest_priest.png" alt="Solo Priest"><div class="gm-tip tag tt t3"><div class="nm" style="padding:0">Casulla blanca · solo Priest</div></div></div>
+            <div class="gm-slot has no"><img src="img/icons/bow_4.png" alt="Gran arco dorado"><img class="cls" src="img/icons/crest_ranger.png" alt="Solo Ranger"><div class="gm-tip tag tt t5"><div class="nm" style="padding:0">Gran arco dorado · solo Ranger</div></div></div>
+            <div class="gm-slot has"><img src="img/icons/gem_ruby.png" alt="Rubí"><div class="gm-tip tag tt t2"><div class="nm" style="padding:0">Rubí</div></div></div>
+            <div class="gm-slot has"><img src="img/icons/gem_emerald.png" alt="Esmeralda"><div class="gm-tip tag tt t2"><div class="nm" style="padding:0">Esmeralda</div></div></div>
+            <div class="gm-slot has no"><img src="img/icons/tome_5.png" alt="Tomo de la Grieta"><img class="cls" src="img/icons/crest_priest.png" alt="Solo Priest"><div class="gm-tip tag tt t8"><div class="nm" style="padding:0">Tomo de la Grieta · solo Priest</div></div></div>
+            <div class="gm-slot has no"><img src="img/icons/quiver_3.png" alt="Carcaj repujado"><img class="cls" src="img/icons/crest_ranger.png" alt="Solo Ranger"><div class="gm-tip tag tt t3"><div class="nm" style="padding:0">Carcaj repujado · solo Ranger</div></div></div>
+            <div class="gm-slot has no"><img src="img/icons/legs_cloth_4.png" alt="Falda solar"><img class="cls" src="img/icons/crest_priest.png" alt="Solo Priest"><div class="gm-tip tag tt t5"><div class="nm" style="padding:0">Falda solar · solo Priest</div></div></div>
+            <div class="gm-slot has"><img src="img/icons/amulet_4.png" alt="Colgante solar"><div class="gm-tip tag tt t5"><div class="nm" style="padding:0">Colgante solar</div></div></div>
+            <div class="gm-slot has no"><img src="img/icons/gloves_leather_4.png" alt="Guante de lobero"><img class="cls" src="img/icons/crest_ranger.png" alt="Solo Ranger"><div class="gm-tip tag tt t5"><div class="nm" style="padding:0">Guante de lobero · solo Ranger</div></div></div>
+            <div class="gm-slot has"><img src="img/icons/shield_2.png" alt="Escudo de infante"><div class="gm-tip tag tt t1"><div class="nm" style="padding:0">Escudo de infante</div></div></div>
+          </div>
+        </div>
+      <div class="gm-hb-ghost"><img src="img/icons/helmet_plate_4.png" alt="Yelmo alado dorado, en la mano"><img src="img/icons/opt_click.png" alt=""></div>
+    </div></div>
+  </div>
+  <div class="gm-hb-state">
+    <div class="gm-hb-cap">Bolsa llena · los cofres no se abren hasta hacer sitio</div>
+    <div class="gm-hb-full">
+      <div class="gm-hb-toast">Bolsa llena: libera 3 huecos e inténtalo otra vez</div>
+      <div class="gm-win"><div class="gm-in">
+        <div class="gm-hb-bag">
+          <div class="gm-hb-bh">
+            <div class="has gm-hb-sign"><img src="img/icons/bag_pack.png" alt="Bolsa"><div class="gm-tip mini tt"><div class="hd">Bolsa</div><p>De aquí se viste el grupo: la comparten los tres héroes.</p><p style="padding-top:4px">Clic en una pieza: se la pone. Clic derecho: su menú. También puedes arrastrarla a su casilla o a otro hueco.</p></div></div>
+            <span class="n full">18 / 18</span>
+            <div class="gm-hb-acts">
+              <div class="has"><img src="img/icons/btn_sort.png" alt="Ordenar"><div class="gm-tip tag tt above"><div class="hd" style="padding:0">Ordenar por rareza</div></div></div>
+              <div class="has"><img src="img/icons/bag_gems_out.png" alt="Guardar las gemas"><div class="gm-tip mini tt above" style="left:auto;right:0"><div class="hd">Guardar las gemas</div><p>Manda todas las gemas de la bolsa al alijo.</p></div></div>
+            </div>
+          </div>
+          <div class="gm-grid">
+            <div class="gm-slot has"><img src="img/icons/helmet_plate_4.png" alt="Yelmo alado dorado"><div class="gm-tip tag tt t5"><div class="nm" style="padding:0">Yelmo alado dorado</div></div></div>
+            <div class="gm-slot has"><img src="img/icons/boots_plate_3.png" alt="Greba acanalada"><div class="gm-tip tag tt t3"><div class="nm" style="padding:0">Greba acanalada</div></div></div>
+            <div class="gm-slot has no"><img src="img/icons/chest_cloth_3.png" alt="Casulla blanca"><img class="cls" src="img/icons/crest_priest.png" alt="Solo Priest"><div class="gm-tip tag tt t3"><div class="nm" style="padding:0">Casulla blanca · solo Priest</div></div></div>
+            <div class="gm-slot has no"><img src="img/icons/bow_4.png" alt="Gran arco dorado"><img class="cls" src="img/icons/crest_ranger.png" alt="Solo Ranger"><div class="gm-tip tag tt t5"><div class="nm" style="padding:0">Gran arco dorado · solo Ranger</div></div></div>
+            <div class="gm-slot has"><img src="img/icons/gem_ruby.png" alt="Rubí"><div class="gm-tip tag tt t2"><div class="nm" style="padding:0">Rubí</div></div></div>
+            <div class="gm-slot has"><img src="img/icons/gem_emerald.png" alt="Esmeralda"><div class="gm-tip tag tt t2"><div class="nm" style="padding:0">Esmeralda</div></div></div>
+            <div class="gm-slot has no"><img src="img/icons/tome_5.png" alt="Tomo de la Grieta"><img class="cls" src="img/icons/crest_priest.png" alt="Solo Priest"><div class="gm-tip tag tt t8"><div class="nm" style="padding:0">Tomo de la Grieta · solo Priest</div></div></div>
+            <div class="gm-slot has no"><img src="img/icons/quiver_3.png" alt="Carcaj repujado"><img class="cls" src="img/icons/crest_ranger.png" alt="Solo Ranger"><div class="gm-tip tag tt t3"><div class="nm" style="padding:0">Carcaj repujado · solo Ranger</div></div></div>
+            <div class="gm-slot has no"><img src="img/icons/legs_cloth_4.png" alt="Falda solar"><img class="cls" src="img/icons/crest_priest.png" alt="Solo Priest"><div class="gm-tip tag tt t5"><div class="nm" style="padding:0">Falda solar · solo Priest</div></div></div>
+            <div class="gm-slot has"><img src="img/icons/amulet_4.png" alt="Colgante solar"><div class="gm-tip tag tt t5"><div class="nm" style="padding:0">Colgante solar</div></div></div>
+            <div class="gm-slot has no"><img src="img/icons/gloves_leather_4.png" alt="Guante de lobero"><img class="cls" src="img/icons/crest_ranger.png" alt="Solo Ranger"><div class="gm-tip tag tt t5"><div class="nm" style="padding:0">Guante de lobero · solo Ranger</div></div></div>
+            <div class="gm-slot has"><img src="img/icons/shield_2.png" alt="Escudo de infante"><div class="gm-tip tag tt t1"><div class="nm" style="padding:0">Escudo de infante</div></div></div>
+            <div class="gm-slot has"><img src="img/icons/gem_diamond.png" alt="Diamante"><div class="gm-tip tag tt t2"><div class="nm" style="padding:0">Diamante</div></div></div>
+            <div class="gm-slot has"><img src="img/icons/ring_3.png" alt="Anillo de rubí"><div class="gm-tip tag tt t3"><div class="nm" style="padding:0">Anillo de rubí</div></div></div>
+            <div class="gm-slot has"><img src="img/icons/gloves_plate_3.png" alt="Guantelete acanalado"><div class="gm-tip tag tt t3"><div class="nm" style="padding:0">Guantelete acanalado</div></div></div>
+            <div class="gm-slot has no"><img src="img/icons/wand_2.png" alt="Vara de acólito"><img class="cls" src="img/icons/crest_priest.png" alt="Solo Priest"><div class="gm-tip tag tt t1"><div class="nm" style="padding:0">Vara de acólito · solo Priest</div></div></div>
+            <div class="gm-slot has"><img src="img/icons/trinket_2.png" alt="Reloj de arena"><div class="gm-tip tag tt t1"><div class="nm" style="padding:0">Reloj de arena</div></div></div>
+            <div class="gm-slot has"><img src="img/icons/sword_2.png" alt="Espada larga de acero"><div class="gm-tip tag tt t1"><div class="nm" style="padding:0">Espada larga de acero</div></div></div>
+          </div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+  </div>
+  <div class="gm-hb-row s1">
+  <div class="gm-hb-state">
+    <div class="gm-hb-cap">Hoja · la tercera pestaña: todo lo que el héroe y la cuenta tienen</div>
+    <div class="gm-book gm-hb-stash">
+    <div class="gm-tabs">
+      <div class="gm-tab has"><img src="img/icons/tab_gear.png" alt="Equipo"><div class="gm-tip tag tt"><div class="hd" style="padding:0">Equipo</div></div></div>
+      <div class="gm-tab has"><img src="img/icons/tab_talents.png" alt="Talentos"><div class="gm-tip tag tt"><div class="hd" style="padding:0">Talentos</div></div></div>
+      <div class="gm-tab on has"><img src="img/icons/bag_sheet.png" alt="Hoja"><div class="gm-tip tag tt"><div class="hd" style="padding:0">Hoja</div></div></div>
+    </div>
+    <div class="gm-win">
+      <img class="gm-close" src="img/icons/ui_x.png" alt="Cerrar">
+      <div class="gm-in gm-hb-sheet">
+        <div class="gm-who"><img src="img/icons/crest_knight.png" alt=""><div class="gm-title">Knight</div><span class="gm-hb-hp has"><img src="img/icons/stat_health.png" alt="Vida ahora">41 800 / 48 210<div class="gm-tip tag tt above"><div class="hd" style="padding:0">Vida ahora mismo</div></div></span></div>
+        <div class="gm-hb-cols">
+          <div>
+            <div class="gm-stat has"><img src="img/icons/stat_attackDamage.png" alt="Daño de ataque"><b>1 842</b><div class="gm-tip tag tt"><div class="hd" style="padding:0">Daño de ataque</div></div></div>
+            <div class="gm-stat has"><img src="img/icons/stat_attackSpeed.png" alt="Velocidad de ataque"><b>1,32</b><div class="gm-tip tag tt"><div class="hd" style="padding:0">Velocidad de ataque</div></div></div>
+            <div class="gm-stat has"><img src="img/icons/stat_critChance.png" alt="Crítico"><b>24,5 %</b><div class="gm-tip mini tt"><div class="hd">Crítico</div><p>Probabilidad de crítico. A partir de cierto valor cada punto rinde menos.</p></div></div>
+            <div class="gm-stat has"><img src="img/icons/stat_critDamage.png" alt="Daño crítico"><b>182 %</b><div class="gm-tip tag tt"><div class="hd" style="padding:0">Daño crítico</div></div></div>
+            <div class="gm-stat has"><img src="img/icons/stat_multistrike.png" alt="Golpe múltiple"><b>12 %</b><div class="gm-tip tag tt"><div class="hd" style="padding:0">Golpe múltiple</div></div></div>
+            <div class="gm-stat has"><img src="img/icons/stat_damageIncrease.png" alt="Aumento de daño"><b>0 %</b><div class="gm-tip tag tt"><div class="hd" style="padding:0">Aumento de daño</div></div></div>
+            <div class="gm-stat has"><img src="img/icons/stat_lifesteal.png" alt="Robo de vida"><b>2,2 %</b><div class="gm-tip tag tt"><div class="hd" style="padding:0">Robo de vida</div></div></div>
+          </div>
+          <div>
+            <div class="gm-stat has"><img src="img/icons/stat_armor.png" alt="Armadura"><b>3 480<em>−41 %</em></b><div class="gm-tip mini tt"><div class="hd">Armadura</div><p>Reduce el daño físico. La cifra gris es cuánto quita en esta etapa.</p></div></div>
+            <div class="gm-stat has"><img src="img/icons/stat_magicResist.png" alt="Resistencia mágica"><b>1 120<em>−19 %</em></b><div class="gm-tip mini tt"><div class="hd">Resistencia mágica</div><p>Reduce el daño mágico. La cifra gris es cuánto quita en esta etapa.</p></div></div>
+            <div class="gm-stat has"><img src="img/icons/stat_health.png" alt="Vida"><b>48 210</b><div class="gm-tip tag tt"><div class="hd" style="padding:0">Vida</div></div></div>
+            <div class="gm-stat has"><img src="img/icons/stat_hpRegen.png" alt="Regeneración"><b>84</b><div class="gm-tip tag tt"><div class="hd" style="padding:0">Regeneración</div></div></div>
+            <div class="gm-stat has"><img src="img/icons/stat_block.png" alt="Bloqueo"><b>31 %</b><div class="gm-tip tag tt"><div class="hd" style="padding:0">Bloqueo</div></div></div>
+            <div class="gm-stat has"><img src="img/icons/stat_damageReduction.png" alt="Reducción de daño"><b>18 %</b><div class="gm-tip mini tt"><div class="hd">Reducción de daño</div><p>Solo la dan efectos activos, como Piel de piedra.</p></div></div>
+          </div>
+          <div>
+            <div class="gm-stat has"><img src="img/icons/stat_cooldownReduction.png" alt="Reducción de recarga"><b>12 %</b><div class="gm-tip mini tt left"><div class="hd">Reducción de recarga</div><p>Las habilidades vuelven antes. A partir de cierto valor cada punto rinde menos.</p></div></div>
+            <div class="gm-stat has"><img src="img/icons/stat_healPower.png" alt="Poder de curación"><b>0 %</b><div class="gm-tip tag tt left"><div class="hd" style="padding:0">Poder de curación</div></div></div>
+          </div>
+        </div>
+        <div class="gm-rule"><i></i><img src="img/icons/ui_rule.png" alt=""><i></i></div>
+        <div class="gm-hb-accts">
+          <div class="gm-hb-acct has"><img src="img/icons/tech_eco_gold.png" alt="Oro por baja"><b>+35 %</b><div class="gm-tip mini tt above"><div class="hd">Oro por baja</div><p>De toda la cuenta: mejoras y mascotas.</p></div></div>
+          <div class="gm-hb-acct has"><img src="img/icons/tech_eco_xp.png" alt="Experiencia"><b>+27,5 %</b><div class="gm-tip mini tt above"><div class="hd">Experiencia</div><p>De toda la cuenta: mejoras y mascotas.</p></div></div>
+          <div class="gm-hb-acct has"><img src="img/icons/tech_eco_offline.png" alt="Rendimiento en ausencia"><b>+62,5 %</b><div class="gm-tip mini tt above"><div class="hd">Rendimiento en ausencia</div><p>Lo que se gana con el juego cerrado.</p></div></div>
+          <div class="gm-hb-acct has"><img src="img/icons/tech_chest_gem.png" alt="Gemas en los cofres"><b>+32,5 %</b><div class="gm-tip mini tt above"><div class="hd">Gemas en los cofres</div><p>Sobre la probabilidad base de que un cofre traiga una gema.</p></div></div>
+          <div class="gm-hb-acct has"><img src="img/icons/tech_chest_drop_normal.png" alt="Cofre común"><b>2,05 %</b><div class="gm-tip mini tt above"><div class="hd">Cofre común</div><p>Probabilidad por baja.</p></div></div>
+          <div class="gm-hb-acct has"><img src="img/icons/tech_chest_drop_stage.png" alt="Cofre de jefe de etapa"><b>103,5 %</b><div class="gm-tip mini tt above"><div class="hd">Cofre de jefe de etapa</div><p>Probabilidad por jefe de etapa.</p></div></div>
+        </div>
+        <div class="gm-rule"><i></i><img src="img/icons/ui_rule.png" alt=""><i></i></div>
+        <div class="gm-hb-fx">
+          <div class="has good"><img src="img/icons/tal_stone_skin.png" alt="Piel de piedra">4,2 s<div class="gm-tip mini tt above"><div class="hd">Piel de piedra</div><p>Efecto activo: −30 % de daño recibido.</p></div></div>
+          <div class="has good"><img src="img/icons/tal_battle_cry.png" alt="Grito de guerra">1,8 s<div class="gm-tip mini tt above"><div class="hd">Grito de guerra</div><p>Efecto activo: más daño de ataque y crítico.</p></div></div>
+          <div class="has bad"><img src="img/icons/stat_attackDamage.png" alt="Debilitado">2,1 s<div class="gm-tip mini tt above"><div class="hd">Debilitado</div><p>Efecto en contra: hace menos daño.</p></div></div>
+        </div>
+      </div>
+    </div>
+    </div>
+  </div>
   </div>
 </div>

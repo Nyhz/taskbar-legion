@@ -1,0 +1,22 @@
+{
+  "normal": {
+    "en": "Normal",
+    "es": "Normal"
+  },
+  "hell": {
+    "en": "Hell",
+    "es": "Infierno"
+  },
+  "inferno": {
+    "en": "Inferno",
+    "es": "Averno"
+  },
+  "eternal": {
+    "en": "Eternal",
+    "es": "Eterno"
+  },
+  "torment": {
+    "en": "Torment",
+    "es": "Tormento"
+  }
+}

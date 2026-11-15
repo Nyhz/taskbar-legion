@@ -96,7 +96,9 @@ export function TechCard({
           <span style={{ color: owned ? accent : PALETTE.textMute, fontSize: 15, fontWeight: 700 }}>
             {cumulativeLabel(node, rank)}
           </span>
-          <span style={{ color: PALETTE.textMute, fontSize: 9 }}>{owned ? effectUnit(node) : 'not owned'}</span>
+          <span style={{ color: PALETTE.textMute, fontSize: 9 }}>
+            {owned ? effectUnit(node) : 'not owned'}
+          </span>
         </div>
         <div style={{ color: PALETTE.textMute, fontSize: 9.5, lineHeight: 1.2, marginTop: 2 }}>
           {node.description}
@@ -107,7 +109,9 @@ export function TechCard({
       <button
         onClick={() => buyable && onBuy()}
         disabled={!buyable}
-        title={maxed ? 'Fully upgraded' : buyable ? `Buy next rank for ${format(cost)}g` : `Need ${format(cost)}g`}
+        title={
+          maxed ? 'Fully upgraded' : buyable ? `Buy next rank for ${format(cost)}g` : `Need ${format(cost)}g`
+        }
         style={{
           flexShrink: 0,
           margin: 0,

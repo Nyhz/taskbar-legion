@@ -1,0 +1,260 @@
+/* The interface kit: tokens, typefaces and the recipes every panel shares. Ported from the approved mock-ups
+   (docs/redesign/mockups/00_kit.html). Everything is authored at the game's 1× art pixel; the element that carries
+   `.tk` is zoomed by its owner (KitRoot), so borders, nine-slices and lettering keep whole art pixels.
+   Rules: signs instead of words, words in tooltips; chrome is pixel art (nine-slices), not CSS boxes; a blackletter
+   for names, a pixel grotesque for numbers; gold only where it matters. Colours come from tokens.ts (set as CSS
+   variables by KitRoot) — never write a hex here that is not a palette tone. */
+@font-face { font-family: 'Jacquard 12'; src: url('../../assets/fonts/Jacquard12-Regular.ttf') format('truetype'); font-display: block; }
+@font-face { font-family: 'Jersey 10'; src: url('../../assets/fonts/Jersey10-Regular.ttf') format('truetype'); font-display: block; }
+@font-face { font-family: 'Jersey 20'; src: url('../../assets/fonts/Jersey20-Regular.ttf') format('truetype'); font-display: block; }
+
+.tk {
+  --f-name: 'Jacquard 12', serif; /* names of things: 12 px grid */
+  --f-title: 'Jacquard 12', serif; /* window titles: the same face at twice the size */
+  --f-num: 'Jersey 10', monospace; /* numbers and tooltip text: 10 px grid */
+  --f-big: 'Jersey 20', monospace; /* the one big number: 20 px grid */
+  font: 10px/10px var(--f-num);
+  color: var(--k8);
+  image-rendering: pixelated;
+  user-select: none;
+}
+.tk * { box-sizing: border-box; }
+.tk img, .tk canvas { image-rendering: pixelated; display: block; }
+.tk p { margin: 0; }
+/* A kit button is whatever its recipe says: drop the browser's look. Zero specificity, so every recipe wins. */
+:where(.tk button) { all: unset; box-sizing: border-box; cursor: pointer; }
+
+
+/* Window (Window.tsx): one nine-slice, brass only on the corners. The close key takes the place of the
+   top-right fitting. Nothing here clips: tooltips are free to leave the window. The window under the pointer
+   comes to the front, so a tooltip is never hidden behind a neighbour. */
+.tk-book { position: relative; z-index: 1; width: max-content; }
+.tk-book:hover { z-index: 9; }
+.tk-book.places { padding-top: 16px; }
+.tk-win { position: relative; z-index: 1; border: 10px solid transparent; border-image: url('../../assets/ui/ui_window.png') 10 fill / 10px / 0 stretch;
+  filter: drop-shadow(2px 2px 0 rgba(11, 13, 23, .55)); }
+.tk-in { margin: -3px; }
+.tk-close { position: absolute; right: -10px; top: -10px; z-index: 3; width: 13px; height: 13px; }
+.tk-close:hover { filter: brightness(1.25); }
+
+/* The head of a window: its title, a dim note beside it, and things at the far end (kept clear of the close key). */
+.tk-head { display: flex; align-items: center; gap: 5px; height: 22px; margin-top: -2px; }
+.tk-head > .note { color: var(--k6); padding-top: 5px; }
+.tk-head > .note.bad { color: var(--bad); }
+.tk-head > .end { margin-left: auto; display: flex; align-items: center; gap: 1px; padding-right: 8px; }
+.tk-title { font: 24px/22px var(--f-title); color: var(--gold-hi); text-shadow: 1px 1px 0 var(--k0); white-space: nowrap; }
+.tk-rule { display: flex; align-items: center; gap: 1px; margin: 5px 0 4px; }
+.tk-rule i { flex: 1; height: 1px; background: var(--k3); }
+
+/* Tabs: bookmarks hanging OUTSIDE the window's left edge (or its right one: `.right`) — a sign, a number or a
+   lock. They take no room in the layout (the window's box is its frame) and stand a fixed distance above the
+   window's BOTTOM, so a column of launchers keeps its height when it moves between windows of different heights.
+   The lit one joins the window. `.solo` is a column on its own (Bookmarks.tsx), for a window that is not a kit one. */
+.tk-tabs { position: absolute; left: -19px; bottom: 10px; display: grid; gap: 2px; }
+.tk-tabs.right { left: auto; right: -19px; }
+.tk-tabs.solo { position: relative; left: 0; right: auto; bottom: 0; width: 22px; }
+.tk-tab { position: relative; width: 22px; height: 22px; padding: 3px 0 0 3px; }
+.tk-tab::before { content: ''; position: absolute; inset: 0; background: url('../../assets/ui/ui_tab.png'); }
+.tk-tab > img, .tk-tab > span { position: relative; }
+.tk-tab > img { opacity: .55; }
+.tk-tab:hover > img { opacity: 1; }
+.tk-tab > span { display: block; width: 16px; line-height: 16px; text-align: center; color: var(--k6); }
+.tk-tab.on { z-index: 2; }
+.tk-tab.on::before { background-image: url('../../assets/ui/ui_tab_on.png'); }
+.tk-tab.on > img, .tk-tab.next > img { opacity: 1; }
+.tk-tab.on > span { color: var(--gold-hi); }
+.tk-tab.shut > img { opacity: .3; }
+.tk-tab.small > img { margin: 4px 0 0 4px; }
+.tk-tabs.right .tk-tab::before { transform: scaleX(-1); } /* the same bookmark, facing the other way */
+
+/* Places: bookmarks on the window's top edge — who the window is about (a crest and a number), a free place, a
+   closed one. A dot says something waits there. */
+.tk-places { position: absolute; left: 12px; top: 0; display: flex; gap: 2px; }
+.tk-place { position: relative; width: 36px; height: 19px; background: url('../../assets/ui/bag_place.png'); display: flex; align-items: flex-start; gap: 2px; padding: 2px 0 0 4px; color: var(--k6); }
+.tk-place > b { font-weight: 400; line-height: 16px; }
+.tk-place > img { opacity: .6; }
+.tk-place:hover > img { opacity: 1; }
+.tk-place.on { z-index: 2; background-image: url('../../assets/ui/bag_place_on.png'); color: var(--gold-hi); }
+.tk-place.on > img { opacity: 1; }
+.tk-place.free, .tk-place.shut { justify-content: center; padding-left: 0; }
+.tk-place.shut > img { opacity: .35; }
+.tk-place.shut > img.small { margin-top: 3px; }
+.tk-place > u { position: absolute; right: 3px; top: 3px; width: 3px; height: 3px; background: var(--gold-hi); box-shadow: 0 0 0 1px var(--k0); }
+
+/* Slot (Slot.tsx): 24×24 — every item cell of the game (gear, bag, stash). An item is its tier frame
+   (`smframe_N`, 24 px) with the bare icon (`sm_…`, 22 px) on top (ItemIcon): the icons are DRAWN at this size by
+   the asset pipeline, so the proportion to the rest of the interface is the same at every scale. An empty slot is
+   a sunk well, optionally with the ghost of what goes there. States: sel (gold brackets), no (not usable: dim,
+   the owner's small crest in the corner), gone (the origin of a drag), ok (a valid drop target, lit). */
+.tk-grid { display: grid; grid-template-columns: repeat(var(--cols, 6), 24px); gap: 2px; }
+.tk-slot { position: relative; width: 24px; height: 24px; }
+.tk-slot > img { width: 24px; height: 24px; }
+.tk-item { position: relative; width: 24px; height: 24px; }
+.tk-item > img { position: absolute; left: 0; top: 0; }
+.tk-item > img + img { left: 1px; top: 1px; }
+.tk-slot > img.ghost { position: absolute; left: 1px; top: 1px; width: 22px; height: 22px; opacity: .16; filter: grayscale(1) brightness(1.6); }
+.tk-slot.no > :first-child { opacity: .3; }
+.tk-slot.gone > :first-child { opacity: .18; }
+.tk-slot > img.cls { position: absolute; right: 0; bottom: 0; width: 9px; height: 9px; }
+.tk-slot > img.mark { position: absolute; left: 0; top: 0; width: 7px; height: 7px; }
+.tk-slot > b { position: absolute; right: 1px; bottom: 1px; z-index: 1; font-weight: 400; color: var(--k9); text-shadow: 1px 0 0 var(--k0), -1px 0 0 var(--k0), 0 1px 0 var(--k0), 0 -1px 0 var(--k0); }
+.tk-slot.sel::after { content: ''; position: absolute; inset: -2px; pointer-events: none;
+  background:
+    linear-gradient(var(--gold-hi), var(--gold-hi)) 0 0 / 5px 1px, linear-gradient(var(--gold-hi), var(--gold-hi)) 0 0 / 1px 5px,
+    linear-gradient(var(--gold-hi), var(--gold-hi)) 100% 0 / 5px 1px, linear-gradient(var(--gold-hi), var(--gold-hi)) 100% 0 / 1px 5px,
+    linear-gradient(var(--gold-hi), var(--gold-hi)) 0 100% / 5px 1px, linear-gradient(var(--gold-hi), var(--gold-hi)) 0 100% / 1px 5px,
+    linear-gradient(var(--gold-hi), var(--gold-hi)) 100% 100% / 5px 1px, linear-gradient(var(--gold-hi), var(--gold-hi)) 100% 100% / 1px 5px;
+  background-repeat: no-repeat; }
+.tk-slot.ok::before { content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none; box-shadow: inset 0 0 0 1px var(--gold-hi); }
+.tk-slot.can { cursor: pointer; }
+.tk-slot.can:hover > :first-child { filter: brightness(1.18); }
+.tk-slot.buy > :first-child { opacity: .8; }
+.tk-slot.buy:hover > :first-child { opacity: 1; }
+
+/* Bars: stepped corners, a lit top row, the number inside. */
+.tk-bar { position: relative; height: 11px; background: var(--k0);
+  clip-path: polygon(1px 0, calc(100% - 1px) 0, calc(100% - 1px) 1px, 100% 1px, 100% calc(100% - 1px), calc(100% - 1px) calc(100% - 1px), calc(100% - 1px) 100%, 1px 100%, 1px calc(100% - 1px), 0 calc(100% - 1px), 0 1px, 1px 1px); }
+.tk-bar > u { position: absolute; left: 1px; top: 1px; bottom: 1px; background: linear-gradient(var(--xp-hi) 0 1px, var(--xp) 1px 7px, var(--xp-dk) 7px); }
+.tk-bar > b { position: absolute; inset: 0; font-weight: 400; text-align: center; line-height: 11px; color: var(--k9); text-shadow: 1px 1px 0 var(--k0); }
+
+/* Stats: a sign and a number. What it is, and where it comes from, lives in the tooltip. */
+.tk-stats { display: grid; align-content: start; margin-left: 2px; }
+.tk-stat { position: relative; display: grid; grid-template-columns: 16px 1fr; gap: 3px; align-items: center; height: 18px; padding-right: 2px; }
+.tk-stat > b { font-weight: 400; text-align: right; color: var(--k9); white-space: nowrap; }
+.tk-stat:hover { background: var(--k2); }
+.tk-stat.gap { margin-top: 8px; }
+.tk-stat > b.up { color: var(--good); }
+
+/* Tooltips: the only place where things are spelled out. */
+.tk-tip { width: 150px; border: 4px solid transparent; border-image: url('../../assets/ui/ui_tip.png') 4 fill / 4px / 0 stretch; padding: 2px 3px 3px; color: var(--k7); text-align: left; font: 10px/10px var(--f-num);
+  filter: drop-shadow(2px 2px 0 rgba(11, 13, 23, .55)); }
+.tk-tip.mini { width: 116px; }
+.tk-tip.tag { width: auto; white-space: nowrap; }
+.tk-tip .nm { font: 12px/12px var(--f-name); padding-bottom: 3px; }
+.tk-tip .hd { color: var(--gold-hi); padding-bottom: 3px; }
+.tk-tip .sub { display: flex; align-items: center; gap: 2px; height: 16px; margin: -3px 0; }
+.tk-tip .sub .r { margin-left: auto; display: flex; align-items: center; color: var(--k9); }
+.tk-tip .tk-rule { margin: 4px 0 3px; }
+.tk-tip .aff { display: grid; grid-template-columns: 16px auto 1fr; gap: 3px; align-items: center; height: 15px; }
+.tk-tip .aff b, .tk-tip .cmp b, .tk-tip .ln b { font-weight: 400; color: var(--k9); }
+.tk-tip .aff.gem b { color: #f08a62; }
+.tk-tip .cmp { display: flex; align-items: center; gap: 1px; height: 16px; margin: 0 0 -3px -2px; }
+.tk-tip .cmp b { color: var(--good); }
+.tk-tip .lore { color: var(--k5); padding-top: 4px; }
+.tk-tip .ln { display: flex; justify-content: space-between; padding-top: 3px; }
+.tk-tip p + .ln { padding-top: 5px; }
+.tk .t0 .nm { color: var(--t0); } .tk .t1 .nm { color: var(--t1); } .tk .t2 .nm { color: var(--t2); } .tk .t3 .nm { color: var(--t3); } .tk .t4 .nm { color: var(--t4); }
+.tk .t5 .nm { color: var(--t5); } .tk .t6 .nm { color: var(--t6); } .tk .t7 .nm { color: var(--t7); } .tk .t8 .nm { color: var(--t8); }
+.tk .tt { display: none; position: absolute; left: calc(100% + 5px); top: 0; z-index: 40; pointer-events: none; }
+.tk .tt.above { left: 0; top: auto; bottom: calc(100% + 4px); }
+.tk .tt.left { left: auto; right: calc(100% + 5px); }
+.tk .has:hover > .tt { display: block; }
+
+/* Keys (Key.tsx). A square key carries a sign; a worded key carries a word and, sometimes, a price. Tones:
+   plum (default), gold (the one that matters), danger; `off` is disabled. A lamp says a switch is on; a badge
+   counts. Gold: the purse, wherever it shows. */
+.tk-btn { position: relative; width: 24px; height: 24px; border: 4px solid transparent; border-image: url('../../assets/ui/ui_btn.png') 4 fill / 4px / 0 stretch; }
+.tk-btn > img { margin-top: -1px; }
+.tk-btn:not(.off):hover, .tk-key:not(.off):hover { filter: brightness(1.15); }
+.tk-btn.gold, .tk-key.gold { border-image-source: url('../../assets/ui/ui_btn_gold.png'); }
+.tk-btn.danger, .tk-key.danger { border-image-source: url('../../assets/ui/opt_btn_danger.png'); }
+.tk-btn.off, .tk-key.off { border-image-source: url('../../assets/ui/ui_btn_off.png'); cursor: default; }
+.tk-btn.off > img { opacity: .45; filter: grayscale(1); }
+.tk-btn > b, .tk-key > b.badge { position: absolute; right: -6px; top: -7px; min-width: 9px; height: 9px; padding: 0 2px; font-weight: 400; line-height: 9px; text-align: center; color: var(--k9); background: #8f2433; box-shadow: 0 0 0 1px var(--k0); }
+.tk-btn > u, .tk-key > u { position: absolute; right: -2px; top: -2px; width: 3px; height: 3px; background: #86ab5a; box-shadow: 0 0 0 1px var(--k0); }
+.tk-key { position: relative; display: inline-flex; align-items: center; gap: 2px; height: 20px; border: 4px solid transparent; border-image: url('../../assets/ui/ui_btn.png') 4 fill / 4px / 0 stretch; padding: 0 5px; line-height: 11px; color: var(--k9); white-space: nowrap; }
+.tk-key > img { margin: -3px 0 -2px; }
+.tk-key > b.price { font-weight: 400; color: var(--gold-hi); }
+.tk-key.gold { color: var(--gold-dk); }
+.tk-key.gold > b.price { color: var(--gold-dk); }
+.tk-key.off { color: var(--k5); }
+.tk-key.off > img { opacity: .45; filter: grayscale(1); }
+.tk-key.off > b.price { color: var(--k5); }
+.tk-key .tk-tip, .tk-btn .tk-tip { white-space: normal; }
+.tk-gold { display: flex; align-items: center; gap: 2px; color: var(--gold-hi); }
+
+/* A sign that toggles (a filter, a small action): dim until hovered, underlined when on. */
+.tk-chip { position: relative; width: 18px; height: 20px; padding: 2px 1px; }
+.tk-chip > img { opacity: .5; }
+.tk-chip:hover > img { opacity: .85; }
+.tk-chip.on { box-shadow: inset 0 -1px 0 var(--gold); }
+.tk-chip.on > img { opacity: 1; }
+
+/* Check (Check.tsx): a pixel box and its label. */
+.tk-check { position: relative; display: flex; align-items: center; gap: 4px; height: 16px; color: var(--k8); }
+.tk-check > img { width: 11px; height: 11px; }
+.tk-check:hover { color: var(--k9); }
+
+/* Menu (Menu.tsx): a dark plate, one line per action. */
+.tk-menu { width: max-content; min-width: 96px; border: 4px solid transparent; border-image: url('../../assets/ui/ui_tip.png') 4 fill / 4px / 0 stretch; filter: drop-shadow(2px 2px 0 rgba(11, 13, 23, .55)); }
+.tk-menu > .it { display: flex; align-items: center; gap: 4px; width: 100%; height: 18px; padding: 0 6px 0 1px; color: var(--k8); white-space: nowrap; }
+.tk-menu > .it > img { flex: none; }
+.tk-menu > .it > i { flex: none; width: 16px; }
+.tk-menu > .it:not(.off):hover, .tk-menu > .it.on { background: var(--k2); color: var(--k9); }
+.tk-menu > .it.off { color: var(--k5); cursor: default; }
+.tk-menu > .it.off > img { opacity: .35; }
+.tk-menu > .it.bad { color: var(--bad); }
+.tk-menu > .it > .nm { font: 12px/12px var(--f-name); color: var(--gold-hi); }
+.tk-menu > .it > .end { margin-left: auto; display: flex; align-items: center; gap: 1px; padding-left: 10px; }
+.tk-menu.tall > .it { height: 20px; }
+
+/* Nodes (Node.tsx): an ability on a square plate, a passive on a round seal, an ability modifier on a teal plate,
+   an ultimate on an octagon. Pips under it are its ranks; `cd` shades the sign while it cools down. */
+.tk-node { position: relative; width: 24px; height: 24px; flex: none; }
+.tk-node > img { position: absolute; left: 0; top: 0; }
+.tk-node > img.g { left: 4px; top: 4px; }
+.tk-node.seal { width: 22px; height: 22px; }
+.tk-node.seal > img.g { left: 3px; top: 3px; }
+.tk-node.ult { width: 30px; height: 30px; }
+.tk-node.ult > img.g { left: 7px; top: 7px; }
+.tk-node > img.b { left: auto; right: -2px; top: -2px; }
+.tk-node.lock > img, .tk-node.lock > .tk-pips { opacity: .38; }
+.tk-node.cd > img.g { opacity: .35; }
+.tk-node > i { position: absolute; right: 3px; bottom: 3px; font-style: normal; color: var(--k9); text-shadow: 1px 0 0 var(--k0), -1px 0 0 var(--k0), 0 1px 0 var(--k0), 0 -1px 0 var(--k0); }
+.tk-node.can:hover > img.f { filter: brightness(1.4); }
+.tk-pips { position: absolute; left: 50%; top: calc(100% + 1px); transform: translateX(-50%); display: flex; gap: 1px; }
+.tk-pips > i { width: 3px; height: 2px; background: var(--k3); }
+.tk-pips > i.on { background: var(--gold); }
+
+/* Additions made when porting to the game. */
+.tk-tip { white-space: normal; }
+.tk-tip .hd.solo { padding: 0; }
+.tk-tip .ln b.good { color: var(--good); }
+.tk-tip .ln b.bad { color: var(--bad); }
+.tk-tip p + .ln, .tk-tip .ln + p { padding-top: 4px; }
+.tk .tt.below { left: 0; top: calc(100% + 3px); bottom: auto; }
+.tk .tt.below.end { left: auto; right: 0; }
+.tk-bar.progress > u { background: linear-gradient(#b3c873 0 1px, #5e8f4b 1px 5px, #3f7343 5px); }
+.tk-bar.danger > u { background: linear-gradient(#f08a62 0 1px, #bb3a3a 1px 5px, #8f2433 5px); }
+.tk-tip p + p { padding-top: 4px; }
+
+/* Tooltip pieces for items (ItemTip.tsx): the wide card with a delta column, the worn card beside it, sockets. */
+.tk-tip.wide { width: 172px; }
+.tk-tip.still { position: static; display: block; }
+.tk-tip .worn { color: var(--k6); padding-bottom: 4px; }
+.tk-tip .sub > img, .tk-tip .sub .r > img { flex: none; }
+.tk-tip .sub .r > em { padding-left: 3px; }
+.tk-tip em { font-style: normal; }
+.tk-tip em.up, .tk-tip b.up { color: var(--good); }
+.tk-tip em.dn, .tk-tip b.dn { color: var(--bad); }
+.tk-tip .aff.d { grid-template-columns: 16px auto 1fr auto; }
+.tk-tip .aff > span { display: flex; align-items: center; }
+.tk-tip .aff > span > img { margin: -3px 0 -3px 1px; }
+.tk-tip .aff.lost, .tk-tip .aff.empty { color: var(--k5); }
+.tk-tip .aff.lost > img, .tk-tip .aff.empty > img { opacity: .35; }
+.tk-tip .ln b.gold { color: var(--gold-hi); }
+.tk-tip .ln.bad > span { color: var(--bad); }
+.tk-tip .note { color: var(--k5); padding-top: 4px; }
+.tk-cmp { display: flex; gap: 4px; align-items: flex-start; width: max-content; }
+.tk .tt.above.end { left: auto; right: 0; }
+.tk .tt.up { top: auto; bottom: 0; }
+.tk-stat > b > em { font-style: normal; color: var(--k6); padding-left: 4px; }
+.tk-tip .ln.here, .tk-tip .ln.here b { color: var(--gold-hi); }
+.tk-tip .sub + p { padding-top: 5px; }
+
+/* A hovered group of cards (TipGroup) is a row, not a block. */
+.tk .has:hover > .tk-cmp.tt { display: flex; }
+
+/* The panel layer's wrappers (src/app/PanelLayer): the one under the pointer rises, so a tooltip leaving a
+   window is never covered by the window next to it. */
+.tk-raise:hover { z-index: 40 !important; }

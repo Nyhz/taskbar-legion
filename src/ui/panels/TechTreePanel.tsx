@@ -17,9 +17,20 @@ export function TechTreePanel(): React.JSX.Element {
   const buyTech = useStore((s) => s.buyTech);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, width: '100%', height: '100%', minHeight: 0 }}>
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 6,
+        width: '100%',
+        height: '100%',
+        minHeight: 0,
+      }}
+    >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
-        <span style={{ color: PALETTE.textMute, fontSize: 10 }}>Every upgrade scales forever — spend gold to rank up</span>
+        <span style={{ color: PALETTE.textMute, fontSize: 10 }}>
+          Every upgrade scales forever — spend gold to rank up
+        </span>
         <span style={{ color: PALETTE.gold, fontWeight: 700 }}>💰 {format(gold)}</span>
       </div>
 
@@ -52,7 +63,15 @@ export function TechTreePanel(): React.JSX.Element {
                   marginBottom: 8,
                 }}
               >
-                <span style={{ color, fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase' }}>
+                <span
+                  style={{
+                    color,
+                    fontSize: 11,
+                    fontWeight: 700,
+                    letterSpacing: 1,
+                    textTransform: 'uppercase',
+                  }}
+                >
                   {category}
                 </span>
                 <span style={{ color: PALETTE.textMute, fontSize: 9.5 }}>{CATEGORY_BLURB[category]}</span>

@@ -1,16 +1,46 @@
-import { createContext, useCallback, useContext, useState, type ReactNode } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 import { createPortal } from 'react-dom';
-import { PALETTE } from '@/styles/palette';
+import { KitRoot, Menu, MenuRow } from '@/ui/kit';
+import { kitZoomAt } from '@/ui/panels/items/kitZoom';
+import '@/ui/panels/items/items.css';
 
-// A tiny global right-click menu. Any component calls useContextMenu()(x, y, items)
-// from an onContextMenu handler; a full-screen backdrop closes it on outside click.
+// A tiny global right-click menu. Any component calls useContextMenu()(x, y, items) from an onContextMenu
+// handler; a full-screen backdrop closes it on outside click. It is drawn with the interface kit (Menu) inside a
+// KitRoot of its own — it is portaled to <body> — at the zoom of the kit panel under the pointer (kitZoom.ts), so
+// a menu looks like part of the window it was opened from.
 
 export interface MenuItem {
   label: string;
+  /** Art stem of the row's sign (`hud_stash`). Preferred. */
+  sign?: string;
+  /** Old callers pass an emoji here; the known ones are mapped to a sign, the rest are dropped. */
   icon?: string;
   onClick: () => void;
   disabled?: boolean;
   danger?: boolean;
+}
+
+// The emoji the old panels use → the sign that says the same.
+const EMOJI_SIGN: Readonly<Record<string, string>> = {
+  '🛡️': 'tab_gear', // equip
+  '⬇️': 'bag_pack', // unequip → back to the bag
+  '🎒': 'bag_pack', // send to the bag
+  '🧰': 'hud_stash', // send to the stash
+  '◆': 'ui_gem', // socket a gem
+  '💾': 'opt_export', // save a preset
+  '🗑️': 'opt_new', // clear a preset
+};
+
+function signOf(item: MenuItem): string | undefined {
+  return item.sign ?? (item.icon === undefined ? undefined : EMOJI_SIGN[item.icon]);
 }
 
 type OpenFn = (x: number, y: number, items: MenuItem[]) => void;
@@ -18,12 +48,32 @@ type OpenFn = (x: number, y: number, items: MenuItem[]) => void;
 const Ctx = createContext<OpenFn>(() => undefined);
 export const useContextMenu = (): OpenFn => useContext(Ctx);
 
+const EDGE = 4; // px kept clear of the viewport's edge
+
+interface OpenMenu {
+  x: number;
+  y: number;
+  zoom: number;
+  items: MenuItem[];
+}
+
 export function ContextMenuProvider({ children }: { children: ReactNode }): React.JSX.Element {
-  const [menu, setMenu] = useState<{ x: number; y: number; items: MenuItem[] } | null>(null);
+  const [menu, setMenu] = useState<OpenMenu | null>(null);
+  const plateRef = useRef<HTMLDivElement>(null);
   const open = useCallback<OpenFn>((x, y, items) => {
-    if (items.length > 0) setMenu({ x, y, items });
+    if (items.length > 0) setMenu({ x, y, zoom: kitZoomAt(x, y), items });
   }, []);
   const close = (): void => setMenu(null);
+
+  // Keep the plate on screen: once laid out, pull it back inside the viewport.
+  useLayoutEffect(() => {
+    const plate = plateRef.current;
+    if (menu === null || plate === null) return;
+    const box = plate.getBoundingClientRect();
+    const x = Math.max(EDGE, Math.min(menu.x, window.innerWidth - box.width - EDGE));
+    const y = Math.max(EDGE, Math.min(menu.y, window.innerHeight - box.height - EDGE));
+    if (x !== menu.x || y !== menu.y) setMenu({ ...menu, x, y });
+  }, [menu]);
 
   return (
     <Ctx.Provider value={open}>
@@ -32,42 +82,37 @@ export function ContextMenuProvider({ children }: { children: ReactNode }): Reac
         createPortal(
           <>
             <div
+              className="tk-layer-back"
               onClick={close}
-              onContextMenu={(e) => { e.preventDefault(); close(); }}
-              style={{ position: 'fixed', inset: 0, zIndex: 10000 }}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                close();
+              }}
             />
             <div
-              style={{
-                position: 'fixed',
-                left: Math.min(menu.x, window.innerWidth - 170),
-                top: Math.min(menu.y, window.innerHeight - 30 - menu.items.length * 24),
-                zIndex: 10001,
-                minWidth: 150,
-                background: PALETTE.bgPanel,
-                border: `2px solid ${PALETTE.ink}`,
-                boxShadow: `0 0 0 1px ${PALETTE.goldDim}, 3px 3px 0 rgba(0,0,0,0.5)`,
-                padding: 3,
-                fontSize: 11,
-              }}
+              ref={plateRef}
+              className="tk-layer-menu"
+              style={{ left: menu.x, top: menu.y }}
+              data-interactive="true"
             >
-              {menu.items.map((it, i) => (
-                <button
-                  key={i}
-                  disabled={it.disabled}
-                  onClick={() => { it.onClick(); close(); }}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 6, width: '100%', textAlign: 'left',
-                    padding: '4px 6px', background: 'transparent', border: 'none',
-                    color: it.disabled ? PALETTE.textMute : it.danger === true ? PALETTE.titleRedHi : PALETTE.textLight,
-                    cursor: it.disabled ? 'default' : 'pointer',
-                  }}
-                  onMouseEnter={(e) => { if (!it.disabled) e.currentTarget.style.background = PALETTE.bgInset; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
-                >
-                  <span>{it.icon}</span>
-                  <span style={{ flex: 1 }}>{it.label}</span>
-                </button>
-              ))}
+              <KitRoot zoom={menu.zoom}>
+                <Menu>
+                  {menu.items.map((it, i) => (
+                    <MenuRow
+                      key={i}
+                      sign={signOf(it)}
+                      disabled={it.disabled}
+                      danger={it.danger}
+                      onClick={() => {
+                        it.onClick();
+                        close();
+                      }}
+                    >
+                      {it.label}
+                    </MenuRow>
+                  ))}
+                </Menu>
+              </KitRoot>
             </div>
           </>,
           document.body,

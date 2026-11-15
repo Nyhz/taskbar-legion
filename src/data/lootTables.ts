@@ -6,7 +6,9 @@
 // dropWeight/unlockStage + TIER_CHEST_FACTOR) to the LOCKED per-DIFFICULTY drop tables
 // (data/difficulties.ts, DIFFICULTY.md §4) — a flat table per difficulty, tier-capped,
 // no depth-gate, no chest tilt. Clean-wipes pre-v6 gear/gems.
-export const GENERATOR_VERSION = 6;
+// v7: armour is CLASS-LOCKED by family (Knight plate, Ranger leather, Priest cloth): composeItem draws a class
+// for armour too, which shifts the roll stream of every armour piece. Clean-wipes pre-v7 gear/gems.
+export const GENERATOR_VERSION = 7;
 
 // ── Perfect stats ──
 // Every generated item rolls for "perfect" inherent substats: PERFECT_STAT_CHANCE to

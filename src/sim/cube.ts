@@ -31,7 +31,13 @@ function medianIlvl(items: readonly ItemInstance[]): number {
   return sorted[Math.floor((sorted.length - 1) / 2)] ?? 1;
 }
 
-export function synthesize(items: readonly ItemInstance[], doubleTierChance: number = SYNTH_DOUBLE_TIER_CHANCE): ItemInstance | null {
+/** `classPool`: the classes a class-locked output (weapon, off-hand, armour) may be born for — the party's, like
+ *  chest loot — so the Cube never hands a knight-only party a wand or a cloth hood. Omitted ⇒ any launch class. */
+export function synthesize(
+  items: readonly ItemInstance[],
+  doubleTierChance: number = SYNTH_DOUBLE_TIER_CHANCE,
+  classPool?: string[],
+): ItemInstance | null {
   if (!canSynthesize(items)) return null;
   const inputTier = items[0]?.tier ?? 0;
 
@@ -51,7 +57,7 @@ export function synthesize(items: readonly ItemInstance[], doubleTierChance: num
   // Output ilvl is the MEDIAN of the inputs (not a fresh stage roll), so feeding the
   // cube higher-ilvl gear yields a higher-ilvl result. Synthesized gear is "more lucky":
   // the perfect-stat pass uses SYNTH_PERFECT_CHANCE instead of the base chance.
-  const out = composeItem(slot, outTier, origin, rng, medianIlvl(items), undefined, undefined, SYNTH_PERFECT_CHANCE);
+  const out = composeItem(slot, outTier, origin, rng, medianIlvl(items), undefined, classPool, SYNTH_PERFECT_CHANCE);
   return out; // no binding — this game has no trading/bound gear (out.bound stays false)
 }
 

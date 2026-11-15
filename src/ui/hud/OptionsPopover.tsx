@@ -3,8 +3,7 @@ import { resetGame, exportSave, importSave } from '@/persistence/saveManager';
 import { isTauri } from '@/platform/tauri';
 import { exportSaveToFile, readSaveFromFile } from '@/platform/saveTransfer';
 import { PALETTE } from '@/styles/palette';
-
-const IMPORT_CONFIRM = 'Import this save? It REPLACES your current progress and reloads.';
+import { LANGS, LANG_NAMES, setLanguage, useLanguage, useT } from '@/i18n';
 
 function saveFileName(): string {
   // Date is fine here — this is a UI edge, not the deterministic sim.
@@ -29,6 +28,8 @@ function downloadSave(json: string, name: string): void {
 
 export function OptionsPopover({ onClose }: { onClose: () => void }): React.JSX.Element {
   const fileRef = useRef<HTMLInputElement>(null);
+  const t = useT();
+  const language = useLanguage();
 
   // Export: native Save dialog under Tauri, Blob download in the browser dev build.
   const onExport = (): void => {
@@ -36,7 +37,7 @@ export function OptionsPopover({ onClose }: { onClose: () => void }): React.JSX.
     const name = saveFileName();
     if (isTauri()) {
       void exportSaveToFile(json, name).then((r) => {
-        if (r.status === 'error') window.alert(`Export failed: ${r.message}`);
+        if (r.status === 'error') window.alert(t('options.exportFailed', { message: r.message }));
       });
     } else {
       downloadSave(json, name);
@@ -52,12 +53,12 @@ export function OptionsPopover({ onClose }: { onClose: () => void }): React.JSX.
     void readSaveFromFile().then(async (r) => {
       if (r.status === 'cancelled') return;
       if (r.status === 'error') {
-        window.alert(`Import failed: ${r.message}`);
+        window.alert(t('options.importFailed', { message: r.message }));
         return;
       }
-      if (r.text === undefined || !window.confirm(IMPORT_CONFIRM)) return;
+      if (r.text === undefined || !window.confirm(t('options.importConfirm'))) return;
       const err = await importSave(r.text); // null on success → triggers a reload
-      if (err !== null) window.alert(`Import failed: ${err}`);
+      if (err !== null) window.alert(t('options.importFailed', { message: err }));
     });
   };
 
@@ -66,10 +67,10 @@ export function OptionsPopover({ onClose }: { onClose: () => void }): React.JSX.
     const file = e.target.files?.[0];
     e.target.value = ''; // allow re-importing the same file later
     if (file === undefined) return;
-    if (!window.confirm(IMPORT_CONFIRM)) return;
+    if (!window.confirm(t('options.importConfirm'))) return;
     void file.text().then(async (text) => {
       const err = await importSave(text); // null on success → triggers a reload
-      if (err !== null) window.alert(`Import failed: ${err}`);
+      if (err !== null) window.alert(t('options.importFailed', { message: err }));
     });
   };
 
@@ -87,7 +88,7 @@ export function OptionsPopover({ onClose }: { onClose: () => void }): React.JSX.
       }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-        <span style={{ fontWeight: 700, color: PALETTE.gold }}>Options</span>
+        <span style={{ fontWeight: 700, color: PALETTE.gold }}>{t('options.title')}</span>
         <button
           onClick={onClose}
           style={{
@@ -104,12 +105,29 @@ export function OptionsPopover({ onClose }: { onClose: () => void }): React.JSX.
         </button>
       </div>
 
-      <Section label="Backup">
+      <Section label={t('options.language')}>
+        {LANGS.map((lang) => (
+          <button
+            key={lang}
+            onClick={() => setLanguage(lang)}
+            aria-pressed={lang === language}
+            style={{
+              ...backupBtn,
+              background: lang === language ? PALETTE.gold : PALETTE.bgInset,
+              color: lang === language ? PALETTE.ink : PALETTE.gold,
+            }}
+          >
+            {LANG_NAMES[lang]}
+          </button>
+        ))}
+      </Section>
+
+      <Section label={t('options.backup')}>
         <button onClick={onExport} style={backupBtn}>
-          ⭳ Export
+          ⭳ {t('options.exportSave')}
         </button>
         <button onClick={onImport} style={backupBtn}>
-          ⭱ Import
+          ⭱ {t('options.importSave')}
         </button>
         <input
           ref={fileRef}
@@ -120,10 +138,10 @@ export function OptionsPopover({ onClose }: { onClose: () => void }): React.JSX.
         />
       </Section>
 
-      <Section label="Save">
+      <Section label={t('options.save')}>
         <button
           onClick={() => {
-            if (window.confirm('Start a NEW GAME? This erases all progress (stage, gear, gold, tech) and cannot be undone.')) {
+            if (window.confirm(t('options.newGameConfirm'))) {
               void resetGame();
             }
           }}
@@ -136,7 +154,7 @@ export function OptionsPopover({ onClose }: { onClose: () => void }): React.JSX.
             fontWeight: 700,
           }}
         >
-          ⟳ New Game
+          ⟳ {t('options.newGame')}
         </button>
       </Section>
     </div>
@@ -147,12 +165,13 @@ export function OptionsPopover({ onClose }: { onClose: () => void }): React.JSX.
 // toggles the options popover, anchored just below the title bar.
 export function SettingsHeaderButton(): React.JSX.Element {
   const [open, setOpen] = useState(false);
+  const t = useT();
   return (
     <div style={{ position: 'relative' }}>
       <button
         onClick={() => setOpen((v) => !v)}
-        aria-label="Settings"
-        title="Settings"
+        aria-label={t('options.settings')}
+        title={t('options.settings')}
         style={{
           background: open ? PALETTE.gold : PALETTE.titleRedHi,
           color: open ? PALETTE.ink : PALETTE.textLight,

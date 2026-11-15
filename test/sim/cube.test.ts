@@ -51,6 +51,16 @@ describe('cube synthesis', () => {
     expect(synthesize(items(2))).toEqual(synthesize(items(2)));
   });
 
+  it('a class-locked result is born for a class of the party', () => {
+    for (let k = 0; k < 40; k++) {
+      const ins = Array.from({ length: CUBE_INPUT_COUNT }, (_, i) =>
+        composeItem('ring', 2, { rollSeed: 9000 + k * 16 + i, stageIndex: 30, chestType: 'normal', generatorVersion: 1 }, makeRng(9000 + k * 16 + i)),
+      );
+      const out = synthesize(ins, 0, ['knight']);
+      if (out !== null && out.category !== 'jewelry') expect(out.classKey).toBe('knight');
+    }
+  });
+
   it('synthesizes gems: 9 same-tier gems → one higher tier (+1, or +2 lucky), deterministic', () => {
     expect(canSynthesizeGems(gems(3))).toBe(true);
     expect(canSynthesizeGems(gems(3, 8))).toBe(false); // wrong count
