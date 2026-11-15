@@ -4,6 +4,8 @@ import type { ActiveEffect } from '@/data/effects';
 import type { StatMod } from './stats';
 import type { ResolvedAbility } from './loadout';
 import type { UltimateDef } from '@/data/ultimates';
+import type { TriggerDef } from '@/data/triggers';
+import type { TargetCondition } from '@/data/talents';
 
 // The mutable runtime state the Simulation owns and ticks. Combat mutates these
 // objects in place within a tick (deterministic — no hidden global state). The
@@ -36,6 +38,15 @@ export interface Combatant {
   // ── ultimate (hero-only; resolved at L30 in loadout) ──
   ult?: UltimateDef; // the class ult IF unlocked (level ≥ 30); undefined otherwise
   ultCharge?: number; // remaining death-block charges this stage (deathBlock ults only)
+  // ── talent kit (hero-only; resolved from the talents in sim/kit.ts) ──
+  triggers?: readonly TriggerDef[]; // ultimate + capstone + modifier + ability triggers (sim/triggers.ts fires them)
+  triggerUses?: Record<string, number>; // per-stage uses already spent, by trigger key (refilled with the ult charge)
+  lowHpMods?: readonly { hpBelow: number; mod: StatMod }[]; // stats that hold while its own life is under a share
+  dealtBonuses?: readonly DealtBonus[]; // more damage / stronger heals depending on who receives them
+  partyRegenPct?: number; // while alive: every hero regenerates this % of its max HP per second
+  // ── bookkeeping for triggers ──
+  engaged?: boolean; // enemy-only: it has reached the fight (its engage triggers have fired)
+  lastHitBy?: string; // enemy-only: id of the hero whose hit or bleed last landed (who gets the kill)
   // enemy-only precomputed combat values (stage-scaled at spawn):
   enemyDamage?: number;
   enemyAttackSpeed?: number;
@@ -48,6 +59,14 @@ export interface Combatant {
   // `totalMs` (the cast bar) before its effect resolves. While set, the boss starts no new
   // cast. Render reads this to draw the under-boss cast bar (GameStrip → EnemySprite).
   casting?: { key: string; remainingMs: number; totalMs: number };
+}
+
+/** A role talent's bonus to what a hero deals: `pct`% more damage, or stronger heals, when the receiver meets
+ *  the condition. */
+export interface DealtBonus {
+  what: 'damage' | 'heal';
+  when: TargetCondition;
+  pct: number;
 }
 
 // Render/accrual event emitted by a combat tick (lives here so both combat.ts and

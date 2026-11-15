@@ -5,8 +5,6 @@ import { buildHeroCombatant, resolveUltimate } from '@/sim/loadout';
 import { makeRng } from '@/sim/rng';
 import { isInvulnerable, vulnerabilityMult } from '@/sim/effects';
 import { ultimateForClass, ULTIMATE_UNLOCK_LEVEL } from '@/data/ultimates';
-import { talentTree, talentNodes } from '@/data/talents';
-import { CLASS_KEYS } from '@/data/classes';
 import type { Combatant } from '@/sim/world';
 
 // Class ultimates: off-tree, auto-unlocked at L60, auto-fired by the sim on their
@@ -95,32 +93,6 @@ describe('boss-engage ultimates (Priest enrage + Ranger mark)', () => {
       const as = h.effects.find((e) => e.defKey === 'buff_enrage_as');
       expect(cdr?.value).toBe(25);
       expect(as?.value).toBe(25);
-    }
-  });
-});
-
-describe('reworked talent trees', () => {
-  it('each class has exactly 5 abilities, all in rows 1-4', () => {
-    for (const k of CLASS_KEYS) {
-      const abilityNodes = talentNodes(k).filter((n) => n.kind === 'ability');
-      expect(abilityNodes).toHaveLength(5);
-      expect(abilityNodes.every((n) => n.rowIndex <= 3)).toBe(true);
-      // Row 1 holds two abilities; rows 2-4 one each.
-      const tree = talentTree(k);
-      expect(tree.rows[0]?.filter((n) => n.kind === 'ability')).toHaveLength(2);
-      for (const r of [1, 2, 3]) expect(tree.rows[r]?.filter((n) => n.kind === 'ability')).toHaveLength(1);
-    }
-  });
-
-  it('every passive node is a percent bonus (rows 5-10 are pure passives)', () => {
-    for (const k of CLASS_KEYS) {
-      const tree = talentTree(k);
-      for (const node of talentNodes(k)) {
-        if (node.kind === 'passive') expect(node.passive?.mode).toBe('percent');
-      }
-      for (const r of [4, 5, 6, 7, 8, 9]) {
-        expect(tree.rows[r]?.every((n) => n.kind === 'passive')).toBe(true);
-      }
     }
   });
 });

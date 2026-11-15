@@ -584,3 +584,23 @@ conservadora, marcada como provisional; si salta el límite de uso, dejar anotad
       del jefe de mundo lleva los signos de jefe y de llave en lugar de la palabra BOSS y un emoji. Visto en
       captura: portal con y sin llave, frase de derrota en español. El aviso de "sin llave" no lo he visto en
       captura. Quedan en inglés o con emoji: los glifos de habilidad que flotan al lanzar (`render/fx.ts`).
+- [x] **Bloque 4a — clases en la simulación** (`CLASSES.md`, primera tanda; nombres en inglés PROVISIONALES).
+      - Árbol nuevo: diez niveles, tronco + dos ramas + remates; nodos de habilidad, pasiva, rol, modificador y
+        remate (`data/talentSpec.ts`, `data/talentTrees/*`, reglas en `sim/talentRules.ts`: `canSpend` dice por qué
+        se niega un punto; máximo dos habilidades aprendidas; "elige una"; el modificador necesita su habilidad).
+      - Mecánicas: parches de habilidad (`abilityPatch`), objetivo y coeficiente por efecto, talentos de rol
+        (auras de grupo, `sim/liveStats.ts`), disparadores genéricos (`sim/triggers.ts`; las tres definitivas pasan
+        por ahí), objetivo "dos héroes".
+      - Carga tolerante (`persistence/sanitizeHero.ts`): claves desconocidas fuera, dos habilidades, rangos acotados.
+      - Paridad: código viejo y nuevo dan el mismo flujo de eventos y estado del RNG en 30 000 ticks, ocho escenarios.
+      - **Hallazgo de la sonda**: la política de talentos antigua era ILEGAL (cinco habilidades y todos los puntos
+        en una pasiva por encima de su tope: +285 % de daño, +190 % de vida), así que los muros estaban medidos
+        contra un grupo demasiado fuerte. Medianas a 8 h/día, sin retocar nada:
+        antes (ilegal) Tormento 16,0 d activos, 5/5 semillas · árbol nuevo 14,3 d pero solo 1/5 semillas pasa
+        Tormento 10-10 (el resto se queda en 489–499) · control árbol viejo con política legal 11,7 meses, 1/5.
+        Legal contra legal, el rediseño es MÁS fuerte que el árbol viejo. El reajuste de ritmo sigue pendiente.
+      - Provisional (del documento no se deducía): Vigilia 0,05 % de vida/s por rango sin escalar con poder de
+        curación; curas por disparador como fracción plana de vida; Égida dura 4 s fijos; Tiro Largo = "aún no ha
+        llegado al combate"; Guardián alcanza a todo el grupo, Knight incluido.
+      - Flojo: Muro Viviente casi nunca salta con Knight–Ranger–Priest; `switchClass` sigue borrando talentos sin
+        devolver puntos (ya era así); `sim/abilities.ts` ronda las 600 líneas.

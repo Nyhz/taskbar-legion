@@ -1,41 +1,23 @@
 import { useStore } from '@/state/store';
-import { talentTree, type TalentNode } from '@/data/talents';
+import { talentTree } from '@/data/talents';
 import { MAX_LEVEL } from '@/data/stageScaling';
 import { aggregate } from '@/sim/stats';
-import {
-  MAX_ACTIVE_ABILITIES,
-  canLearnNewAbility,
-  equipmentMods,
-  heroAbilities,
-  heroBaseStats,
-  talentPassiveMods,
-} from '@/sim/loadout';
+import { equipmentMods, heroBaseStats, talentPassiveMods } from '@/sim/loadout';
+import { MAX_ACTIVE_ABILITIES, canSpend, learnedAbilityNodes, spentPoints } from '@/sim/talentRules';
 import { getBonuses } from '@/sim/bonuses';
 import { useT } from '@/i18n';
-import {
-  Head,
-  Key,
-  Node,
-  Sign,
-  Tip,
-  TipLine,
-  TipText,
-  TipTitle,
-  Title,
-  type NodeState,
-  type TipSide,
-} from '@/ui/kit';
-import { abilityArtStem } from '@/ui/abilityArt';
+import { Head, Key, Sign, Tip, TipLine, TipText, TipTitle, Title, type TipSide } from '@/ui/kit';
 import { classCrestStem } from '@/ui/itemArt';
-import { TalentsTip } from './TalentsTip';
+import { TalentsTabNode } from './TalentsTabNode';
 import { layoutTalentTree, spentBarFill, type PlacedNode } from './talentsLayout';
 import './TalentsTab.css';
 
-// The talents wing's content. It shows the game's CURRENT tree (data/talents: ten rows, row N opens at (N−1)·10
-// points spent) laid out top to bottom, one row per tier — see talentsLayout. Left-click raises a node,
-// right-click lowers it; the ranked abilities ARE the active ones, at most MAX_ACTIVE_ABILITIES: once that many
-// are learned, every other ability is disabled. Giving every point back is free. Nothing here decides a rule:
-// the store's spendTalent / refundTalent do.
+// The talents wing's content. It shows the class tree (data/talents: ten tiers, tier N opens at (N−1)·10 points
+// spent; a common trunk, then two branches side by side and their capstones) laid out top to bottom, one row
+// per tier — see talentsLayout. Left-click raises a node, right-click lowers it; the ranked abilities ARE the
+// active ones, at most MAX_ACTIVE_ABILITIES: once that many are learned, every other ability is disabled.
+// Giving every point back is free. Nothing here decides a rule: sim/talentRules.canSpend says whether a node
+// can be raised (and why not), and the store's spendTalent / refundTalent apply it.
 
 /** Tooltips open over the hero window (to the right), upwards from the lower half of the tree. */
 function tipSide(p: PlacedNode, height: number): TipSide {
@@ -53,9 +35,8 @@ export function TalentsTab({ heroId }: { heroId: string }): React.JSX.Element | 
   if (hero === undefined) return null;
 
   const layout = layoutTalentTree(talentTree(hero.classKey));
-  const spent = Object.values(hero.talents).reduce((a, b) => a + b, 0);
-  const learned = heroAbilities(hero.classKey, hero.talents).length;
-  const canLearnNew = canLearnNewAbility(hero.classKey, hero.talents);
+  const spent = spentPoints(hero.talents);
+  const learned = learnedAbilityNodes(hero.classKey, hero.talents).length;
   const mods = [
     ...equipmentMods(hero.equipment),
     ...talentPassiveMods(hero.classKey, hero.talents),
@@ -65,47 +46,19 @@ export function TalentsTab({ heroId }: { heroId: string }): React.JSX.Element | 
   const nextTier = layout.tiers.find((tier) => tier.need > spent);
   const crest = classCrestStem(hero.classKey);
 
-  const renderNode = (p: PlacedNode): React.JSX.Element => {
-    const node: TalentNode = p.node;
-    const rank = hero.talents[node.key] ?? 0;
-    const need = layout.tiers[p.tier]?.need ?? 0;
-    const tierClosed = spent < need;
-    // An ability without points cannot be learned once the active ones are full.
-    const capped = node.kind === 'ability' && rank === 0 && !canLearnNew;
-    const canBuy = !tierClosed && !capped && hero.talentPoints > 0 && rank < node.maxRank;
-    const state: NodeState = rank >= node.maxRank ? 'max' : rank > 0 ? 'on' : 'off';
-    const blocked = tierClosed
-      ? t('talents.tierNeeds', { n: need })
-      : capped
-        ? t('talents.capFull', { max: MAX_ACTIVE_ABILITIES })
-        : undefined;
-    const isAbility = node.kind === 'ability' && node.abilityKey !== undefined;
-    return (
-      <Node
-        key={node.key}
-        kind={isAbility ? 'ability' : 'passive'}
-        state={state}
-        sign={isAbility ? abilityArtStem(node.abilityKey ?? '') : `stat_${node.passive?.stat ?? 'health'}`}
-        alt={node.name}
-        locked={tierClosed || capped}
-        pips={{ rank, max: node.maxRank }}
-        onClick={canBuy ? () => spendTalent(hero.id, node.key) : undefined}
-        onContextMenu={(e) => {
-          e.preventDefault();
-          refundTalent(hero.id, node.key);
-        }}
-        style={{ left: p.x, top: p.y }}
-      >
-        <TalentsTip
-          node={node}
-          rank={rank}
-          stats={stats}
-          side={tipSide(p, layout.height)}
-          blocked={blocked}
-        />
-      </Node>
-    );
-  };
+  const renderNode = (p: PlacedNode): React.JSX.Element => (
+    <TalentsTabNode
+      key={p.node.key}
+      classKey={hero.classKey}
+      talents={hero.talents}
+      placed={p}
+      check={canSpend(hero.classKey, hero.talents, hero.talentPoints, p.node.key)}
+      stats={stats}
+      side={tipSide(p, layout.height)}
+      onSpend={() => spendTalent(hero.id, p.node.key)}
+      onRefund={() => refundTalent(hero.id, p.node.key)}
+    />
+  );
 
   return (
     <div>

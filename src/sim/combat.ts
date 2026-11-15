@@ -1,20 +1,20 @@
 import type { Combatant, WorldState, CombatEvent } from './world';
 import type { Rng } from './rng';
-import { aggregate, type EffectiveStats } from './stats';
+import type { EffectiveStats } from './stats';
 import {
   tickEffectDurations,
   effectStatMods,
   dotDps,
   hotHps,
   absorbDamage,
-  applyEffect,
   isInvulnerable,
   vulnerabilityMult,
   weakenMult,
   healReceivedMult,
 } from './effects';
 import { tickCooldowns, castReadyAbilities, resolveChanneledCast } from './abilities';
-import { effectDef } from '@/data/effects';
+import { dealtMult, liveStats } from './liveStats';
+import { checkLowHp, onBlock, onCrit, onEffectsEnded, onEnemyDeath, onEnemyEngage, tryRescue, type TriggerCtx } from './triggers';
 import { mitigation, enrageMultiplier, MAX_DAMAGE_REDUCTION } from '@/data/stageScaling';
 import { WALK_SPEED, HERO_SPACING, MOVE_EPS, RANGE, RESPAWN_MS } from '@/data/field';
 
@@ -26,7 +26,7 @@ import { WALK_SPEED, HERO_SPACING, MOVE_EPS, RANGE, RESPAWN_MS } from '@/data/fi
 export type { CombatEvent } from './world';
 
 export function heroStats(c: Combatant): EffectiveStats {
-  return aggregate(c.baseStats, [...c.staticMods, ...effectStatMods(c.effects)]);
+  return liveStats(c);
 }
 
 /** Speed multiplier from a slowed enemy's effects (Frozen Trap / Chill). Enemy combat
@@ -45,12 +45,17 @@ export function resolveCombatTick(world: WorldState, deltaMs: number, rng: Rng):
   const dtSec = deltaMs / 1000;
   const { heroes, enemies } = world;
   const S = world.globalStageIndex;
+  // What the talent triggers (sim/triggers.ts) see: both sides and this tick's events.
+  const ctx: TriggerCtx = { heroes, enemies, events };
+  // Party life regeneration (a role talent): the living heroes' shares add up, for every hero.
+  let partyRegenPct = 0;
+  for (const h of heroes) if (h.alive && h.partyRegenPct !== undefined) partyRegenPct += h.partyRegenPct;
 
   // 1. Upkeep: effects, cooldowns, dot/hot, regen, boss enrage clock, deaths. Heroes
   //    then enemies — same order as the old [...heroes, ...enemies], minus the per-tick
   //    array allocation. The upkeep step consumes no RNG, so this is byte-identical.
-  for (const c of heroes) tickCombatantUpkeep(c, world.tick, deltaMs, dtSec, events);
-  for (const c of enemies) tickCombatantUpkeep(c, world.tick, deltaMs, dtSec, events);
+  for (const c of heroes) tickCombatantUpkeep(c, world.tick, deltaMs, dtSec, ctx, partyRegenPct);
+  for (const c of enemies) tickCombatantUpkeep(c, world.tick, deltaMs, dtSec, ctx, 0);
 
   // 2. Formation march: a lead anchor (partyX) advances to the engage line; each
   //    hero eases to its COLUMN slot (front = slot 0, the rest trail behind). The
@@ -137,13 +142,18 @@ export function resolveCombatTick(world: WorldState, deltaMs: number, rng: Rng):
       // Boss enrage clock counts FIGHT time (once engaged), not the walk-up.
       if (gap <= 0) {
         e.fightMs = (e.fightMs ?? 0) + deltaMs;
-        // First moment a boss is engaged → fire the party's onBossEngage ults (once) and
-        // seed its ability openers, so the kit's cadence is measured from ENGAGEMENT (not
-        // from spawn, which the walk-up would otherwise eat into and bunch the openers).
-        if (e.isBoss === true && e.bossUltTriggered !== true) {
-          e.bossUltTriggered = true;
-          triggerBossEngageUlts(heroes, e, events);
-          seedAbilityOpeners(e);
+        // First moment an enemy reaches the fight → fire the party's engage triggers (once):
+        // the boss-engage ultimates, their elite versions, the wave triggers. A boss also seeds
+        // its ability openers, so the kit's cadence is measured from ENGAGEMENT (not from spawn,
+        // which the walk-up would otherwise eat into and bunch the openers).
+        if (e.engaged !== true) {
+          // The wave's first: nobody of it (dead or alive — the dead stay listed until the next
+          // wave spawns) had reached the fight yet.
+          const firstOfWave = !enemies.some((o) => o.engaged === true);
+          e.engaged = true;
+          if (e.isBoss === true) e.bossUltTriggered = true;
+          onEnemyEngage(e, firstOfWave, ctx);
+          if (e.isBoss === true) seedAbilityOpeners(e);
         }
       }
     }
@@ -168,7 +178,7 @@ export function resolveCombatTick(world: WorldState, deltaMs: number, rng: Rng):
       }
       const target = nearestEnemyInRange(h, enemies);
       if (target === undefined) return false;
-      heroAttack(h, stats, target, enemies, rng, events);
+      heroAttack(h, stats, target, enemies, rng, events, heroes);
       return true;
     });
   }
@@ -196,10 +206,13 @@ export function resolveCombatTick(world: WorldState, deltaMs: number, rng: Rng):
     advanceAttack(e, (e.enemyAttackSpeed ?? 0.8) * enemySpeedFactor(e), deltaMs, () => {
       if (frontHero === undefined || !frontHero.alive) return false;
       if (e.x - frontHero.x > e.range + MOVE_EPS) return false; // not in range yet (MOVE_EPS: same anti-deadband as nearestEnemyInRange)
-      enemyAttack(e, frontHero, S, rng, events);
+      enemyAttack(e, frontHero, S, rng, ctx);
       return true;
     });
   }
+
+  // 7. "An ally is low" triggers (a capstone's emergency heal): looked at once per tick.
+  checkLowHp(ctx);
 
   return events;
 }
@@ -207,9 +220,11 @@ export function resolveCombatTick(world: WorldState, deltaMs: number, rng: Rng):
 // Per-combatant upkeep: effect durations, cooldowns, DoT/HoT, hero regen, death. No RNG
 // (so hero/enemy ordering is irrelevant to determinism). Surfaces DoT/HoT as floating
 // numbers ~once a second (the per-second rate) rather than every 100ms tick.
-function tickCombatantUpkeep(c: Combatant, worldTick: number, deltaMs: number, dtSec: number, events: CombatEvent[]): void {
+function tickCombatantUpkeep(c: Combatant, worldTick: number, deltaMs: number, dtSec: number, ctx: TriggerCtx, partyRegenPct: number): void {
   if (!c.alive) return;
-  tickEffectDurations(c.effects, deltaMs);
+  const { events } = ctx;
+  const ended = tickEffectDurations(c.effects, deltaMs);
+  if (ended !== undefined) onEffectsEnded(c, ended, ctx);
   tickCooldowns(c, deltaMs);
   // Marked targets (Ranger ult) take amplified DoT ticks; an invulnerable hero takes none.
   const dot = dotDps(c.effects) * dtSec * vulnerabilityMult(c.effects);
@@ -225,10 +240,10 @@ function tickCombatantUpkeep(c: Combatant, worldTick: number, deltaMs: number, d
     if (hps > 0) events.push({ type: 'heal', targetId: c.id, amount: hps, tick: true });
   }
   if (c.side === 'hero') {
-    const regen = (heroStats(c).hpRegen ?? 0) * dtSec * healMult;
+    const regen = ((heroStats(c).hpRegen ?? 0) + (c.maxHp * partyRegenPct) / 100) * dtSec * healMult;
     if (regen > 0) c.hp = Math.min(c.maxHp, c.hp + regen);
   }
-  if (c.hp <= 0) kill(c, events);
+  if (c.hp <= 0) kill(c, ctx);
 }
 
 // A brief, varied hold (ms) before a ranged/caster hero resumes a forward chase. Derived
@@ -289,7 +304,8 @@ function advanceAttack(c: Combatant, attacksPerSec: number, deltaMs: number, doA
   c.attackTimerMs = fired ? interval : 0;
 }
 
-export function heroAttack(h: Combatant, stats: EffectiveStats, target: Combatant, enemies: Combatant[], rng: Rng, events: CombatEvent[]): void {
+export function heroAttack(h: Combatant, stats: EffectiveStats, target: Combatant, enemies: Combatant[], rng: Rng, events: CombatEvent[], heroes: Combatant[] = [h]): void {
+  const ctx: TriggerCtx = { heroes, enemies, events };
   // One resolved hit (own crit roll) on `victim`, scaled by `mult` (1 = full; <1 = AoE splash).
   // Auto-attacks land one of these on the target, plus a capped multistrike chance for a
   // second — each hit heals lifesteal + can crit independently.
@@ -299,11 +315,14 @@ export function heroAttack(h: Combatant, stats: EffectiveStats, target: Combatan
     if (crit) dmg *= 1 + stats.critDamage / 100;
     dmg = Math.max(1, dmg);
     dmg *= vulnerabilityMult(victim.effects); // Ranger's Mark amplifies all damage to the boss
+    dmg *= dealtMult(h, victim, 'damage'); // role talents: more damage to the wounded / the approaching / elites and bosses
     victim.hp -= dmg;
+    victim.lastHitBy = h.id;
     events.push({ type: 'damage', targetId: victim.id, sourceId: h.id, amount: dmg, crit, multi, splash: mult < 1 ? true : undefined });
     const heal = ((dmg * stats.lifesteal) / 100) * healReceivedMult(h.effects); // Mortal Wound cuts lifesteal too
     if (heal > 0) h.hp = Math.min(h.maxHp, h.hp + heal);
-    if (victim.hp <= 0) kill(victim, events);
+    if (crit) onCrit(h, victim, ctx);
+    if (victim.hp <= 0) kill(victim, ctx);
   };
   strike(target, 1, false);
   // Multistrike: a chance for a second hit this swing (already soft-capped in aggregate).
@@ -333,7 +352,8 @@ export function heroAttack(h: Combatant, stats: EffectiveStats, target: Combatan
   // (kills are resolved inside `strike` as each hit lands — no trailing kill needed)
 }
 
-function enemyAttack(e: Combatant, target: Combatant, S: number, rng: Rng, events: CombatEvent[]): void {
+function enemyAttack(e: Combatant, target: Combatant, S: number, rng: Rng, ctx: TriggerCtx): void {
+  const { events } = ctx;
   // Last Stand invulnerability negates the hit entirely (before mitigation) — but the
   // enemy still SWINGS (the attack fires, deals 0): keep them visibly attacking.
   if (isInvulnerable(target.effects)) {
@@ -352,32 +372,22 @@ function enemyAttack(e: Combatant, target: Combatant, S: number, rng: Rng, event
   dmg = Math.max(0, absorbDamage(target.effects, dmg)); // shields soak the hit first
   target.hp -= dmg;
   events.push({ type: 'damage', targetId: target.id, sourceId: e.id, amount: dmg, blocked });
-  if (target.hp <= 0) kill(target, events);
+  if (blocked) onBlock(target, e, ctx); // a blocked hit feeds the block triggers (Riposte's charges…)
+  if (target.hp <= 0) kill(target, ctx);
 }
 
-function kill(c: Combatant, events: CombatEvent[]): void {
+function kill(c: Combatant, ctx: TriggerCtx): void {
   if (!c.alive) return;
-  // Knight Last Stand: a would-be-lethal blow is cancelled (once per stage).
-  if (c.side === 'hero' && tryDeathBlock(c)) return;
+  // A hero about to fall may be saved by a "lethal" trigger: the Knight's Last Stand (his own,
+  // once per stage) or its capstone watching over an ally.
+  if (c.side === 'hero' && tryRescue(c, ctx)) return;
   c.alive = false;
   c.hp = 0;
   // A fallen hero starts a revive countdown (resolved by the Simulation each tick);
   // enemies just stay dead.
   if (c.side === 'hero') c.respawnMs = RESPAWN_MS;
-  events.push({ type: 'death', targetId: c.id });
-}
-
-/** Knight ult: intercept a lethal blow — consume a charge, leave the hero at a sliver
- *  of HP (healed) and grant brief total invulnerability. Returns true if it saved them. */
-function tryDeathBlock(c: Combatant): boolean {
-  const ult = c.ult;
-  if (ult === undefined || ult.effect.type !== 'deathBlock') return false;
-  if ((c.ultCharge ?? 0) <= 0) return false;
-  if (isInvulnerable(c.effects)) return false; // already mid-Last-Stand
-  c.ultCharge = (c.ultCharge ?? 0) - 1;
-  c.hp = Math.max(1, c.maxHp * ult.effect.healFrac);
-  applyEffect(c.effects, effectDef('fx_invuln'), c.id, 0, ult.effect.invulnMs);
-  return true;
+  ctx.events.push({ type: 'death', targetId: c.id });
+  if (c.side === 'enemy') onEnemyDeath(c, ctx); // the kill and "its bearer died" triggers
 }
 
 /** Seed a freshly-engaged boss's ability openers: an ability with `openerMs` starts on that
@@ -389,26 +399,5 @@ function seedAbilityOpeners(e: Combatant): void {
     if (op === undefined || op <= 0) continue;
     e.cooldowns[def.key] = op;
     (e.cooldownTotals ??= {})[def.key] = op;
-  }
-}
-
-/** Fire the party's onBossEngage ultimates against a freshly-engaged boss (once). Pushes a
- *  render-only 'cast' marker for the ranger's mark so the strip can fly its crosshair in. */
-function triggerBossEngageUlts(heroes: Combatant[], boss: Combatant, events: CombatEvent[]): void {
-  for (const h of heroes) {
-    if (!h.alive) continue;
-    const ult = h.ult;
-    if (ult === undefined) continue;
-    if (ult.effect.type === 'partyEnrage') {
-      for (const ally of heroes) {
-        if (!ally.alive) continue;
-        applyEffect(ally.effects, effectDef('buff_enrage_cdr'), h.id, ult.effect.cdrPct, ult.effect.durationMs);
-        applyEffect(ally.effects, effectDef('buff_enrage_as'), h.id, ult.effect.attackSpeedPct, ult.effect.durationMs);
-      }
-    } else if (ult.effect.type === 'markVulnerable') {
-      applyEffect(boss.effects, effectDef('fx_mark'), h.id, ult.effect.bonusDamagePct, ult.effect.durationMs);
-      // targetId = the ranger (crosshair origin), sourceId = the boss it locks onto.
-      events.push({ type: 'cast', targetId: h.id, sourceId: boss.id, abilityKey: 'ranger_mark' });
-    }
   }
 }

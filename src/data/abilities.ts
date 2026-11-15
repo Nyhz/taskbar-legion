@@ -1,4 +1,6 @@
 import type { StatKey } from './stats';
+import type { TriggerDef } from './triggers';
+import { BRANCH_ABILITIES } from './branchAbilities';
 
 // Ability library (TALENTS.md). Abilities apply declarative effects; ranks (from the
 // talent tree) scale them. Two scaling channels:
@@ -15,6 +17,7 @@ export interface AbilityPower {
   coeff: number; // multiplier at rank 1 (× attackDamage for damage/dot, × target maxHP for heal/hot/shield)
   coeffPerRank?: number; // added to coeff per rank beyond the first
   canCrit?: boolean; // instant `damage` effects may crit (uses caster crit stats)
+  alwaysCrit?: boolean; // every instant `damage` hit is a crit (no roll) — a modifier's patch sets it
   // AoE splash for a SINGLE-TARGET damage ability: enemies WITHIN splashRadius (world px) of
   // the primary target also take splashCoeff (× attackDamage). Used by Explosive Arrow — the
   // front enemy takes the full `coeff`, only nearby enemies take the reduced splash.
@@ -31,7 +34,32 @@ export interface AppliedEffect {
   // rankScaling. Use when one ability buffs several stats that scale at different rates
   // (e.g. Bloodlust: +3.75%/rank attack speed but +1%/rank lifesteal).
   valuePerRank?: number;
+  // ── An effect of its own inside the ability (docs/redesign/CLASSES.md §6, F3) ──
+  /** Who THIS effect lands on, when it is not the ability's target (Smite: the heal goes to the hurt ally,
+   *  the strike to the enemy in front). */
+  target?: AbilityTarget;
+  /** THIS effect's own coefficient, when it does not share the ability's `power`. */
+  power?: AbilityPower;
+  /** Share of the resolved coefficient this effect takes (default 1). Lets a modifier move part of an
+   *  ability's power to another effect or raise one effect's total without restating the numbers. */
+  powerScale?: number;
+  /** Base value of a stat / weaken / vulnerable effect when it is not the effect def's own. */
+  value?: number;
+  /** Also laid on the enemies caught in the ability's splash (Explosive Arrow's blast). */
+  onSplash?: boolean;
 }
+
+export type AbilityTarget =
+  | 'self'
+  | 'lowestAllyHp'
+  | 'lowestOtherAlly' // the hurt-most living ally that is not the caster (nobody when alone)
+  | 'frontEnemy'
+  | 'meleeEnemies'
+  | 'allEnemies'
+  | 'allAllies'
+  | 'randomDpsAlly'
+  | 'twoDpsAllies' // two different heroes: damage dealers first, then the tank, then anyone left
+  | 'tank';
 
 export interface AbilityDef {
   key: string;
@@ -47,7 +75,7 @@ export interface AbilityDef {
   // under the boss) before its effect resolves — telegraphs the cast. Heroes ignore it
   // (instant, one-per-swing). Undefined/0 = instant.
   castTimeMs?: number;
-  target: 'self' | 'lowestAllyHp' | 'frontEnemy' | 'meleeEnemies' | 'allEnemies' | 'allAllies' | 'randomDpsAlly' | 'tank';
+  target: AbilityTarget;
   applies: AppliedEffect[];
   castCondition?: 'always' | 'enemyPresent' | 'allyBelowHpPct' | 'tankEngaged';
   power?: AbilityPower;
@@ -55,7 +83,10 @@ export interface AbilityDef {
   // Charge-gated cast (no cooldown): the ability banks `perAttack` charge(s) per AUTO-
   // attack and fires once it reaches `toCast`, then resets to 0. Rewards attack speed.
   // When set, `cooldownMs` is ignored. The sim tracks charges on Combatant.charges.
+  // `perAttack` may be 0: the charges then come from a trigger (Riposte: one per blocked hit).
   charge?: { perAttack: number; toCast: number };
+  // Triggers the hero carries while this ability is learned (data/triggers.ts).
+  triggers?: readonly TriggerDef[];
   // Passive party AURA (no cast, no cooldown): while this ability is SLOTTED (occupies a
   // loadout slot), every party member gains `baseValue (+valuePerRank·(rank-1))`% of
   // `stat`. Applied at party-build time (sim/loadout.partyAuraMods), never cast.
@@ -65,11 +96,13 @@ export interface AbilityDef {
 export const TARGET_LABEL: Record<AbilityDef['target'], string> = {
   self: 'Self',
   lowestAllyHp: 'Lowest-HP ally',
+  lowestOtherAlly: 'Lowest-HP other ally',
   frontEnemy: 'Front enemy',
   meleeEnemies: 'Enemies in melee range',
   allEnemies: 'All enemies',
   allAllies: 'All allies',
   randomDpsAlly: 'Random damage-dealer',
+  twoDpsAllies: 'Two heroes',
   tank: 'Tank',
 };
 
@@ -203,6 +236,9 @@ export const ABILITIES: Record<string, AbilityDef> = {
     // Wave DoT over 4s: total damage per enemy = 0.6×→1.4× AD (+0.2/rank), dealt in 100ms ticks.
     castCondition: 'enemyPresent', power: { coeff: 0.6, coeffPerRank: 0.2 },
   },
+
+  // ───────────── Branch abilities (docs/redesign/CLASSES.md, first wave) ─────────────
+  ...BRANCH_ABILITIES,
 
   // ───────────────────────── Enemies ─────────────────────────
   // Enemy abilities follow the SAME pattern as hero abilities: damage = coeff ×

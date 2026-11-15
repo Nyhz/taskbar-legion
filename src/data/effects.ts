@@ -1,4 +1,5 @@
 import type { StatKey } from './stats';
+import { BRANCH_EFFECTS } from './branchEffects';
 
 // Effect library. Abilities apply declarative EffectDefs; the combat loop processes
 // a GENERIC ActiveEffect list (SPEC §4.10) — adding content is data, never editing
@@ -189,7 +190,13 @@ export const EFFECTS: Record<string, EffectDef> = {
     kind: { type: 'silence' },
     durationMs: 2000, maxStacks: 1, stackRule: 'refresh', beneficial: false,
   },
+
+  // ── Class redesign, first wave (branch abilities, modifiers, capstones) ──
+  ...BRANCH_EFFECTS,
 };
+
+/** The total-immunity effect a rescue grants (Last Stand and its capstone). */
+export const INVULN_EFFECT_KEY = 'fx_invuln';
 
 export function effectDef(key: string): EffectDef {
   const def = EFFECTS[key];

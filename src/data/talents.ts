@@ -1,129 +1,68 @@
-import type { StatKey } from './stats';
-import { STATS } from './stats';
 import { CLASS_KEYS } from './classes';
-import { abilityDef } from './abilities';
+import { TRUNK, type ClassTreeSpec, type NodeSpec, type TalentBranch, type TalentNode } from './talentSpec';
+import { KNIGHT_TREE } from './talentTrees/knight';
+import { RANGER_TREE } from './talentTrees/ranger';
+import { PRIEST_TREE } from './talentTrees/priest';
 
-// Per-class talent trees on the shared 10-ROW framework (TALENTS.md, supersedes
-// SPEC §4.9). Row N unlocks at (N-1)*10 points spent, regardless of which nodes.
-// REWORK: each class has exactly 5 abilities, all in the FIRST FOUR rows —
-//   Row 1: 2 abilities + 2 stats. Rows 2-4: 1 ability + 2 stats. Rows 5-10: 3 stats.
-// Every passive node is a PERCENT bonus (flat-origin stats convert via FLAT_TO_PERCENT;
-// already-percent stats add percentage points). The class ULTIMATE is NOT on the tree —
-// it auto-unlocks at level 30 (data/ultimates.ts) and uses no points or loadout slot.
+// Per-class talent trees (docs/redesign/CLASSES.md §2 — supersedes TALENTS.md and SPEC §4.9). Ten tiers; tier
+// N opens at (N−1)·10 points spent, whichever nodes hold them:
+//   tiers 1–4   the common TRUNK: the five original abilities, eight stat passives, three role talents
+//   tiers 5–9   two BRANCHES, two nodes each per tier: the branch ability, a "choose one" pair of modifiers,
+//               the branch ability's modifier and stat passives
+//   tier 10     each branch's capstone (one point, needs points in its branch, excludes the other)
+// The class ULTIMATE is not on the tree: it unlocks at level 30 (data/ultimates.ts); a capstone transforms it.
+// The model and the node constructors are in data/talentSpec.ts, the content in data/talentTrees/*; the rules
+// (what can be bought or given back) are pure functions in sim/talentRules.ts.
 
-export interface TalentNode {
-  key: string;
-  rowIndex: number; // 0-based
-  kind: 'passive' | 'ability';
-  name: string;
-  maxRank: number;
-  passive?: { stat: StatKey; mode: 'flat' | 'percent'; valuePerRank: number };
-  abilityKey?: string;
-}
+export type { RoleEffect, TalentBranch, TalentNode, TalentNodeKind, TargetCondition } from './talentSpec';
+export { CAPSTONE_BRANCH_POINTS, TRUNK } from './talentSpec';
 
 export interface ClassTalentTree {
   classKey: string;
+  /** One array per tier, top (tier 1) to bottom (tier 10): trunk nodes, or the first branch's nodes followed
+   *  by the second's. */
   rows: TalentNode[][];
+  branches: TalentBranch[];
 }
 
-const MAX_RANK = 5;
-
-// A spec is either a stat node [stat, perRankValue] or an ability node (its key).
-type StatSpec = readonly [StatKey, number];
-type Spec = StatSpec | string;
-
-const isStat = (s: Spec): s is StatSpec => Array.isArray(s);
-
-// Per-class row layout. Each inner array is one row, top (row 1) to bottom (row 10).
-const CLASS_TALENTS: Record<string, Spec[][]> = {
-  knight: [
-    // Rows 1-4: the 5 abilities (row 1 = 2) + role stats. Rows 5-10: pure % stats.
-    ['knight_guard', 'knight_debilitate', ['health', 20], ['armor', 2.5]],
-    ['knight_bulwark', ['health', 20], ['block', 2]],
-    ['knight_battlecry', ['armor', 2.5], ['magicResist', 2.5]],
-    ['knight_bloodlust', ['health', 20], ['block', 2]],
-    [['health', 20], ['armor', 2.5], ['magicResist', 2.5]],
-    [['block', 2], ['health', 20], ['attackDamage', 2.0]],
-    [['armor', 2.5], ['magicResist', 2.5], ['block', 2]],
-    [['health', 20], ['block', 2], ['armor', 2.5]],
-    [['armor', 2.5], ['magicResist', 2.5], ['health', 20]],
-    [['health', 20], ['armor', 2.5], ['attackDamage', 2.0]],
-  ],
-  priest: [
-    ['priest_mend', 'priest_powerinfusion', ['healPower', 3], ['health', 20]],
-    ['priest_holyshield', ['cooldownReduction', 1.5], ['magicResist', 2.5]],
-    ['priest_nova', ['healPower', 3], ['health', 20]],
-    ['priest_retribution', ['cooldownReduction', 1.5], ['magicResist', 2.5]],
-    [['healPower', 3], ['health', 20], ['magicResist', 2.5]],
-    [['cooldownReduction', 1.5], ['healPower', 3], ['attackDamage', 2.0]],
-    [['healPower', 4], ['health', 20], ['magicResist', 2.5]],
-    [['cooldownReduction', 1.5], ['healPower', 4], ['health', 20]],
-    [['healPower', 4], ['health', 20], ['attackDamage', 2.0]],
-    [['healPower', 4], ['cooldownReduction', 1.5], ['magicResist', 2.5]],
-  ],
-  ranger: [
-    ['ranger_fast_fire', 'ranger_aimedshot', ['attackDamage', 2.0], ['attackSpeed', 1.5]],
-    ['ranger_multishot', ['critChance', 2], ['health', 20]],
-    ['ranger_focus', ['attackDamage', 2.0], ['critDamage', 4]],
-    ['ranger_frozentrap', ['attackSpeed', 1.5], ['critChance', 2]],
-    [['attackDamage', 2.0], ['critChance', 2], ['health', 20]],
-    [['attackSpeed', 1.5], ['critChance', 2], ['attackDamage', 2.0]],
-    [['attackDamage', 2.0], ['critDamage', 4], ['critChance', 2]],
-    [['critChance', 2], ['attackSpeed', 1.5], ['critDamage', 4]],
-    [['attackDamage', 2.0], ['attackSpeed', 1.5], ['critChance', 2]],
-    [['critDamage', 4], ['attackDamage', 2.0], ['critChance', 2]],
-  ],
+const SPECS: Record<string, ClassTreeSpec> = {
+  knight: KNIGHT_TREE,
+  ranger: RANGER_TREE,
+  priest: PRIEST_TREE,
 };
 
-// Flat stats whose talent nodes are expressed as PERCENT instead (REBALANCE:
-// flat talent stats are swingy early and useless late; a percent bonus scales with
-// total power, so "points spent" stays meaningful at every stage). The row layout's
-// per-rank number is multiplied by this factor and applied as a percent bonus.
-// Stats not listed keep their native mode (already-percent stats; flat ones that don't
-// convert cleanly are not talent-rollable anyway).
-const FLAT_TO_PERCENT: Partial<Record<StatKey, number>> = {
-  attackDamage: 1.5,
-  health: 0.1,
-  armor: 1.0,
-  magicResist: 1.0,
-};
-
-function statNode(classKey: string, row: number, slot: number, spec: StatSpec): TalentNode {
-  const [stat, perRank] = spec;
-  const conv = FLAT_TO_PERCENT[stat];
-  const mode: 'flat' | 'percent' = conv !== undefined ? 'percent' : STATS[stat].kind;
-  const valuePerRank = conv !== undefined ? Math.round(perRank * conv * 100) / 100 : perRank;
-  return {
-    key: `${classKey}_r${row}_s${slot}`,
-    rowIndex: row,
-    kind: 'passive',
-    name: STATS[stat].label,
-    maxRank: MAX_RANK,
-    passive: { stat, mode, valuePerRank },
-  };
-}
-
-function abilityNode(row: number, abilityKey: string): TalentNode {
-  return {
-    key: abilityKey, // ability node key == its ability def key
-    rowIndex: row,
-    kind: 'ability',
-    name: abilityDef(abilityKey).name,
-    maxRank: MAX_RANK,
-    abilityKey,
-  };
-}
+const place = (specs: readonly NodeSpec[], rowIndex: number, lane: string): TalentNode[] =>
+  specs.map((spec) => ({ ...spec, rowIndex, lane }));
 
 function buildTree(classKey: string): ClassTalentTree {
-  const layout = CLASS_TALENTS[classKey] ?? [];
-  const rows = layout.map((rowSpecs, row) =>
-    rowSpecs.map((spec, slot) => (isStat(spec) ? statNode(classKey, row, slot, spec) : abilityNode(row, spec))),
-  );
-  return { classKey, rows };
+  const spec = SPECS[classKey];
+  if (spec === undefined) return { classKey, rows: [], branches: [] };
+  const rows: TalentNode[][] = spec.trunk.map((row, tier) => place(row, tier, TRUNK));
+  const branchTiers = Math.max(...spec.branches.map((b) => b.rows.length));
+  for (let i = 0; i < branchTiers; i++) {
+    const tier = spec.trunk.length + i;
+    const row = spec.branches.flatMap((b) => place(b.rows[i] ?? [], tier, b.key));
+    // The "choose one" pairs: the two modifiers a branch offers in one tier, and the capstones of the tier.
+    for (const b of spec.branches) {
+      const mods = row.filter((n) => n.lane === b.key && n.kind === 'modifier');
+      if (mods.length > 1) for (const n of mods) n.chooseGroup = `${classKey}_${b.key}_t${tier + 1}`;
+    }
+    const caps = row.filter((n) => n.kind === 'capstone');
+    if (caps.length > 1) for (const n of caps) n.chooseGroup = `${classKey}_capstone`;
+    rows.push(row);
+  }
+  return { classKey, rows, branches: spec.branches.map((b) => ({ key: b.key, name: b.name })) };
 }
 
 export const TALENT_TREES: Record<string, ClassTalentTree> = Object.fromEntries(
   CLASS_KEYS.map((k) => [k, buildTree(k)]),
+);
+
+const NODE_LISTS: Record<string, TalentNode[]> = Object.fromEntries(
+  Object.values(TALENT_TREES).map((t) => [t.classKey, t.rows.flat()]),
+);
+const NODE_MAPS: Record<string, Map<string, TalentNode>> = Object.fromEntries(
+  Object.entries(NODE_LISTS).map(([k, nodes]) => [k, new Map(nodes.map((n) => [n.key, n]))]),
 );
 
 export function talentTree(classKey: string): ClassTalentTree {
@@ -132,12 +71,30 @@ export function talentTree(classKey: string): ClassTalentTree {
   return tree;
 }
 
-/** Flat list of every node in a class tree (handy for lookups). */
+/** Whether the class has a tree (a save may name a class that no longer exists). */
+export function hasTalentTree(classKey: string): boolean {
+  return NODE_LISTS[classKey] !== undefined;
+}
+
+/** Flat list of every node in a class tree, in tree order (tier by tier). */
 export function talentNodes(classKey: string): TalentNode[] {
-  return talentTree(classKey).rows.flat();
+  const nodes = NODE_LISTS[classKey];
+  if (nodes === undefined) throw new Error(`No talent tree for ${classKey}`);
+  return nodes;
+}
+
+/** A node by key, or undefined — never throws (a stale key or an unknown class in a save must not take the
+ *  interface or the load down). */
+export function tryTalentNode(classKey: string, nodeKey: string): TalentNode | undefined {
+  return NODE_MAPS[classKey]?.get(nodeKey);
 }
 
 /** Row N (0-based) unlocks at N*10 points spent — independent of which line. */
 export function rowUnlockThreshold(rowIndex: number): number {
   return rowIndex * 10;
+}
+
+/** Talent points a hero of this level has earned: one at level 1 and one per level after. */
+export function talentPointsAtLevel(level: number): number {
+  return Math.max(0, Math.floor(level));
 }

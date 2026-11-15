@@ -1,10 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { CLASS_KEYS } from '@/data/classes';
 import { talentNodes, talentTree } from '@/data/talents';
-import { GUTTER, PLATE, SEAL, layoutTalentTree, spentBarFill } from '@/ui/panels/hero/talentsLayout';
-import { WING_CONTENT_ART } from '@/ui/panels/panelLayout';
-
-const sizeOf = (kind: string): number => (kind === 'ability' ? PLATE : SEAL);
+import { GUTTER, layoutTalentTree, nodeSize, spentBarFill } from '@/ui/panels/hero/talentsLayout';
+import { TALENTS_WING_ART } from '@/ui/panels/hero/wingLayout';
+import { WING_CONTENT_ART, WING_MAX_ART_HEIGHT } from '@/ui/panels/panelLayout';
 
 describe('talents wing layout (vertical: a tier is a row)', () => {
   it("is exactly as wide as a wing's content, and places every node of every class once, inside the tree", () => {
@@ -17,7 +16,7 @@ describe('talents wing layout (vertical: a tier is a row)', () => {
           .sort(),
       );
       for (const p of layout.nodes) {
-        const size = sizeOf(p.node.kind);
+        const size = nodeSize(p.node);
         expect(p.x).toBeGreaterThanOrEqual(GUTTER); // the gutter belongs to the bar and the thresholds
         expect(p.y).toBeGreaterThanOrEqual(0);
         expect(p.x + size).toBeLessThanOrEqual(layout.width);
@@ -31,7 +30,7 @@ describe('talents wing layout (vertical: a tier is a row)', () => {
     for (const classKey of CLASS_KEYS) {
       const layout = layoutTalentTree(talentTree(classKey));
       const box = (p: (typeof layout.nodes)[number]): { x0: number; y0: number; x1: number; y1: number } => {
-        const size = sizeOf(p.node.kind);
+        const size = nodeSize(p.node);
         return { x0: p.x, y0: p.y, x1: p.x + size, y1: p.y + size };
       };
       layout.nodes.forEach((a, i) => {
@@ -40,7 +39,7 @@ describe('talents wing layout (vertical: a tier is a row)', () => {
         expect(a.tier).toBe(a.node.rowIndex);
         if (tier !== undefined) {
           expect(a.y).toBeGreaterThanOrEqual(tier.y);
-          expect(a.y + sizeOf(a.node.kind)).toBeLessThanOrEqual(tier.y + tier.height);
+          expect(a.y + nodeSize(a.node)).toBeLessThanOrEqual(tier.y + tier.height);
         }
         layout.nodes.slice(i + 1).forEach((b) => {
           const A = box(a);
@@ -66,15 +65,42 @@ describe('talents wing layout (vertical: a tier is a row)', () => {
     }
   });
 
-  it('abilities form the left band and passives the right one', () => {
+  it('the trunk reads ability → role talent → passives, left to right', () => {
     for (const classKey of CLASS_KEYS) {
       const layout = layoutTalentTree(talentTree(classKey));
-      const rightmostAbility = Math.max(
-        ...layout.nodes.filter((p) => p.node.kind === 'ability').map((p) => p.x),
-      );
-      const trunkPassives = layout.nodes.filter((p) => p.node.kind !== 'ability' && p.tier < 4);
-      for (const p of trunkPassives) expect(p.x).toBeGreaterThan(rightmostAbility);
+      for (const tier of [0, 1, 2, 3]) {
+        const row = layout.nodes.filter((p) => p.tier === tier).sort((a, b) => a.x - b.x);
+        const order = (kind: string): number => ['ability', 'role', 'passive'].indexOf(kind);
+        expect(row).toHaveLength(4);
+        row.forEach((p, i) => {
+          const prev = row[i - 1];
+          if (prev !== undefined) expect(order(p.node.kind)).toBeGreaterThanOrEqual(order(prev.node.kind));
+        });
+      }
     }
+  });
+
+  it('from tier 5 each branch keeps its own half: the first on the left, the second on the right', () => {
+    for (const classKey of CLASS_KEYS) {
+      const tree = talentTree(classKey);
+      const layout = layoutTalentTree(tree);
+      const [left, right] = tree.branches;
+      expect(left).toBeDefined();
+      expect(right).toBeDefined();
+      const middle = GUTTER + (layout.width - GUTTER) / 2;
+      for (const p of layout.nodes.filter((q) => q.tier >= 4)) {
+        const size = nodeSize(p.node);
+        if (p.node.lane === left?.key) expect(p.x + size, p.node.key).toBeLessThanOrEqual(middle);
+        else {
+          expect(p.node.lane).toBe(right?.key);
+          expect(p.x, p.node.key).toBeGreaterThanOrEqual(middle);
+        }
+      }
+    }
+  });
+
+  it('the wing with the whole tree fits the height every wing must fit', () => {
+    expect(TALENTS_WING_ART.height).toBeLessThanOrEqual(WING_MAX_ART_HEIGHT);
   });
 
   it('the bar reaches a tier exactly when the tier opens, and its end at the point cap', () => {

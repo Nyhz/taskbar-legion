@@ -9,8 +9,14 @@ import { classDef } from '@/data/classes';
 import { talentNodes } from '@/data/talents';
 import type { AbilityDef } from '@/data/abilities';
 import { abilityDef } from '@/data/abilities';
+import type { AbilityPatch } from '@/data/abilityPatch';
 import type { UltimateDef } from '@/data/ultimates';
 import { ultimateForClass } from '@/data/ultimates';
+import { patchAbility } from './abilityPatch';
+import { applyKit, resolveKit } from './kit';
+import { MAX_ACTIVE_ABILITIES, learnedAbilityNodes } from './talentRules';
+
+export { MAX_ACTIVE_ABILITIES };
 
 // Reduces player config (class+level, equipment, talents) into the inputs the
 // pure combat sim consumes: base stats + static StatMods + ranked abilities. This
@@ -72,21 +78,26 @@ export function talentPassiveMods(classKey: string, talents: Record<string, numb
   return mods;
 }
 
-/** Party-wide AURA stat-mods: every ability that is a passive aura AND slotted (in a
- *  hero's activeAbilities) contributes its bonus to the WHOLE party. `activeAbilities`
- *  undefined (the headless harness) counts every ranked aura as slotted. The returned
- *  mods are added to every hero's static mods at build time. */
+/** Party-wide AURA stat-mods, added to every hero's static mods at build time. Two sources:
+ *   - an ability that is a passive aura AND slotted (in a hero's activeAbilities) — `activeAbilities`
+ *     undefined (the headless harness) counts every ranked aura as slotted;
+ *   - a ROLE talent that gives the whole party a stat (docs/redesign/CLASSES.md, F4): a passive node, so it
+ *     needs no slot — its ranks are enough. */
 export function partyAuraMods(roster: readonly HeroConfig[]): StatMod[] {
   const mods: StatMod[] = [];
   for (const h of roster) {
     const active = h.activeAbilities;
     for (const node of talentNodes(h.classKey)) {
+      const rank = h.talents[node.key] ?? 0;
+      if (rank <= 0) continue;
+      if (node.role?.type === 'partyStat') {
+        mods.push({ key: node.role.stat, mode: node.role.mode, value: node.role.valuePerRank * rank });
+        continue;
+      }
       if (node.kind !== 'ability' || node.abilityKey === undefined) continue;
       const def = abilityDef(node.abilityKey);
       if (def.aura === undefined) continue;
       if (active !== undefined && !active.includes(def.key)) continue; // must be slotted
-      const rank = h.talents[node.key] ?? 0;
-      if (rank <= 0) continue;
       const value = def.aura.baseValue + def.aura.valuePerRank * (rank - 1);
       mods.push({ key: def.aura.stat, mode: modeFor(def.aura.stat), value });
     }
@@ -94,27 +105,40 @@ export function partyAuraMods(roster: readonly HeroConfig[]): StatMod[] {
   return mods;
 }
 
-/** The maximum abilities a hero fires at once (the player picks which — DATA_MODEL). */
-export const MAX_ACTIVE_ABILITIES = 2;
-
 /** Whether the hero may put the FIRST point into a not-yet-ranked ability node. The ranked
  *  ability set IS the active loadout (no separate selection), so learning a NEW ability is
  *  blocked once MAX_ACTIVE_ABILITIES are already ranked — ranking an already-learned ability
- *  further, and all passive nodes, are unaffected. */
+ *  further, and all passive nodes, are unaffected. (The full rule set is sim/talentRules.canSpend.) */
 export function canLearnNewAbility(classKey: string, talents: Record<string, number>): boolean {
-  return heroAbilities(classKey, talents).length < MAX_ACTIVE_ABILITIES;
+  return learnedAbilityNodes(classKey, talents).length < MAX_ACTIVE_ABILITIES;
 }
 
-/** Every ability a hero has unlocked (talent ability nodes with rank > 0), with rank.
- *  Capped at MAX_ACTIVE_ABILITIES by the talent-tree gate, so this POOL is exactly the
- *  hero's active loadout. */
+// Patched definitions are memoised by (ability, modifiers held): the interface asks for a hero's abilities on
+// every frame, and a stable object per combination keeps that free. Pure — same key, same definition.
+const patched = new Map<string, AbilityDef>();
+
+/** The ability as this hero casts it: its definition with the patches of the modifiers it holds. */
+function abilityFor(classKey: string, talents: Readonly<Record<string, number>>, abilityKey: string): AbilityDef {
+  const mods = talentNodes(classKey).filter((n) => n.modifies === abilityKey && n.patch !== undefined && (talents[n.key] ?? 0) > 0);
+  const def = abilityDef(abilityKey);
+  if (mods.length === 0) return def;
+  const id = `${abilityKey}|${mods.map((n) => n.key).join(',')}`;
+  let out = patched.get(id);
+  if (out === undefined) {
+    out = patchAbility(def, mods.flatMap((n): AbilityPatch[] => (n.patch === undefined ? [] : [n.patch])));
+    patched.set(id, out);
+  }
+  return out;
+}
+
+/** Every ability a hero has unlocked (talent ability nodes with rank > 0), with rank, each as the hero casts
+ *  it (modifiers applied). Capped at MAX_ACTIVE_ABILITIES by the talent-tree gate, so this POOL is exactly
+ *  the hero's active loadout. */
 export function heroAbilities(classKey: string, talents: Record<string, number>): ResolvedAbility[] {
   const out: ResolvedAbility[] = [];
-  for (const node of talentNodes(classKey)) {
-    if (node.kind !== 'ability' || node.abilityKey === undefined) continue;
-    const rank = talents[node.key] ?? 0;
-    if (rank <= 0) continue;
-    out.push({ def: abilityDef(node.abilityKey), rank });
+  for (const node of learnedAbilityNodes(classKey, talents)) {
+    if (node.abilityKey === undefined) continue;
+    out.push({ def: abilityFor(classKey, talents, node.abilityKey), rank: talents[node.key] ?? 0 });
   }
   return out;
 }
@@ -181,7 +205,8 @@ export function buildHeroCombatant(config: HeroConfig, combatMods: readonly Stat
   const staticMods = heroStaticMods(config, combatMods);
   const maxHp = aggregate(baseStats, staticMods).health;
   const { ult, ultCharge } = resolveUltimate(config.classKey, config.level);
-  return {
+  const abilities = activeHeroAbilities(config.classKey, config.talents, config.activeAbilities, config.autoDefaultAbilities);
+  const hero: Combatant = {
     id: config.id,
     side: 'hero',
     classKey: config.classKey,
@@ -195,12 +220,14 @@ export function buildHeroCombatant(config: HeroConfig, combatMods: readonly Stat
     x: 0,
     range: classDef(config.classKey).range,
     moveSpeed: 0, // heroes hold formation; only partyX advances them
-    abilities: activeHeroAbilities(config.classKey, config.talents, config.activeAbilities, config.autoDefaultAbilities),
+    abilities,
     autoSplash: classDef(config.classKey).autoSplash,
     alive: true,
     ult,
     ultCharge,
   };
+  applyKit(hero, resolveKit(config.classKey, config.level, config.talents, abilities));
+  return hero;
 }
 
 /** Recompute a hero combatant's loadout in place (after equip/talent/tech change),
@@ -216,6 +243,7 @@ export function refreshHeroLoadout(
   hero.maxHp = aggregate(hero.baseStats, hero.staticMods).health;
   hero.hp = Math.min(hero.maxHp, Math.max(1, hero.maxHp * frac));
   hero.abilities = activeHeroAbilities(config.classKey, config.talents, config.activeAbilities, config.autoDefaultAbilities);
+  applyKit(hero, resolveKit(config.classKey, config.level, config.talents, hero.abilities));
   // Re-resolve the ult (it may have just unlocked at L30). Preserve the current charge
   // on a mid-fight refresh (equip/talent change) — only a stage advance refills it.
   const { ult, ultCharge } = resolveUltimate(config.classKey, config.level);

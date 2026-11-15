@@ -336,6 +336,7 @@ export class Simulation {
       h.attackTimerMs = 0;
       h.respawnMs = undefined; // cancel any in-flight revive
       if (h.ult?.effect.type === 'deathBlock') h.ultCharge = h.ult.effect.chargesPerStage;
+      h.triggerUses = undefined; // "once per stage" triggers (a capstone's emergency heal) refill here too
     }
   }
 }

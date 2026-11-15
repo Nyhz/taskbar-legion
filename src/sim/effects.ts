@@ -50,11 +50,26 @@ export function applyEffect(
   existing.value = resolvedValue;
 }
 
-/** Decrement durations and drop expired effects (mutates). */
-export function tickEffectDurations(effects: ActiveEffect[], deltaMs: number): void {
+/** Decrement durations and drop expired effects (mutates). Returns the effects that just ended (ran out, or
+ *  a shield that was spent), or undefined when none did — the caller fires their "effect ended" triggers. */
+export function tickEffectDurations(effects: ActiveEffect[], deltaMs: number): ActiveEffect[] | undefined {
   for (const e of effects) e.remainingMs -= deltaMs;
+  let ended: ActiveEffect[] | undefined;
   for (let i = effects.length - 1; i >= 0; i--) {
-    if ((effects[i]?.remainingMs ?? 0) <= 0) effects.splice(i, 1);
+    const e = effects[i];
+    if (e !== undefined && e.remainingMs > 0) continue;
+    effects.splice(i, 1);
+    if (e !== undefined) (ended ??= []).push(e);
+  }
+  return ended;
+}
+
+/** Lengthen the effects with these keys by `ms`, if the holder carries them (mutates). */
+export function extendEffects(effects: ActiveEffect[], keys: readonly string[], ms: number): void {
+  for (const e of effects) {
+    if (e.remainingMs <= 0 || !keys.includes(e.defKey)) continue;
+    e.remainingMs += ms;
+    e.totalMs = Math.max(e.totalMs ?? 0, e.remainingMs); // the gauge reads "full" against the longer time
   }
 }
 

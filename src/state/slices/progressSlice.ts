@@ -9,7 +9,7 @@ import { SLOTS, type SlotKey } from '@/data/itemSlots';
 import { GENERATOR_VERSION } from '@/data/lootTables';
 import { UI_SCALE } from './uiSlice';
 import type { ItemInstance, InvEntry } from '@/sim/items';
-import { heroAbilities } from '@/sim/loadout';
+import { sanitizeHeroTalents } from '@/persistence/sanitizeHero';
 import type { SaveV1 } from '@/persistence/saveSchema';
 
 // Account-wide progression: gold (the main currency), zone keys (world-boss challenge
@@ -173,18 +173,11 @@ export const createProgressSlice: StateCreator<GameStore, [], [], ProgressSlice>
       ...((): { roster: typeof save.roster; selectedHeroId: string } => {
         const kept = save.roster
           .filter((h) => CLASSES[h.classKey] !== undefined)
-          .map((h) => {
-            // The hero's CURRENTLY-valid unlocked ability keys. Used to (a) seed an
-            // active set for pre-ability saves and (b) drop any stale/renamed key a save
-            // still carries (e.g. a since-renamed ability) so it can't reach the sim/UI.
-            const poolKeys = heroAbilities(h.classKey, h.talents).map((a) => a.def.key);
-            const activeAbilities =
-              h.activeAbilities === undefined
-                ? poolKeys.slice(0, 2)
-                : h.activeAbilities.filter((k) => poolKeys.includes(k));
-            return { ...h, equipment: sanitizeEquipment(h.equipment), activeAbilities };
-          });
-        const roster = kept.length > 0 ? kept : save.roster.slice(0, 1).map((h) => ({ ...h, classKey: 'knight', talents: {}, equipment: {}, activeAbilities: [] }));
+          // Talents, points to spend, active abilities and presets are brought in line with the
+          // CURRENT tree (persistence/sanitizeHero): stale or renamed keys are dropped so they can't
+          // reach the sim/UI, and no point is lost.
+          .map((h) => ({ ...sanitizeHeroTalents(h), equipment: sanitizeEquipment(h.equipment) }));
+        const roster = kept.length > 0 ? kept : save.roster.slice(0, 1).map((h) => sanitizeHeroTalents({ ...h, classKey: 'knight', talents: {}, equipment: {}, activeAbilities: [] }));
         const selected = roster.find((h) => h.id === save.roster[0]?.id) ?? roster[0];
         return { roster, selectedHeroId: selected?.id ?? 'h0' };
       })(),

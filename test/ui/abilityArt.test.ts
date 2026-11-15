@@ -5,6 +5,7 @@ import {
   FALLBACK_ABILITY_ART,
   FALLBACK_ULTIMATE_ART,
   abilityArtStem,
+  talentNodeArtStem,
   ultimateArtStem,
 } from '@/ui/abilityArt';
 import { CLASS_KEYS } from '@/data/classes';
@@ -20,12 +21,12 @@ const EXPORTED = new Set(
 
 // The abilities a hero can learn are exactly the ability nodes of the class trees.
 const HERO_ABILITIES = CLASS_KEYS.flatMap((c) => talentNodes(c)).flatMap((n) =>
-  n.abilityKey === undefined ? [] : [n.abilityKey],
+  n.kind !== 'ability' || n.abilityKey === undefined ? [] : [n.abilityKey],
 );
 
 describe('ability art', () => {
   it('every hero ability has a sign of its own, and the file exists', () => {
-    expect(HERO_ABILITIES.length).toBe(15);
+    expect(HERO_ABILITIES.length).toBe(21); // 7 per class: the 5 of the trunk + 1 per branch
     const stems = HERO_ABILITIES.map(abilityArtStem);
     for (const stem of stems) expect(EXPORTED.has(stem), stem).toBe(true);
     expect(new Set(stems).size).toBe(HERO_ABILITIES.length); // no two abilities share a sign
@@ -37,6 +38,12 @@ describe('ability art', () => {
     const stems = keys.map(ultimateArtStem);
     for (const stem of stems) expect(EXPORTED.has(stem), stem).toBe(true);
     expect(new Set(stems).size).toBe(keys.length);
+  });
+
+  it('every node of every talent tree has a sign whose file exists', () => {
+    for (const c of CLASS_KEYS) {
+      for (const n of talentNodes(c)) expect(EXPORTED.has(talentNodeArtStem(c, n)), `${n.key} → ${talentNodeArtStem(c, n)}`).toBe(true);
+    }
   });
 
   it('an unknown key gets the stand-in instead of throwing', () => {

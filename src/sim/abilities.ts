@@ -1,10 +1,13 @@
-import type { AbilityDef } from '@/data/abilities';
+import type { AbilityDef, AbilityPower, AbilityTarget, AppliedEffect } from '@/data/abilities';
+import { TARGET_LABEL } from '@/data/abilities';
 import type { EffectDef } from '@/data/effects';
 import { effectDef } from '@/data/effects';
 import type { Combatant, CombatEvent } from './world';
 import type { Rng } from './rng';
-import { aggregate, type EffectiveStats } from './stats';
-import { applyEffect, effectStatMods, absorbDamage, isSilenced, isInvulnerable, vulnerabilityMult, weakenMult, healReceivedMult } from './effects';
+import type { EffectiveStats } from './stats';
+import { applyEffect, absorbDamage, isSilenced, isInvulnerable, vulnerabilityMult, weakenMult, healReceivedMult } from './effects';
+import { dealtMult, liveStats } from './liveStats';
+import { onCrit, type TriggerCtx } from './triggers';
 import { STATS } from '@/data/stats';
 import { classDef } from '@/data/classes';
 import { mitigation, MAX_DAMAGE_REDUCTION } from '@/data/stageScaling';
@@ -39,7 +42,7 @@ export function tickCooldowns(c: Combatant, deltaMs: number): void {
 
 /** Effective stats of any combatant (for scaling ability magnitudes/cooldowns). */
 function casterStats(c: Combatant): EffectiveStats {
-  return aggregate(c.baseStats, [...c.staticMods, ...effectStatMods(c.effects)]);
+  return liveStats(c);
 }
 
 /** A caster's basic-attack damage — the unit every damaging ability is denominated
@@ -52,35 +55,49 @@ export function normalAttackDamage(caster: Combatant, cs: EffectiveStats): numbe
   return cs.attackDamage * (1 + cs.damageIncrease / 100);
 }
 
+/** The power an applied effect resolves against: its own, or the ability's. */
+function powerOf(ability: AbilityDef, applied: AppliedEffect): AbilityPower | undefined {
+  return applied.power ?? ability.power;
+}
+
+/** The effect's coefficient at a rank: (coeff + per-rank growth) × the share of it this effect takes. */
+function effectCoeff(ability: AbilityDef, applied: AppliedEffect, steps: number): number | undefined {
+  const p = powerOf(ability, applied);
+  if (p === undefined) return undefined;
+  return (p.coeff + (p.coeffPerRank ?? 0) * steps) * (applied.powerScale ?? 1);
+}
+
 /** Resolve the magnitude of one applied effect for the ability at a given rank.
  *  Power effects scale with stats; stat/CC effects use base value + rankScaling.
  *  Damage/DoT are a multiple of the caster's normal attack (DoT = TOTAL over its
  *  duration, divided into per-second in applyToTarget). Heal/HoT/Shield are a
- *  fraction of the target's max HP (HoT = TOTAL over its duration). */
-function effectMagnitude(ability: AbilityDef, def: EffectDef, rank: number, cs: EffectiveStats, target: Combatant, caster: Combatant, perRankOverride?: number, coeffOverride?: number, healEff = 1): number {
+ *  fraction of the target's max HP (HoT = TOTAL over its duration). Each effect resolves
+ *  against its OWN power when it has one, else the ability's (docs/redesign/CLASSES.md, F3). */
+function effectMagnitude(ability: AbilityDef, applied: AppliedEffect, def: EffectDef, rank: number, cs: EffectiveStats, target: Combatant, caster: Combatant, coeffOverride?: number, healEff = 1): number {
   const steps = Math.max(0, rank - 1);
   const t = def.kind.type;
   if (t === 'damage' || t === 'dot') {
-    const p = ability.power;
-    if (p === undefined) return 0;
-    const coeff = coeffOverride ?? p.coeff + (p.coeffPerRank ?? 0) * steps;
+    const coeff = coeffOverride ?? effectCoeff(ability, applied, steps);
+    if (coeff === undefined) return 0;
     return coeff * normalAttackDamage(caster, cs);
   }
   if (t === 'heal' || t === 'hot' || t === 'shield') {
-    const p = ability.power;
-    if (p === undefined) return 0;
-    const coeff = p.coeff + (p.coeffPerRank ?? 0) * steps;
+    const coeff = effectCoeff(ability, applied, steps);
+    if (coeff === undefined) return 0;
     // healPower's benefit is scaled by the difficulty's heal-power effectiveness (the zone
     // debuff) — the base coeff floor is untouched, only the healPower amplification diminishes.
     return coeff * target.maxHp * (1 + (cs.healPower * healEff) / 100);
   }
-  // statMod / weaken / healReduction / silence / root / tag: base value + per-rank. A
-  // per-effect `valuePerRank` (perRankOverride) wins over the ability-wide rankScaling.
+  // statMod / weaken / vulnerable / healReduction / silence / root / tag: base value + per-rank.
+  // The base is the applied effect's own `value` when it states one (a vulnerability has no value
+  // on its def), else the effect def's. A per-effect `valuePerRank` wins over the ability-wide
+  // rankScaling.
   const base =
-    def.kind.type === 'statMod' || def.kind.type === 'weaken' || def.kind.type === 'healReduction'
+    applied.value ??
+    (def.kind.type === 'statMod' || def.kind.type === 'weaken' || def.kind.type === 'healReduction'
       ? def.kind.value
-      : 0;
-  const perRank = perRankOverride ?? ability.rankScaling?.perRank.value ?? 0;
+      : 0);
+  const perRank = applied.valuePerRank ?? ability.rankScaling?.perRank.value ?? 0;
   return base + perRank * steps;
 }
 
@@ -160,22 +177,24 @@ function engaged(caster: Combatant, enemies: Combatant[]): boolean {
 function isSelfOrPartyBuff(ability: AbilityDef): boolean {
   // self / whole-party / single-ally buffs (e.g. Power Infusion on a DPS) all wait for
   // engagement so their uptime isn't wasted on the walk-up.
-  if (ability.target !== 'self' && ability.target !== 'allAllies' && ability.target !== 'randomDpsAlly') return false;
+  if (ability.target !== 'self' && ability.target !== 'allAllies' && ability.target !== 'randomDpsAlly' && ability.target !== 'twoDpsAllies') return false;
   return ability.castCondition !== 'allyBelowHpPct';
 }
 
-/** True if the ability grants an absorb shield (applies any shield-kind effect). */
-function appliesShield(ability: AbilityDef): boolean {
-  return ability.applies.some((a) => effectDef(a.effectKey).kind.type === 'shield');
+/** The shield an ability IS about — its first effect, when that is a shield (Bulwark, Holy Shield). A shield
+ *  that merely rides along with something else (a modifier's small ward) does not make it a shield ability. */
+function primaryShieldKey(ability: AbilityDef): string | undefined {
+  const first = ability.applies[0];
+  return first !== undefined && effectDef(first.effectKey).kind.type === 'shield' ? first.effectKey : undefined;
 }
 
-/** True if the combatant already carries an active (un-depleted) shield from any source. */
-function hasActiveShield(c: Combatant): boolean {
-  return c.effects.some((e) => e.remainingMs > 0 && e.value > 0 && effectDef(e.defKey).kind.type === 'shield');
+/** True if the combatant already carries an active (un-depleted) shield of this kind, from any source. */
+function hasActiveShield(c: Combatant, shieldKey: string): boolean {
+  return c.effects.some((e) => e.defKey === shieldKey && e.remainingMs > 0 && e.value > 0);
 }
 
-function selectTargets(caster: Combatant, ability: AbilityDef, allies: Combatant[], enemies: Combatant[], rng: Rng): Combatant[] {
-  switch (ability.target) {
+function selectTargets(caster: Combatant, target: AbilityTarget, allies: Combatant[], enemies: Combatant[], rng: Rng): Combatant[] {
+  switch (target) {
     case 'self':
       return [caster];
     case 'allAllies':
@@ -202,6 +221,13 @@ function selectTargets(caster: Combatant, ability: AbilityDef, allies: Combatant
       const lowest = living.reduce((lo, a) => (a.hp / a.maxHp < lo.hp / lo.maxHp ? a : lo));
       return [lowest];
     }
+    case 'lowestOtherAlly': {
+      // The hurt-most living ally that is NOT the caster (a modifier's "also covers an ally");
+      // nobody when the caster stands alone.
+      const others = allies.filter((a) => a.alive && a !== caster);
+      if (others.length === 0) return [];
+      return [others.reduce((lo, a) => (a.hp / a.maxHp < lo.hp / lo.maxHp ? a : lo))];
+    }
     case 'randomDpsAlly': {
       const dps = allies.filter((a) => a.alive && roleOf(a) === 'dps');
       // Prefer a DPS; if the party has none, fall back to the tank so Power Infusion still
@@ -209,6 +235,24 @@ function selectTargets(caster: Combatant, ability: AbilityDef, allies: Combatant
       if (dps.length > 0) return [rng.pick(dps)];
       const tank = findTank(allies);
       return tank !== undefined ? [tank] : [];
+    }
+    case 'twoDpsAllies': {
+      // Two DIFFERENT heroes: damage dealers first, then the tank, then whoever is left (party
+      // order). The RNG is only drawn when there are more damage dealers than places.
+      const want = 2;
+      const dps = allies.filter((a) => a.alive && roleOf(a) === 'dps');
+      const picked: Combatant[] = [];
+      while (dps.length > want - picked.length && picked.length < want) {
+        picked.push(...dps.splice(dps.indexOf(rng.pick(dps)), 1));
+      }
+      picked.push(...dps.slice(0, want - picked.length));
+      const tank = findTank(allies);
+      if (picked.length < want && tank !== undefined && !picked.includes(tank)) picked.push(tank);
+      for (const a of allies) {
+        if (picked.length >= want) break;
+        if (a.alive && !picked.includes(a)) picked.push(a);
+      }
+      return picked;
     }
     case 'tank': {
       const tank = findTank(allies);
@@ -224,22 +268,21 @@ function selectTargets(caster: Combatant, ability: AbilityDef, allies: Combatant
 function applyToTarget(
   caster: Combatant,
   ability: AbilityDef,
+  applied: AppliedEffect,
   def: EffectDef,
   rank: number,
   cs: EffectiveStats,
   target: Combatant,
-  durationOverride: number | undefined,
-  perRankOverride: number | undefined,
   S: number,
   rng: Rng,
   events: CombatEvent[],
   coeffOverride?: number,
 ): void {
   const kind = def.kind.type;
-  const duration = effectDuration(ability, def, rank, durationOverride);
+  const duration = effectDuration(ability, def, rank, applied.durationMsOverride);
   // The zone heal-power debuff applies to healPower-scaled effects (heal/hot/shield).
   const healEff = healPowerEffectiveness(S);
-  let value = effectMagnitude(ability, def, rank, cs, target, caster, perRankOverride, coeffOverride, healEff);
+  let value = effectMagnitude(ability, applied, def, rank, cs, target, caster, coeffOverride, healEff);
   // DoT/HoT coeffs are TOTALS over the effect's duration; store as per-second
   // (what dotDps/hotHps sum each tick).
   if (kind === 'dot' || kind === 'hot') value /= Math.max(0.001, duration / 1000);
@@ -252,11 +295,21 @@ function applyToTarget(
     healCrit = true;
     value *= 1 + cs.critDamage / 100;
   }
+  // Role talents: a hero's heals are stronger on some allies, its damage on some enemies.
+  if (kind === 'heal' || kind === 'hot') value *= dealtMult(caster, target, 'heal');
+  else if (kind === 'dot' && caster.side === 'hero') {
+    value *= dealtMult(caster, target, 'damage');
+    target.lastHitBy = caster.id;
+  }
 
   if (kind === 'damage') {
     let dmg = value;
     let crit = false;
-    if (ability.power?.canCrit === true && rng.chance(Math.min(1, cs.critChance / 100))) {
+    const power = powerOf(ability, applied);
+    if (power?.alwaysCrit === true) {
+      crit = true; // a sure crit: no roll (a modifier's patch)
+      dmg *= 1 + cs.critDamage / 100;
+    } else if (power?.canCrit === true && rng.chance(Math.min(1, cs.critChance / 100))) {
       crit = true;
       dmg *= 1 + cs.critDamage / 100;
     }
@@ -270,13 +323,15 @@ function applyToTarget(
         events.push({ type: 'damage', targetId: target.id, sourceId: caster.id, amount: 0, crit, invuln: true });
         return;
       }
-      const ts = aggregate(target.baseStats, [...target.staticMods, ...effectStatMods(target.effects)]);
+      const ts = liveStats(target);
       const defense = caster.enemyMagic === true ? ts.magicResist : ts.armor;
       dmg *= weakenMult(caster.effects); // a Debilitated enemy's spells hit softer too
       dmg *= 1 - mitigation(Math.max(0, defense), S);
       dmg *= 1 - Math.min(MAX_DAMAGE_REDUCTION, Math.max(0, ts.damageReduction)) / 100; // flat % off (e.g. shields/DR buffs)
     } else {
       dmg *= vulnerabilityMult(target.effects); // Ranger's Mark amplifies hero ability damage to the boss
+      dmg *= dealtMult(caster, target, 'damage'); // role talents
+      target.lastHitBy = caster.id;
     }
     dmg = Math.max(0, absorbDamage(target.effects, dmg));
     target.hp -= dmg;
@@ -331,13 +386,14 @@ export function castReadyAbilities(
     // until the caster is actually engaged (a foe in range). The AoE then lands on the
     // ENTIRE wave (selectTargets no longer range-gates allEnemies), not just what's in reach.
     if ((isSelfOrPartyBuff(ability) || ability.target === 'allEnemies') && !engaged(caster, enemies)) continue;
-    const targets = selectTargets(caster, ability, allies, enemies, rng);
+    const targets = selectTargets(caster, ability.target, allies, enemies, rng);
     if (targets.length === 0) continue;
-    // Don't stack shields: if this ability grants a shield and every target already has an
-    // active shield (from ANY source), skip the cast WITHOUT consuming its cooldown — it
+    // Don't stack shields: if this ability IS a shield and every target already has an active
+    // shield of that kind (from ANY source), skip the cast WITHOUT consuming its cooldown — it
     // fires the moment the existing shield drops. Keeps the Knight's Bulwark and the
     // Priest's Holy Shield from overwriting / wasting each other on the same tank.
-    if (appliesShield(ability) && targets.every(hasActiveShield)) continue;
+    const shieldKey = primaryShieldKey(ability);
+    if (shieldKey !== undefined && targets.every((t) => hasActiveShield(t, shieldKey))) continue;
     // A channeled enemy cast (world-boss Frenzy / Mortal Wound) winds up FIRST: begin the
     // channel + start its cooldown now, but resolve the effect only when the cast bar fills
     // (combat.resolveChanneledCast). A channeling enemy starts nothing else this call.
@@ -347,9 +403,11 @@ export function castReadyAbilities(
       commitCooldown(caster, ability, rank);
       break;
     }
-    applyAbilityEffectsTo(caster, ability, rank, cs, targets, enemies, S, rng, events);
+    const firstEvent = events.length;
+    applyAbilityEffectsTo(caster, ability, rank, cs, targets, allies, enemies, S, rng, events);
     commitCooldown(caster, ability, rank);
     cast.push(ability.key);
+    if (single && caster.triggers !== undefined) critTriggers(caster, allies, enemies, events, firstEvent);
     // Heroes take just one action per swing — the cast consumed it; the rest wait for the
     // next swing. Enemies keep firing every ready ability.
     if (single) break;
@@ -366,6 +424,7 @@ function applyAbilityEffectsTo(
   rank: number,
   cs: EffectiveStats,
   targets: Combatant[],
+  allies: Combatant[],
   enemies: Combatant[],
   S: number,
   rng: Rng,
@@ -374,7 +433,10 @@ function applyAbilityEffectsTo(
   for (const applied of ability.applies) {
     if (applied.chance !== undefined && !rng.chance(applied.chance)) continue;
     const def = effectDef(applied.effectKey);
-    for (const t of targets) applyToTarget(caster, ability, def, rank, cs, t, applied.durationMsOverride, applied.valuePerRank, S, rng, events);
+    // An effect with a target of its own (Smite's strike, a modifier's "also on an ally") picks it
+    // here; the rest land on the ability's targets.
+    const own = applied.target === undefined ? targets : selectTargets(caster, applied.target, allies, enemies, rng);
+    for (const t of own) applyToTarget(caster, ability, applied, def, rank, cs, t, S, rng, events);
   }
   // AoE splash: a single-target damage ability with power.splashCoeff also blasts enemies
   // WITHIN splashRadius (world px) of the primary target for the reduced splash coeff
@@ -384,15 +446,31 @@ function applyAbilityEffectsTo(
   if (splashBase !== undefined && primary !== undefined) {
     const splashCoeff = splashBase + (ability.power?.splashCoeffPerRank ?? 0) * Math.max(0, rank - 1);
     const radius = ability.power?.splashRadius ?? 45;
-    const dmgApplied = ability.applies.find((a) => effectDef(a.effectKey).kind.type === 'damage');
+    const dmgApplied = ability.applies.find((a) => a.target === undefined && effectDef(a.effectKey).kind.type === 'damage');
     if (dmgApplied !== undefined) {
       const dmgDef = effectDef(dmgApplied.effectKey);
+      // Effects that ride the blast (a modifier's burn) land on the splashed enemies at their own value.
+      const riders = ability.applies.filter((a) => a.onSplash === true);
       for (const e of enemies) {
         if (!e.alive || targets.includes(e)) continue;
         if (Math.abs(e.x - primary.x) > radius) continue; // outside the blast radius → spared
-        applyToTarget(caster, ability, dmgDef, rank, cs, e, dmgApplied.durationMsOverride, dmgApplied.valuePerRank, S, rng, events, splashCoeff);
+        applyToTarget(caster, ability, dmgApplied, dmgDef, rank, cs, e, S, rng, events, splashCoeff);
+        for (const rider of riders) applyToTarget(caster, ability, rider, effectDef(rider.effectKey), rank, cs, e, S, rng, events);
       }
     }
+  }
+}
+
+/** Fire a hero's "on crit" triggers for the critical hits its cast just landed (the damage events pushed
+ *  since `from`). Only reached by heroes that carry triggers. */
+function critTriggers(caster: Combatant, allies: Combatant[], enemies: Combatant[], events: CombatEvent[], from: number): void {
+  const ctx: TriggerCtx = { heroes: allies, enemies, events };
+  const landed = events.length;
+  for (let i = from; i < landed; i++) {
+    const ev = events[i];
+    if (ev === undefined || ev.type !== 'damage' || ev.crit !== true || ev.sourceId !== caster.id) continue;
+    const victim = enemies.find((e) => e.id === ev.targetId);
+    if (victim !== undefined) onCrit(caster, victim, ctx);
   }
 }
 
@@ -427,8 +505,8 @@ export function resolveChanneledCast(
   const resolved = caster.abilities.find((a) => a.def.key === ch.key);
   if (resolved === undefined) return null;
   const cs = casterStats(caster);
-  const targets = selectTargets(caster, resolved.def, allies, enemies, rng);
-  if (targets.length > 0) applyAbilityEffectsTo(caster, resolved.def, resolved.rank, cs, targets, enemies, S, rng, events);
+  const targets = selectTargets(caster, resolved.def.target, allies, enemies, rng);
+  if (targets.length > 0) applyAbilityEffectsTo(caster, resolved.def, resolved.rank, cs, targets, allies, enemies, S, rng, events);
   return resolved.def.key;
 }
 
@@ -454,59 +532,61 @@ export function abilityAuraLine(ability: AbilityDef, rank: number): string | nul
 }
 
 /** Human-readable line per applied effect, with magnitudes resolved at the given
- *  rank + stats. `refMaxHp` stands in for the target's max HP (heal/shield basis). */
+ *  rank + stats. `refMaxHp` stands in for the target's max HP (heal/shield basis). An effect with a
+ *  target of its own says who it lands on. */
 export function abilityEffectLines(ability: AbilityDef, rank: number, cs: EffectiveStats, refMaxHp: number, healEff = 1): string[] {
   const r = Math.max(1, rank);
   const refTarget = { maxHp: refMaxHp } as Combatant;
   const refCaster = { side: 'hero' } as Combatant;
-  // Heal/HoT/Shield scale with the TARGET's max HP (× heal power), so a flat number is
-  // meaningless in a tooltip — the target varies and isn't the caster. Show the % of max
-  // HP it actually grants (heal-power-amplified AND zone-debuffed via healEff, matching the
-  // combat formula), labelled by whose HP it's a fraction of.
-  const healPctOfMaxHp = (): number => {
-    const p = ability.power;
-    if (p === undefined) return 0;
-    const coeff = p.coeff + (p.coeffPerRank ?? 0) * Math.max(0, r - 1);
-    return coeff * (1 + (cs.healPower * healEff) / 100) * 100;
-  };
   const pf = (x: number): string => `${+x.toFixed(1)}%`;
-  const hpBasis =
-    ability.target === 'self' ? 'your max HP' : ability.target === 'tank' ? "the tank's max HP" : "the target's max HP";
+  const n = (x: number): string => format(Math.round(x));
   const lines: string[] = [];
   for (const applied of ability.applies) {
     const def = effectDef(applied.effectKey);
     const k = def.kind;
+    const who = applied.target ?? ability.target;
     const dur = effectDuration(ability, def, r, applied.durationMsOverride);
     const durS = (dur / 1000).toFixed(dur % 1000 === 0 ? 0 : 1);
     // DoT magnitudes are TOTALS over the duration (see effectMagnitude); damage/dot scale
     // with the caster's own attack, so the displayed hero's stats give the real number.
-    const v = effectMagnitude(ability, def, r, cs, refTarget, refCaster, applied.valuePerRank);
-    const n = (x: number): string => format(Math.round(x));
+    const v = effectMagnitude(ability, applied, def, r, cs, refTarget, refCaster);
+    // Heal/HoT/Shield scale with the TARGET's max HP (× heal power), so a flat number is
+    // meaningless in a tooltip — the target varies and isn't the caster. Show the % of max
+    // HP it actually grants (heal-power-amplified AND zone-debuffed via healEff, matching the
+    // combat formula), labelled by whose HP it's a fraction of.
+    const healPct = (effectCoeff(ability, applied, r - 1) ?? 0) * (1 + (cs.healPower * healEff) / 100) * 100;
+    const hpBasis = who === 'self' ? 'your max HP' : who === 'tank' ? "the tank's max HP" : "the target's max HP";
     const pre = applied.chance !== undefined ? `${Math.round(applied.chance * 100)}% chance: ` : '';
+    const at = applied.target !== undefined ? ` (${TARGET_LABEL[applied.target].toLowerCase()})` : '';
+    const power = powerOf(ability, applied);
     switch (k.type) {
       case 'damage':
-        lines.push(`${pre}Damage ~${n(v)}${ability.power?.canCrit === true ? ' (can crit)' : ''}`);
+        lines.push(`${pre}Damage ~${n(v)}${power?.alwaysCrit === true ? ' (always crits)' : power?.canCrit === true ? ' (can crit)' : ''}${at}`);
         break;
       case 'dot':
-        lines.push(`${pre}~${n(v)} damage over ${durS}s`);
+        lines.push(`${pre}~${n(v)} damage over ${durS}s${at}`);
         break;
       case 'heal':
-        lines.push(`${pre}Heal ${pf(healPctOfMaxHp())} of ${hpBasis}`);
+        lines.push(`${pre}Heal ${pf(healPct)} of ${hpBasis}${at}`);
         break;
       case 'hot':
-        lines.push(`${pre}Heal ${pf(healPctOfMaxHp())} of ${hpBasis} over ${durS}s`);
+        lines.push(`${pre}Heal ${pf(healPct)} of ${hpBasis} over ${durS}s${at}`);
         break;
       case 'shield':
-        lines.push(`${pre}Shield ${pf(healPctOfMaxHp())} of ${hpBasis} for ${durS}s`);
+        lines.push(`${pre}Shield ${pf(healPct)} of ${hpBasis} for ${durS}s${at}`);
         break;
       case 'statMod': {
         const pct = k.mode === 'percent';
-        const sign = v >= 0 ? '+' : '';
-        lines.push(`${pre}${sign}${pct ? Math.round(v) : v.toFixed(1)}${pct ? '%' : ''} ${STATS[k.stat].label} for ${durS}s`);
+        const sign = v >= 0 ? '+' : '−';
+        const mag = Math.abs(v);
+        lines.push(`${pre}${sign}${pct ? +mag.toFixed(1) : mag.toFixed(1)}${pct ? '%' : ''} ${STATS[k.stat].label} for ${durS}s${at}`);
         break;
       }
       case 'weaken':
-        lines.push(`${pre}−${Math.round(v)}% damage dealt for ${durS}s`);
+        lines.push(`${pre}−${+v.toFixed(1)}% damage dealt for ${durS}s${at}`);
+        break;
+      case 'vulnerable':
+        lines.push(`${pre}+${+v.toFixed(1)}% damage taken for ${durS}s${at}`);
         break;
       case 'root':
         lines.push(`${pre}Root ${durS}s`);

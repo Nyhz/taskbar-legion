@@ -3,10 +3,11 @@ import type { GameStore } from '../store';
 import type { HeroState, Loadout } from '@/persistence/saveSchema';
 import { isGem, isItem } from '@/sim/items';
 import { findEntry, place, removeId } from '@/sim/slots';
-import { heroAbilities, canLearnNewAbility } from '@/sim/loadout';
+import { heroAbilities } from '@/sim/loadout';
+import { canSpend, learnedAbilityNodes, refundOne, sanitizeTalents, spentPoints } from '@/sim/talentRules';
 import { slotFamily, type SlotKey } from '@/data/itemSlots';
 import { totalExpToReach, MAX_LEVEL } from '@/data/stageScaling';
-import { talentNodes, rowUnlockThreshold } from '@/data/talents';
+import { tryTalentNode } from '@/data/talents';
 
 // The fielded roster (≤3 heroes). Equipment, levels and talents live here (the
 // save-shaped HeroState); the engine builds combat units from it. Cross-slice
@@ -164,28 +165,22 @@ export const createPartySlice: StateCreator<GameStore, [], [], PartySlice> = (se
     }));
   },
 
+  // Put one point into a node. Every rule of the tree (tier, two abilities, "choose one", a modifier
+  // needs its ability, the capstone's requirement) is sim/talentRules.canSpend — the same function the
+  // interface asks why a node cannot be raised.
   spendTalent: (heroId, nodeKey) => {
     const s = get();
     const hero = s.roster.find((h) => h.id === heroId);
-    if (hero === undefined || hero.talentPoints <= 0) return false;
-    const node = talentNodes(hero.classKey).find((n) => n.key === nodeKey);
+    if (hero === undefined) return false;
+    if (!canSpend(hero.classKey, hero.talents, hero.talentPoints, nodeKey).ok) return false;
+    const node = tryTalentNode(hero.classKey, nodeKey);
     if (node === undefined) return false;
-    const spent = Object.values(hero.talents).reduce((a, b) => a + b, 0);
-    if (spent < rowUnlockThreshold(node.rowIndex)) return false; // row locked
-    if ((hero.talents[nodeKey] ?? 0) >= node.maxRank) return false;
-    // Learning a NEW ability (first point) is gated: at most MAX_ACTIVE_ABILITIES ability
-    // nodes may be ranked, since the ranked set IS the active loadout. Already-ranked
-    // abilities and passive nodes are never blocked.
-    const learningNew = node.kind === 'ability' && (hero.talents[nodeKey] ?? 0) === 0;
-    if (learningNew && !canLearnNewAbility(hero.classKey, hero.talents)) return false;
     // A freshly-learned ability auto-fills a free active slot so it starts firing at once.
-    const autoActivate = learningNew && node.abilityKey !== undefined;
+    const learned = node.kind === 'ability' && (hero.talents[nodeKey] ?? 0) === 0 ? node.abilityKey : undefined;
     set((st) => ({
       roster: mapHero(st.roster, heroId, (h) => {
         const active = h.activeAbilities ?? [];
-        const nextActive = autoActivate && node.abilityKey !== undefined && active.length < 2 && !active.includes(node.abilityKey)
-          ? [...active, node.abilityKey]
-          : active;
+        const nextActive = learned !== undefined && active.length < 2 && !active.includes(learned) ? [...active, learned] : active;
         return {
           ...h,
           talentPoints: h.talentPoints - 1,
@@ -198,34 +193,23 @@ export const createPartySlice: StateCreator<GameStore, [], [], PartySlice> = (se
     return true;
   },
 
-  // Refund ONE rank of a node (right-click) → +1 point. Rejected if removing the point
-  // would drop `spent` below a still-ranked HIGHER row's unlock threshold (you'd have
-  // points stranded in a now-locked row) — refund those rows first.
+  // Refund ONE rank of a node (right-click) → its point back. Taking the last point out of an ability
+  // also gives back its modifiers. Rejected if a still-ranked node would be left in a closed tier (or
+  // the capstone short of its branch points) — refund those first (sim/talentRules.refundOne).
   refundTalent: (heroId, nodeKey) => {
     const s = get();
     const hero = s.roster.find((h) => h.id === heroId);
     if (hero === undefined) return false;
-    const cur = hero.talents[nodeKey] ?? 0;
-    if (cur <= 0) return false;
-    const node = talentNodes(hero.classKey).find((n) => n.key === nodeKey);
-    if (node === undefined) return false;
-    const nextTalents: Record<string, number> = { ...hero.talents };
-    if (cur - 1 <= 0) delete nextTalents[nodeKey];
-    else nextTalents[nodeKey] = cur - 1;
-    const newSpent = Object.values(nextTalents).reduce((a, b) => a + b, 0);
-    for (const n of talentNodes(hero.classKey)) {
-      if ((nextTalents[n.key] ?? 0) > 0 && newSpent < rowUnlockThreshold(n.rowIndex)) return false;
-    }
-    // An ability node dropped to rank 0 is no longer learned → drop it from the active set.
-    const deactivate = node.kind === 'ability' && node.abilityKey !== undefined && cur - 1 === 0;
+    const result = refundOne(hero.classKey, hero.talents, nodeKey);
+    if (!result.ok) return false;
+    // An ability dropped to rank 0 is no longer learned → drop it from the active set.
+    const learned = new Set(learnedAbilityNodes(hero.classKey, result.talents).map((n) => n.key));
     set((st) => ({
       roster: mapHero(st.roster, heroId, (h) => ({
         ...h,
-        talentPoints: h.talentPoints + 1,
-        talents: nextTalents,
-        activeAbilities: deactivate && node.abilityKey !== undefined
-          ? (h.activeAbilities ?? []).filter((k) => k !== node.abilityKey)
-          : h.activeAbilities,
+        talentPoints: h.talentPoints + result.refunded,
+        talents: result.talents,
+        activeAbilities: (h.activeAbilities ?? []).filter((k) => learned.has(k)),
       })),
       configEpoch: st.configEpoch + 1,
     }));
@@ -235,7 +219,7 @@ export const createPartySlice: StateCreator<GameStore, [], [], PartySlice> = (se
   respec: (heroId) =>
     set((st) => ({
       roster: mapHero(st.roster, heroId, (h) => {
-        const refunded = Object.values(h.talents).reduce((a, b) => a + b, 0);
+        const refunded = spentPoints(h.talents);
         // Wiping talents un-ranks every ability → clear the active selection too.
         return { ...h, talentPoints: h.talentPoints + refunded, talents: {}, activeAbilities: [] };
       }),
@@ -269,15 +253,18 @@ export const createPartySlice: StateCreator<GameStore, [], [], PartySlice> = (se
       if (hero === undefined || lo === undefined || lo === null) return st;
       if (lo.classKey !== hero.classKey) return st;
 
-      const totalEarned = hero.talentPoints + Object.values(hero.talents).reduce((a, b) => a + b, 0);
-      const wanted = Object.values(lo.talents).reduce((a, b) => a + b, 0);
+      // The preset goes through the tree's rules first: one saved against an older tree (or with
+      // more points than the hero has now) is trimmed to what is valid, never applied blindly.
+      const totalEarned = hero.talentPoints + spentPoints(hero.talents);
+      const build = sanitizeTalents(hero.classKey, lo.talents, totalEarned, lo.activeAbilities);
+      const learned = learnedAbilityNodes(hero.classKey, build.talents).map((n) => n.key);
 
       return {
         roster: mapHero(st.roster, heroId, (h) => ({
           ...h,
-          talents: { ...lo.talents },
-          talentPoints: Math.max(0, totalEarned - wanted),
-          activeAbilities: [...lo.activeAbilities],
+          talents: build.talents,
+          talentPoints: build.talentPoints,
+          activeAbilities: [...lo.activeAbilities.filter((k) => learned.includes(k)), ...learned.filter((k) => !lo.activeAbilities.includes(k))],
         })),
         configEpoch: st.configEpoch + 1,
       };

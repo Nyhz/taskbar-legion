@@ -1,9 +1,14 @@
 // Economy + character-growth model for the progression probe: XP→level, a default talent
 // allocation (so heroes actually have abilities/ultimates), and the gold→tech spend policy.
 //
-// Talent policy: spend points (≈ level) greedily, ability nodes first within each unlocked
-// row (rows unlock at rowIndex*10 spent), so the Priest's heal and each class's signature
-// come online early — an "average" build, not a min-maxed one.
+// Talent policy (class redesign, docs/redesign/CLASSES.md): an "average" build, not a min-maxed one, and
+// always a build the tree accepts (every point goes through sim/talentRules.canSpend):
+//   1. the class's first two abilities (the tier-1 pair, the two the probe always fielded) to rank 5;
+//   2. the whole TRUNK, lowest tier first: stat passives and the three role talents;
+//   3. ONE branch per role (PROBE_BRANCH: Knight → Bastion, Ranger → Marksman, Priest → Devotion), lowest tier
+//      first: its passives, the "choose one" modifier of an ability the hero has, and its capstone as soon as
+//      tier 10 and the 25 branch points allow. The branch's own ability stays unlearned (two abilities already);
+//   4. whatever is left goes into the other branch: its passives, and its modifier of an ability the hero has.
 //
 // Tech policy (the #1 pacing lever — easy to re-order here): bootstrap the party, then make
 // chests actually flow (auto-open + storage, which fight the ~50% overflow loss), then
@@ -11,7 +16,8 @@
 
 import { totalExpToReach, MAX_LEVEL } from '@/data/stageScaling';
 import { TECH_NODES, TECH_NODE_MAP, nodeCost } from '@/data/techTree';
-import { talentNodes } from '@/data/talents';
+import { talentNodes, TRUNK, type TalentNode } from '@/data/talents';
+import { canSpend } from '@/sim/talentRules';
 import type { HeroConfig } from '@/sim/loadout';
 
 const ABILITY_RANK_CAP = 5; // stop dumping points into one ability past this
@@ -43,32 +49,33 @@ export function levelForXp(xp: number): number {
   return lvl;
 }
 
-/** Greedy "average" talent build for `points` (≈ level): fill unlocked rows, abilities first.
- *  A row unlocks once cumulative spent ≥ rowIndex*10 (rowUnlockThreshold). */
+/** The branch the probe's hero of each class specialises in (one per role). */
+export const PROBE_BRANCH: Record<string, string> = { knight: 'bastion', ranger: 'marksman', priest: 'devotion' };
+
+/** How soon the policy wants a node: abilities, then the trunk, then its branch, then the other one. */
+function priority(classKey: string, n: TalentNode): number {
+  if (n.kind === 'ability') return 0;
+  if (n.lane === TRUNK) return 1;
+  return n.lane === PROBE_BRANCH[classKey] ? 2 : 3;
+}
+
+/** Greedy "average" talent build for `points` (≈ level), following the policy at the top of this file. Among
+ *  the nodes the tree lets it raise, it takes the most wanted, then the lowest tier, then tree order. */
 export function defaultTalents(classKey: string, points: number): Record<string, number> {
   const nodes = talentNodes(classKey);
+  // Only the first two abilities are ever learned (the probe's fixed pair).
+  const pair = new Set(nodes.filter((n) => n.kind === 'ability').slice(0, 2).map((n) => n.key));
   const ranks: Record<string, number> = {};
   let spent = 0;
   while (spent < points) {
-    let pick: (typeof nodes)[number] | undefined;
-    let pickIsAbility = false;
+    let pick: TalentNode | undefined;
     for (const n of nodes) {
-      if (n.rowIndex * 10 > spent) continue; // row not yet unlocked
-      const r = ranks[n.key] ?? 0;
-      const isAbility = n.kind === 'ability';
-      if (isAbility && r >= ABILITY_RANK_CAP) continue;
-      // prefer the lowest-row ability; otherwise the lowest-row node available
-      if (pick === undefined) {
-        pick = n;
-        pickIsAbility = isAbility;
-      } else if (isAbility && !pickIsAbility) {
-        pick = n;
-        pickIsAbility = true;
-      } else if (isAbility === pickIsAbility && n.rowIndex < pick.rowIndex) {
-        pick = n;
-      }
+      if (n.kind === 'ability' && (!pair.has(n.key) || (ranks[n.key] ?? 0) >= ABILITY_RANK_CAP)) continue;
+      if (!canSpend(classKey, ranks, points - spent, n.key).ok) continue;
+      if (pick === undefined || priority(classKey, n) < priority(classKey, pick) ||
+        (priority(classKey, n) === priority(classKey, pick) && n.rowIndex < pick.rowIndex)) pick = n;
     }
-    if (pick === undefined) break; // nothing left to rank (everything capped)
+    if (pick === undefined) break; // nothing left to rank (everything bought or closed)
     ranks[pick.key] = (ranks[pick.key] ?? 0) + 1;
     spent += 1;
   }

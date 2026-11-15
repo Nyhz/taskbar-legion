@@ -6,6 +6,8 @@
 // All tunable numbers live HERE (data-driven; the sim reads them). The companion
 // effect markers (fx_invuln / fx_mark / buff_enrage_*) are in data/effects.ts.
 
+import type { TriggerAction, TriggerDef } from './triggers';
+
 export type UltimateTrigger =
   | 'onLethalDamage' // checked in the kill path (Knight)
   | 'onBossEngage'; // fired once when a boss first enters the fight (Priest, Ranger)
@@ -62,4 +64,48 @@ export function ultimateForClass(classKey: string, level: number): UltimateDef |
   const u = ULTIMATES[classKey];
   if (u === undefined || level < u.unlockLevel) return undefined;
   return u;
+}
+
+/** How a capstone node transforms the class ultimate (docs/redesign/CLASSES.md §2.4). Pure data. */
+export interface UltimatePatch {
+  /** The engage ultimates also fire against elites. */
+  vs?: 'eliteOrBoss';
+  /** New duration of what the ultimate applies. */
+  durationMs?: number;
+  /** Extra actions when the ultimate fires. */
+  addActions?: readonly TriggerAction[];
+  /** Extra triggers the hero carries with the capstone. */
+  addTriggers?: readonly TriggerDef[];
+}
+
+/** The ultimate as TRIGGERS (data/triggers.ts) — the one place its `effect` numbers turn into behaviour, so
+ *  the sim fires ultimates through the same generic path as every other trigger. `patch` is the capstone's. */
+export function ultimateTriggers(u: UltimateDef, patch?: UltimatePatch): TriggerDef[] {
+  const e = u.effect;
+  const extra = patch?.addActions ?? [];
+  const vs = patch?.vs ?? 'boss';
+  let own: TriggerDef;
+  if (e.type === 'deathBlock') {
+    own = {
+      key: u.key, event: { on: 'lethal', who: 'self' }, uses: 'ultCharge',
+      actions: [{ do: 'rescue', hpFrac: e.healFrac, invulnMs: e.invulnMs }, ...extra],
+    };
+  } else if (e.type === 'partyEnrage') {
+    const durationMs = patch?.durationMs ?? e.durationMs;
+    own = {
+      key: u.key, event: { on: 'enemyEngage', vs },
+      actions: [
+        { do: 'apply', effectKey: 'buff_enrage_cdr', to: 'allAllies', value: e.cdrPct, durationMs },
+        { do: 'apply', effectKey: 'buff_enrage_as', to: 'allAllies', value: e.attackSpeedPct, durationMs },
+        ...extra,
+      ],
+    };
+  } else {
+    const durationMs = patch?.durationMs ?? e.durationMs;
+    own = {
+      key: u.key, event: { on: 'enemyEngage', vs }, marker: u.key,
+      actions: [{ do: 'apply', effectKey: 'fx_mark', to: 'subject', value: e.bonusDamagePct, durationMs }, ...extra],
+    };
+  }
+  return [own, ...(patch?.addTriggers ?? [])];
 }

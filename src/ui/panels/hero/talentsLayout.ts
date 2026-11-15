@@ -7,26 +7,35 @@ import { WING_CONTENT_ART } from '../panelLayout';
 // rowUnlockThreshold(N) points spent) and the bar down the left edge fills with the points spent, so it says why
 // a row is still closed; the points a closed tier needs stand beside its row.
 //
-// Inside a tier, nodes stand on a LANE (a band of columns). Today every tier has ONE lane, the trunk: its
-// abilities stack from the left and its passives from the right, so abilities and passives each read as a
-// column band down the tiers. The redesign's specialisation branches (docs/redesign/CLASSES.md: two branches
-// from tier 5, modifiers, a capstone) become extra lanes of the same tiers — add them to `lanesOf` and give each
-// its `left`; nothing else here needs to change.
+// A row is four slots wide. The TRUNK (tiers 1–4) fills them in the data's order: abilities, the role talent,
+// the stat passives. From tier 5 the row splits in two LANES of two slots, one per specialisation branch
+// (docs/redesign/CLASSES.md §2.1): the first branch on the left, the second on the right; a branch's lone
+// capstone stands centred on its lane. Serviceable, not final: the follow-up owns the look (lane headers, the
+// "choose one" link, connectors).
 
 /** Room on the left for the points a closed tier needs and for the bar of points spent. */
 export const GUTTER = 22;
-/** A lane is wide enough for four nodes side by side; they share what the gutter leaves of the wing. */
-const LANE_SLOTS = 4;
-export const SLOT_PITCH = (WING_CONTENT_ART - GUTTER) / LANE_SLOTS; // 33
-/** Node footprints (kit `Node`): an ability plate is 24, a passive seal 22. In this tree the rank pips sit on the
- *  node's bottom edge and reach 1 px below it. */
+/** A row is four nodes side by side; they share what the gutter leaves of the wing. */
+const ROW_SLOTS = 4;
+export const SLOT_PITCH = (WING_CONTENT_ART - GUTTER) / ROW_SLOTS; // 33
+/** Node footprints (kit `Node`): an ability or modifier plate is 24, a passive or role seal 22, a capstone's
+ *  octagon 30. In this tree the rank pips sit on the node's bottom edge and reach 1 px below it; a node with a
+ *  single rank (modifier, capstone) shows none — its frame already says bought or not. */
 export const PLATE = 24;
 export const SEAL = 22;
+export const OCTAGON = 30;
 const PIPS = 1;
-const ROW_GAP = 1;
-/** Height of a tier's row: its tallest node, its pips and a pixel of air. */
-const ROW_WITH_ABILITY = PLATE + PIPS + ROW_GAP; // 26
-const ROW_OF_PASSIVES = SEAL + PIPS + ROW_GAP; // 24
+
+/** Footprint of a node's frame. */
+export function nodeSize(node: TalentNode): number {
+  if (node.kind === 'capstone') return OCTAGON;
+  return node.kind === 'ability' || node.kind === 'modifier' ? PLATE : SEAL;
+}
+
+/** Whether the node shows rank pips. */
+export function hasPips(node: TalentNode): boolean {
+  return node.maxRank > 1;
+}
 
 export interface PlacedNode {
   node: TalentNode;
@@ -53,53 +62,44 @@ export interface TalentLayout {
   height: number;
 }
 
-interface Lane {
-  nodes: TalentNode[];
-  /** Left edge of the lane inside the tree (after the gutter). */
-  left: number;
-}
-
-/** The lanes of one tier. One for now (the trunk); branches add theirs here. */
-function lanesOf(row: readonly TalentNode[]): Lane[] {
-  return [{ nodes: [...row], left: GUTTER }];
-}
-
-/** Abilities stack from the left of the lane (a lone ability sits half a step in, centred on the two-slot
- *  ability band); passives stack from the right. Seals are centred on the row's plates. */
-function placeLane(lane: Lane, tier: number, y: number, rowHeight: number): PlacedNode[] {
-  const abilities = lane.nodes.filter((n) => n.kind === 'ability');
-  const passives = lane.nodes.filter((n) => n.kind !== 'ability');
-  const lone = abilities.length === 1 ? SLOT_PITCH / 2 : 0;
-  const tall = rowHeight - PIPS - ROW_GAP; // the tallest node of the row
-  const placed: PlacedNode[] = abilities.map((node, i) => ({
-    node,
-    tier,
-    x: Math.round(lane.left + lone + i * SLOT_PITCH + (SLOT_PITCH - PLATE) / 2),
-    y: y + (tall - PLATE) / 2,
-  }));
-  passives.forEach((node, i) => {
-    const fromRight = passives.length - 1 - i;
-    placed.push({
-      node,
-      tier,
-      x: Math.round(lane.left + (LANE_SLOTS - 1 - fromRight) * SLOT_PITCH + (SLOT_PITCH - SEAL) / 2),
-      y: y + (tall - SEAL) / 2,
-    });
+/** Centre x of each node of a row, in slots from the left edge of the tree's node area. */
+function slotCentres(row: readonly TalentNode[], branchKeys: readonly string[]): number[] {
+  const perLane = new Map<string, TalentNode[]>();
+  for (const n of row) perLane.set(n.lane, [...(perLane.get(n.lane) ?? []), n]);
+  const laneSlots = ROW_SLOTS / Math.max(1, branchKeys.length);
+  return row.map((n) => {
+    const lane = perLane.get(n.lane) ?? [n];
+    const i = lane.indexOf(n);
+    const branch = branchKeys.indexOf(n.lane);
+    if (branch < 0) return i + 0.5; // the trunk: one slot each, in order
+    // A branch's lane: its nodes side by side, or its lone node (the capstone) centred on the lane.
+    return branch * laneSlots + (lane.length === 1 ? laneSlots / 2 : i + 0.5);
   });
-  return placed;
 }
 
 export function layoutTalentTree(tree: ClassTalentTree): TalentLayout {
   const nodes: PlacedNode[] = [];
   const tiers: PlacedTier[] = [];
+  const branchKeys = tree.branches.map((b) => b.key);
   let y = 0;
   tree.rows.forEach((row, tier) => {
-    const height = row.some((n) => n.kind === 'ability') ? ROW_WITH_ABILITY : ROW_OF_PASSIVES;
+    // A row is as tall as its tallest node (with its pips); nodes are centred on the tallest frame.
+    const tall = Math.max(SEAL, ...row.map(nodeSize));
+    const height = Math.max(SEAL + PIPS, ...row.map((n) => nodeSize(n) + (hasPips(n) ? PIPS : 0)));
     tiers.push({ tier, y, height, need: rowUnlockThreshold(tier) });
-    for (const lane of lanesOf(row)) nodes.push(...placeLane(lane, tier, y, height));
+    const centres = slotCentres(row, branchKeys);
+    row.forEach((node, i) => {
+      const size = nodeSize(node);
+      nodes.push({
+        node,
+        tier,
+        x: Math.round(GUTTER + (centres[i] ?? 0.5) * SLOT_PITCH - size / 2),
+        y: y + Math.floor((tall - size) / 2),
+      });
+    });
     y += height;
   });
-  return { nodes, tiers, width: WING_CONTENT_ART, height: Math.max(ROW_OF_PASSIVES, y) };
+  return { nodes, tiers, width: WING_CONTENT_ART, height: Math.max(SEAL + PIPS, y) };
 }
 
 /** How far the bar of points spent is filled, in px from its top end: it reaches each tier's tick exactly when
