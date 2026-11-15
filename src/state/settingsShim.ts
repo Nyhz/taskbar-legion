@@ -12,7 +12,10 @@ const KEY = 'taskbar-legion.settings.v0';
 export interface UiSettings {
   uiScale: UiScale;
   menuScale: number; // independent menu zoom (0.75 / 1 / 1.25); 1 = native size
-  gameScale: number; // independent strip+topbar zoom (0.75 / 1 / 1.25); 1 = native size
+  gameScale: number; // strip + top bar zoom: a whole-pixel stop of state/pixelScale (see `wholePixelScale`)
+  /** True when `gameScale` was saved by the whole-pixel system. Saves from before it hold 0.75 / 1 / 1.25 of
+   *  another unit: honouring one of those shrinks the game (0.75 lands on ×1), so they are not read. */
+  wholePixelScale?: boolean;
   dockOrientation: DockOrientation;
   retryStage: boolean; // keep the party on its stage after a wipe instead of retreating
   hideSocketWarning: boolean; // skip the "gem can't be recovered" confirm when socketing
@@ -29,6 +32,11 @@ function hasLocalStorage(): boolean {
     typeof localStorage.getItem === 'function' &&
     typeof localStorage.setItem === 'function'
   );
+}
+
+/** The game scale the player last had, or undefined when the stored one predates the whole-pixel system. */
+export function storedGameScale(settings: Partial<UiSettings>): number | undefined {
+  return settings.wholePixelScale === true ? settings.gameScale : undefined;
 }
 
 export function loadSettings(): Partial<UiSettings> {

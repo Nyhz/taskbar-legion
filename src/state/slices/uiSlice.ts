@@ -1,7 +1,7 @@
 import type { StateCreator } from 'zustand';
 import { getLanguage, isLang, setLanguage, subscribeLanguage } from '@/i18n/core';
 import type { Lang } from '@/i18n/core';
-import { loadSettings, saveSettings } from '../settingsShim';
+import { loadSettings, saveSettings, storedGameScale } from '../settingsShim';
 import { UI_SCALE, snapGameScale } from '../pixelScale';
 
 export type PanelKey =
@@ -99,6 +99,7 @@ export const createUiSlice: StateCreator<UiSlice, [], [], UiSlice> = (set, get) 
       uiScale: get().uiScale,
       menuScale: get().menuScale,
       gameScale: get().gameScale,
+      wholePixelScale: true,
       dockOrientation: get().dockOrientation,
       retryStage: get().retryStage,
       hideSocketWarning: get().hideSocketWarning,
@@ -115,7 +116,7 @@ export const createUiSlice: StateCreator<UiSlice, [], [], UiSlice> = (set, get) 
     windowPos: {},
     uiScale: UI_SCALE, // fixed baseline — the user knobs are menuScale / gameScale
     menuScale: Math.min(MENU_SCALE_MAX, persisted.menuScale ?? 1), // clamp a stale 1.25 down
-    gameScale: snapGameScale(persisted.gameScale ?? 1, displayPixelRatio(), displayViewportHeight()), // whole screen pixels per art pixel
+    gameScale: snapGameScale(storedGameScale(persisted) ?? 1, displayPixelRatio(), displayViewportHeight()), // whole screen pixels per art pixel
     dockOrientation: persisted.dockOrientation ?? 'bottom',
     retryStage: persisted.retryStage ?? false,
     hideSocketWarning: persisted.hideSocketWarning ?? false,
