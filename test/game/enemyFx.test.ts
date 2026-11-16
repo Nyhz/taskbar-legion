@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { ABILITIES, WHOLE_PARTY } from '@/data/abilities';
 import { EFFECT_LOOKS, hasOwnLook, wornLooks } from '@/game/render/abilityFx';
 import { categorize } from '@/game/render/effectAuras';
-import { AREA_BLOWS, FOE_SHOT, WARN_HOT_FROM, areaBlow, burstOffsets, shotGoesOver, warnTiles, waveReachMs } from '@/game/render/enemyFx';
+import { AREA_BLOWS, FOE_SHOT, WARN_HOT_FROM, areaBlow, bossLook, burstOffsets, markFrame, shotGoesOver, warnTiles, waveReachMs } from '@/game/render/enemyFx';
 import { fxMeta } from '@/game/render/fxData';
 import { KIT_HITS } from '@/game/render/bossFx';
 
@@ -46,6 +46,7 @@ describe('area blows', () => {
         expect(fxMeta(blow.warn.hot)?.loop, blow.warn.hot).toBe(true);
       }
       if (blow.origin !== undefined) expect(fxMeta(blow.origin)?.loop, blow.origin).toBe(false);
+      if (blow.mark !== undefined) expect(blow.warn, `${key}: a mark goes with a wind-up`).toBeDefined();
       expect(fxMeta(blow.jolt)?.loop, blow.jolt).toBe(false);
       if (blow.wave.kind === 'bursts') expect(fxMeta(blow.wave.fx)?.loop, blow.wave.fx).toBe(false);
       else {
@@ -54,6 +55,32 @@ describe('area blows', () => {
       }
       expect(blow.speed).toBeGreaterThan(0);
     }
+  });
+
+  it('the Anvilfall has its own look: a mark over the front hero stepped through with the cast, an impact on him, in the boss\'s look', () => {
+    const crush = areaBlow('boss_crush');
+    expect(crush?.mark).toBeDefined();
+    expect(crush?.impact).toBeDefined();
+    for (const look of [crush?.mark, crush?.impact]) {
+      for (const fx of [look?.fx, look?.magic]) {
+        expect(fxMeta(fx ?? '')?.loop, fx).toBe(false);
+        expect(fxMeta(fx ?? '')?.n ?? 0, fx).toBeGreaterThanOrEqual(5);
+      }
+    }
+    // Its own warning and wave, not the slam's or the shockwave's.
+    expect(crush?.warn?.fx).not.toBe(areaBlow('boss_slam')?.warn?.fx);
+    expect(crush?.wave.fx).not.toBe(areaBlow('boss_shockwave')?.wave.fx);
+    // Steel for a boss whose blows are mostly steel, the magic look for a spell-heavy one.
+    const mark = crush?.mark ?? { fx: '', magic: '' };
+    expect(bossLook(mark, 0.4)).toBe(mark.fx);
+    expect(bossLook(mark, 0.6)).toBe(mark.magic);
+    expect(bossLook(mark, undefined)).toBe(mark.fx);
+    // The mark steps from its first frame to its last over the cast.
+    expect(markFrame(0, 10)).toBe(0);
+    expect(markFrame(0.5, 10)).toBe(5);
+    expect(markFrame(0.999, 10)).toBe(9);
+    expect(markFrame(1, 10)).toBe(9);
+    expect(markFrame(-1, 10)).toBe(0);
   });
 
   it('the warning grows from the foe back through the party and covers all of it well before the blow', () => {

@@ -36,11 +36,35 @@ export interface AreaBlow {
   warn?: { fx: string; hot: string; step: number };
   /** A one-shot on the ground where the blow starts. */
   origin?: string;
+  /** A blow aimed at the FRONT hero (the Crushing Blow): over him while it is wound up, a sign the game steps
+   *  through frame by frame with the cast (`mark`), and where it lands on him, its impact. Each comes in two
+   *  looks — steel for a boss whose blows are mostly steel, `magic` for a spell-heavy one (bossLook): what to brace with. */
+  mark?: BlowLook;
+  impact?: BlowLook;
   wave: BlowWave;
   /** How fast the wave runs along the ground, in pixels per ms. */
   speed: number;
   /** The one-shot under each hero it reaches. */
   jolt: string;
+}
+
+/** One of a blow's signs in its two looks. */
+export interface BlowLook {
+  fx: string;
+  magic: string;
+}
+
+/** The look of a sign for a boss that hits with `magicShare` of its damage as magic (data/bossKit: 0.4 or 0.6):
+ *  the magic one when magic is the larger part. */
+export function bossLook(look: BlowLook, magicShare: number | undefined): string {
+  return (magicShare ?? 0) > 0.5 ? look.magic : look.fx;
+}
+
+/** Which frame of a `frames`-long mark shows at `progress` (0…1) of the cast: the first at the start, the last
+ *  from the moment the cast is all but done. */
+export function markFrame(progress: number, frames: number): number {
+  const n = Math.max(1, Math.floor(frames));
+  return Math.max(0, Math.min(n - 1, Math.floor(Math.max(0, progress) * n)));
 }
 
 const WARN = { fx: 'warn_crack', hot: 'warn_crack_hot', step: 22 };
@@ -55,9 +79,19 @@ export const AREA_BLOWS: Readonly<Record<string, AreaBlow>> = {
   boss_slam: { warn: WARN, wave: { kind: 'bursts', fx: 'slam_spike', every: 19 }, speed: 0.3, jolt: 'jolt' },
   // Shockwave: a ring where it is let go, and a wall of force as tall as a hero running back through everyone.
   boss_shockwave: { warn: WARN, origin: 'shock_ring', wave: { kind: 'front', fx: 'shock_front', trail: 'shock_trail', trailEvery: 20 }, speed: 0.26, jolt: 'jolt' },
-  // The Crushing Blow (round 7, data/bossKit CRUSH): the slam's rock teeth, through the whole party — its own
-  // longer wind-up is what tells it from the shockwave.
-  boss_crush: { warn: WARN, wave: { kind: 'bursts', fx: 'slam_spike', every: 15 }, speed: 0.34, jolt: 'jolt' },
+  // The Crushing Blow (round 7, data/bossKit CRUSH; its own look 2026-11-16 — tools/assets/pipeline/fx/crush.py):
+  // while it is wound up an anvil lowers out of the sky onto the FRONT hero and a seal tightens under his feet —
+  // iron and brass for a boss whose blows are mostly steel, violet runes for a spell-heavy one — and a seam of runes
+  // glows along the path behind him. It lands on him (the anvil, a flash, the ground cratered) and its magic shock
+  // runs back through the others in a low violet ripple, crackling under each.
+  boss_crush: {
+    warn: { fx: 'warn_rune', hot: 'warn_rune_hot', step: 22 },
+    mark: { fx: 'crush_mark', magic: 'crush_mark_magic' },
+    impact: { fx: 'crush_impact', magic: 'crush_impact_magic' },
+    wave: { kind: 'front', fx: 'crush_shock', trail: 'crush_trail', trailEvery: 16 },
+    speed: 0.42,
+    jolt: 'crush_zap',
+  },
   // Resaca (the Ninth Wave's own mechanic, data/bossKit): the path goes under while it is wound up, then a wave as
   // tall as a hero runs back through the party and drags it along.
   boss_undertow: { warn: { fx: 'warn_tide', hot: 'warn_tide_hot', step: 22 }, origin: 'undertow_surge', wave: { kind: 'front', fx: 'undertow_front', trail: 'undertow_trail', trailEvery: 18 }, speed: 0.3, jolt: 'undertow_splash' },

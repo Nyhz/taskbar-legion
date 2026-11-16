@@ -1,6 +1,6 @@
 {
-  "updated": "16 nov 2026, tarde",
-  "intro": "Pendiente de confirmar: el signo del aura nueva del Apoyo, «Armas encantadas» (ronda 5 de equilibrio).",
+  "updated": "16 nov 2026, noche",
+  "intro": "Pendiente de confirmar: el signo del aura nueva del Apoyo, «Armas encantadas» (ronda 5), y el nombre y el aspecto del golpe fuerte nuevo de los jefes de mundo (ronda 7).",
   "sections": [
     {
       "id": "aura-enchant",
@@ -16,6 +16,68 @@
       ],
       "questions": [
         "¿Te vale la estrella violeta como signo de «Armas encantadas», o prefieres otro dibujo (por ejemplo, una hoja con un destello)?"
+      ]
+    },
+    {
+      "id": "crush",
+      "title": "El golpe fuerte de los jefes de mundo: nombre y aspecto",
+      "eyebrow": "Ronda 7 · la defensa importa",
+      "text": "Desde Averno, cada jefe de mundo lanza cada 24 s un golpe fuerte con 2 s de aviso, contra el héroe de delante: sin defensas lo mata; con Piel de piedra, Tajo debilitante, un escudo o Baluarte lo aguanta. A los de detrás les llega una sacudida mágica que frena la resistencia mágica. Mientras se prepara, un yunque baja del cielo sobre el de delante y un sello se cierra bajo sus pies; por el camino de detrás brilla una hilera de runas (por ahí correrá la sacudida). Si el jefe golpea sobre todo con acero (60 % físico), el yunque es de hierro y latón: pide armadura. Si golpea sobre todo con magia (60 % mágico), es violeta con una runa: pide resistencia mágica. Al caer: el yunque, un destello, el suelo reventado bajo el héroe, y una onda violeta baja que corre hacia atrás y chisporrotea bajo cada uno.",
+      "items": [
+        {
+          "title": "Averno 4 (jefe de acero): el aviso a media carga",
+          "text": "El yunque de hierro sobre el Knight, el sello aún abierto, las runas por detrás.",
+          "img": "img/crush/averno_warn1.png"
+        },
+        {
+          "title": "Averno 4: el último tercio del aviso",
+          "text": "El yunque casi encima, las flechas encendidas, el sello cerrado y ardiendo.",
+          "img": "img/crush/averno_warn2.png"
+        },
+        {
+          "title": "Averno 4, ampliado",
+          "text": "El yunque de hierro y latón, las flechas y el sello encendidos sobre el Knight (que ya se ha hecho piedra: Piel de piedra salta con el aviso).",
+          "img": "img/crush/averno_warn2_zoom.png"
+        },
+        {
+          "title": "Averno 4: el golpe",
+          "text": "Cae sobre el Knight; la sacudida violeta corre hacia la Ranger y la Priest.",
+          "img": "img/crush/averno_impact.png"
+        },
+        {
+          "title": "Averno 4: el golpe, ampliado",
+          "text": "El destello sobre el Knight y la onda violeta saliendo hacia atrás.",
+          "img": "img/crush/averno_impact_zoom.png"
+        },
+        {
+          "title": "Tormento 5 (jefe de magia): el aviso",
+          "text": "El mismo golpe en su versión mágica: yunque violeta con runa.",
+          "img": "img/crush/torment_warn1.png"
+        },
+        {
+          "title": "Tormento 5: el último tercio del aviso",
+          "img": "img/crush/torment_warn2.png"
+        },
+        {
+          "title": "Tormento 5, ampliado",
+          "text": "El yunque violeta con su runa: este jefe golpea sobre todo con magia.",
+          "img": "img/crush/torment_warn2_zoom.png"
+        },
+        {
+          "title": "Tormento 5: el golpe",
+          "img": "img/crush/torment_impact.png"
+        },
+        {
+          "title": "Los dibujos, ampliados",
+          "text": "De arriba abajo: el aviso de acero y el mágico (fotograma a fotograma con la carga), las runas del camino, la caída de acero y la mágica, la onda, su rastro y el chispazo bajo cada héroe.",
+          "img": "img/crush/sheet.png"
+        }
+      ],
+      "questions": [
+        "Nombre (inglés · español). Propuestas: «Anvilfall · Caída del yunque» (puesto ahora, va con el dibujo) · «Hammerfall · Martillazo» · «Earthbreaker · Rompetierras» · «Crushing Blow · Golpe demoledor» (el provisional de antes). ¿Cuál, u otro?",
+        "¿Te vale el yunque que baja del cielo como aviso de «golpe enorme que hay que aguantar», o prefieres otro objeto (un puño de piedra, un martillo)?",
+        "¿Se entiende la diferencia entre el yunque de hierro (pide armadura) y el violeta con runa (pide resistencia mágica)?",
+        "La hilera de runas por detrás avisa de la sacudida mágica para la retaguardia. ¿Clara, o la quieres más fuerte?"
       ]
     }
   ]

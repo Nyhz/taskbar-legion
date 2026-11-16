@@ -1,6 +1,7 @@
 import { Container, Sprite, type Texture } from 'pixi.js';
 import { fxFrameAt, fxMeta, type FxMeta } from './fxData';
 import { fxFrames } from './fxTextures';
+import { markFrame } from './enemyFx';
 
 // The two things an enemy's AREA BLOW puts on the ground that are neither a one-shot nor worn by a body
 // (render/enemyFx says which): the WARNING — tiles of the ground splitting, laid afresh every frame for as long as
@@ -54,6 +55,18 @@ export class BlowFxLayer extends Container {
       const texture = tile.frames[frame];
       if (texture !== undefined) tile.sprite.texture = texture;
     }
+  }
+
+  /** Show the mark `fx` with its attach point at (x, y), on the frame that `progress` (0…1) of the cast calls for
+   *  (render/enemyFx markFrame). Call every frame the blow is wound up, like `warn`. */
+  mark(fx: string, x: number, y: number, progress: number): void {
+    const tile = this.tile(fx);
+    if (tile === null) return;
+    tile.used = true;
+    tile.sprite.visible = true;
+    tile.sprite.position.set(Math.round(x), Math.round(y));
+    const texture = tile.frames[markFrame(progress, tile.frames.length)];
+    if (texture !== undefined) tile.sprite.texture = texture;
   }
 
   /** Send a front running left along the ground from `fromX` to `toX` at `speed` px/ms; `onTrail(x)` is called

@@ -83,7 +83,7 @@ export const talents = {
   firesCharged: 'When its {n} charges are full.',
   firesLethal: 'When a blow would kill the hero. Uses per stage: {n}.',
   firesBossWindup: 'When it winds up a blow.',
-  firesBossWindupHeavy: 'When it winds up its Crushing Blow (any blow, if it has none).',
+  firesBossWindupHeavy: 'When it winds up its Anvilfall (any blow, if it has none).',
   firesAgainstBoss: 'Against a boss: {rule}.',
   firesOr: ', or ',
   firesBoss: 'On engaging a stage boss or a world boss.',

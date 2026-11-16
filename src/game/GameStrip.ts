@@ -29,7 +29,7 @@ import { creatureRole, enemyRank } from './render/figureData';
 import { loadHeroFigures, worldFigures } from './render/figureTextures';
 import { BLOW_SIGNS, CLEANSE_FLASH, LIGHT_SHOTS, abilityLook, bandCount, hasAuraLook, type AbilityLook, type BandLook, type CastBurst } from './render/abilityFx';
 import { BlowFxLayer } from './render/BlowFx';
-import { BLOW_PAST_PARTY, FOE_ARC_HEIGHT, FOE_SHOT, WARN_HOT_FROM, areaBlow, burstOffsets, shotGoesOver, warnTiles, waveReachMs, type AreaBlow } from './render/enemyFx';
+import { BLOW_PAST_PARTY, FOE_ARC_HEIGHT, FOE_SHOT, WARN_HOT_FROM, areaBlow, bossLook, burstOffsets, shotGoesOver, warnTiles, waveReachMs, type AreaBlow } from './render/enemyFx';
 import { FxShots, fxLoop, type FxLoop } from './render/BodyFx';
 import { BossKitFx } from './render/BossKitFx';
 import { SHOVE } from './render/bossFx';
@@ -54,6 +54,8 @@ import { isStripDragging } from '@/platform/dragState';
 // render layer READS sim state and never mutates it.
 
 const STRIP_HEIGHT = 160; // must match App.STRIP_LOGICAL_HEIGHT
+// A hero this close behind the front of an area blow's stretch is the front hero it lands on (render/enemyFx impact).
+const BLOW_FRONT_REACH = 20;
 const STRIP_WIDTH = 600; // must match App.STRIP_LOGICAL_WIDTH — the canvas is a FIXED logical size
                          // (rendered at ×uiScale); Game Scale zooms the whole strip in the DOM.
 // The fighters stand on the backdrop art's path line: the figures anchor exactly on their ground row, so the
@@ -110,8 +112,12 @@ export class GameStrip {
   private readonly fxGround = new FxShots();
   private readonly fxAir = new FxShots(); // ability one-shots played over the fighters (a blast, arrows coming down)
   // An enemy's area blow (render/enemyFx): the warning laid on the ground while it is wound up — under the
-  // fighters, a child of fxGround — and the front that runs back through the party, over them (a child of fxAir).
+  // fighters, a child of fxGround — and the front that runs back through the party and the mark of a blow aimed at
+  // the front hero, over them (a child of fxAir).
   private readonly blowWarn = new BlowFxLayer();
+  // The share of its damage that is magic, by the boss winding up a blow (seen while it is wound up): which look of
+  // a blow's signs to show where it lands (render/enemyFx bossLook).
+  private readonly blowMagic = new Map<string, number>();
   private readonly blowFront = new BlowFxLayer();
   private readonly floating = new FloatingTextLayer();
   private readonly delayed = new Delayed(); // hits held back a beat so their number lands with the blow
@@ -686,7 +692,7 @@ export class GameStrip {
             for (const burst of look.cast) this.playCastBurst(heroCaster, burst, ev.abilityKey, groundY);
           }
           // An enemy's area blow (Brutal Smash, Ground Slam, Shockwave) runs back through the whole party.
-          if (blow !== undefined) this.playAreaBlow(blow, caster, groundY);
+          if (blow !== undefined) this.playAreaBlow(blow, caster, groundY, ev.targetId);
           // What the ability throws at the wave as a whole (a burning arrow, a flask) and what it scatters over it.
           if (heroCaster !== undefined && look !== undefined) this.playWaveLook(heroCaster, look, ev.abilityKey, groundY);
         }
@@ -891,17 +897,33 @@ export class GameStrip {
     const progress = Math.max(0, Math.min(1, 1 - cast.remainingMs / cast.totalMs));
     const count = warnTiles(stretch.fromX - stretch.toX, warn.step, progress);
     this.blowWarn.warn(warn.fx, warn.hot, stretch.fromX, groundY, warn.step, count, progress >= WARN_HOT_FROM ? count : 0);
+    // A blow aimed at the front hero: its mark over him, stepping with the cast, in the boss's look.
+    const mark = areaBlow(cast.key)?.mark;
+    this.blowMagic.set(c.id, c.magicShare ?? 0);
+    const front = this.frontBodyX();
+    // (Over the fighters, with the front that runs back — the weight comes down in front of whoever stands there.)
+    if (mark !== undefined && front !== null) this.blowFront.mark(bossLook(mark, c.magicShare), front, groundY, progress);
+  }
+
+  // Where the front hero's BODY stands (strip x: the centre of the figure), or null with no hero standing.
+  private frontBodyX(): number | null {
+    let best: HeroSprite | null = null;
+    for (const h of this.heroSprites.values()) if (h.visible && h.standing && (best === null || h.x > best.x)) best = h;
+    return best === null ? null : best.x + best.bodyCx;
   }
 
   // An enemy's area blow lands (its cast event): its mark where it starts, and its wave running back along the
   // ground through the whole party — a row of bursts going off one after another, or one front that travels.
-  private playAreaBlow(blow: AreaBlow, caster: HeroSprite | EnemySprite, groundY: number): void {
+  private playAreaBlow(blow: AreaBlow, caster: HeroSprite | EnemySprite, groundY: number, casterId: string): void {
     const stretch = this.blowStretch();
     if (stretch === null) return;
     if (blow.origin !== undefined) {
       const at = caster instanceof EnemySprite ? caster.feetPoint().x : caster.x;
       this.fxGround.play(blow.origin, at, groundY + 2);
     }
+    // A blow aimed at the front hero lands on him first, in the look of the boss that swings it.
+    const front = this.frontBodyX();
+    if (blow.impact !== undefined && front !== null) this.fxAir.play(bossLook(blow.impact, this.blowMagic.get(casterId)), front, groundY, -1);
     const length = stretch.fromX - stretch.toX;
     const wave = blow.wave;
     if (wave.kind === 'bursts') {
@@ -920,8 +942,10 @@ export class GameStrip {
     const stretch = blow === undefined ? null : this.blowStretch();
     if (blow === undefined || stretch === null) return 0;
     const wait = waveReachMs(blow, stretch.fromX - hero.x);
+    // (On the front hero a blow with its own impact has already shown where it lands: no jolt over it.)
+    const front = blow.impact !== undefined && stretch.fromX - hero.x <= BLOW_FRONT_REACH;
     this.delayed.add(wait, () => {
-      if (hero.parent !== null) this.fxGround.play(blow.jolt, hero.x + hero.bodyCx, groundY);
+      if (hero.parent !== null && !front) this.fxGround.play(blow.jolt, hero.x + hero.bodyCx, groundY);
     });
     return wait;
   }
