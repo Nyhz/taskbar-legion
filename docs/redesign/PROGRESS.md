@@ -1930,3 +1930,9 @@ se mide dónde quedan los muros de hoy respecto al techo nuevo (Ronda 4 del info
   así como 4-20-80-200-500+ (no exactamente esos números, pero saltos proporcionalmente parecidos).» Cada dificultad más
   larga que la anterior en cada partida; Infierno ≈ 20 h, Tormento 500+ sin dispararse. Si para cumplirlo hay que salir
   de la escalera (sobre todo en Infierno), se sale y se apunta dónde y cuánto. Sustituye al orientativo 4/70/170/300/450.
+- **La escalera no se toca para cuadrar horas** (16 nov, ronda 6 · B): el ajuste dejó los muros de Infierno–Eterno al
+  7–21 % del techo para cumplir 4/20/80/200/500 (por una instrucción mía de salir de la escalera). Rechazado: «te has
+  saltado una norma importante… La escalera debe ir en aumento y acercarse a mis valores mientras mantenemos tiempos
+  aproximados. Menos daño de bosses y más vida supongo que ayudaría. Más vida para amenazar con alcanzar el enrage.»
+  Orden: escalera (±5, como mucho ±10 apuntado) → horas aproximadas → menos daño de jefe y más vida de muro (la amenaza
+  es la furia). Si no cabe, se propone otra palanca con números, sin aplicarla.
