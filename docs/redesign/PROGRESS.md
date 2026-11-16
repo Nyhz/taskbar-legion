@@ -1907,3 +1907,13 @@ se mide dónde quedan los muros de hoy respecto al techo nuevo (Ronda 4 del info
   La cantidad lo frena al principio (una T8 son 6 561 T4); al final del juego fabricar es la forma de superar el techo.
   **Primero el simulador** (ronda 4e): que use el Cubo, que valore la vida y que acepte las mejoras reales; después,
   en otra pasada, el Knight, el daño mixto de los jefes y el aura del Apoyo.
+- **Tras la ronda 4e** (16 nov; sonda con Cubo, vida y mejoras reales; muros en la escalera; 1 056 h): tres decisiones.
+  - **Horas que suben con la dificultad**: cada dificultad más larga que la anterior, con el total que salga (orientativo
+    4 / 70 / 170 / 300 / 450 h). Hoy salía 8 / 116 / 202 / 160 / 607. Palancas: la vida de los muros dentro de la escalera
+    (±5 puntos) y la presión.
+  - **Presión gradual al empezar cada dificultad**: la presión del jefe de mundo (golpe en área, golpes a la retaguardia,
+    golpe sobre el tanque) entra poco a poco en los mundos 1–3 de cada dificultad en lugar de entera desde el mundo 1, y
+    los muros 1–2 piden algo menos, para que el equipo del final de la anterior pase 1–2 muros (hoy Normal → Infierno 0 de 8).
+  - **Furia más dura**: pasado el minuto, el daño del jefe sube más rápido (hoy se duplica cada 2 s) para que pasar del
+    minuto sea casi imposible desde Averno; el % de la escalera pasa a ser lo que de verdad hace falta. Hoy el grupo
+    tumbaba el muro de Tormento con un 66 % del techo cuando pedía un 85 %.
