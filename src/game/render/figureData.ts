@@ -94,6 +94,24 @@ export function frontSetback(meta: FigureMeta, reach: number): number {
   return Math.max(0, Math.round(meta.box[2] - room));
 }
 
+/**
+ * The same for a BOSS, from where the front hero really stands. A boss's reach is long (data/field RANGE.melee plus
+ * its size), but the Knight still closes to his own melee reach to swing at it, so measuring the room from the
+ * boss's reach drew the big figures over him. Its art is set back from the Knight's melee reach instead, and a
+ * little more for a bigger figure (`BOSS_FRONT_GAP` of its height), so its front edge stands clear of his
+ * (user, 2026-11-16: «aumentar el box de los bosses para que no se peguen tanto visualmente»). Presentation only:
+ * where the boss stands in the fight, its reach and the heroes' do not change.
+ */
+export function bossSetback(meta: FigureMeta): number {
+  const room = Math.max(0, RANGE.melee - heroFrontReach());
+  const height = Math.max(0, -meta.box[1]);
+  const gap = Math.max(BOSS_FRONT_GAP.min, Math.min(BOSS_FRONT_GAP.max, Math.round(height * BOSS_FRONT_GAP.ofHeight)));
+  return Math.max(0, Math.round(meta.box[2] + gap - room));
+}
+
+/** The clear ground between a boss's front edge and the front hero's (art px): a share of the boss's height. */
+export const BOSS_FRONT_GAP = { ofHeight: 0.1, min: 6, max: 16 } as const;
+
 /** What the render needs to know of an enemy to choose its creature (a slice of sim/world's Combatant). */
 export interface EnemyLook {
   id: string;

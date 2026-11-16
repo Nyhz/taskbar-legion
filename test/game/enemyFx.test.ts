@@ -46,7 +46,7 @@ describe('area blows', () => {
         expect(fxMeta(blow.warn.hot)?.loop, blow.warn.hot).toBe(true);
       }
       if (blow.origin !== undefined) expect(fxMeta(blow.origin)?.loop, blow.origin).toBe(false);
-      if (blow.mark !== undefined) expect(blow.warn, `${key}: a mark goes with a wind-up`).toBeDefined();
+      if (blow.mark !== undefined || blow.charge !== undefined) expect(blow.warn, `${key}: its wind-up signs go with a warning`).toBeDefined();
       expect(fxMeta(blow.jolt)?.loop, blow.jolt).toBe(false);
       if (blow.wave.kind === 'bursts') expect(fxMeta(blow.wave.fx)?.loop, blow.wave.fx).toBe(false);
       else {
@@ -57,24 +57,27 @@ describe('area blows', () => {
     }
   });
 
-  it('the Anvilfall has its own look: a mark over the front hero stepped through with the cast, an impact on him, in the boss\'s look', () => {
+  it('the Charged Strike has its own look: the boss gathering it, a mark under the front hero, a flash on him — in the boss\'s look', () => {
     const crush = areaBlow('boss_crush');
-    expect(crush?.mark).toBeDefined();
-    expect(crush?.impact).toBeDefined();
-    for (const look of [crush?.mark, crush?.impact]) {
+    for (const look of [crush?.charge, crush?.mark, crush?.impact]) {
+      expect(look).toBeDefined();
       for (const fx of [look?.fx, look?.magic]) {
         expect(fxMeta(fx ?? '')?.loop, fx).toBe(false);
         expect(fxMeta(fx ?? '')?.n ?? 0, fx).toBeGreaterThanOrEqual(5);
       }
     }
-    // Its own warning and wave, not the slam's or the shockwave's.
+    // The wind-up signs are stepped with the cast: one frame per tenth of it.
+    expect(fxMeta(crush?.charge?.fx ?? '')?.n).toBe(10);
+    expect(fxMeta(crush?.mark?.magic ?? '')?.n).toBe(10);
+    // Its own warning and wave, not the slam's or the shockwave's: a crack that runs back.
     expect(crush?.warn?.fx).not.toBe(areaBlow('boss_slam')?.warn?.fx);
+    expect(crush?.wave.kind).toBe('front');
     expect(crush?.wave.fx).not.toBe(areaBlow('boss_shockwave')?.wave.fx);
-    // Steel for a boss whose blows are mostly steel, the magic look for a spell-heavy one.
-    const mark = crush?.mark ?? { fx: '', magic: '' };
-    expect(bossLook(mark, 0.4)).toBe(mark.fx);
-    expect(bossLook(mark, 0.6)).toBe(mark.magic);
-    expect(bossLook(mark, undefined)).toBe(mark.fx);
+    // Hot iron for a boss whose blows are mostly steel, the magic look for a spell-heavy one.
+    const charge = crush?.charge ?? { fx: '', magic: '' };
+    expect(bossLook(charge, 0.4)).toBe(charge.fx);
+    expect(bossLook(charge, 0.6)).toBe(charge.magic);
+    expect(bossLook(charge, undefined)).toBe(charge.fx);
     // The mark steps from its first frame to its last over the cast.
     expect(markFrame(0, 10)).toBe(0);
     expect(markFrame(0.5, 10)).toBe(5);

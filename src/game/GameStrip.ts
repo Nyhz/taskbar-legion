@@ -897,12 +897,17 @@ export class GameStrip {
     const progress = Math.max(0, Math.min(1, 1 - cast.remainingMs / cast.totalMs));
     const count = warnTiles(stretch.fromX - stretch.toX, warn.step, progress);
     this.blowWarn.warn(warn.fx, warn.hot, stretch.fromX, groundY, warn.step, count, progress >= WARN_HOT_FROM ? count : 0);
-    // A blow aimed at the front hero: its mark over him, stepping with the cast, in the boss's look.
-    const mark = areaBlow(cast.key)?.mark;
+    // A blow aimed at the front hero, in the boss's look, stepping with the cast: the boss gathering it at its front
+    // and the mark closing on the ground round the hero's feet (both over the fighters, so his body hides neither).
+    const blow = areaBlow(cast.key);
     this.blowMagic.set(c.id, c.magicShare ?? 0);
+    const boss = this.enemySprites.get(c.id);
+    if (blow?.charge !== undefined && boss !== undefined) {
+      const at = boss.chargePoint();
+      this.blowFront.mark(bossLook(blow.charge, c.magicShare), at.x, at.y, progress);
+    }
     const front = this.frontBodyX();
-    // (Over the fighters, with the front that runs back — the weight comes down in front of whoever stands there.)
-    if (mark !== undefined && front !== null) this.blowFront.mark(bossLook(mark, c.magicShare), front, groundY, progress);
+    if (blow?.mark !== undefined && front !== null) this.blowFront.mark(bossLook(blow.mark, c.magicShare), front, groundY, progress);
   }
 
   // Where the front hero's BODY stands (strip x: the centre of the figure), or null with no hero standing.

@@ -36,9 +36,11 @@ export interface AreaBlow {
   warn?: { fx: string; hot: string; step: number };
   /** A one-shot on the ground where the blow starts. */
   origin?: string;
-  /** A blow aimed at the FRONT hero (the Crushing Blow): over him while it is wound up, a sign the game steps
-   *  through frame by frame with the cast (`mark`), and where it lands on him, its impact. Each comes in two
-   *  looks — steel for a boss whose blows are mostly steel, `magic` for a spell-heavy one (bossLook): what to brace with. */
+  /** A blow aimed at the FRONT hero (the heavy blow): while it is wound up, the boss gathering it at its front
+   *  (`charge`) and a mark closing on the ground under the hero it will land on (`mark`) — both stepped frame by
+   *  frame with the cast —, and where it lands on him, its `impact`. Each in two looks — hot iron for a boss whose
+   *  blows are mostly steel, `magic` for a spell-heavy one (bossLook): what to brace with. */
+  charge?: BlowLook;
   mark?: BlowLook;
   impact?: BlowLook;
   wave: BlowWave;
@@ -79,16 +81,18 @@ export const AREA_BLOWS: Readonly<Record<string, AreaBlow>> = {
   boss_slam: { warn: WARN, wave: { kind: 'bursts', fx: 'slam_spike', every: 19 }, speed: 0.3, jolt: 'jolt' },
   // Shockwave: a ring where it is let go, and a wall of force as tall as a hero running back through everyone.
   boss_shockwave: { warn: WARN, origin: 'shock_ring', wave: { kind: 'front', fx: 'shock_front', trail: 'shock_trail', trailEvery: 20 }, speed: 0.26, jolt: 'jolt' },
-  // The Crushing Blow (round 7, data/bossKit CRUSH; its own look 2026-11-16 — tools/assets/pipeline/fx/crush.py):
-  // while it is wound up an anvil lowers out of the sky onto the FRONT hero and a seal tightens under his feet —
-  // iron and brass for a boss whose blows are mostly steel, violet runes for a spell-heavy one — and a seam of runes
-  // glows along the path behind him. It lands on him (the anvil, a flash, the ground cratered) and its magic shock
-  // runs back through the others in a low violet ripple, crackling under each.
+  // The heavy blow (round 7, data/bossKit CRUSH; its own look 2026-11-16 — tools/assets/pipeline/fx/crush.py, the
+  // user's pick «el jefe carga el golpe»): while it is wound up the boss gathers it at its front — motes pulled into
+  // a core that swells and burns, hot iron for a boss whose blows are mostly steel, violet for a spell-heavy one —,
+  // four corners close in on the ground under the front hero, and a hairline split glints along the path behind him.
+  // It lands on him as one dry flash, and a crack runs back under the others with violet light jumping out of it
+  // (the magic shock), crackling under each.
   boss_crush: {
-    warn: { fx: 'warn_rune', hot: 'warn_rune_hot', step: 22 },
+    warn: { fx: 'warn_seam', hot: 'warn_seam_hot', step: 22 },
+    charge: { fx: 'crush_charge', magic: 'crush_charge_magic' },
     mark: { fx: 'crush_mark', magic: 'crush_mark_magic' },
     impact: { fx: 'crush_impact', magic: 'crush_impact_magic' },
-    wave: { kind: 'front', fx: 'crush_shock', trail: 'crush_trail', trailEvery: 16 },
+    wave: { kind: 'front', fx: 'crush_crack', trail: 'crush_seam', trailEvery: 12 },
     speed: 0.42,
     jolt: 'crush_zap',
   },

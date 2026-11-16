@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { RANGE } from '@/data/field';
 import { ENEMY_KINDS } from '@/data/enemies';
 import { WORLDS } from '@/data/worlds';
-import { figureMeta, frontSetback, heroFrontReach, type FigureMeta } from '@/game/render/figureData';
+import { BOSS_FRONT_GAP, bossSetback, figureMeta, frontSetback, heroFrontReach, type FigureMeta } from '@/game/render/figureData';
 
 // A melee enemy's place in the fight is fixed by the simulation; its ART is set back when its body would
 // otherwise be drawn over the hero it fights.
@@ -52,18 +52,35 @@ describe('frontSetback', () => {
     expect(moved).toContain('magmawyrm');
   });
 
-  it('a world boss with a figure of its own is drawn where the simulation has it: no setback', () => {
-    // sim/stages.spawnZoneBoss gives a world boss a reach of RANGE.melee + 60, and that reach is what GameStrip
-    // passes here. Its figure is drawn to stand at its root (its feet under it, its head over the hero who closes
-    // in), so it must fit that reach untouched — a setback would pull the body away from where its blows land.
-    const reach = RANGE.melee + 60;
+  it('every boss — world or stage — stands clear of the front hero, by a gap that grows with its figure', () => {
+    // User, 2026-11-16: «aumentar el box de los bosses para que no se peguen tanto visualmente». The Knight closes to
+    // his own melee reach to swing at a boss (sim/combat), whatever the boss's longer reach: the art is set back from
+    // there, so the boss's front edge stops BOSS_FRONT_GAP of its height short of his — presentation only.
+    const figures = new Set<string>();
     for (const world of WORLDS) {
-      if (world.worldBoss === undefined) continue;
-      const meta = figureMeta(world.worldBoss.key);
-      expect(meta, world.worldBoss.key).toBeDefined();
-      if (meta === undefined) continue;
-      expect(meta.box[2] + heroFrontReach(), world.worldBoss.key).toBeLessThanOrEqual(reach);
-      expect(frontSetback(meta, reach), world.worldBoss.key).toBe(0);
+      if (world.worldBoss !== undefined) figures.add(world.worldBoss.key);
+      for (const creature of Object.values(world.creatures)) if (creature.role === 'boss') figures.add(creature.key);
     }
+    expect(figures.size).toBeGreaterThan(10);
+    for (const key of figures) {
+      const meta = figureMeta(key);
+      expect(meta, key).toBeDefined();
+      if (meta === undefined) continue;
+      const back = bossSetback(meta);
+      expect(back, key).toBeGreaterThanOrEqual(0);
+      const clear = RANGE.melee - heroFrontReach() - (meta.box[2] - back); // ground between the two front edges
+      expect(clear, key).toBeGreaterThanOrEqual(BOSS_FRONT_GAP.min);
+      expect(clear, key).toBeLessThanOrEqual(Math.max(BOSS_FRONT_GAP.max, RANGE.melee - heroFrontReach() - meta.box[2]));
+    }
+  });
+
+  it('a bigger boss leaves a wider gap, within its bounds', () => {
+    const at = (height: number): number => {
+      const meta: FigureMeta = { w: 200, h: 200, cols: 1, root: 100, ground: 190, box: [-60, -height, 200, 1], anims: {} };
+      return RANGE.melee - heroFrontReach() - (meta.box[2] - bossSetback(meta));
+    };
+    expect(at(40)).toBe(BOSS_FRONT_GAP.min);
+    expect(at(120)).toBe(12);
+    expect(at(400)).toBe(BOSS_FRONT_GAP.max);
   });
 });

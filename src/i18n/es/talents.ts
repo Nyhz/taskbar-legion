@@ -79,7 +79,7 @@ export const talents: Record<keyof typeof en, string> = {
   firesCharged: 'Al completar sus {n} cargas.',
   firesLethal: 'Cuando un golpe mataría al héroe. Usos por etapa: {n}.',
   firesBossWindup: 'Cuando prepara un golpe.',
-  firesBossWindupHeavy: 'Cuando prepara su Caída del yunque (cualquier golpe, si no tiene).',
+  firesBossWindupHeavy: 'Cuando prepara su Golpe cargado (cualquier golpe, si no tiene).',
   firesAgainstBoss: 'Contra un jefe: {rule}.',
   firesOr: ', o ',
   firesBoss: 'Al entrar en combate con un jefe de etapa o de mundo.',

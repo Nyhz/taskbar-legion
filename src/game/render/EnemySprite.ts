@@ -9,7 +9,7 @@ import { ENEMY_Z, ELITE_ARRIVE_FX, ELITE_CREST_FX, ELITE_FIGURE_SCALE, ELITE_RIM
 import { figureMask } from './figureMask';
 import { FigureBody } from './FigureBody';
 import { DEATH } from './figureClip';
-import { clipMs, FEET_BELOW_ORIGIN, frontSetback, type EnemyRank } from './figureData';
+import { bossSetback, clipMs, FEET_BELOW_ORIGIN, frontSetback, type EnemyRank } from './figureData';
 import { AttackLead, impactMs, swingEtaMs, unledRate, unledWaitMs } from './attackLead';
 import { TICK_MS } from '@/sim/Simulation';
 import type { FigureSheet } from './figureTextures';
@@ -107,6 +107,7 @@ export class EnemySprite extends Container {
   private readonly barY: number; // HP-bar y (above the figure), container-local
   private readonly cy: number; // body-centre y for auras/cast (container-local, negative = up)
   private readonly halfW: number; // half the body's width
+  private readonly figureTop: number; // the standing figure's top, from its feet (negative: up)
   private readonly auraScale: number;
   private readonly deathHoldMs: number;
   private readonly boss: boolean; // a stage boss or a world boss
@@ -161,9 +162,11 @@ export class EnemySprite extends Container {
     // A melee figure too wide for the gap the fight leaves is drawn set back, so its body stands behind the
     // point where it meets the hero instead of over him (figureData.frontSetback). Everything hung on the body
     // (bars, rings, auras, marks) follows `cx`.
-    const setback = this.style === 'melee' ? frontSetback(sheet.meta, c.range) : 0;
+    // (A boss is set back from where the Knight really stands to fight it, clear of him: figureData.bossSetback.)
+    const setback = this.boss && c.summon === undefined ? bossSetback(sheet.meta) : this.style === 'melee' ? frontSetback(sheet.meta, c.range) : 0;
     this.cx = setback - Math.round((left + right) / 2);
     this.halfW = (right - left) / 2;
+    this.figureTop = top;
     this.barY = FEET_Y + top - this.look.bar.h - (rank === 'elite' ? 5 : 2);
     this.lifeBar = new LifeBar(this.look.bar, 'hud_s_fill_foe');
     this.lifeBar.visible = false;
@@ -360,6 +363,12 @@ export class EnemySprite extends Container {
   /** Where this enemy's shots leave from (parent coords): ahead of its body, a little above its middle. */
   shotPoint(): { x: number; y: number } {
     return { x: this.x + this.cx - Math.min(this.halfW, 10), y: this.y + this.cy - 3 };
+  }
+
+  /** Where a boss gathers its heavy blow (parent coords): at the front of its body, low — a third of its height
+   *  off the ground — so it reads as the blow it is about to drive into the hero in front of it. */
+  chargePoint(): { x: number; y: number } {
+    return { x: this.x + this.cx - this.halfW * 0.7, y: this.y + FEET_Y + Math.round(this.figureTop * 0.32) };
   }
 
   /** Raise this enemy's HP bar by `px` so it doesn't sit on top of a neighbour's bar when
