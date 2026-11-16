@@ -1,3 +1,51 @@
+# Resumen de la noche del 15 al 16 de noviembre (léelo primero)
+
+**Qué se ha hecho mientras dormías.** Con tu vía libre se ha cerrado la pasada final de equilibrio. Hay cinco commits del coordinador más este último. Lo de abajo de este resumen es el detalle, ronda a ronda.
+
+**Lo que ha cambiado en el juego**
+- **La sanadora:**
+  - sin Infusión de poder ni Purificar;
+  - con Luz sanadora (cura instantánea) y Círculo de sanación (cura instantánea en grupo);
+  - cada cura quita todos los efectos dañinos a quien cura;
+  - las curas se lanzan más a menudo (Sanar cada 14 s, Luz sanadora cada 12 s, Círculo y Santuario cada 20 s, Castigo cada 10 s).
+- **Los jefes de mundo aprietan durante su minuto desde Infierno:**
+  - golpe en área cada 4 s en Infierno y cada 6 s después, que alcanza a todo el grupo;
+  - la mitad de sus golpes van a la retaguardia;
+  - desde Averno, el golpe pega mucho más fuerte al tanque.
+  - Normal queda como estaba.
+- **El Knight defiende más:** Piel de piedra hasta 50 % y Tajo debilitante hasta 35 %.
+- **Lo que ya decidiste, cableado:**
+  - oleadas por etapa 16 / 17 / 18 / 19 / 20;
+  - llave garantizada al limpiar por primera vez el X-9 de cada mundo, y luego un 25 % de los cofres de jefe de etapa;
+  - el jugador medio usa la construcción por defecto en Normal e Infierno y la buena desde Averno.
+- **Normal:** para que con 16 oleadas siga en 3–4 h, sus oleadas son más pequeñas y sus enemigos más blandos (caen de 1–2 golpes).
+- **Vida de los muros:** reajustada para las horas.
+- **La sonda (el simulador del jugador medio):** ahora usa todas las habilidades y construcciones, y los afijos de cada jefe son fijos por partida, como en el juego.
+
+**Cómo queda frente a tus objetivos** (4 partidas simuladas a 8 h al día)
+
+| | Objetivo | Queda |
+|---|---|---|
+| Normal | 3–4 h | 4 h ✔ |
+| Infierno | ≈ 40 h | 43 h ✔ |
+| Averno | ≈ 120 h | 119 h ✔ |
+| Eterno | ≈ 230 h | 254 h ✔ (entre 189 y 350 según la partida) |
+| Tormento | ≈ 325 h | 313 h ✔ |
+| **Total** | **≈ 3 meses** | **723 h, unos 91 días** ✔ |
+| Construirse bien importa | | Sí: unos 15–25 % menos de equipo con la buena construcción, y bastante más mal construido. La mejor construcción ya cambia según el jefe |
+| Sanadora obligatoria desde Infierno | | Con el equipo normal, sí. **Con mucho equipo (≥150 %) aún se pasan sin curas los primeros muros de Infierno** y algunos después |
+| Knight defensivo mejor desde Averno | | En 7 de 12 muros; igual en 4 |
+| El equipo se nota más en cada dificultad | | Sí |
+| Mascotas | Infierno con 0–1 | Al llegar a Infierno casi nadie tiene ninguna; al acabar el juego, 5 de 6 ✔ |
+
+**Lo que tienes que decidir tú** (detalle en «Ronda 3 · punto de control 3b», §6)
+1. **Qué es «el 100 % del equipo de la zona».** La rareza más habitual de lo que cae (la moda) es la pieza que se tira. Con ella tu escalera de muros (60–80 % en Infierno … 90–100 % en Tormento) dejaría los muros sin muro. Propongo medirla con la rareza de lo que se lleva puesto, subiendo con la dificultad: con eso los muros de hoy cumplen tu escalera sin tocar horas.
+2. **La sanadora con mucho equipo en Infierno.** Aceptarlo, o encender un sangrado del golpe del jefe que solo quitan las curas (ya está hecho pero apagado, porque hoy mata también a los grupos con curas).
+3. **Unos 36 intentos fallidos por muro en Tormento.** Es el bucle de llaves. ¿Así, o más llaves y muros algo más duros?
+4. **Diferencias entre jugadores** (Eterno de 189 a 350 h). ¿Aceptable?
+
+---
+
 # Informe del reajuste de ritmo (2026-11-15)
 
 > **Léeme primero: Ronda 2 — punto de control 2 (cerrado a medias a propósito).** La sección «Ronda 2» de abajo es
@@ -1269,3 +1317,114 @@ Priest sin curas cae antes de 34 s en ≥75 % de las semillas: 10/13 muros; Knig
 3. **Sanadora**: volver a medir con los muros nuevos. Si la Priest sin curas aún gana muros de Infierno con ≥150 %, golpes en área cada 4 s en Infierno, como ya decidiste. Revisar la presión en Eterno y Tormento: hoy la Priest sin curas aguanta 35 s en Tormento 4-10.
 4. **Knight**: si el margen sigue empatado en algunos muros, un poco más de golpe sobre el tanque en Eterno y Tormento.
 5. **Método**: el ajustador (`scripts/tune-pacing.ts`) ya mide contra la vara nueva. Puntos de control por dificultad, 4 semillas, con `taskpolicy -b`.
+
+
+## Ronda 3 · punto de control 3b: el ajuste fino
+
+*16 nov 2026, de madrugada. La medida final son 4 semillas de la sonda, de Normal 1-1 a Tormento 10-10 (`scripts/pass-measure.ts`), con `taskpolicy -b`.*
+
+### 1. Tabla final frente a los objetivos
+
+| Objetivo | Resultado | Estado |
+|---|---|---|
+| Normal ≈ 4 h | 4 h (3–4) | ✔ |
+| Infierno ≈ 40 h | 43 h (42–50) | ✔ (+8 %) |
+| Averno ≈ 120 h | 119 h (93–141) | ✔ |
+| Eterno ≈ 230 h | 254 h (189–350) | ✔ en mediana (+10 %); la dispersión es grande |
+| Tormento ≈ 325 h | 313 h (282–348) | ✔ (−4 %) |
+| Total ≈ 720 h (3 meses a 8 h al día) | **723 h** (658–861) · 91 días de calendario (83–108) | ✔ |
+| Intentos fallidos por muro (mediana) | Normal 0 · Infierno 2 · Averno 8 · Eterno 18 · Tormento 36 | Muchos en Tormento: cada intento fallido cuesta una llave |
+| Pelea al tumbar el muro (mediana) | 25 · 55 · 69 · 71 · 72 s | ✔ en torno al minuto desde Infierno |
+| Muros a un 80–90 % de la vara C (percentil 90) en 60 s | piden 13 % · 75 % · 136 % · 191 % · 368 % | ✘ desde Averno (ver §3: con horas y exigencia de equipo no cabe) |
+| La exigencia de equipo sube por dificultad | el grupo lleva al tumbar 29 → 67 → 120 → 161 → 289 % de la vara | ✔ |
+| Desde Infierno no se pasa sin curas | Con su equipo, la Priest sin curas pierde 9 de 10 muros de Infierno y 9 de 12 después. Con ≥150 % aún gana los muros 1–7 de Infierno y 5 de 12 después | ✘ a medias (§4) |
+| El Knight defensivo gana desde Averno | Más margen en 7 de 12 muros, igual en 4, menos en 1 | ✔ a medias |
+| Mascotas | Esperadas al acabar Normal 0,07 · Infierno 0,5 · Averno 2,2 · Eterno 3,7 · Tormento 5,3 (de 6) | ✔ «a Infierno con 0 o 1» |
+| Arranque (Knight solo de nivel 1) | El test de arranque de la sonda pasa | ✔ |
+
+### 2. Cambios
+
+**Números**
+
+| Dónde | Qué | Antes → ahora | Por qué |
+|---|---|---|---|
+| `src/data/stageScaling.ts` `WORLD_WALL_MULT` | Vida de los muros | Tabla del 3a × 1 (Normal) / 0,75 (Infierno) / 1,25 (Averno) / 1,25 (Eterno) / 1,5 (Tormento); Tormento 9-10 y 10-10 más bajos (×1,3 y ×1,25) | Cuadrar las horas por dificultad. Los dos últimos muros de Tormento se iban a 100–230 h cada uno |
+| `src/data/bossKit.ts` `WORLD_BOSS_PRESSURE` | Golpe en área en Infierno | cada 6 s → **cada 4 s** | Lo decidido para el caso de que hiciera falta, y hacía falta |
+| `src/data/bossKit.ts` `WORLD_BOSS_PRESSURE` | Golpe sobre el tanque en Eterno / Tormento | 2,4 / 2,8 → **2,7 / 3,1** | Más golpe sobre el tanque para que el Knight defensivo gane margen. Con 3,0 / 3,4 los muros se volvían imposibles (Tormento 7-10: 380 intentos) |
+
+Mascotas: no las he tocado. Con el ritmo nuevo cumplen la regla del usuario.
+
+**Diseño**
+
+- **Desgarro (cableado, apagado).** Es un sangrado que deja el golpe en área del jefe de mundo: un % de la vida por segundo y por capa, una capa más con cada golpe, y solo lo quita una cura (`debuff_rend` y `WORLD_BOSS_PRESSURE.woundPct`).
+  - Se aplica en `sim/abilities` → `bossMechanics.onWorldBlow`, con texto en EN y ES, ficha y aspecto (de momento los del veneno). Tiene test.
+  - Lo hice para que la Priest sin curas pierda aunque vaya muy equipada: es un % de la vida, así que el equipo no lo reduce.
+  - Probado al 1,3 % por capa, la Priest sin curas perdía todos los muros, pero el grupo **con** curas también: sus curas no lo quitan con suficiente frecuencia.
+  - Lo he dejado en 0 en todas las dificultades. Encenderlo pide antes rehacer la cadencia de limpieza de la Priest. Es una decisión para el usuario.
+- **Herramientas**:
+  - `scripts/healer-check.ts`: reglas de sanadora y Knight en peleas reales contra los muros de hoy;
+  - `scripts/vara-quantiles.ts`: qué % piden los muros con cada definición de la vara;
+  - `scripts/pass-measure.ts` acepta una tabla de muros de prueba (`WALL_MULTS`) e informa de las mascotas.
+
+### 3. La escalera de muros y la vara C
+
+Con las horas cuadradas y la exigencia de equipo respetada, los muros piden de la vara al percentil 90 un 13 / 75 / 136 / 191 / 368 %. La escalera pedía 15–25 / 60–80 / 80–90 / 85–95 / 90–100 %.
+
+- Desde Averno, para cumplir la escalera con esa vara habría que **bajar** los muros a la mitad o menos.
+- Entonces el jugador medio llegaría a cada muro llevando ya más de lo que pide: no habría muro, y las horas caerían.
+- Eso rompe dos reglas (exigencia de equipo y horas), así que han mandado las reglas.
+
+Lo que sí cumple la escalera es una vara cuya rareza **sube con la dificultad**. Medido con el grupo de la sonda en cada muro (`vara-quantiles.ts`, 1 semilla):
+
+| Dificultad | Moda literal | P90 | P95 | P97 | P99 | Escalera |
+|---|---|---|---|---|---|---|
+| Normal | 29 % | 12 % | 8 % | 7 % | 7 % | 15–25 % |
+| Infierno | 312 % | **70 %** | 35 % | 34 % | 18 % | 60–80 % |
+| Averno | 893 % | 146 % | **75 %** | 57 % | 25 % | 80–90 % |
+| Eterno | 1 768 % | 183 % | **83 %** | 60 % | 29 % | 85–95 % |
+| Tormento | 4 549 % | 451 % | 128 % | **104 %** | 37 % | 90–100 % |
+
+Con una vara al percentil 90 en Infierno, 95 en Averno y Eterno y 97 en Tormento, los muros de hoy cumplen la escalera casi exactos, sin tocar horas. Normal queda por debajo (12 % con P90): ahí los muros son un trámite a propósito.
+
+**Horas con la moda literal** (muros puestos en la escalera de la vara moda: Normal ×0,7, Infierno ×0,22, Averno ×0,1, Eterno ×0,05 y Tormento ×0,02 de la vida de hoy):
+- Con 1 semilla hasta el final de Averno: Normal 3,9 h, **Infierno 18 h** (objetivo 40) y **Averno 34 h** (objetivo 120), sin un solo intento fallido. Los muros dejan de frenar.
+- Las dos partidas completas no terminaron en 40 minutos de simulación: con muros tan bajos el jugador llega sin equipo a etapas que no puede limpiar, y la sonda se pasa el tiempo midiendo farmeos.
+- Para volver a ≈ 720 h habría que sacar las horas de otro sitio (enemigos mucho más duros o muchas menos llaves), y el equipo dejaría de ser lo que abre los muros.
+
+### 4. Sanadora y Knight con los muros nuevos
+
+`scripts/healer-check.ts`: el grupo de la sonda al tumbar cada muro (semilla 2), 8 semillas por caso.
+
+- **Priest sin curas (Nova + Escudo sagrado)**:
+  - con el equipo que lleva el grupo: pierde (0 %) 9 de 10 muros de Infierno (gana Infierno 2-10) y 9 de 12 después (Averno 10-10 62 %, Eterno 1-10 25 %, Eterno 10-10 12 %);
+  - con ≥150 % de la vara: gana los muros 1–7 de Infierno y los 8–10 entre un 38 y un 62 %, porque esos muros mueren en menos de 25 s antes de que la presión cuente;
+  - después, con ≥150 %, pierde 7 de 12 (gana Averno 7-10 88 %, Averno 10-10 62 %, Eterno 4-10 75 %, Eterno 1-10 25 %, Eterno 10-10 12 %).
+- **Knight ofensivo (Grito de guerra + Sed de sangre)** frente al de la construcción buena (Tajo debilitante + Grito de guerra), en margen:
+  - el defensivo es mejor en 7 de 12 muros (×1,07–1,14);
+  - igual en 4;
+  - peor en 1 (Eterno 4-10, ×0,94).
+
+### 5. Lo que queda flojo
+
+- **La sanadora con mucho equipo.** En Infierno, un grupo con ≥150 % pasa sin curas porque el combate dura menos de 25 s. El Desgarro lo resolvería, pero mata también al grupo con curas; hay que hacer antes que las curas limpien más a menudo.
+- **Dispersión.** Eterno va de 189 a 350 h según la semilla; el total, de 658 a 861 h. Los mundos alternan muros que caen al llegar (0,5 h) con otros de 20–60 h, por la cinta del equipo: farmear un muro duro sobra para el siguiente.
+- **Intentos fallidos en Tormento**: unos 36 por muro. Es el bucle de llaves, una llave cada ~4 cofres de jefe de etapa.
+- **Normal**: sus muros piden un 12–13 % de la vara (escalera: 15–25 %). No los subí para no arriesgar las 3–4 h.
+- **La vara**: el percentil 90 no sirve para la escalera desde Averno (§3).
+
+### 6. Preguntas para el usuario
+
+1. **¿Qué es «el 100 % del equipo de la zona»?**
+   - (a) La rareza de lo que se lleva, subiendo con la dificultad: P90 en Infierno, P95 en Averno y Eterno, P97 en Tormento. Con ella los muros de hoy cumplen tu escalera sin tocar horas.
+   - (b) La moda literal: las horas cambian como en §3.
+   - (c) Mantener P90 y aceptar que desde Averno los muros pidan más del 100 %.
+2. **Sanadora con mucho equipo en Infierno:**
+   - (a) aceptarlo (con el equipo normal sí hace falta);
+   - (b) encender el Desgarro y rehacer la limpieza de las curas para que lo aguante un grupo con curas;
+   - (c) alargar los muros de Infierno (más vida, y las horas se recuperan acortando otras cosas).
+3. **Muchos intentos fallidos en Tormento** (unos 36 por muro):
+   - (a) así, es el farmeo;
+   - (b) más llaves en Tormento y muros algo más duros, para menos intentos y las mismas horas.
+4. **Dispersión entre jugadores** (Eterno de 189 a 350 h):
+   - (a) aceptable;
+   - (b) suavizar la cinta del equipo, con muros más parejos dentro de cada dificultad.

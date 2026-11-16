@@ -371,6 +371,7 @@ export const EFFECT_LOOKS: Readonly<Record<string, readonly LastingLook[]>> = {
   buff_boss_shell: [{ slot: 'body', fx: 'shell_plate', tile: true, start: 'shell_raise', end: 'shell_break', up: 0.5, priority: 3 }],
   // Venomous: the hero it has poisoned bubbles green (over Stone Skin's glint: the poison is what matters).
   debuff_venom: [{ slot: 'body', fx: 'venom_drip', start: 'venom_splash', up: 0.5, priority: 3 }],
+  debuff_rend: [{ slot: 'body', fx: 'venom_drip', start: 'venom_splash', up: 0.5, priority: 3 }], // Desgarro: venom's look until it has its own
   // Roots: he is held — roots out of the ground wound round him, falling away when they let go.
   debuff_rooted: [{ slot: 'feet', fx: 'roots_bind', start: 'roots_rise', end: 'roots_break', priority: 3 }],
   // Esporas: destroying angels at his feet and rooted on him, their dust climbing; they wither when a heal clears them.

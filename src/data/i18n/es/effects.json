@@ -167,6 +167,10 @@
     "en": "Venom",
     "es": "Veneno"
   },
+  "debuff_rend": {
+    "en": "Rend",
+    "es": "Desgarro"
+  },
   "debuff_rooted": {
     "en": "Rooted",
     "es": "Enraizado"

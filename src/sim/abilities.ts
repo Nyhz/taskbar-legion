@@ -9,7 +9,7 @@ import { noteStruck, dealtMult, liveStats } from './liveStats';
 import { onCrit, type TriggerCtx } from './triggers';
 import { noteDamageTaken, recentlyHit, recentlyHitHard } from './recent';
 import { condemn, critBleed, guardedDamage, healInfusion, overflowShield } from './passives';
-import { behindBack, resolveSpecial, shellDamage } from './bossMechanics';
+import { behindBack, onWorldBlow, resolveSpecial, shellDamage } from './bossMechanics';
 import { afterMirror, reflection, specialReady } from './mirror';
 import { foeDamageMult, foeWard } from './enemyTraits';
 import { biggestCluster, pickTarget } from './targeting';
@@ -628,6 +628,7 @@ function applyToTarget(
       target.lastHitBy = caster.id;
       condemn(caster, target); // Condemn: hit by her damage abilities, it takes more from everyone
     }
+    if (caster.side === 'enemy' && caster.isBoss === true && isAreaBlow(ability)) onWorldBlow(caster, target, S); // its Rend (world bosses, from Hell)
     noteDamageTaken(target, dmg); // what lands on a hero, before its shields (sim/recent.ts)
     dmg = Math.max(0, absorbDamage(target.effects, dmg));
     target.hp -= dmg;

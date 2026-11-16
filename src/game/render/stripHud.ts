@@ -156,6 +156,7 @@ const EFFECT_SIGN: Readonly<Record<string, string>> = {
   // what an enemy lays on a hero, and what heroes lay on enemies (a boss line may list these one day)
   debuff_mortal_wound: 'wound',
   debuff_venom: 'venom',
+  debuff_rend: 'venom', // Desgarro: the venom sign until it has its own
   debuff_rooted: 'roots',
   debuff_guilt: 'guilt',
   debuff_gilded: 'gilded',

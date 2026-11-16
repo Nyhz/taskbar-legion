@@ -67,15 +67,21 @@ export const BOSS_AFFIX = {
  *    - blowCoeff:      the blow on the front hero, × its hit;
  *    - splashCoeff:    the blow on everyone behind, × its hit;
  *    - backShotChance: the share of its basic attacks aimed at a hero behind the front one — sustained damage on
- *                      the back line. */
+ *                      the back line;
+ *    - woundPct:       the Rend (data/bossEffects debuff_rend) its area blow leaves on every hero it reaches: this %
+ *                      of the hero's life a second per stack, stacking blow after blow; only a heal lifts it. */
 export interface WorldBossPressure {
   hitMult: number;
   blowEveryMs: number;
   blowCoeff: number;
   splashCoeff: number;
   backShotChance: number;
+  woundPct: number;
 }
 
+/** Rend (woundPct) is wired but OFF on every difficulty (round 3, 2026-11-16): at a strength that kills a party
+ *  without heals inside Hell's short fights (1.3 % a second per stack) it killed the parties WITH heals too — her heals
+ *  do not lift it often enough. Turning it on needs her cleansing cadence reworked first (PACING_REPORT 3b). */
 /** Normal → Torment. Normal is the world boss as it was (any build passes); the rest are tuned against the build
  *  study (scripts/build-study.ts: a Priest who carries no heal must not see the end of a wall from Hell on). */
 // Tuned 2026-11-16 (docs/redesign/PACING_REPORT.md, round 3 checkpoint 2) by SURVIVAL against a wall that cannot
@@ -83,13 +89,15 @@ export interface WorldBossPressure {
 // minute; the same party with a Priest who carries no heal, at ~150 %, loses a hero before 34 s (the time a 150 %
 // party needs on a wall tuned to die at 60 s to 85 %).
 export const WORLD_BOSS_PRESSURE: readonly WorldBossPressure[] = [
-  { hitMult: 1, blowEveryMs: 10_000, blowCoeff: 1.2, splashCoeff: 0.6, backShotChance: 0 },
-  { hitMult: 1, blowEveryMs: 6_000, blowCoeff: 1.2, splashCoeff: 1.2, backShotChance: 0.5 },
+  { hitMult: 1, blowEveryMs: 10_000, blowCoeff: 1.2, splashCoeff: 0.6, backShotChance: 0, woundPct: 0 },
+  // Hell: the blow every 4 s (decided 2026-11-16 for the case it was needed — it was: with Hell's walls at their
+  // hours a geared party without heals still beat them before the attrition told).
+  { hitMult: 1, blowEveryMs: 4_000, blowCoeff: 1.2, splashCoeff: 1.2, backShotChance: 0.5, woundPct: 0 },
   // From Inferno the blow lands on the front hero far harder (coordinator, 2026-11-16: a Knight who carries his
   // defences must win in margin too): Stone Skin, Debilitate and Hold the Line are what take it.
-  { hitMult: 1, blowEveryMs: 6_000, blowCoeff: 2.0, splashCoeff: 1.2, backShotChance: 0.5 },
-  { hitMult: 1.15, blowEveryMs: 6_000, blowCoeff: 2.4, splashCoeff: 1.2, backShotChance: 0.55 },
-  { hitMult: 1.45, blowEveryMs: 6_000, blowCoeff: 2.8, splashCoeff: 1.2, backShotChance: 0.55 },
+  { hitMult: 1, blowEveryMs: 6_000, blowCoeff: 2.0, splashCoeff: 1.2, backShotChance: 0.5, woundPct: 0 },
+  { hitMult: 1.15, blowEveryMs: 6_000, blowCoeff: 2.7, splashCoeff: 1.2, backShotChance: 0.55, woundPct: 0 },
+  { hitMult: 1.45, blowEveryMs: 6_000, blowCoeff: 3.1, splashCoeff: 1.2, backShotChance: 0.55, woundPct: 0 },
 ];
 
 /** The pressure of a world boss at difficulty index `d` (clamped to the table). */

@@ -313,12 +313,15 @@ export function wallCurveMult(S: number): number {
 // wall→months response is hypersensitive near the gear ceiling, so values are tuned against the
 // progression probe (npm run probe), NOT derived analytically. Worlds past 50 fall back to the
 // S-curve generator (wallCurveMult).
+// Retuned 2026-11-16 (round 3, checkpoint 3b) for the hours per difficulty (≈ 4 / 40 / 120 / 230 / 325, 4 seeds of
+// the probe, scripts/pass-measure.ts): the 3a table × 1 / 0.75 / 1.25 / 1.25 / 1.5 by difficulty, Torment's last two
+// walls held lower (they took 100–230 h each at the common factor). Docs: PACING_REPORT.md round 3 · 3b.
 export const WORLD_WALL_MULT: readonly number[] = [
-  0.270, 0.193, 0.200, 0.160, 0.160, 0.135, 0.140, 0.160, 0.141, 0.150,
-  0.223, 0.391, 0.863, 1.25, 1.28, 1.28, 1.25, 1.25, 1.37, 1.58,
-  1.72, 1.83, 1.96, 2.08, 2.34, 2.84, 3.48, 4.17, 4.89, 5.70,
-  6.48, 7.19, 7.96, 8.91, 10.1, 11.3, 12.9, 15.1, 16.7, 18.7,
-  20.3, 22.5, 26.6, 32.3, 37.1, 42.0, 49.9, 59.6, 68.1, 72.2,
+  0.27, 0.193, 0.2, 0.16, 0.16, 0.135, 0.14, 0.16, 0.141, 0.15,
+  0.167, 0.293, 0.647, 0.938, 0.96, 0.96, 0.938, 0.938, 1.03, 1.19,
+  2.15, 2.29, 2.45, 2.6, 2.92, 3.55, 4.35, 5.21, 6.11, 7.12,
+  8.1, 8.99, 9.95, 11.1, 12.6, 14.1, 16.1, 18.9, 20.9, 23.4,
+  30.5, 33.8, 39.9, 48.4, 55.7, 63, 74.8, 89.4, 88.4, 90,
 ];
 export function wallWorldMult(S: number): number {
   return WORLD_WALL_MULT[worldOf(S) - 1] ?? wallCurveMult(S);

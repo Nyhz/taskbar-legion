@@ -16,6 +16,14 @@ export const BOSS_EFFECTS: Record<string, EffectDef> = {
     key: 'debuff_venom', name: 'Venom', icon: 'dot',
     kind: { type: 'dot', damagePerTick: 0, element: 'poison' }, durationMs: 4000, maxStacks: 5, stackRule: 'refresh', beneficial: false, cleansePriority: 1,
   },
+  // Desgarro (round 3, 2026-11-16): what a WORLD boss's area blow leaves on each hero it reaches from Hell on
+  // (data/bossKit WORLD_BOSS_PRESSURE.woundPct) — a bleed of a share of the hero's life a second per stack, piling
+  // up blow after blow and lasting long; only a heal lifts it (data/healing). It is what makes the Priest's heals
+  // necessary however geared the party: a share of life, so armour and gear do not shrink it.
+  debuff_rend: {
+    key: 'debuff_rend', name: 'Rend', icon: 'dot',
+    kind: { type: 'dot', damagePerTick: 0, element: 'physical' }, durationMs: 12000, maxStacks: 8, stackRule: 'refresh', beneficial: false, cleansePriority: 2,
+  },
   // Sísmico: a marker on the boss for as long as the fight lasts — the strip shakes the ground at its feet. It
   // does nothing in the simulation (the affix is the shorter cooldown of its area blow).
   buff_boss_tremor: {

@@ -114,6 +114,17 @@ export function onBossHit(boss: Combatant, target: Combatant, dealt: number, blo
   }
 }
 
+// ── Desgarro (world-boss pressure) ──────────────────────────────────────────────────────────────────────────
+
+/** A WORLD boss's area blow has just reached `target`: from Hell on it leaves a stack of Rend (data/bossKit
+ *  WORLD_BOSS_PRESSURE.woundPct % of the hero's life a second per stack; only a heal lifts it). */
+export function onWorldBlow(boss: Combatant, target: Combatant, S: number): void {
+  if (boss.bossRank !== 'world' || !target.alive) return;
+  const pct = worldBossPressure(difficultyIndexOf(S)).woundPct;
+  if (pct <= 0) return;
+  applyEffect(target.effects, effectDef('debuff_rend'), boss.id, (target.maxHp * pct) / 100);
+}
+
 // ── Summons ─────────────────────────────────────────────────────────────────────────────────────────────────
 
 /** What an ability does beyond its effects. Called once when the cast resolves; `allies` is the caster's own

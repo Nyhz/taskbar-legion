@@ -44,7 +44,7 @@ function fight(S: number, seconds: number): { blowsFront: number; blowsBehind: n
 describe('world-boss pressure', () => {
   it('Normal is the world boss as it was: its blow every 10 s at 1.2 / 0.6, every basic attack on the front hero', () => {
     const p = worldBossPressure(0);
-    expect(p).toEqual({ hitMult: 1, blowEveryMs: 10_000, blowCoeff: 1.2, splashCoeff: 0.6, backShotChance: 0 });
+    expect(p).toEqual({ hitMult: 1, blowEveryMs: 10_000, blowCoeff: 1.2, splashCoeff: 0.6, backShotChance: 0, woundPct: 0 });
     const blow = bossKit(1, globalStageOf(0, 3, 10), 'world').abilities.find((a) => a.def.key === 'boss_shockwave');
     expect(blow?.def.cooldownMs).toBe(10_000);
     expect(blow?.def.power?.splashCoeff).toBe(0.6);
@@ -111,5 +111,31 @@ describe('option A: the first clear of an X-9 hands over a key', () => {
     w.phase = 'boss';
     clear(false);
     expect(w.pending.keys[S + 1]).toBeUndefined();
+  });
+});
+
+describe('Rend (wired, off by default)', () => {
+  it('with a woundPct, a world boss\'s area blow leaves a stack of Rend on each hero it reaches; off, none', () => {
+    const S = globalStageOf(1, 3, 10);
+    const row = WORLD_BOSS_PRESSURE[1] as { woundPct: number };
+    const before = row.woundPct;
+    try {
+      expect(before).toBe(0);
+      // a full fight: count the heroes carrying Rend at the end
+      const count = (pct: number): number => {
+        row.woundPct = pct;
+        const w = createWorld(7, [hero('tank', 240, 60), hero('archer', 130, 170), hero('priest', 95, 205)]);
+        w.maxClearedStage = S - 1;
+        w.globalStageIndex = S - 1;
+        const sim = new Simulation(w);
+        sim.enterZoneBoss(Math.ceil(S / 10));
+        for (let t = 0; t < 200; t++) sim.tick({ bonuses: getBonuses({}, {}), ownedPetKeys: [], retryStage: true });
+        return w.heroes.filter((h) => h.effects.some((e) => e.defKey === 'debuff_rend')).length;
+      };
+      expect(count(0)).toBe(0);
+      expect(count(1)).toBe(3);
+    } finally {
+      row.woundPct = before;
+    }
   });
 });

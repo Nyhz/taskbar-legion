@@ -51,6 +51,7 @@ export const hud = {
   fxTremor: "A brute's blow shook the ground: attacks {pct} % slower for a moment. Heals leave it alone.",
   fxMortalWound: "A boss's blow left a deep wound: heals on it are {v} % weaker for {s} s. Any of the Priest's heals lifts it.",
   fxVenom: "Venom from the boss's hits: {dps} damage a second, up to {n} layers; it fades {s} s after the last hit. Any of the Priest's heals lifts it.",
+  fxRend: "Rend from the boss's blow: {dps} damage a second, one more layer with every blow, up to {n}; it lasts {s} s. Only one of the Priest's heals lifts it.",
   fxRooted: "Bound by roots: no attacks and no abilities for {s} s. Any of the Priest's heals tears them off at once.",
   fxGuilt: "Carries the guilt: loses {v} % of its life for every 1 % the boss loses, for {s} s. Any of the Priest's heals lifts it.",
   fxGilded: "The cooldowns of its abilities stand still for {s} s. Any of the Priest's heals lifts it.",

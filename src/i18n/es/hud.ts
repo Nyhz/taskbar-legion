@@ -49,6 +49,7 @@ export const hud: Record<keyof typeof en, string> = {
   fxTremor: 'El golpe de un bruto ha sacudido el suelo: ataca un {pct} % más lento un momento. Las curas no lo quitan.',
   fxMortalWound: 'El golpe de un jefe ha dejado una herida profunda: las curas que recibe rinden un {v} % menos durante {s} s. Cualquier cura de la Priest la quita.',
   fxVenom: 'Veneno de los golpes del jefe: {dps} de daño por segundo, hasta {n} capas; se va {s} s después del último golpe. Cualquier cura de la Priest lo quita.',
+  fxRend: 'Desgarro del golpe del jefe: {dps} de daño por segundo, una capa más con cada golpe, hasta {n}; dura {s} s. Solo una cura de la Priest lo quita.',
   fxRooted: 'Raíces que atan: sin ataques ni habilidades durante {s} s. Cualquier cura de la Priest las arranca al instante.',
   fxGuilt: 'Carga con la culpa: pierde un {v} % de su vida por cada 1 % que pierde el jefe, durante {s} s. Cualquier cura de la Priest la quita.',
   fxGilded: 'Las recargas de sus habilidades se detienen durante {s} s. Cualquier cura de la Priest lo quita.',

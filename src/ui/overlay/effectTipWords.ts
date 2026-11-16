@@ -63,6 +63,7 @@ const OWN_LINES: Readonly<Record<string, (fact: EffectTipFact, def: EffectDef) =
   debuff_tremor: (f, d) => t('hud.fxTremor', { pct: num(Math.abs(worth(f, d))) }),
   debuff_mortal_wound: (f, d) => t('hud.fxMortalWound', { v: num(worth(f, d)), s: seconds(f, d) }),
   debuff_venom: (f, d) => t('hud.fxVenom', { dps: num(worth(f, d)), n: d.maxStacks, s: seconds(f, d) }),
+  debuff_rend: (f, d) => t('hud.fxRend', { dps: num(worth(f, d)), n: d.maxStacks, s: seconds(f, d) }),
   debuff_rooted: (f, d) => t('hud.fxRooted', { s: seconds(f, d) }),
   debuff_guilt: (f, d) => t('hud.fxGuilt', { v: num(worth(f, d)), s: seconds(f, d) }),
   debuff_gilded: (f, d) => t('hud.fxGilded', { s: seconds(f, d) }),
