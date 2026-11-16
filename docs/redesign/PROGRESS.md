@@ -1902,3 +1902,8 @@ se mide dónde quedan los muros de hoy respecto al techo nuevo (Ronda 4 del info
 - **Resistencia mágica también en las oleadas: aura del Apoyo** (16 nov; usuario: «la resistencia mágica debería ser
   necesaria siempre»). Los Apoyos ganan un aura que encanta las armas de sus aliados: mientras el Apoyo viva, parte del
   daño de los enemigos de su oleada es mágico. Con datos, texto EN/ES y signo; el % se fija en la medida. **Por cablear.**
+- **El Cubo, sin límite** (16 nov, tras la ronda 4d): se puede fabricar cualquier rareza en cualquier dificultad. Se le
+  explicó que la pieza sale al nivel de objeto mediano de las 9 de entrada (no bajo) y con afijos de la clase; lo mantiene.
+  La cantidad lo frena al principio (una T8 son 6 561 T4); al final del juego fabricar es la forma de superar el techo.
+  **Primero el simulador** (ronda 4e): que use el Cubo, que valore la vida y que acepte las mejoras reales; después,
+  en otra pasada, el Knight, el daño mixto de los jefes y el aura del Apoyo.
