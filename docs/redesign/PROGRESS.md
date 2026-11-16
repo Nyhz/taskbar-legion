@@ -1925,3 +1925,8 @@ se mide dónde quedan los muros de hoy respecto al techo nuevo (Ronda 4 del info
   Eterno / Tormento, cerca de lo que cura la Priest, para que el Knight ofensivo no llegue desde Averno y el defensivo sí.
   **Solo esta propuesta**: las oleadas se quedan como están (descartadas «oleadas contra el frente» y «presión dentro
   del minuto»). Después, re-afinar muros y horas.
+- **Forma de las horas, regla firme** (16 nov, durante la ronda 6 · B): «Lo que no puede ser es que Eterno dure menos que
+  Averno, eso jamás. Y hay que tener cuidado con Tormento. Y tener cuidado con Infierno. La progresión debería ser algo
+  así como 4-20-80-200-500+ (no exactamente esos números, pero saltos proporcionalmente parecidos).» Cada dificultad más
+  larga que la anterior en cada partida; Infierno ≈ 20 h, Tormento 500+ sin dispararse. Si para cumplirlo hay que salir
+  de la escalera (sobre todo en Infierno), se sale y se apunta dónde y cuánto. Sustituye al orientativo 4/70/170/300/450.
