@@ -1882,3 +1882,7 @@ se mide dónde quedan los muros de hoy respecto al techo nuevo (Ronda 4 del info
   costaban ~8 h de 314). **Jugador medio nuevo** (usuario: «farmear y no gastar llaves en intentos que sabe que no van
   a pasar»): intenta con la primera llave; tras perder, solo reintenta si el jefe se quedó al 15 % de vida o menos, o si
   su equipo ha subido un 10 % desde el intento anterior.
+- **Techo gradual** (16 nov, tras la ronda 4): la rareza nueva de una dificultad entra en el techo poco a poco, del
+  mundo 1 (todo a la rareza anterior) al mundo 10 (todo a la nueva). Quita la sierra del mundo 2.
+- **Manda la escalera** (16 nov, tras la ronda 4b): los muros se ponen en la escalera suave aunque el juego pase de
+  ≈720 h; «aceptamos más horas, ya veremos si luego hacemos algún ajuste». Ronda 4c: muros en la escalera y medida.
