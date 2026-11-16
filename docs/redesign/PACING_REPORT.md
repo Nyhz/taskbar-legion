@@ -2088,15 +2088,15 @@ El mundo 1 cae en 5 de 8 cambios (antes de la ronda, a veces); el mundo 2 casi n
 Eterno va +5 sobre su escalera.
 
 **Sanadora sin curas** (`scripts/healer-check.ts`, semilla 1, 10 muros de Infierno 1 a Tormento 8, 8 combates): con su
-equipo, la Priest sin curas pierde 7 de 9 muros desde Infierno 3 (gana Infierno 1 y Averno 5). ✔ a medias, como antes.
+equipo, la Priest sin curas pierde 7 de 9 muros desde Infierno 3 (gana Infierno 1 y Eterno 5). ✔ a medias, como antes.
 
 **Knight ofensivo frente a defensivo** (`scripts/front-tune.ts`, nuevo): **no se cumple**. Con su equipo, el Knight sin
 defensas (Grito de guerra + Sed de sangre) gana lo mismo que el de la construcción buena (Tajo debilitante + Grito de
 guerra) en los 6 muros medidos de Averno a Tormento, y su margen es el mismo (0,85–1,26 frente a 0,85–1,10). La
-presión al frente (`BOSS_FRONT_PRESSURE`) apenas cuenta: en un muro de Averno el Knight pasa todo el minuto al
+presión al frente (`BOSS_FRONT_PRESSURE`) apenas cuenta: en el muro de Eterno 5 el Knight pasa todo el minuto al
 96–100 % de vida. Probado multiplicando esa presión desde Averno:
 
-| × la presión al frente | Averno 5 (propio · ofensivo) | Tormento 8 | Lectura |
+| × la presión al frente | Eterno 5 (propio · ofensivo) | Tormento 8 | Lectura |
 |---|---|---|---|
 | ×1 (la de hoy: 1,3 / 1,5 / 1,7) | 1 · 0,75 | 1 · 1 | igual |
 | ×5 | 0,88 · 1 | 1 · 1 | igual |
@@ -2111,7 +2111,7 @@ como decisión: hace falta que los jefes peguen mucho más al frente **y** que l
 
 **Resistencia mágica** (`scripts/mr-check.ts`, nuevo: el grupo con su equipo y sin ninguna tirada de resistencia
 mágica; 10 muros de 2 semillas con las instantáneas de la pasada 1, 8 combates; farmeo del X-9, 2 semillas):
-- **Muros**: sin ella pierde en 3 de 10 (Infierno 3: 88 % → 38 % de victorias; Averno 3 y 5: 38 → 13 %, 75 → 50 %); en
+- **Muros**: sin ella pierde en 3 de 10 (Infierno 3: 88 % → 38 % de victorias; Eterno 3 y 5: 38 → 13 %, 75 → 50 %); en
   los otros 7 igual.
 - **Farmeo**: nada. Ni una muerte con o sin ella, y el tiempo de limpiar el X-9 cambia un 0–4 %. El grupo va tan
   sobrado en las oleadas que ninguna defensa decide al farmear; Armas encantadas (40 %) no lo cambia.
@@ -2207,3 +2207,80 @@ La columna «Escalera» es la línea sin ajustes; el objetivo de la ronda 5 es e
 | 8 | T7→T8 (78 %) | 88 % | 83 % | 77 (69–91) % | 77 (75–91) % | 0 (0–2) | ×1,1 |
 | 9 | T7→T8 (89 %) | 89 % | 84 % | 68 (65–79) % | 72 (68–79) % | 11 (0–14) | ×1,1 |
 | 10 | T8 | 90 % | 85 % | 64 (61–70) % | 66 (65–70) % | 8 (2–14) | ×1,1 |
+
+## Ronda 5 · C · por qué los enemigos no amenazan a un grupo equipado (diagnóstico, sin cambios en el juego)
+
+*`scripts/threat-diag.ts` (nuevo): el grupo de la sonda (pasada 4 de la ronda 5, 2 semillas) al llegar a cada muro y al
+tumbarlo; sus defensas y de dónde salen; un combate contra el muro y una etapa entera de farmeo del X-5 contando cada
+golpe recibido y cada cura. Corrección: en la 5 · B llamé «Averno 5» a la etapa global 350, que es **Eterno 5**
+(201–300 es Averno, 301–400 Eterno); ya está corregido arriba.*
+
+### La causa, en una tabla (Knight, mediana de 2 partidas, al tumbar el muro)
+
+| Punto | Vida del Knight | Evita (armadura / RM) | Golpe del muro, con presión | El muro lo tumba sin curas en | Las oleadas le quitan | Las oleadas lo tumbarían en | Curas que recibe en el muro |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Infierno 3 | 1 544 | 21 % / 19 % | 122 | 22 s | 7 /s | 219 s | 18 /s |
+| Averno 5 | 9 171 | 35 % / 44 % | 323 | 71 s | 24 /s | 385 s | 137 /s |
+| Eterno 5 | 15 804 | 49 % / 52 % | 832 | 60 s | 45 /s | 349 s | 182 /s |
+| Tormento 5 | 32 128 | 65 % / 64 % | 2 217 | 67 s | 60 /s | 533 s | 3 449 /s |
+| Tormento 8 | 37 707 | 64 % / 61 % | 2 454 | 68 s | 55 /s | 686 s | 336 /s |
+
+(«Lo tumba sin curas en»: sólo los golpes normales del muro, con su bloqueo, sin Piel de piedra ni Tajo debilitante.)
+
+1. **Defensas.** Ninguna toca el tope del 90 %: el Knight evita un 20 % en Infierno y un 60–65 % en Tormento, con la
+   armadura 1,8 veces la «de nivel» (`expectedDefense`). El Ranger va al 20–40 %, la Priest al 40–60 %. Bloqueo del
+   Knight 40–52 %, reducción de daño fija 5–8 % (más Piel de piedra cuando salta), regeneración 5 por segundo
+   (despreciable).
+2. **Lo que entra frente a lo que se cura.** Los golpes normales del muro quitan al Knight cerca de un **1,5 % de su
+   vida por segundo** desde Averno (unos 65 s para tumbarlo sin curas); con Piel de piedra y Tajo debilitante, la mitad.
+   Las curas de la Priest son **un % de la vida de quien cura** (Sanar 30 % en 6 s cada 14 s, Luz sanadora 22 % cada
+   12 s): entre las dos, unos **4 % de la vida por segundo** de capacidad, pase lo que pase con el equipo. El muro pega
+   un 0,5–1,5 % por segundo y la Priest repone hasta un 4 %: **sobra capacidad de cura por 3–8 veces**, en todo el juego
+   desde Averno. Por eso el Knight acaba el minuto al 90–100 % y los muros sólo se pierden por la furia.
+   En el farmeo es peor: las oleadas le quitan un 0,15–0,5 % de la vida por segundo y una etapa entera dura 130–290 s;
+   el grupo no baja del 60–90 % sin curarse. **Ninguna defensa decide al farmear, y la resistencia mágica tampoco**:
+   un 40 % de un daño que no amenaza sigue sin amenazar.
+3. **De dónde sale la defensa** (Knight en Tormento 8): vida 37 700 = nivel y clase 2 % · afijos 29 % · **gemas 36 %** ·
+   talentos y % 33 %; armadura 4 626 = nivel 2 % · afijos 57 % · gemas 22 % · talentos 20 %. Las gemas (a 0,9 de un afijo,
+   `GEM_AFFIX_FRACTION`, en 3–4 huecos por pieza alta) son la mayor fuente de vida.
+4. **Cómo crece cada cosa** (`scripts`: Φ, `enemyDamage`, tablas de la sección F):
+
+   | | Infierno 3 → Tormento 8 |
+   |---|---:|
+   | Vida de un enemigo normal (anclada al daño del grupo) | × 89 (2 350 → 210 000) |
+   | Daño de un enemigo normal (`DMG0·Φ^1,2·1,3^dificultad` × `TRASH_DMG_TUNE`) | × 31 (3,4 → 105) |
+   | Golpe del muro (× 7, presión de mundo y al frente) | × 20 (122 → 2 454) |
+   | Vida del Knight | × 24 (1 544 → 37 700) |
+   | Daño que le entra por golpe tras mitigar | × 9 (le entra un 80 % → un 37 %) |
+
+   La vida de los enemigos está **anclada** al daño del grupo (2–3 golpes), pero el **daño** de los enemigos sigue una
+   fórmula fija que no mira al grupo; `TRASH_DMG_TUNE` sólo la puede bajar (≤ 1, «donde el grupo limpia sin morir»). El
+   grupo multiplica su vida por 24 y su mitigación por 3 mientras el golpe del muro crece ×20: **se separa entre
+   Infierno y Averno** (de 22 s a 71 s para tumbar al Knight sin curas) y desde ahí la amenaza queda plana, muy por
+   debajo de lo que la Priest repone.
+5. **El precipicio entre ×10 y ×20** no es el tope del 90 % (nadie llega). Es la capacidad de cura: como las curas son un
+   % de la vida, un grupo **o** recibe menos de lo que la Priest repone y no muere nunca, **o** recibe más y muere en
+   segundos. A ×1 el Knight recibe ~0,5 % por segundo con sus defensas; a ×10, ~5 % (justo por encima de los ~4 % que
+   repone la Priest: el defensivo aguanta, el ofensivo, que recibe el doble, no); a ×20, ~10 % (mueren los dos). Las
+   defensas del Knight (Piel de piedra, Tajo debilitante) reducen lo que le entra a la mitad: **mueven el precipicio ×2,
+   y sólo deciden si la presión cae dentro de esa franja**.
+
+### Propuestas (ninguna capa una estadística de poder; todas rehacen el eje del daño enemigo)
+
+1. **Anclar el daño de los jefes a la vida del tanque, como ya se ancla su vida al daño del grupo.** Una tabla por punto
+   de afinado (`BOSS_DMG_TUNE`, escrita por la sonda como `GRUNT_HP_TUNE`) para que el golpe sostenido del muro sobre el
+   héroe de delante sea un **% de la vida por segundo del Knight equipado, tras su mitigación**, subiendo por dificultad
+   y alrededor de la capacidad de cura: por ejemplo 2 % en Infierno, 3 % en Averno, 3,5 % en Eterno, 4 % en Tormento,
+   frente a ~4 % de cura. El Knight ofensivo (que recibe el doble) pasa de la capacidad desde Averno y muere; el defensivo
+   queda por debajo. Se mide con la sonda, no se adivina.
+2. **Lo mismo para las oleadas, sin tope en 1.** Rehacer `TRASH_DMG_TUNE` hacia un objetivo de **% de vida por segundo en
+   el frente** (de ~0,5 % en Normal a ~2 % en Tormento) en vez de «≤ 1 donde el grupo limpia»: con presión real al
+   farmear, la resistencia mágica que pide Armas encantadas (40 % de cada golpe) y la sanadora cuentan también fuera de
+   los muros. Las oleadas viven poco (2–3 golpes), así que el % debe ser del daño mientras están vivas, no del tiempo de
+   la etapa.
+3. **Una presión que crece durante el minuto, no sólo después.** Que el daño del jefe suba poco a poco a lo largo de la
+   pelea (por ejemplo +1 % por segundo hasta el minuto, y la furia después): el grupo no pasa de «inmortal» a «muerto en
+   segundos» de golpe, el Knight defensivo gana segundos de verdad (aguanta más tramo de la subida) y se ve en la barra.
+   Combina con la 1; por sí sola no basta.
+
+Las tres mueven las horas: tras cablear la que se elija, hay que re-afinar los muros y las horas (punto B otra vez).
