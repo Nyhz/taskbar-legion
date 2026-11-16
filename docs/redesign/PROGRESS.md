@@ -1917,3 +1917,11 @@ se mide dónde quedan los muros de hoy respecto al techo nuevo (Ronda 4 del info
   - **Furia más dura**: pasado el minuto, el daño del jefe sube más rápido (hoy se duplica cada 2 s) para que pasar del
     minuto sea casi imposible desde Averno; el % de la escalera pasa a ser lo que de verdad hace falta. Hoy el grupo
     tumbaba el muro de Tormento con un 66 % del techo cuando pedía un 85 %.
+- **El daño de los jefes, anclado a la vida del tanque** (16 nov, tras el diagnóstico de la ronda 5 · C: ninguna defensa
+  toca el tope del 90 %; las curas de la Priest son un % de la vida y reponen ~4 %/s en todo el juego, y el daño
+  enemigo es una fórmula fija que se queda plana desde Averno). Igual que la vida de los jefes se ancla al daño del grupo,
+  su daño pasa a ser una **tabla fija por etapa**, medida una vez con el jugador medio (no reacciona a la vida de cada
+  jugador): el muro quita al Knight medio, tras mitigar, ≈ 2 / 3 / 3,5 / 4 % de vida por segundo en Infierno / Averno /
+  Eterno / Tormento, cerca de lo que cura la Priest, para que el Knight ofensivo no llegue desde Averno y el defensivo sí.
+  **Solo esta propuesta**: las oleadas se quedan como están (descartadas «oleadas contra el frente» y «presión dentro
+  del minuto»). Después, re-afinar muros y horas.
