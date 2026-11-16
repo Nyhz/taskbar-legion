@@ -5,6 +5,7 @@ import { STATS, type StatKey } from '@/data/stats';
 import { effectCoeff, effectDuration, effectMagnitude, powerOf } from './abilities';
 import type { EffectiveStats } from './stats';
 import type { Combatant } from './world';
+import { HEAL_CLEANSE_COUNT } from '@/data/healing';
 
 // What an ability does at a rank, as DATA: one fact per applied effect, with its magnitude resolved at the
 // hero's stats. The interface words them in the player's language (ui/panels/hero/abilityLineText) — the
@@ -29,7 +30,7 @@ export type EffectFact = {
   | { type: 'vulnerable'; pct: number; ms: number } // more damage taken
   | { type: 'root'; ms: number }
   | { type: 'silence'; ms: number }
-  | { type: 'cleanse' } // removes harmful effects
+  | { type: 'cleanse'; count: number } // lifts harmful effects from each hero it heals (data/healing)
 );
 
 /** A party aura at a rank (an aura ability grants it while learned), or null if the ability has none.
@@ -92,12 +93,13 @@ export function abilityEffectFacts(ability: AbilityDef, rank: number, cs: Effect
       case 'silence':
         facts.push({ ...base, type: 'silence', ms });
         break;
-      case 'cleanse':
-        facts.push({ ...base, type: 'cleanse' });
-        break;
       default:
         break;
     }
+  }
+  // A heal of hers lifts harmful effects from each hero it heals (as it lands, or as a heal over time is applied).
+  if (ability.applies.some((a) => { const t = effectDef(a.effectKey).kind.type; return t === 'heal' || t === 'hot'; })) {
+    facts.push({ type: 'cleanse', count: HEAL_CLEANSE_COUNT });
   }
   return facts;
 }

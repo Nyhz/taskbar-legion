@@ -76,6 +76,11 @@ export type AbilityTarget =
   | 'mostHitAlly' // the living ally that has taken the most damage in the last moments
   | 'hurtAlly' // an ally that has just taken a heavy hit, else the one with the least life
   | 'harmedAlly' // the ally carrying the most harmful effects, else the one with the least life
+  // An ally in danger (under data/healing HEAL_URGENT_FRAC: the most hurt), else the one carrying the most harmful
+  // effects, else one just struck hard, else the most hurt (Healing Light).
+  | 'triageAlly'
+  // The hurt-most living ally other than the one the ability itself lands on (a modifier's "and a second ally").
+  | 'nextHurtAlly'
   // ── the boss kit (data/bossKit.ts): whom a boss picks among the heroes, wherever they stand ──
   | 'randomEnemy' // any living foe, at random
   | 'softestEnemy' // the living foe with the least armour (the Certero affix)
@@ -123,10 +128,11 @@ export type FireRule =
   | { when: 'allyHit' }
   // An ally is under `frac` of its life — or (`orHeavyHit`) has just taken a single hit of HEAVY_HIT_LIFE_FRAC.
   | { when: 'allyBelow'; frac: number; orHeavyHit?: boolean }
-  // `allies` living heroes under `frac` of their life (all of them when the party is smaller), or one under `orOneBelow`.
-  | { when: 'partyHurt'; allies: number; frac: number; orOneBelow: number }
-  // An ally carries a harmful effect, or is under `frac` of its life.
-  | { when: 'harmedOrBelow'; frac: number };
+  // `allies` living heroes under `frac` of their life (all of them when the party is smaller), or one under
+  // `orOneBelow` — or (`orHarmed`) that many of them carrying a harmful effect.
+  | { when: 'partyHurt'; allies: number; frac: number; orOneBelow: number; orHarmed?: number }
+  // An ally carries a harmful effect, or is under `frac` of its life — or (`orHeavyHit`) has just taken a heavy hit.
+  | { when: 'harmedOrBelow'; frac: number; orHeavyHit?: boolean };
 
 /** How long a hit stays "recent" for the fire rules, and what share of its life one hit must take from a hero
  *  to count as heavy (sim/recent.ts keeps the bookkeeping). */
@@ -233,22 +239,26 @@ export const ABILITIES: Record<string, AbilityDef> = {
   priest_mend: {
     key: 'priest_mend', name: 'Mend', icon: 'heal',
     desc: 'A rolling heal on whoever is hurt — amplified by heal power.',
-    cooldownMs: 20000, target: 'hurtAlly', applies: [{ effectKey: 'fx_hot', durationMsOverride: 6000 }],
+    // Recast every 14 s (was 20): the world bosses' minute presses the back line from Hell on (data/bossKit
+    // WORLD_BOSS_PRESSURE), and a party must be kept standing by its heals — round 3, checkpoint 2.
+    cooldownMs: 14000, target: 'hurtAlly', applies: [{ effectKey: 'fx_hot', durationMsOverride: 6000 }],
     // HoT coeff is the TOTAL heal over the duration (× target max HP × healPower), spread
-    // per-tick. 15%→25% of max HP over 6s (+2.5/rank).
-    // On whoever has just taken a heavy hit; otherwise on the most hurt, once someone is under 70 %.
-    castCondition: 'allyBelowHpPct', fires: { when: 'allyBelow', frac: 0.7, orHeavyHit: true }, power: { coeff: 0.15, coeffPerRank: 0.025 },
+    // per-tick. 20%→30% of max HP over 6s (+2.5/rank) — raised with the heal kit (2026-11-16): a heal over time
+    // is worth MORE than the instant one beside it (Healing Light), which pays for landing at once.
+    // On whoever has just taken a heavy hit; otherwise on the most hurt, once someone is under 70 %. As it is
+    // applied it lifts the ally's harmful effects (data/healing).
+    castCondition: 'allyBelowHpPct', fires: { when: 'allyBelow', frac: 0.7, orHeavyHit: true }, power: { coeff: 0.2, coeffPerRank: 0.025 },
   },
-  priest_powerinfusion: {
-    key: 'priest_powerinfusion', name: 'Power Infusion', icon: 'surge',
-    desc: 'Infuse a damage-dealer with frenzied speed and cooldown reduction. Prefers a DPS; if the party has none, infuses the tank instead.',
-    cooldownMs: 24000, target: 'randomDpsAlly',
-    // buff_infusion_as + buff_infusion_cdr: both 30%→50% (+5/rank) for 6s.
-    applies: [
-      { effectKey: 'buff_infusion_as', valuePerRank: 5 },
-      { effectKey: 'buff_infusion_cdr', valuePerRank: 5 },
-    ],
-    castCondition: 'enemyPresent', fires: { when: 'worthIt', foes: 3 },
+  // Healing Light (2026-11-16, in Power Infusion's place): the instant heal on one ally. Worth ~75 % of Mend (user
+  // rule: "si las overtime son 30 %, las instantáneas deben ser 20-25 %"): 15%→22% of the ally's max HP (+1.75/rank),
+  // × heal power. It lifts the ally's harmful effects as it lands (data/healing) — Purify's work is the heals' now.
+  priest_healing_light: {
+    key: 'priest_healing_light', name: 'Healing Light', icon: 'heal',
+    desc: 'An instant heal on the ally who needs it most — and every harmful effect lifted from them.',
+    cooldownMs: 12000, target: 'triageAlly', applies: [{ effectKey: 'fx_heal' }], // every 12 s (was 20): see Mend
+    // An ally under 60 %, one just struck hard, or one carrying a harmful effect: the one in danger first
+    // (data/healing HEAL_URGENT_FRAC), then the one carrying something, then the most hurt.
+    castCondition: 'allyBelowHpPct', fires: { when: 'harmedOrBelow', frac: 0.6, orHeavyHit: true }, power: { coeff: 0.15, coeffPerRank: 0.0175 },
   },
   priest_holyshield: {
     key: 'priest_holyshield', name: 'Holy Shield', icon: 'shield',
@@ -265,14 +275,16 @@ export const ABILITIES: Record<string, AbilityDef> = {
     // Per-target wave damage: 1.2× → 2.8× AD (+0.4/rank).
     castCondition: 'enemyPresent', fires: { when: 'worthIt', foes: 3 }, power: { coeff: 1.2, coeffPerRank: 0.4, canCrit: true },
   },
-  priest_purify: {
-    key: 'priest_purify', name: 'Purify', icon: 'holy',
-    desc: 'Lifts every harmful effect from an ally — venom, a mortal wound, spores — and heals it a little.',
-    cooldownMs: 16000, target: 'harmedAlly', applies: [{ effectKey: 'fx_cleanse' }, { effectKey: 'fx_heal' }],
-    // On the ally carrying the most harmful effects (with none harmed, the most hurt): they are all removed,
-    // then it heals 6%→10% of that ally's max HP (+1/rank), so a wound that cut healing no longer cuts this one.
-    // Kept for a harmful effect; with none around it is still used as a small heal on an ally under 60 %.
-    fires: { when: 'harmedOrBelow', frac: 0.6 }, power: { coeff: 0.06, coeffPerRank: 0.01 },
+  // Circle of Healing (2026-11-16, in Purify's place): the instant heal on the whole party, worth ~75 % of
+  // Sanctuary (user: "si la cura over time grupal es 20, la cura aoe grupal instant debe ser 15"): 9%→15% of each
+  // one's max HP (+1.5/rank), × heal power. Each of them has its harmful effects lifted as it lands (data/healing).
+  priest_circle: {
+    key: 'priest_circle', name: 'Circle of Healing', icon: 'holy',
+    desc: 'An instant heal on the whole party — and every harmful effect lifted from each of them.',
+    cooldownMs: 20000, target: 'allAllies', applies: [{ effectKey: 'fx_heal' }], // every 20 s (was 30): see Mend
+    // A party heal is for a hurt party (two heroes under 80 %, or one under half) — or two of them carrying a
+    // harmful effect.
+    castCondition: 'allyBelowHpPct', fires: { when: 'partyHurt', allies: 2, frac: 0.8, orOneBelow: 0.5, orHarmed: 2 }, power: { coeff: 0.09, coeffPerRank: 0.015 },
   },
 
   // ───────────────────────── Ranger ─────────────────────────

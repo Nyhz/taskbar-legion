@@ -314,6 +314,25 @@ def condemn() -> Icon:  # the gavel coming down: judged, it takes more from ever
     ], {"h": ("leather", 2), "H": ("leather", 4), "L": ("leather", 6), **GOLD, "v": ("violet", 3), "V": ("violet", 6)})
 
 
+
+def infusion() -> Icon:  # a mint cross, and the yellow spark it gives off: each heal quickens the one it heals
+    return sprite([
+        "..........G...",
+        ".........GYG..",
+        "....mm....G...",
+        "....mM........",
+        "....mM.....y..",
+        ".mmmmMmmm.yYy.",
+        ".mMMMwMMM..y..",
+        ".mmmmMmmm.....",
+        "....mM........",
+        "....mM...G....",
+        "....mm..GYG...",
+        ".........G....",
+        E,
+        E,
+    ], {**MINT, **GOLD, **WHITE})
+
 # ── The effect passive's frame ──────────────────────────────────────────────────────────────────────────────
 def effect_seal(ring: Tone, fill: Tone, lit: Tone | None = None) -> Image.Image:
     """22×22 (a passive's footprint): the role talent's seal — round, crossed by four points — one size down.
@@ -350,6 +369,7 @@ def build() -> list[dict]:
         ("tal_e_pierce_through", "Atravesar", pierce_through()), ("tal_e_cruelty", "Ensañamiento", cruelty()),
         ("tal_e_overflow", "Rebosar", overflow()), ("tal_e_mantle", "Manto", mantle()), ("tal_e_revive", "Reanimar", revive()),
         ("tal_e_searing_light", "Luz hiriente", searing_light()), ("tal_e_condemn", "Condena", condemn()),
+        ("tal_e_infusion", "Infusión de poder (pasivo)", infusion()),
     ]
     frames = [
         ("tal_effect_off", "Pasivo de efecto sin puntos", effect_seal(("ink", 3), ("ink", 0))),

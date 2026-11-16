@@ -6,11 +6,13 @@ import { CAPSTONE_BRANCH_POINTS, TRUNK, rowUnlockThreshold, talentNodes, talentT
 
 // The talent TREE as data (docs/redesign/CLASSES.md §2, F1): its shape, its budget and its stable keys.
 
-// The Priest's fifth is Purify since the second combat wave: Retribution Aura became a passive of the same tier.
+// The Priest's fifth was Purify since the second combat wave (Retribution Aura became a passive of the same tier);
+// since the heal kit (2026-11-16) her second and fifth are Healing Light and Circle of Healing, in the places of
+// Power Infusion (a passive of Zeal now) and Purify (the heals' work now).
 const ORIGINAL_ABILITIES: Record<string, string[]> = {
   knight: ['knight_guard', 'knight_debilitate', 'knight_bulwark', 'knight_battlecry', 'knight_bloodlust'],
   ranger: ['ranger_fast_fire', 'ranger_aimedshot', 'ranger_multishot', 'ranger_focus', 'ranger_frozentrap'],
-  priest: ['priest_mend', 'priest_powerinfusion', 'priest_holyshield', 'priest_nova', 'priest_purify'],
+  priest: ['priest_mend', 'priest_healing_light', 'priest_holyshield', 'priest_nova', 'priest_circle'],
 };
 
 describe('talent tree shape', () => {
@@ -96,12 +98,12 @@ describe('talent tree shape', () => {
     }
   });
 
-  it('five effect passives per class, where the second combat wave put them', () => {
+  it('five effect passives per class where the second combat wave put them — the Priest a sixth, Power Infusion', () => {
     const where = (k: string): string[] =>
       talentNodes(k).filter((n) => n.kind === 'passive' && n.role !== undefined).map((n) => `${n.key}@${n.lane}${n.rowIndex + 1}`);
     expect(where('knight')).toEqual(['knight_guardian@trunk1', 'knight_close_ranks@bastion7', 'knight_weathered_hide@scourge7', 'knight_shelter@bastion9', 'knight_endurance@scourge9']);
     expect(where('ranger')).toEqual(['ranger_first_blood@trunk1', 'ranger_countersniper@marksman7', 'ranger_pierce_through@stalker7', 'ranger_hemorrhage@marksman9', 'ranger_cruelty@stalker9']);
-    expect(where('priest')).toEqual(['priest_overflow@trunk1', 'priest_mantle@devotion7', 'priest_searing_light@zeal7', 'priest_revive@devotion9', 'priest_condemn@zeal9']);
+    expect(where('priest')).toEqual(['priest_overflow@trunk1', 'priest_infusion@zeal5', 'priest_mantle@devotion7', 'priest_searing_light@zeal7', 'priest_revive@devotion9', 'priest_condemn@zeal9']);
   });
 
   it('tier 1 keeps the values of the old row 1 for the stat passive that stayed', () => {

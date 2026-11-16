@@ -247,13 +247,13 @@
     "en": "Holy Nova also heals each ally for 3% of its life.",
     "es": "Nova sagrada cura además a cada aliado un 3 % de su vida."
   },
-  "priest_mod_twin_infusion.name": {
-    "en": "Twin Infusion",
-    "es": "Infusión gemela"
+  "priest_mod_twin_light.name": {
+    "en": "Twin Light",
+    "es": "Luz gemela"
   },
-  "priest_mod_twin_infusion.desc": {
-    "en": "Power Infusion reaches two heroes.",
-    "es": "Infusión de poder alcanza a dos héroes."
+  "priest_mod_twin_light.desc": {
+    "en": "Healing Light also heals the next most hurt ally for half as much.",
+    "es": "Luz sanadora cura también al siguiente aliado más herido, la mitad."
   },
   "priest_mod_deep_sanctuary.name": {
     "en": "Deep Sanctuary",
@@ -406,6 +406,14 @@
   "priest_condemn.desc": {
     "en": "Enemies hit by her damage abilities take 2% more damage per rank from the whole party for 4s.",
     "es": "Los enemigos golpeados por sus habilidades de daño reciben un 2 % más de daño por rango de todo el grupo durante 4 s."
+  },
+  "priest_infusion.name": {
+    "en": "Power Infusion",
+    "es": "Infusión de poder"
+  },
+  "priest_infusion.desc": {
+    "en": "Each of her heals gives the allies it heals 3% attack speed and 3% cooldown reduction per rank for 4s.",
+    "es": "Cada cura suya da a los aliados que cura un 3 % de velocidad de ataque y un 3 % de reducción de recarga por rango durante 4 s."
   },
   "priest_retribution.name": {
     "en": "Retribution Aura",

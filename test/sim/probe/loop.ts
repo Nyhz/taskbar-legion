@@ -27,6 +27,9 @@ import { measureFarm, measureBoss, type FarmSample } from './combat';
 import { openCaptured, equipItems, socketGems, partyPower } from './gear';
 import { wallDamage, zoneSetDamage } from './zoneGear';
 import { freshHero, syncGrowth, buyTech } from './economy';
+import { partyWithBuild, type PartyBuild } from './builds';
+import { petMissChance, petRanks } from '@/sim/pets';
+import { PET_KEYS, petDef } from '@/data/pets';
 import { getBonuses } from '@/sim/bonuses';
 import { chestDropChance } from '@/sim/chests';
 import { offlineCapMs } from '@/sim/offline';
@@ -71,6 +74,18 @@ export interface ProbeConfig {
    *  (again and again while walled). Lets a measurement sample "the party the average player has at stage S"
    *  (scripts/measure-backline.ts). Return false to end the run there. */
   observe?: (target: number, party: readonly HeroConfig[], bonuses: ReturnType<typeof getBonuses>) => boolean | void;
+  /** The build every hero of a class plays (test/sim/probe/builds.ts); omitted = PROBE_DEFAULT_BUILD. */
+  build?: PartyBuild;
+  /** Pets: 'none' (the player never finds one) or 'median' (each pet is owned from the moment half the players
+   *  would have found it — the chance of having missed it falls to 50 % with the kills so far — and climbs its
+   *  ranks through its own objective, counted from then, as in the game). */
+  pets?: 'none' | 'median';
+  /** The run's seed deals the affixes of each boss and the supports of each wave (as in the game: the same on every
+   *  attempt at a wall). false = the old probe: they came from the combat seed, so a failed wall rerolled them. */
+  fixedRunSeed?: boolean;
+  /** Tooling (the build study): the build the party switches to for an attempt at the wall `stage` (a free respec
+   *  before the fight) — omitted or undefined, it fights in the build it farms in. */
+  wallBuild?: (stage: number) => PartyBuild | undefined;
 }
 
 // THE PACING REFERENCE (set by the user, 2026-11-15): the game is a desktop overlay that stays open — assume
@@ -93,6 +108,8 @@ export const DEFAULT_CONFIG: ProbeConfig = {
   remeasureTol: 0.03,
   maxDays: 3000,
   stallDays: 540,
+  pets: 'none',
+  fixedRunSeed: true,
 };
 
 export interface State {
@@ -110,7 +127,13 @@ export interface State {
   activeSec: number; // total active-combat seconds consumed
   calendarDays: number;
   tally: ProbeTally; // what active play has produced so far (kills, income, chests) — drop-rate and objective tuning
+  build?: PartyBuild; // the build every hero of a class plays (cfg.build)
+  away: { gold: number; xp: number }; // what away-time banked (it counts for the gold and experience pets' objectives)
+  pets: Record<string, PetCounters>; // owned pets (cfg.pets 'median') → the counters when each was found
 }
+
+/** The counters a pet objective reads, as they stood when the pet was found. */
+interface PetCounters { gold: number; xp: number; opened: number; found: number; playedMs: number; bosses: number }
 
 /** Running totals of ACTIVE play (away-time excluded): the base the pet drop rates and objectives are tuned on. */
 export interface ProbeTally {
@@ -208,7 +231,7 @@ function addXp(state: State, perHero: number): void {
   for (let i = 0; i < state.party.length; i++) {
     state.xp[i] = (state.xp[i] ?? 0) + perHero;
     const cfg = state.party[i];
-    if (cfg !== undefined && syncGrowth(cfg, state.xp[i] ?? 0)) state.dirty = true;
+    if (cfg !== undefined && syncGrowth(cfg, state.xp[i] ?? 0, state.build?.[cfg.classKey])) state.dirty = true;
   }
 }
 
@@ -237,7 +260,7 @@ function farmSample(state: State, S: number, bonuses: ReturnType<typeof getBonus
     if (!stale) state.dirty = false; // moved too little to matter: keep the measurement (the drift keeps adding up)
   }
   if (stale) {
-    const sample = measureFarm(state.party, S, cfg.measureSeed, bonuses);
+    const sample = measureFarm(state.party, S, cfg.measureSeed, bonuses, undefined, cfg.fixedRunSeed === false ? cfg.measureSeed : state.seed);
     state.cache = { stage: S, sample, goldMult: bonuses.goldMult, xpMult: bonuses.xpMult, power: partyPower(state.party), heroes: state.party.length };
     state.dirty = false;
   }
@@ -290,9 +313,9 @@ function farmChunk(state: State, S: number, dtSec: number, cfg: ProbeConfig, bon
 }
 
 /** Recruit any affordable open slot, then spend gold on tech (which may open more slots). */
-function recruitAndTech(state: State, trace?: (line: string) => void): void {
+function recruitAndTech(state: State, cfg: ProbeConfig, trace?: (line: string) => void): void {
   for (let pass = 0; pass < 4; pass++) {
-    let bonuses = getBonuses(state.techRanks, {});
+    let bonuses = bonusesOf(state, cfg);
     while (state.party.length < bonuses.partySlots && state.party.length < CLASS_KEYS.length) {
       const nextClass = CLASS_KEYS[state.party.length];
       if (nextClass === undefined) break;
@@ -300,11 +323,11 @@ function recruitAndTech(state: State, trace?: (line: string) => void): void {
       const cost = unlock.type === 'gold' ? unlock.cost : 0;
       if (state.gold < cost) break;
       state.gold -= cost;
-      state.party.push(freshHero(`h${state.party.length}`, nextClass, 1));
+      state.party.push(freshHero(`h${state.party.length}`, nextClass, 1, state.build?.[nextClass]));
       trace?.(`${(state.activeSec / 3600).toFixed(2)}h\trecruit ${nextClass} (frontier ${state.frontier})`);
       state.xp.push(0);
       state.dirty = true;
-      bonuses = getBonuses(state.techRanks, {});
+      bonuses = bonusesOf(state, cfg);
     }
     // Until the trio is complete the player SAVES for it: only the party slot is bought (a purse drained by cheap
     // economy ranks would push the first recruit back by half an hour).
@@ -324,6 +347,8 @@ function applyOffline(state: State, cfg: ProbeConfig, bonuses: ReturnType<typeof
   const clears = sec / m.clearSec;
   state.gold += m.gold * clears * bonuses.offlineMult; // gold/xp only, ×offlineMult, no loot
   addXp(state, m.xp * clears * bonuses.offlineMult);
+  state.away.gold += m.gold * clears * bonuses.offlineMult;
+  state.away.xp += m.xp * clears * bonuses.offlineMult;
 }
 
 /** Farming granularity: fine in Normal (the first hours are looked at closely), three times coarser after it. */
@@ -354,7 +379,7 @@ export interface ProbeRun {
 export function newProbeRun(seed: number, cfg: ProbeConfig = DEFAULT_CONFIG): ProbeRun {
   return {
     state: {
-      party: [freshHero('h0', 'knight', 1)],
+      party: [freshHero('h0', 'knight', 1, cfg.build?.knight)],
       xp: [0],
       gold: 0,
       techRanks: {},
@@ -368,6 +393,9 @@ export function newProbeRun(seed: number, cfg: ProbeConfig = DEFAULT_CONFIG): Pr
       activeSec: 0,
       calendarDays: 0,
       tally: emptyTally(),
+      build: cfg.build,
+      away: { gold: 0, xp: 0 },
+      pets: {},
     },
     activeLeft: cfg.activeHoursPerDay * 3600,
     milestones: [],
@@ -397,8 +425,39 @@ export function runFrontier(run: ProbeRun): number {
 export function runActiveHours(run: ProbeRun): number {
   return run.state.activeSec / 3600;
 }
-export function runBonuses(run: ProbeRun): ReturnType<typeof getBonuses> {
-  return getBonuses(run.state.techRanks, {});
+export function runBonuses(run: ProbeRun, cfg: ProbeConfig = DEFAULT_CONFIG): ReturnType<typeof getBonuses> {
+  return bonusesOf(run.state, cfg);
+}
+
+/** The pets the player owns now and their ranks (cfg.pets 'median'; none otherwise). Finds the pets whose chance
+ *  of having been missed has fallen to a half with the kills so far, noting the counters their objectives start from. */
+export function ownedPetRanks(state: State, cfg: ProbeConfig): Record<string, number> {
+  if (cfg.pets !== 'median') return {};
+  const t = state.tally;
+  const counters = (): PetCounters => ({
+    gold: t.gold + state.away.gold, xp: t.xp + state.away.xp, opened: t.normalChestsOpened, found: t.chestsFound,
+    playedMs: state.activeSec * 1000, bosses: t.bossKills,
+  });
+  for (const key of PET_KEYS) {
+    if (state.pets[key] === undefined && petMissChance(key, t.kills, t.bossKills) <= 0.5) state.pets[key] = counters();
+  }
+  const now = counters();
+  const progress: Record<string, number> = {};
+  for (const [key, at] of Object.entries(state.pets)) {
+    const kind = petDef(key).objective.kind;
+    progress[key] = kind === 'goldEarned' ? now.gold - at.gold
+      : kind === 'xpEarned' ? now.xp - at.xp
+      : kind === 'commonChestsOpened' ? now.opened - at.opened
+      : kind === 'chestsFound' ? now.found - at.found
+      : kind === 'timePlayed' ? now.playedMs - at.playedMs
+      : now.bosses - at.bosses;
+  }
+  return petRanks(Object.keys(state.pets), progress);
+}
+
+/** The bonuses of the player's tech and pets. */
+function bonusesOf(state: State, cfg: ProbeConfig): ReturnType<typeof getBonuses> {
+  return getBonuses(state.techRanks, ownedPetRanks(state, cfg));
 }
 
 /** Play `run` on until the game (or `cfg.stopAtStage`) is cleared, `cfg.stopAtActiveSec` is reached, or it gives up. */
@@ -407,12 +466,12 @@ export function advanceProbe(run: ProbeRun, cfg: ProbeConfig = DEFAULT_CONFIG): 
   const lastStage = Math.min(MAX_GLOBAL_STAGE, cfg.stopAtStage ?? MAX_GLOBAL_STAGE);
   const timeUp = (): boolean => cfg.stopAtActiveSec !== undefined && state.activeSec >= cfg.stopAtActiveSec;
   while (state.frontier < lastStage && state.calendarDays < cfg.maxDays && !run.gaveUp && !timeUp()) {
-    let bonuses = getBonuses(state.techRanks, {});
+    let bonuses = bonusesOf(state, cfg);
 
     while (run.activeLeft > 0 && state.frontier < lastStage && !timeUp()) {
       // Gold is spent as soon as it is enough: a recruit joins mid-session, not at the end of the day.
-      recruitAndTech(state, cfg.trace);
-      bonuses = getBonuses(state.techRanks, {});
+      recruitAndTech(state, cfg, cfg.trace);
+      bonuses = bonusesOf(state, cfg);
       if (cfg.farmStage !== undefined) {
         const dt = Math.min(run.activeLeft, chunkSec(state, cfg));
         farmChunk(state, cfg.farmStage, dt, cfg, bonuses);
@@ -432,7 +491,9 @@ export function advanceProbe(run: ProbeRun, cfg: ProbeConfig = DEFAULT_CONFIG): 
           // A key in hand → an attempt (the first one needs a key too). The key is spent on entry, win or lose.
           state.keys[target] = (state.keys[target] ?? 0) - 1;
           if (run.firstAttemptSec < 0) run.firstAttemptSec = state.activeSec;
-          const res = measureBoss(state.party, target, cfg.measureSeed + run.attempts, bonuses);
+          const wb = cfg.wallBuild?.(target);
+          const fighters = wb === undefined ? state.party : partyWithBuild(state.party, wb);
+          const res = measureBoss(fighters, target, cfg.measureSeed + run.attempts, bonuses, undefined, cfg.fixedRunSeed === false ? cfg.measureSeed + run.attempts : state.seed);
           run.attempts += 1;
           cfg.trace?.(`${(state.activeSec / 3600).toFixed(2)}h\tattempt ${target} ${res.win ? 'WIN' : 'lost'} lvl ${state.party.map((h) => h.level).join('/')} top T${topTier(state.party)} fight ${res.fightSec.toFixed(0)}s minHP ${(res.minHpFrac * 100).toFixed(0)}%`);
           const spent = res.win ? Math.max(30, res.killSec) : cfg.lostAttemptSec;
@@ -522,7 +583,7 @@ export function advanceProbe(run: ProbeRun, cfg: ProbeConfig = DEFAULT_CONFIG): 
     if (run.activeLeft > 0) break; // stopped mid-day (done, time up, or the hook): the day is not over
 
     applyOffline(state, cfg, bonuses);
-    recruitAndTech(state, cfg.trace);
+    recruitAndTech(state, cfg, cfg.trace);
     state.calendarDays += 1;
     run.activeLeft = cfg.activeHoursPerDay * 3600;
 

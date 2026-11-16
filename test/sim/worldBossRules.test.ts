@@ -124,11 +124,11 @@ describe('Culpa (the Scapegoat)', () => {
     expect(events.some((e) => e.type === 'death' && e.targetId === 'archer')).toBe(true);
   });
 
-  it('Purify lifts the mark', () => {
+  it('a heal on the marked hero lifts the mark', () => {
     const archer = hero('archer', { hp: 900 });
     applyEffect(archer.effects, effectDef('debuff_guilt'), 'boss', 2, 8000);
-    const priest = hero('healer', { classKey: 'priest', abilities: [{ def: abilityDef('priest_purify'), rank: 1 }] });
-    expect(castReadyAbilities(priest, [archer, priest], [boss('guilt', 0)], 40, quietRng(), [])).toEqual(['priest_purify']);
+    const priest = hero('healer', { classKey: 'priest', abilities: [{ def: abilityDef('priest_healing_light'), rank: 1 }] });
+    expect(castReadyAbilities(priest, [archer, priest], [boss('guilt', 0)], 40, quietRng(), [])).toEqual(['priest_healing_light']);
     expect(effect(archer, 'debuff_guilt')).toBeUndefined();
     expect(effectDef('debuff_guilt').beneficial).toBe(false);
   });
@@ -157,17 +157,17 @@ describe('Silencio dorado (the Gilded Abbot)', () => {
   });
 
   it('an ability that is ready is still cast, and charges still build: only the clocks stop', () => {
-    const priest = hero('healer', { classKey: 'priest', abilities: [{ def: abilityDef('priest_purify'), rank: 1 }] });
+    const priest = hero('healer', { classKey: 'priest', abilities: [{ def: abilityDef('priest_healing_light'), rank: 1 }] });
     const archer = hero('archer', { hp: 500 });
     applyEffect(priest.effects, effectDef('debuff_gilded'), 'boss', 0);
     applyEffect(archer.effects, effectDef('debuff_gilded'), 'boss', 0);
-    expect(castReadyAbilities(priest, [archer, priest], [boss('gildedSilence', 0)], 50, quietRng(), [])).toEqual(['priest_purify']);
+    expect(castReadyAbilities(priest, [archer, priest], [boss('gildedSilence', 0)], 50, quietRng(), [])).toEqual(['priest_healing_light']);
     // …it lifted it from the ally it was cast on, and its own cooldown, just started, does not run while she is silenced.
     expect(effect(archer, 'debuff_gilded')).toBeUndefined();
-    const started = priest.cooldowns.priest_purify ?? 0;
+    const started = priest.cooldowns.priest_healing_light ?? 0;
     expect(started).toBeGreaterThan(0);
     tickCooldowns(priest, 3000);
-    expect(priest.cooldowns.priest_purify).toBe(started);
+    expect(priest.cooldowns.priest_healing_light).toBe(started);
     tickCooldowns(archer, 3000); // freed: hers would run
     expect(effectDef('debuff_gilded').beneficial).toBe(false);
   });
@@ -227,7 +227,7 @@ describe('Resaca (the Ninth Wave)', () => {
   it('it breaks off what a hero was winding up: his swing starts over, and an ability it cut short was never cast', () => {
     const b = boss('undertow', 0);
     const sturdy = { hp: 1e6, maxHp: 1e6 };
-    const ready = abilityDef('priest_purify');
+    const ready = abilityDef('priest_healing_light');
     const tank = striker('tank', 10, { ...sturdy, abilities: [{ def: ready, rank: 1 }] });
     const heroes = column(tank, hero('archer', sturdy), hero('healer', sturdy));
     const world = fight(heroes, [b], 60);

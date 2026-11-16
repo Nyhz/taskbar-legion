@@ -155,6 +155,11 @@ export class HeroSprite extends Container {
     this.bodyFx.burst(HEAL_BLOOM, 'over');
   }
 
+  /** A one-shot over this hero's body (render/abilityFx: a heal's own look on whoever it heals, a cleanse's flash). */
+  burstFx(fx: string): void {
+    this.bodyFx.burst(fx, 'over');
+  }
+
   /** A blow raises its sign on this hero instead of a word (render/abilityFx BLOW_SIGNS: a block is a spark on the
    *  shield, a hit that did nothing a gold glance, a second strike two crossing cuts). */
   blowSign(sign: { fx: string; gapMs: number }): void {

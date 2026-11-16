@@ -79,7 +79,7 @@ describe('Esporas (the Destroying Angel)', () => {
     expect(spores.durationMs).toBeGreaterThan(Math.max(...MECHANIC.spores.everyMs)); // a cloud renews them before they fade
   });
 
-  it('a direct heal clears them from the hero it lands on; a rolling heal does not', () => {
+  it('a heal clears them from the hero it lands on — an instant one as it lands, a rolling one as it is applied', () => {
     const tank = hero('tank', { hp: 400 });
     const archer = hero('archer', { hp: 900 });
     for (const h of [tank, archer]) for (let i = 0; i < 3; i++) applyEffect(h.effects, spores, 'boss', 2);
@@ -87,19 +87,19 @@ describe('Esporas (the Destroying Angel)', () => {
     expect(castReadyAbilities(priest, [tank, archer, priest], [boss('spores', 0)], 70, quietRng(), [])).toEqual(['t_heal']);
     expect(effect(tank, spores.key)).toBeUndefined(); // the one who had least: healed, and clean
     expect(effect(archer, spores.key)?.stacks).toBe(3);
-    // Mend is a heal that rolls: it mends, it does not clear.
+    // Mend is a heal that rolls: it clears them as it is applied (the user, 2026-11-16 — the heals do Purify's work).
     const mender = healerWith(abilityDef('priest_mend'));
     archer.hp = 300;
     expect(castReadyAbilities(mender, [archer, mender], [boss('spores', 0)], 70, quietRng(), [])).toEqual(['priest_mend']);
     expect(effect(archer, 'fx_hot')).toBeDefined();
-    expect(effect(archer, spores.key)?.stacks).toBe(3);
+    expect(effect(archer, spores.key)).toBeUndefined();
     expect(spores.healCleansed).toBe(true);
   });
 
-  it('Purify clears them too; and they come thicker and faster as the difficulty rises', () => {
+  it('Healing Light, cast for them, clears them; and they come thicker and faster as the difficulty rises', () => {
     const archer = hero('archer', { hp: 900 });
     applyEffect(archer.effects, spores, 'boss', 2);
-    const priest = healerWith(abilityDef('priest_purify'));
+    const priest = healerWith(abilityDef('priest_healing_light'));
     castReadyAbilities(priest, [archer, priest], [boss('spores', 0)], 70, quietRng(), []);
     expect(effect(archer, spores.key)).toBeUndefined();
     const at = (d: number): { every: number; pct: number } => {
@@ -130,7 +130,7 @@ describe('Hoja al rojo (the Quench)', () => {
     }
   });
 
-  it('nothing is laid on the heroes: Purify has nothing to lift', () => {
+  it('nothing is laid on the heroes: a heal has nothing to lift', () => {
     const b = boss('redBlade', 0);
     const heroes = party();
     const world = fight(heroes, [b], 80);
@@ -218,14 +218,15 @@ describe('Espejos (the Unmaker): what it reflects', () => {
   it('what it does for allies the boss takes for itself: heals and shields far weaker, buffs weaker', () => {
     const mend = reflecting('priest_mend', 1);
     expect(mend?.def.target).toBe('self');
-    expect(mend?.def.applies).toEqual([{ effectKey: 'fx_hot', durationMsOverride: 6000, power: { coeff: 0.15 * 0.02 }, target: 'self' }]);
-    const infusion = reflecting('priest_powerinfusion', 3); // 30 + 2 × 5 = 40 %
-    expect(infusion?.def.applies.map((a) => [a.effectKey, a.value, a.target])).toEqual([['buff_infusion_as', 40 * 0.3, 'self'], ['buff_infusion_cdr', 40 * 0.3, 'self']]);
+    expect(mend?.def.applies).toEqual([{ effectKey: 'fx_hot', durationMsOverride: 6000, power: { coeff: 0.2 * 0.02 }, target: 'self' }]);
+    const battlecry = reflecting('knight_battlecry', 1);
+    expect(battlecry?.def.applies.every((a) => a.target === 'self')).toBe(true);
     // Smite both heals an ally and strikes an enemy: the heal goes to the boss, the strike to a hero.
     const smite = reflecting('priest_smite', 1);
     expect(smite?.def.applies.map((a) => [a.effectKey, a.target, a.power?.coeff])).toEqual([['fx_heal', 'self', 0.08 * 0.02], ['fx_damage', 'randomEnemy', 0.6 * 0.25]]);
-    // Purify: its cleanse is nothing the boss can take; its small heal is.
-    expect(reflecting('priest_purify', 1)?.def.applies.map((a) => a.effectKey)).toEqual(['fx_heal']);
+    // Healing Light and Circle of Healing: their heal goes to the boss (the cleanse they carry is the heroes' alone).
+    expect(reflecting('priest_healing_light', 1)?.def.applies.map((a) => [a.effectKey, a.target])).toEqual([['fx_heal', 'self']]);
+    expect(reflecting('priest_circle', 1)?.def.applies.map((a) => [a.effectKey, a.target])).toEqual([['fx_heal', 'self']]);
   });
 
   it('with nothing cast yet there is nothing to reflect; an unknown key is ignored', () => {
@@ -316,7 +317,7 @@ describe('Espejos in a fight', () => {
     expect(reflection(mirrorBoss(3, { key: 'knight_battlecry', rank: 1 }), { harm: 0.4, boon: 0.05, buff: 0.6 })?.def.applies.map((a) => a.effectKey)).toEqual(['buff_battlecry_ad', 'buff_battlecry_crit']);
   });
 
-  it('what it lays on the heroes is harmful, so Purify lifts it; with nothing cast it does nothing', () => {
+  it('what it lays on the heroes is harmful, so a heal lifts it; with nothing cast it does nothing', () => {
     const b = mirrorBoss(0, { key: 'knight_debilitate', rank: 1 });
     const heroes = party();
     run(fight(heroes, [b], 100), firstCast('mirror') + 200);

@@ -10,6 +10,7 @@ import { buildHeroCombatant, type HeroConfig } from '@/sim/loadout';
 import { dealtMult, liveStats } from '@/sim/liveStats';
 import type { Combatant, CombatEvent, WorldState } from '@/sim/world';
 import { anyMoment, base, effect, luckyRng, quietRng, unit } from './_kit';
+import { noteDamageTaken } from '@/sim/recent';
 
 // The fifteen EFFECT passives (second combat wave, B — agreed 2026-11-15): each one end to end, from the talent
 // a hero holds to what happens in the fight. Their figures are per rank; the tests use rank 5 unless they say so.
@@ -263,14 +264,14 @@ describe('Priest', () => {
     for (let i = 0; i < 10; i++) resolveCombatTick(world, TICK, quietRng());
     expect(effect(tank, 'fx_overflow')?.value).toBeCloseTo(50, 6); // capped at 5 % of 1000
     expect(tank.hp).toBe(1000);
-    // An instant heal overflows the same way: 60 on a hero missing 10.
-    const healer = holder('p', 'priest', { priest_overflow: 2 }, { range: 400, abilities: [{ def: anyMoment(abilityDef('priest_purify')), rank: 1 }] });
+    // An instant heal overflows the same way: 150 on a hero missing 10.
+    const healer = holder('p', 'priest', { priest_overflow: 2 }, { range: 400, abilities: [{ def: { ...anyMoment(abilityDef('priest_healing_light')), castCondition: undefined }, rank: 1 }] });
     healer.baseStats = { ...healer.baseStats, healPower: 0 };
     const ally = plainHero('k', { x: 10, hp: 990 });
     const second = fight([ally, healer], [foe('g', { enemyDamage: 0 })]);
     resolveCombatTick(second, TICK, quietRng());
     expect(ally.hp).toBe(1000);
-    expect(effect(ally, 'fx_overflow')?.value).toBeCloseTo(20, 6); // 50 spare, capped at 2 % of 1000
+    expect(effect(ally, 'fx_overflow')?.value).toBeCloseTo(20, 6); // 140 spare, capped at 2 % of 1000
     // The shield soaks the next hit.
     // With her down nothing overflows.
     const other = plainHero('k2');
@@ -331,29 +332,128 @@ describe('Priest', () => {
   });
 });
 
-describe('Purify', () => {
-  const purify = (rank = 1): Combatant =>
-    plainHero('p', { classKey: 'priest', range: 400, baseStats: base({ health: 1000, healPower: 0 }), abilities: [{ def: abilityDef('priest_purify'), rank }] });
+describe('her heals lift harmful effects (Purify is the heals\' work now)', () => {
+  const priestCasting = (key: string, rank = 1, over: Partial<Combatant> = {}): Combatant =>
+    plainHero('p', { classKey: 'priest', range: 400, baseStats: base({ health: 1000, healPower: 0 }), abilities: [{ def: abilityDef(key), rank }], ...over });
 
-  it('lifts every harmful effect from the ally that carries most of them and heals it 6% of its life', () => {
-    const priest = purify();
+  it('Healing Light goes to the ally carrying harmful effects, lifts ALL of them and heals in full — the wound went first', () => {
+    const priest = priestCasting('priest_healing_light');
     const tank = plainHero('k', { hp: 500 });
     applyEffect(tank.effects, effectDef('debuff_mortal_wound'), 'b', 25);
+    applyEffect(tank.effects, effectDef('debuff_venom'), 'b', 10);
+    applyEffect(tank.effects, effectDef('debuff_rooted'), 'b', 0);
     applyEffect(tank.effects, effectDef('fx_shield'), 'p', 80); // a good effect stays
-    const clean = plainHero('r', { hp: 300 }); // lower, but nothing to lift
-    expect(castReadyAbilities(priest, [tank, clean, priest], [foe('g')], 1, quietRng(), [])).toEqual(['priest_purify']);
+    const clean = plainHero('r', { hp: 400 }); // lower, but over the danger line and nothing to lift
+    const events: CombatEvent[] = [];
+    expect(castReadyAbilities(priest, [tank, clean, priest], [foe('g')], 1, quietRng(), events)).toEqual(['priest_healing_light']);
     expect(tank.effects.map((e) => e.defKey)).toEqual(['fx_shield']);
-    expect(tank.hp).toBeCloseTo(560, 6); // the full 6 %: the wound that cut healing went first
-    expect(clean.hp).toBe(300);
+    expect(tank.hp).toBeCloseTo(650, 6); // the full 15 %
+    expect(clean.hp).toBe(400);
+    expect(events.find((e) => e.type === 'cue' && e.cue === 'cleanse')).toMatchObject({ targetId: 'k', sourceId: 'p', amount: 3 });
   });
 
-  it('with nothing to lift it is a small heal on an ally under 60%, and is kept otherwise', () => {
-    const priest = purify(5);
-    const hurt = plainHero('k', { hp: 500 });
-    expect(castReadyAbilities(priest, [hurt, priest], [foe('g')], 1, quietRng(), [])).toEqual(['priest_purify']);
-    expect(hurt.hp).toBeCloseTo(600, 6); // 10 % at rank 5
-    const idle = purify();
-    expect(castReadyAbilities(idle, [plainHero('k', { hp: 700 }), idle], [foe('g')], 1, quietRng(), [])).toEqual([]);
+  it('Healing Light: an ally in danger (under 35 %) comes first, whatever another carries', () => {
+    const priest = priestCasting('priest_healing_light');
+    const harmed = plainHero('k', { hp: 900 });
+    applyEffect(harmed.effects, effectDef('debuff_guilt'), 'b', 2);
+    const dying = plainHero('r', { hp: 300 });
+    castReadyAbilities(priest, [harmed, dying, priest], [foe('g')], 1, quietRng(), []);
+    expect(dying.hp).toBeCloseTo(450, 6);
+    expect(effect(harmed, 'debuff_guilt')).toBeDefined(); // only those it heals are cleansed
+  });
+
+  it('it waits: nobody under 60 %, nobody struck hard and nothing harmful — no cast; something harmful — it goes', () => {
+    const priest = priestCasting('priest_healing_light');
+    const ally = plainHero('k', { hp: 700 });
+    expect(castReadyAbilities(priest, [ally, priest], [foe('g')], 1, quietRng(), [])).toEqual([]);
+    applyEffect(ally.effects, effectDef('debuff_gilded'), 'b', 0);
+    expect(castReadyAbilities(priest, [ally, priest], [foe('g')], 1, quietRng(), [])).toEqual(['priest_healing_light']);
+    expect(effect(ally, 'debuff_gilded')).toBeUndefined();
+  });
+
+  it('a heal over time lifts them as it is APPLIED (Mend on its target only); a party heal lifts every one it heals', () => {
+    const mender = priestCasting('priest_mend');
+    const hurt = plainHero('k', { hp: 300 });
+    const other = plainHero('r', { hp: 900 });
+    for (const h of [hurt, other]) applyEffect(h.effects, effectDef('debuff_venom'), 'b', 10);
+    castReadyAbilities(mender, [hurt, other, mender], [foe('g')], 1, quietRng(), []);
+    expect(effect(hurt, 'debuff_venom')).toBeUndefined();
+    expect(effect(hurt, 'fx_hot')).toBeDefined();
+    expect(effect(other, 'debuff_venom')).toBeDefined();
+
+    const circle = priestCasting('priest_circle', 1, { hp: 400 });
+    const a = plainHero('k', { hp: 300 });
+    const b = plainHero('r', { hp: 900 });
+    for (const h of [a, b, circle]) applyEffect(h.effects, effectDef('debuff_rooted'), 'b', 0);
+    // (She is bound too — but the test calls her cast directly: what it does, not whether she can.)
+    circle.effects = [];
+    applyEffect(circle.effects, effectDef('debuff_spores'), 'b', 5);
+    castReadyAbilities(circle, [a, b, circle], [foe('g')], 1, quietRng(), []);
+    for (const h of [a, b, circle]) expect(h.effects.filter((e) => !effectDef(e.defKey).beneficial)).toEqual([]);
+  });
+
+  it('Temblor is too slight to spend a heal on: it stays (data/effects cleanseIgnores)', () => {
+    const priest = priestCasting('priest_healing_light');
+    const ally = plainHero('k', { hp: 300 });
+    applyEffect(ally.effects, effectDef('debuff_tremor'), 'b', 20);
+    castReadyAbilities(priest, [ally, priest], [foe('g')], 1, quietRng(), []);
+    expect(ally.hp).toBeCloseTo(450, 6);
+    expect(effect(ally, 'debuff_tremor')).toBeDefined();
+  });
+});
+
+describe('Power Infusion (a passive of Zeal): each heal quickens whoever it heals', () => {
+  const zeal = (rank: number, key: string, over: Partial<Combatant> = {}): Combatant =>
+    holder('p', 'priest', { priest_infusion: rank }, { range: 400, abilities: [{ def: anyMoment(abilityDef(key)), rank: 1 }], ...over });
+
+  it('an instant heal: 3 % attack speed and cooldown reduction per rank for 4 s, on the one healed only', () => {
+    const priest = zeal(5, 'priest_healing_light');
+    const healed = plainHero('k', { hp: 300 });
+    const other = plainHero('r', { hp: 950 });
+    castReadyAbilities(priest, [healed, other, priest], [foe('g')], 1, quietRng(), []);
+    expect(effect(healed, 'buff_infusion_as')).toMatchObject({ value: 15, remainingMs: 4000 });
+    expect(effect(healed, 'buff_infusion_cdr')).toMatchObject({ value: 15, remainingMs: 4000 });
+    expect(effect(other, 'buff_infusion_as')).toBeUndefined();
+    expect(effect(priest, 'buff_infusion_as')).toBeUndefined();
+    const low = zeal(1, 'priest_healing_light');
+    const one = plainHero('k', { hp: 300 });
+    castReadyAbilities(low, [one, low], [foe('g')], 1, quietRng(), []);
+    expect(effect(one, 'buff_infusion_as')?.value).toBe(3);
+  });
+
+  it('a party heal quickens everyone it heals — herself too; renewed, never stacked', () => {
+    const priest = zeal(5, 'priest_circle', { hp: 500 });
+    const a = plainHero('k', { hp: 300 });
+    castReadyAbilities(priest, [a, priest], [foe('g')], 1, quietRng(), []);
+    for (const h of [a, priest]) expect(effect(h, 'buff_infusion_as')?.value).toBe(15);
+    const buff = effect(a, 'buff_infusion_as');
+    if (buff !== undefined) buff.remainingMs = 1000;
+    priest.cooldowns = {};
+    castReadyAbilities(priest, [a, priest], [foe('g')], 1, quietRng(), []);
+    expect(a.effects.filter((e) => e.defKey === 'buff_infusion_as')).toHaveLength(1);
+    expect(effect(a, 'buff_infusion_as')).toMatchObject({ value: 15, remainingMs: 4000, stacks: 1 });
+  });
+
+  it('a heal over time quickens as it is applied — its ticks do not', () => {
+    const priest = zeal(5, 'priest_mend');
+    const ally = plainHero('k', { hp: 300, x: 10 });
+    castReadyAbilities(priest, [ally, priest], [foe('g')], 1, quietRng(), []);
+    expect(effect(ally, 'buff_infusion_as')?.remainingMs).toBe(4000);
+    const world = fight([ally, priest], []);
+    for (let i = 0; i < 20; i++) resolveCombatTick(world, TICK, quietRng()); // two seconds of ticks
+    expect(effect(ally, 'buff_infusion_as')?.remainingMs).toBeCloseTo(2000, -1);
+  });
+
+  it('without the talent, or with a shield or a hit, nothing quickens', () => {
+    const none = holder('p', 'priest', {}, { range: 400, abilities: [{ def: anyMoment(abilityDef('priest_healing_light')), rank: 1 }] });
+    const ally = plainHero('k', { hp: 300 });
+    castReadyAbilities(none, [ally, none], [foe('g')], 1, quietRng(), []);
+    expect(effect(ally, 'buff_infusion_as')).toBeUndefined();
+    const shielder = zeal(5, 'priest_holyshield');
+    const tank = plainHero('k', { hp: 300 });
+    noteDamageTaken(tank, 50); // the shield goes on whoever is being hit
+    castReadyAbilities(shielder, [tank, shielder], [foe('g')], 1, quietRng(), []);
+    expect(effect(tank, 'buff_infusion_as')).toBeUndefined();
   });
 });
 

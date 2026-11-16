@@ -7,12 +7,13 @@
 // THE ZONE SET is what the world itself can dress those heroes in: the same heroes (level, talents, tech), stripped,
 // then dressed by the probe's own rule from ZONE_SET_CHESTS stage-boss chests of the world's X-9, their gems
 // socketed. It is a fixed reference (one seed per world), not a ceiling: an older piece with a lucky roll can beat it.
-// Both damages are measured in the REAL fight, against a boss that cannot die inside the window, so the number is
+// Both damages are measured in the REAL fight, against a boss of its real life that cannot die inside the window
+// (wallDamage tops its life up), so the number is
 // the one the wall's life is written in: a wall of `share × zone-set damage` dies at exactly 60 s to a party at
 // `share` of the zone.
 
 import { Simulation, createWorld, TICK_MS, type TickContext } from '@/sim/Simulation';
-import { ZONE_BOSS_HP_OVERRIDE, ZONE_ENRAGE_MS, worldOf } from '@/data/stageScaling';
+import { ZONE_ENRAGE_MS, worldOf } from '@/data/stageScaling';
 import type { HeroConfig } from '@/sim/loadout';
 import type { Bonuses } from '@/sim/bonuses';
 import { buildParty } from './combat';
@@ -21,7 +22,6 @@ import { openCaptured, equipItems, socketGems } from './gear';
 export const ZONE_SET_CHESTS = 240; // stage-boss chests of the world's X-9 the zone set is picked from
 export const ZONE_SET_SEED = 90_210; // the reference draw (per world: + the boss stage)
 export const ZONE_SET_DRAWS = 5; // independent zone sets the reference is averaged over
-const UNKILLABLE = 1e18;
 
 /** The heroes of `party` (same level, talents) dressed from nothing with the best of `chests` chests of the world. */
 export function zoneSet(party: readonly HeroConfig[], bossStage: number, bonuses: Bonuses, chests = ZONE_SET_CHESTS, seed = ZONE_SET_SEED): HeroConfig[] {
@@ -44,35 +44,39 @@ export function withZoneChests(party: readonly HeroConfig[], bossStage: number, 
   return out;
 }
 
-/** Damage `party` deals to the world boss at `bossStage` before its enrage (the boss cannot die in the measure; a
- *  party that dies early simply stops adding). */
+/** Damage `party` deals to the world boss at `bossStage` before its enrage (a party that dies early simply stops
+ *  adding). The boss has its REAL life — so its shell (Acorazado) soaks and breaks as in the fight, and Culpa takes its
+ *  toll by the share of that life the party takes off — but it cannot die inside the measure: whenever it falls under
+ *  half its life, half its life is given back (and Culpa's record of it moved with it, so the refill costs no toll).
+ *  The damage is the sum of what the party took off it. (Until 2026-11-16 the boss was given 10^18 life: the shell
+ *  then never broke and Culpa never took a toll.) */
 export function wallDamage(party: readonly HeroConfig[], bossStage: number, bonuses: Bonuses, seed: number, windowMs = ZONE_ENRAGE_MS): number {
   const W = worldOf(bossStage);
-  const pinned = ZONE_BOSS_HP_OVERRIDE[W];
-  ZONE_BOSS_HP_OVERRIDE[W] = UNKILLABLE;
-  try {
-    const world = createWorld(seed, buildParty(party));
-    world.maxClearedStage = bossStage - 1;
-    world.globalStageIndex = bossStage - 1;
-    const sim = new Simulation(world);
-    if (!sim.enterZoneBoss(W)) return 0;
-    const ctx: TickContext = { bonuses, ownedPetKeys: [], retryStage: true };
-    const wipes = world.wipes;
-    let dealt = 0;
-    for (let t = 0; t < (windowMs + 30_000) / TICK_MS; t++) {
-      sim.tick(ctx);
-      world.chests = [];
-      if (world.wipes > wipes) break;
-      const boss = world.enemies.find((e) => e.isBoss === true);
-      if (boss === undefined) continue;
-      dealt = boss.maxHp - boss.hp;
-      if ((boss.fightMs ?? 0) >= windowMs) break;
+  const world = createWorld(seed, buildParty(party));
+  world.maxClearedStage = bossStage - 1;
+  world.globalStageIndex = bossStage - 1;
+  const sim = new Simulation(world);
+  if (!sim.enterZoneBoss(W)) return 0;
+  const ctx: TickContext = { bonuses, ownedPetKeys: [], retryStage: true };
+  const wipes = world.wipes;
+  let dealt = 0;
+  let before: number | undefined;
+  for (let t = 0; t < (windowMs + 30_000) / TICK_MS; t++) {
+    sim.tick(ctx);
+    world.chests = [];
+    if (world.wipes > wipes) break;
+    const boss = world.enemies.find((e) => e.isBoss === true);
+    if (boss === undefined) continue;
+    if (before !== undefined && boss.hp < before) dealt += before - boss.hp;
+    if (boss.hp < boss.maxHp / 2) {
+      const refill = boss.maxHp / 2;
+      boss.hp += refill;
+      if (boss.hpSeen !== undefined) boss.hpSeen += refill;
     }
-    return dealt;
-  } finally {
-    if (pinned === undefined) delete ZONE_BOSS_HP_OVERRIDE[W];
-    else ZONE_BOSS_HP_OVERRIDE[W] = pinned;
+    before = boss.hp;
+    if ((boss.fightMs ?? 0) >= windowMs || !boss.alive) break;
   }
+  return dealt;
 }
 
 /** The zone set's damage at a world for these heroes: the geometric mean over ZONE_SET_DRAWS independent zone sets

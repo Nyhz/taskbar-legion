@@ -38,6 +38,12 @@ export const REPLACED_NODES: Readonly<Record<string, string>> = {
   priest_zeal_t7_health: 'priest_searing_light',
   priest_zeal_t9_healPower: 'priest_condemn',
   priest_t4_magicResist: 'priest_retribution', // the aura took this node's place (it keeps its own ranks first)
+  // The heal kit (2026-11-16): two abilities left for two instant heals in their places, and Power Infusion became a
+  // passive in the Zeal node that held cooldown reduction.
+  priest_powerinfusion: 'priest_healing_light',
+  priest_purify: 'priest_circle',
+  priest_zeal_t5_cooldownReduction: 'priest_infusion',
+  priest_mod_twin_infusion: 'priest_mod_twin_light',
 };
 
 export interface ClassTalentTree {

@@ -56,6 +56,48 @@ export const BOSS_AFFIX = {
   mortalWound: { abilityKey: 'boss_mortal_wound', coeff: { stage: 1.5, world: 2.5 } satisfies Record<BossRank, number> },
 } as const;
 
+// ── World-boss pressure ─────────────────────────────────────────────────────────────────────────────────────
+
+/** How hard a WORLD boss presses the party during its minute, by difficulty (user decision, 2026-11-16: "jefes que
+ *  peguen más fuerte durante el minuto" — from Hell on, a party must need its tank's defences and its Priest's heals
+ *  to see the end of the minute, however well geared). Its life and its enrage are untouched here (the wall's pace
+ *  is the final pacing pass's); this is only what it does to the party while the clock runs.
+ *    - hitMult:        × the damage of its every hit (basic attacks, its area blow, its affixes' blows);
+ *    - blowEveryMs:    its area blow comes this often (Sísmico, when faster, still wins);
+ *    - blowCoeff:      the blow on the front hero, × its hit;
+ *    - splashCoeff:    the blow on everyone behind, × its hit;
+ *    - backShotChance: the share of its basic attacks aimed at a hero behind the front one — sustained damage on
+ *                      the back line. */
+export interface WorldBossPressure {
+  hitMult: number;
+  blowEveryMs: number;
+  blowCoeff: number;
+  splashCoeff: number;
+  backShotChance: number;
+}
+
+/** Normal → Torment. Normal is the world boss as it was (any build passes); the rest are tuned against the build
+ *  study (scripts/build-study.ts: a Priest who carries no heal must not see the end of a wall from Hell on). */
+// Tuned 2026-11-16 (docs/redesign/PACING_REPORT.md, round 3 checkpoint 2) by SURVIVAL against a wall that cannot
+// die (scripts/pressure-survival.ts): a party with heals at ~85 % of the zone keeps everyone standing through the
+// minute; the same party with a Priest who carries no heal, at ~150 %, loses a hero before 34 s (the time a 150 %
+// party needs on a wall tuned to die at 60 s to 85 %).
+export const WORLD_BOSS_PRESSURE: readonly WorldBossPressure[] = [
+  { hitMult: 1, blowEveryMs: 10_000, blowCoeff: 1.2, splashCoeff: 0.6, backShotChance: 0 },
+  { hitMult: 1, blowEveryMs: 6_000, blowCoeff: 1.2, splashCoeff: 1.2, backShotChance: 0.5 },
+  { hitMult: 1, blowEveryMs: 6_000, blowCoeff: 1.2, splashCoeff: 1.2, backShotChance: 0.5 },
+  { hitMult: 1.15, blowEveryMs: 6_000, blowCoeff: 1.2, splashCoeff: 1.2, backShotChance: 0.55 },
+  { hitMult: 1.45, blowEveryMs: 6_000, blowCoeff: 1.2, splashCoeff: 1.2, backShotChance: 0.55 },
+];
+
+/** The pressure of a world boss at difficulty index `d` (clamped to the table). */
+export function worldBossPressure(d: number): WorldBossPressure {
+  const i = Math.max(0, Math.min(WORLD_BOSS_PRESSURE.length - 1, Math.floor(d)));
+  const p = WORLD_BOSS_PRESSURE[i] ?? WORLD_BOSS_PRESSURE[0];
+  if (p === undefined) throw new Error('WORLD_BOSS_PRESSURE is empty');
+  return p;
+}
+
 /** A small deterministic hash stream (mulberry32) — NOT the simulation's rng: picking affixes must not move the
  *  combat/loot stream, and the same stage must show the same affixes every time within a run. */
 function stream(seed: number): () => number {

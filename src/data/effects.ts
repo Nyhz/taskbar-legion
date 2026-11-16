@@ -42,8 +42,6 @@ export type EffectKind =
   | { type: 'guilt' }
   // Silencio dorado: the holder's ability cooldowns do not run while it lasts (sim/abilities.tickCooldowns).
   | { type: 'cooldownFreeze' }
-  // Purify: instant — removes every harmful effect from its target (sim/abilities.applyToTarget).
-  | { type: 'cleanse' }
   | { type: 'tag'; tag: string };
 
 export interface EffectDef {
@@ -55,11 +53,15 @@ export interface EffectDef {
   maxStacks: number; // 1 = refresh-only; >1 = stacks
   stackRule: 'refresh' | 'extend' | 'independent';
   beneficial: boolean;
-  /** A harmful effect too slight and too brief to spend a cleanse on: Purify neither looks for it nor removes it
+  /** A harmful effect too slight and too brief to spend a cleanse on: a heal neither looks for it nor lifts it
    *  (a brute's Temblor). It still shows on the hero that carries it. */
   cleanseIgnores?: boolean;
-  /** Any DIRECT heal on the holder — an instant heal, not a rolling one — removes it (a world boss's spores). */
+  /** Any heal on the holder removes ALL of it, beside the one effect a heal cleanses (data/healing): an instant
+   *  heal as it lands, a heal over time as it is applied (a world boss's spores). */
   healCleansed?: boolean;
+  /** When a heal can lift only some of a hero's harmful effects (data/healing HEAL_CLEANSE_COUNT), the higher
+   *  goes first (default 0; ties: the one with the longest still to run). */
+  cleansePriority?: number;
 }
 
 export interface ActiveEffect {
@@ -84,10 +86,6 @@ export const EFFECTS: Record<string, EffectDef> = {
     key: 'fx_heal', name: 'Heal', icon: 'heal',
     kind: { type: 'heal' }, durationMs: 0, maxStacks: 1, stackRule: 'refresh', beneficial: true,
   },
-  fx_cleanse: {
-    key: 'fx_cleanse', name: 'Purify', icon: 'holy',
-    kind: { type: 'cleanse' }, durationMs: 0, maxStacks: 1, stackRule: 'refresh', beneficial: true,
-  },
   fx_shield: {
     key: 'fx_shield', name: 'Shield', icon: 'shield',
     kind: { type: 'shield' }, durationMs: 8000, maxStacks: 1, stackRule: 'refresh', beneficial: true,
@@ -108,8 +106,8 @@ export const EFFECTS: Record<string, EffectDef> = {
     kind: { type: 'statMod', stat: 'attackSpeed', mode: 'percent', value: 25 },
     durationMs: 8000, maxStacks: 1, stackRule: 'refresh', beneficial: true,
   },
-  // Power Infusion (Priest → a DPS ally): frenzied attack speed + CDR. Both 30%→50%
-  // (+5/rank, per-effect valuePerRank on the ability). 6s.
+  // Power Infusion (a passive of the Priest's Zeal branch, data/talentTrees/priest): each of her heals gives the
+  // whole party attack speed + CDR for a moment. The value is the talent's (per rank × rank); the duration too.
   buff_infusion_as: {
     key: 'buff_infusion_as', name: 'Power Infusion', icon: 'surge',
     kind: { type: 'statMod', stat: 'attackSpeed', mode: 'percent', value: 30 },
@@ -200,11 +198,11 @@ export const EFFECTS: Record<string, EffectDef> = {
   debuff_mortal_wound: {
     key: 'debuff_mortal_wound', name: 'Mortal Wound', icon: 'expose',
     kind: { type: 'healReduction', value: 25 },
-    durationMs: 8000, maxStacks: 1, stackRule: 'refresh', beneficial: false,
+    durationMs: 8000, maxStacks: 1, stackRule: 'refresh', beneficial: false, cleansePriority: 3,
   },
 
   // Temblor (a brute's area blow from Eternal on — data/enemies TRAIT_TUNING.tremor): the heroes it reaches
-  // attack 20 % slower for 2.5 s. Shown on the hero (its chip says why he is slow); Purify leaves it alone.
+  // attack 20 % slower for 2.5 s. Shown on the hero (its chip says why he is slow); a heal leaves it alone.
   debuff_tremor: {
     key: 'debuff_tremor', name: 'Tremor', icon: 'expose',
     kind: { type: 'statMod', stat: 'attackSpeed', mode: 'percent', value: -20 },

@@ -259,10 +259,10 @@ describe('Priest abilities and modifiers', () => {
     };
     expect(run({ priest_sanctuary: 1 }, 1900).every((h) => h.effects.length === 0)).toBe(true); // nobody under 70%
     const [p, k] = run({ priest_sanctuary: 1 }, 1000);
-    expect((effect(p, 'fx_sanctuary')?.value ?? 0) * 6).toBeCloseTo(60, 5); // 6% of her 1000
-    expect((effect(k, 'fx_sanctuary')?.value ?? 0) * 6).toBeCloseTo(120, 5); // 6% of his 2000
+    expect((effect(p, 'fx_sanctuary')?.value ?? 0) * 6).toBeCloseTo(120, 5); // 12% of her 1000
+    expect((effect(k, 'fx_sanctuary')?.value ?? 0) * 6).toBeCloseTo(240, 5); // 12% of his 2000
     const [, k5] = run({ priest_sanctuary: 5 }, 1000);
-    expect((effect(k5, 'fx_sanctuary')?.value ?? 0) * 6).toBeCloseTo(200, 5); // 10%
+    expect((effect(k5, 'fx_sanctuary')?.value ?? 0) * 6).toBeCloseTo(400, 5); // 20%
     const [pd, kd] = run({ priest_sanctuary: 1, priest_mod_deep_sanctuary: 1 }, 1000);
     expect(effect(pd, 'fx_ward')?.value).toBeCloseTo(40, 5); // 4% of 1000
     expect(effect(kd, 'fx_ward')?.value).toBeCloseTo(80, 5);
@@ -290,9 +290,9 @@ describe('Priest abilities and modifiers', () => {
     const plain = cast({ priest_mend: 1 });
     const swift = cast({ priest_mend: 1, priest_mod_swift_mend: 1 });
     expect(plain.hp).toBe(100);
-    expect(plain.hot).toBeCloseTo(150, 5); // 15% of 1000 over 6s
-    expect(swift.hp).toBeCloseTo(145, 5); // 30% of it at once
-    expect(swift.hot).toBeCloseTo(105, 5);
+    expect(plain.hot).toBeCloseTo(200, 5); // 20% of 1000 over 6s
+    expect(swift.hp).toBeCloseTo(160, 5); // 30% of it at once
+    expect(swift.hot).toBeCloseTo(140, 5);
   });
 
   it('Aegis: Holy Shield also gives the tank 10% less damage taken for its 4s', () => {
@@ -315,30 +315,70 @@ describe('Priest abilities and modifiers', () => {
     expect(ally.hp).toBeCloseTo(1060, 5);
   });
 
-  it('Twin Infusion: Power Infusion reaches two different heroes — the damage dealer and the tank', () => {
-    const priest = priestWith({ priest_powerinfusion: 1, priest_mod_twin_infusion: 1 }, 'priest_powerinfusion');
-    const knight = unit({ id: 'k', side: 'hero', classKey: 'knight', x: 0 });
-    const ranger = unit({ id: 'r', side: 'hero', classKey: 'ranger', x: -30 });
-    const rng = quietRng();
-    castReadyAbilities(priest, [knight, ranger, priest], [unit({ id: 'e', side: 'enemy', x: 10 })], 1, rng, []);
-    for (const h of [knight, ranger]) {
-      expect(effect(h, 'buff_infusion_as')?.value).toBe(30);
-      expect(effect(h, 'buff_infusion_cdr')?.value).toBe(30);
+  it('Healing Light: an instant heal on the ally who needs it — 15% of its life at rank 1, 22% at rank 5', () => {
+    const cast = (rank: number): number => {
+      const priest = priestWith({ priest_healing_light: rank }, 'priest_healing_light');
+      const ally = unit({ id: 'k', side: 'hero', hp: 100 });
+      castReadyAbilities(priest, [priest, ally], [], 1, quietRng(), []);
+      return ally.hp;
+    };
+    expect(cast(1)).toBeCloseTo(250, 5); // +15% of 1000
+    expect(cast(5)).toBeCloseTo(320, 5); // +22%
+  });
+
+  it('Circle of Healing: an instant heal on the whole party — 9% of each one\'s life at rank 1, 15% at rank 5', () => {
+    const cast = (rank: number): number[] => {
+      const priest = priestWith({ priest_circle: rank }, 'priest_circle');
+      priest.hp = 500;
+      const ally = unit({ id: 'k', side: 'hero', hp: 1000, maxHp: 2000 });
+      castReadyAbilities(priest, [priest, ally], [], 1, quietRng(), []);
+      return [priest.hp, ally.hp];
+    };
+    expect(cast(1)).toEqual([590, 1180]);
+    const [p5, k5] = cast(5);
+    expect(p5).toBeCloseTo(650, 5);
+    expect(k5).toBeCloseTo(1300, 5);
+  });
+
+  it('an instant heal is worth less than the heal over time beside it (the user\'s rule): Healing Light < Mend, Circle < Sanctuary', () => {
+    const coeff = (key: string, rank: number): number => {
+      const p = abilityDef(key).power;
+      return (p?.coeff ?? 0) + (p?.coeffPerRank ?? 0) * (rank - 1);
+    };
+    for (const rank of [1, 5]) {
+      const light = coeff('priest_healing_light', rank) / coeff('priest_mend', rank);
+      const circle = coeff('priest_circle', rank) / coeff('priest_sanctuary', rank);
+      for (const ratio of [light, circle]) {
+        expect(ratio).toBeGreaterThanOrEqual(0.7);
+        expect(ratio).toBeLessThanOrEqual(0.8);
+      }
     }
-    expect(priest.effects).toHaveLength(0);
-    expect(rng.draws).toBe(0); // one damage dealer for two places: nothing to roll
+    expect(coeff('priest_mend', 5)).toBeCloseTo(0.3, 5); // "si las overtime son 30 %…"
+    expect(coeff('priest_sanctuary', 5)).toBeCloseTo(0.2, 5); // "si la cura over time grupal es 20…"
+  });
+
+  it('Twin Light: Healing Light also heals the next most hurt ally — another one — for half as much', () => {
+    const priest = priestWith({ priest_healing_light: 1, priest_mod_twin_light: 1 }, 'priest_healing_light');
+    const worst = unit({ id: 'k', side: 'hero', hp: 100 });
+    const next = unit({ id: 'r', side: 'hero', hp: 400 });
+    const fine = unit({ id: 'x', side: 'hero', hp: 900 });
+    castReadyAbilities(priest, [worst, next, fine, priest], [], 1, quietRng(), []);
+    expect(worst.hp).toBeCloseTo(250, 5); // 15%
+    expect(next.hp).toBeCloseTo(475, 5); // half of it
+    expect(fine.hp).toBe(900);
   });
 
   it('the "two heroes" target picks two of three damage dealers with the RNG, never the same twice, and one when alone', () => {
-    const priest = priestWith({ priest_powerinfusion: 1, priest_mod_twin_infusion: 1 }, 'priest_powerinfusion');
+    // No ability of the current kits aims at two heroes; the target stays for one that will.
+    const twin = { ...anyMoment(abilityDef('ranger_fast_fire')), target: 'twoDpsAllies' as const };
+    const caster = (): ReturnType<typeof unit> => unit({ id: 'p', side: 'hero', classKey: 'priest', x: 0, range: 200, abilities: [{ def: twin, rank: 1 }] });
     const rangers = ['a', 'b', 'c'].map((id) => unit({ id, side: 'hero', classKey: 'ranger' }));
-    castReadyAbilities(priest, [...rangers, priest], [unit({ id: 'e', side: 'enemy', x: 10 })], 1, luckyRng(), []);
-    expect(rangers.filter((r) => effect(r, 'buff_infusion_as') !== undefined)).toHaveLength(2);
+    castReadyAbilities(caster(), [...rangers, caster()], [unit({ id: 'e', side: 'enemy', x: 10 })], 1, luckyRng(), []);
+    expect(rangers.filter((r) => effect(r, 'buff_fast_fire') !== undefined)).toHaveLength(2);
 
-    const alone = priestWith({ priest_powerinfusion: 1, priest_mod_twin_infusion: 1 }, 'priest_powerinfusion');
-    alone.x = 0;
+    const alone = caster();
     alone.range = 30;
     castReadyAbilities(alone, [alone], [unit({ id: 'e', side: 'enemy', x: 10 })], 1, quietRng(), []);
-    expect(effect(alone, 'buff_infusion_as')?.value).toBe(30);
+    expect(effect(alone, 'buff_fast_fire')).toBeDefined();
   });
 });

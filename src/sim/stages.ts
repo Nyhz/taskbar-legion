@@ -2,7 +2,7 @@ import type { Rng } from './rng';
 import type { Combatant, WorldState } from './world';
 import type { ResolvedAbility } from './loadout';
 import { abilityDef } from '@/data/abilities';
-import type { BossRank } from '@/data/bossKit';
+import { worldBossPressure, type BossRank } from '@/data/bossKit';
 import { armBoss, bossKit } from './bossMechanics';
 import { pickEnemyKind, supportAuras, traitsOf, SUPPORT_KIND, TRAIT_TUNING, type EnemyKind, type EnemyRole } from '@/data/enemies';
 import { difficultyIndexOf } from '@/data/difficulties';
@@ -215,7 +215,8 @@ export function spawnZoneBoss(world: WorldState, rng: Rng): void {
       // Decoupled zone-boss HP (own Φ-power scale — THE wall; grows steeper than party power).
       hpMult: 0,
       hpAbsolute: zoneBossHp(S),
-      dmgMult: ZONE_BOSS_DMG_MULT,
+      dmgMult: ZONE_BOSS_DMG_MULT * worldBossPressure(difficultyIndexOf(S)).hitMult, // its minute presses harder by difficulty (data/bossKit)
+      backShotChance: worldBossPressure(difficultyIndexOf(S)).backShotChance,
       magic: rng.chance(0.4),
       range: RANGE.melee + 60, // towering sprite → stop well clear of the tank (+30 reach)
       moveSpeed: MOVE_SPEED.melee,

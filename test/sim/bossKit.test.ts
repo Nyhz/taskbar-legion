@@ -428,12 +428,12 @@ describe('Roots (Our Lady of Mistletoe)', () => {
     expect(effectDef('debuff_rooted').beneficial).toBe(false);
   });
 
-  it('Purify frees him: what a boss lays on a hero — roots, venom, the mortal wound — is all cleansed', () => {
+  it('a heal frees him: what a boss lays on a hero — roots, venom, the mortal wound — is all lifted by the heal on him', () => {
     const archer = hero('archer', { hp: 9e5 });
     for (const key of ['debuff_rooted', 'debuff_venom', 'debuff_mortal_wound']) applyEffect(archer.effects, effectDef(key), 'boss', 1);
-    const priest = hero('healer', { classKey: 'priest', abilities: [{ def: abilityDef('priest_purify'), rank: 1 }] });
+    const priest = hero('healer', { classKey: 'priest', abilities: [{ def: abilityDef('priest_healing_light'), rank: 1 }] });
     const cast = castReadyAbilities(priest, [archer, priest], [boss([])], 20, quietRng(), []);
-    expect(cast).toEqual(['priest_purify']);
+    expect(cast).toEqual(['priest_healing_light']);
     expect(archer.effects.filter((e) => !effectDef(e.defKey).beneficial)).toEqual([]);
   });
 });

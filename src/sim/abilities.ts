@@ -8,7 +8,7 @@ import { applyEffect, absorbDamage, liftHealCleansed, isCooldownFrozen, isSilenc
 import { noteStruck, dealtMult, liveStats } from './liveStats';
 import { onCrit, type TriggerCtx } from './triggers';
 import { noteDamageTaken, recentlyHit, recentlyHitHard } from './recent';
-import { condemn, critBleed, guardedDamage, overflowShield } from './passives';
+import { condemn, critBleed, guardedDamage, healInfusion, overflowShield } from './passives';
 import { behindBack, resolveSpecial, shellDamage } from './bossMechanics';
 import { afterMirror, reflection, specialReady } from './mirror';
 import { foeDamageMult, foeWard } from './enemyTraits';
@@ -16,6 +16,7 @@ import { biggestCluster, pickTarget } from './targeting';
 import { classDef } from '@/data/classes';
 import { mitigation, enrageMultiplier, MAX_DAMAGE_REDUCTION } from '@/data/stageScaling';
 import { healPowerEffectiveness } from '@/data/difficulties';
+import { HEAL_CLEANSE_COUNT, HEAL_URGENT_FRAC } from '@/data/healing';
 
 // Cooldown tracking + AI cast logic. Abilities apply declarative effects; power
 // effects (damage/heal/shield/dot/hot) scale off the caster/target stats, stat
@@ -155,15 +156,53 @@ export function isAreaBlow(ability: AbilityDef): boolean {
 const lifeFrac = (c: Combatant): number => (c.maxHp > 0 ? c.hp / c.maxHp : 1);
 const tough = (c: Combatant): boolean => c.isElite === true || c.isBoss === true;
 
-/** A harmful effect Purify cares about: not one too slight to cleanse (data/effects `cleanseIgnores`: Temblor). */
+/** A harmful effect a heal lifts: not one too slight to cleanse (data/effects `cleanseIgnores`: Temblor). */
 function cleansable(defKey: string): boolean {
   const def = effectDef(defKey);
   return !def.beneficial && def.cleanseIgnores !== true;
 }
 
-/** Whether `c` carries a harmful effect that Purify removes. */
+/** Whether `c` carries a harmful effect that a heal lifts. */
 export function isHarmed(c: Combatant): boolean {
   return c.effects.some((e) => e.remainingMs > 0 && cleansable(e.defKey));
+}
+
+/** How many harmful effects a heal would lift from `c`. */
+function harmCount(c: Combatant): number {
+  let n = 0;
+  for (const e of c.effects) if (e.remainingMs > 0 && cleansable(e.defKey)) n += 1;
+  return n;
+}
+
+/** A hero's heal on a hero lifts harmful effects (user decision, 2026-11-16 — Purify's work is the heals' now):
+ *  everything a heal clears outright (`healCleansed`: a world boss's spores), then HEAL_CLEANSE_COUNT more, the one
+ *  that matters most first (`cleansePriority`, then the longest still to run). Called as an instant heal lands
+ *  and as a heal over time is applied — before the heal itself, so a mortal wound it lifts no longer cuts it.
+ *  A cue says so for the strip. */
+function healCleanse(caster: Combatant, target: Combatant, events: CombatEvent[]): void {
+  if (caster.side !== 'hero' || target.side !== 'hero' || !target.alive) return;
+  const before = target.effects.length;
+  liftHealCleansed(target.effects);
+  let lifted = before - target.effects.length;
+  for (let n = 0; n < HEAL_CLEANSE_COUNT; n++) {
+    let pick = -1;
+    let bestPrio = Number.NEGATIVE_INFINITY;
+    let bestLeft = Number.NEGATIVE_INFINITY;
+    for (let i = 0; i < target.effects.length; i++) {
+      const e = target.effects[i];
+      if (e === undefined || e.remainingMs <= 0 || !cleansable(e.defKey)) continue;
+      const prio = effectDef(e.defKey).cleansePriority ?? 0;
+      if (prio > bestPrio || (prio === bestPrio && e.remainingMs > bestLeft)) {
+        pick = i;
+        bestPrio = prio;
+        bestLeft = e.remainingMs;
+      }
+    }
+    if (pick < 0) break;
+    target.effects.splice(pick, 1);
+    lifted += 1;
+  }
+  if (lifted > 0) events.push({ type: 'cue', targetId: target.id, sourceId: caster.id, cue: 'cleanse', amount: lifted });
 }
 
 /** A hero ability's FireRule (data/abilities): is this the moment? Pure read of both sides. */
@@ -220,17 +259,20 @@ function fireRuleMet(rule: FireRule, ability: AbilityDef, caster: Combatant, all
     case 'partyHurt': {
       let living = 0;
       let hurt = 0;
+      let harmed = 0;
       for (const a of allies) {
         if (!a.alive) continue;
         living += 1;
         const f = lifeFrac(a);
         if (f < rule.orOneBelow) return true;
         if (f < rule.frac) hurt += 1;
+        if (rule.orHarmed !== undefined && isHarmed(a)) harmed += 1;
       }
-      return living > 0 && hurt >= Math.min(rule.allies, living);
+      if (living === 0) return false;
+      return hurt >= Math.min(rule.allies, living) || (rule.orHarmed !== undefined && harmed >= Math.min(rule.orHarmed, living));
     }
     case 'harmedOrBelow':
-      return allies.some((a) => a.alive && (isHarmed(a) || lifeFrac(a) < rule.frac));
+      return allies.some((a) => a.alive && (isHarmed(a) || lifeFrac(a) < rule.frac || (rule.orHeavyHit === true && recentlyHitHard(a) && a.hp < a.maxHp)));
   }
 }
 
@@ -305,7 +347,8 @@ export function foesBehind(front: Combatant, foes: readonly Combatant[]): Combat
 /** The blast radius of an ability that states none (world px ≈ 1.5 bodies). */
 const DEFAULT_BLAST_RADIUS = 45;
 
-function selectTargets(caster: Combatant, target: AbilityTarget, allies: Combatant[], enemies: Combatant[], rng: Rng, blastRadius = DEFAULT_BLAST_RADIUS): Combatant[] {
+/** `exclude`: who the ability itself already lands on (a modifier's "and a second ally": `nextHurtAlly`). */
+function selectTargets(caster: Combatant, target: AbilityTarget, allies: Combatant[], enemies: Combatant[], rng: Rng, blastRadius = DEFAULT_BLAST_RADIUS, exclude: readonly Combatant[] = []): Combatant[] {
   switch (target) {
     case 'self':
       return [caster];
@@ -414,6 +457,36 @@ function selectTargets(caster: Combatant, target: AbilityTarget, allies: Combata
       }
       const pick = hard ?? low;
       return pick !== undefined ? [pick] : [];
+    }
+    case 'triageAlly': {
+      // Healing Light: an ally in danger first (the most hurt, under HEAL_URGENT_FRAC); over that line, the one
+      // carrying the most harmful effects (a heal lifts one); then one just struck hard; then the most hurt.
+      let low: Combatant | undefined;
+      let harmed: Combatant | undefined;
+      let most = 0;
+      let hard: Combatant | undefined;
+      for (const a of allies) {
+        if (!a.alive) continue;
+        if (low === undefined || lifeFrac(a) < lifeFrac(low)) low = a;
+        const n = harmCount(a);
+        if (n > most || (n > 0 && n === most && harmed !== undefined && lifeFrac(a) < lifeFrac(harmed))) {
+          most = n;
+          harmed = a;
+        }
+        if (recentlyHitHard(a) && a.hp < a.maxHp && (hard === undefined || (a.recentDamage ?? 0) / a.maxHp > (hard.recentDamage ?? 0) / hard.maxHp)) hard = a;
+      }
+      if (low !== undefined && lifeFrac(low) < HEAL_URGENT_FRAC) return [low];
+      const pick = harmed ?? hard ?? low;
+      return pick !== undefined ? [pick] : [];
+    }
+    case 'nextHurtAlly': {
+      // The hurt-most living ally the ability itself does not land on.
+      let best: Combatant | undefined;
+      for (const a of allies) {
+        if (!a.alive || exclude.includes(a)) continue;
+        if (best === undefined || lifeFrac(a) < lifeFrac(best)) best = a;
+      }
+      return best !== undefined ? [best] : [];
     }
     case 'harmedAlly': {
       // The ally with the most harmful effects on it; with none harmed, the most hurt.
@@ -566,23 +639,18 @@ function applyToTarget(
     events.push({ type: 'damage', targetId: target.id, sourceId: caster.id, amount: dmg, crit, abilityKey: ability.key, splash });
     return;
   }
-  if (kind === 'cleanse') {
-    // Purify: every harmful effect on the target goes (they end now; a heal after it is no longer cut).
-    for (let i = target.effects.length - 1; i >= 0; i--) {
-      const e = target.effects[i];
-      if (e !== undefined && cleansable(e.defKey)) target.effects.splice(i, 1);
-    }
-    return;
-  }
   if (kind === 'heal') {
+    // A hero's heal lifts harmful effects as it lands — first, so a mortal wound it lifts no longer cuts it.
+    healCleanse(caster, target, events);
     // Mortal Wound (and any healReduction) cuts the healing the target receives.
     const heal = Math.max(0, value) * healReceivedMult(target.effects);
     overflowShield(target, target.hp + heal - target.maxHp); // Overflow: what does not fit becomes a shield
     target.hp = Math.min(target.maxHp, target.hp + heal);
-    if (heal > 0) liftHealCleansed(target.effects); // a direct heal clears what such a heal clears (a world boss's spores)
     events.push({ type: 'heal', targetId: target.id, sourceId: caster.id, amount: heal, crit: healCrit });
     return;
   }
+  // A heal over time lifts harmful effects as it is APPLIED (never on its ticks).
+  if (kind === 'hot') healCleanse(caster, target, events);
   // dot / hot / shield / statMod / silence / root / tag → ongoing effect.
   applyEffect(target.effects, def, caster.id, value, duration);
 }
@@ -641,9 +709,10 @@ export function castReadyAbilities(
       break;
     }
     const firstEvent = events.length;
-    applyAbilityEffectsTo(caster, ability, rank, cs, targets, allies, enemies, S, rng, events);
+    const healed = applyAbilityEffectsTo(caster, ability, rank, cs, targets, allies, enemies, S, rng, events);
     commitCooldown(caster, ability, rank);
     cast.push(ability.key);
+    if (single && healed.length > 0) healInfusion(caster, allies, healed); // Power Infusion: each of her heals quickens the party
     if (single && caster.triggers !== undefined) critTriggers(caster, allies, enemies, events, firstEvent);
     // Heroes take just one action per swing — the cast consumed it; the rest wait for the
     // next swing. Enemies keep firing every ready ability.
@@ -654,7 +723,8 @@ export function castReadyAbilities(
 
 /** Apply an ability's declarative effects to its (pre-selected) targets, plus any AoE
  *  splash. Split out so a channeled cast can resolve the SAME way an instant cast does.
- *  Targets are passed in (selected once) so RNG-targeted abilities don't re-roll. */
+ *  Targets are passed in (selected once) so RNG-targeted abilities don't re-roll. Returns the heroes a heal (an
+ *  instant one or one over time) of this cast landed on. */
 function applyAbilityEffectsTo(
   caster: Combatant,
   ability: AbilityDef,
@@ -666,7 +736,8 @@ function applyAbilityEffectsTo(
   S: number,
   rng: Rng,
   events: CombatEvent[],
-): void {
+): Combatant[] {
+  const healed: Combatant[] = [];
   resolveSpecial(caster, ability, allies, enemies, S, events); // what it does beyond effects (a boss's summons, its undertow…)
   if (ability.special?.kind === 'mirror') {
     // Espejos: the boss casts back the last ability a hero cast (sim/mirror builds it) — a cast like any other,
@@ -684,8 +755,12 @@ function applyAbilityEffectsTo(
     const def = effectDef(applied.effectKey);
     // An effect with a target of its own (Smite's strike, a modifier's "also on an ally") picks it
     // here; the rest land on the ability's targets.
-    const own = applied.target === undefined ? targets : selectTargets(caster, applied.target, allies, enemies, rng);
-    for (const t of own) applyToTarget(caster, ability, applied, def, rank, cs, t, S, rng, events);
+    const own = applied.target === undefined ? targets : selectTargets(caster, applied.target, allies, enemies, rng, undefined, targets);
+    const heals = def.kind.type === 'heal' || def.kind.type === 'hot';
+    for (const t of own) {
+      applyToTarget(caster, ability, applied, def, rank, cs, t, S, rng, events);
+      if (heals && t.side === 'hero' && !healed.includes(t)) healed.push(t);
+    }
   }
   // AoE splash: a single-target damage ability with power.splashCoeff also blasts enemies
   // WITHIN splashRadius (world px) of the primary target for the reduced splash coeff
@@ -708,6 +783,7 @@ function applyAbilityEffectsTo(
       }
     }
   }
+  return healed;
 }
 
 /** Fire a hero's "on crit" triggers for the critical hits its cast just landed (the damage events pushed

@@ -44,7 +44,7 @@ export interface Reflection {
 }
 
 /** The ability the boss casts to reflect the last one a hero cast, or undefined when there is none yet (or it
- *  has nothing that can be turned: a cleanse). `harm` scales what falls on the heroes; `boon` the heals and
+ *  has nothing that can be turned: an immunity). `harm` scales what falls on the heroes; `boon` the heals and
  *  shields the boss takes (shares of ITS life); `buff` the stat effects it takes. */
 export function reflection(boss: Combatant, scale: { harm: number; boon: number; buff: number }): Reflection | undefined {
   const last = boss.lastHeroCast;
@@ -56,7 +56,7 @@ export function reflection(boss: Combatant, scale: { harm: number; boon: number;
   for (const a of src.applies) {
     const def = effectDef(a.effectKey);
     const kind = def.kind.type;
-    if (kind === 'cleanse' || kind === 'invulnerable') continue; // nothing of these is the boss's to take
+    if (kind === 'invulnerable') continue; // nothing of this is the boss's to take
     const power = a.power ?? src.power;
     const coeff = power === undefined ? undefined : (power.coeff + (power.coeffPerRank ?? 0) * steps) * (a.powerScale ?? 1);
     const durationMsOverride = (a.durationMsOverride ?? def.durationMs) + (src.rankScaling?.perRank.durationMs ?? 0) * steps;

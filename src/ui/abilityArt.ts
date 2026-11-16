@@ -23,10 +23,10 @@ const ABILITY_ART: Readonly<Record<string, string>> = {
   knight_riposte: 'tal_riposte',
   // Priest
   priest_mend: 'abil_mend',
-  priest_powerinfusion: 'abil_power_infusion',
+  priest_healing_light: 'abil_healing_light',
   priest_holyshield: 'abil_holy_shield',
   priest_nova: 'abil_holy_nova',
-  priest_purify: 'abil_purify',
+  priest_circle: 'abil_circle',
   priest_sanctuary: 'tal_sanctuary',
   priest_smite: 'tal_smite',
   // Ranger
@@ -101,6 +101,7 @@ const EFFECT_ART: Readonly<Record<string, string>> = {
   priest_revive: 'tal_e_revive',
   priest_searing_light: 'tal_e_searing_light',
   priest_condemn: 'tal_e_condemn',
+  priest_infusion: 'tal_e_infusion',
 };
 const PASSIVE_ART: Readonly<Record<PassiveEffect['is'], string>> = {
   intercept: 'tal_e_guardian',
@@ -114,6 +115,7 @@ const PASSIVE_ART: Readonly<Record<PassiveEffect['is'], string>> = {
   lowestGuard: 'tal_e_mantle',
   fasterRespawn: 'tal_e_revive',
   condemn: 'tal_e_condemn',
+  healInfusion: 'tal_e_infusion',
 };
 
 /** Art stem of the sign on a talent node's frame. STAND-INS for the nodes the redesign added: a role talent

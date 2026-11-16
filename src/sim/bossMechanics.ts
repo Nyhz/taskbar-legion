@@ -1,6 +1,6 @@
 import type { AbilityDef } from '@/data/abilities';
 import { abilityDef, stageBossAbilityKeys, worldBossAbilityKeys } from '@/data/abilities';
-import { BOSS_AFFIX, MECHANIC_EXTRAS, SUMMONS, SUMMON_HOVER, bossAffixes, mechanicAbility, worldBossMechanic, MECHANIC, type BossAffixKey, type BossRank } from '@/data/bossKit';
+import { BOSS_AFFIX, MECHANIC_EXTRAS, SUMMONS, SUMMON_HOVER, bossAffixes, mechanicAbility, worldBossMechanic, worldBossPressure, MECHANIC, type BossAffixKey, type BossRank } from '@/data/bossKit';
 import { difficultyIndexOf } from '@/data/difficulties';
 import { effectDef } from '@/data/effects';
 import { HERO_SPACING } from '@/data/field';
@@ -40,8 +40,13 @@ export function bossKit(runSeed: number, S: number, rank: BossRank): BossKit {
     abilities.push(resolved(mechanicAbility(abilityDef(MECHANIC[mechanic].abilityKey), mechanic, d)));
   }
   for (const key of rank === 'world' ? worldBossAbilityKeys() : stageBossAbilityKeys()) {
-    const blow = abilityDef(key);
-    abilities.push(resolved(affixes.includes('seismic') ? { ...blow, cooldownMs: BOSS_AFFIX.seismic.blowEveryMs } : blow));
+    let blow = abilityDef(key);
+    if (rank === 'world') {
+      // A world boss's minute presses the party by its difficulty (data/bossKit WORLD_BOSS_PRESSURE).
+      const p = worldBossPressure(d);
+      blow = { ...blow, cooldownMs: p.blowEveryMs, power: { ...blow.power, coeff: p.blowCoeff, splashCoeff: p.splashCoeff } };
+    }
+    abilities.push(resolved(affixes.includes('seismic') ? { ...blow, cooldownMs: Math.min(blow.cooldownMs, BOSS_AFFIX.seismic.blowEveryMs) } : blow));
   }
   if (affixes.includes('deadeye')) abilities.push(resolved(abilityDef(BOSS_AFFIX.deadeye.abilityKey)));
   if (affixes.includes('mortalWound')) {

@@ -95,14 +95,14 @@ describe('ability mechanics', () => {
     const priest = unit({
       id: 'p', side: 'hero', hp: 100, maxHp: 100,
       baseStats: base({ healPower: 100 }), // ×2 amplifier raw — but devalued by the zone debuff
-      abilities: [{ def: plain('priest_mend'), rank: 1 }], // coeff 0.15 total over 6s × maxHp
+      abilities: [{ def: plain('priest_mend'), rank: 1 }], // coeff 0.20 total over 6s × maxHp
     });
     const ally = unit({ id: 'a', side: 'hero', hp: 10, maxHp: 100 });
     castReadyAbilities(priest, [priest, ally], [], 1, makeRng(1), []); // stage 1 = Normal (heal eff 1.0)
-    // ally is lowest (10%) and below 70% → HoT total = 0.15 × 100 × (1 + 100×1.0/100) = 30
-    // over 6s, stored as 5/sec on the effect (Normal has no heal debuff).
+    // ally is lowest (10%) and below 70% → HoT total = 0.20 × 100 × (1 + 100×1.0/100) = 40
+    // over 6s, stored as 6.67/sec on the effect (Normal has no heal debuff).
     const hot = ally.effects.find((e) => e.defKey === 'fx_hot');
-    expect(hot?.value).toBeCloseTo(5, 1);
+    expect(hot?.value).toBeCloseTo(40 / 6, 1);
   });
 
   it('the zone heal-power debuff shrinks the SAME heal as difficulty rises (Mend)', () => {
@@ -118,12 +118,12 @@ describe('ability mechanics', () => {
     };
     // Same priest (healPower 200), same target — only the zone changes. Normal (1.0) heals more
     // than Hell (0.33) than Torment (0.11): the treadmill devalues stale gear each difficulty.
-    const normal = hotPerSec(1); // 0.15×100×(1+200×1.0/100)/6 = (0.15×300)/6 = 7.5
-    const hell = hotPerSec(105); // (1+200×0.33/100) → 0.15×166/6 = 4.15
-    const torment = hotPerSec(450); // (1+200×0.11/100) → 0.15×122/6 = 3.05
-    expect(normal).toBeCloseTo(7.5, 1);
-    expect(hell).toBeCloseTo(4.15, 1);
-    expect(torment).toBeCloseTo(3.05, 1);
+    const normal = hotPerSec(1); // 0.20×100×(1+200×1.0/100)/6 = (0.20×300)/6 = 10
+    const hell = hotPerSec(105); // (1+200×0.33/100) → 0.20×166/6 = 5.53
+    const torment = hotPerSec(450); // (1+200×0.11/100) → 0.20×122/6 = 4.07
+    expect(normal).toBeCloseTo(10, 1);
+    expect(hell).toBeCloseTo(0.2 * 166 / 6, 1);
+    expect(torment).toBeCloseTo(0.2 * 122 / 6, 1);
     expect(normal).toBeGreaterThan(hell);
     expect(hell).toBeGreaterThan(torment);
   });
@@ -231,8 +231,9 @@ describe('per-ability cooldowns', () => {
   });
 
   it('Priest & Ranger cooldown spot-checks', () => {
-    expect(ABILITIES.priest_mend?.cooldownMs).toBe(20_000);
-    expect(ABILITIES.priest_powerinfusion?.cooldownMs).toBe(24_000);
+    expect(ABILITIES.priest_mend?.cooldownMs).toBe(14_000); // heal cadence raised with the world-boss pressure (round 3, checkpoint 2)
+    expect(ABILITIES.priest_healing_light?.cooldownMs).toBe(12_000);
+    expect(ABILITIES.priest_circle?.cooldownMs).toBe(20_000);
     expect(ABILITIES.priest_holyshield?.cooldownMs).toBe(24_000);
     expect(ABILITIES.priest_nova?.cooldownMs).toBe(20_000);
     expect(ABILITIES.ranger_fast_fire?.cooldownMs).toBe(24_000);

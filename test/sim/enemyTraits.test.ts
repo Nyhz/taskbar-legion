@@ -265,7 +265,7 @@ describe('traits by difficulty', () => {
     for (const h of party) expect(effect(h, slow.key)).toBeUndefined();
   });
 
-  it('Temblor shows on the hero, and Purify leaves it alone: it neither casts for it, nor picks its bearer, nor removes it', () => {
+  it('Temblor shows on the hero, and a heal leaves it alone: it neither casts for it, nor picks its bearer, nor removes it', () => {
     const slow = effectDef(TRAIT_TUNING.tremor.effect);
     expect(slow.beneficial).toBe(false); // a debuff: the strip shows its chip
     expect(slow.cleanseIgnores).toBe(true);
@@ -274,19 +274,20 @@ describe('traits by difficulty', () => {
       applyEffect(h.effects, slow, 'b', -20);
       return h;
     };
-    const priestWith = (): Combatant => unit({ id: 'p', side: 'hero', classKey: 'priest', range: 200, abilities: [{ def: abilityDef('priest_purify'), rank: 1 }] });
-    // Only Temblor in the party: nobody is "harmed", Purify stays ready.
+    // Healing Light: kept for someone harmed, under 60 % or struck hard (the heal that lifts what a hero carries).
+    const priestWith = (): Combatant => unit({ id: 'p', side: 'hero', classKey: 'priest', range: 200, abilities: [{ def: abilityDef('priest_healing_light'), rank: 1 }] });
+    // Only Temblor in the party: nobody is "harmed", the heal stays ready.
     const shaken = shakenHero('k');
     expect(isHarmed(shaken)).toBe(false);
     const priest = priestWith();
     expect(castReadyAbilities(priest, [priest, shaken], [foe('e')], ETERNAL, quietRng(), [])).toEqual([]);
-    expect(priest.cooldowns['priest_purify'] ?? 0).toBe(0);
-    // Someone else carries a real debuff: Purify goes to THAT hero, and Temblor stays where it is.
+    expect(priest.cooldowns['priest_healing_light'] ?? 0).toBe(0);
+    // Someone else carries a real debuff: the heal goes to THAT hero, and Temblor stays where it is.
     const wounded = unit({ id: 'r', side: 'hero' });
     applyEffect(wounded.effects, effectDef('debuff_mortal_wound'), 'b', 25);
     applyEffect(wounded.effects, slow, 'b', -20);
     const again = priestWith();
-    expect(castReadyAbilities(again, [again, shaken, wounded], [foe('e')], ETERNAL, quietRng(), [])).toEqual(['priest_purify']);
+    expect(castReadyAbilities(again, [again, shaken, wounded], [foe('e')], ETERNAL, quietRng(), [])).toEqual(['priest_healing_light']);
     expect(effect(wounded, 'debuff_mortal_wound')).toBeUndefined();
     expect(effect(wounded, slow.key)).toBeDefined(); // not removed either
     expect(effect(shaken, slow.key)).toBeDefined();

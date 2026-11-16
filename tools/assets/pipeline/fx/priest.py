@@ -10,9 +10,13 @@ Four families, told apart by colour AND by shape, so a glance says what was done
 Her basic attacks   light_bolt (the lantern's) · light_page (a leaf of the book) · light_hit (where they land)
 Any heal            heal_bloom (on whoever is healed)
 Mend                mend_gift (cast, at the lantern) · mend_wind (the heal taking hold) · mend_petals (while it mends)
+Healing Light       swift_gift (cast, at the book) · swift_light (on the one it heals: a shaft of light dropped at once)
+Circle of Healing   circle_pulse (cast, under the party: one bright ring flashing out, crosses of light thrown up)
+Any cleanse         cleanse_flash (on whoever a heal lifted a harmful effect from: dark flecks driven off by light)
 Holy Shield         ward_spark (cast, at the book) · ward_raise · ward_front (while it holds) · ward_break
 Lesser wards        ward_veil (Deep Sanctuary, Second Wind: a small canopy of the same glass)
-Power Infusion      infuse_send (cast, at her hand) · infusion_ignite · the rim `infused` + infusion_motes (while on)
+Power Infusion      infusion_ignite · the rim `infused` (a passive now: each of her heals lights it on the party)
+                    (infuse_send and infusion_motes stay drawn for the record; nothing plays them now)
 Holy Nova           nova_flash (cast, at the staff's foot) · nova_ring + nova_shaft (through the wave) · nova_hit
 Retribution Aura    retribution_seal (under her) · retribution_tread (under every ally)
 Sanctuary           sanctuary_ring (cast, under the party) · sanctuary_glow (while it lasts)
@@ -622,6 +626,112 @@ def zeal_ignite(cel: Cel, i: int, t: float) -> None:
     rim(cel, ("crimson", 1))
 
 
+# ----------------------------------------------------------------------------------------- Healing Light
+def _cross(cel: Cel, x: float, y: float, r: int, core=LIGHT, arm=("sea", 8), tip=("sea", 6)) -> None:
+    """A small plus of light: a heal's own sign (a nova's hit is an eight-ray star, never a plus)."""
+    cel.put(x, y, core)
+    for d in range(1, r + 1):
+        tone = arm if d < r else tip
+        cel.put(x + d, y, tone)
+        cel.put(x - d, y, tone)
+        cel.put(x, y + d, tone)
+        cel.put(x, y - d, tone)
+
+
+def swift_gift(cel: Cel, i: int, t: float) -> None:
+    """Healing Light leaving her: the open book flares white and one cross of mint light jumps off it — quick, no
+    petals (those are the heal that keeps working)."""
+    cx, cy = 10, 14
+    if i < 3:
+        blob(cel, cx + 0.5, cy + 0.5, 4.4 - i * 1.2, 4.4 - i * 1.2, ("sea", 8))
+        blob(cel, cx + 0.5, cy + 0.5, 2.4 - i * 0.7, 2.4 - i * 0.7, LIGHT)
+    lift = 10 * ease_out(t, 1.6)
+    _cross(cel, cx + 3 + lift * 0.6, cy - 2 - lift, (2, 3, 3, 2, 1)[i])
+    if i >= 3:
+        thin(cel, 0.5, 3)
+    rim(cel, ("sea", 2))
+
+
+def swift_light(cel: Cel, i: int, t: float) -> None:
+    """Healing Light landing: a shaft of white-mint light DROPPED on the ally at once — top to toe in two frames —
+    with a cross flashing over the head, then gone. Upright and sudden: an instant heal reads as a strike of light,
+    where a heal over time winds up the body slowly (mend_wind)."""
+    ax, base = 16, 62
+    top = 4
+    reach = (0.45, 1.0, 1.0, 1.0, 1.0, 1.0)[i]
+    w = (2.6, 4.4, 3.6, 2.6, 1.6, 0.8)[i]
+    bottom = top + (base - top) * reach
+    for y in range(top, int(bottom)):
+        f = (y - top) / max(1.0, base - top)
+        half = w * (0.65 + 0.35 * f)
+        for x in range(int(math.floor(ax - half)), int(math.ceil(ax + half))):
+            d = abs(x + 0.5 - ax) / max(half, 0.5)
+            cel.put(x, y, LIGHT if d < 0.45 else ("sea", 8) if d < 0.8 else ("sea", 6))
+    if 1 <= i <= 4:
+        ring(cel, ax, base - 1.5, 6 + i * 2.5, 1.6 + i * 0.5, ("sea", 8) if i < 3 else ("sea", 6), thick=1.2)
+    if i >= 1:
+        _cross(cel, ax, 10 - min(i, 3), (3, 4, 4, 3, 2)[i - 1] if i - 1 < 5 else 1)
+    if i >= 4:
+        thin(cel, 0.55 if i == 4 else 0.3, 7)
+    rim(cel, ("sea", 2))
+
+
+# ----------------------------------------------------------------------------------------- Circle of Healing
+def circle_pulse(cel: Cel, i: int, t: float) -> None:
+    """Circle of Healing: ONE bright ring flashes out under the whole party — faster and whiter than Sanctuary's —
+    and throws crosses of light up off it as it passes. Nothing stays: the heal is given at once."""
+    ax, ay = 64, 30
+    rx = 10 + 54 * ease_out(t, 2.2)
+    ry = rx * 0.27
+    if i < 5:
+        ring(cel, ax, ay, rx, ry, LIGHT, thick=1.6 - 0.25 * i)
+        ring(cel, ax, ay, rx - 2, ry - 0.6, ("sea", 8), thick=1.0)
+    if i < 2:
+        blob(cel, ax + 0.5, ay - 0.5, 7 - i * 3, 2.4 - i, LIGHT)
+    rnd = random.Random(11)
+    for k in range(9):
+        a = math.pi * (1.05 + 0.9 * k / 8)
+        born = 0.15 + 0.06 * k
+        if t < born:
+            continue
+        f = min(1.0, (t - born) / 0.45)
+        x = ax + math.cos(a) * rx * 0.9 + (rnd.random() - 0.5) * 3
+        y = ay + math.sin(a) * ry - 4 - f * 16
+        _cross(cel, x, y, 2 if f < 0.6 else 1)
+    if i >= 5:
+        thin(cel, 0.5 if i == 5 else 0.25, 9)
+    rim(cel, ("sea", 2))
+
+
+# ----------------------------------------------------------------------------------------- a heal's cleanse
+def cleanse_flash(cel: Cel, i: int, t: float) -> None:
+    """A heal lifted a harmful effect off this hero: a white flash at the chest throws dark violet flecks off the body
+    and they fade as they fly — the harm driven out, in the moment it happens."""
+    ax, base = 20, 50
+    cy = base - 22
+    if i < 2:
+        blob(cel, ax + 0.5, cy + 0.5, 3.2 - i * 1.2, 4.2 - i * 1.6, LIGHT)
+    if i < 4:
+        ring(cel, ax, cy, 5 + i * 4.5, 6.5 + i * 5.0, LIGHT if i < 2 else ("sea", 8), thick=1.0, gap=(lambda a: int(a / 30) % 2 == 1) if i >= 2 else None)
+    rnd = random.Random(31)
+    for k in range(10):
+        a = math.tau * k / 10 + rnd.random() * 0.5
+        sp = 9 + rnd.random() * 9
+        d = 5 + sp * ease_out(t, 1.4)
+        x = ax + math.cos(a) * d
+        y = cy + math.sin(a) * d * 1.2 - t * 5
+        if t > 0.75 and k % 2:
+            continue
+        dark = ("violet", 2) if t < 0.6 else ("violet", 3)
+        cel.put(x, y, dark)
+        cel.put(x + 1, y, dark)
+        cel.put(x, y + 1, dark)
+        cel.put(x + 1, y + 1, ("violet", 4) if t < 0.6 else ("violet", 3))
+    if i >= 4:
+        thin(cel, 0.5, 4)
+    rim(cel, ("sea", 2), only=lambda tone: tone[0] != "violet")
+    rim(cel, ("ink", 7), only=lambda tone: tone[0] == "violet")
+
 FX = [
     Fx("light_bolt", 28, 11, 23, 5, [50, 50, 50], True, light_bolt),
     Fx("light_page", 24, 15, 14, 7, [60, 60, 60, 60], True, light_page),
@@ -650,4 +760,8 @@ FX = [
     Fx("zeal_wave", 128, 44, 64, 26, [50, 50, 60, 60, 70, 80, 90], False, zeal_wave),
     Fx("zeal_wings", 62, 54, 31, 52, [110] * 8, True, zeal_wings),
     Fx("zeal_ignite", 68, 62, 34, 60, [40, 50, 55, 65, 75, 85, 95], False, zeal_ignite),
+    Fx("swift_gift", 30, 26, 10, 14, [35, 45, 55, 70, 80], False, swift_gift),
+    Fx("swift_light", 32, 66, 16, 62, [35, 45, 60, 70, 80, 90], False, swift_light),
+    Fx("circle_pulse", 128, 44, 64, 30, [35, 40, 45, 55, 60, 70, 80], False, circle_pulse),
+    Fx("cleanse_flash", 40, 52, 20, 50, [35, 45, 55, 65, 75, 90], False, cleanse_flash),
 ]

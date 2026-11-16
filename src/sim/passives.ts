@@ -206,3 +206,17 @@ export function condemn(caster: Combatant, target: Combatant): void {
   if (held === undefined || !target.alive) return;
   applyEffect(target.effects, effectDef(held.def.effectKey), caster.id, held.value);
 }
+
+/** Power Infusion (a passive of the Priest's Zeal branch, user decision 2026-11-16): `caster` has just healed
+ *  `healed` (an instant heal landed, or a heal over time was applied). Her held passive lays its effects — worth
+ *  its figure each, for its time, renewed and never stacked — on the whole living party, herself included, or
+ *  only on those she healed (the talent's `to`). */
+export function healInfusion(caster: Combatant, allies: readonly Combatant[], healed: readonly Combatant[]): void {
+  const held = passiveOf(caster, 'healInfusion');
+  if (held === undefined || held.value <= 0 || healed.length === 0) return;
+  const to = held.def.to === 'party' ? allies : healed;
+  for (const a of to) {
+    if (!a.alive) continue;
+    for (const key of held.def.effectKeys) applyEffect(a.effects, effectDef(key), caster.id, held.value, held.def.durationMs);
+  }
+}

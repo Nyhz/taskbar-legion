@@ -27,7 +27,7 @@ import { t, type PlainTextKey } from '@/i18n';
 import { castFx, FX } from './render/fx';
 import { creatureRole, enemyRank } from './render/figureData';
 import { loadHeroFigures, worldFigures } from './render/figureTextures';
-import { BLOW_SIGNS, LIGHT_SHOTS, abilityLook, bandCount, hasAuraLook, type AbilityLook, type BandLook, type CastBurst } from './render/abilityFx';
+import { BLOW_SIGNS, CLEANSE_FLASH, LIGHT_SHOTS, abilityLook, bandCount, hasAuraLook, type AbilityLook, type BandLook, type CastBurst } from './render/abilityFx';
 import { BlowFxLayer } from './render/BlowFx';
 import { BLOW_PAST_PARTY, FOE_ARC_HEIGHT, FOE_SHOT, WARN_HOT_FROM, areaBlow, burstOffsets, shotGoesOver, warnTiles, waveReachMs, type AreaBlow } from './render/enemyFx';
 import { FxShots, fxLoop, type FxLoop } from './render/BodyFx';
@@ -648,7 +648,15 @@ export class GameStrip {
       const enemySprite = this.enemySprites.get(ev.targetId);
       const sprite = heroSprite ?? enemySprite;
       const amt = ev.amount ?? 0;
-      if (ev.type === 'cue') {
+      if (ev.type === 'cue' && ev.cue === 'cleanse' && heroSprite !== undefined) {
+        // A heal lifted a harmful effect off this hero (sim/abilities.healCleanse): the flash lands with the heal —
+        // at the healer's release when it comes from a spell being cast.
+        const healer = ev.sourceId === undefined ? undefined : this.heroSprites.get(ev.sourceId);
+        const spell = ev.sourceId === undefined ? undefined : castBy.get(ev.sourceId);
+        this.delayed.add(healer !== undefined && spell !== undefined ? healer.castBlowMs(spell) : 0, () => {
+          if (heroSprite.parent !== null) heroSprite.burstFx(CLEANSE_FLASH);
+        });
+      } else if (ev.type === 'cue') {
         // A wave enemy's trait or a support falling (sim/enemyTraits): a brief flash, nothing that stays.
         const cue = ev.cue === undefined ? undefined : FOE_CUES[ev.cue];
         if (cue !== undefined && enemySprite !== undefined) this.playFoeCue(cue.fx, cue.at, enemySprite, groundY);
@@ -731,8 +739,10 @@ export class GameStrip {
         // its release, if the heal comes from a spell being cast, not while her arm is still going up.
         const healer = ev.sourceId === undefined ? undefined : this.heroSprites.get(ev.sourceId);
         const spell = ev.sourceId === undefined ? undefined : castBy.get(ev.sourceId);
+        const healOn = spell === undefined ? undefined : abilityLook(spell)?.healOn;
         this.delayed.add(healer !== undefined && spell !== undefined ? healer.castBlowMs(spell) : 0, () => {
           if (heroSprite.parent === null) return;
+          if (healOn !== undefined) heroSprite.burstFx(healOn); // an instant heal's own look (Healing Light's shaft)
           heroSprite.healBloom();
           this.floating.spawn(heroSprite.x, heroSprite.y - 20, `+${formatDmg(amt)}`, FX.heal, 1);
         });

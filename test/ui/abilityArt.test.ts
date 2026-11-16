@@ -64,7 +64,7 @@ describe('ability art', () => {
     for (const c of CLASS_KEYS) {
       const nodes = talentNodes(c);
       const effects = nodes.filter((x) => x.kind === 'passive' && x.role !== undefined);
-      expect(effects).toHaveLength(5);
+      expect(effects).toHaveLength(c === 'priest' ? 6 : 5); // the Priest's sixth: Power Infusion, a passive since the heal kit
       for (const n of effects) {
         const stem = talentNodeArtStem(c, n);
         expect(stem.startsWith('tal_e_'), `${n.key} → ${stem}`).toBe(true);

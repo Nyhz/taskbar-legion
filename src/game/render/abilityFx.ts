@@ -101,6 +101,9 @@ export interface AbilityLook {
   band?: readonly BandLook[];
   /** The hits show this long after the cast clip's blow (the time the volley is in the air). */
   hitDelayMs?: number;
+  /** A one-shot on every hero the ability HEALS, over its body (Healing Light's shaft of light), beside the bloom
+   *  every heal plays. */
+  healOn?: string;
 }
 
 export interface LastingLook {
@@ -194,8 +197,9 @@ export const ABILITY_LOOKS: Readonly<Record<string, AbilityLook>> = {
   // ── Priest ── A heal is mint and soft, a shield azure and faceted, power bright yellow, wrath white-gold.
   // Mend: petals of mint light leave her lantern; the heal winding up the hurt one is the opening of its lasting look.
   priest_mend: { cast: [{ fx: 'mend_gift', spot: 'caster-over', atBlow: true, dx: 21, dy: -19 }] },
-  // Power Infusion: a star leaves her hand; the shaft of yellow light on the ally is the opening of its lasting look.
-  priest_powerinfusion: { cast: [{ fx: 'infuse_send', spot: 'caster-over', atBlow: true, dx: 14, dy: -24 }] },
+  // Healing Light: the book flares and a cross jumps off it; a shaft of light DROPS on the one it heals at once
+  // (`healOn`) — an instant heal strikes, where Mend's ribbon winds up slowly.
+  priest_healing_light: { cast: [{ fx: 'swift_gift', spot: 'caster-over', atBlow: true, dx: 15, dy: -24 }], healOn: 'swift_light' },
   // Holy Shield: the book flashes; the glass closing round the tank is the opening of its lasting look.
   priest_holyshield: { cast: [{ fx: 'ward_spark', spot: 'caster-over', atBlow: true, dx: 15, dy: -24 }] },
   // Holy Nova: the staff's foot strikes, a ring of light opens under the wave and shafts burst up through it, near to far.
@@ -204,9 +208,10 @@ export const ABILITY_LOOKS: Readonly<Record<string, AbilityLook>> = {
     band: [{ fx: 'nova_shaft', layer: 'air', every: 15, sweepMs: 220, atBlow: true, delayMs: 40 }],
     hit: 'nova_hit', hitDelayMs: 150,
   },
-  // Purify: her book flashes white-gold; the heal it carries blooms on the cleansed ally like any heal.
+  // Circle of Healing: one bright ring flashes out under the whole party and throws crosses of light up — nothing
+  // stays (Sanctuary's ring is slower and leaves each of them standing in a glow); each of them blooms like any heal.
   // (Retribution Aura is a passive talent now: its seal and tread are lasting looks under its stand-in key.)
-  priest_purify: { cast: [{ fx: 'nova_flash', spot: 'caster-over', atBlow: true, dx: 8 }] },
+  priest_circle: { cast: [{ fx: 'circle_pulse', spot: 'party', atBlow: true, dy: 2 }] },
   // Sanctuary: a ring of mint light opens under the whole party; the glow each of them stands in is its lasting look.
   priest_sanctuary: { cast: [{ fx: 'sanctuary_ring', spot: 'party', atBlow: true, dy: 2 }] },
   // Smite: light falls on the enemy from the sky (the heal it carries blooms on the ally like any heal).
@@ -237,6 +242,9 @@ export const SHOT_FROM: Readonly<Record<string, Readonly<Record<string, { dx: nu
 
 /** The one-shot a heal plays on whoever it heals — every heal, whoever cast it: one look per MEANING. */
 export const HEAL_BLOOM = 'heal_bloom';
+/** The one-shot on a hero a heal has just lifted a harmful effect from (the sim's 'cleanse' cue): dark flecks
+ *  driven off by light. The effect's own closing look (roots breaking, spores withering) plays with it. */
+export const CLEANSE_FLASH = 'cleanse_flash';
 /** A hero blooms at most this often (a heal on the whole party and its ticks must not strobe). */
 export const HEAL_BLOOM_GAP_MS = 350;
 
@@ -335,13 +343,11 @@ export const EFFECT_LOOKS: Readonly<Record<string, readonly LastingLook[]>> = {
   // The lesser wards (Deep Sanctuary, Second Wind): a small canopy of the shield's glass over the head.
   fx_ward: [{ slot: 'front', fx: 'ward_veil' }],
   // Power Infusion: a bright yellow AURA that is only a rim — a thin line of light hugging the figure, brightest
-  // at the head — with a dotted glow at the feet and three slow motes climbing past its sides. Nothing behind the
-  // body and nothing over it: the rim takes no slot, so Rapid Fire's arrows, Bloodlust's blaze, a stone or a
-  // golden skin all show with it (the user, 2026-11-15: the mantle it was first was "invasivo" and hid Rapid Fire).
-  buff_infusion_as: [
-    { rim: 'infused', start: 'infusion_ignite', priority: 1, delayMs: INFUSION_ARRIVES_MS },
-    { slot: 'around', fx: 'infusion_motes', delayMs: INFUSION_ARRIVES_MS },
-  ],
+  // at the head. Nothing behind the body and nothing over it: the rim takes no slot, so Rapid Fire's arrows,
+  // Bloodlust's blaze, a stone or a golden skin all show with it (the user, 2026-11-15: the mantle it was first was
+  // "invasivo" and hid Rapid Fire). A passive now (2026-11-16): each of her heals lights it on the WHOLE party, so
+  // the motes it had are gone — three rims and nothing more.
+  buff_infusion_as: [{ rim: 'infused', start: 'infusion_ignite', priority: 1, delayMs: INFUSION_ARRIVES_MS }],
   // Battle Enrage: wings of crimson-gold fire open behind HER shoulders; the heroes she rouses wear a rim of the
   // same fire and no wings — three winged heroes abreast buried each other, and `behind` is where their own
   // looks live (Rapid Fire, Bloodlust, Last Stand).

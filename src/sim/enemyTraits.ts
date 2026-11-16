@@ -4,7 +4,7 @@ import { TRAIT_TUNING, auraValue, type EnemyTrait, type SupportAura } from '@/da
 import { difficultyIndexOf } from '@/data/difficulties';
 
 // What the wave enemies' TRAITS and the SUPPORT's auras do (numbers: data/enemies.ts). Pure and deterministic:
-// nothing here draws from the combat rng. None of it is an effect — nothing for Purify to chase, no chip, no body
+// nothing here draws from the combat rng. None of it is an effect — nothing for a heal to lift, no chip, no body
 // look: an enemy carries plain marks (`traits`, `guardUp`, `rousedMs`, `underAuras`, `aegis`) that the combat
 // loop reads at a handful of places, and the strip shows as a tint or a brief flash (render/foeFx).
 

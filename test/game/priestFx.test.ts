@@ -33,7 +33,7 @@ const priest = { id: 'priest', classKey: 'priest' };
 describe('the Priest', () => {
   it('has a look for every ability: nothing is left pending', () => {
     expect(PENDING_ABILITIES).toEqual([]);
-    for (const key of ['priest_mend', 'priest_powerinfusion', 'priest_holyshield', 'priest_nova', 'priest_purify', 'priest_sanctuary', 'priest_smite', 'priest_enrage']) {
+    for (const key of ['priest_mend', 'priest_healing_light', 'priest_holyshield', 'priest_nova', 'priest_circle', 'priest_sanctuary', 'priest_smite', 'priest_enrage']) {
       expect(ABILITY_LOOKS[key], key).toBeDefined();
     }
   });
@@ -47,11 +47,11 @@ describe('the Priest', () => {
     }
   });
 
-  it('Power Infusion is a RIM of light round the figure and a few motes: it takes no slot another look lives in', () => {
+  it('Power Infusion is a RIM of light round the figure and nothing more: it takes no slot another look lives in', () => {
+    // (A passive since the heal kit: each of her heals lights it on whoever it heals, so its motes are gone.)
     const got = wornLooks([worn('buff_infusion_as'), worn('buff_infusion_cdr')], knight);
     expect(got.rim?.look.rim).toBe('infused');
-    expect(got.slots.get('around')?.look.fx).toBe('infusion_motes');
-    expect([...got.slots.keys()]).toEqual(['around']); // nothing behind the body, nothing over it
+    expect([...got.slots.keys()]).toEqual([]); // nothing behind the body, nothing over it, nothing around
     expect(SILENT_EFFECTS.has('buff_infusion_cdr')).toBe(true);
     for (const hero of ['knight', 'ranger', 'priest']) expect(hasSkin(hero, 'infused'), hero).toBe(true);
   });
@@ -88,14 +88,13 @@ describe('the Priest', () => {
     const roused = wornLooks([worn('buff_enrage_as'), worn('buff_infusion_as', { remainingMs: 5000 })], knight);
     expect(roused.slots.has('behind')).toBe(false);
     expect(roused.rim?.look.rim).toBe('roused');
-    expect(roused.slots.get('around')?.look.fx).toBe('infusion_motes'); // the infusion still shows its motes
     for (const hero of ['knight', 'ranger', 'priest']) expect(hasSkin(hero, 'roused'), hero).toBe(true);
   });
 
   it('a heal that keeps working, a shield and a buff sit in different slots: all three show at once', () => {
     const got = wornLooks([worn('fx_hot'), worn('fx_shield', { remainingMs: 3000, totalMs: 4000 }), worn('buff_infusion_as'), worn('fx_sanctuary')], knight);
     expect([...got.slots.keys()].sort()).toEqual(['around', 'front', 'ground']);
-    expect(got.slots.get('around')?.look.fx).toBe('mend_petals'); // the heal's petals over the infusion's motes…
+    expect(got.slots.get('around')?.look.fx).toBe('mend_petals'); // the heal's petals…
     expect(got.rim?.look.rim).toBe('infused'); // …which still shows by its rim
   });
 
@@ -116,8 +115,8 @@ describe('the Priest', () => {
     expect(wornLooks([aura], knight).slots.has('ground')).toBe(false);
   });
 
-  it('a heal, a shield, power and wrath are different gestures: no two of her spells share a clip', () => {
-    const spells = ['priest_mend', 'priest_holyshield', 'priest_powerinfusion', 'priest_nova', 'priest_smite', 'priest_sanctuary', 'priest_enrage'];
+  it('a heal, a shield, power and wrath are different gestures: no two of her spells share a clip (the two party heals share one)', () => {
+    const spells = ['priest_mend', 'priest_holyshield', 'priest_healing_light', 'priest_nova', 'priest_smite', 'priest_sanctuary', 'priest_enrage'];
     const clips = spells.map((key) => heroAbilityClip('priest', key));
     expect(new Set(clips).size).toBe(spells.length);
     const anims = figureMeta('priest')?.anims ?? {};

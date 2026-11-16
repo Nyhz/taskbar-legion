@@ -89,23 +89,42 @@ def holy_nova() -> Icon:  # a burst of light
     ], {"y": ("brass", 4), "Y": ("brass", 6), "w": ("light", 0)})
 
 
-def purify() -> Icon:  # a drop of clear water with a glint, sparks lifting off it: what washes the harm away
+def healing_light() -> Icon:  # a cross of mint light flashing out, rays at its corners: the heal given at once
     return sprite([
-        "......bb......",
-        ".w...bBBb...w.",
-        "www..bBBb..www",
-        ".w..bBWWBb..w.",
-        "....bBWWBb....",
-        "...bBWWWWBb...",
-        "..bBWWwwWWBb..",
-        "..bBWwwWWWBb..",
-        "..bBWwWWWWBb..",
-        "..bBWWWWWWBb..",
-        "...bBWWWWBb...",
-        "....bBBBBb....",
-        ".....bbbb.....",
+        "l............l",
+        ".l....ss....l.",
+        "..l...sS...l..",
+        "......sS......",
+        "......sW......",
+        ".ssssssWsssss.",
+        ".sSSSSWWWSSSs.",
+        ".ssssssWsssss.",
+        "......sW......",
+        "......sS......",
+        "..l...sS...l..",
+        ".l....ss....l.",
+        "l............l",
         E,
-    ], {"b": ("azure", 3), "B": ("azure", 5), "W": ("azure", 7), "w": ("light", 0)})
+    ], {"s": ("sea", 4), "S": ("sea", 7), "W": ("light", 0), "l": ("sea", 8)})
+
+
+def circle_of_healing() -> Icon:  # a ring of light with three small crosses on it: the heal on the whole party
+    return sprite([
+        "......s.......",
+        ".....sWs......",
+        "..r...s...r...",
+        ".r.........r..",
+        "r...........r.",
+        "s...........s.",
+        "Ws.........sWs",
+        "s...........s.",
+        "r...........r.",
+        ".r.........r..",
+        "..r.......r...",
+        "...rrrrrrr....",
+        E,
+        E,
+    ], {"s": ("sea", 7), "W": ("light", 0), "r": ("sea", 5)})
 
 
 def retribution() -> Icon:  # a ring of thorns around a core: the aura that strikes back
@@ -282,10 +301,10 @@ def hunters_mark() -> Icon:  # Ranger: the mark set on the prey
 
 
 SIGNS = [
-    ("abil_mend", "Mend (provisional)", mend), ("abil_power_infusion", "Power Infusion (provisional)", power_infusion),
+    ("abil_mend", "Mend (provisional)", mend), ("abil_power_infusion", "Power Infusion · pasivo de Celo (provisional)", power_infusion),
+    ("abil_healing_light", "Healing Light (provisional)", healing_light), ("abil_circle", "Circle of Healing (provisional)", circle_of_healing),
     ("abil_holy_shield", "Holy Shield (provisional)", holy_shield), ("abil_holy_nova", "Holy Nova (provisional)", holy_nova),
     ("abil_retribution", "Retribution Aura (provisional)", retribution),
-    ("abil_purify", "Purify (provisional)", purify),
     ("abil_rapid_fire", "Rapid Fire (provisional)", rapid_fire), ("abil_aimed_shot", "Aimed Shot (provisional)", aimed_shot),
     ("abil_raining_arrows", "Raining Arrows (provisional)", raining_arrows), ("abil_explosive_arrow", "Explosive Arrow (provisional)", explosive_arrow),
     ("abil_caltrops", "Caltrops (provisional)", caltrops),

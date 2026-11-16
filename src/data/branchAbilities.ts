@@ -54,17 +54,20 @@ export const BRANCH_ABILITIES: Record<string, AbilityDef> = {
   priest_sanctuary: {
     key: 'priest_sanctuary', name: 'Sanctuary', icon: 'holy',
     desc: 'When someone is hurt, a rolling heal on the whole party.',
-    cooldownMs: 30000, target: 'allAllies',
-    // fx_sanctuary: 6%→10% of each one's max HP over 6s (+1/rank), × heal power.
+    cooldownMs: 20000, target: 'allAllies', // every 20 s (was 30): the world bosses press harder (data/bossKit WORLD_BOSS_PRESSURE)
+    // fx_sanctuary: 12%→20% of each one's max HP over 6s (+2/rank), × heal power — raised with the heal kit
+    // (2026-11-16): the party heal over time is worth more than the instant one (Circle of Healing). As it is
+    // applied it lifts every harmful effect from each of them (data/healing).
     applies: [{ effectKey: 'fx_sanctuary' }],
-    // A party heal is for a hurt PARTY: two heroes under 80 %, or one under half.
-    castCondition: 'allyBelowHpPct', fires: { when: 'partyHurt', allies: 2, frac: 0.8, orOneBelow: 0.5 }, power: { coeff: 0.06, coeffPerRank: 0.01 },
+    // A party heal is for a hurt PARTY: two heroes under 80 %, or one under half — or two of them carrying a
+    // harmful effect.
+    castCondition: 'allyBelowHpPct', fires: { when: 'partyHurt', allies: 2, frac: 0.8, orOneBelow: 0.5, orHarmed: 2 }, power: { coeff: 0.12, coeffPerRank: 0.02 },
   },
   // ── Priest · Zeal ──
   priest_smite: {
     key: 'priest_smite', name: 'Smite', icon: 'lightning',
     desc: 'An instant heal on whoever is hurt most and, with it, a strike of light on her priority target.',
-    cooldownMs: 14000, target: 'lowestAllyHp',
+    cooldownMs: 10000, target: 'lowestAllyHp', // every 10 s (was 14): see Sanctuary
     // Heal 8%→14% of the ally's max HP (+1.5/rank, × heal power); the strike is an effect of its own:
     // 0.6×→1.0× AD (+0.1/rank) on her priority target, skipped when no enemy has reached her.
     applies: [

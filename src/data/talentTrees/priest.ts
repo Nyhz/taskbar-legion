@@ -5,13 +5,13 @@ import { ability, capstone, effect, modifier, role, stat, type ClassTreeSpec } f
 // Second combat wave (2026-11-15): five EFFECT passives took the place of five stat nodes — Overflow (was the
 // tier-1 life), Mantle (Devotion 7 magic resist), Revive (Devotion 9 cooldown reduction), Searing Light (Zeal 7
 // life) and Condemn (Zeal 9 heal power). Retribution Aura is a passive of tier 4 (it took the tier's magic-resist
-// node, beside Sacred Ward) and its ability slot went to the new Purify.
+// node, beside Sacred Ward) and its ability slot went to the new Purify (gone since: see below).
 
 export const PRIEST_TREE: ClassTreeSpec = {
   classKey: 'priest',
   trunk: [
     [
-      ability('priest_mend'), ability('priest_powerinfusion'), stat('priest_t1_healPower', 'healPower', 3),
+      ability('priest_mend'), ability('priest_healing_light'), stat('priest_t1_healPower', 'healPower', 3),
       effect('priest_overflow', 'Overflow', 'While she lives, healing that does not fit becomes a shield of up to 1% of life per rank.',
         { type: 'passive', effect: { is: 'overhealShield', effectKey: 'fx_overflow' }, perRank: 1 }),
     ],
@@ -29,7 +29,7 @@ export const PRIEST_TREE: ClassTreeSpec = {
       stat('priest_t3_healPower', 'healPower', 3), stat('priest_t3_health', 'health', 2),
     ],
     [
-      ability('priest_purify'),
+      ability('priest_circle'),
       role('priest_sacred_ward', 'Sacred Ward', 'The whole party has 1.5% more magic resist per rank.',
         { type: 'partyStat', stat: 'magicResist', mode: 'percent', valuePerRank: 1.5 }),
       // Retribution Aura was an ability; it is a passive now and keeps its key, so a save's ranks carry over.
@@ -76,12 +76,19 @@ export const PRIEST_TREE: ClassTreeSpec = {
     {
       key: 'zeal', name: 'Zeal',
       rows: [
-        [ability('priest_smite'), stat('priest_zeal_t5_cooldownReduction', 'cooldownReduction', 1.5)],
+        [
+          ability('priest_smite'),
+          // Power Infusion, a passive now (user, 2026-11-16): each time she heals with an instant heal or applies one
+          // over time, the allies she HEALS (herself too, when she heals herself) get 4 s of 15 % attack speed and
+          // 15 % cooldown reduction — 3 % per rank, 15 % at rank 5. Renewed, never stacked.
+          effect('priest_infusion', 'Power Infusion', 'Each of her heals gives the allies it heals 3% attack speed and 3% cooldown reduction per rank for 4s.',
+            { type: 'passive', effect: { is: 'healInfusion', effectKeys: ['buff_infusion_as', 'buff_infusion_cdr'], durationMs: 4000, to: 'healed' }, perRank: 3 }),
+        ],
         [
           modifier('priest_mod_radiant_nova', 'Radiant Nova', 'Holy Nova also heals each ally for 3% of its life.', 'priest_nova',
             { patch: { addApplies: [{ effectKey: 'fx_heal', target: 'allAllies', power: { coeff: 0.03 } }] } }),
-          modifier('priest_mod_twin_infusion', 'Twin Infusion', 'Power Infusion reaches two heroes.', 'priest_powerinfusion',
-            { patch: { target: 'twoDpsAllies' } }),
+          modifier('priest_mod_twin_light', 'Twin Light', 'Healing Light also heals the next most hurt ally for half as much.', 'priest_healing_light',
+            { patch: { addApplies: [{ effectKey: 'fx_heal', target: 'nextHurtAlly', powerScale: 0.5 }] } }),
         ],
         [
           stat('priest_zeal_t7_healPower', 'healPower', 3),

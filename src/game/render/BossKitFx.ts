@@ -84,7 +84,7 @@ export class BossKitFx {
     this.on.sign(at.x, boss.y - Math.round(boss.bodyHeight * 0.75), ev.abilityKey);
     // What that ability gives its allies, the boss keeps: light flying into it.
     const def = tryAbilityDef(ev.abilityKey);
-    if (def?.applies.some((a) => effectDef(a.effectKey).beneficial && effectDef(a.effectKey).kind.type !== 'cleanse') === true) boss.burstAt(MIRROR_CUE.boon, 0);
+    if (def?.applies.some((a) => effectDef(a.effectKey).beneficial) === true) boss.burstAt(MIRROR_CUE.boon, 0);
     return true;
   }
 

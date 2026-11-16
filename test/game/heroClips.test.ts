@@ -29,11 +29,13 @@ describe('heroAbilityClip', () => {
 
   it('gives the Priest a gesture of her own for each spell: a heal, a shield, a nova, a smite and the ultimate are not one move', () => {
     const clips = {
-      priest_mend: 'mend', priest_holyshield: 'ward', priest_nova: 'nova', priest_smite: 'smite', priest_powerinfusion: 'infuse',
+      priest_mend: 'mend', priest_holyshield: 'ward', priest_nova: 'nova', priest_smite: 'smite', priest_healing_light: 'infuse',
       priest_enrage: 'exalt', priest_sanctuary: 'cast',
     };
     for (const [key, clip] of Object.entries(clips)) expect(heroAbilityClip('priest', key), key).toBe(clip);
     expect(new Set(Object.values(clips)).size).toBe(Object.keys(clips).length);
+    // Circle of Healing is a heal on the whole party, like Sanctuary: the same gesture, the lantern over everyone.
+    expect(heroAbilityClip('priest', 'priest_circle')).toBe(heroAbilityClip('priest', 'priest_sanctuary'));
   });
 
   it('falls back to the basic attack for an unknown class or a renamed ability', () => {

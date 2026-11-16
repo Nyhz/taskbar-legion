@@ -152,8 +152,8 @@ describe('Triage (heals that depend on the target)', () => {
       castReadyAbilities(priest, [priest, ally], [], 1, quietRng(), []);
       return (effect(ally, 'fx_hot')?.value ?? 0) * 6;
     };
-    expect(mend({ priest_mend: 1 }, 300)).toBeCloseTo(150, 6);
-    expect(mend({ priest_mend: 1, priest_triage: 5 }, 300)).toBeCloseTo(150 * 1.15, 6); // under 40%
-    expect(mend({ priest_mend: 1, priest_triage: 5 }, 600)).toBeCloseTo(150, 6); // hurt, but not that low
+    expect(mend({ priest_mend: 1 }, 300)).toBeCloseTo(200, 6);
+    expect(mend({ priest_mend: 1, priest_triage: 5 }, 300)).toBeCloseTo(200 * 1.15, 6); // under 40%
+    expect(mend({ priest_mend: 1, priest_triage: 5 }, 600)).toBeCloseTo(200, 6); // hurt, but not that low
   });
 });

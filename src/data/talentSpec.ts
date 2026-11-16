@@ -52,7 +52,10 @@ export type PassiveEffect =
   // Fallen heroes come back sooner.
   | { is: 'fasterRespawn' }
   // Enemies hit by the owner's damage abilities take more damage from everyone for a while (`effectKey`).
-  | { is: 'condemn'; effectKey: string };
+  | { is: 'condemn'; effectKey: string }
+  // Each heal the owner gives (an instant one as it lands, a heal over time as it is applied) lays `effectKeys` —
+  // worth the figure each — for `durationMs` on `to`: the whole party (owner included) or only those healed.
+  | { is: 'healInfusion'; effectKeys: readonly string[]; durationMs: number; to: 'party' | 'healed' };
 
 /** What a ROLE talent does — a passive with behaviour (F4). Values are per rank. */
 export type RoleEffect =

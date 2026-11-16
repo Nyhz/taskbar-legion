@@ -2,11 +2,17 @@
 //
 // Everything here drives the REAL deterministic Simulation (no analytic shortcuts) so the
 // numbers are byte-faithful to the shipped game. Two measurements:
-//   - measureFarm: time + income + GROSS chest drops for ONE full stage clear (20 waves +
-//     stage boss), at the party's current power. Chests/pending are drained every tick so
+//   - measureFarm: time + income + GROSS chest drops for ONE full stage clear (its difficulty's waves —
+//     data/stageScaling WAVES_BY_DIFFICULTY — + the stage boss), at the party's current power. Chests/pending are drained every tick so
 //     storage caps never distort the drop RATE (the player-model applies capture separately).
 //   - measureBoss: a single WORLD-boss attempt (the hard wall) → win? kill time, and the
 //     worst party-HP fraction reached (the survival margin / "how scary was it").
+//
+// RUN SEED vs COMBAT SEED: in the game a stage's boss affixes and which waves bring a support (and its auras) come
+// from the run's seed alone (sim/bossMechanics.bossKit, sim/enemyTraits.supportAuras read world.seed), so a player
+// meets the SAME affixes on every attempt at a wall. Both measurements take the run seed apart from the combat
+// seed: `runSeed` sets world.seed (what the run is dealt), `seed` the combat rng (how a fight rolls). Omitted, the
+// run seed is the combat seed (the old behaviour).
 //
 // Stage isolation: we pin maxClearedStage so a clear LOOPS in place (never advances the
 // frontier) and run with retryStage so a wipe never retreats — the measurement stays on S.
@@ -70,16 +76,18 @@ function drain(w: WorldState, gross: Record<ChestType, number>): { gold: number;
   return { gold, xp, kills, bossKills };
 }
 
-/** One full stage clear (20 waves + stage boss) at the party's current power. `S` must be a
+/** One full stage clear (its difficulty's waves + stage boss) at the party's current power. `S` must be a
  *  NORMAL or stage-boss stage (S % 10 !== 0); world bosses go through measureBoss. */
 export function measureFarm(
   configs: readonly HeroConfig[],
   S: number,
   seed: number,
   bonuses: Bonuses,
-  budgetSec = 1800, // a stage is 20 waves of enemies that take two or three hits each: ten minutes is ordinary
+  budgetSec = 1800, // a stage is up to 20 waves of enemies that take two or three hits each: ten minutes is ordinary
+  runSeed = seed,
 ): FarmSample {
   const world = createWorld(seed, buildParty(configs));
+  world.seed = runSeed; // what the run is dealt (affixes, supports); the combat rng keeps `seed`
   world.globalStageIndex = S;
   world.maxClearedStage = S; // a clear LOOPS here (no frontier advance)
   const sim = new Simulation(world);
@@ -144,8 +152,10 @@ export function measureBoss(
   seed: number,
   bonuses: Bonuses,
   capSec = 300,
+  runSeed = seed,
 ): BossResult {
   const world = createWorld(seed, buildParty(configs));
+  world.seed = runSeed; // the run's affixes for this wall — the same on every attempt; the combat rng keeps `seed`
   const W = worldOf(S);
   world.maxClearedStage = S - 1; // this world's W-9 is beaten (the gate to the portal)
   world.globalStageIndex = S - 1;

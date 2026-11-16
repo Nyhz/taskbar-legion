@@ -47,15 +47,15 @@ describe('every visible effect has a line', () => {
 });
 
 describe('what the lines say', () => {
-  it('Tremor: why the hero is slow, and that Purify leaves it alone', () => {
+  it('Tremor: why the hero is slow, and that a heal leaves it alone', () => {
     setLanguage('en');
     expect(effectTipEntries([{ key: 'debuff_tremor', value: -20, stacks: 1, totalMs: 2500 }])).toEqual([
-      { name: 'Tremor', lines: ["A brute's blow shook the ground: attacks 20 % slower for a moment. Purify leaves it alone."] },
+      { name: 'Tremor', lines: ["A brute's blow shook the ground: attacks 20 % slower for a moment. Heals leave it alone."] },
     ]);
     setLanguage('es');
     const [entry] = effectTipEntries([{ key: 'debuff_tremor' }]);
     expect(entry?.name).toBe('Temblor');
-    expect(entry?.lines[0]).toBe('El golpe de un bruto ha sacudido el suelo: ataca un 20 % más lento un momento. Purificar no lo quita.');
+    expect(entry?.lines[0]).toBe('El golpe de un bruto ha sacudido el suelo: ataca un 20 % más lento un momento. Las curas no lo quitan.');
   });
 
   it('a buff of two stats is ONE entry and one sentence, with the numbers it has on the hero (its rank), not the base ones', () => {
@@ -77,21 +77,21 @@ describe('what the lines say', () => {
     expect(effectTipEntries([{ key: 'fx_dot', value: 40, stacks: 1, totalMs: 5000 }])[0]?.lines).toEqual(['Takes 40 damage a second for 5 s.']);
     expect(effectTipEntries([{ key: 'fx_hot', value: 12.5, stacks: 1, totalMs: 4000 }])[0]?.lines).toEqual(['Heals 13 life a second for 4 s.']);
     expect(effectTipEntries([{ key: 'debuff_venom', value: 30, stacks: 3, totalMs: 4000 }])[0]?.lines).toEqual([
-      "Venom from the boss's hits: 90 damage a second, up to 5 layers; it fades 4 s after the last hit. Purify removes it.",
+      "Venom from the boss's hits: 90 damage a second, up to 5 layers; it fades 4 s after the last hit. Any of the Priest's heals lifts it.",
     ]);
     setLanguage('es');
     expect(effectTipEntries([{ key: 'debuff_spores', value: 8, stacks: 2, totalMs: 20000 }])[0]?.lines).toEqual([
-      'Esporas de las nubes del jefe: 16 de daño por segundo, hasta 5 capas. Cualquier cura directa, o Purificar, las limpia.',
+      'Esporas de las nubes del jefe: 16 de daño por segundo, hasta 5 capas. Cualquier cura las limpia todas.',
     ]);
   });
 
-  it('what a boss lays on a hero says whether Purify lifts it', () => {
+  it('what a boss lays on a hero says whether a heal lifts it', () => {
     setLanguage('es');
     const line = (key: string, value?: number): string => effectTipEntries([{ key, ...(value === undefined ? {} : { value }) }])[0]?.lines[0] ?? '';
-    expect(line('debuff_mortal_wound')).toBe('El golpe de un jefe ha dejado una herida profunda: las curas que recibe rinden un 25 % menos durante 8 s. Purificar la quita.');
-    expect(line('debuff_rooted')).toBe('Raíces que atan: sin ataques ni habilidades durante 5 s. Purificar las arranca al instante.');
-    expect(line('debuff_guilt', 2.5)).toBe('Carga con la culpa: pierde un 2,5 % de su vida por cada 1 % que pierde el jefe, durante 8 s. Purificar la quita.');
-    expect(line('debuff_gilded')).toBe('Las recargas de sus habilidades se detienen durante 6 s. Purificar lo quita.');
+    expect(line('debuff_mortal_wound')).toBe('El golpe de un jefe ha dejado una herida profunda: las curas que recibe rinden un 25 % menos durante 8 s. Cualquier cura de la Priest la quita.');
+    expect(line('debuff_rooted')).toBe('Raíces que atan: sin ataques ni habilidades durante 5 s. Cualquier cura de la Priest las arranca al instante.');
+    expect(line('debuff_guilt', 2.5)).toBe('Carga con la culpa: pierde un 2,5 % de su vida por cada 1 % que pierde el jefe, durante 8 s. Cualquier cura de la Priest la quita.');
+    expect(line('debuff_gilded')).toBe('Las recargas de sus habilidades se detienen durante 6 s. Cualquier cura de la Priest lo quita.');
   });
 
   it('marks, weakenings and what lasts the whole fight', () => {

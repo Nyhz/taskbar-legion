@@ -366,15 +366,24 @@ SIGNS: list[tuple[str, str, list[str], dict[str, Tone]]] = [
         ".r...r.",
         "..rrr..",
     ], {**RED, **GOLD}),
-    ("purify", "Purificar", [
-        "...b...",
-        "..bBb..",
-        "..bwb..",
-        ".bBwBb.",
-        ".bwBBb.",
-        ".bBBBb.",
-        "..bbb..",
-    ], {**BLUE, "w": ("light", 0)}),
+    ("healing_light", "Luz sanadora", [
+        "m.....m",
+        ".m.M.m.",
+        "...M...",
+        ".MMWMM.",
+        "...M...",
+        ".m.M.m.",
+        "m.....m",
+    ], {**GREEN, "W": ("light", 0)}),
+    ("circle", "Círculo de sanación", [
+        "..mWm..",
+        ".m...m.",
+        "m.....m",
+        "W..M..W",
+        "m.....m",
+        ".m...m.",
+        "..mmm..",
+    ], {**GREEN, "W": ("light", 0)}),
     # Effect passives that show on the strip (second combat wave): Shelter on the ally it covers, Weathered Hide's stacks.
     ("shelter", "Amparo", [
         "...b...",

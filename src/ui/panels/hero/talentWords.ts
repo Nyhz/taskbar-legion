@@ -47,6 +47,8 @@ const TARGET_TEXT: Partial<Record<AbilityTarget, PlainTextKey>> = {
   mostHitAlly: 'talents.targetMostHit',
   hurtAlly: 'talents.targetHurt',
   harmedAlly: 'talents.targetHarmed',
+  triageAlly: 'talents.targetTriage',
+  nextHurtAlly: 'talents.targetNextHurt',
 };
 
 /** Who an ability (or one of its effects) lands on. */
@@ -158,7 +160,8 @@ function factLine(fact: EffectFact): string {
     case 'silence':
       return t('talents.fxSilence', { s: seconds(fact.ms) });
     case 'cleanse':
-      return t('talents.fxCleanse');
+      if (!Number.isFinite(fact.count)) return t('talents.fxCleanseAll');
+      return fact.count <= 1 ? t('talents.fxCleanse') : t('talents.fxCleanseMany', { n: fact.count });
   }
 }
 
@@ -198,9 +201,13 @@ function ruleLine(rule: FireRule): string {
         ? t('talents.firesAllyBelowOrHit', { pct: figure(rule.frac * 100, 0) })
         : t('talents.firesAllyBelow', { pct: figure(rule.frac * 100, 0) });
     case 'partyHurt':
-      return t('talents.firesPartyHurt', { n: rule.allies, pct: figure(rule.frac * 100, 0), low: figure(rule.orOneBelow * 100, 0) });
+      return rule.orHarmed !== undefined
+        ? t('talents.firesPartyHurtOrHarmed', { n: rule.allies, pct: figure(rule.frac * 100, 0), low: figure(rule.orOneBelow * 100, 0), h: rule.orHarmed })
+        : t('talents.firesPartyHurt', { n: rule.allies, pct: figure(rule.frac * 100, 0), low: figure(rule.orOneBelow * 100, 0) });
     case 'harmedOrBelow':
-      return t('talents.firesHarmed', { pct: figure(rule.frac * 100, 0) });
+      return rule.orHeavyHit === true
+        ? t('talents.firesHarmedOrHit', { pct: figure(rule.frac * 100, 0) })
+        : t('talents.firesHarmed', { pct: figure(rule.frac * 100, 0) });
   }
 }
 

@@ -6,7 +6,7 @@ import { heroAbilities, buildHeroCombatant, partyAuraMods } from '@/sim/loadout'
 import { spentPoints } from '@/sim/talentRules';
 import { abilityArtStem } from '@/ui/abilityArt';
 import { layoutTalentTree } from '@/ui/panels/hero/talentsLayout';
-import { REPLACED_NODES, talentTree } from '@/data/talents';
+import { REPLACED_NODES, talentPointsAtLevel, talentTree } from '@/data/talents';
 import type { HeroState, SaveV1 } from '@/persistence/saveSchema';
 
 // Tolerant loading (docs/redesign/CLASSES.md §7): a save written against another talent tree — or a damaged
@@ -148,15 +148,44 @@ describe('a save from before the second combat wave', () => {
     expect(abilityArtStem('priest_retribution')).toBeDefined(); // a stale key never throws in the interface
   });
 
-  it('points in a stat node that gave way move to the passive standing there now, for the three classes', () => {
+  it('a Priest saved before the heal kit loads with her points where they stand now, and her two heals active', () => {
+    const out = sanitizeHeroTalents(hero({
+      classKey: 'priest', level: 60,
+      talents: { priest_mend: 5, priest_powerinfusion: 5, priest_t1_healPower: 5, priest_overflow: 5, priest_holyshield: 3, priest_triage: 5, priest_t2_cooldownReduction: 2 },
+      activeAbilities: ['priest_powerinfusion', 'priest_mend'],
+    }));
+    expect(out.talents.priest_powerinfusion).toBeUndefined();
+    expect(out.talents.priest_healing_light).toBe(5); // Power Infusion's points: in the heal that took its place
+    expect(out.talents.priest_mend).toBe(5);
+    expect(out.activeAbilities).toEqual(['priest_mend', 'priest_healing_light']);
+    expect(spentPoints(out.talents) + out.talentPoints).toBe(talentPointsAtLevel(60));
+    // Purify's points go to Circle of Healing; a Zeal hero's cooldown node and Twin Infusion to what stands there.
+    const zeal = sanitizeHeroTalents(hero({
+      classKey: 'priest', level: 120,
+      talents: {
+        priest_mend: 1, priest_purify: 4, priest_t1_healPower: 5, priest_overflow: 5, priest_triage: 5, priest_t2_cooldownReduction: 5, priest_t2_magicResist: 5,
+        priest_vigil: 5, priest_t3_healPower: 5, priest_t3_health: 5, priest_sacred_ward: 5, priest_retribution: 5, priest_t4_cooldownReduction: 5,
+        priest_zeal_t5_cooldownReduction: 3,
+      },
+      activeAbilities: ['priest_purify'],
+    }));
+    expect(zeal.talents.priest_circle).toBe(4);
+    expect(zeal.talents.priest_infusion).toBe(3);
+    expect(zeal.activeAbilities).toEqual(['priest_mend', 'priest_circle']);
+  });
+
+  it('points in a node that gave way move to the node standing there now, for the three classes', () => {
     for (const [oldKey, newKey] of Object.entries(REPLACED_NODES)) {
       const classKey = oldKey.split('_')[0] ?? '';
       // The whole trunk bought, so every tier is open and the moved points have somewhere to stand.
       const trunk = Object.fromEntries(talentTree(classKey).rows.slice(0, 4).flat().filter((n) => n.kind !== 'ability' && n.key !== newKey).map((n) => [n.key, n.maxRank]));
       const branches = Object.fromEntries(talentTree(classKey).rows.slice(4, 9).flat().filter((n) => n.kind === 'passive' && n.key !== newKey).map((n) => [n.key, n.maxRank]));
-      const out = sanitizeHeroTalents(hero({ classKey, level: 120, talents: { ...trunk, ...branches, [oldKey]: 4 } }));
+      // A modifier that took a modifier's place needs its ability learned to stand (and holds one point at most).
+      const node = talentTree(classKey).rows.flat().find((n) => n.key === newKey);
+      const needs = node?.modifies !== undefined ? { [node.modifies]: 1 } : {};
+      const out = sanitizeHeroTalents(hero({ classKey, level: 120, talents: { ...trunk, ...branches, ...needs, [oldKey]: 4 } }));
       expect(out.talents[oldKey], oldKey).toBeUndefined();
-      expect(out.talents[newKey], `${oldKey} → ${newKey}`).toBe(4);
+      expect(out.talents[newKey], `${oldKey} → ${newKey}`).toBe(Math.min(4, node?.maxRank ?? 4));
     }
   });
 });

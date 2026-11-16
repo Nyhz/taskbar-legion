@@ -9,7 +9,7 @@ import { format } from '@/sim/num';
 //
 // Two sources of a line:
 //   - OWN_LINES: effects with a sentence of their own — what an enemy or a boss lays on a hero (the line says
-//     where it came from and whether Purify lifts it), marks, a boss's own states;
+//     where it came from and whether a heal lifts it), marks, a boss's own states;
 //   - by KIND: what most abilities' effects are (a stat up or down, damage or healing over time, deals less,
 //     takes more…) — every effect of those kinds has its line without anyone writing it.
 // An effect with neither (a new kind nobody worded yet) shows its name alone: nothing breaks.

@@ -45,10 +45,10 @@ const CLASS_CLIPS: Readonly<Record<string, ClassClips>> = {
       priest_holyshield: 'ward', // Holy Shield: the open book thrust out at arm's length, like a hand raised to halt
       priest_nova: 'nova', // Holy Nova: the staff lifted over her head in both hands and driven into the ground
       priest_smite: 'smite', // Smite: the staff brought over and down at the enemy like a gavel
-      priest_powerinfusion: 'infuse', // Power Infusion: read out of the book held high, then given with a sweep of the arm
+      priest_healing_light: 'infuse', // Healing Light: read out of the book held high, then given with a sweep of the arm
       priest_enrage: 'exalt', // Battle Enrage (ultimate): a step forward, the staff thrown up ahead of the party like a standard
     },
-    otherwise: 'cast', // Sanctuary: up on her toes, the lantern raised over everyone (her basic attacks are `attack`, `attack2`, `attack3`)
+    otherwise: 'cast', // Sanctuary, Circle of Healing: up on her toes, the lantern raised over everyone (her basic attacks are `attack`, `attack2`, `attack3`)
   },
 };
 

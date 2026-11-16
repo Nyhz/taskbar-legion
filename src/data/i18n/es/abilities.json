@@ -119,13 +119,13 @@
     "en": "A rolling heal on whoever is hurt — amplified by heal power.",
     "es": "Una cura progresiva sobre quien esté herido; el poder de curación la aumenta."
   },
-  "priest_powerinfusion.name": {
-    "en": "Power Infusion",
-    "es": "Infusión de poder"
+  "priest_healing_light.name": {
+    "en": "Healing Light",
+    "es": "Luz sanadora"
   },
-  "priest_powerinfusion.desc": {
-    "en": "Infuse a damage-dealer with frenzied speed and cooldown reduction. Prefers a DPS; if the party has none, infuses the tank instead.",
-    "es": "Infunde a un héroe de daño velocidad frenética y reducción de recarga. Prefiere a uno de daño; si el grupo no tiene, infunde al tanque."
+  "priest_healing_light.desc": {
+    "en": "An instant heal on the ally who needs it most — and every harmful effect lifted from them.",
+    "es": "Una cura instantánea sobre el aliado que más la necesita, que además le quita todos los efectos dañinos."
   },
   "priest_holyshield.name": {
     "en": "Holy Shield",
@@ -143,13 +143,13 @@
     "en": "A burst of holy light damaging the whole wave.",
     "es": "Un estallido de luz sagrada que daña a toda la oleada."
   },
-  "priest_purify.name": {
-    "en": "Purify",
-    "es": "Purificar"
+  "priest_circle.name": {
+    "en": "Circle of Healing",
+    "es": "Círculo de sanación"
   },
-  "priest_purify.desc": {
-    "en": "Lifts every harmful effect from an ally — venom, a mortal wound, spores — and heals it a little.",
-    "es": "Quita todos los efectos dañinos de un aliado —veneno, herida mortal, esporas— y lo sana un poco."
+  "priest_circle.desc": {
+    "en": "An instant heal on the whole party — and every harmful effect lifted from each of them.",
+    "es": "Una cura instantánea sobre todo el grupo, que además quita todos los efectos dañinos a cada uno."
   },
   "priest_sanctuary.name": {
     "en": "Sanctuary",
