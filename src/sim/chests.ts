@@ -117,9 +117,9 @@ export function openChest(
   // the gear piece. Higher for boss/zone chests so they feel more rewarding.
   if (rng.chance(Math.min(1, CHEST_CONFIG.gemChance[type] * bonuses.gemDropMult))) {
     // Gem tier uses the SAME per-difficulty tier distribution as ITEMS (full tierWeights,
-    // minTier 0), so e.g. a Hell T5 drops at the same % for gems as for gear. Gems have no T0
+    // minTier 0, and the same boss-chest lift), so e.g. a Hell T5 drops at the same % for gems as for gear. Gems have no T0
     // (GemTier is 1–8), so a T0 roll folds up to T1 — its floor — leaving every T≥1 % identical.
-    const tier = Math.max(1, rollTier(S, rng, 0)) as GemTier;
+    const tier = Math.max(1, rollTier(S, rng, 0, type)) as GemTier;
     gems.push(generateGem({ rollSeed: seedFrom(rng), stageIndex: S, generatorVersion: GENERATOR_VERSION }, tier));
   }
   // Challenge key: STAGE-BOSS chests only. Rolled AFTER the gem so the gear+gem stream is

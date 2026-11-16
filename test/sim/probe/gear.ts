@@ -99,9 +99,12 @@ export function equipItems(party: HeroConfig[], items: readonly ItemInstance[]):
   return changed;
 }
 
-/** Socket each gem into the open socket (across the party's equipped items) that adds the
- *  most score. Skips a gem if no open socket helps. Mutates configs in place. */
-export function socketGems(party: HeroConfig[], gems: readonly GemInstance[]): boolean {
+/** Socket each gem into the socket (across the party's equipped items) where it adds the most score. As in the
+ *  game (state/slices/partySlice.socketGem), a gem may REPLACE one already set when that is better for the hero —
+ *  the old gem is lost (round 4b, 2026-11-16: until then the probe only filled empty sockets, so its party carried
+ *  the mixed-rarity gems of its first drops for ever). `replace: false` keeps the old fill-only rule (the option-C
+ *  reference set fills each socket with exactly its own gem). Skips a gem if no socket helps. Mutates in place. */
+export function socketGems(party: HeroConfig[], gems: readonly GemInstance[], replace = true): boolean {
   let changed = false;
   for (const gem of gems) {
     let best: { cfgIdx: number; slot: SlotKey; socketIdx: number; delta: number } | null = null;
@@ -111,7 +114,7 @@ export function socketGems(party: HeroConfig[], gems: readonly GemInstance[]): b
       const before = heroScore(cfg, party);
       for (const [slot, item] of Object.entries(cfg.equipment) as [SlotKey, ItemInstance][]) {
         for (let s = 0; s < item.sockets.length; s++) {
-          if ((item.sockets[s]?.gem ?? null) !== null) continue; // occupied
+          if (!replace && (item.sockets[s]?.gem ?? null) !== null) continue; // occupied
           const trial: ItemInstance = {
             ...item,
             sockets: item.sockets.map((sk, idx) => (idx === s ? { gem } : sk)),

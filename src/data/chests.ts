@@ -2,6 +2,8 @@
 // yield chests (3 types, capped storage). When a type's storage is full it stops
 // accumulating (no overflow). Auto-open tech opens all chests on an interval.
 
+import { tierWeightsAt } from './difficulties';
+
 export type ChestType = 'normal' | 'stageBoss' | 'zoneBoss';
 
 export interface ChestStack {
@@ -35,8 +37,8 @@ export const CHEST_CONFIG: ChestDropConfig = {
   capacity: { normal: 6, stageBoss: 4, zoneBoss: 4 },
   itemsPerChest: { normal: 1, stageBoss: 1, zoneBoss: 1 }, // every chest = exactly 1 item
   // Gem chance per chest opened (× gemDropMult tech, capped at 1.0). The ONLY thing that
-  // differs between chest TYPES (the item tier table is identical across them —
-  // docs/DIFFICULTY.md §4): normal chests stay the rare trickle (7.5%) while boss chests are a
+  // differs between chest TYPES besides the boss lift of the two top rarities (BOSS_CHEST_TOP_TIER_MULT below,
+  // docs/DIFFICULTY.md §4): normal chests stay the rare trickle (10%) while boss chests are a
   // reliable gem source — stage-boss chest = 50%, world-boss chest = 100% (always a bonus gem).
   gemChance: { normal: 0.1, stageBoss: 0.5, zoneBoss: 1.0 },
 };
@@ -64,3 +66,23 @@ export function stageKeyDropChance(S: number): number {
  *  down to the 12-min floor (30m − 12×90s) — the same proportions as before, doubled. */
 export const AUTO_OPEN_BASE_INTERVAL_MS = 1_800_000; // 30 min
 export const AUTO_OPEN_FLOOR_MS = 720_000; // 12 min (30m − 12×90s)
+
+// BOSS CHESTS ROLL A BETTER TABLE (user, 2026-11-16, round 4): the TWO highest rarities of the world's table are
+// multiplied — a stage-boss chest ×1.5, the world-boss chest ×3 — and the rest of the table is scaled down so it still
+// sums to 100 (a common chest rolls the table as it is). Items AND the chest's gem roll from it.
+export const BOSS_CHEST_TOP_TIER_MULT: Readonly<Record<ChestType, number>> = { normal: 1, stageBoss: 1.5, zoneBoss: 3 };
+/** How many of the highest rarities with weight a boss chest lifts. */
+export const BOSS_CHEST_TOP_TIERS = 2;
+
+/** The rarity table a chest of `type` dropped at global stage `S` rolls (sums to 100). */
+export function chestTierWeightsAt(S: number, type: ChestType = 'normal'): number[] {
+  const base = tierWeightsAt(S);
+  const mult = BOSS_CHEST_TOP_TIER_MULT[type];
+  if (mult === 1) return base;
+  const top = base.map((w, t) => (w > 0 ? t : -1)).filter((t) => t >= 0).slice(-BOSS_CHEST_TOP_TIERS);
+  const topSum = top.reduce((a, t) => a + (base[t] ?? 0), 0);
+  const lifted = topSum * mult;
+  const restSum = 100 - topSum;
+  const restScale = restSum > 0 ? Math.max(0, 100 - lifted) / restSum : 0;
+  return base.map((w, t) => (top.includes(t) ? w * mult : w * restScale));
+}

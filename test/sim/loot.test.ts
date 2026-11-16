@@ -152,7 +152,7 @@ describe('loot generation (gear overhaul)', () => {
       expect(rollTier(150, rng)).toBeLessThanOrEqual(5);
       expect(rollTier(250, rng)).toBeLessThanOrEqual(6);
     }
-    // Torment (G 401-500, cap T8): T8 is reachable (the ~2% chase).
+    // Torment (G 401-500, cap T8): T8 is reachable (the ~1% chase).
     let sawT8 = false;
     for (let i = 0; i < 20000 && !sawT8; i++) if (rollTier(491, rng) === 8) sawT8 = true;
     expect(sawT8).toBe(true);

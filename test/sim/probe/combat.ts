@@ -41,6 +41,7 @@ export interface BossResult {
   killSec: number; // time-to-kill on a win (0 on a loss), the walk to the boss included
   fightSec: number; // the boss's own fight clock when it died — or when the party did (its enrage starts at ZONE_ENRAGE_MS)
   minHpFrac: number; // worst party HP fraction reached (survival margin)
+  bossHpFrac?: number; // the boss's life left (fraction) when the attempt ended — 0 on a win
 }
 
 const ZERO_CHESTS = (): Record<ChestType, number> => ({ normal: 0, stageBoss: 0, zoneBoss: 0 });
@@ -161,11 +162,12 @@ export function measureBoss(
   world.maxClearedStage = S - 1; // this world's W-9 is beaten (the gate to the portal)
   world.globalStageIndex = S - 1;
   const sim = new Simulation(world);
-  if (!sim.enterZoneBoss(W)) return { win: false, killSec: 0, fightSec: 0, minHpFrac: 0 };
+  if (!sim.enterZoneBoss(W)) return { win: false, killSec: 0, fightSec: 0, minHpFrac: 0, bossHpFrac: 1 };
 
   const ctx: TickContext = { bonuses, ownedPetKeys: [], retryStage: true };
   const gross = ZERO_CHESTS();
   let minHpFrac = 1;
+  let bossHpFrac = 1;
   let tracking = false;
   let fightSec = 0;
   const startWipes = world.wipes;
@@ -174,21 +176,22 @@ export function measureBoss(
   for (let t = 0; t < maxTicks; t++) {
     sim.tick(ctx);
     drain(world, gross);
-    if (world.wipes > startWipes) return { win: false, killSec: 0, fightSec, minHpFrac }; // wiped → loss
+    if (world.wipes > startWipes) return { win: false, killSec: 0, fightSec, minHpFrac, bossHpFrac }; // wiped → loss
 
     if (world.phase === 'zoneBoss') {
       const boss = world.enemies.find((e) => e.isBoss === true && e.alive);
       if (boss !== undefined) {
         tracking = true;
         fightSec = (boss.fightMs ?? 0) / 1000 + TICK_MS / 1000;
+        bossHpFrac = boss.maxHp > 0 ? boss.hp / boss.maxHp : 1;
         const f = minHeroHpFrac(world);
         if (f < minHpFrac) minHpFrac = f;
       } else if (tracking) {
-        return { win: true, killSec: ((t + 1) * TICK_MS) / 1000, fightSec, minHpFrac };
+        return { win: true, killSec: ((t + 1) * TICK_MS) / 1000, fightSec, minHpFrac, bossHpFrac: 0 };
       }
     } else if (tracking) {
-      return { win: true, killSec: ((t + 1) * TICK_MS) / 1000, fightSec, minHpFrac };
+      return { win: true, killSec: ((t + 1) * TICK_MS) / 1000, fightSec, minHpFrac, bossHpFrac: 0 };
     }
   }
-  return { win: false, killSec: 0, fightSec, minHpFrac }; // enrage cap reached without a kill → loss
+  return { win: false, killSec: 0, fightSec, minHpFrac, bossHpFrac }; // enrage cap reached without a kill → loss
 }

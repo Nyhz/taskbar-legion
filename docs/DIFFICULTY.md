@@ -72,24 +72,30 @@ stage 1-1.)*
 | Table (relative weights, rows sum to 100) | T0 | T1 | T2 | T3 | T4 | T5 | T6 | T7 | T8 |
 |---|---|---|---|---|---|---|---|---|---|
 | Starter (Normal, world 1) | 80 | 18 | 2 | – | – | – | – | – | – |
-| **Normal** (world 10) · Hell world 1 | 40.5 | 30 | 20 | 7.5 | **2** | – | – | – | – |
-| **Hell** (world 10) · Inferno world 1 | 12.5 | 25 | 33 | 20 | 7.5 | **2** | – | – | – |
-| **Inferno** (world 10) · Eternal world 1 | 7.5 | 15 | 24 | 28 | 16 | 7.5 | **2** | – | – |
-| **Eternal** (world 10) · Torment world 1 | 4.5 | 10 | 17 | 24 | 21 | 14 | 7.5 | **2** | – |
-| **Torment** (world 10) | – | 5.5 | 12 | 19 | 24 | 18 | 12 | 7.5 | **2** |
+| **Normal** (world 10) · Hell world 1 | 40.5 | 32.7 | 21.8 | 4 | **1** | – | – | – | – |
+| **Hell** (world 10) · Inferno world 1 | 12.5 | 26.44 | 34.91 | 21.15 | 4 | **1** | – | – | – |
+| **Inferno** (world 10) · Eternal world 1 | 7.5 | 15.81 | 25.3 | 29.52 | 16.87 | 4 | **1** | – | – |
+| **Eternal** (world 10) · Torment world 1 | 4.5 | 10.52 | 17.89 | 25.26 | 22.1 | 14.73 | 4 | **1** | – |
+| **Torment** (world 10) | – | 5.5 | 12.64 | 20.01 | 25.26 | 18.95 | 12.64 | 4 | **1** |
 
-So a difficulty's **new top tier** is absent in its first world, shows up at 0.2 % in the second and reaches its
-**2 %** — the chase — only in the last. In Normal: no epics or legendaries in world 1; epics from 0.8 % (world 2)
-to 7.5 %, legendaries from 0.2 % to 2 %.
+So a difficulty's **new top tier** is absent in its first world, shows up at 0.1 % in the second and reaches its
+**1 %** — the chase — only in the last. In Normal: no epics or legendaries in world 1; epics from 0.4 % (world 2)
+to 4 %, legendaries from 0.1 % to 1 %.
+
+*(User, 2026-11-16, round 4: the two top tiers of every row HALVED — 2 → 1 and 7.5 → 4. At 2 % a Torment run saw
+60–75 T8 pieces and the party ended with 21–22 T8 of its 30 slots. The 4.5 points went to the middle tiers — those
+between the row's lowest tier with weight and its second-highest — in proportion to their weight.)*
 
 **The real treadmill is affix quality, not tier.** A cap-tier drop still has to be the *right slot* with
 *better rolls* than what you wear; we model the **upgrade rate**, not the raw drop rate, against the timeline.
 
-**Chests** (`data/chests.ts`): all chest types roll items from the **same** table of their drop stage — they
-differ only in **gem chance** (common 10 %, stage-boss 50 %, world-boss 100 %). Cadence (user decisions,
+**Chests** (`data/chests.ts`): a common chest rolls the table of its drop stage as it is; a **boss chest lifts
+the two top rarities** of that table — **×1.5** for a stage boss, **×3** for a world boss — and scales the rest
+down so it still sums to 100 (`chestTierWeightsAt`; user, 2026-11-16). Gem chance differs too (common 10 %,
+stage-boss 50 %, world-boss 100 %). Cadence (user decisions,
 2026-11-15): a **common chest** drops on **0.2 %** of kills — about one every five minutes of play, so the storage
 of 6 fills in half an hour (it was 1.5 %: one or two a minute); a stage boss drops its chest **25 %** of the time,
-a world boss always. Gems roll on the same table, as an **extra** roll on top of the item.
+a world boss always. Gems roll on the same table (boss lift included), as an **extra** roll on top of the item.
 
 ## 5. Bosses — two roles
 

@@ -52,6 +52,12 @@ export interface ProbeConfig {
   remeasureTol: number;
   /** Tooling (the wall tuner): keep the keys instead of attempting — the party just farms at the wall. */
   holdKeys?: boolean;
+  /** THE SENSIBLE KEY USER (round 4b, user 2026-11-16: «farmear y no gastar llaves en intentos que sabe que no van a
+   *  pasar»): the first attempt at a wall goes in with the first key; after a loss the player retries only when the
+   *  boss was left at `bossHpAtMost` of its life or less, or the party's power (gear.partyPower) rose by `powerGain`
+   *  since the attempt, or `maxWaitSec` of active play went by (a player tries again some day). Meanwhile it keeps its
+   *  keys and farms the world's X-9. `false` = the old probe, an attempt with every key. */
+  retryRule?: { bossHpAtMost: number; powerGain: number; maxWaitSec: number } | false;
   /** Tooling (the anchors): do nothing but farm this stage — no progress, no attempts — until the time is up.
    *  "A party in the full gear of the world it has just left" is a party that stayed there a few more hours. */
   farmStage?: number;
@@ -115,6 +121,7 @@ export const DEFAULT_CONFIG: ProbeConfig = {
   pets: 'none',
   fixedRunSeed: true,
   buildAt: (target) => (target > 200 ? PROBE_GOOD_BUILD : undefined),
+  retryRule: { bossHpAtMost: 0.15, powerGain: 0.1, maxWaitSec: 8 * 3600 },
 };
 
 export interface State {
@@ -167,6 +174,7 @@ export interface WorldMilestone {
   daysOnWorld: number; // calendar days spent on THIS world (since the previous world's clear)
   hoursOnWorld: number; // ACTIVE hours spent on this world (since the previous world's clear)
   keylessHours: number; // of those, active hours parked at W-9 without a key (waiting for one to drop)
+  heldHours?: number; // …and with a key in hand, farming for gear before a retry (retryRule)
   firstKeyHours: number; // active hours from reaching the wall (W-9 cleared) to the first attempt
   gear: GearState; // what the party wore when the wall fell
   gearPct?: number; // its gear % of the zone at the kill (zoneGear.ts) — only with cfg.measureGear
@@ -378,6 +386,8 @@ export interface ProbeRun {
   keylessSec: number; // active seconds parked at the current wall without a key
   wallReachedSec: number; // active seconds when the current wall was reached (W-9 cleared); -1 before
   firstAttemptSec: number; // active seconds at the first attempt on the current wall; -1 before
+  lastAttempt: { bossHpFrac: number; power: number; sec: number } | null; // the last lost attempt at the current wall
+  heldSec: number; // active seconds at the current wall holding a key the player chose not to spend (retryRule)
   gaveUp: boolean; // the stall guard or the observe hook ended it
 }
 
@@ -416,6 +426,8 @@ export function newProbeRun(seed: number, cfg: ProbeConfig = DEFAULT_CONFIG): Pr
     keylessSec: 0,
     wallReachedSec: -1,
     firstAttemptSec: -1,
+    lastAttempt: null,
+    heldSec: 0,
     gaveUp: false,
   };
 }
@@ -499,7 +511,16 @@ export function advanceProbe(run: ProbeRun, cfg: ProbeConfig = DEFAULT_CONFIG): 
 
       if (isWorldBoss(target)) {
         if (run.wallReachedSec < 0) run.wallReachedSec = state.activeSec;
-        if (cfg.holdKeys !== true && (state.keys[target] ?? 0) >= 1) {
+        const wb0 = cfg.wallBuild?.(target);
+        const ready = (() => {
+          const rule = cfg.retryRule;
+          const last = run.lastAttempt;
+          if (rule === undefined || rule === false || last === null) return true;
+          if (last.bossHpFrac <= rule.bossHpAtMost) return true;
+          if (state.activeSec - last.sec >= rule.maxWaitSec) return true;
+          return partyPower(wb0 === undefined ? state.party : partyWithBuild(state.party, wb0)) >= last.power * (1 + rule.powerGain);
+        })();
+        if (cfg.holdKeys !== true && (state.keys[target] ?? 0) >= 1 && ready) {
           // A key in hand → an attempt (the first one needs a key too). The key is spent on entry, win or lose.
           state.keys[target] = (state.keys[target] ?? 0) - 1;
           if (run.firstAttemptSec < 0) run.firstAttemptSec = state.activeSec;
@@ -535,6 +556,7 @@ export function advanceProbe(run: ProbeRun, cfg: ProbeConfig = DEFAULT_CONFIG): 
               daysOnWorld: state.calendarDays - run.lastWorldClearDay,
               hoursOnWorld: (state.activeSec - run.lastWorldClearSec) / 3600,
               keylessHours: run.keylessSec / 3600,
+              heldHours: run.heldSec / 3600,
               firstKeyHours: (run.firstAttemptSec - run.wallReachedSec) / 3600,
               gear,
               ...zone,
@@ -552,6 +574,8 @@ export function advanceProbe(run: ProbeRun, cfg: ProbeConfig = DEFAULT_CONFIG): 
             run.lastWorldClearDay = state.calendarDays;
             run.lastWorldClearSec = state.activeSec;
             run.keylessSec = 0;
+            run.heldSec = 0;
+            run.lastAttempt = null;
             run.wallReachedSec = -1;
             run.firstAttemptSec = -1;
             continue;
@@ -559,15 +583,17 @@ export function advanceProbe(run: ProbeRun, cfg: ProbeConfig = DEFAULT_CONFIG): 
           // the attempt failed: the key is gone
           run.wallFails += 1;
           run.totalBossFails += 1;
+          run.lastAttempt = { bossHpFrac: res.bossHpFrac ?? 1, power: partyPower(fighters), sec: state.activeSec };
           continue;
         }
-        // no key: the party loops this world's W-9 (target-1) until a stage-boss chest gives one
+        // no key — or a key the player keeps until it is ready to retry: the party loops this world's W-9 (target-1)
         const dt = Math.min(run.activeLeft, chunkSec(state, cfg));
         const keysBefore = state.keys[target] ?? 0;
         farmChunk(state, target - 1, dt, cfg, bonuses);
         run.activeLeft -= dt;
         state.activeSec += dt;
-        run.keylessSec += dt;
+        if (keysBefore >= 1) run.heldSec += dt;
+        else run.keylessSec += dt;
         for (let k = keysBefore; k < (state.keys[target] ?? 0); k++) cfg.onKey?.(run);
       } else {
         const m = farmSample(state, target, bonuses, cfg);

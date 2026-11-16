@@ -1534,3 +1534,121 @@ Mediana de las 3 semillas; entre paréntesis, de la menor a la mayor.
 ### Horas
 
 Para cumplir la escalera, los muros tendrían que tener de 3 a 5 veces más vida desde Infierno, y el grupo, que hoy los tumba con un 12–16 % del techo, tendría que llegar al 40–90 %. Con lo que cae hoy eso no ocurre en un tiempo razonable: **las horas subirían mucho**, varias veces el total, y más aún con las dos rarezas altas a la mitad. Antes de tocar los muros harían falta dos cosas: que la sonda cambie gemas como un jugador (sube sola el % del grupo al doble) y decidir si el techo del mundo 2–4 debe contar una rareza que casi no cae allí.
+
+
+## Ronda 4b · gemas, techo gradual, llaves sensatas y drops nuevos
+
+*16 nov 2026. 3 semillas de la sonda, Normal 1-1 → Tormento 10-10, con `taskpolicy -b` (`scripts/ceiling-pass.ts`). La vida de los muros no se ha tocado.*
+
+### Qué ha cambiado
+
+- **Drops** (`src/data/difficulties.ts`): en el mundo 10 de cada dificultad la rareza más alta pasa de 2 a 1 % y la segunda de 7,5 a 4 %. Los 4,5 puntos quitados van a las rarezas medias (entre la más baja con peso y la segunda más alta, sin incluirlas), en proporción a su peso. Cada fila suma 100. La escalera por mundo sigue saliendo de `tierWeightsAt`.
+- **Cofres de jefe** (`src/data/chests.ts` `chestTierWeightsAt`, aplicado en `sim/loot.rollTier`): las dos rarezas más altas de la tabla del mundo, ×1,5 en el cofre de jefe de etapa y ×3 en el de jefe de mundo. El resto de la tabla baja para seguir sumando 100. La gema del cofre sale de la misma tabla (antes ya compartía la de los objetos).
+- **`GENERATOR_VERSION` no sube.** Subirla borra al cargar todo el equipo y las gemas guardadas del jugador (`state/slices/progressSlice`). Además, las filas de rareza ya se reajustaron tres veces (junio) sin subirla, y ningún objeto guardado cambia de forma.
+- **Sonda · gemas**: una gema nueva puede sustituir a una puesta si mejora al héroe; la vieja se pierde, como en el juego (`partySlice.socketGem`). El set de referencia de la vara C sigue rellenando solo huecos vacíos.
+- **Sonda · llaves**: el primer intento se hace con la primera llave. Tras perder, solo reintenta si el jefe quedó al 15 % de vida o menos, si el poder del grupo (`partyPower`) ha subido un 10 %, o si ha pasado un día de juego (8 h activas) desde el intento anterior. Esta última condición es mía, para que un muro sin mejoras no deje a la sonda parada para siempre. Mientras, guarda las llaves y farmea el X-9.
+- **Techo gradual** (`zoneGear.gradualCeilingDamage`): dentro de cada dificultad, el daño del techo en 60 s es la mezcla en línea recta, por (mundo − 1) / 9, del set techo a la rareza más alta del mundo 1 y del set techo a la del mundo 10. En Normal va de T2 a T4. En la tabla, «T7→T8 (44 %)» quiere decir que el techo está un 44 % del camino entre los dos.
+
+### Resumen
+
+| | Objetivo | Horas (mediana · rango) | Intentos fallidos por muro | Horas guardando llave por mundo | Piezas de la rareza más alta al final |
+|---|---|---|---|---|---|
+| Normal | 3–4 h | 4 (3–4) h | 0,0 (máx 0) | 0,0 | 0 de 30 |
+| Infierno | ≈ 40 h | 48 (33–52) h | 1,0 (0,0–5,0) (máx 5) | 0,0 (0,0–8,3) | 2 (1–3) de 30 |
+| Averno | ≈ 120 h | 127 (116–235) h | 2,5 (0,0–13,0) (máx 13) | 6,9 (0,0–83,2) | 6 (4–6) de 30 |
+| Eterno | ≈ 230 h | 174 (158–375) h | 3,5 (0,0–25,0) (máx 25) | 10,4 (0,0–100,4) | 7 (4–7) de 30 |
+| Tormento | ≈ 325 h | 168 (156–217) h | 4,5 (0,0–20,0) (máx 20) | 7,0 (0,0–84,6) | 6 (5–7) de 30 |
+
+**Total**: 574 (493–803) h; días 72 (62–101) (objetivo ≈ 720 h, unos 90 días).
+
+«Intentos fallidos por muro» es la mediana de los diez muros de la dificultad (antes de la ronda: 0 / 2 / 8 / 18 / 36). «Horas guardando llave» son las horas de un mundo farmeando con una llave en la mano, esperando a mejorar.
+
+### Muro a muro
+
+Todo en % del techo gradual. Mediana de 3 semillas; entre paréntesis, de la menor a la mayor. «Vida ×» es por cuánto habría que multiplicar la vida de ese muro para que pidiera lo que dice la escalera.
+
+
+**Normal**
+
+| Mundo | Techo (rareza) | Escalera | Pide hoy | Lleva al llegar | Lleva al tumbar | Intentos fallidos | Vida × para la escalera |
+|---|---|---:|---:|---:|---:|---:|---:|
+| 1 | T2 | 10 % | 6 % | 5 (5–6) % | 5 (5–6) % | 0 | ×1,7 |
+| 2 | T2→T4 (11 %) | 11 % | 6 % | 10 (8–15) % | 10 (8–15) % | 0 | ×1,7 |
+| 3 | T2→T4 (22 %) | 12 % | 7 % | 13 (7–17) % | 13 (7–17) % | 0 | ×1,8 |
+| 4 | T2→T4 (33 %) | 13 % | 8 % | 24 (9–28) % | 24 (9–28) % | 0 | ×1,7 |
+| 5 | T2→T4 (44 %) | 14 % | 8 % | 21 (21–29) % | 21 (21–29) % | 0 | ×1,8 |
+| 6 | T2→T4 (56 %) | 16 % | 12 % | 39 (33–55) % | 39 (33–55) % | 0 | ×1,3 |
+| 7 | T2→T4 (67 %) | 17 % | 9 % | 27 (26–46) % | 27 (26–46) % | 0 | ×1,8 |
+| 8 | T2→T4 (78 %) | 18 % | 6 % | 15 (12–26) % | 15 (12–26) % | 0 | ×2,9 |
+| 9 | T2→T4 (89 %) | 19 % | 5 % | 20 (11–22) % | 20 (11–22) % | 0 | ×3,8 |
+| 10 | T4 | 20 % | 4 % | 14 (8–15) % | 14 (8–15) % | 0 | ×4,7 |
+
+**Infierno**
+
+| Mundo | Techo (rareza) | Escalera | Pide hoy | Lleva al llegar | Lleva al tumbar | Intentos fallidos | Vida × para la escalera |
+|---|---|---:|---:|---:|---:|---:|---:|
+| 1 | T4 | 40 % | 6 % | 11 (9–17) % | 10 (9–17) % | 1 (0–1) | ×6,9 |
+| 2 | T4→T5 (11 %) | 42 % | 13 % | 15 (9–18) % | 12 (12–13) % | 2 (1–3) | ×3,2 |
+| 3 | T4→T5 (22 %) | 43 % | 16 (16–17) % | 10 (9–17) % | 17 (17–20) % | 1 (0–3) | ×2,6 |
+| 4 | T4→T5 (33 %) | 45 % | 23 % | 19 (18–21) % | 24 (21–28) % | 2 (1–5) | ×2,0 |
+| 5 | T4→T5 (44 %) | 47 % | 21 (20–21) % | 18 (11–23) % | 23 (19–23) % | 2 (0–3) | ×2,2 |
+| 6 | T4→T5 (56 %) | 48 % | 20 (18–21) % | 19 (15–27) % | 27 (19–27) % | 0 (0–1) | ×2,4 |
+| 7 | T4→T5 (67 %) | 50 % | 17 (15–18) % | 22 (17–23) % | 22 (17–23) % | 0 | ×2,9 |
+| 8 | T4→T5 (78 %) | 52 % | 17 (15–18) % | 18 (13–20) % | 18 (17–20) % | 0 (0–1) | ×3,1 |
+| 9 | T4→T5 (89 %) | 53 % | 18 (17–19) % | 14 (12–18) % | 19 (16–21) % | 3 (1–5) | ×3,0 |
+| 10 | T5 | 55 % | 21 (19–21) % | 16 (14–16) % | 19 (15–22) % | 2 (1–5) | ×2,7 |
+
+**Averno**
+
+| Mundo | Techo (rareza) | Escalera | Pide hoy | Lleva al llegar | Lleva al tumbar | Intentos fallidos | Vida × para la escalera |
+|---|---|---:|---:|---:|---:|---:|---:|
+| 1 | T5 | 55 % | 37 (36–43) % | 21 (20–25) % | 26 (23–29) % | 8 (7–8) | ×1,5 |
+| 2 | T5→T6 (11 %) | 57 % | 29 (29–31) % | 21 (20–21) % | 24 (24–27) % | 4 (1–5) | ×1,9 |
+| 3 | T5→T6 (22 %) | 58 % | 22 (21–23) % | 14 (12–22) % | 14 (12–22) % | 0 (0–1) | ×2,7 |
+| 4 | T5→T6 (33 %) | 60 % | 22 (21–23) % | 15 (14–18) % | 17 (14–19) % | 2 (1–4) | ×2,7 |
+| 5 | T5→T6 (44 %) | 62 % | 21 (17–21) % | 14 (12–15) % | 15 (14–16) % | 2 (0–4) | ×3,0 |
+| 6 | T5→T6 (56 %) | 63 % | 22 (20–22) % | 18 (16–19) % | 19 (18–21) % | 2 (1–2) | ×2,9 |
+| 7 | T5→T6 (67 %) | 65 % | 24 (21–24) % | 18 (14–19) % | 21 (19–23) % | 3 (3–9) | ×2,7 |
+| 8 | T5→T6 (78 %) | 67 % | 25 (24–28) % | 19 (17–20) % | 19 (10–24) % | 4 (2–5) | ×2,7 |
+| 9 | T5→T6 (89 %) | 68 % | 27 (26–27) % | 15 (13–23) % | 18 (14–24) % | 2 (2–3) | ×2,5 |
+| 10 | T6 | 70 % | 27 (27–28) % | 14 (14–20) % | 23 (22–29) % | 10 (2–13) | ×2,6 |
+
+**Eterno**
+
+| Mundo | Techo (rareza) | Escalera | Pide hoy | Lleva al llegar | Lleva al tumbar | Intentos fallidos | Vida × para la escalera |
+|---|---|---:|---:|---:|---:|---:|---:|
+| 1 | T6 | 65 % | 44 (36–44) % | 36 (28–39) % | 41 (36–45) % | 1 (0–5) | ×1,5 |
+| 2 | T6→T7 (11 %) | 67 % | 29 (28–32) % | 24 (16–25) % | 25 (17–27) % | 4 (1–6) | ×2,3 |
+| 3 | T6→T7 (22 %) | 68 % | 25 (24–28) % | 22 (15–23) % | 22 (22–23) % | 1 (0–3) | ×2,7 |
+| 4 | T6→T7 (33 %) | 70 % | 28 (24–31) % | 21 (21–24) % | 24 (21–28) % | 1 (1–2) | ×2,5 |
+| 5 | T6→T7 (44 %) | 72 % | 27 (24–30) % | 17 (10–23) % | 25 (24–26) % | 7 (4–13) | ×2,6 |
+| 6 | T6→T7 (56 %) | 73 % | 27 (24–29) % | 22 (21–22) % | 22 (21–26) % | 1 (0–3) | ×2,8 |
+| 7 | T6→T7 (67 %) | 75 % | 26 (25–27) % | 19 (19–22) % | 23 (19–28) % | 7 (1–8) | ×2,9 |
+| 8 | T6→T7 (78 %) | 77 % | 29 (28–31) % | 22 (18–26) % | 26 (16–26) % | 4 (0–25) | ×2,7 |
+| 9 | T6→T7 (89 %) | 78 % | 30 (27–31) % | 23 (17–23) % | 24 (22–25) % | 6 (2–10) | ×2,7 |
+| 10 | T7 | 80 % | 33 (29–34) % | 23 (20–24) % | 27 (24–28) % | 9 (7–24) | ×2,4 |
+
+**Tormento**
+
+| Mundo | Techo (rareza) | Escalera | Pide hoy | Lleva al llegar | Lleva al tumbar | Intentos fallidos | Vida × para la escalera |
+|---|---|---:|---:|---:|---:|---:|---:|
+| 1 | T7 | 75 % | 45 (39–46) % | 26 (23–28) % | 32 (31–33) % | 15 (6–20) | ×1,7 |
+| 2 | T7→T8 (11 %) | 77 % | 36 (33–36) % | 17 (16–19) % | 28 (23–29) % | 2 (1–5) | ×2,1 |
+| 3 | T7→T8 (22 %) | 78 % | 29 (26–29) % | 23 (23–24) % | 23 (23–24) % | 0 | ×2,7 |
+| 4 | T7→T8 (33 %) | 80 % | 29 (26–29) % | 20 (19–20) % | 23 (21–25) % | 13 (7–17) | ×2,7 |
+| 5 | T7→T8 (44 %) | 82 % | 27 (25–28) % | 18 (15–20) % | 21 (15–22) % | 10 (2–20) | ×3,0 |
+| 6 | T7→T8 (56 %) | 83 % | 26 (26–28) % | 19 (18–19) % | 21 (19–21) % | 5 (3–15) | ×3,2 |
+| 7 | T7→T8 (67 %) | 85 % | 27 (27–28) % | 19 (17–19) % | 24 (23–28) % | 4 (1–11) | ×3,1 |
+| 8 | T7→T8 (78 %) | 87 % | 29 (29–30) % | 21 (20–21) % | 24 (21–24) % | 8 (0–9) | ×3,0 |
+| 9 | T7→T8 (89 %) | 88 % | 26 % | 21 % | 21 (21–22) % | 0 (0–1) | ×3,4 |
+| 10 | T8 | 90 % | 25 (25–26) % | 17 (17–19) % | 20 (19–20) % | 3 (2–9) | ×3,5 |
+
+
+### Lectura
+
+- **Los intentos fallidos se desploman**: de 36 a unos 4,5 por muro en Tormento, y de 18 a 3,5 en Eterno. Siguen quedando muros de 10–25 intentos (Averno 10, Eterno 8 y 10, Tormento 1, 4 y 5). Ahí el jefe se queda al 15 % o menos y el jugador reintenta, que es lo que haría alguien que se ve cerca.
+- **Las horas bajan**: 574 h de mediana (493–803), frente a 723 h. Eterno y Tormento quedan cortos: 174 h y 168 h frente a 230 h y 325 h. Infierno y Averno quedan cerca de su objetivo. Que la sonda cambie gemas hace al grupo bastante más fuerte, y eso pesa más que la rareza alta más escasa. Las horas se han perdido sobre todo en el final del juego.
+- **Rareza más alta en el equipo**: al acabar Tormento el grupo lleva 5–7 piezas T8 de 30 (antes 21–22). Al acabar Infierno, Averno y Eterno, 2, 6 y 7 piezas de su rareza más alta.
+- **Frente a la escalera, todos los muros siguen pidiendo menos**: en mediana un 18 % del techo en Infierno, 24 % en Averno, 29 % en Eterno y 28 % en Tormento. Para cumplirla, la vida habría que multiplicarla en mediana por ×2,8 en Infierno, ×2,6 en Averno y Eterno y ×3,0 en Tormento. Los mundos 1 son los que quedan más cerca (×1,5–1,7); los más lejos, Normal 10 (×4,7) e Infierno 1 (×6,9).
+- **La forma ya no sale en sierra**: con el techo gradual, lo que pide cada muro es mucho más plano dentro de cada dificultad (Averno 21–29 %, Eterno 25–33 %, Tormento 25–36 % del mundo 2 al 10). El mundo 1 sigue pidiendo más (37–45 %).
+- **El grupo tumba los muros con un 19–27 % del techo**. Llegar al 40–90 % que pide la escalera exigiría bastante más equipo del que se junta hoy en esas horas: si se suben los muros a la escalera, las horas subirán, y habrá que medir cuánto.

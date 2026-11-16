@@ -98,7 +98,7 @@ export function zoneReferenceSet(party: readonly HeroConfig[], bossStage: number
     for (const hero of set) for (const item of Object.values(hero.equipment)) for (let k = 0; k < (item?.sockets.length ?? 0); k++) {
       gems.push(generateGem({ rollSeed: rng.int(2 ** 31), stageIndex: S, generatorVersion: GENERATOR_VERSION }, Math.max(1, usualTier(S)) as GemTier));
     }
-    socketGems(set, gems);
+    socketGems(set, gems, false);
   }
   return set;
 }
@@ -223,10 +223,10 @@ function midRolled(item: ItemInstance): ItemInstance {
 }
 
 /** THE CEILING SET of the world whose boss is `bossStage`, worn by the heroes of `party` (same level, talents). */
-export function zoneCeilingSet(party: readonly HeroConfig[], bossStage: number, seed = ZONE_SET_SEED): HeroConfig[] {
+export function zoneCeilingSet(party: readonly HeroConfig[], bossStage: number, seed = ZONE_SET_SEED, tierOverride?: ItemTier): HeroConfig[] {
   const set: HeroConfig[] = party.map((h) => ({ ...h, equipment: {} }));
   const S = bossStage - 1;
-  const tier = topTierAt(S);
+  const tier = tierOverride ?? topTierAt(S);
   const ilvl = expectedLevel(S);
   const rng = makeRng(deriveSeed(seed, bossStage) ^ 0x5eed);
   const items: ItemInstance[] = [];
@@ -269,14 +269,37 @@ export function zoneCeilingSet(party: readonly HeroConfig[], bossStage: number, 
 }
 
 /** The ceiling set's 60 s damage at a world for these heroes: geometric mean over ZONE_SET_DRAWS draws of the keys. */
-export function ceilingDamage(party: readonly HeroConfig[], bossStage: number, bonuses: Bonuses, seed: number, draws = ZONE_SET_DRAWS): number {
+export function ceilingDamage(party: readonly HeroConfig[], bossStage: number, bonuses: Bonuses, seed: number, draws = ZONE_SET_DRAWS, tierOverride?: ItemTier): number {
   let logs = 0;
   let n = 0;
   for (let d = 0; d < draws; d++) {
-    const dealt = wallDamage(zoneCeilingSet(party, bossStage, ZONE_SET_SEED + 7919 * d), bossStage, bonuses, seed);
+    const dealt = wallDamage(zoneCeilingSet(party, bossStage, ZONE_SET_SEED + 7919 * d, tierOverride), bossStage, bonuses, seed);
     if (dealt <= 0) continue;
     logs += Math.log(dealt);
     n += 1;
   }
   return n > 0 ? Math.exp(logs / n) : 0;
+}
+
+// ── THE GRADUAL CEILING (round 4b, user decision 2026-11-16: «sube poco a poco») ───────────────────────────────────
+// Within a difficulty the ceiling climbs from the top rarity of its world 1 (the previous difficulty's cap; Normal's
+// world 1 tops out at T2, the starter table) to the difficulty's own cap in world 10: the ceiling's 60 s of damage is
+// the straight blend, by (world − 1) / 9, of the ceiling set at the world-1 rarity and at the world-10 rarity (both at
+// the world's item level, mid rolls, gems of their rarity). It replaces the plain ceiling, whose world 2 already
+// counted a rarity that drops there on 0.1 % of items.
+
+/** The rarities the gradual ceiling blends between in the difficulty of `bossStage`: its world 1 and world 10 tops. */
+export function ceilingTierRange(bossStage: number): { from: ItemTier; to: ItemTier; t: number } {
+  const d = Math.floor((bossStage - 1) / 100);
+  const w = Math.floor(((bossStage - 1) % 100) / 10) + 1;
+  return { from: topTierAt(d * 100 + 5), to: topTierAt(d * 100 + 95), t: (w - 1) / 9 };
+}
+
+/** The gradual ceiling's 60 s of damage at the wall `bossStage` for these heroes. */
+export function gradualCeilingDamage(party: readonly HeroConfig[], bossStage: number, bonuses: Bonuses, seed: number, draws = ZONE_SET_DRAWS): number {
+  const { from, to, t } = ceilingTierRange(bossStage);
+  const hi = ceilingDamage(party, bossStage, bonuses, seed, draws, to);
+  if (from === to || t >= 1) return hi;
+  const lo = ceilingDamage(party, bossStage, bonuses, seed, draws, from);
+  return lo + (hi - lo) * t;
 }

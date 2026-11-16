@@ -5,7 +5,7 @@ import { getBonuses } from '@/sim/bonuses';
 import { createWorld } from '@/sim/Simulation';
 import { makeRng } from '@/sim/rng';
 import { worldBossStageOf } from '@/data/difficulties';
-import { STAGE_KEY_DROP_CHANCE, stageKeyDropChance } from '@/data/chests';
+import { STAGE_KEY_DROP_CHANCE, stageKeyDropChance, chestTierWeightsAt } from '@/data/chests';
 import { godHero } from './_helpers';
 
 const bonuses = getBonuses({}, {});
@@ -25,15 +25,24 @@ function meanTier(type: 'normal' | 'stageBoss' | 'zoneBoss', S: number, n: numbe
 }
 
 describe('chests', () => {
-  it('item tier is independent of chest type (only gem CHANCE differs)', () => {
-    // DIFFICULTY.md §4: every chest type rolls items from the SAME per-difficulty table;
-    // chest type only changes the gem chance (×1/×2/×4), never the item tier. So mean item
-    // tier is ~equal across types (the differing gem roll only perturbs the rng stream).
-    const normal = meanTier('normal', 60, 1500);
-    const stage = meanTier('stageBoss', 60, 1500);
-    const zone = meanTier('zoneBoss', 60, 1500);
-    expect(Math.abs(stage - normal)).toBeLessThan(0.05);
-    expect(Math.abs(zone - normal)).toBeLessThan(0.05);
+  it('boss chests lift the two top rarities of the world (stage ×1.5, world ×3) and the table still sums to 100', () => {
+    // User, 2026-11-16 (round 4): a common chest rolls the world's table as it is; a stage-boss chest its two top
+    // rarities ×1.5 and a world-boss chest ×3, the rest scaled down to fill 100.
+    for (const S of [5, 60, 155, 491]) {
+      const base = chestTierWeightsAt(S, 'normal');
+      const top = base.map((w, t) => (w > 0 ? t : -1)).filter((t) => t >= 0).slice(-2);
+      for (const [type, mult] of [['stageBoss', 1.5], ['zoneBoss', 3]] as const) {
+        const lifted = chestTierWeightsAt(S, type);
+        expect(lifted.reduce((a, b) => a + b, 0)).toBeCloseTo(100, 9);
+        for (const t of top) expect(lifted[t]).toBeCloseTo((base[t] ?? 0) * mult, 9);
+      }
+    }
+    // And it shows in what the chests give: mean item tier normal < stage boss < world boss.
+    const normal = meanTier('normal', 491, 3000);
+    const stage = meanTier('stageBoss', 491, 3000);
+    const zone = meanTier('zoneBoss', 491, 3000);
+    expect(stage).toBeGreaterThan(normal);
+    expect(zone).toBeGreaterThan(stage);
   });
 
   it('gem tier distribution matches the ITEM tier table per difficulty (T0 folds into T1)', () => {

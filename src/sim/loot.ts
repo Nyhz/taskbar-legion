@@ -11,7 +11,8 @@ import { STATS, FLEX_STATS, JEWELRY_STATS } from '@/data/stats';
 import { CLASS_KEYS } from '@/data/classes';
 import type { ChestType } from '@/data/chests';
 import { phi, EG_FLAT, GEAR_POWER, expectedLevel, pctAffixIlvlMult } from '@/data/stageScaling';
-import { difficultyOf, tierWeightsAt } from '@/data/difficulties';
+import { difficultyOf } from '@/data/difficulties';
+import { chestTierWeightsAt } from '@/data/chests';
 import { PERFECT_STAT_CHANCE, PERFECT_STAT_BONUS } from '@/data/lootTables';
 
 // The deterministic loot generator (the SPEC §4.6 contract): generateItem(origin)
@@ -27,12 +28,13 @@ export interface ItemOrigin {
 
 /** Tier roll (DIFFICULTY.md §4): the drop table of the stage's WORLD — the per-world ladder
  *  (data/difficulties.tierWeightsAt): a difficulty climbs from the previous one's table to its own
- *  across its ten worlds. NO chest tilt (chest type only changes gem CHANCE, never item tier).
- *  `minTier` excludes low tiers (jewelry has no T0; the gem path passes 1). The new top tier of each
- *  difficulty reaches its ~2% only in the last world; tiers above the cap have weight 0. */
-export function rollTier(S: number, rng: Rng, minTier: ItemTier = 0): ItemTier {
+ *  across its ten worlds. A BOSS chest lifts the two top rarities of that table (data/chests.chestTierWeightsAt:
+ *  stage boss ×1.5, world boss ×3; user, 2026-11-16). `minTier` excludes low tiers (jewelry has no T0; the gem
+ *  path passes 1). The new top tier of each difficulty reaches its 1 % only in the last world; tiers above the cap
+ *  have weight 0. */
+export function rollTier(S: number, rng: Rng, minTier: ItemTier = 0, chestType: ChestType = 'normal'): ItemTier {
   const def = difficultyOf(S);
-  const weights = tierWeightsAt(S);
+  const weights = chestTierWeightsAt(S, chestType);
   const w: number[] = [];
   let total = 0;
   for (let t = 0; t < weights.length; t++) {
@@ -59,7 +61,7 @@ export function generateItem(origin: ItemOrigin, allowedClasses?: string[]): Ite
   const category = SLOTS[slot].category;
   // Jewelry doesn't exist at T0 (no T0 base affix) — reject-and-reroll via minTier.
   const minTier: ItemTier = category === 'jewelry' ? 1 : 0;
-  const tier = rollTier(origin.stageIndex, rng, minTier);
+  const tier = rollTier(origin.stageIndex, rng, minTier, origin.chestType);
   return composeItem(slot, tier, origin, rng, undefined, undefined, allowedClasses);
 }
 

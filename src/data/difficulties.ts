@@ -35,16 +35,21 @@ export interface DifficultyDef {
 
 // Drop tables (docs/DIFFICULTY.md §4) — each is the table of its difficulty's LAST world; see `tierWeightsAt`
 // for the per-world ladder that climbs to it. MIDDLE-WEIGHTED pass: the two top tiers of every
-// difficulty are fixed at 7.5 (just below the cap) and 2 (the cap chase), and the remaining weight
+// difficulty are fixed at 4 (just below the cap) and 1 (the cap chase), and the remaining weight
 // is humped on the MIDDLE tiers of each difficulty's range, tapering toward the low trash — so most
 // drops land in the mid band rather than the T0/T1 floor, while the endgame chase stays rare. Each
 // row sums to 100.
-//                                  T0   T1   T2  T3  T4   T5   T6   T7  T8
-const W_NORMAL  = [40.5, 30, 20,  7.5,  2,   0,   0,   0,  0] as const;
-const W_HELL    = [12.5, 25, 33, 20,  7.5,  2,   0,   0,  0] as const;
-const W_INFERNO = [ 7.5, 15, 24, 28, 16,   7.5,  2,   0,  0] as const;
-const W_ETERNAL = [ 4.5, 10, 17, 24, 21,  14,   7.5,  2,  0] as const;
-const W_TORMENT = [   0, 5.5, 12, 19, 24,  18,  12,   7.5, 2] as const;
+// User, 2026-11-16 (round 4): the two top tiers HALVED (2 → 1, 7.5 → 4) — at 2 % a Torment run saw 60–75 T8 pieces
+// and the party ended with 21–22 T8 of 30 slots. The 4.5 points taken went to the middle tiers (between the lowest
+// tier with weight and the second-highest, exclusive) in proportion to their weight. Boss chests lift the two top tiers
+// again (chests.ts BOSS_CHEST_TOP_TIER_MULT). Old rows: N 40.5/30/20/7.5/2 · H 12.5/25/33/20/7.5/2 ·
+// I 7.5/15/24/28/16/7.5/2 · E 4.5/10/17/24/21/14/7.5/2 · T 0/5.5/12/19/24/18/12/7.5/2.
+//                                  T0     T1     T2     T3     T4     T5     T6   T7  T8
+const W_NORMAL  = [40.5,  32.7,  21.8,   4,     1,     0,     0,     0,  0] as const;
+const W_HELL    = [12.5,  26.44, 34.91, 21.15,  4,     1,     0,     0,  0] as const;
+const W_INFERNO = [ 7.5,  15.81, 25.3,  29.52, 16.87,  4,     1,     0,  0] as const;
+const W_ETERNAL = [ 4.5,  10.52, 17.89, 25.26, 22.1,  14.73,  4,     1,  0] as const;
+const W_TORMENT = [   0,   5.5,  12.64, 20.01, 25.26, 18.95, 12.64,  4,  1] as const;
 
 export const DIFFICULTIES: Readonly<Record<DifficultyKey, DifficultyDef>> = {
   normal:  { key: 'normal',  name: 'Normal',  index: 0, tierCap: 4, tierWeights: W_NORMAL },

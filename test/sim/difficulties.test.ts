@@ -51,7 +51,8 @@ describe('the per-world drop ladder', () => {
       for (let w = 2; w <= 10; w++) {
         expect(tierWeightsAt(d * 100 + (w - 1) * 10 + 1)[cap] ?? 0).toBeGreaterThan(tierWeightsAt(d * 100 + (w - 2) * 10 + 1)[cap] ?? 0);
       }
-      expect(tierWeightsAt(d * 100 + 91)[cap]).toBeCloseTo(2, 9); // its 2 % in the last
+      expect(tierWeightsAt(d * 100 + 91)[cap]).toBeCloseTo(1, 9); // its 1 % in the last (2 % until 2026-11-16)
+      expect(tierWeightsAt(d * 100 + 91)[cap - 1]).toBeCloseTo(4, 9); // and the one below it 4 %
     }
   });
 });
@@ -62,7 +63,7 @@ describe('difficulty drop tables (each is the table of its last world)', () => {
   it('every difficulty table sums to 100', () => {
     for (const k of DIFFICULTY_KEYS) {
       const sum = DIFFICULTIES[k].tierWeights.reduce((a, b) => a + b, 0);
-      expect(sum).toBe(100);
+      expect(sum).toBeCloseTo(100, 9);
     }
   });
 
