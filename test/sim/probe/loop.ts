@@ -10,8 +10,9 @@
 //     extrapolate from the cached rate, so months of farming cost milliseconds.
 //   - Frontier pushes through normal stages 1..9 (each a measured clear), then the world boss
 //     (stage 10) is the wall. KEYS (the live rule: engine.applyEnterZoneBoss / Simulation.enterZoneBoss):
-//     every attempt — the first one too — spends a key of that world; keys come only out of stage-boss
-//     chests of that world (rolled by the real openChest); a failed attempt loses the key. With a key in
+//     every attempt — the first one too — spends a key of that world; the first clear of the world's X-9 gives
+//     one (option A), the rest come out of stage-boss chests of that world (rolled by the real openChest, a
+//     quarter of them); a failed attempt loses the key. With a key in
 //     hand the player attempts; without one the party loops this world's W-9 (where the live game parks
 //     it) until a chest gives the next. Each attempt is fought with its own combat seed, so a party at
 //     the margin can lose one and win the next, as in the game.
@@ -26,8 +27,8 @@
 import { measureFarm, measureBoss, type FarmSample } from './combat';
 import { openCaptured, equipItems, socketGems, partyPower } from './gear';
 import { wallDamage, zoneSetDamage } from './zoneGear';
-import { freshHero, syncGrowth, buyTech } from './economy';
-import { partyWithBuild, type PartyBuild } from './builds';
+import { freshHero, syncGrowth, buyTech, applyBuild } from './economy';
+import { partyWithBuild, PROBE_GOOD_BUILD, type PartyBuild } from './builds';
 import { petMissChance, petRanks } from '@/sim/pets';
 import { PET_KEYS, petDef } from '@/data/pets';
 import { getBonuses } from '@/sim/bonuses';
@@ -37,7 +38,7 @@ import { classDef, CLASS_KEYS } from '@/data/classes';
 import { MAX_GLOBAL_STAGE, difficultyIndexOf, DIFFICULTY_KEYS, worldBossStageOf } from '@/data/difficulties';
 import { worldOf, zoneBossHp, ELITE_CHANCE, ELITE_CHEST_MULT, ELITE_MIN_STAGE } from '@/data/stageScaling';
 import type { HeroConfig } from '@/sim/loadout';
-import type { ChestType } from '@/data/chests';
+import { FIRST_CLEAR_KEYS, type ChestType } from '@/data/chests';
 
 export interface ProbeConfig {
   activeHoursPerDay: number; // full-rate active combat per day (gold+xp+chests)
@@ -76,6 +77,9 @@ export interface ProbeConfig {
   observe?: (target: number, party: readonly HeroConfig[], bonuses: ReturnType<typeof getBonuses>) => boolean | void;
   /** The build every hero of a class plays (test/sim/probe/builds.ts); omitted = PROBE_DEFAULT_BUILD. */
   build?: PartyBuild;
+  /** The build by the stage the player is taking on (a free respec when it changes); overrides `build` where it
+   *  returns one. DEFAULT_CONFIG: the default build in Normal and Hell, PROBE_GOOD_BUILD from Inferno. */
+  buildAt?: (target: number) => PartyBuild | undefined;
   /** Pets: 'none' (the player never finds one) or 'median' (each pet is owned from the moment half the players
    *  would have found it — the chance of having missed it falls to 50 % with the kills so far — and climbs its
    *  ranks through its own objective, counted from then, as in the game). */
@@ -110,6 +114,7 @@ export const DEFAULT_CONFIG: ProbeConfig = {
   stallDays: 540,
   pets: 'none',
   fixedRunSeed: true,
+  buildAt: (target) => (target > 200 ? PROBE_GOOD_BUILD : undefined),
 };
 
 export interface State {
@@ -480,6 +485,13 @@ export function advanceProbe(run: ProbeRun, cfg: ProbeConfig = DEFAULT_CONFIG): 
         continue;
       }
       const target = state.frontier + 1;
+      const want = cfg.buildAt?.(target) ?? cfg.build;
+      if (want !== state.build) {
+        // the player respecs (free) into the build of this stage
+        state.build = want;
+        for (const h of state.party) applyBuild(h, h.level, want?.[h.classKey]);
+        state.dirty = true;
+      }
       if (cfg.observe?.(target, state.party, bonuses) === false) {
         run.gaveUp = true;
         break;
@@ -568,6 +580,8 @@ export function advanceProbe(run: ProbeRun, cfg: ProbeConfig = DEFAULT_CONFIG): 
           tallyClears(state, m, chests, 1, cfg);
           grantLoot(state, target, { normal: chests.normal * cfg.capture.normal, stageBoss: chests.stageBoss * cfg.capture.stageBoss, zoneBoss: 0 }, bonuses, cfg.freezeGear === true);
           state.frontier = target;
+          // Option A (data/chests FIRST_CLEAR_KEYS): the first clear of a world's X-9 hands over one key of that world.
+          if (target % 10 === 9) state.keys[target + 1] = (state.keys[target + 1] ?? 0) + FIRST_CLEAR_KEYS;
           run.lastProgressDay = state.calendarDays;
           cfg.trace?.(`${(state.activeSec / 3600).toFixed(2)}h\tcleared ${target} in ${m.clearSec.toFixed(0)}s lvl ${state.party.map((h) => h.level).join('/')} top T${topTier(state.party)} gold ${Math.round(state.gold)} wipes ${m.wipes}`);
         } else {

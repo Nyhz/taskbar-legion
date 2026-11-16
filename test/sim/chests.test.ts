@@ -59,7 +59,7 @@ describe('chests', () => {
     expect(Math.abs((gemH[1] ?? 0) - ((itemH[0] ?? 0) + (itemH[1] ?? 0))) / N).toBeLessThan(0.01);
   });
 
-  it('world-boss keys drop ONLY from stage-boss chests, credited to the zone (1 chest in 4; every chest in Normal)', () => {
+  it('world-boss keys drop ONLY from stage-boss chests, credited to the zone (1 chest in 4, every difficulty)', () => {
     const S = 135; // Hell 4-5 → its zone's world boss is Hell 4-10 (global 140)
     const bossStage = worldBossStageOf(S);
     expect(bossStage).toBe(140);
@@ -77,10 +77,8 @@ describe('chests', () => {
     expect(stageKeyDropChance(S)).toBe(0.25); // Hell
     expect(keyRate('stageBoss')).toBeGreaterThan(0.22);
     expect(keyRate('stageBoss')).toBeLessThan(0.28);
-    // Normal is strolled through: every stage-boss chest of its hundred stages holds a key, and only there.
-    for (const g of [1, 55, 100]) expect(stageKeyDropChance(g)).toBe(1);
-    for (const g of [101, 250, 500]) expect(stageKeyDropChance(g)).toBe(0.25);
-    expect(openChest('stageBoss', 35, makeRng(3), bonuses).keys[worldBossStageOf(35)]).toBe(1);
+    // Option A (2026-11-16): one in four on every difficulty, Normal too (the first clear of an X-9 gives one outright).
+    for (const g of [1, 55, 100, 101, 250, 500]) expect(stageKeyDropChance(g)).toBe(0.25);
 
     // The key is credited to the world-boss of the chest's OWN zone, never another.
     const rng = makeRng(7);

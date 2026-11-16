@@ -48,11 +48,12 @@ export const CHEST_TYPES: ChestType[] = ['normal', 'stageBoss', 'zoneBoss'];
 // on a wipe. User, 2026-11-15 (round 2): "mantenemos 25% cofre y llave al 25% también" → one key per ~16 stage
 // bosses (it was 0.5 until today, then 0.1 for a few hours).
 export const STAGE_KEY_DROP_CHANCE = 0.25;
-// NORMAL is the exception: there EVERY stage-boss chest holds a key. He wants Normal strolled through in three
-// or four hours ("keys are no obstacle"): at 25 % more than half the players would reach each of its ten world
-// bosses without a key and repeat X-9 some sixteen times — three quarters of an hour a world, Normal's whole
-// budget twice over. With a key in every chest nine players in ten have theirs before they reach the boss.
-export const STAGE_KEY_DROP_CHANCE_BY_DIFFICULTY: readonly number[] = [1, STAGE_KEY_DROP_CHANCE, STAGE_KEY_DROP_CHANCE, STAGE_KEY_DROP_CHANCE, STAGE_KEY_DROP_CHANCE];
+// OPTION A (user decision, 2026-11-15, wired 2026-11-16): the FIRST clear of a world's X-9 gives one key of that
+// world outright (FIRST_CLEAR_KEYS, granted by the sim — Simulation.handleClear → world.pending.keys), on every
+// difficulty, so the first attempt never waits; after it, a quarter of the stage-boss chests hold one — Normal too.
+export const STAGE_KEY_DROP_CHANCE_BY_DIFFICULTY: readonly number[] = [STAGE_KEY_DROP_CHANCE, STAGE_KEY_DROP_CHANCE, STAGE_KEY_DROP_CHANCE, STAGE_KEY_DROP_CHANCE, STAGE_KEY_DROP_CHANCE];
+/** Keys of its world the first clear of an X-9 gives (option A). */
+export const FIRST_CLEAR_KEYS = 1;
 /** The chance that a stage-boss chest dropped at global stage `S` holds a world-boss key. */
 export function stageKeyDropChance(S: number): number {
   return STAGE_KEY_DROP_CHANCE_BY_DIFFICULTY[Math.max(0, Math.min(4, Math.floor((Math.max(1, S) - 1) / 100)))] ?? STAGE_KEY_DROP_CHANCE;

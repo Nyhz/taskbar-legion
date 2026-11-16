@@ -120,9 +120,10 @@ export const EFFECTS: Record<string, EffectDef> = {
   },
   buff_guard_block: {
     key: 'buff_guard_block', name: 'Stone Skin', icon: 'guard',
-    // Stone Skin is a flat damage-reduction cooldown: 20% DR at rank 1, +5%/rank → 40% at
-    // rank 5. Applied as flat %-off incoming damage (sim/combat.enemyAttack). 6s uptime.
-    kind: { type: 'statMod', stat: 'damageReduction', mode: 'percent', value: 20 },
+    // Stone Skin is a flat damage-reduction cooldown: 30% DR at rank 1, +5%/rank → 50% at
+    // rank 5 (was 20 → 40 %; raised 2026-11-16 with the world bosses' blows on the tank, so a Knight who carries
+    // his defences outlasts one who does not). Applied as flat %-off incoming damage (sim/combat.enemyAttack). 6s uptime.
+    kind: { type: 'statMod', stat: 'damageReduction', mode: 'percent', value: 30 },
     durationMs: 6000, maxStacks: 1, stackRule: 'refresh', beneficial: true,
   },
   buff_battlecry_ad: {
@@ -151,7 +152,7 @@ export const EFFECTS: Record<string, EffectDef> = {
   // Debilitating Cleave (Knight): each enemy in melee range deals 15%→25% less damage for 6s.
   debuff_weaken: {
     key: 'debuff_weaken', name: 'Debilitated', icon: 'expose',
-    kind: { type: 'weaken', value: 15 },
+    kind: { type: 'weaken', value: 25 }, // 25 → 35 % at rank 5 (was 15 → 25 %; raised 2026-11-16, see Stone Skin)
     durationMs: 6000, maxStacks: 1, stackRule: 'refresh', beneficial: false,
   },
   // ── Ultimates (off-tree, auto-granted at L60; values resolved from data/ultimates) ──

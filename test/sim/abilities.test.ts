@@ -85,7 +85,7 @@ describe('ability mechanics', () => {
     expect(cast).toContain('knight_debilitate');
     for (const e of [nearA, nearB]) {
       expect(e.hp).toBeCloseTo(880, 1); // 1000 − 1.2×100
-      expect(e.effects.find((x) => x.defKey === 'debuff_weaken')?.value).toBeCloseTo(15, 1);
+      expect(e.effects.find((x) => x.defKey === 'debuff_weaken')?.value).toBeCloseTo(25, 1);
     }
     expect(far.hp).toBe(1000); // beyond melee reach — untouched
     expect(far.effects.find((x) => x.defKey === 'debuff_weaken')).toBeUndefined();

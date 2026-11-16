@@ -85,6 +85,10 @@ export class GameEngine {
       bossKills += p.bossKills;
       chestsFound += p.chestsFound;
       pets.push(...p.petDrops);
+      if (Object.keys(p.keys).length > 0) {
+        useStore.getState().addZoneKeys(p.keys); // option A: the key the first clear of an X-9 hands over
+        p.keys = {};
+      }
       p.gold = 0;
       p.xp = 0;
       p.kills = 0;
@@ -131,6 +135,7 @@ export class GameEngine {
     p.bossKills = 0;
     p.chestsFound = 0;
     p.petDrops = [];
+    p.keys = {};
     this.mirror();
     this.pushHud();
     return summary;

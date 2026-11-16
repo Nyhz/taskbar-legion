@@ -212,7 +212,7 @@ describe('Espejos (the Unmaker): what it reflects', () => {
     // What it leaves on the enemies it leaves on the heroes: the cleave's weakening, whole.
     const cleave = reflecting('knight_debilitate', 1);
     expect(cleave?.def.target).toBe('meleeEnemies');
-    expect(cleave?.def.applies.find((a) => a.effectKey === 'debuff_weaken')).toMatchObject({ value: 15, valuePerRank: 0 });
+    expect(cleave?.def.applies.find((a) => a.effectKey === 'debuff_weaken')).toMatchObject({ value: 25, valuePerRank: 0 });
   });
 
   it('what it does for allies the boss takes for itself: heals and shields far weaker, buffs weaker', () => {
@@ -285,7 +285,7 @@ describe('Espejos in a fight', () => {
     run(fight(party(), [quick], 100), firstCast('mirror') + 200);
     expect(effect(quick, 'buff_fast_fire')?.value).toBeCloseTo(45 * 0.7, 6);
 
-    const stone = mirrorBoss(4, { key: 'knight_guard', rank: 1 }, { hp: 1e9, maxHp: 1e9 }); // 20 % less damage, 70 % of it
+    const stone = mirrorBoss(4, { key: 'knight_guard', rank: 1 }, { hp: 1e9, maxHp: 1e9 }); // 30 % less damage, 70 % of it
     const tank = hero('tank', { baseStats: base({ health: 1000, attackDamage: 1000, attackSpeed: 1 }), attackTimerMs: 0 });
     const world = fight([tank, hero('archer'), hero('healer')], [stone], 100);
     const before = run(world, firstCast('mirror') - 300).filter((e) => e.type === 'damage' && e.targetId === 'boss');
@@ -293,7 +293,7 @@ describe('Espejos in a fight', () => {
     run(world, 500);
     expect(effect(stone, 'buff_guard_block')).toBeDefined();
     const after = run(world, 2000).filter((e) => e.type === 'damage' && e.targetId === 'boss');
-    expect(after[0]?.amount).toBeCloseTo(1000 * (1 - 0.2 * 0.7), 3);
+    expect(after[0]?.amount).toBeCloseTo(1000 * (1 - 0.3 * 0.7), 3);
   });
 
   it('an attack-damage buff makes it hit harder while it lasts — its blows and its abilities — by its share for the difficulty', () => {

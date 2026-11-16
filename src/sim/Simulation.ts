@@ -22,7 +22,7 @@ import {
 } from '@/data/stageScaling';
 import { isFinalStage } from '@/data/difficulties';
 import { WALK_SPEED, SPAWN_AHEAD, HERO_SPACING, TELEPORT_HOLD_MS, WIPE_RETREAT_AT_MS, WIPE_ARRIVE_AT_MS, WIPE_TOTAL_MS, BOSS_DOWN_MS } from '@/data/field';
-import type { ChestType } from '@/data/chests';
+import { FIRST_CLEAR_KEYS, type ChestType } from '@/data/chests';
 
 // The fixed-timestep simulation loop. Owns WorldState; tick() advances combat,
 // accrues income/chests/pets, and drives stage flow incl. the W-10 world-boss gate
@@ -254,6 +254,11 @@ export class Simulation {
       // and re-farm). W-9 NEVER auto-advances — it parks for the world-boss portal (the
       // wall is W-10, entered via enterZoneBoss).
       if (firstClear && !isPreZoneGate(w.globalStageIndex)) w.globalStageIndex += 1;
+      // Option A: the first clear of a world's X-9 hands over one key of that world (data/chests FIRST_CLEAR_KEYS).
+      if (firstClear && isPreZoneGate(w.globalStageIndex)) {
+        const boss = w.globalStageIndex + 1;
+        w.pending.keys[boss] = (w.pending.keys[boss] ?? 0) + FIRST_CLEAR_KEYS;
+      }
       w.wavesThisStage = 0;
       w.phase = 'advancing';
       w.advanceTimerMs = ADVANCE_MS;

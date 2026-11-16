@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { enemyHp, stageBossHp, zoneBossHp, tunePoint, ELITE_HP_MULT, TRASH_HP_FRACTION, TUNE_POINTS, GRUNT_HP_TUNE, STAGE_BOSS_HP_TUNE, TRASH_DMG_TUNE, MAX_LEVEL } from '@/data/stageScaling';
+import { enemyHp, stageBossHp, zoneBossHp, tunePoint, ELITE_HP_MULT, NORMAL_TRASH_HP_MULT, TRASH_HP_FRACTION, TUNE_POINTS, GRUNT_HP_TUNE, STAGE_BOSS_HP_TUNE, TRASH_DMG_TUNE, MAX_LEVEL } from '@/data/stageScaling';
 import { ENEMY_KINDS } from '@/data/enemies';
 import { getBonuses } from '@/sim/bonuses';
 import { GRUNT_HITS, STAGE_BOSS_SEC, gruntHp, gruntHits, measureStageBoss } from './probe/anchors';
@@ -16,7 +16,9 @@ describe('toughness anchors — the tables against the on-gear party', () => {
   it('a grunt takes 2–3 basic hits of the hardest hitter at every tuning point: never a one-shot', () => {
     for (const p of POINTS) {
       const hits = gruntHp(anchorStage(p)) / (REFERENCE_TOP_HIT[p] ?? Number.NaN);
-      expect(hits, `point ${p} (stage ${anchorStage(p)})`).toBeGreaterThanOrEqual(GRUNT_HITS.min);
+      // Normal is the stroll (data/stageScaling NORMAL_TRASH_HP_MULT): there a grunt may fall to one or two hits.
+      const min = anchorStage(p) <= 100 ? GRUNT_HITS.min * NORMAL_TRASH_HP_MULT : GRUNT_HITS.min;
+      expect(hits, `point ${p} (stage ${anchorStage(p)})`).toBeGreaterThanOrEqual(min);
       expect(hits, `point ${p} (stage ${anchorStage(p)})`).toBeLessThanOrEqual(GRUNT_HITS.max);
     }
   });
@@ -78,9 +80,9 @@ describe('toughness anchors — measured in a real fight (the opening of a new g
     const party = runParty(run);
     expect(party.every((h) => h.level < MAX_LEVEL)).toBe(true);
     const g = gruntHits(party, 5, DEFAULT_CONFIG.measureSeed, bonuses);
-    expect(g.hits).toBeGreaterThanOrEqual(1.7); // the fight's own average, with a little room around 2–3
+    expect(g.hits).toBeGreaterThanOrEqual(1.7 * NORMAL_TRASH_HP_MULT); // 2–3 hits with a little room, × Normal's softer grunts
     expect(g.hits).toBeLessThanOrEqual(3.3);
-    expect(g.eliteHits).toBeGreaterThan(8);
+    expect(g.eliteHits).toBeGreaterThan(8 * NORMAL_TRASH_HP_MULT);
     const b = measureStageBoss(party, 5, DEFAULT_CONFIG.measureSeed, bonuses);
     expect(b.win).toBe(true);
     expect(b.seconds).toBeGreaterThanOrEqual(4);

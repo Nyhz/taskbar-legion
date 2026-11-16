@@ -71,6 +71,7 @@ function drain(w: WorldState, gross: Record<ChestType, number>): { gold: number;
   w.pending.bossKills = 0;
   w.pending.chestsFound = 0;
   w.pending.petDrops.length = 0;
+  w.pending.keys = {}; // the probe grants the first-clear key itself (loop.ts)
   for (const c of w.chests) gross[c.type] += c.count;
   w.chests = [];
   return { gold, xp, kills, bossKills };

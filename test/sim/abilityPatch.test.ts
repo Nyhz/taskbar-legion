@@ -58,8 +58,8 @@ describe('Knight modifiers', () => {
     const fine = unit({ id: 'p', side: 'hero', classKey: 'priest', hp: 900 });
     const foe = unit({ id: 'e', side: 'enemy', x: 10 });
     castReadyAbilities(knight, [knight, hurt, fine], [foe], 1, quietRng(), []);
-    expect(effect(knight, 'buff_guard_block')?.value).toBe(30); // 20 + 5·2 at rank 3
-    expect(effect(hurt, 'buff_guard_block')?.value).toBe(30);
+    expect(effect(knight, 'buff_guard_block')?.value).toBe(40); // 30 + 5·2 at rank 3
+    expect(effect(hurt, 'buff_guard_block')?.value).toBe(40);
     expect(effect(fine, 'buff_guard_block')).toBeUndefined();
 
     const solo = unit({ id: 'k', side: 'hero', abilities: [learned('knight', { knight_guard: 3, knight_mod_shared_skin: 1 }, 'knight_guard')] });
@@ -73,7 +73,7 @@ describe('Knight modifiers', () => {
     const far = unit({ id: 'e2', side: 'enemy', x: 300 });
     castReadyAbilities(knight, [knight], [near, far], 1, quietRng(), []);
     expect(near.hp).toBeCloseTo(800, 5); // 2.0× AD at rank 5
-    expect(effect(near, 'debuff_weaken')?.value).toBe(25);
+    expect(effect(near, 'debuff_weaken')?.value).toBe(35);
     expect(effect(near, 'debuff_cripple')).toMatchObject({ value: -20, remainingMs: 6000 });
     expect(far.effects).toHaveLength(0);
   });

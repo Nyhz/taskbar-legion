@@ -161,6 +161,8 @@ export interface PendingAccrual {
   kills: number;
   bossKills: number;
   chestsFound: number;
+  /** World-boss keys earned outright (option A: the first clear of a world's X-9), by world-boss stage. */
+  keys: Record<number, number>;
 }
 
 export interface WorldState {
@@ -197,5 +199,5 @@ export interface WorldState {
 }
 
 export function emptyPending(): PendingAccrual {
-  return { gold: 0, xp: 0, petDrops: [], kills: 0, bossKills: 0, chestsFound: 0 };
+  return { gold: 0, xp: 0, petDrops: [], kills: 0, bossKills: 0, chestsFound: 0, keys: {} };
 }

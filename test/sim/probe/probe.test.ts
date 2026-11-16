@@ -61,12 +61,14 @@ describe('probe economy', () => {
 });
 
 describe('probe keys and targets', () => {
-  it('only stage-boss chests hold world-boss keys: every one in Normal, one in four after it', () => {
+  it('only stage-boss chests hold world-boss keys: one in four, on every difficulty (option A)', () => {
     const draw = { n: 0 };
     const classes = ['knight', 'ranger', 'priest'];
     expect(openCaptured('normal', 129, 400, 5, draw, bonuses, classes).keys).toBe(0);
     expect(openCaptured('zoneBoss', 130, 400, 5, draw, bonuses, classes).keys).toBe(0);
-    expect(openCaptured('stageBoss', 29, 300, 5, draw, bonuses, classes).keys).toBe(300); // Normal: a stroll
+    const normal = openCaptured('stageBoss', 29, 2000, 5, draw, bonuses, classes).keys; // Normal too, now
+    expect(normal).toBeGreaterThan(430);
+    expect(normal).toBeLessThan(570);
     const keys = openCaptured('stageBoss', 129, 2000, 5, draw, bonuses, classes).keys; // Hell
     expect(keys).toBeGreaterThan(430);
     expect(keys).toBeLessThan(570);

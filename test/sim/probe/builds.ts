@@ -39,6 +39,15 @@ export const PROBE_DEFAULT_BUILD: PartyBuild = {
   priest: { abilities: ['priest_mend', 'priest_healing_light'], branch: 'devotion' },
 };
 
+/** THE GOOD BUILD the average player switches to from Inferno (user decision, 2026-11-16: "la construcción por
+ *  defecto en Normal e Infierno y la buena desde Averno"): the build study's most frequent best build of Hell and
+ *  later (scripts/build-study.ts, round 3 checkpoint 2) — one build for every wall, not the best of each. */
+export const PROBE_GOOD_BUILD: PartyBuild = {
+  knight: { abilities: ['knight_debilitate', 'knight_battlecry'], branch: 'bastion' },
+  ranger: { abilities: ['ranger_aimedshot', 'ranger_weakspot'], branch: 'marksman' },
+  priest: { abilities: ['priest_mend', 'priest_healing_light'], branch: 'devotion' },
+};
+
 /** The branches (lanes other than the trunk) of a class, in tree order. */
 export function branchesOf(classKey: string): string[] {
   const out: string[] = [];

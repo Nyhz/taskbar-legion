@@ -85,9 +85,11 @@ export interface WorldBossPressure {
 export const WORLD_BOSS_PRESSURE: readonly WorldBossPressure[] = [
   { hitMult: 1, blowEveryMs: 10_000, blowCoeff: 1.2, splashCoeff: 0.6, backShotChance: 0 },
   { hitMult: 1, blowEveryMs: 6_000, blowCoeff: 1.2, splashCoeff: 1.2, backShotChance: 0.5 },
-  { hitMult: 1, blowEveryMs: 6_000, blowCoeff: 1.2, splashCoeff: 1.2, backShotChance: 0.5 },
-  { hitMult: 1.15, blowEveryMs: 6_000, blowCoeff: 1.2, splashCoeff: 1.2, backShotChance: 0.55 },
-  { hitMult: 1.45, blowEveryMs: 6_000, blowCoeff: 1.2, splashCoeff: 1.2, backShotChance: 0.55 },
+  // From Inferno the blow lands on the front hero far harder (coordinator, 2026-11-16: a Knight who carries his
+  // defences must win in margin too): Stone Skin, Debilitate and Hold the Line are what take it.
+  { hitMult: 1, blowEveryMs: 6_000, blowCoeff: 2.0, splashCoeff: 1.2, backShotChance: 0.5 },
+  { hitMult: 1.15, blowEveryMs: 6_000, blowCoeff: 2.4, splashCoeff: 1.2, backShotChance: 0.55 },
+  { hitMult: 1.45, blowEveryMs: 6_000, blowCoeff: 2.8, splashCoeff: 1.2, backShotChance: 0.55 },
 ];
 
 /** The pressure of a world boss at difficulty index `d` (clamped to the table). */

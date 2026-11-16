@@ -119,7 +119,7 @@ describe('talent words', () => {
     expect(circle).toBeDefined();
     expect(hold).toBeDefined();
     if (cleave === undefined || cry === undefined || light === undefined || circle === undefined || hold === undefined) return;
-    expect(abilityLines(cleave, 1, stats, 1)[1]).toBe('−15 % damage dealt for 6 s');
+    expect(abilityLines(cleave, 1, stats, 1)[1]).toBe('−25 % damage dealt for 6 s');
     // A heal of hers says it lifts what the healed carry (data/healing: all of it, from those it heals).
     expect(abilityLines(light, 1, stats, 1).at(-1)).toBe('Lifts every harmful effect from each ally it heals');
     // When it fires, in words (the tooltip's own line).
@@ -130,7 +130,7 @@ describe('talent words', () => {
     expect(ultimateFireLine(ULTIMATES.knight as UltimateDef)).toBe('When a blow would kill the hero. Uses per stage: 1.');
     expect(ultimateFireLine(ULTIMATES.ranger as UltimateDef, { vs: 'eliteOrBoss' })).toBe('On engaging an elite, a stage boss or a world boss.');
     setLanguage('es');
-    expect(abilityLines(cleave, 1, stats, 1)[1]).toBe('−15 % de daño infligido durante 6 s');
+    expect(abilityLines(cleave, 1, stats, 1)[1]).toBe('−25 % de daño infligido durante 6 s');
     expect(abilityLines(circle, 1, stats, 1).at(-1)).toBe('Quita todos los efectos dañinos a cada aliado que cura');
     expect(fireLine(light)).toBe('Cuando un aliado lleva un efecto dañino, baja del 60 % de su vida o acaba de recibir un golpe fuerte.');
     expect(abilityLines(cry, 1, stats, 1)[0]).toMatch(/^\+\d+(,\d)? % de daño de ataque durante \d+ s$/);

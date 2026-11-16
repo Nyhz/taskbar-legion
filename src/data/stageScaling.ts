@@ -83,7 +83,8 @@ export function zoneBossHp(S: number): number {
 // stage — right for Eternal and Torment, and three times what Normal's four hours allow (100 stages in 240
 // minutes). Normal's stages are eight waves (about 1¼ minutes at X-1, 3½ at X-9: a world in some 20 minutes), and
 // the count grows with each difficulty until the full twenty.
-export const WAVES_BY_DIFFICULTY: readonly number[] = [8, 12, 16, 20, 20];
+// Normal 16 · Hell 17 · Inferno 18 · Eternal 19 · Torment 20 (user decision, 2026-11-15; wired 2026-11-16).
+export const WAVES_BY_DIFFICULTY: readonly number[] = [16, 17, 18, 19, 20];
 export function wavesPerStage(S: number): number {
   return WAVES_BY_DIFFICULTY[Math.max(0, Math.min(4, Math.floor((Math.max(1, S) - 1) / 100)))] ?? 20;
 }
@@ -94,10 +95,16 @@ export function wavesPerStage(S: number): number {
 // batches (field.ts), each spread across a band so they arrive as loose groups.
 const WAVE_SIZE_BY_STAGE = [5, 6, 7, 8, 10, 12, 15, 18, 22] as const; // tune-pass: steeper X-7/8/9 spike (more mobs = more incoming pressure late in a world)
 
-/** Enemies per wave for a stage, ramped by its position within the world (X-1..X-9). */
+/** × wave size by difficulty (Normal → Torment). Normal's stage went from 8 waves to 16 (2026-11-16) and Normal must
+ *  stay a 3–4 hour stroll: its waves are smaller instead of its enemies weaker (an enemy still takes its 2–3 hits). */
+export const WAVE_SIZE_MULT_BY_DIFFICULTY: readonly number[] = [0.6, 1, 1, 1, 1];
+
+/** Enemies per wave for a stage, ramped by its position within the world (X-1..X-9), × its difficulty's share. */
 export function waveSizeForStage(globalStageIndex: number): number {
   const s = stageInWorld(globalStageIndex); // 1..10 (10 = boss stage)
-  return WAVE_SIZE_BY_STAGE[Math.min(s, 9) - 1] ?? 5;
+  const base = WAVE_SIZE_BY_STAGE[Math.min(s, 9) - 1] ?? 5;
+  const mult = WAVE_SIZE_MULT_BY_DIFFICULTY[Math.max(0, Math.min(4, Math.floor((Math.max(1, globalStageIndex) - 1) / 100)))] ?? 1;
+  return Math.max(3, Math.round(base * mult));
 }
 
 // Elite ("champion") trash: a per-mob chance to roll a beefed-up enemy — bigger, hits and
@@ -330,8 +337,12 @@ export function earlyDmgRamp(S: number): number {
 
 /** The trash REFERENCE HP: a grunt has TRASH_HP_FRACTION times it, each enemy kind its own share (data/enemies).
  *  Read from the anchor table (bosses have their own: stageBossHp / zoneBossHp). */
+/** × wave enemies' life in Normal: its stages grew from 8 waves to 16 (2026-11-16) and Normal stays a 3–4 hour
+ *  stroll (the user: "en Normal puede ser más relajado") — there a grunt falls to one or two hits. */
+export const NORMAL_TRASH_HP_MULT = 0.6;
+
 export function enemyHp(S: number): number {
-  return (GRUNT_HP_TUNE[tunePoint(S)] ?? 1) / TRASH_HP_FRACTION;
+  return ((GRUNT_HP_TUNE[tunePoint(S)] ?? 1) / TRASH_HP_FRACTION) * (S <= 100 ? NORMAL_TRASH_HP_MULT : 1);
 }
 export function enemyDamage(S: number): number {
   return DMG0 * phi(S) ** DMG_EXP * enemyDiffMult(S) * earlyDmgRamp(S);

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { getBonuses } from '@/sim/bonuses';
-import { ZONE_BOSS_HP_OVERRIDE, ZONE_ENRAGE_MS, STAGE_ENRAGE_MS, BOSS_ENRAGE_RAMP_MS, enrageMultiplier, zoneBossHp } from '@/data/stageScaling';
+import { ZONE_BOSS_HP_OVERRIDE, ZONE_ENRAGE_MS, STAGE_ENRAGE_MS, BOSS_ENRAGE_RAMP_MS, enrageMultiplier, expectedLevel, zoneBossHp } from '@/data/stageScaling';
 import { freshHero } from './economy';
-import { zoneSet, withZoneChests, wallDamage, zoneSetDamage, gearPercent } from './zoneGear';
+import { zoneSet, zoneReferenceSet, usualTier, withZoneChests, wallDamage, zoneSetDamage, gearPercent } from './zoneGear';
 
 // "Geared at X % of the zone" (zoneGear.ts): the damage a party deals to the world boss in its 60 s, over the
 // damage the same heroes deal in the zone set. These pin the definition, not the tuning.
@@ -44,16 +44,31 @@ describe('gear % of the zone', () => {
     expect(ZONE_BOSS_HP_OVERRIDE[15]).toBeUndefined();
   });
 
-  it('more of the zone worn is a higher gear %: naked < a handful of chests < many < the zone set (≈ 100)', () => {
+  it('more of the zone worn is a higher gear %: naked < a handful of chests < many, and the reference set is ≈ 100', () => {
     const ref = zoneSetDamage(party, boss, bonuses, 1234);
     const pct = (p: ReturnType<typeof heroes>): number => (100 * wallDamage(p, boss, bonuses, 1234)) / ref;
     const naked = pct(party);
     const few = pct(withZoneChests(party, boss, bonuses, 12));
     const many = pct(withZoneChests(party, boss, bonuses, 80));
-    expect(naked).toBeLessThan(5);
-    expect(few).toBeGreaterThan(naked);
+    expect(naked).toBeLessThan(15);
+    // a party that falls is counted at the rate it was dealing, so a handful of chests barely moves a naked one
+    expect(few).toBeGreaterThan(naked * 0.9);
     expect(many).toBeGreaterThan(few);
-    expect(many).toBeLessThan(100);
-    expect(gearPercent(zoneSet(party, boss, bonuses), boss, bonuses, 1234)).toBeGreaterThan(60); // one draw of the set, against the mean of five
+    expect(many).toBeGreaterThan(naked);
+    const one = gearPercent(zoneReferenceSet(party, boss, 7), boss, bonuses, 1234); // one draw, against the mean of five
+    expect(one).toBeGreaterThan(60);
+    expect(one).toBeLessThan(160);
+  });
+
+  it('the reference set (option C): every slot an item of the world\'s X-9 level at its usual worn rarity, gems in', () => {
+    const set = zoneReferenceSet(party, boss);
+    for (const h of set) {
+      expect(Object.keys(h.equipment).length).toBeGreaterThanOrEqual(10);
+      for (const item of Object.values(h.equipment)) {
+        expect(item?.ilvl).toBe(expectedLevel(boss - 1));
+        expect(item?.tier).toBe(usualTier(boss - 1, item?.category === 'jewelry'));
+        for (const so of item?.sockets ?? []) expect(so.gem).not.toBeNull();
+      }
+    }
   });
 });

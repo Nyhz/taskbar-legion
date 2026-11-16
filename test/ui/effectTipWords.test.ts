@@ -100,7 +100,7 @@ describe('what the lines say', () => {
       effectTipEntries([{ key, ...(value === undefined ? {} : { value }), ...(stacks === undefined ? {} : { stacks }) }])[0]?.lines.join(' | ') ?? '';
     expect(line('fx_mark', 20)).toBe('Marked: takes 20 % more damage from everyone until it dies.');
     expect(line('debuff_weakspot', 9)).toBe('Takes 9 % more damage for 6 s.');
-    expect(line('debuff_weaken')).toBe('Deals 15 % less damage for 6 s.');
+    expect(line('debuff_weaken')).toBe('Deals 25 % less damage for 6 s.');
     expect(line('fx_invuln')).toBe('Takes no damage for 6 s.');
     expect(line('buff_boss_frenzy', 5, 4)).toBe('Attack speed +20 % and growing (stacks: 4).');
     expect(line('buff_boss_tremor')).toBe('The ground shakes under it: its area blow comes every 6 s.');

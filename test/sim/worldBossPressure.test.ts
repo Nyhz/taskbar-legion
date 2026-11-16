@@ -94,3 +94,22 @@ describe('world-boss pressure', () => {
     }
   });
 });
+
+describe('option A: the first clear of an X-9 hands over a key', () => {
+  it('a first clear of W-9 puts one key of that world in pending; a re-clear does not', () => {
+    const w = createWorld(3, [hero('tank', 240, 60)]);
+    const S = globalStageOf(1, 4, 9);
+    w.globalStageIndex = S;
+    w.maxClearedStage = S - 1;
+    w.phase = 'boss';
+    w.enemies = [];
+    const sim = new Simulation(w);
+    const clear = (sim as unknown as { handleClear: (offline?: boolean, first?: boolean) => void }).handleClear.bind(sim);
+    clear(false);
+    expect(w.pending.keys[S + 1]).toBe(1);
+    w.pending.keys = {};
+    w.phase = 'boss';
+    clear(false);
+    expect(w.pending.keys[S + 1]).toBeUndefined();
+  });
+});
