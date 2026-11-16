@@ -1941,3 +1941,13 @@ se mide dónde quedan los muros de hoy respecto al techo nuevo (Ronda 4 del info
   escalera, al menos ascendente de requerimientos, aunque no sea tan alta.» Prioridad: horas ≈ 4/20/80/200/500+ (cada
   dificultad más larga en cada partida) → lo que pide cada muro SIEMPRE sube (mundo a mundo y dificultad a dificultad),
   tendiendo a 10→20 / 20→55 / 55→70 / 70→80 / 80→90 tanto como dejen las horas.
+- **Tras la ronda 6 · B — que la defensa importe sin suerte** (16 nov, noche). Tres respuestas del usuario:
+  1. «Tienes libertad total para tocar habilidades, cds, triggers de las habilidades, etc para alcanzar la escalera y
+     ritmo. Deberías ser capaz de tunear para que no todo dependa de la suerte. Cambiar triggers para que sean menos
+     luck based, añadir algún talento, modificar algo, etc.» → **Ronda 7**: Knight defensivo necesario desde Averno,
+     resistencia mágica necesaria, sanadora necesaria desde Infierno, con resultados consistentes (no moneda al aire).
+     Cada cambio de diseño se apunta aquí.
+  2. Nada de retoques sueltos de botín (más cofres o más rareza solo en Infierno/Averno) para cuadrar la escalera: «no
+     quiero tener que hacer ajustes aleatorios solo porque no eres capaz de encontrar una solución».
+  3. Los muros pueden pedir menos del techo («pueden ser 20-30, 30-40, 40-60 por ejemplo o algo así»), siempre
+     ascendentes. Se retoma tras resolver el punto 1, porque cambiar habilidades mueve todo lo demás.
