@@ -1891,3 +1891,14 @@ se mide dónde quedan los muros de hoy respecto al techo nuevo (Ronda 4 del info
   Tormento 80→90 % del techo). Con la escalera de saltos el equipo anterior no tumbaba ni el mundo 1 (Normal 10 → Infierno
   1: 0 de 8). Ronda 4c: con los muros en la escalera el juego no se termina (el grupo se estanca al 55–65 % del techo en
   Eterno/Tormento); ronda 4d diagnostica por qué antes de elegir palanca.
+- **El Knight defensivo, por los jefes** (16 nov): «cuanto más se avance, el Knight debería necesitar más habilidades,
+  equipo y talentos defensivos». Regla elegida: **solo en los jefes** — los jefes de etapa y de mundo pegan cada vez más
+  fuerte al frente con la dificultad; las oleadas se quedan como están. Objetivo de medida: desde Averno un Knight con
+  construcción/equipo ofensivo no pasa los muros. **Por cablear.**
+- **Daño físico/mágico de los jefes** (16 nov): fuera la moneda del 40 % por aparición (`spawnStageBoss` /
+  `spawnZoneBoss`, `rng.chance(0.4)`). **Cada jefe es una mezcla fija, en datos y visible en su ficha: 60/40 o 40/60**,
+  unos más cargados de daño mágico y otros de físico (usuario: «cada jefe tendría que ser una mezcla, intentando que
+  sean 60/40 o 40/60»). Cada golpe se reparte en esa proporción y cada parte se mitiga con su defensa. **Por cablear.**
+- **Resistencia mágica también en las oleadas: aura del Apoyo** (16 nov; usuario: «la resistencia mágica debería ser
+  necesaria siempre»). Los Apoyos ganan un aura que encanta las armas de sus aliados: mientras el Apoyo viva, parte del
+  daño de los enemigos de su oleada es mágico. Con datos, texto EN/ES y signo; el % se fija en la medida. **Por cablear.**
