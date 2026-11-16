@@ -1936,3 +1936,8 @@ se mide dónde quedan los muros de hoy respecto al techo nuevo (Ronda 4 del info
   aproximados. Menos daño de bosses y más vida supongo que ayudaría. Más vida para amenazar con alcanzar el enrage.»
   Orden: escalera (±5, como mucho ±10 apuntado) → horas aproximadas → menos daño de jefe y más vida de muro (la amenaza
   es la furia). Si no cabe, se propone otra palanca con números, sin aplicarla.
+- **Escalera ascendente, horas primero** (16 nov, noche, ronda 6 · B): con los muros en la escalera Infierno no baja de
+  ~90–130 h (×4 de cofres solo lo deja en ~70). Usuario: «Vamos a intentar alcanzar unas horas aproximadas con una
+  escalera, al menos ascendente de requerimientos, aunque no sea tan alta.» Prioridad: horas ≈ 4/20/80/200/500+ (cada
+  dificultad más larga en cada partida) → lo que pide cada muro SIEMPRE sube (mundo a mundo y dificultad a dificultad),
+  tendiendo a 10→20 / 20→55 / 55→70 / 70→80 / 80→90 tanto como dejen las horas.
