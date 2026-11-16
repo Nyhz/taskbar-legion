@@ -1159,3 +1159,113 @@ Construcción genérica (Tajo debilitante + Grito de guerra · Fuego rápido + D
 4. **Infusión casi no se usa en Infierno y Averno**:
    - (a) da igual, es de Celo;
    - (b) hacer Celo más atractivo para una sanadora media.
+
+
+## Ronda 3 · punto de control 3a: lo decidido, cableado, y una medida gruesa
+
+*16 nov 2026, de madrugada. Todavía no se ha tocado la vida de los muros: eso es el 3b.*
+
+### 1. Cambios de números
+
+| Dónde | Qué | Antes → ahora |
+|---|---|---|
+| `src/data/stageScaling.ts` `WAVES_BY_DIFFICULTY` | Oleadas por etapa | 8 / 12 / 16 / 20 / 20 → **16 / 17 / 18 / 19 / 20** |
+| `src/data/stageScaling.ts` `WAVE_SIZE_MULT_BY_DIFFICULTY` (nuevo) | Tamaño de oleada por dificultad | Normal ×0,6, el resto ×1 (mínimo 3 enemigos) |
+| `src/data/stageScaling.ts` `NORMAL_TRASH_HP_MULT` (nuevo) | Vida de los enemigos de oleada en Normal | ×0,6: allí un enemigo cae de 1–2 golpes. Las pruebas de anclaje lo admiten solo en Normal |
+| `src/data/chests.ts` | Llave en cofre de jefe de etapa | 100 % en Normal y 25 % después → **25 % en todas** |
+| `src/data/effects.ts` | Piel de piedra (reducción de daño) | 20 → 40 % → **30 → 50 %** |
+| `src/data/effects.ts` | Tajo debilitante (daño que resta al enemigo) | 15 → 25 % → **25 → 35 %** |
+| `src/data/bossKit.ts` `WORLD_BOSS_PRESSURE` | Golpe en área del jefe de mundo sobre el tanque (`blowCoeff`), de Averno a Tormento | 1,2 → **2,0 / 2,4 / 2,8** |
+
+### 2. Cambios que no son números, con su porqué
+
+- **Llave, opción A, en el juego.** `Simulation.handleClear` da una llave del mundo (`FIRST_CLEAR_KEYS` = 1) al limpiar por primera vez su X-9. La deja en `world.pending.keys` y el motor la pasa a la tienda (`addZoneKeys`). La sonda hace lo mismo. Hay test en `test/sim/worldBossPressure.test.ts`.
+- **Normal con 16 oleadas: oleadas más pequeñas y enemigos más blandos.**
+  - Con 16 oleadas, Normal se iba a 4,7–5,3 h.
+  - Solo oleadas más pequeñas no basta, porque frena la subida de nivel y de equipo: con ×0,45 seguía en 4,2–4,6 h y empezaba a fallar muros.
+  - Con oleadas ×0,6 y enemigos ×0,6 queda en 3,4–4,0 h.
+  - Lo que sí cambia la regla de «2–3 golpes» es solo Normal, que el usuario quiere relajado.
+- **Vara de «equipo de la zona», opción C, con un matiz.** El 100 % es cada hueco con un objeto del nivel del X-9 del mundo. La rareza es la habitual **de lo que se lleva puesto**: el percentil 90 de lo que cae en ese mundo, no la moda. Lleva gemas de esa rareza y, de cada hueco, la mejor de 3 piezas (`zoneReferenceSet`, en `zoneGear` y por tanto en el ajustador).
+  - Por qué: la moda literal es la pieza común que se tira, de rareza 0–1 en Infierno y 3–4 en Tormento. El jugador medio de la sonda lleva entre 3 y 50 veces su daño desde Infierno.
+  - Un muro que pidiera el 80–90 % de esa moda no sería un muro, y eso choca con la regla de exigencia de equipo.
+  - La moda literal sigue disponible con `ZONE_REF_QUANTILE=mode ZONE_REF_GEMS=0`.
+- **La medida de daño cuenta a quien cae a su ritmo.** `zoneGear.wallDamage` cuenta a un grupo que cae antes del minuto según el ritmo al que hacía daño hasta caer, no solo lo que llegó a quitar. Así el % de equipo mide el daño que da el equipo; el aguante se mide aparte. Sin esto, un grupo débil que cae a los 10 s salía con un % ridículo y la proporción se disparaba.
+- **Jugador medio**: construcción por defecto en Normal e Infierno, y desde Averno la buena fija del estudio (`PROBE_GOOD_BUILD`: Tajo debilitante + Grito de guerra · Disparo certero + Punto débil · Sanar + Luz sanadora). La sonda cambia de construcción gratis al llegar a Averno (`buildAt`). Elegí la fija y no la mejor de cada muro porque es lo que haría un jugador medio y no depende del ruido de la búsqueda. Sin mascotas.
+- **Tests actualizados**:
+  - claves y anclajes de Normal;
+  - valores del Knight en `test/sim/abilities.test.ts`, `test/sim/abilityPatch.test.ts` y `test/sim/worldBossesLate.test.ts`;
+  - textos de Tajo debilitante en `test/ui/effectTipWords.test.ts` y `test/ui/talentWords.test.ts`;
+  - prueba nueva de la vara C en `test/sim/probe/zoneGear.test.ts`.
+- `tsc`, lint y vitest en verde: 108 archivos, 990 tests (1 omitido). Las corridas largas fueron con `taskpolicy -b` y como mucho 5 procesos.
+
+### 3. Medida gruesa
+
+Cuatro semillas, de Normal 1-1 a Tormento 10-10 (`scripts/pass-measure.ts`). «Muro» = el % de la vara C que lo mata justo en 60 s.
+
+| Dificultad | Horas de esa dificultad (mediana · rango) | Objetivo | Intentos fallidos por muro (mediana) | Pelea al tumbar (s, mediana) | Equipo del grupo al tumbar (% vara C) | Muro (% vara C que lo mata en 60 s) |
+|---|---|---|---|---|---|---|
+| Normal | 4 h · 3–4 | 4 h | 0 | 25 | 29 % | 13 % |
+| Infierno | 56 h · 47–60 | 40 h | 2 | 65 | 75 % | 91 % |
+| Averno | 84 h · 67–97 | 120 h | 4 | 64 | 111 % | 117 % |
+| Eterno | 175 h · 144–238 | 230 h | 10 | 68 | 148 % | 180 % |
+| Tormento | 241 h · 206–358 | 325 h | 16 | 72 | 208 % | 255 % |
+
+Total (mediana): 565 h · por semilla [504, 554, 577, 707] · días [64, 70, 73, 89]
+
+Por muro (mediana de 4 semillas): equipo % vara C al tumbar / muro % / intentos fallidos / horas en el mundo
+Normal 1:11/12/0/0.4 2:14/11/0/0.3 3:27/13/0/0.3 4:23/8/0/0.3 5:23/8/0/0.3 6:34/10/0/0.4 7:38/13/0/0.4 8:31/14/0/0.4 9:40/14/0/0.4 10:36/18/0/0.3
+Infierno 1:40/29/2/3.1 2:37/25/2/3.4 3:52/49/1/3.4 4:70/80/4/8.8 5:70/87/1/3.9 6:83/91/2/4.4 7:84/99/0/0.8 8:100/110/2/7.6 9:85/106/2/1.3 10:111/122/6/20.3
+Averno 1:145/176/3/3.3 2:75/92/5/6.1 3:90/105/0/1.0 4:95/114/2/2.2 5:124/118/2/7.0 6:85/95/4/9.3 7:92/104/3/4.1 8:167/188/7/13.6 9:148/161/0/0.5 10:173/217/14/21.2
+Eterno 1:284/336/12/19.7 2:90/115/20/28.4 3:96/109/2/1.9 4:115/130/10/13.9 5:154/186/8/12.8 6:145/166/10/14.0 7:123/139/7/10.3 8:266/302/6/12.3 9:247/291/12/15.2 10:327/384/21/33.3
+Tormento 1:327/399/28/30.8 2:83/127/44/55.7 3:83/92/2/6.4 4:108/125/20/23.7 5:224/256/16/13.6 6:205/254/16/18.5 7:156/175/8/9.9 8:328/454/10/8.0 9:293/412/16/15.5 10:402/538/46/41.9
+
+**Sanadora** (aguante ante un muro que no muere; equipo con la vara nueva; 8 semillas):
+
+| Muro | Mecánica | Equipo 85 / 150 | Con curas (85 %): 1.ª caída · sin bajas | Priest sin curas (≥150 %): 1.ª caída · cae antes de 34 s | Knight ofensivo (85 %): 1.ª caída · sin bajas | Infusión (tiempo bajo ella) |
+|---|---|---|---|---|---|---|
+| Infierno 2-10 | Raíces | 81 / 150 % | 60 s · 100 % | 22 s · 100 % | 60 s · 100 % | 0 % |
+| Infierno 5-10 | Silencio dorado | 81 / 134 % | 23 s · 0 % | 18 s · 100 % | 22 s · 0 % | 0 % |
+| Infierno 8-10 | Hoja al rojo | 93 / 154 % | 60 s · 100 % | 28 s · 100 % | 54 s · 75 % | 0 % |
+| Averno 1-10 | Bandada | 81 / 143 % | 34 s · 12 % | 15 s · 100 % | 25 s · 0 % | 0 % |
+| Averno 4-10 | Culpa | 81 / 143 % | 59 s · 88 % | 19 s · 100 % | 56 s · 75 % | 0 % |
+| Averno 7-10 | Esporas | 81 / 146 % | 60 s · 100 % | 31 s · 88 % | 48 s · 38 % | 0 % |
+| Averno 10-10 | Espejos | 101 / 132 % | 58 s · 88 % | 19 s · 100 % | 35 s · 0 % | 0 % |
+| Eterno 4-10 | Culpa | 88 / 158 % | 60 s · 100 % | 26 s · 100 % | 54 s · 75 % | 14 % |
+| Eterno 7-10 | Esporas | 110 / 150 % | 60 s · 100 % | 35 s · 50 % | 60 s · 100 % | 37 % |
+| Eterno 10-10 | Espejos | 86 / 145 % | 58 s · 88 % | 16 s · 100 % | 49 s · 12 % | 22 % |
+| Tormento 4-10 | Culpa | 102 / 148 % | 60 s · 100 % | 35 s · 38 % | 59 s · 88 % | 38 % |
+| Tormento 7-10 | Esporas | 72 / 144 % | 60 s · 100 % | 31 s · 62 % | 60 s · 100 % | 42 % |
+| Tormento 10-10 | Espejos | 82 / 148 % | 59 s · 88 % | 28 s · 88 % | 49 s · 25 % | 34 % |
+
+Priest sin curas cae antes de 34 s en ≥75 % de las semillas: 10/13 muros; Knight ofensivo peor que con defensa (desde Averno): 6/10
+
+**Knight defensivo frente al ofensivo en margen**, con la misma Ranger y Priest buenas y 12 semillas:
+- el defensivo (Tajo debilitante + Grito de guerra) aguanta más vida de muro en 7 de 11 muros de Averno en adelante, entre un 4 y un 61 % más (Averno 7-10 ×1,30, Averno 10-10 ×1,61);
+- empata en 3 y pierde en 1 (Eterno 10-10, ×0,96).
+
+### 4. Frente a los objetivos
+
+| Objetivo | Hoy | Estado |
+|---|---|---|
+| Normal ≈ 4 h | 3–4 h (mediana 4) | ✔ |
+| Infierno ≈ 40 h | 56 h (47–60) | ✘ largo: los muros 4-10, 8-10 y 10-10 piden muchas horas |
+| Averno ≈ 120 h | 84 h | ✘ corto |
+| Eterno ≈ 230 h | 175 h | ✘ corto |
+| Tormento ≈ 325 h | 241 h | ✘ corto (total 565 h, frente a ≈ 720) |
+| Muros a ~60 s con un 80–90 % de la vara C | piden 13 % (Normal) · 91 % · 117 % · 180 % · 255 % | ✘ desde Averno piden de más; se mueren a 64–72 s porque el grupo va igual de sobrado |
+| La exigencia de equipo sube por dificultad | 29 → 75 → 111 → 148 → 208 % de la vara al tumbar | ✔ sube, pero demasiado arriba |
+| Desde Infierno no se pasa sin curas | Priest sin curas cae antes de 34 s en 10 de 13 muros | ✔ casi; flojo en Tormento 4-10 y 7-10 y Eterno 7-10 |
+| El Knight defensivo gana desde Averno | Margen mejor en 7 de 11; aguante mejor en 6 de 10 | ✔ a medias |
+
+### 5. Plan para el 3b (ajuste fino)
+
+1. **Muros a la vara C.** Poner `WORLD_WALL_MULT` mundo a mundo para que cada muro pida su objetivo de la vara en 60 s. Propuesta de escalera: Normal 15–25 %, Infierno 60–80 %, Averno 80–90 %, Eterno 85–95 %, Tormento 90–100 %.
+   - Desde Averno eso baja mucho los muros: hoy piden del 117 al 255 %, y lo que pidan de más se reparte en horas de farmeo.
+   - Hay que recuperar esas horas con lo que manda el usuario: «las horas se cuadran con la vida de muros y enemigos».
+2. **Horas.** Con muros más bajos desde Averno hay que alargar el camino:
+   - enemigos y jefes de etapa más duros desde Averno (`GRUNT_HP_TUNE` y `STAGE_BOSS_HP_TUNE`, con la ventana de 2–3 golpes como guía);
+   - o menos llaves (pasar del 25 % a algo menor desde Eterno).
+   - Infierno hay que acortarlo: de 56 a ≈ 40 h, sobre todo los muros 4-10, 8-10 y 10-10.
+3. **Sanadora**: volver a medir con los muros nuevos. Si la Priest sin curas aún gana muros de Infierno con ≥150 %, golpes en área cada 4 s en Infierno, como ya decidiste. Revisar la presión en Eterno y Tormento: hoy la Priest sin curas aguanta 35 s en Tormento 4-10.
+4. **Knight**: si el margen sigue empatado en algunos muros, un poco más de golpe sobre el tanque en Eterno y Tormento.
+5. **Método**: el ajustador (`scripts/tune-pacing.ts`) ya mide contra la vara nueva. Puntos de control por dificultad, 4 semillas, con `taskpolicy -b`.
