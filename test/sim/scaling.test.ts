@@ -69,8 +69,13 @@ describe('finite stage scaling', () => {
 
 // The 2026-11-15 retune (DIFFICULTY.md §8): the 3-month game.
 describe('the retuned curves', () => {
-  it('every world-boss wall is tougher than the one before, all fifty', () => {
-    for (let w = 2; w <= 50; w++) expect(zoneBossHp(w * 10), `world ${w}`).toBeGreaterThan(zoneBossHp((w - 1) * 10));
+  it('every world-boss wall is tougher than the one before inside its difficulty, and a difficulty opens near the last', () => {
+    // The ladder (rounds 4c–4e, 2026-11-16): a difficulty's world 1 asks the same share of nearly the same ceiling as
+    // the previous world 10 (it starts where the last one ended), so measured asks may open it a little below it.
+    for (let w = 2; w <= 50; w++) {
+      if (w % 10 === 1) expect(zoneBossHp(w * 10) / zoneBossHp((w - 1) * 10), `world ${w}`).toBeGreaterThan(0.85);
+      else expect(zoneBossHp(w * 10), `world ${w}`).toBeGreaterThan(zoneBossHp((w - 1) * 10));
+    }
     expect(WORLD_WALL_MULT).toHaveLength(50);
   });
 

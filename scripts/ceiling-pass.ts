@@ -10,6 +10,7 @@ import { appendFileSync, writeFileSync } from 'node:fs';
 import { newProbeRun, advanceProbe, probeResult, DEFAULT_CONFIG, type ProbeConfig } from '../test/sim/probe/loop';
 import { gradualCeilingDamage, wallDamage, ceilingTierRange } from '../test/sim/probe/zoneGear';
 import { partyWithBuild, PROBE_DEFAULT_BUILD, PROBE_GOOD_BUILD } from '../test/sim/probe/builds';
+import { SURVIVAL_NEED } from '../test/sim/probe/gear';
 import { zoneBossHp } from '@/data/stageScaling';
 import type { HeroConfig } from '@/sim/loadout';
 import type { Bonuses } from '@/sim/bonuses';
@@ -42,6 +43,10 @@ const r = probeResult(run, cfg);
 if (process.env.CP_SNAP !== undefined) writeFileSync(process.env.CP_SNAP, JSON.stringify({ seed: SEED, arrive, last }));
 process.stdout.write(`seed ${SEED}: probe ${r.totalActiveHours.toFixed(0)} h in ${((Date.now() - t0) / 1000).toFixed(0)} s — measuring the ceiling\n`);
 
+// The ceiling set is dressed by the plain role score: the life the probe's heroes learned to ask for at the walls
+// (gear.SURVIVAL_NEED, end-of-run values by now) is the probe player's habit, not part of the ceiling.
+SURVIVAL_NEED.clear();
+
 function measure(snap: Snap, S: number): { ask: number; pct: number } {
   const party = partyWithBuild(snap.party, S > 200 ? PROBE_GOOD_BUILD : PROBE_DEFAULT_BUILD);
   const ceil = gradualCeilingDamage(party, S, snap.bonuses, MEASURE_SEED);
@@ -59,7 +64,7 @@ const walls = r.milestones.map((m) => {
     stage: m.stage, hours: m.hoursOnWorld, fails: m.bossFails, fight: m.bossFightSec, keyless: m.keylessHours, held: m.heldHours ?? 0,
     topPieces: m.gear.topTierPieces, meanTier: m.gear.meanTier, slots: m.gear.slots, gems: m.gear.gems, sockets: m.gear.sockets,
     ceilFrom: range.from, ceilTo: range.to,
-    askArrive: ma?.ask, askKill: mk?.ask, pctArrive: ma?.pct, pctKill: mk?.pct, level: m.partyLevel,
+    askArrive: ma?.ask, askKill: mk?.ask, pctArrive: ma?.pct, pctKill: mk?.pct, level: m.partyLevel, cube: m.cube,
   };
 });
 appendFileSync(OUT, JSON.stringify({ seed: SEED, frontier: run.state.frontier, gaveUp: run.gaveUp, completed: r.completed, stalledAt: r.stalledAtStage, hours: r.difficultyActiveHours, days: r.totalCalendarDays, fails: r.totalBossFails, walls, sec: (Date.now() - t0) / 1000 }) + '\n');

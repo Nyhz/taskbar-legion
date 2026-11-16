@@ -313,15 +313,24 @@ export function wallCurveMult(S: number): number {
 // wall→months response is hypersensitive near the gear ceiling, so values are tuned against the
 // progression probe (npm run probe), NOT derived analytically. Worlds past 50 fall back to the
 // S-curve generator (wallCurveMult).
-// Retuned 2026-11-16 (round 3, checkpoint 3b) for the hours per difficulty (≈ 4 / 40 / 120 / 230 / 325, 4 seeds of
-// the probe, scripts/pass-measure.ts): the 3a table × 1 / 0.75 / 1.25 / 1.25 / 1.5 by difficulty, Torment's last two
-// walls held lower (they took 100–230 h each at the common factor). Docs: PACING_REPORT.md round 3 · 3b.
+// THE LADDER (user, 2026-11-16, rounds 4c–4e: «manda la escalera»; a game longer than ≈ 720 h is accepted): each wall
+// asks, as a % of its zone's GRADUAL CEILING (the 60 s of damage of a set at the zone's top rarity, item level, mid
+// rolls and gems — climbing within a difficulty from the world-1 rarity to the world-10 one; test/sim/probe/zoneGear
+// gradualCeilingDamage), a share rising in a straight line from world 1 to world 10, and each difficulty STARTS WHERE
+// THE PREVIOUS ONE ENDED (round 4e): Normal 10→20 %, Hell 20→55 %, Inferno 55→70 %, Eternal 70→80 %, Torment 80→90 %.
+// Fitted (round 4e) with the probe that plays like a player — Cube, life when it dies, gems counted — in three passes
+// of 3 seeds (scripts/ceiling-pass.ts, scripts/wall-ask.ts: the measured ask on arrival, median, × target ÷ ask).
+// Hell 1, Eternal 1 and Torment 1 sit a hair under the wall before them (same share of nearly the same ceiling).
+// Docs: PACING_REPORT.md rounds 4c–4e. Before it (round 3 · 3b, tuned for the hours ≈ 4 / 40 / 120 / 230 / 325):
+// 0.27 0.193 0.2 0.16 0.16 0.135 0.14 0.16 0.141 0.15 · 0.167 0.293 0.647 0.938 0.96 0.96 0.938 0.938 1.03 1.19 ·
+// 2.15 2.29 2.45 2.6 2.92 3.55 4.35 5.21 6.11 7.12 · 8.1 8.99 9.95 11.1 12.6 14.1 16.1 18.9 20.9 23.4 ·
+// 30.5 33.8 39.9 48.4 55.7 63 74.8 89.4 88.4 90.
 export const WORLD_WALL_MULT: readonly number[] = [
-  0.27, 0.193, 0.2, 0.16, 0.16, 0.135, 0.14, 0.16, 0.141, 0.15,
-  0.167, 0.293, 0.647, 0.938, 0.96, 0.96, 0.938, 0.938, 1.03, 1.19,
-  2.15, 2.29, 2.45, 2.6, 2.92, 3.55, 4.35, 5.21, 6.11, 7.12,
-  8.1, 8.99, 9.95, 11.1, 12.6, 14.1, 16.1, 18.9, 20.9, 23.4,
-  30.5, 33.8, 39.9, 48.4, 55.7, 63, 74.8, 89.4, 88.4, 90,
+  0.421, 0.372, 0.379, 0.592, 0.574, 0.585, 0.661, 0.679, 0.697, 0.701,
+  0.577, 0.82, 1.06, 1.31, 1.82, 2.1, 2.91, 3.58, 4.29, 4.65,
+  5.03, 5.07, 7.83, 9.25, 11.7, 13.9, 16.1, 17, 20.2, 22.5,
+  21, 26.3, 31.5, 36.3, 43.3, 47.5, 54.5, 60.1, 63.4, 66.1,
+  63.2, 81.6, 123, 164, 189, 208, 238, 269, 304, 307,
 ];
 export function wallWorldMult(S: number): number {
   return WORLD_WALL_MULT[worldOf(S) - 1] ?? wallCurveMult(S);

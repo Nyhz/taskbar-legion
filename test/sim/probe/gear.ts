@@ -3,8 +3,9 @@
 // The "average player" greedily equips any item that raises a hero's role-weighted power
 // score for its slot, routing each piece to the hero it helps most (weapon class-lock
 // respected; defensive armor naturally lands on the tank, offensive on the DPS, via the
-// score deltas). Gems are socketed into open sockets where they add the most. No Cube
-// crafting, no re-rolls, no inventory hoarding — looted-not-equipped items are discarded.
+// score deltas). Gems are socketed where they add the most (replacing a worse one, as the game allows). Since round 4e
+// (2026-11-16) the leftovers go to the Cube (probe/cubePolicy.ts), a hero who keeps dying at a wall asks its gear for
+// more life (SURVIVAL_NEED), and a piece is judged with its sockets filled the way the piece it replaces has them.
 //
 // Power is a cheap heuristic used ONLY to pick upgrades among thousands of micro-decisions;
 // actual progression gates (walls) are decided by the REAL combat sim (combat.ts), so the
@@ -28,14 +29,41 @@ export function heroScore(config: HeroConfig, party: readonly HeroConfig[]): num
   const dps = eff.attackDamage * eff.attackSpeed * (1 + (eff.critChance / 100) * (eff.critDamage / 100));
   const ehp = eff.health * (1 + eff.armor / 300 + eff.magicResist / 300);
   const heal = eff.health * (eff.healPower / 100);
+  let score: number;
   switch (config.classKey) {
     case 'knight':
-      return ehp * 0.7 + dps * 0.3;
+      score = ehp * 0.7 + dps * 0.3;
+      break;
     case 'priest':
-      return ehp * 0.4 + heal * 0.4 + dps * 0.2;
+      score = ehp * 0.4 + heal * 0.4 + dps * 0.2;
+      break;
     default: // ranger / dps
-      return dps * 0.8 + ehp * 0.2;
+      score = dps * 0.8 + ehp * 0.2;
   }
+  // SURVIVAL (round 4e): a hero that keeps dying before the minute is up deals nothing after it — below the life its
+  // class was seen to need at the walls, every piece of its worth shrinks in proportion, so the player buys life first.
+  const need = SURVIVAL_NEED.get(config.classKey) ?? 0;
+  return need > 0 && ehp < need ? score * (ehp / need) : score;
+}
+
+/** The effective life the score weighs (health cushioned by armour and magic resist). */
+export function heroEhp(config: HeroConfig, party: readonly HeroConfig[]): number {
+  const eff = aggregate(heroBaseStats(config.classKey, config.level), heroStaticMods(config, partyAuraMods(party)));
+  return eff.health * (1 + eff.armor / 300 + eff.magicResist / 300);
+}
+
+/** The effective life each class was seen to need at the walls (class → ehp), raised by the probe when a hero of
+ *  that class dies before the enrage (loop.ts). Reset at every new run (newProbeRun). Round 4e, 2026-11-16: the
+ *  Ranger chose damage only and went to Eternal 8 with 541 life, dying 18–25 s into every attempt. */
+export const SURVIVAL_NEED = new Map<string, number>();
+
+/** `item` judged as it will be worn: its empty sockets filled with the gems the piece it replaces carries (a player
+ *  fills a new piece from the gems that keep dropping; until round 4e a bare piece lost to a gemmed one). */
+function asWorn(item: ItemInstance, old: ItemInstance | undefined): ItemInstance {
+  if (old === undefined || item.sockets.every((s) => s.gem !== null)) return item;
+  const spare = old.sockets.map((s) => s.gem).filter((g) => g !== null);
+  let k = 0;
+  return { ...item, sockets: item.sockets.map((s) => (s.gem !== null ? s : { gem: spare[k++] ?? null })) };
 }
 
 function canEquip(config: HeroConfig, item: ItemInstance): boolean {
@@ -82,7 +110,7 @@ export function equipItems(party: HeroConfig[], items: readonly ItemInstance[]):
     for (let i = 0; i < party.length; i++) {
       const cfg = party[i];
       if (cfg === undefined || !canEquip(cfg, item)) continue;
-      const delta = heroScore(withEquip(cfg, item), party) - heroScore(cfg, party);
+      const delta = heroScore(withEquip(cfg, asWorn(item, cfg.equipment[item.slot])), party) - heroScore(cfg, party);
       if (delta > bestDelta) {
         bestDelta = delta;
         bestIdx = i;

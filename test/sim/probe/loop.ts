@@ -25,7 +25,8 @@
 // months"), per difficulty, with the monotonic check.
 
 import { measureFarm, measureBoss, type FarmSample } from './combat';
-import { openCaptured, equipItems, socketGems, partyPower } from './gear';
+import { openCaptured, equipItems, socketGems, partyPower, heroEhp, SURVIVAL_NEED } from './gear';
+import { newCubeBag, cubeStep, type CubeBag } from './cubePolicy';
 import { wallDamage, zoneSetDamage } from './zoneGear';
 import { freshHero, syncGrowth, buyTech, applyBuild } from './economy';
 import { partyWithBuild, PROBE_GOOD_BUILD, type PartyBuild } from './builds';
@@ -36,7 +37,7 @@ import { chestDropChance } from '@/sim/chests';
 import { offlineCapMs } from '@/sim/offline';
 import { classDef, CLASS_KEYS } from '@/data/classes';
 import { MAX_GLOBAL_STAGE, difficultyIndexOf, DIFFICULTY_KEYS, worldBossStageOf } from '@/data/difficulties';
-import { worldOf, zoneBossHp, ELITE_CHANCE, ELITE_CHEST_MULT, ELITE_MIN_STAGE } from '@/data/stageScaling';
+import { worldOf, zoneBossHp, ELITE_CHANCE, ELITE_CHEST_MULT, ELITE_MIN_STAGE, ZONE_ENRAGE_MS } from '@/data/stageScaling';
 import type { HeroConfig } from '@/sim/loadout';
 import type { ItemInstance } from '@/sim/items';
 import type { GemInstance } from '@/data/gems';
@@ -60,6 +61,8 @@ export interface ProbeConfig {
    *  since the attempt, or `maxWaitSec` of active play went by (a player tries again some day). Meanwhile it keeps its
    *  keys and farms the world's X-9. `false` = the old probe, an attempt with every key. */
   retryRule?: { bossHpAtMost: number; powerGain: number; maxWaitSec: number } | false;
+  /** The player uses the Cube (probe/cubePolicy.ts; round 4e). false = the old probe, which threw away all it did not wear. */
+  cube?: boolean;
   /** Tooling (the anchors): do nothing but farm this stage — no progress, no attempts — until the time is up.
    *  "A party in the full gear of the world it has just left" is a party that stayed there a few more hours. */
   farmStage?: number;
@@ -144,6 +147,7 @@ export interface State {
   build?: PartyBuild; // the build every hero of a class plays (cfg.build)
   away: { gold: number; xp: number }; // what away-time banked (it counts for the gold and experience pets' objectives)
   pets: Record<string, PetCounters>; // owned pets (cfg.pets 'median') → the counters when each was found
+  cube?: CubeBag; // what the player keeps for the Cube and what it has made (cfg.cube)
 }
 
 /** The counters a pet objective reads, as they stood when the pet was found. */
@@ -180,6 +184,7 @@ export interface WorldMilestone {
   firstKeyHours: number; // active hours from reaching the wall (W-9 cleared) to the first attempt
   gear: GearState; // what the party wore when the wall fell
   gearPct?: number; // its gear % of the zone at the kill (zoneGear.ts) — only with cfg.measureGear
+  cube?: { made: number[]; gemsMade: number[]; transfigured: number; wornFromCube: number }; // the Cube so far, and what the party wears of it
   wallPct?: number; // the wall's life as a % of the zone set's 60 s of damage: the gear % that kills it at exactly 60 s
 }
 
@@ -254,6 +259,11 @@ function addXp(state: State, perHero: number): void {
  *  as it stands once it has equipped and socketed what it wanted. Never changes the run. */
 export const lootWatch: { fn?: (dropStage: number, type: ChestType, loot: { items: readonly ItemInstance[]; gems: readonly GemInstance[] }, party: readonly HeroConfig[]) => void } = {};
 
+function cubeSummary(bag: CubeBag, party: readonly HeroConfig[]): { made: number[]; gemsMade: number[]; transfigured: number; wornFromCube: number } {
+  const worn = party.flatMap((h) => Object.values(h.equipment).map((i) => i?.id ?? ''));
+  return { made: [...bag.madeItems], gemsMade: [...bag.madeGems], transfigured: bag.transfigured, wornFromCube: worn.filter((id) => bag.madeIds.has(id)).length };
+}
+
 function grantLoot(state: State, dropStage: number, captured: Record<ChestType, number>, bonusesGemDrop: ReturnType<typeof getBonuses>, freezeGear = false): void {
   const allowed = state.party.map((p) => p.classKey);
   for (const type of CHEST_TYPES) {
@@ -264,6 +274,7 @@ function grantLoot(state: State, dropStage: number, captured: Record<ChestType, 
     const loot = openCaptured(type, dropStage, open, state.seed, state.draw, bonusesGemDrop, allowed);
     if (!freezeGear && equipItems(state.party, loot.items)) state.dirty = true;
     if (!freezeGear && socketGems(state.party, loot.gems)) state.dirty = true;
+    if (!freezeGear && state.cube !== undefined && cubeStep(state.cube, state.party, dropStage, loot.items, loot.gems, bonusesGemDrop, allowed)) state.dirty = true;
     lootWatch.fn?.(dropStage, type, loot, state.party);
     if (loot.keys > 0) {
       const boss = worldBossStageOf(dropStage); // a key belongs to the world its chest dropped in
@@ -399,6 +410,7 @@ export interface ProbeRun {
 }
 
 export function newProbeRun(seed: number, cfg: ProbeConfig = DEFAULT_CONFIG): ProbeRun {
+  SURVIVAL_NEED.clear();
   return {
     state: {
       party: [freshHero('h0', 'knight', 1, cfg.build?.knight)],
@@ -418,6 +430,7 @@ export function newProbeRun(seed: number, cfg: ProbeConfig = DEFAULT_CONFIG): Pr
       build: cfg.build,
       away: { gold: 0, xp: 0 },
       pets: {},
+      ...(cfg.cube === false ? {} : { cube: newCubeBag() }),
     },
     activeLeft: cfg.activeHoursPerDay * 3600,
     milestones: [],
@@ -536,6 +549,23 @@ export function advanceProbe(run: ProbeRun, cfg: ProbeConfig = DEFAULT_CONFIG): 
           const res = measureBoss(fighters, target, cfg.measureSeed + run.attempts, bonuses, undefined, cfg.fixedRunSeed === false ? cfg.measureSeed + run.attempts : state.seed);
           run.attempts += 1;
           cfg.trace?.(`${(state.activeSec / 3600).toFixed(2)}h\tattempt ${target} ${res.win ? 'WIN' : 'lost'} lvl ${state.party.map((h) => h.level).join('/')} top T${topTier(state.party)} fight ${res.fightSec.toFixed(0)}s minHP ${(res.minHpFrac * 100).toFixed(0)}%`);
+          // A hero that fell before the enrage asks its gear for more life (gear.SURVIVAL_NEED): enough to have stood
+          // the minute at the rate it was losing it; the player then re-picks from what it keeps for the Cube.
+          let needMoved = false;
+          for (const [cls, sec] of Object.entries(res.deathSec ?? {})) {
+            if (sec >= ZONE_ENRAGE_MS / 1000) continue;
+            const hero = state.party.find((h) => h.classKey === cls);
+            if (hero === undefined) continue;
+            const want = heroEhp(hero, state.party) * Math.min(3, ZONE_ENRAGE_MS / 1000 / Math.max(5, sec));
+            if (want > (SURVIVAL_NEED.get(cls) ?? 0)) {
+              SURVIVAL_NEED.set(cls, want);
+              needMoved = true;
+            }
+          }
+          if (needMoved) {
+            if (state.cube !== undefined) equipItems(state.party, state.cube.items);
+            state.dirty = true;
+          }
           const spent = res.win ? Math.max(30, res.killSec) : cfg.lostAttemptSec;
           run.activeLeft -= spent;
           state.activeSec += spent;
@@ -564,6 +594,7 @@ export function advanceProbe(run: ProbeRun, cfg: ProbeConfig = DEFAULT_CONFIG): 
               hoursOnWorld: (state.activeSec - run.lastWorldClearSec) / 3600,
               keylessHours: run.keylessSec / 3600,
               heldHours: run.heldSec / 3600,
+              ...(state.cube !== undefined ? { cube: cubeSummary(state.cube, state.party) } : {}),
               firstKeyHours: (run.firstAttemptSec - run.wallReachedSec) / 3600,
               gear,
               ...zone,
