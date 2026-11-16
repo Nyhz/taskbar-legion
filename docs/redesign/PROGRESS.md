@@ -1855,3 +1855,30 @@ pasivo de Infusión lo recibe SOLO quien es curado (ella también si se cura).
   Infierno 4-5 / 6-5: 0–2 %. Hoy las curas apenas se lanzan porque casi nadie baja de los umbrales: es la falta de
   presión que corrige el 2B; con más presión el uso subirá.
 - Capturas: `tools/assets/out/preview/priest2_*.png`.
+
+### Decisiones del usuario tras la pasada de la noche (16 nov, mañana) — la vara, los drops y las llaves
+
+Respuestas a las preguntas del informe de la ronda 3 (3b) y a una ronda nueva sobre progresión. **Por cablear**: antes
+se mide dónde quedan los muros de hoy respecto al techo nuevo (Ronda 4 del informe de ritmo).
+
+- **El 100 % del equipo de una zona es su techo realista**: cada hueco con la rareza más alta que cae en ese mundo de
+  esa dificultad, al nivel de objeto máximo del mundo, con tiradas de afijo medias y gemas de esa rareza en todos los
+  huecos. Sustituye a la vara C (percentil 90), que daba muros al 4 549 % y no tenía techo.
+- **Escalera suave** (lo que pide cada muro para caer en 60 s, % del techo): Normal 10–20 · Infierno 40–55 · Averno
+  55–70 · Eterno 65–80 · Tormento 75–90. **Dentro de cada dificultad sube del mundo 1 al 10.**
+- **Al cambiar de dificultad**, el equipo del final de la anterior basta para uno o dos muros; desde el tercero hay que
+  farmear la dificultad nueva.
+- **Drops**: las dos rarezas más altas de cada dificultad, a la mitad en su mundo 10 (2 % → 1 %, 7,5 % → 4 %); lo quitado
+  pasa a las rarezas medias. La rareza nueva sigue asomando en el mundo 2. Medido antes del cambio: en todo Tormento
+  caen unas 60–75 piezas T8 y el grupo acaba con 21–22 T8 de 30 huecos.
+- **Cofres de jefe con mejor tabla**: el de jefe de etapa ×1,5 en las dos rarezas más altas, el de jefe de mundo ×3
+  (hoy los tres cofres usan la misma tabla).
+- **La sanadora con mucho equipo en Infierno**: se acepta (ir muy sobrado salta la mecánica). Se vuelve a medir con la
+  escalera nueva. El Desgarro sigue apagado.
+- **Dispersión entre jugadores**: muros más parejos. La escalera debería reducirla sola; si no, se ajusta muro a muro.
+- **Llaves**: siguen como hoy (entrada al muro: una garantizada al limpiar el X-9, luego el 25 % de los cofres de jefe de
+  etapa). **Sin aviso de preparación en el juego**: el jugador aprende probando. El problema de los 36 intentos fallidos
+  era de la sonda, que entraba con cada llave (96 % del tiempo de Eterno/Tormento «sin llave»; los intentos solo
+  costaban ~8 h de 314). **Jugador medio nuevo** (usuario: «farmear y no gastar llaves en intentos que sabe que no van
+  a pasar»): intenta con la primera llave; tras perder, solo reintenta si el jefe se quedó al 15 % de vida o menos, o si
+  su equipo ha subido un 10 % desde el intento anterior.
