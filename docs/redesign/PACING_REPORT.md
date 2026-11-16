@@ -2464,3 +2464,83 @@ con el Knight ofensivo / con la Priest sin curas.
 3. **El Knight defensivo y la resistencia mágica pesan poco** con el daño de jefe bajo.
 4. **Tormento dentro de la dificultad**: los mundos 2–5 llevan 75–135 h y los 7, 8 y 10 caen al llegar.
 5. Las tablas de golpe se escribieron con el Knight de la penúltima pasada; en la final el Knight llega algo distinto.
+
+## Ronda 7 · que la defensa importe sin depender de la suerte
+
+*16 nov 2026, noche. Herramienta nueva: `scripts/luck-diag.ts` (resumen: `scripts/luck-summary.py`). Las partidas de la
+ronda 6 (`snap16-1..3`), en sus 9 muros de Averno 3/5/8, Eterno 3/5/8 y Tormento 3/5/8, cada uno con su vida actual
+multiplicada por 0,6–1,25, y cinco grupos: el de la sonda (su construcción), con un Knight ofensivo (Grito de guerra +
+Sed de sangre), con un Knight de Piel de piedra + Baluarte, con una Priest sin curas (Nova + Escudo sagrado) y sin
+resistencia mágica en el equipo. 12–16 combates por casilla. Los muros y las horas NO se han re-afinado.*
+
+### 1. De dónde salía la suerte (antes)
+
+| | Averno | Eterno | Tormento |
+|---|---|---|---|
+| Derrotas del grupo de la sonda (muro a su vida) por supervivencia / por la furia | 13 / 30 | 0 / 78 | 0 / 87 |
+| Primera en caer en esas derrotas | Ranger 34 de 43 | Ranger 36, Priest 27, Knight 15 | Ranger 41, Priest 23, Knight 23 |
+| Coherencia (los combates que coinciden con la mayoría) | 0,81 | 0,82 | 0,85 |
+
+- **La Ranger moría a los dados.** Desde Infierno, la mitad de los golpes normales del jefe de mundo iban a la retaguardia,
+  al azar; ella tiene una séptima parte de la vida del Knight.
+- **En la carrera contra la furia**, la vida del muro en la que el grupo pasaba del 80 % al 20 % de victorias ocupaba
+  ±6 % (mediana): dentro de esa franja el mismo grupo ganaba o perdía según los críticos.
+- **Los dados por combate** (bloqueos del Knight, curas críticas, golpes que van atrás, críticos) no separaban las victorias
+  de las derrotas: la suerte estaba repartida por todo el combate, no en un dado concreto.
+- **La defensa no contaba.** El Knight de Piel de piedra + Baluarte ganaba MENOS que el de la construcción buena (Tajo
+  debilitante + Grito de guerra), y el ofensivo casi lo mismo. Sin resistencia mágica se perdía poco.
+
+### 2. Cambios (detalle en PROGRESS «Ronda 7»)
+
+| Qué | Antes | Ahora |
+|---|---|---|
+| Cuándo salta una habilidad | Una regla | Una para oleadas y otra contra jefes (`firesBoss`): las defensas esperan al anuncio del Golpe demoledor |
+| Golpe pesado del jefe de mundo | — | Golpe demoledor desde Averno: cada 24 s desde los 8 s, 2 s de anuncio, sin bloqueo; 1,2 / 1,5 / 1,7 × la vida efectiva del Knight medio al de delante; sacudida mágica a los de detrás |
+| Golpes normales del jefe a la retaguardia | 50–55 % desde Infierno | 0 % |
+| Presión continua sobre el tanque (% de su vida por segundo) | 1 / 2 / 4 / 6 / 8 | 1 / 2 / 3 / 4,5 / 6 |
+| Bloqueo, críticos, multigolpe de los héroes | Dados | Tiradas firmes (contador) |
+| Mantener la línea | 26 s | 24 s |
+| Knight de la sonda desde Averno | Tajo + Grito de guerra | Piel de piedra + Tajo |
+
+### 3. Los cuatro objetivos, antes → ahora
+
+Victorias con el muro al 80 % y al 90 % de su vida actual (la construcción buena gana ahí con holgura).
+
+| | Construcción buena | Knight ofensivo | Priest sin curas | Sin resistencia mágica |
+|---|---|---|---|---|
+| Averno, antes | 99 / 95 % | 92 / 78 % | 28 / 13 % | 90 / 79 % |
+| Averno, ahora | 92 / 75 % | 31 / 6 % | 0 / 0 % | 62 / 50 % |
+| Eterno, antes | 100 / 90 % | 89 / 72 % | 8 / 3 % | 92 / 79 % |
+| Eterno, ahora | 95 / 72 % | 34 / 27 % | 0 / 0 % | 57 / 44 % |
+| Tormento, antes | 99 / 84 % | 94 / 62 % | 17 / 8 % | 99 / 75 % |
+| Tormento, ahora | 100 / 81 % | 22 / 12 % | 17 / 5 % | 72 / 53 % |
+
+- **1. Sanadora necesaria desde Infierno:** se mantiene (sin curas no se gana desde Averno salvo algún muro de
+  Tormento con el muro muy bajo).
+- **2. Knight defensivo necesario desde Averno:** ✔. Con el equipo con que el grupo tumba el muro, el ofensivo gana
+  un 6–34 % donde el defensivo gana un 72–100 %, y la distancia crece hacia Tormento. Cae él primero: el Golpe demoledor
+  lo mata (Última defensa le salva del primero de los tres).
+- **3. Resistencia mágica:** ✔ contra los jefes mágicos, apenas contra los físicos, como dice su ficha (media de
+  victorias en todas las vidas de muro):
+
+  | | Jefe 60 % mágico, con / sin RM | Jefe 60 % físico, con / sin RM |
+  |---|---|---|
+  | Averno | 0,36 → 0,21 (antes 0,64 → 0,49)* | 0,81 → 0,56 |
+  | Eterno | 0,73 → 0,33 (antes 0,51 → 0,38) | 0,89 → 0,84 |
+  | Tormento | 0,78 → 0,47 (antes 0,43 → 0,36) | 0,93 → 0,84 |
+
+  *Averno medido antes de bajar su sacudida a 0,2; con 0,2, sin resistencia mágica el grupo gana 62 / 50 % frente a 92 / 75 %.
+- **4. Poca suerte:** coherencia con el muro a su vida 0,92–0,96 en Eterno y Tormento (antes 0,82–0,85); 0,76 en Averno,
+  donde el grupo queda justo en el umbral. La franja 80 % → 20 % de victorias pasa de ±6 % a ±4,5 % de vida del muro
+  (mediana; medida en pasos de 0,1, así que no baja de ahí). Lo que queda de suerte son las elecciones al azar de las
+  mecánicas (a quién cae el rayo, a quién marca la Culpa).
+
+### 4. Lo que queda
+
+- **Horas.** Con la misma vida de muro el grupo gana menos (el Knight cambia daño por defensa y entra el Golpe
+  demoledor): la construcción buena gana ahora el 27–44 % de los combates con el muro a su vida actual (antes 40–70 %). Las horas
+  subirán: hay que re-afinar muros y horas.
+- **La sonda y la resistencia mágica.** La Ranger de la sonda lleva poca; la sonda sube su vida efectiva (ponderada
+  por la mezcla del jefe) cuando muere antes del minuto, así que debería aprender a llevarla, pero no lo he medido en
+  una partida entera.
+- **Nombres y arte provisionales:** «Golpe demoledor» y su aspecto (los dientes de roca del Golpe de suelo).

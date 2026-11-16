@@ -2,7 +2,7 @@ import type { Rng } from './rng';
 import type { Combatant, WorldState } from './world';
 import type { ResolvedAbility } from './loadout';
 import { abilityDef } from '@/data/abilities';
-import { bossMagicShare, worldBossPressureAt, type BossRank } from '@/data/bossKit';
+import { bossMagicShare, crushAt, CRUSH, worldBossPressureAt, type BossRank } from '@/data/bossKit';
 import { armBoss, bossKit } from './bossMechanics';
 import { pickEnemyKind, supportAuras, traitsOf, SUPPORT_KIND, TRAIT_TUNING, type EnemyKind, type EnemyRole } from '@/data/enemies';
 import { difficultyIndexOf } from '@/data/difficulties';
@@ -28,6 +28,8 @@ import {
   enrageRampMs,
   zoneBossHit,
   stageBossHit,
+  crushHit,
+  crushShock,
 } from '@/data/stageScaling';
 
 // Enemy spawning. Waves of 2–8 mixed kinds spawn ahead of the party and advance.
@@ -188,6 +190,14 @@ function dressBoss(boss: Combatant | undefined, kit: ReturnType<typeof bossKit>,
   boss.magicShare = bossMagicShare(S, rank);
   // What it deals the FRONT hero is anchored to the average tank's life (data/stageScaling, round 6).
   boss.frontHit = rank === 'world' ? zoneBossHit(S) : stageBossHit(S);
+  // Its Crushing Blow, when it wields one (data/bossKit CRUSH, round 7): what it deals the front hero and its magic shock.
+  if (rank === 'world') {
+    const c = crushAt(S);
+    if (c.tankLife > 0) {
+      boss.crushHit = crushHit(S, c.tankLife);
+      boss.crushShock = crushShock(S, c.backLife, boss.magicShare, CRUSH.shockMagicRef);
+    }
+  }
   boss.enrageRampMs = enrageRampMs(difficultyIndexOf(S));
   armBoss(boss);
 }

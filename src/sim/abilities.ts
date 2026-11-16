@@ -18,6 +18,7 @@ import { enrageMultiplier, MAX_DAMAGE_REDUCTION } from '@/data/stageScaling';
 import { foeMagicShare, mixedMitigation } from './damageMix';
 import { healPowerEffectiveness } from '@/data/difficulties';
 import { HEAL_CLEANSE_COUNT, HEAL_URGENT_FRAC } from '@/data/healing';
+import { steadyRoll } from './steady';
 
 // Cooldown tracking + AI cast logic. Abilities apply declarative effects; power
 // effects (damage/heal/shield/dot/hot) scale off the caster/target stats, stat
@@ -158,6 +159,33 @@ export function isAreaBlow(ability: AbilityDef): boolean {
   return (ability.castTimeMs ?? 0) > 0 && ability.power?.splashCoeff !== undefined;
 }
 
+/** The targets that pick ONE ally (a heal, a shield on whoever needs it): braced against a boss's blow they land on
+ *  the hero it will strike instead. */
+const ONE_ALLY_TARGETS: ReadonlySet<AbilityTarget> = new Set<AbilityTarget>(['hurtAlly', 'triageAlly', 'mostHitAlly', 'lowestAllyHp', 'harmedAlly', 'tank']);
+
+/** A boss of the fight — a living boss among `enemies` (from a hero's side). */
+function bossOf(enemies: readonly Combatant[]): Combatant | undefined {
+  return enemies.find((e) => e.alive && e.isBoss === true);
+}
+
+/** A blow: an enemy ability with a cast bar that ends in damage on the party. */
+function isBlow(def: AbilityDef): boolean {
+  return (def.castTimeMs ?? 0) > 0 && (def.power !== undefined || def.special?.kind === 'crush');
+}
+
+/** Whether a boss is winding up a blow on the party right now — its HEAVY blow when `heavy` (or any blow when it
+ *  wields no heavy one). A blow: an ability with a cast bar that ends in damage on the party. */
+export function bossWindingUp(enemies: readonly Combatant[], heavy: boolean): boolean {
+  for (const e of enemies) {
+    if (!e.alive || e.isBoss !== true || e.casting === undefined) continue;
+    const key = e.casting.key;
+    const def = e.abilities.find((a) => a.def.key === key)?.def;
+    if (def === undefined || !isBlow(def)) continue;
+    if (!heavy || def.heavy === true || !e.abilities.some((a) => a.def.heavy === true)) return true;
+  }
+  return false;
+}
+
 const lifeFrac = (c: Combatant): number => (c.maxHp > 0 ? c.hp / c.maxHp : 1);
 const tough = (c: Combatant): boolean => c.isElite === true || c.isBoss === true;
 
@@ -278,19 +306,37 @@ function fireRuleMet(rule: FireRule, ability: AbilityDef, caster: Combatant, all
     }
     case 'harmedOrBelow':
       return allies.some((a) => a.alive && (isHarmed(a) || lifeFrac(a) < rule.frac || (rule.orHeavyHit === true && recentlyHitHard(a) && a.hp < a.maxHp)));
+    case 'bossWindup':
+      return bossWindingUp(enemies, rule.heavy === true);
   }
+}
+
+/** The rules a hero ability fires by in this fight: its boss rules while a boss is in it (round 7), else its one
+ *  rule. Undefined: it has none (the old castCondition holds). */
+function fireRules(ability: AbilityDef, enemies: readonly Combatant[]): readonly FireRule[] | undefined {
+  if (ability.firesBoss !== undefined && enemies.some((e) => e.alive && e.isBoss === true && e.abilities.some((a) => isBlow(a.def)))) return ability.firesBoss;
+  // A boss that winds up no blow at all is met by the waves' rule.
+  return ability.fires !== undefined ? [ability.fires] : undefined;
+}
+
+/** Whether a hero ability is firing now because a boss winds up its blow (it then lands on the blow's target). */
+function bracing(ability: AbilityDef, caster: Combatant, allies: Combatant[], enemies: Combatant[]): boolean {
+  if (caster.side !== 'hero' || ability.firesBoss === undefined || bossOf(enemies) === undefined) return false;
+  return ability.firesBoss.some((r) => r.when === 'bossWindup' && fireRuleMet(r, ability, caster, allies, enemies));
 }
 
 /** A rule that answers what happens to the party (a heal, a ward): it does not wait for the caster to be in
  *  reach of an enemy, unlike a buff. */
-function isReactive(ability: AbilityDef): boolean {
-  const w = ability.fires?.when;
-  return w === 'allyHit' || w === 'allyBelow' || w === 'partyHurt' || w === 'harmedOrBelow' || ability.castCondition === 'allyBelowHpPct';
+function isReactive(ability: AbilityDef, enemies: readonly Combatant[]): boolean {
+  const reactive = (w: FireRule['when'] | undefined): boolean => w === 'allyHit' || w === 'allyBelow' || w === 'partyHurt' || w === 'harmedOrBelow' || w === 'bossWindup';
+  const rules = fireRules(ability, enemies);
+  return (rules !== undefined && rules.some((r) => reactive(r.when))) || ability.castCondition === 'allyBelowHpPct';
 }
 
 function conditionMet(ability: AbilityDef, caster: Combatant, allies: Combatant[], enemies: Combatant[]): boolean {
-  if (ability.fires !== undefined && caster.side === 'hero') {
-    return enemies.some((e) => e.alive) && fireRuleMet(ability.fires, ability, caster, allies, enemies);
+  const rules = caster.side === 'hero' ? fireRules(ability, enemies) : undefined;
+  if (rules !== undefined) {
+    return enemies.some((e) => e.alive) && rules.some((r) => fireRuleMet(r, ability, caster, allies, enemies));
   }
   const cond = ability.castCondition ?? 'always';
   if (cond === 'enemyPresent') return enemies.some((e) => e.alive);
@@ -324,11 +370,11 @@ function engaged(caster: Combatant, enemies: Combatant[]): boolean {
 // range of a foe — otherwise it's blown during the stage-start walk-up and most of its
 // uptime is wasted before any fighting. Reactive heals (allyBelowHpPct) are exempt: they
 // trigger off a hurt ally, not engagement.
-function isSelfOrPartyBuff(ability: AbilityDef): boolean {
+function isSelfOrPartyBuff(ability: AbilityDef, enemies: readonly Combatant[]): boolean {
   // self / whole-party / single-ally buffs (e.g. Power Infusion on a DPS) all wait for
   // engagement so their uptime isn't wasted on the walk-up.
   if (ability.target !== 'self' && ability.target !== 'allAllies' && ability.target !== 'randomDpsAlly' && ability.target !== 'twoDpsAllies') return false;
-  return !isReactive(ability);
+  return !isReactive(ability, enemies);
 }
 
 /** The shield an ability IS about — its first effect, when that is a shield (Bulwark, Holy Shield). A shield
@@ -575,7 +621,8 @@ function applyToTarget(
   // at cast (a crit HoT boosts every tick), scaled by the caster's crit damage. So a priest
   // who stacks crit chance gets bigger heals.
   let healCrit = false;
-  if ((kind === 'heal' || kind === 'hot') && rng.chance(Math.min(1, cs.critChance / 100))) {
+  // A steady roll (sim/steady): a priest's crit chance makes every so many heals a crit, not a lucky few.
+  if ((kind === 'heal' || kind === 'hot') && steadyRoll(caster, 'healCrit', cs.critChance)) {
     healCrit = true;
     value *= 1 + cs.critDamage / 100;
   }
@@ -594,7 +641,7 @@ function applyToTarget(
     if (power?.alwaysCrit === true) {
       crit = true; // a sure crit: no roll (a modifier's patch)
       dmg *= 1 + cs.critDamage / 100;
-    } else if (power?.canCrit === true && rng.chance(Math.min(1, cs.critChance / 100))) {
+    } else if (power?.canCrit === true && (caster.side === 'hero' ? steadyRoll(caster, 'crit', cs.critChance) : rng.chance(Math.min(1, cs.critChance / 100)))) {
       crit = true;
       dmg *= 1 + cs.critDamage / 100;
     }
@@ -698,8 +745,12 @@ export function castReadyAbilities(
     // Don't blow a self/party buff — OR a whole-wave AoE — during the walk-up: hold it
     // until the caster is actually engaged (a foe in range). The AoE then lands on the
     // ENTIRE wave (selectTargets no longer range-gates allEnemies), not just what's in reach.
-    if ((isSelfOrPartyBuff(ability) || ability.target === 'allEnemies') && !engaged(caster, enemies)) continue;
-    const targets = selectTargets(caster, ability.target, allies, enemies, rng, ability.power?.splashRadius);
+    if ((isSelfOrPartyBuff(ability, enemies) || ability.target === 'allEnemies') && !engaged(caster, enemies)) continue;
+    // Braced against a boss's blow (its boss rule fired on the wind-up): an ability for one ally lands on the hero
+    // the blow will strike — the front one.
+    const braced = bracing(ability, caster, allies, enemies) && ONE_ALLY_TARGETS.has(ability.target);
+    const front = braced ? frontmostAlly(allies) : undefined;
+    const targets = front !== undefined ? [front] : selectTargets(caster, ability.target, allies, enemies, rng, ability.power?.splashRadius);
     if (targets.length === 0) continue;
     // Don't stack shields: if this ability IS a shield and every target already has an active
     // shield of that kind (from ANY source), skip the cast WITHOUT consuming its cooldown — it

@@ -145,7 +145,7 @@ describe('the dark reflection', () => {
     const fromTank = hitBy('tank', 3);
     expect(fromTank.length).toBeGreaterThanOrEqual(3);
     expect(fromTank.every((id) => id !== 'tank')).toBe(true);
-    expect(new Set(fromTank).size).toBe(2); // the two behind him, in turn
+    // (Which of the two behind him it strikes is picked at random each time.)
   });
 
   it('the heroes behind can kill it, the front hero cannot reach it; no reflection of a fallen hero or with nothing copied', () => {

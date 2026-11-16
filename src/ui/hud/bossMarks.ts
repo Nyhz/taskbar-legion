@@ -1,5 +1,5 @@
 import { abilityDef } from '@/data/abilities';
-import { BOSS_AFFIX, BOSS_AFFIX_KEYS, MECHANIC, SUMMONS, mechanicAbility, type BossAffixKey, type BossMechanicKey, type BossRank } from '@/data/bossKit';
+import { BOSS_AFFIX, BOSS_AFFIX_KEYS, CRUSH, MECHANIC, SUMMONS, crushAt, mechanicAbility, type BossAffixKey, type BossMechanicKey, type BossRank } from '@/data/bossKit';
 import { difficultyIndexOf } from '@/data/difficulties';
 import { effectDef } from '@/data/effects';
 import { t } from '@/i18n';
@@ -109,10 +109,15 @@ function mechanicMark(key: BossMechanicKey, d: number, effects: readonly WornEff
 }
 
 /** What the boss hits with: its fixed physical/magic mix (data/bossKit BOSS_MAGIC_SHARE), signed by the defence
- *  that matters more against it. */
-function damageMark(magicShare: number): BossMark {
+ *  that matters more against it — and, for a world boss that wields it, its Crushing Blow (data/bossKit CRUSH):
+ *  what to brace for. */
+function damageMark(magicShare: number, globalStage: number, crush: boolean): BossMark {
   const magic = Math.round(Math.max(0, Math.min(1, magicShare)) * 100);
   const physical = 100 - magic;
+  const c = crushAt(globalStage);
+  const more = crush && c.tankLife > 0
+    ? [t('boss.crushHelp', { secs: secs(CRUSH.everyMs), cast: secs(CRUSH.castMs), tank: Math.round(c.tankLife * 100), back: Math.round(c.backLife * (magicShare / CRUSH.shockMagicRef) * 100) })]
+    : undefined;
   return {
     kind: 'damage',
     key: 'damage',
@@ -120,6 +125,7 @@ function damageMark(magicShare: number): BossMark {
     name: magic > physical ? t('boss.damageMagic') : t('boss.damagePhysical'),
     kindName: t('boss.damageKind'),
     help: t('boss.damageHelp', { phys: physical, magic }),
+    ...(more !== undefined ? { more } : {}),
   };
 }
 
@@ -127,9 +133,9 @@ const isAffix = (key: string): key is BossAffixKey => (BOSS_AFFIX_KEYS as readon
 const isMechanic = (key: string): key is BossMechanicKey => key in MECHANIC;
 
 /** The marks of the boss in front, in the order they are drawn. Unknown keys (an old save) are skipped. */
-export function bossMarks(boss: { affixes?: readonly string[]; mechanic?: string; bossRank?: BossRank; effects?: readonly WornEffect[]; magicShare?: number }, globalStage: number): BossMark[] {
+export function bossMarks(boss: { affixes?: readonly string[]; mechanic?: string; bossRank?: BossRank; effects?: readonly WornEffect[]; magicShare?: number; crushHit?: number }, globalStage: number): BossMark[] {
   const marks: BossMark[] = [];
-  if (boss.magicShare !== undefined) marks.push(damageMark(boss.magicShare));
+  if (boss.magicShare !== undefined) marks.push(damageMark(boss.magicShare, globalStage, (boss.crushHit ?? 0) > 0));
   if (boss.mechanic !== undefined && isMechanic(boss.mechanic)) marks.push(mechanicMark(boss.mechanic, difficultyIndexOf(globalStage), boss.effects ?? []));
   for (const key of boss.affixes ?? []) if (isAffix(key)) marks.push(affixMark(key, boss.bossRank ?? 'stage'));
   return marks;

@@ -199,26 +199,66 @@ export const TRASH_DMG_TUNE: number[] = [
  *  capacity (1 / 4 / 9 / 14 / 24): every wall became a survival coin-toss with tens of failed attempts. Then, by the
  *  user's rule for round 6 · B («menos daño de bosses y más vida … la amenaza es llegar a la furia»), lowered to
  *  1 / 2 / 4 / 6 / 8: the wall is a race against the enrage, the boss's hit still the tank's business. */
-export const BOSS_THREAT_PCT: readonly [number, number, number, number, number] = [1, 2, 4, 6, 8];
+// ROUND 7 (2026-11-16): from Inferno a share of that pressure moved into the Crushing Blow (data/bossKit CRUSH) — the
+// heavy blow a Knight braces for — so the sustained part is lower there (4 / 6 / 8 → 3 / 4.5 / 6): a Knight who
+// braces for the blow takes about what he took before; one who does not, about half again as much.
+export const BOSS_THREAT_PCT: readonly [number, number, number, number, number] = [1, 2, 3, 4.5, 6];
 /** A STAGE boss presses the front at this share of its world boss's target: the defensive build shows outside the
  *  walls too, while a stage boss (5–10 s) never threatens the farm. */
 export const STAGE_BOSS_THREAT_SHARE = 0.6;
-/** The world boss's basic hit, world 1 … 50 (scripts/boss-hit-tune.ts). */
+/** The world boss's basic hit, world 1 … 50 (scripts/boss-hit-tune.ts; rewritten in round 7 with every swing on the
+ *  front hero — backShotChance 0 — so the per-hit value is lower for the same share of his life a second). */
 export const ZONE_BOSS_HIT_TUNE: number[] = [
-  17.4, 5.45, 6.09, 6.25, 6.65, 8.3, 9.24, 10.6, 11.7, 12,
-  23.2, 34, 56.3, 55.4, 56.7, 56.9, 57.3, 65.2, 64.9, 80.4,
-  107, 245, 463, 506, 557, 636, 684, 736, 827, 1050,
-  1180, 2000, 2330, 2250, 2660, 2860, 2870, 2830, 2790, 2800,
-  3140, 4770, 6930, 8830, 8850, 10600, 10400, 10900, 10700, 10600,
+  17.4, 5.45, 6.09, 6.25, 6.65, 8.16, 8.63, 8.87, 9.44, 10.2,
+  13.7, 19, 38.7, 38.1, 38.9, 38.7, 39.4, 44.1, 48.3, 49.1,
+  59.9, 86.7, 146, 225, 266, 265, 271, 280, 296, 346,
+  620, 821, 1170, 1260, 1370, 1500, 1450, 1450, 1540, 1610,
+  1640, 2340, 3630, 4640, 5510, 5310, 5340, 5190, 5290, 5350,
 ];
 /** The stage bosses' basic hit, world 1 … 50 (scripts/boss-hit-tune.ts; against the Knight that reaches the wall). */
 export const STAGE_BOSS_HIT_TUNE: number[] = [
-  13.2, 3.26, 3.66, 3.73, 4.01, 4.99, 5.56, 6.48, 6.5, 7.21,
-  12, 15.3, 20.8, 22.9, 23.5, 23.6, 23.7, 24, 27.2, 29.2,
-  45.7, 74.7, 138, 214, 259, 262, 305, 323, 345, 386,
-  589, 674, 1160, 1250, 1200, 1430, 1540, 1540, 1530, 1510,
-  1670, 1920, 2990, 4190, 5090, 5250, 6190, 5830, 6410, 6290,
+  13.2, 3.26, 3.66, 3.73, 4.01, 4.92, 5.19, 5.27, 5.66, 6.17,
+  8.26, 11.4, 15.5, 22.9, 23.4, 23.3, 23.7, 26.2, 27.2, 29.2,
+  38.6, 52.9, 66.7, 102, 161, 181, 189, 188, 206, 207,
+  280, 535, 695, 889, 988, 1080, 1160, 1130, 1130, 1210,
+  1400, 1460, 2080, 3030, 3800, 4570, 4510, 4470, 4550, 4440,
 ];
+
+// THE CRUSHING BLOW's anchors (round 7; data/bossKit CRUSH says how hard, these say against whom). Written ONCE by
+// `scripts/crush-tune.ts` from the probe's party at each wall (its last look before the kill), the median over the
+// snapshot files: the average Knight's EFFECTIVE life against that world boss — his life over the share of a hit that
+// gets through his armour and magic resist at the boss's physical/magic mix and his standing damage reduction — and the
+// LIFE of the average back-line hero (the lower of the Ranger's and the Priest's). Data, not a reaction: a hero above
+// the average takes less of the blow, one below it more. The shock is sized against ON-LEVEL magic resist (the
+// defence that turns half away at that stage, `expectedDefense`): a back-line hero who wears it takes the share
+// CRUSH.backLife says, one who wears none twice that. Worlds before Inferno: unused (0).
+/** The average Knight's effective life at each world's wall, world 1 … 50. */
+export const KNIGHT_EHP_TUNE: number[] = [
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  2320, 3080, 4780, 7380, 8730, 8660, 8860, 9180, 9690, 11300,
+  18100, 21800, 29600, 32000, 34700, 38000, 36700, 36800, 39000, 40900,
+  38100, 50700, 73500, 93900, 111000, 107000, 108000, 105000, 107000, 108000,
+];
+/** The average back-line hero's life at each world's wall, world 1 … 50. */
+export const BACK_LIFE_TUNE: number[] = [
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  1060, 1260, 1790, 2440, 2440, 2450, 2650, 2650, 2670, 3560,
+  3310, 2930, 3170, 2720, 3220, 3520, 3480, 3480, 3390, 4290,
+  3550, 2980, 3950, 6130, 5470, 5470, 5470, 5470, 7010, 4380,
+];
+
+/** The Crushing Blow's hit on the front hero at global stage `S`, for `tankLife` × the average Knight's effective life. */
+export function crushHit(S: number, tankLife: number): number {
+  return tankLife * (KNIGHT_EHP_TUNE[worldOf(S) - 1] ?? 0);
+}
+/** The Crushing Blow's magic shock on each hero behind at global stage `S`: what takes `backLife` × the average
+ *  back-line hero's life, × the boss's magic share over `magicRef`, through on-level magic resist. */
+export function crushShock(S: number, backLife: number, magicShare: number, magicRef: number): number {
+  const through = 1 - mitigation(expectedDefense(S), S);
+  return (backLife * (magicShare / Math.max(0.01, magicRef)) * (BACK_LIFE_TUNE[worldOf(S) - 1] ?? 0)) / Math.max(0.05, through);
+}
 
 /** The world boss's basic hit at global stage `S`: the anchor table, or the formula where it has no entry (world 1). */
 export function zoneBossHit(S: number): number {

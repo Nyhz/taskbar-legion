@@ -9,12 +9,13 @@ export const BRANCH_ABILITIES: Record<string, AbilityDef> = {
   knight_holdtheline: {
     key: 'knight_holdtheline', name: 'Hold the Line', icon: 'banner',
     desc: 'Plant the shield: the whole party takes less damage for a short window.',
-    cooldownMs: 26000, target: 'allAllies',
+    // Every 24 s (was 26; round 7): ready for each Crushing Blow it is kept for (data/bossKit CRUSH, every 24 s).
+    cooldownMs: 24000, target: 'allAllies',
     // buff_holdline_dr: 10% less damage taken at rank 1, +2.5/rank → 20% at rank 5. 6s.
     applies: [{ effectKey: 'buff_holdline_dr' }],
-    // When the party is being hit; with a boss in the fight it is kept for the wind-up of its area blow (one
-    // every 10 s, so it never waits longer than that).
-    castCondition: 'enemyPresent', fires: { when: 'partyHit', atAreaBlow: true }, rankScaling: { perRank: { value: 2.5 } },
+    // When the party is being hit. Against a boss (round 7: a rule for the waves, another for the bosses) it is kept
+    // for the wind-up of its heavy blow (the Crushing Blow), or of its area blow when it wields no heavy one.
+    castCondition: 'enemyPresent', fires: { when: 'partyHit' }, firesBoss: [{ when: 'bossWindup', heavy: true }], rankScaling: { perRank: { value: 2.5 } },
   },
   // ── Knight · Scourge ──
   knight_riposte: {

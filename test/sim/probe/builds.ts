@@ -43,7 +43,9 @@ export const PROBE_DEFAULT_BUILD: PartyBuild = {
  *  defecto en Normal e Infierno y la buena desde Averno"): the build study's most frequent best build of Hell and
  *  later (scripts/build-study.ts, round 3 checkpoint 2) — one build for every wall, not the best of each. */
 export const PROBE_GOOD_BUILD: PartyBuild = {
-  knight: { abilities: ['knight_debilitate', 'knight_battlecry'], branch: 'bastion' },
+  // Round 7 (2026-11-16): from Inferno the world bosses' Crushing Blow asks the Knight to carry his defences — Stone
+  // Skin kept for it and Debilitating Cleave on the boss as it winds up (was Debilitating Cleave + Battle Cry).
+  knight: { abilities: ['knight_guard', 'knight_debilitate'], branch: 'bastion' },
   ranger: { abilities: ['ranger_aimedshot', 'ranger_weakspot'], branch: 'marksman' },
   priest: { abilities: ['priest_mend', 'priest_healing_light'], branch: 'devotion' },
 };

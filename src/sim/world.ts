@@ -125,6 +125,12 @@ export interface Combatant {
     of?: { heroId: string; classKey: string };
   };
   dealtToBoss?: number; // hero-only: damage dealt to the boss of the fight under way (who Roots binds)
+  /** hero-only: the meters of its steady rolls (sim/steady.ts) — a blocked blow, a critical hit or heal, a second strike. */
+  steady?: Partial<Record<'block' | 'healCrit' | 'crit' | 'multi', number>>;
+  /** Boss-only, the Crushing Blow (data/bossKit CRUSH): what it deals the front hero, and what its magic shock deals
+   *  each hero behind (raw, before their defences; data/stageScaling crushHit / crushShock). */
+  crushHit?: number;
+  crushShock?: number;
 }
 
 /** A role talent's bonus to what a hero deals: `pct`% more damage, or stronger heals, when the receiver meets

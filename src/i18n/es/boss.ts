@@ -7,6 +7,7 @@ export const boss: Record<keyof typeof en, string> = {
   damagePhysical: 'Sobre todo físico',
   damageMagic: 'Sobre todo mágico',
   damageHelp: 'Cada golpe es un {phys} % físico, que frena la armadura, y un {magic} % mágico, que frena la resistencia mágica.',
+  crushHelp: 'Cada {secs} s prepara su Golpe demoledor ({cast} s): el héroe de delante recibe cerca del {tank} % de la vida de un Knight medio —si se ha preparado (Piel de piedra, Baluarte, Tajo debilitante, un escudo) lo aguanta— y todos los de detrás una sacudida mágica de cerca del {back} % de su vida, que frena la resistencia mágica.',
   armored: 'Acorazado',
   armoredHelp: 'Lleva una coraza que vale el {shell} % de su vida. Mientras aguanta, el jefe recibe un {cut} % menos de daño; los críticos la gastan el doble de rápido. Vuelve {secs} s después de romperse.',
   vampiric: 'Vampírico',

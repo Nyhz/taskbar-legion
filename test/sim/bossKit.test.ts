@@ -210,12 +210,16 @@ describe('Vampiric (Vampírico)', () => {
   });
 
   it('a blocked hit feeds it nothing', () => {
+    // Block is a steady roll (round 7, sim/steady): a tank with a great deal of it blocks most hits, not every one —
+    // the boss heals for the hits that land unblocked, and for those alone.
     const b = boss(['vampiric'], { hp: 5e5, maxHp: 1e6 });
     const tank = hero('tank', { baseStats: base({ health: 1e6, block: 100 }) });
     const world = fight([tank], [b]);
     const events = run(world, 3000, { ...quietRng(), chance: () => true });
-    expect(events.some((e) => e.type === 'damage' && e.targetId === 'tank' && e.blocked === true)).toBe(true);
-    expect(b.hp).toBe(5e5);
+    const hits = events.filter((e) => e.type === 'damage' && e.targetId === 'tank' && e.sourceId === b.id);
+    expect(hits.some((e) => e.blocked === true)).toBe(true);
+    const unblocked = hits.filter((e) => e.blocked !== true).length;
+    expect(b.hp).toBeCloseTo(5e5 + unblocked * BOSS_AFFIX.vampiric.healFrac * 1e6, 6);
   });
 });
 

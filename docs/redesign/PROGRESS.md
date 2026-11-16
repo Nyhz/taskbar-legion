@@ -1951,3 +1951,60 @@ se mide dónde quedan los muros de hoy respecto al techo nuevo (Ronda 4 del info
      quiero tener que hacer ajustes aleatorios solo porque no eres capaz de encontrar una solución».
   3. Los muros pueden pedir menos del techo («pueden ser 20-30, 30-40, 40-60 por ejemplo o algo así»), siempre
      ascendentes. Se retoma tras resolver el punto 1, porque cambiar habilidades mueve todo lo demás.
+
+### Ronda 7 — que la defensa importe sin depender de la suerte (16 nov, noche; sin commit)
+
+Diagnóstico (`scripts/luck-diag.ts`, 3 partidas × 9 muros de Averno–Tormento × 5 vidas de muro × 5 grupos × 12–16
+combates; detalle en PACING_REPORT «Ronda 7»): en Averno la mitad de las derrotas del grupo de la sonda eran de
+supervivencia y la primera en caer era la Ranger (34 de 43): la mitad de los golpes normales del jefe iban a la
+retaguardia, al azar. Desde Eterno se perdía por la carrera contra la furia, con una franja de ±6 % de vida del muro en
+la que el mismo grupo ganaba o perdía según los dados. El Knight «defensivo» (Piel de piedra + Baluarte) ganaba MENOS
+que el de la construcción buena (Tajo debilitante + Grito de guerra), y sin resistencia mágica apenas se perdía.
+
+Cambios de diseño:
+- **Dos disparadores por habilidad: uno para oleadas, otro para jefes** (idea del usuario). Dato nuevo `firesBoss` en
+  `data/abilities` (regla nueva `bossWindup`: un jefe prepara un golpe; `heavy`: su Golpe demoledor, o cualquier golpe
+  si no tiene; contra un jefe que no prepara ningún golpe vale la regla de oleadas). Una habilidad para un aliado que
+  salta por el anuncio cae sobre el héroe que va a recibir el golpe (el de delante). El tooltip dice las dos reglas
+  («Contra un jefe: …», EN/ES).
+  - Piel de piedra, Baluarte, Tajo debilitante, Mantener la línea y Escudo sagrado: contra un jefe, al anuncio de su
+    Golpe demoledor (el Escudo, sobre el tanque).
+  - Sanar (la progresiva): además, al anuncio, sobre el tanque, para que ya esté curando cuando llega el golpe.
+  - Luz sanadora y Círculo no cambian: ya responden al golpe fuerte recibido.
+  - Mantener la línea en oleadas: «cuando el grupo recibe daño» (su espera al golpe en área pasa a la regla de jefe).
+- **Golpe demoledor** (`boss_crush`, `data/bossKit` CRUSH; nombre provisional): desde Averno, el golpe pesado del jefe de
+  mundo, cada 24 s desde el segundo 8 (tres por minuto: 8, 32, 56 s), 2 s de anuncio, no se puede bloquear.
+  - Al de delante le quita 1,2 / 1,5 / 1,7 veces la vida efectiva del Knight medio (Averno / Eterno / Tormento; vida
+    entre lo que dejan pasar su armadura y su resistencia mágica a la mezcla del jefe, y su reducción de daño fija).
+    Con Piel de piedra y Tajo debilitante se queda en un 30–45 % de su vida; sin nada lo mata (Última defensa le salva
+    del primero).
+  - A los de detrás, una sacudida mágica: con resistencia mágica «a nivel» les quita 0,2 / 0,45 / 0,5 de su vida ×
+    mezcla mágica / 0,5 (un jefe 60 % mágico: 24 / 54 / 60 %); sin resistencia mágica, el doble. El Tajo no la suaviza.
+  - Entra poco a poco en los mundos 1–3 de Averno, como el resto de la presión. Tablas `KNIGHT_EHP_TUNE` y
+    `BACK_LIFE_TUNE` (`scripts/crush-tune.ts`). La ficha del jefe lo explica bajo «Con qué golpea».
+  - Arte: reutiliza los dientes de roca del Golpe de suelo (no hay signo nuevo).
+- **Los golpes normales del jefe de mundo van todos al de delante** (antes la mitad a la retaguardia desde Infierno):
+  la retaguardia sufre lo que se ve venir (golpe en área, sacudida, mecánicas). La tabla del golpe del jefe se recalculó
+  para la misma presión sobre el tanque (`scripts/boss-hit-tune.ts`).
+- **Presión continua desde Averno más baja** (`BOSS_THREAT_PCT` 4 / 6 / 8 → 3 / 4,5 / 6): parte pasa al Golpe demoledor.
+- **Mantener la línea**: recarga 26 → 24 s, para llegar a cada Golpe demoledor.
+- **Tiradas firmes** (`sim/steady.ts`): bloqueo, críticos (de golpe, de habilidad y de cura) y multigolpe de los héroes
+  ya no son dados: cada uno llena un contador con su % y sale cada vez que pasa de 100. Se bloquea y se critica
+  exactamente lo que dice la estadística, repartido, sin rachas. Las tiradas de los enemigos siguen siendo dados.
+- **La construcción buena del Knight desde Averno** en la sonda pasa a Piel de piedra + Tajo debilitante.
+
+Resultado (mismas partidas; victorias con el muro al 80 % / 90 % de su vida actual — los muros no se han re-afinado):
+
+| | Construcción buena | Knight ofensivo | Priest sin curas | Sin resistencia mágica |
+|---|---|---|---|---|
+| Averno, antes | 99 / 95 % | 92 / 78 % | 28 / 13 % | 90 / 79 % |
+| Averno, ahora | 92 / 75 % | 31 / 6 % | 0 / 0 % | 62 / 50 % |
+| Eterno, antes | 100 / 90 % | 89 / 72 % | 8 / 3 % | 92 / 79 % |
+| Eterno, ahora | 95 / 72 % | 34 / 27 % | 0 / 0 % | 57 / 44 % |
+| Tormento, antes | 99 / 84 % | 94 / 62 % | 17 / 8 % | 99 / 75 % |
+| Tormento, ahora | 100 / 81 % | 22 / 12 % | 17 / 5 % | 72 / 53 % |
+
+Coherencia entre semillas con el muro a su vida actual: 0,81–0,85 antes → 0,92–0,94 ahora en Eterno y Tormento (0,76
+en Averno, donde el grupo queda justo en el umbral). **Pendiente**: con la misma vida de muro el grupo de la sonda gana
+menos que antes (el Knight cambia daño por defensa y entra el Golpe demoledor): las horas subirán y hay que re-afinar
+muros y horas en la siguiente ronda.

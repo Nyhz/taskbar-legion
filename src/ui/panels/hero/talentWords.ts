@@ -208,6 +208,8 @@ function ruleLine(rule: FireRule): string {
       return rule.orHeavyHit === true
         ? t('talents.firesHarmedOrHit', { pct: figure(rule.frac * 100, 0) })
         : t('talents.firesHarmed', { pct: figure(rule.frac * 100, 0) });
+    case 'bossWindup':
+      return rule.heavy === true ? t('talents.firesBossWindupHeavy') : t('talents.firesBossWindup');
   }
 }
 
@@ -222,9 +224,14 @@ function fireFactLine(fact: FireFact): string {
   return ruleLine(fact);
 }
 
-/** WHEN an ability fires, in words — the tooltip's "When it fires" line. */
+/** WHEN an ability fires, in words — the tooltip's "When it fires" line: its rule, and its rule against a boss when
+ *  it has one of its own (round 7: one trigger for the waves, another for the bosses). */
 export function fireLine(ability: AbilityDef): string {
-  return fireFactLine(abilityFireFact(ability));
+  const line = fireFactLine(abilityFireFact(ability));
+  const boss = ability.firesBoss;
+  if (boss === undefined || boss.length === 0) return line;
+  const rules = boss.map((r) => lowerFirst(ruleLine(r).replace(/\.$/, '')));
+  return `${line} ${t('talents.firesAgainstBoss', { rule: rules.join(t('talents.firesOr')) })}`;
 }
 
 /** When a class ultimate fires, in words; `patch` is the capstone the hero holds (elites too). */

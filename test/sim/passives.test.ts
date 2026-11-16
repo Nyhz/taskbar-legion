@@ -9,7 +9,7 @@ import { RANGE, RESPAWN_MS } from '@/data/field';
 import { buildHeroCombatant, type HeroConfig } from '@/sim/loadout';
 import { dealtMult, liveStats } from '@/sim/liveStats';
 import type { Combatant, CombatEvent, WorldState } from '@/sim/world';
-import { anyMoment, base, effect, luckyRng, quietRng, unit } from './_kit';
+import { anyMoment, base, effect, luckyRng, primeSteady, quietRng, unit } from './_kit';
 import { noteDamageTaken } from '@/sim/recent';
 
 // The fifteen EFFECT passives (second combat wave, B — agreed 2026-11-15): each one end to end, from the talent
@@ -105,11 +105,13 @@ describe('Knight', () => {
   });
 
   it('Weathered Hide: each blocked hit is 1% less per rank on what follows, to 5; five in a row unblocked lose it all', () => {
-    const knight = holder('k', 'knight', { knight_weathered_hide: 2 });
+    // Some block to roll with (a steady roll: primed below to come up or not).
+    const knight = holder('k', 'knight', { knight_weathered_hide: 2 }, { baseStats: base({ health: 1000, attackDamage: 100, attackSpeed: 0.1, block: 10 }) });
     const world = fight([knight], [foe('g')]);
     const hit = (blocked: boolean): number => {
       for (const e of world.enemies) e.attackTimerMs = 0;
-      return dealt(resolveCombatTick(world, TICK, blocked ? luckyRng() : quietRng()), 'k');
+      primeSteady(knight, 'block', blocked); // block is a steady roll (sim/steady): set it to come up, or not
+      return dealt(resolveCombatTick(world, TICK, quietRng()), 'k');
     };
     expect(hit(true)).toBeCloseTo(50, 6); // blocked: half, and no stack yet when it landed
     expect(knight.hideStacks).toBe(1);
@@ -166,6 +168,7 @@ describe('Ranger', () => {
     ranger.baseStats = { ...ranger.baseStats, critChance: 100, critDamage: 100 };
     const crit = (target: Combatant): number => {
       const events: CombatEvent[] = [];
+      primeSteady(ranger, 'crit'); // a crit is a steady roll (sim/steady): set it to come up
       heroAttack(ranger, heroStats(ranger), target, [target], luckyRng(), events, [ranger]);
       return events[0]?.amount ?? 0;
     };

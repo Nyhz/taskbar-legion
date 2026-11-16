@@ -28,7 +28,8 @@ describe('area blows', () => {
   it('every enemy ability that reaches the whole party has a look, and nothing else does', () => {
     // (A boss mechanic that reaches everyone in its own way — the chain bolt leaping from hero to hero — is not a
     // blow along the ground: its picture is the boss kit's, render/bossFx KIT_HITS.)
-    const reaching = Object.values(ABILITIES).filter((a) => a.power?.splashRadius === WHOLE_PARTY && KIT_HITS[a.key] === undefined).map((a) => a.key).sort();
+    // (The Crushing Blow reaches everyone through its own rule — data/abilities special 'crush' — not a splash.)
+    const reaching = Object.values(ABILITIES).filter((a) => (a.power?.splashRadius === WHOLE_PARTY || a.special?.kind === 'crush') && KIT_HITS[a.key] === undefined).map((a) => a.key).sort();
     expect(Object.keys(AREA_BLOWS).sort()).toEqual(reaching);
     expect(KIT_HITS.boss_chain_bolt?.kind).toBe('bolt');
     expect(areaBlow('boss_slam')).toBeDefined();

@@ -75,4 +75,16 @@ describe('boss marks', () => {
     expect(help({ mechanic: 'roots' }, 120)).toContain('Every 15 s');
     expect(help({ mechanic: 'chainBolt' }, 130)).toContain('50 %');
   });
+
+  it('a world boss that wields the Crushing Blow says what to brace for, under what it hits with (round 7)', () => {
+    const S = globalStageOf(3, 5, 10);
+    const marks = bossMarks({ magicShare: 0.6, crushHit: 1000, bossRank: 'world' }, S);
+    expect(marks[0]?.key).toBe('damage');
+    expect(marks[0]?.more?.[0]).toContain('Every 24 s it winds up its Crushing Blow (2 s)');
+    expect(marks[0]?.more?.[0]).toContain('150 %'); // Eternal: 1.5 × an average Knight's life
+    expect(marks[0]?.more?.[0]).toContain('54 %'); // the shock: 0.45 × 0.6 / 0.5
+    expect(bossMarks({ magicShare: 0.6 }, S)[0]?.more).toBeUndefined(); // a stage boss: no such blow
+    setLanguage('es');
+    expect(bossMarks({ magicShare: 0.6, crushHit: 1000 }, S)[0]?.more?.[0]).toContain('Golpe demoledor');
+  });
 });

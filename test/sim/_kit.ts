@@ -53,6 +53,12 @@ export function luckyRng(): Rng {
   return { ...quietRng(), chance: () => true };
 }
 
+/** A hero's steady roll `key` (sim/steady, round 7: block, crits, multistrike are meters, not dice) set to come up
+ *  on its next roll (`lucky`) or never for a long while (`!lucky`). */
+export function primeSteady(c: Combatant, key: 'block' | 'healCrit' | 'crit' | 'multi', lucky = true): void {
+  c.steady = { ...c.steady, [key]: lucky ? 100 : -1e9 };
+}
+
 export const effect = (c: Combatant | undefined, key: string): Combatant['effects'][number] | undefined =>
   c?.effects.find((e) => e.defKey === key);
 

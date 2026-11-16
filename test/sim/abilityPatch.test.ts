@@ -173,7 +173,7 @@ describe('Ranger abilities and modifiers', () => {
       castReadyAbilities(ranger, [ranger], [foe], 1, rng, events);
       return { hp: foe.hp, crit: events.find((e) => e.type === 'damage')?.crit, draws: rng.draws };
     };
-    expect(shoot({ ranger_aimedshot: 1 })).toEqual({ hp: 820, crit: false, draws: 1 }); // 1.8× AD, the roll fails
+    expect(shoot({ ranger_aimedshot: 1 })).toEqual({ hp: 820, crit: false, draws: 0 }); // 1.8× AD; no crit at 0 % (a steady roll: no dice either way)
     expect(shoot({ ranger_aimedshot: 1, ranger_mod_heartseeker: 1 })).toEqual({ hp: 730, crit: true, draws: 0 }); // ×1.5
   });
 

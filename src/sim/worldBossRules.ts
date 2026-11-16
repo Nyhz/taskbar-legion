@@ -1,8 +1,10 @@
 import { effectDef } from '@/data/effects';
 import { WALK_SPEED } from '@/data/field';
-import { absorbDamage, applyEffect, isInvulnerable } from './effects';
+import { MAX_DAMAGE_REDUCTION, enrageMultiplier } from '@/data/stageScaling';
+import { absorbDamage, applyEffect, isInvulnerable, weakenMult } from './effects';
 import { liveStats } from './liveStats';
-import { dotTaken } from './passives';
+import { mixedMitigation } from './damageMix';
+import { dotTaken, guardedDamage } from './passives';
 import { noteDamageTaken } from './recent';
 import type { Combatant, CombatEvent } from './world';
 
@@ -148,4 +150,41 @@ export function levelParty(caster: Combatant, heroes: readonly Combatant[], abil
     noteDamageTaken(h, lost);
     events.push({ type: 'damage', targetId: h.id, sourceId: caster.id, amount: lost, abilityKey });
   }
+}
+
+// ── The Crushing Blow (round 7, data/bossKit CRUSH) ─────────────────────────────────────────────────────────
+
+/** The key its numbers carry (the strip shows them as the blow's). */
+export const CRUSH_ABILITY = 'boss_crush';
+
+/** One HIT of the Crushing Blow on hero `h`: `raw` of it, `magic` the share that is magic — each part turned away by
+ *  its own defence, then the hero's damage reduction, the guard passives (an `area` hit for the heroes behind:
+ *  Close Ranks), shields. It cannot be blocked. A hero it brings to nothing falls at the next upkeep. */
+function crushHitOn(h: Combatant, raw: number, magic: number, area: boolean, S: number, events: CombatEvent[], bossId: string): void {
+  if (raw <= 0 || !h.alive) return;
+  if (isInvulnerable(h.effects)) {
+    events.push({ type: 'damage', targetId: h.id, sourceId: bossId, amount: 0, invuln: true, abilityKey: CRUSH_ABILITY });
+    return;
+  }
+  const ts = liveStats(h);
+  let dmg = raw * (1 - mixedMitigation(ts.armor, ts.magicResist, magic, S));
+  dmg *= 1 - Math.min(MAX_DAMAGE_REDUCTION, Math.max(0, ts.damageReduction)) / 100;
+  dmg = guardedDamage(h, dmg, { raw, area, magic });
+  noteDamageTaken(h, dmg);
+  dmg = Math.max(0, absorbDamage(h.effects, dmg));
+  h.hp -= dmg;
+  events.push({ type: 'damage', targetId: h.id, sourceId: bossId, amount: dmg, abilityKey: CRUSH_ABILITY, splash: area ? true : undefined });
+}
+
+/** The Crushing Blow lands: the front hero takes the boss's `crushHit` at its own physical/magic mix (enraged like
+ *  its swings, softened by a Debilitating Cleave on it), everyone behind him its `crushShock`, all magic — which a
+ *  cleave does not soften (it saps the boss's strength, not its magic): magic resist, a shield, Stone Skin shared
+ *  with the ally, Hold the Line and Close Ranks are what take it. */
+export function crushParty(boss: Combatant, heroes: readonly Combatant[], S: number, events: CombatEvent[]): void {
+  const front = heroes.find((h) => h.alive);
+  if (front === undefined) return;
+  const weak = weakenMult(boss.effects);
+  const enrage = enrageMultiplier(boss.fightMs ?? 0, boss.enrageMs ?? Number.POSITIVE_INFINITY, boss.enrageRampMs);
+  crushHitOn(front, (boss.crushHit ?? 0) * weak * enrage, boss.magicShare ?? 0, false, S, events, boss.id);
+  for (const h of heroes) if (h !== front) crushHitOn(h, boss.crushShock ?? 0, 1, true, S, events, boss.id);
 }

@@ -104,7 +104,10 @@ export type AbilitySpecial =
   // hero it copied steps out, hitting for `reflectionHit` of a normal enemy's hit.
   | { kind: 'mirror'; harm: number; boon: number; buff: number; panes: number; paneEffectKey: string; panePct: number; reflectionEvery: number; reflection: string; reflectionHit: number }
   // Only once the caster's `panes` panes are all lit (stacks of `paneEffectKey`): it breaks them — they go dark.
-  | { kind: 'shatter'; panes: number; paneEffectKey: string };
+  | { kind: 'shatter'; panes: number; paneEffectKey: string }
+  // The Crushing Blow (data/bossKit CRUSH): the caster's `crushHit` on the front hero (its own physical/magic mix),
+  // and its `crushShock` — all magic — on every hero behind him (sim/worldBossRules crushParty).
+  | { kind: 'crush' };
 
 /** WHEN a hero's ability fires once it is ready — its fixed default behaviour (user decision 2026-11-15: no
  *  player settings; "se usa siempre que sea útil y, si está pasando algo concreto, lo aprovecha — nunca se queda
@@ -132,7 +135,10 @@ export type FireRule =
   // `orOneBelow` — or (`orHarmed`) that many of them carrying a harmful effect.
   | { when: 'partyHurt'; allies: number; frac: number; orOneBelow: number; orHarmed?: number }
   // An ally carries a harmful effect, or is under `frac` of its life — or (`orHeavyHit`) has just taken a heavy hit.
-  | { when: 'harmedOrBelow'; frac: number; orHeavyHit?: boolean };
+  | { when: 'harmedOrBelow'; frac: number; orHeavyHit?: boolean }
+  // A boss in the fight is winding up a blow on the party (a cast bar under it that ends in a hit). `heavy`: only its
+  // HEAVY blow (an ability marked `heavy`, the Crushing Blow) — or any blow when the boss has no heavy one.
+  | { when: 'bossWindup'; heavy?: boolean };
 
 /** How long a hit stays "recent" for the fire rules, and what share of its life one hit must take from a hero
  *  to count as heavy (sim/recent.ts keeps the bookkeeping). */
@@ -168,6 +174,13 @@ export interface AbilityDef {
   castCondition?: 'always' | 'enemyPresent' | 'allyBelowHpPct' | 'tankEngaged';
   /** Hero abilities: when it fires once ready (its default behaviour). When set it replaces `castCondition`. */
   fires?: FireRule;
+  /** Hero abilities: when it fires while a BOSS is in the fight (round 7, user: «diseñar las habilidades para que
+   *  tengan 2 triggers. Uno para oleadas, otro para bosses»): any of these rules. Without it, `fires` holds against
+   *  bosses too. An ability that lands on an ally and fires because a boss winds up its blow lands on the hero the
+   *  blow will strike (the front one). */
+  firesBoss?: readonly FireRule[];
+  /** Enemy abilities: its HEAVY blow — the one a party keeps its defences for (Stone Skin, a shield…). */
+  heavy?: boolean;
   power?: AbilityPower;
   rankScaling?: { perRank: Partial<{ value: number; durationMs: number; cooldownMs: number }> };
   // Charge-gated cast (no cooldown): the ability banks `perAttack` charge(s) per AUTO-
@@ -191,8 +204,9 @@ export const ABILITIES: Record<string, AbilityDef> = {
     cooldownMs: 20000, target: 'self',
     // buff_guard_block: 30% damage reduction at rank 1, +5%/rank → 50% at rank 5. 6s uptime.
     applies: [{ effectKey: 'buff_guard_block' }],
-    // Not burnt before any blow comes: it waits until he is actually being hit.
-    castCondition: 'enemyPresent', fires: { when: 'selfHit' }, rankScaling: { perRank: { value: 5 } },
+    // Not burnt before any blow comes: it waits until he is actually being hit. Against a boss (round 7) it is kept
+    // for the wind-up of its heavy blow (the Crushing Blow) — or of any blow, when the boss has no heavy one.
+    castCondition: 'enemyPresent', fires: { when: 'selfHit' }, firesBoss: [{ when: 'bossWindup', heavy: true }], rankScaling: { perRank: { value: 5 } },
   },
   knight_debilitate: {
     key: 'knight_debilitate', name: 'Debilitating Cleave', icon: 'expose',
@@ -201,8 +215,9 @@ export const ABILITIES: Record<string, AbilityDef> = {
     // Bonus damage (1.2×→2.0× AD) + debuff_weaken to EVERY enemy in melee reach: each deals
     // 15%→25% less damage for 6s.
     applies: [{ effectKey: 'fx_damage' }, { effectKey: 'debuff_weaken' }],
-    // A sweep wants company: two in reach, or something tough, or the last of the wave.
-    castCondition: 'enemyPresent', fires: { when: 'inReach', foes: 2 }, power: { coeff: 1.2, coeffPerRank: 0.2, canCrit: true },
+    // A sweep wants company: two in reach, or something tough, or the last of the wave. Against a boss (round 7) it
+    // waits for the wind-up of its heavy blow: the boss it saps lands that blow softer.
+    castCondition: 'enemyPresent', fires: { when: 'inReach', foes: 2 }, firesBoss: [{ when: 'bossWindup', heavy: true }], power: { coeff: 1.2, coeffPerRank: 0.2, canCrit: true },
     rankScaling: { perRank: { value: 2.5 } },
   },
   knight_bulwark: {
@@ -210,8 +225,8 @@ export const ABILITIES: Record<string, AbilityDef> = {
     desc: 'Brace behind a bulwark — a heavy absorb shield on himself.',
     cooldownMs: 24000, target: 'self',
     applies: [{ effectKey: 'fx_shield', durationMsOverride: 8000 }],
-    // Self-shield: 30%→50% of his max HP absorbed (+5%/rank).
-    castCondition: 'enemyPresent', fires: { when: 'selfHit' }, power: { coeff: 0.3, coeffPerRank: 0.05 },
+    // Self-shield: 30%→50% of his max HP absorbed (+5%/rank). Against a boss (round 7): raised as its heavy blow winds up.
+    castCondition: 'enemyPresent', fires: { when: 'selfHit' }, firesBoss: [{ when: 'bossWindup', heavy: true }], power: { coeff: 0.3, coeffPerRank: 0.05 },
   },
   knight_battlecry: {
     key: 'knight_battlecry', name: 'Battle Cry', icon: 'cry',
@@ -247,7 +262,10 @@ export const ABILITIES: Record<string, AbilityDef> = {
     // is worth MORE than the instant one beside it (Healing Light), which pays for landing at once.
     // On whoever has just taken a heavy hit; otherwise on the most hurt, once someone is under 70 %. As it is
     // applied it lifts the ally's harmful effects (data/healing).
-    castCondition: 'allyBelowHpPct', fires: { when: 'allyBelow', frac: 0.7, orHeavyHit: true }, power: { coeff: 0.2, coeffPerRank: 0.025 },
+    // Against a boss (round 7) it is also laid on the hero its heavy blow will strike as the blow winds up — the heal
+    // already rolling when it lands; the instant heal (Healing Light) answers it after.
+    castCondition: 'allyBelowHpPct', fires: { when: 'allyBelow', frac: 0.7, orHeavyHit: true },
+    firesBoss: [{ when: 'bossWindup', heavy: true }, { when: 'allyBelow', frac: 0.7, orHeavyHit: true }], power: { coeff: 0.2, coeffPerRank: 0.025 },
   },
   // Healing Light (2026-11-16, in Power Infusion's place): the instant heal on one ally. Worth ~75 % of Mend (user
   // rule: "si las overtime son 30 %, las instantáneas deben ser 20-25 %"): 15%→22% of the ally's max HP (+1.75/rank),
@@ -266,7 +284,8 @@ export const ABILITIES: Record<string, AbilityDef> = {
     cooldownMs: 24000, target: 'mostHitAlly', applies: [{ effectKey: 'fx_shield', durationMsOverride: 4000 }],
     // Shield = 10%→20% of that ally's max HP (+2.5/rank). On whoever is taking the most damage right now —
     // the tank most of the time, an archer's target behind him when that is where the blows land.
-    castCondition: 'tankEngaged', fires: { when: 'allyHit' }, power: { coeff: 0.1, coeffPerRank: 0.025 },
+    // Against a boss (round 7): raised on the hero its heavy blow will strike, as it winds up.
+    castCondition: 'tankEngaged', fires: { when: 'allyHit' }, firesBoss: [{ when: 'bossWindup', heavy: true }], power: { coeff: 0.1, coeffPerRank: 0.025 },
   },
   priest_nova: {
     key: 'priest_nova', name: 'Holy Nova', icon: 'holy',

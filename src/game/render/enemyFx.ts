@@ -55,6 +55,9 @@ export const AREA_BLOWS: Readonly<Record<string, AreaBlow>> = {
   boss_slam: { warn: WARN, wave: { kind: 'bursts', fx: 'slam_spike', every: 19 }, speed: 0.3, jolt: 'jolt' },
   // Shockwave: a ring where it is let go, and a wall of force as tall as a hero running back through everyone.
   boss_shockwave: { warn: WARN, origin: 'shock_ring', wave: { kind: 'front', fx: 'shock_front', trail: 'shock_trail', trailEvery: 20 }, speed: 0.26, jolt: 'jolt' },
+  // The Crushing Blow (round 7, data/bossKit CRUSH): the slam's rock teeth, through the whole party — its own
+  // longer wind-up is what tells it from the shockwave.
+  boss_crush: { warn: WARN, wave: { kind: 'bursts', fx: 'slam_spike', every: 15 }, speed: 0.34, jolt: 'jolt' },
   // Resaca (the Ninth Wave's own mechanic, data/bossKit): the path goes under while it is wound up, then a wave as
   // tall as a hero runs back through the party and drags it along.
   boss_undertow: { warn: { fx: 'warn_tide', hot: 'warn_tide_hot', step: 22 }, origin: 'undertow_surge', wave: { kind: 'front', fx: 'undertow_front', trail: 'undertow_trail', trailEvery: 18 }, speed: 0.3, jolt: 'undertow_splash' },

@@ -123,7 +123,8 @@ describe('talent words', () => {
     // A heal of hers says it lifts what the healed carry (data/healing: all of it, from those it heals).
     expect(abilityLines(light, 1, stats, 1).at(-1)).toBe('Lifts every harmful effect from each ally it heals');
     // When it fires, in words (the tooltip's own line).
-    expect(fireLine(hold)).toBe('When the party is taking damage. Against a boss it waits for its area blow.');
+    // Round 7: a rule for the waves and another for the bosses.
+    expect(fireLine(hold)).toBe('When the party is taking damage. Against a boss: when it winds up its Crushing Blow (any blow, if it has none).');
     expect(fireLine(cry)).toBe('With 3 or more enemies up, or against an elite or a boss.');
     expect(fireLine(light)).toBe('When an ally carries a harmful effect, is under 60 % of its life or has just taken a heavy hit.');
     expect(fireLine(circle)).toBe('When 2 allies are under 80 % of their life, one is under 50 %, or 2 carry a harmful effect.');
@@ -134,8 +135,8 @@ describe('talent words', () => {
     expect(abilityLines(circle, 1, stats, 1).at(-1)).toBe('Quita todos los efectos dañinos a cada aliado que cura');
     expect(fireLine(light)).toBe('Cuando un aliado lleva un efecto dañino, baja del 60 % de su vida o acaba de recibir un golpe fuerte.');
     expect(abilityLines(cry, 1, stats, 1)[0]).toMatch(/^\+\d+(,\d)? % de daño de ataque durante \d+ s$/);
-    expect(fireLine(hold)).toBe('Cuando el grupo está recibiendo daño. Contra un jefe espera a su golpe en área.');
-    expect(fireLine(ABILITIES.priest_mend ?? light)).toBe('Cuando un aliado baja del 70 % de su vida o acaba de recibir un golpe fuerte.');
+    expect(fireLine(hold)).toBe('Cuando el grupo está recibiendo daño. Contra un jefe: cuando prepara su Golpe demoledor (cualquier golpe, si no tiene).');
+    expect(fireLine(ABILITIES.priest_mend ?? light)).toBe('Cuando un aliado baja del 70 % de su vida o acaba de recibir un golpe fuerte. Contra un jefe: cuando prepara su Golpe demoledor (cualquier golpe, si no tiene), o cuando un aliado baja del 70 % de su vida o acaba de recibir un golpe fuerte.');
     expect(ultimateFireLine(ULTIMATES.priest as UltimateDef)).toBe('Al entrar en combate con un jefe de etapa o de mundo.');
   });
 

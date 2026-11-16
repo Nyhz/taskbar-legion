@@ -90,16 +90,21 @@ export interface WorldBossPressure {
 // die (scripts/pressure-survival.ts): a party with heals at ~85 % of the zone keeps everyone standing through the
 // minute; the same party with a Priest who carries no heal, at ~150 %, loses a hero before 34 s (the time a 150 %
 // party needs on a wall tuned to die at 60 s to 85 %).
+// ROUND 7 (2026-11-16): a world boss's basic attacks all go for the FRONT hero (backShotChance 0; it was 0.5 from
+// Hell). Half its swings fell at random on the heroes behind, and the Ranger — a seventh of the Knight's life — died
+// to the dice in 13 of 43 lost Inferno walls of the probe's own party (scripts/luck-diag.ts): the same party at the
+// same wall lived or died by where the swings fell. The back line is pressed now by what the party SEES coming: the
+// area blow's splash, the Crushing Blow's magic shock (CRUSH below), the mechanics.
 export const WORLD_BOSS_PRESSURE: readonly WorldBossPressure[] = [
   { hitMult: 1, blowEveryMs: 10_000, blowCoeff: 1.2, splashCoeff: 0.6, backShotChance: 0, woundPct: 0 },
   // Hell: the blow every 4 s (decided 2026-11-16 for the case it was needed — it was: with Hell's walls at their
   // hours a geared party without heals still beat them before the attrition told).
-  { hitMult: 1, blowEveryMs: 4_000, blowCoeff: 1.2, splashCoeff: 1.2, backShotChance: 0.5, woundPct: 0 },
+  { hitMult: 1, blowEveryMs: 4_000, blowCoeff: 1.2, splashCoeff: 1.2, backShotChance: 0, woundPct: 0 },
   // From Inferno the blow lands on the front hero far harder (coordinator, 2026-11-16: a Knight who carries his
   // defences must win in margin too): Stone Skin, Debilitate and Hold the Line are what take it.
-  { hitMult: 1, blowEveryMs: 6_000, blowCoeff: 2.0, splashCoeff: 1.2, backShotChance: 0.5, woundPct: 0 },
-  { hitMult: 1.15, blowEveryMs: 6_000, blowCoeff: 2.7, splashCoeff: 1.2, backShotChance: 0.55, woundPct: 0 },
-  { hitMult: 1.45, blowEveryMs: 6_000, blowCoeff: 3.1, splashCoeff: 1.2, backShotChance: 0.55, woundPct: 0 },
+  { hitMult: 1, blowEveryMs: 6_000, blowCoeff: 2.0, splashCoeff: 1.2, backShotChance: 0, woundPct: 0 },
+  { hitMult: 1.15, blowEveryMs: 6_000, blowCoeff: 2.7, splashCoeff: 1.2, backShotChance: 0, woundPct: 0 },
+  { hitMult: 1.45, blowEveryMs: 6_000, blowCoeff: 3.1, splashCoeff: 1.2, backShotChance: 0, woundPct: 0 },
 ];
 
 /** The pressure of a world boss at difficulty index `d` (clamped to the table). */
@@ -311,6 +316,43 @@ export const MECHANIC = {
     shatter: { abilityKey: 'boss_shatter', castMs: 1500, coeff: [1.2, 1.45, 1.7, 1.95, 2.2] as ByDifficulty },
     reflection: { summon: 'reflection', every: [2, 2, 2, 2, 2] as ByDifficulty, hitOfTrash: [0.8, 0.95, 1.1, 1.25, 1.4] as ByDifficulty, attackSpeed: [0.6, 1.6] as const } },
 } as const;
+
+// ── The Crushing Blow: the defence check (round 7) ─────────────────────────────────────────────────────────
+
+/** THE CRUSHING BLOW (round 7, 2026-11-16; user: «que la defensa importe sin depender de la suerte»). From Inferno on,
+ *  a world boss's HEAVY blow: every `everyMs` (the first at `openerMs`) it winds up for `castMs` — a longer cast bar
+ *  than its shockwave, so the party sees it coming — and strikes the FRONT hero for `tankLife` × the average Knight's
+ *  life at that wall, after his own armour and magic resist against the boss's physical/magic mix (data/stageScaling
+ *  KNIGHT_EHP_TUNE); everyone BEHIND him takes its MAGIC shock: `backLife` × the average back-line hero's life
+ *  (BACK_LIFE_TUNE) through ON-LEVEL magic resist, × the boss's magic share over `shockMagicRef` — twice that with
+ *  none. It cannot be blocked, and it is not dice: a Knight who carries a defence for it (Stone Skin, Bulwark,
+ *  Debilitating Cleave on the boss, Hold the Line; a Holy Shield on him) takes it, one who carries none falls; a back
+ *  line with no magic resist falls to a spell-heavy boss's shock, and stands a steel-heavy one's. The defences wait for its wind-up against a boss (their
+ *  boss rule, data/abilities `firesBoss`). Eased in over a difficulty's first worlds with the rest of the pressure. */
+export const CRUSH = {
+  abilityKey: 'boss_crush',
+  // Every 24 s from 8 s: three in a wall's minute (8 s, 32 s, 56 s) — the Knight's Last Stand takes one blow once a
+  // stage, so a Knight who braces for none still meets two. No shorter than the defences' cooldowns (Stone Skin 20 s,
+  // Bulwark and Hold the Line 24 s), so the one kept for it is ready every time.
+  everyMs: 24_000,
+  openerMs: 8_000,
+  castMs: 2000,
+  tankLife: [0, 0, 1.2, 1.5, 1.7] as readonly [number, number, number, number, number],
+  // Inferno brings the shock in gently (a back line that wears little magic resist stands it); from Eternal it asks for
+  // it. (At 0.3–0.4 in Inferno the probe's Ranger, who wears little, fell to it in most of the walls.)
+  backLife: [0, 0, 0.2, 0.45, 0.5] as readonly [number, number, number, number, number],
+  shockMagicRef: 0.5,
+} as const;
+
+/** The Crushing Blow's strength at global stage `S` — its difficulty's, eased in from the previous one's over the
+ *  first worlds (pressureWeight). Zero on both: the boss does not wield it. */
+export function crushAt(S: number): { tankLife: number; backLife: number } {
+  const d = Math.max(0, Math.min(4, difficultyIndexOf(S)));
+  const own = { tankLife: CRUSH.tankLife[d] ?? 0, backLife: CRUSH.backLife[d] ?? 0 };
+  if (d === 0) return own;
+  const w = pressureWeight(S);
+  return { tankLife: lerp(CRUSH.tankLife[d - 1] ?? 0, own.tankLife, w), backLife: lerp(CRUSH.backLife[d - 1] ?? 0, own.backLife, w) };
+}
 
 /** Abilities a mechanic brings BESIDES its own (the boss holds them ahead of it, so they go first when their
  *  moment comes): Espejos' breaking of the mirrors. Built per difficulty by `mechanicAbility`, like the main one. */

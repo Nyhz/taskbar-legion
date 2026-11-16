@@ -7,6 +7,7 @@ export const boss = {
   damagePhysical: 'Mostly physical',
   damageMagic: 'Mostly magic',
   damageHelp: 'Each hit is {phys} % physical, which armour turns away, and {magic} % magic, which magic resist turns away.',
+  crushHelp: "Every {secs} s it winds up its Crushing Blow ({cast} s): the front hero takes about {tank} % of an average Knight's life — braced for it (Stone Skin, Bulwark, Debilitating Cleave, a shield) he stands it — and everyone behind a magic shock of about {back} % of their life, which magic resist turns away.",
   armored: 'Armored',
   armoredHelp: 'Wears a shell worth {shell} % of its life. While it holds, the boss takes {cut} % less damage; critical hits wear it down twice as fast. It returns {secs} s after breaking.',
   vampiric: 'Vampiric',

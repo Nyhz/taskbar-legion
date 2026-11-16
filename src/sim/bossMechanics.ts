@@ -1,6 +1,6 @@
 import type { AbilityDef } from '@/data/abilities';
 import { abilityDef, stageBossAbilityKeys, worldBossAbilityKeys } from '@/data/abilities';
-import { BOSS_AFFIX, MECHANIC_EXTRAS, SUMMONS, SUMMON_HOVER, bossAffixes, mechanicAbility, worldBossMechanic, worldBossPressureAt, MECHANIC, type BossAffixKey, type BossRank } from '@/data/bossKit';
+import { BOSS_AFFIX, CRUSH, MECHANIC_EXTRAS, SUMMONS, SUMMON_HOVER, bossAffixes, crushAt, mechanicAbility, worldBossMechanic, worldBossPressureAt, MECHANIC, type BossAffixKey, type BossRank } from '@/data/bossKit';
 import { difficultyIndexOf } from '@/data/difficulties';
 import { effectDef } from '@/data/effects';
 import { HERO_SPACING } from '@/data/field';
@@ -8,7 +8,7 @@ import { MAX_DAMAGE_REDUCTION, TRASH_DMG_FRACTION, TRASH_HP_FRACTION, enemyDamag
 import { applyEffect, effectStatMods } from './effects';
 import type { ResolvedAbility } from './loadout';
 import { noteHeroCasts, releaseReflection, shatterPanes } from './mirror';
-import { dragParty, igniteGround, layerSpores, levelParty, tickGroundFire, tickGuilt } from './worldBossRules';
+import { crushParty, dragParty, igniteGround, layerSpores, levelParty, tickGroundFire, tickGuilt } from './worldBossRules';
 import type { Combatant, CombatEvent } from './world';
 
 // THE BOSS KIT in play (data/bossKit.ts holds every number): what a boss wields when it spawns, and the rules of
@@ -38,6 +38,12 @@ export function bossKit(runSeed: number, S: number, rank: BossRank): BossKit {
     // What the mechanic brings besides itself goes ahead of it (the breaking of the mirrors, when its moment comes).
     for (const key of MECHANIC_EXTRAS[mechanic] ?? []) abilities.push(resolved(mechanicAbility(abilityDef(key), mechanic, d)));
     abilities.push(resolved(mechanicAbility(abilityDef(MECHANIC[mechanic].abilityKey), mechanic, d)));
+  }
+  // Its Crushing Blow (round 7, data/bossKit CRUSH): a world boss's heavy blow from Inferno on, ahead of its shockwave
+  // so it is never crowded out by it.
+  if (rank === 'world' && crushAt(S).tankLife > 0) {
+    const crush = abilityDef(CRUSH.abilityKey);
+    abilities.push(resolved({ ...crush, cooldownMs: CRUSH.everyMs, openerMs: CRUSH.openerMs, castTimeMs: CRUSH.castMs }));
   }
   for (const key of rank === 'world' ? worldBossAbilityKeys() : stageBossAbilityKeys()) {
     let blow = abilityDef(key);
@@ -146,6 +152,8 @@ export function resolveSpecial(caster: Combatant, ability: AbilityDef, allies: C
       return; // cast by sim/abilities (it is an ability like any other: sim/mirror builds it)
     case 'shatter':
       return shatterPanes(caster, special, events);
+    case 'crush':
+      return crushParty(caster, foes, S, events);
     case 'summon':
       break;
   }

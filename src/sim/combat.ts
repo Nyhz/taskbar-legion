@@ -23,6 +23,7 @@ import { tryAbilityDef } from '@/data/abilities';
 import { behindBack, dismissSummons, isSummon, onBossHit, shellDamage, tickBossKit } from './bossMechanics';
 import { summonPrey } from './mirror';
 import { noteDamageTaken, tickRecent } from './recent';
+import { steadyRoll } from './steady';
 import {
   dotTaken, guardedDamage, noteBlockStreak, overflowShield, critBleed, overkillPierce, passiveOf, refreshPartyGuards, respawnFactor,
   takeDiverted,
@@ -243,7 +244,7 @@ export function resolveCombatTick(world: WorldState, deltaMs: number, rng: Rng):
       if (frontHero === undefined || !frontHero.alive) return false;
       if (e.x - frontHero.x > e.range + MOVE_EPS) return false; // not in range yet (MOVE_EPS: same anti-deadband as nearestEnemyInRange)
       const target = attackTarget(e, frontHero, heroes, rng, focus);
-      enemyAttack(e, target, S, rng, ctx, target === frontHero);
+      enemyAttack(e, target, S, ctx, target === frontHero);
       return true;
     });
   }
@@ -376,14 +377,14 @@ function advanceAttack(c: Combatant, attacksPerSec: number, deltaMs: number, doA
   c.attackTimerMs = fired ? interval : 0;
 }
 
-export function heroAttack(h: Combatant, stats: EffectiveStats, target: Combatant, enemies: Combatant[], rng: Rng, events: CombatEvent[], heroes: Combatant[] = [h]): void {
+export function heroAttack(h: Combatant, stats: EffectiveStats, target: Combatant, enemies: Combatant[], _rng: Rng, events: CombatEvent[], heroes: Combatant[] = [h]): void {
   const ctx: TriggerCtx = { heroes, enemies, events };
   // One resolved hit (own crit roll) on `victim`, scaled by `mult` (1 = full; <1 = AoE splash).
   // Auto-attacks land one of these on the target, plus a capped multistrike chance for a
   // second — each hit heals lifesteal + can crit independently.
   const strike = (victim: Combatant, mult: number, multi: boolean): void => {
     let dmg = stats.attackDamage * (1 + stats.damageIncrease / 100) * mult;
-    const crit = rng.chance(Math.min(1, stats.critChance / 100));
+    const crit = steadyRoll(h, 'crit', stats.critChance); // a steady roll, not dice (sim/steady, round 7)
     if (crit) dmg *= 1 + stats.critDamage / 100;
     dmg = Math.max(1, dmg);
     dmg *= vulnerabilityMult(victim.effects); // Ranger's Mark amplifies all damage to the boss
@@ -409,7 +410,7 @@ export function heroAttack(h: Combatant, stats: EffectiveStats, target: Combatan
   // stable), and skipped if the first hit already downed the target. The bonus hit is tagged
   // `multi` so the render layer pops a bright "MULTI!" callout on the proc.
   const ms = Math.max(0, stats.multistrike);
-  if (ms > 0 && target.alive && rng.chance(ms / 100)) strike(target, 1, true);
+  if (ms > 0 && target.alive && steadyRoll(h, 'multi', ms)) strike(target, 1, true);
   // Auto-attack AoE (Priest holy strike): every OTHER enemy within `radius` of the primary
   // target takes `coeff×` the hit. Gated on `autoSplash` so single-target classes draw no
   // extra RNG (the combat stream for knight/ranger is unchanged).
@@ -431,7 +432,7 @@ export function heroAttack(h: Combatant, stats: EffectiveStats, target: Combatan
   // (kills are resolved inside `strike` as each hit lands — no trailing kill needed)
 }
 
-function enemyAttack(e: Combatant, target: Combatant, S: number, rng: Rng, ctx: TriggerCtx, onFront: boolean): void {
+function enemyAttack(e: Combatant, target: Combatant, S: number, ctx: TriggerCtx, onFront: boolean): void {
   const { events } = ctx;
   // Last Stand invulnerability negates the hit entirely (before mitigation) — but the
   // enemy still SWINGS (the attack fires, deals 0): keep them visibly attacking.
@@ -452,7 +453,7 @@ function enemyAttack(e: Combatant, target: Combatant, S: number, rng: Rng, ctx: 
   const hit = onFront && e.frontHit !== undefined ? e.frontHit : (e.enemyDamage ?? 1);
   const base = hit * foeDamageMult(e) * heavy;
   let dmg = base * enrage * weakenMult(e.effects) * (1 - mit);
-  const blocked = rng.chance(Math.min(1, stats.block / 100));
+  const blocked = steadyRoll(target, 'block', stats.block); // a steady roll, not dice (sim/steady)
   if (blocked) dmg *= 0.5;
   dmg *= 1 - Math.min(MAX_DAMAGE_REDUCTION, Math.max(0, stats.damageReduction)) / 100; // flat % off (e.g. Stone Skin)
   // The guard passives: the Knight takes part of a hit aimed behind him, the most hurt hero takes less…

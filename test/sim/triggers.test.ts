@@ -6,7 +6,7 @@ import { Simulation, createWorld } from '@/sim/Simulation';
 import { isInvulnerable, vulnerabilityMult, weakenMult } from '@/sim/effects';
 import type { TriggerDef } from '@/data/triggers';
 import type { Combatant, CombatEvent } from '@/sim/world';
-import { effect, luckyRng, quietRng, unit } from './_kit';
+import { effect, luckyRng, primeSteady, quietRng, unit } from './_kit';
 
 // Generic triggers (docs/redesign/CLASSES.md, F5): the class ultimates run through them, and so do Riposte's
 // charges, two modifiers and five of the six capstones.
@@ -48,7 +48,8 @@ describe('on block', () => {
     const enemy = foe({ id: 'e', x: 0 });
     const blocked = createWorld(1, [k]);
     blocked.enemies = [enemy];
-    const events = resolveCombatTick(blocked, 100, luckyRng()); // every chance succeeds: the hit is blocked
+    primeSteady(k, 'block'); // block is a steady roll (sim/steady): set to come up on this hit
+    const events = resolveCombatTick(blocked, 100, luckyRng());
     expect(events.some((e) => e.blocked === true)).toBe(true);
     expect(k.charges?.knight_riposte).toBe(1);
     for (let i = 0; i < 9; i++) onBlock(k, enemy, ctxOf([k], [enemy]));

@@ -82,6 +82,10 @@ export const talents = {
   firesHarmedOrHit: 'When an ally carries a harmful effect, is under {pct} % of its life or has just taken a heavy hit.',
   firesCharged: 'When its {n} charges are full.',
   firesLethal: 'When a blow would kill the hero. Uses per stage: {n}.',
+  firesBossWindup: 'When it winds up a blow.',
+  firesBossWindupHeavy: 'When it winds up its Crushing Blow (any blow, if it has none).',
+  firesAgainstBoss: 'Against a boss: {rule}.',
+  firesOr: ', or ',
   firesBoss: 'On engaging a stage boss or a world boss.',
   firesBossOrElite: 'On engaging an elite, a stage boss or a world boss.',
   // ── Talents tab: what an ability does, one line per effect (sim/abilityFacts) ──

@@ -16,6 +16,14 @@ export const BOSS_ABILITIES: Record<string, AbilityDef> = {
     castCondition: 'enemyPresent', power: { coeff: 0.8 },
   },
 
+  // ── The Crushing Blow (data/bossKit CRUSH): every world boss's heavy blow from Inferno on — the defence check ──
+  boss_crush: {
+    key: 'boss_crush', name: 'Crushing Blow', icon: 'explosion',
+    desc: 'The world boss winds up its heaviest blow: the front hero takes it in full, and a magic shock reaches everyone behind. A hero who has not braced for it falls.',
+    cooldownMs: 24000, openerMs: 8000, castTimeMs: 2000, holdsAttack: true, heavy: true, target: 'frontEnemy', applies: [],
+    castCondition: 'enemyPresent', special: { kind: 'crush' },
+  },
+
   // ── World 1 · the Crowmother ──
   boss_flock: {
     key: 'boss_flock', name: 'Murder of Crows', icon: 'summon',
