@@ -38,6 +38,8 @@ import { classDef, CLASS_KEYS } from '@/data/classes';
 import { MAX_GLOBAL_STAGE, difficultyIndexOf, DIFFICULTY_KEYS, worldBossStageOf } from '@/data/difficulties';
 import { worldOf, zoneBossHp, ELITE_CHANCE, ELITE_CHEST_MULT, ELITE_MIN_STAGE } from '@/data/stageScaling';
 import type { HeroConfig } from '@/sim/loadout';
+import type { ItemInstance } from '@/sim/items';
+import type { GemInstance } from '@/data/gems';
 import { FIRST_CLEAR_KEYS, type ChestType } from '@/data/chests';
 
 export interface ProbeConfig {
@@ -248,6 +250,10 @@ function addXp(state: State, perHero: number): void {
   }
 }
 
+/** Tooling (round 4d, the farm audit): called after every batch of opened chests with what dropped and the party
+ *  as it stands once it has equipped and socketed what it wanted. Never changes the run. */
+export const lootWatch: { fn?: (dropStage: number, type: ChestType, loot: { items: readonly ItemInstance[]; gems: readonly GemInstance[] }, party: readonly HeroConfig[]) => void } = {};
+
 function grantLoot(state: State, dropStage: number, captured: Record<ChestType, number>, bonusesGemDrop: ReturnType<typeof getBonuses>, freezeGear = false): void {
   const allowed = state.party.map((p) => p.classKey);
   for (const type of CHEST_TYPES) {
@@ -258,6 +264,7 @@ function grantLoot(state: State, dropStage: number, captured: Record<ChestType, 
     const loot = openCaptured(type, dropStage, open, state.seed, state.draw, bonusesGemDrop, allowed);
     if (!freezeGear && equipItems(state.party, loot.items)) state.dirty = true;
     if (!freezeGear && socketGems(state.party, loot.gems)) state.dirty = true;
+    lootWatch.fn?.(dropStage, type, loot, state.party);
     if (loot.keys > 0) {
       const boss = worldBossStageOf(dropStage); // a key belongs to the world its chest dropped in
       state.keys[boss] = (state.keys[boss] ?? 0) + loot.keys;

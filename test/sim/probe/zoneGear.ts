@@ -204,7 +204,7 @@ export function topTierAt(S: number): ItemTier {
 }
 
 /** An affix value at the middle of its roll band (rollStatValue with r = the band's midpoint). */
-function midStatValue(key: StatKey, tierMult: number, itemLevel: number): number {
+export function midStatValue(key: StatKey, tierMult: number, itemLevel: number): number {
   const band = STATS[key].rollPerIlvl;
   const r = (band.min + band.max) / 2;
   if (STATS[key].kind === 'percent') return round2(r * tierMult * pctAffixIlvlMult(itemLevel));

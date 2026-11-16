@@ -1652,3 +1652,217 @@ Todo en % del techo gradual. Mediana de 3 semillas; entre paréntesis, de la men
 - **Frente a la escalera, todos los muros siguen pidiendo menos**: en mediana un 18 % del techo en Infierno, 24 % en Averno, 29 % en Eterno y 28 % en Tormento. Para cumplirla, la vida habría que multiplicarla en mediana por ×2,8 en Infierno, ×2,6 en Averno y Eterno y ×3,0 en Tormento. Los mundos 1 son los que quedan más cerca (×1,5–1,7); los más lejos, Normal 10 (×4,7) e Infierno 1 (×6,9).
 - **La forma ya no sale en sierra**: con el techo gradual, lo que pide cada muro es mucho más plano dentro de cada dificultad (Averno 21–29 %, Eterno 25–33 %, Tormento 25–36 % del mundo 2 al 10). El mundo 1 sigue pidiendo más (37–45 %).
 - **El grupo tumba los muros con un 19–27 % del techo**. Llegar al 40–90 % que pide la escalera exigiría bastante más equipo del que se junta hoy en esas horas: si se suben los muros a la escalera, las horas subirán, y habrá que medir cuánto.
+
+
+## Ronda 4c · los muros en la escalera
+
+*16 nov 2026. Decisión del usuario: manda la escalera, y se acepta un juego más largo de ≈ 720 h. Drops, llaves y cofres, sin tocar. 3 semillas de la sonda por iteración, con `taskpolicy -b` (`scripts/ceiling-pass.ts`).*
+
+### Qué ha cambiado
+
+- **`WORLD_WALL_MULT`** (`src/data/stageScaling.ts`): cada muro pide, en % del techo gradual, lo que dice la escalera (Normal 10→20, Infierno 40→55, Averno 55→70, Eterno 65→80, Tormento 75→90, en línea recta del mundo 1 al 10). Dos iteraciones con la regla «multiplicador × objetivo ÷ lo que pide al llegar» (mediana de las semillas). Tras la segunda, Normal 6 subió ×1,5 a mano: pedía un 10 % en vez de un 16 %. La tabla anterior queda en el comentario del dato.
+- **Prueba de muros crecientes** (`test/sim/scaling.test.ts`): dentro de cada dificultad cada muro tiene más vida que el anterior. El mundo 1 de una dificultad puede abrir algo por debajo del mundo 10 de la anterior, como mucho un 15 %. Lo manda la escalera: Tormento 1 pide un 75 % de un techo T7 y Eterno 10 un 80 % del mismo techo, así que queda en ×0,92.
+- **Herramientas**: `scripts/ceiling-pass.ts` tiene ahora un tope de tiempo (`CP_MAXSEC`) y guarda las instantáneas de cada muro (`CP_SNAP`). `scripts/difficulty-change-check.ts` es nuevo y comprueba el cambio de dificultad.
+
+### Resultado
+
+| | Iteración 1 | Iteración 2 (la que queda en el juego) |
+|---|---|---|
+| ¿Terminan el juego? | 1 de 3 (2 047 h); las otras se atascan en Tormento 6 y 8 | **Ninguna**: se atascan en Eterno 8, Tormento 5 y Tormento 8 |
+| Horas activas hasta el último muro tumbado | 2 047 · 2 767 · 6 351 h | 2 466 – 2 840 h |
+| Normal | 8 h (7–9) | 8 h (4–9) |
+| Infierno | 113 h (103–153) | 181 h (144–214) |
+| Averno | 328 h (297–423) | 371 h (282–467) |
+| Eterno | 329 h (276–523) | 394 h (315–473), en las dos semillas que lo acaban |
+| Tormento | 1 312 h (una semilla) | — |
+| Mundo más largo de cada dificultad | Normal 3 h · Infierno 18–53 h · Averno 69–111 h · Eterno 71–365 h · Tormento 357–4 020 h | Normal 1–2 h · Infierno 33–43 h · Averno 59–102 h · Eterno 103–782 h · Tormento 842–1 267 h |
+| Intentos fallidos por muro (mediana) | 0 / 2 / 7,5 / 9 / 39,5 | 0 / 4,5 / 11,5 / 20 / 43 |
+| Lo que pide el muro, en % del techo (mediana) | 8 / 33 / 46 / 59 / 73 | **13 / 43 / 57 / 72 / 78** (escalera ✔ a ±5 puntos) |
+| El grupo lleva al tumbar (mediana) | 16 / 27 / 35 / 48 / 53 % | 16 / 31 / 43 / 56 / 62 % |
+| Piezas de la rareza más alta al final | 1 / 3 / 5 / 11 / 12 de 30 | 1 / 5 / 7 / 8 / — de 30 |
+
+Por qué no basta una pasada: al subir los muros el jugador farmea más, llega a cada muro con más nivel y talentos, y el techo (los mismos héroes con el mejor equipo) sube con él. En la iteración 1 los muros quedaron, en mediana por dificultad, entre un 7 y un 32 % por debajo de la escalera; en la 2 ya caen en ella.
+
+Por qué se atasca: en Tormento el grupo tumba los muros con el 62 % del techo (mediana) y la escalera le pide un 75–90 % a los 60 s. El farmeo no lo acerca lo bastante en un tiempo razonable: en Tormento 4–5 llega a 842–1 267 h de un solo mundo y a 150–215 intentos fallidos (reintenta cada día de juego, y cuando el jefe se queda al 15 % o menos). Al final, la sonda se rinde tras 540 días sin avanzar. Los días de calendario hasta rendirse son 849–896.
+
+### Muro a muro (iteración 2)
+
+
+**Normal**
+
+| Mundo | Techo (rareza) | Escalera | Pide hoy | Lleva al llegar | Lleva al tumbar | Intentos fallidos | Vida × para la escalera |
+|---|---|---:|---:|---:|---:|---:|---:|
+| 1 | T2 | 10 % | 10 % | 5 (5–6) % | 25 (10–26) % | 2 (1–2) | ×1,0 |
+| 2 | T2→T4 (11 %) | 11 % | 10 % | 22 (16–23) % | 22 (16–23) % | 0 | ×1,1 |
+| 3 | T2→T4 (22 %) | 12 % | 12 % | 17 (14–17) % | 17 (14–17) % | 0 | ×1,0 |
+| 4 | T2→T4 (33 %) | 13 % | 13 % | 16 (14–17) % | 16 (14–17) % | 0 | ×1,0 |
+| 5 | T2→T4 (44 %) | 14 % | 14 (14–15) % | 16 (13–21) % | 16 (14–21) % | 0 (0–4) | ×1,0 |
+| 6 | T2→T4 (56 %) | 16 % | 10 % | 18 (13–19) % | 18 (13–19) % | 0 | ×1,5 |
+| 7 | T2→T4 (67 %) | 17 % | 17 (16–17) % | 16 (11–17) % | 16 (15–17) % | 0 (0–3) | ×1,0 |
+| 8 | T2→T4 (78 %) | 18 % | 18 (17–18) % | 14 (14–15) % | 16 (14–19) % | 2 (1–3) | ×1,0 |
+| 9 | T2→T4 (89 %) | 19 % | 18 (14–19) % | 15 (14–19) % | 16 (14–19) % | 0 (0–2) | ×1,0 |
+| 10 | T4 | 20 % | 19 (15–20) % | 14 (14–17) % | 16 (14–17) % | 1 (0–4) | ×1,0 |
+
+**Infierno**
+
+| Mundo | Techo (rareza) | Escalera | Pide hoy | Lleva al llegar | Lleva al tumbar | Intentos fallidos | Vida × para la escalera |
+|---|---|---:|---:|---:|---:|---:|---:|
+| 1 | T4 | 40 % | 40 (40–57) % | 15 (11–15) % | 30 (28–31) % | 6 (6–22) | ×1,0 |
+| 2 | T4→T5 (11 %) | 42 % | 33 (32–34) % | 25 (23–28) % | 29 (26–30) % | 1 | ×1,3 |
+| 3 | T4→T5 (22 %) | 43 % | 33 (33–34) % | 26 (26–27) % | 26 (20–27) % | 1 (0–3) | ×1,3 |
+| 4 | T4→T5 (33 %) | 45 % | 44 (43–44) % | 27 (25–31) % | 30 (26–35) % | 4 (4–6) | ×1,0 |
+| 5 | T4→T5 (44 %) | 47 % | 43 (35–47) % | 27 (12–28) % | 28 (27–31) % | 7 (6–9) | ×1,1 |
+| 6 | T4→T5 (56 %) | 48 % | 41 (32–41) % | 30 (27–36) % | 31 (30–36) % | 2 (0–3) | ×1,2 |
+| 7 | T4→T5 (67 %) | 50 % | 46 (39–47) % | 29 (28–34) % | 34 (32–37) % | 4 (4–6) | ×1,1 |
+| 8 | T4→T5 (78 %) | 52 % | 46 (45–46) % | 32 (30–32) % | 37 (36–38) % | 5 (2–12) | ×1,1 |
+| 9 | T4→T5 (89 %) | 53 % | 52 (51–52) % | 34 (26–35) % | 43 (41–45) % | 6 (5–7) | ×1,0 |
+| 10 | T5 | 55 % | 51 (50–55) % | 38 (37–39) % | 42 (38–44) % | 6 (1–12) | ×1,1 |
+
+**Averno**
+
+| Mundo | Techo (rareza) | Escalera | Pide hoy | Lleva al llegar | Lleva al tumbar | Intentos fallidos | Vida × para la escalera |
+|---|---|---:|---:|---:|---:|---:|---:|
+| 1 | T5 | 55 % | 52 (48–54) % | 43 (40–43) % | 44 (40–45) % | 6 (1–6) | ×1,1 |
+| 2 | T5→T6 (11 %) | 57 % | 51 (49–55) % | 32 (28–34) % | 42 (35–43) % | 5 (3–6) | ×1,1 |
+| 3 | T5→T6 (22 %) | 58 % | 55 (53–62) % | 33 (30–33) % | 41 (39–43) % | 18 (11–32) | ×1,1 |
+| 4 | T5→T6 (33 %) | 60 % | 55 (55–59) % | 37 (36–39) % | 43 (41–45) % | 6 (5–56) | ×1,1 |
+| 5 | T5→T6 (44 %) | 62 % | 55 (52–59) % | 36 (30–36) % | 42 (41–43) % | 19 (9–34) | ×1,1 |
+| 6 | T5→T6 (56 %) | 63 % | 56 % | 37 (35–39) % | 43 (42–43) % | 15 (1–30) | ×1,1 |
+| 7 | T5→T6 (67 %) | 65 % | 62 (60–62) % | 42 (41–43) % | 49 (48–51) % | 48 (17–76) | ×1,0 |
+| 8 | T5→T6 (78 %) | 67 % | 63 (60–65) % | 41 (40–44) % | 44 (44–45) % | 12 (3–14) | ×1,1 |
+| 9 | T5→T6 (89 %) | 68 % | 64 (60–68) % | 41 % | 50 (47–51) % | 25 (7–40) | ×1,1 |
+| 10 | T6 | 70 % | 61 (58–64) % | 44 (39–45) % | 48 (43–48) % | 5 (1–12) | ×1,2 |
+
+**Eterno**
+
+| Mundo | Techo (rareza) | Escalera | Pide hoy | Lleva al llegar | Lleva al tumbar | Intentos fallidos | Vida × para la escalera |
+|---|---|---:|---:|---:|---:|---:|---:|
+| 1 | T6 | 65 % | 56 (55–62) % | 41 (40–42) % | 43 (41–45) % | 23 (0–32) | ×1,2 |
+| 2 | T6→T7 (11 %) | 67 % | 57 % | 35 (29–38) % | 43 (33–52) % | 34 (23–36) | ×1,2 |
+| 3 | T6→T7 (22 %) | 68 % | 66 % | 42 (30–45) % | 49 (37–53) % | 31 (17–57) | ×1,0 |
+| 4 | T6→T7 (33 %) | 70 % | 69 % | 52 (47–52) % | 57 (52–68) % | 21 (3–38) | ×1,0 |
+| 5 | T6→T7 (44 %) | 72 % | 72 % | 48 (26–56) % | 56 (44–64) % | 13 (0–97) | ×1,0 |
+| 6 | T6→T7 (56 %) | 73 % | 73 % | 57 (50–68) % | 58 (57–74) % | 11 (2–79) | ×1,0 |
+| 7 | T6→T7 (67 %) | 75 % | 75 % | 52 (32–54) % | 57 (33–58) % | 20 (8–23) | ×1,0 |
+| 8 | T6→T7 (78 %) | 77 % | 77 % | 52 % | 58 (54–63) % | 8 (5–12) | ×1,0 |
+| 9 | T6→T7 (89 %) | 78 % | 78 % | 55 (50–61) % | 61 (58–63) % | 8 (4–12) | ×1,0 |
+| 10 | T7 | 80 % | 80 % | 55 (52–58) % | 61 (59–64) % | 16 (9–24) | ×1,0 |
+
+**Tormento**
+
+| Mundo | Techo (rareza) | Escalera | Pide hoy | Lleva al llegar | Lleva al tumbar | Intentos fallidos | Vida × para la escalera |
+|---|---|---:|---:|---:|---:|---:|---:|
+| 1 | T7 | 75 % | 75 % | 62 (59–65) % | 62 (59–65) % | 1 | ×1,0 |
+| 2 | T7→T8 (11 %) | 77 % | 77 % | 39 (36–41) % | 60 (52–67) % | 56 (43–69) | ×1,0 |
+| 3 | T7→T8 (22 %) | 78 % | 78 % | 42 (39–45) % | 56 (54–58) % | 44 (35–54) | ×1,0 |
+| 4 | T7→T8 (33 %) | 80 % | 80 % | 45 (42–47) % | 74 (58–90) % | 184 (152–215) | ×1,0 |
+| 5 | T7→T8 (44 %) | 82 % | 81 % | 74 % | 71 % | 2 | ×1,0 |
+| 6 | T7→T8 (56 %) | 83 % | 83 % | 61 % | 62 % | 13 | ×1,0 |
+| 7 | T7→T8 (67 %) | 85 % | 85 % | 59 % | 67 % | 72 | ×1,0 |
+| 8 | | | sin datos | | | | |
+| 9 | | | sin datos | | | | |
+| 10 | | | sin datos | | | | |
+
+
+### Las dos reglas
+
+**(a) Al cambiar de dificultad, el equipo del final de la anterior debería tumbar 1–2 muros de la nueva. No se cumple.** El grupo, tal como llega al último muro de una dificultad, contra los tres primeros de la siguiente (8 combates por muro):
+
+| Cambio | Mundo 1 | Mundo 2 | Mundo 3 |
+|---|---|---|---|
+| Normal → Infierno | 0/8 en las 3 semillas | 0/8 | 0/8 |
+| Infierno → Averno | 0, 2 y 2 de 8 | 0/8 | 0/8 |
+| Averno → Eterno | 3, 0 y 0 de 8 | 0/8 | 0/8 |
+| Eterno → Tormento | 3 y 1 de 8 | 0/8 | 0/8 |
+
+- **Normal → Infierno choca de lleno.** Normal 10 pide un 20 % de un techo T4 e Infierno 1 un 40 % del mismo techo, el doble. Además, Infierno añade la presión del jefe de mundo (golpe en área cada 4 s): en la semilla 3 el grupo muere a los 20–31 s.
+- **En el resto de cambios**, el mundo 1 cae a veces (hasta 3 de 8) y el 2 nunca. El salto de la escalera (70 → 55, 80 → 65, 90 → 75) no compensa que el techo del mundo 2 ya cuente algo de la rareza nueva.
+
+**(b) Sanadora y Knight** (`scripts/healer-check.ts`, semilla 3, muros Infierno 1, 5 y 10, Averno 5 y 10, Eterno 5 y 10, Tormento 5; el grupo en su última mirada antes de tumbar el muro). El «≥150 %» de la herramienta sigue midiéndose con la vara C antigua:
+
+| Muro | Grupo como va | Priest sin curas | Equipo ≥150 % | Priest sin curas con ≥150 % | Knight ofensivo | Margen defensivo / ofensivo |
+|---|---|---|---|---|---|---|
+| Infierno 1 | 6/8 | 0/8 | 154 % | 0/8 | — | — |
+| Infierno 5 | 3/8 | 0/8 | 157 % | 7/8 | — | — |
+| Infierno 10 | 4/8 | 0/8 | 184 % | 0/8 | — | — |
+| Averno 5 | 5/8 | 0/8 | 169 % | 0/8 | 3/8 | ×0,97 / ×0,97 |
+| Averno 10 | 1/8 | 0/8 | 247 % | 0/8 | 0/8 | ×0,91 / ×0,80 |
+| Eterno 5 | 8/8 | 2/8 | 307 % | 2/8 | 8/8 | ×1,10 / ×1,10 |
+| Eterno 10 | 0/8 | 0/8 | 548 % | 0/8 | 0/8 | ×0,91 / ×0,85 |
+| Tormento 5 | 7/8 | 0/8 | 871 % | 0/8 | 2/8 | ×1,03 / ×0,70 |
+
+- **Sanadora: se cumple casi del todo.** Sin curas la Priest pierde 7 de 8 muros con el equipo del grupo, y con ≥150 % pierde 6 de 8; solo pasan Infierno 5 (7/8) y Eterno 5 (2/8).
+- **Knight defensivo: se cumple.** Gana tanto o más que el ofensivo y con más margen en 3 de 5 muros desde Averno (igual en 2).
+
+### Lectura
+
+- **La escalera queda cableada y se cumple**: los muros piden, en mediana, 13 / 43 / 57 / 72 / 78 % del techo.
+- **El juego deja de poder terminarse**: ninguna semilla de la iteración 2 acaba Tormento. Hasta donde llegan son de 2 466 a 2 840 h activas, más del triple de las ≈ 720 h, y Eterno y Tormento se vuelven muros de cientos o miles de horas.
+- **La raíz**: con lo que cae hoy el grupo no pasa del 55–65 % del techo en Eterno y Tormento, y la escalera pide un 65–90 %. Haría falta que el equipo pudiera acercarse más al techo (más rareza alta, mejores tiradas, otra forma de mejorar piezas) o una escalera más baja al final.
+- **El cambio de dificultad no cumple su regla**, y Normal → Infierno choca de frente por el salto de 20 a 40 %.
+
+
+## Ronda 4d · por qué el grupo no pasa del 55–65 % del techo
+
+*16 nov 2026. Diagnóstico, sin cambiar el juego (los muros de la 4c siguen en el árbol). Equipo del grupo en seis muros de las instantáneas de la 4c: tres donde la sonda se atasca (Eterno 8, Tormento 5, Tormento 8), uno donde pasa tras cientos de horas (Tormento 4) y dos donde pasa sin problema (Averno 5, Eterno 3). Además, las tres partidas repetidas con un observador del botín (`scripts/farm-audit.ts`): qué cae en cada mundo y qué se pone el grupo. Herramientas: `scripts/gear-gap.ts`, `scripts/farm-audit.ts` y el gancho `lootWatch` de `test/sim/probe/loop.ts`.*
+
+### Cuánto aporta cada cosa
+
+El equipo del grupo tras su farmeo, cambiando una cosa cada vez, en % del techo gradual (daño en 60 s). «Base» es como va. Entre paréntesis, horas jugadas.
+
+| Muro | Base | Huecos vacíos | Nivel de objeto al del techo | **Rareza** al tope de la zona | Tiradas a la media | **Tipos de afijo** del techo | Gemas al tope | Todo junto |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| Averno 5 (362 h, pasa) | 42 | 0 de 30 | 48 | **70** | 41 | 37 | 73 | 122 |
+| Eterno 3 (684 h, pasa) | 52 | 0 | 53 | **100** | 51 | 44 | 102 | 173 |
+| Eterno 8 (7 000 h, **atasca**) | 34 | 0 | 34 | 59 | 36 | **84** | 34 | 102 |
+| Tormento 4 (2 466 h, pasa tarde) | 56 | 0 | 56 | **92** | 56 | 41 | 65 | 231 |
+| Tormento 5 (6 792 h, **atasca**) | 54 | 0 | 55 | **87** | 37 | 51 | 54 | 173 |
+| Tormento 8 (7 168 h, **atasca**) | 36 | 0 | 38 | **52** | 36 | 34 | 36 | 80 |
+
+«Todo junto» pasa del 100 % porque lleva todas las piezas a la rareza más alta del mundo, y el techo gradual de los mundos 2–9 está por debajo de esa rareza.
+
+Lo que lleva el grupo en esos muros:
+
+| Muro | Piezas a la rareza más alta | Nivel de objeto (media / la más vieja / techo) | Calidad de tiradas (1 = media) | Gemas a la rareza más alta |
+|---|---|---|---|---|
+| Averno 5 | 2 de 30 | 60 / 36 / 77 | 1,03 | 4 de 59 |
+| Eterno 3 | 3 de 30 | 82 / 56 / 94 | 1,03 | 2 de 78 |
+| Eterno 8 | 13 de 30 | 92 / 74 / 103 | 1,04 | 88 de 88 |
+| Tormento 4 | 7 de 30 | 103 / 74 / 111 | 1,01 | 37 de 97 |
+| Tormento 5 | 8 de 30 | 104 / 74 / 112 | 1,02 | 98 de 98 |
+| Tormento 8 | 10 de 30 | 101 / 69 / 114 | 1,03 | 100 de 100 |
+
+### Qué cae y qué se pone (farmeo en el X-9 de cada mundo)
+
+| Muro (semilla) | Objetos abiertos | Nivel de objeto que cae (techo) | Rareza más alta: caen / se pone | La de debajo: caen / se pone | Gemas de la rareza más alta: caen / engasta |
+|---|---:|---|---|---|---|
+| Averno 5 (2) | 1 380 | 77,6 (75) | 6 / 0 | 36 / 3 | 4 / 4 |
+| Eterno 3 (2) | 6 461 | 94,6 (93) | 21 / 3 | 119 / 0 | 2 / 2 |
+| Eterno 8 (2) | 128 863 | 103,6 (102) | **1 163 / 2** | 4 870 / 0 | 447 / 81 |
+| Tormento 4 (1) | 28 908 | 111,6 (110) | **107 / 4** | 647 / 1 | 40 / 36 |
+| Tormento 5 (1) | 19 038 | 112,6 (111) | **84 / 3** | 492 / 0 | 40 / 29 |
+
+Lo que se pierde por almacén lleno lo fija la sonda: un 10 % de los cofres comunes y un 5 % de los de jefe de etapa. Los cofres que se abren dan objetos 1–2 niveles por encima del techo.
+
+¿Rechaza la sonda piezas que de verdad suben el daño? De 101 piezas de la rareza más alta que el grupo dejó pasar en estos muros, **22 habrían subido el daño en el muro**. La mayoría poco (1–8 %), pero algunas mucho: +21 % en Tormento 5, +49 % en Eterno 3 y **+111 %** en Eterno 8 (+143 % pasándole las gemas de la pieza que sustituye). Las otras 79 no ayudaban o empeoraban.
+
+### Lectura
+
+1. **No es falta de farmeo.** En Eterno 8 una partida abre 128 863 objetos en 6 000 h y le caen 1 163 piezas de la rareza más alta, pero se pone 2. En Tormento 4–5 caen 84–107 T8 y se pone 3–4.
+2. **Lo que más pesa es la rareza, pero va atada a los afijos.** Con todas las piezas a la rareza más alta, el grupo pasaría del 54 al 87 % (Tormento 5) o del 42 al 70 % (Averno 5). Pero una pieza de la rareza más alta con afijos que no le sirven a ese héroe no es mejor que la que lleva. De cuatro afijos al azar entre unos diez posibles, rara vez salen los buenos. Por eso caen cientos y casi ninguna se queda.
+3. **Dos fallos de la sonda, no del juego:**
+   - **El Ranger va de cañón de cristal.** La regla con la que elige equipo le da un 80 % de peso al daño, así que no se pone vida. En Eterno 8 tiene 541 de vida (el del techo, 4 710) y muere a los 18–25 s en los seis combates medidos. Por eso «tipos de afijo del techo» sube ese muro del 34 al 84 %: con la vida del techo no muere. Es la causa del atasco de Eterno 8.
+   - **No usa el Cubo.** El juego deja juntar 9 piezas de una rareza en 1 de la siguiente, con un 5 % de saltar dos rarezas y hasta T8, y cambiar un afijo de una pieza a cambio de una gema. La sonda no hace ninguna de las dos cosas. Con lo que cae en Eterno 8 (4 870 T6 y 1 163 T7), el Cubo daría unas 1 700 T7 y unas 190 T8. En Tormento 4, unas 70 T8 más. Además, el Cubo permite T8 en Eterno, por encima de la rareza más alta que cae allí: el «techo» no es techo para quien lo use.
+4. **No son problema:** el nivel de objeto (las piezas viejas llevan 8–13 niveles menos, y subirlas aporta 0–6 puntos), las tiradas (el grupo las lleva algo mejores que la media, 1,01–1,04), las gemas (al final de Eterno y Tormento todas son de la rareza más alta, porque la sonda ya las cambia) y las piezas (lleva los 30 huecos).
+5. **La regla de cambio de pieza deja pasar mejoras reales**, sobre todo las que dan supervivencia: compara cifras sueltas del héroe, no el combate contra el muro.
+
+### Qué cerraría la distancia, de menos a más cambio de diseño
+
+1. **Arreglar la sonda (sin tocar el juego):**
+   - que use el Cubo como un jugador: juntar las piezas sobrantes de la rareza de debajo y cambiar un afijo malo de las piezas buenas;
+   - que el Ranger valore la vida cuando el jefe le pega;
+   - que al comparar una pieza cuente los huecos de gema que traerá llenos.
+
+   Es lo primero, porque hoy medimos a un jugador que no usa una herramienta del juego. Después hay que volver a medir: es posible que el grupo pase de la escalera, y que entonces sobre altura en los muros.
+2. **Decidir qué es el techo si existe el Cubo.** Con él cualquier dificultad llega a T8, así que «la rareza más alta que cae en la zona» deja de ser el máximo. Opciones: que el Cubo no pase de la rareza más alta de la dificultad donde se usa, o medir el techo contando el Cubo.
+3. **Solo si tras 1 y 2 sigue corto, tocar el juego**: afijos más afines a la clase en los cofres de jefe (que una pieza de la rareza más alta sirva más a menudo), o más rareza alta.

@@ -4,9 +4,9 @@
  * asks (its life as a % of the ceiling's 60 s of damage) with the heroes on arrival, and the % of the ceiling the
  * party deals on arrival and at the kill. One JSON line per seed to CP_OUT: hours per difficulty, and per wall the
  * failed attempts, hours on it (keyless / holding a key), top-rarity pieces worn, ask and party %.
- * Env: CP_SEED, CP_OUT, CP_TO (last global stage, default 500). Run each seed under `taskpolicy -b`. Dev tooling only.
+ * Env: CP_SEED, CP_OUT, CP_SNAP (also write the wall snapshots there), CP_TO (last global stage, default 500), CP_MAXSEC (wall-clock budget, default 1.5 h). Run each seed under `taskpolicy -b`. Dev tooling only.
  */
-import { appendFileSync } from 'node:fs';
+import { appendFileSync, writeFileSync } from 'node:fs';
 import { newProbeRun, advanceProbe, probeResult, DEFAULT_CONFIG, type ProbeConfig } from '../test/sim/probe/loop';
 import { gradualCeilingDamage, wallDamage, ceilingTierRange } from '../test/sim/probe/zoneGear';
 import { partyWithBuild, PROBE_DEFAULT_BUILD, PROBE_GOOD_BUILD } from '../test/sim/probe/builds';
@@ -17,9 +17,10 @@ import type { Bonuses } from '@/sim/bonuses';
 const SEED = Number(process.env.CP_SEED ?? 1);
 const OUT = process.env.CP_OUT ?? 'ceiling-pass.jsonl';
 const TO = Number(process.env.CP_TO ?? 500);
+const MAX_SEC = Number(process.env.CP_MAXSEC ?? 5400); // wall-clock budget for the probe; past it the run stops where it is
 const MEASURE_SEED = 4242;
 
-interface Snap { party: HeroConfig[]; bonuses: Bonuses; hours: number }
+interface Snap { stage: number; activeHours: number; party: HeroConfig[]; bonuses: Bonuses }
 const arrive: Record<number, Snap> = {};
 const last: Record<number, Snap> = {};
 const run = newProbeRun(SEED);
@@ -28,14 +29,17 @@ const cfg: ProbeConfig = {
   ...DEFAULT_CONFIG,
   stopAtStage: TO,
   observe: (target, party, bonuses) => {
+    if ((Date.now() - t0) / 1000 > MAX_SEC) return false;
     if (target % 10 !== 0) return;
-    const snap = { party: structuredClone([...party]), bonuses: { ...bonuses }, hours: run.state.activeSec / 3600 };
+    const snap = { stage: target, activeHours: run.state.activeSec / 3600, party: structuredClone([...party]), bonuses: { ...bonuses } };
     if (arrive[target] === undefined) arrive[target] = snap;
     last[target] = snap;
   },
 };
 advanceProbe(run, cfg);
 const r = probeResult(run, cfg);
+// The parties at every wall, in scripts/probe-snapshots.ts' format (healer-check, the difficulty-change check).
+if (process.env.CP_SNAP !== undefined) writeFileSync(process.env.CP_SNAP, JSON.stringify({ seed: SEED, arrive, last }));
 process.stdout.write(`seed ${SEED}: probe ${r.totalActiveHours.toFixed(0)} h in ${((Date.now() - t0) / 1000).toFixed(0)} s — measuring the ceiling\n`);
 
 function measure(snap: Snap, S: number): { ask: number; pct: number } {
@@ -58,5 +62,5 @@ const walls = r.milestones.map((m) => {
     askArrive: ma?.ask, askKill: mk?.ask, pctArrive: ma?.pct, pctKill: mk?.pct, level: m.partyLevel,
   };
 });
-appendFileSync(OUT, JSON.stringify({ seed: SEED, completed: r.completed, stalledAt: r.stalledAtStage, hours: r.difficultyActiveHours, days: r.totalCalendarDays, fails: r.totalBossFails, walls, sec: (Date.now() - t0) / 1000 }) + '\n');
+appendFileSync(OUT, JSON.stringify({ seed: SEED, frontier: run.state.frontier, gaveUp: run.gaveUp, completed: r.completed, stalledAt: r.stalledAtStage, hours: r.difficultyActiveHours, days: r.totalCalendarDays, fails: r.totalBossFails, walls, sec: (Date.now() - t0) / 1000 }) + '\n');
 process.stdout.write(`seed ${SEED}: done, ${((Date.now() - t0) / 1000).toFixed(0)} s\n`);
