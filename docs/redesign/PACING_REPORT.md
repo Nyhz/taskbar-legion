@@ -2035,3 +2035,175 @@ Decisiones del usuario (PROGRESS.md, entradas del 16 nov tras las rondas 4c–4e
 **Tests nuevos**: `test/sim/damageMix.test.ts` (mezcla fija por jefe, reparto de la mitigación, quién pega con qué, Armas encantadas que se van con el Apoyo, la marca de la ficha, la furia por dificultad); en `test/sim/worldBossPressure.test.ts` la presión gradual mundo a mundo y el golpe al frente; actualizados `bossKit` (el jefe ya no gasta tirada), `enemyTraits` (el aura innata), `foeWords` y `foeFx`.
 
 **Números de partida, por medir en B**: `BOSS_FRONT_PRESSURE` (1 / 1,1 / 1,3 / 1,5 / 1,7), el 40 % de Armas encantadas y la rampa de furia. Con tsc, lint y vitest en verde (109 archivos, 998 tests).
+
+## Ronda 5 · B · muros re-afinados y medida (16 nov, tarde)
+
+*3 semillas de la sonda (la de la 4e: Cubo, vida, mejoras reales) de Normal 1-1 a Tormento 10-10, con los combates de
+la 5 · A. Cuatro pasadas (`scripts/ceiling-pass.ts`, ~8 min cada una con `taskpolicy -b`); la tabla de muros es la de la
+cuarta. Todas las partidas terminan el juego.*
+
+### Objetivo de cada muro
+
+La escalera (Normal 10→20, Infierno 20→55, Averno 55→70, Eterno 70→80, Tormento 80→90 % del techo gradual), con los
+mundos 1 y 2 de Infierno a Tormento a ×0,85 y ×0,93 de su línea («los muros 1–2 piden algo menos», con la presión
+gradual), y cada dificultad movida dentro de los ±5 puntos para dar forma a las horas: Normal −5, Infierno −5,
+Averno −5, Eterno +5, Tormento −5. Los 50 muros caen a ±5 puntos de su objetivo.
+
+### Resultado
+
+| | Orientativo | Horas (mediana · rango) | Intentos fallidos por muro | Mundo más largo | Piezas de la rareza más alta al final |
+|---|---|---|---|---|---|
+| Normal | 4 h | 4 (3–9) | 0 | 2,5 h | 0 de 30 |
+| Infierno | 70 h | 116 (111–117) | 4 (máx 11) | 39 h | 12 de 30 |
+| Averno | 170 h | 187 (178–257) | 5 (máx 33) | 43 h | 13 de 30 |
+| Eterno | 300 h | 198 (170–261) | 12 (máx 30) | 102 h | 21 de 30 |
+| Tormento | 450 h | 419 (416–594) | 10 (máx 190) | 213 h | 28 de 30 |
+| **Total** | — | **986 h** (913–1 142), 124 días (115–143) | | | |
+
+- **Cada dificultad dura más que la anterior** en mediana (4 < 116 < 187 < 198 < 419). Eterno queda apenas por encima
+  de Averno y lejos de las 300 h orientativas; Infierno, por encima de 70. Con ±5 puntos de escalera las horas se
+  mueven poco: entre las pasadas 2 y 4, Infierno quedó en 112–118 h y Eterno en 175–198 h hiciera lo que hiciera su
+  desplazamiento. Lo que fija las horas es la escalera misma (cuánto techo hay que alcanzar) y el ritmo del equipo.
+- **Dentro de cada dificultad el tiempo no se reparte parejo**: en Tormento los mundos 2–5 llevan 60–210 h cada uno y los
+  7–10 a veces se pasan al llegar (0,3 h). El techo gradual sube despacio y el Cubo da T8 al final.
+- **Los muros caen después del minuto**: mediana 66–71 s de pelea real (el reloj del jefe cuenta desde que llega al
+  grupo) en Infierno–Tormento, máx 76 s, aun con la furia a 1 s. El jefe apenas pega (ver Knight), así que el grupo
+  aguanta varios segundos de furia ×32–×1 000: la furia sólo mata a quien ya estaba herido.
+- **Cubo** (al acabar el juego, una partida): fabrica 13 T4, 50 T5, 71 T6, 96 T7 y 48 T8; transfigura 42; lleva 15
+  piezas suyas de 30.
+
+### Reglas
+
+**Cambio de dificultad** (`scripts/difficulty-change-check.ts`, 2 semillas, el equipo con que acaba una dificultad
+contra los dos primeros muros de la siguiente, 8 combates cada uno):
+
+| Cambio | Mundo 1 | Mundo 2 |
+|---|---|---|
+| Normal → Infierno | 8/8 · 0/8 | 6/8 · 0/8 |
+| Infierno → Averno | 8/8 · 8/8 | 1/8 · 0/8 |
+| Averno → Eterno | 0/8 · 1/8 | 0/8 · 0/8 |
+| Eterno → Tormento | 8/8 · 8/8 | 0/8 · 0/8 |
+
+El mundo 1 cae en 5 de 8 cambios (antes de la ronda, a veces); el mundo 2 casi nunca. Averno → Eterno falla porque
+Eterno va +5 sobre su escalera.
+
+**Sanadora sin curas** (`scripts/healer-check.ts`, semilla 1, 10 muros de Infierno 1 a Tormento 8, 8 combates): con su
+equipo, la Priest sin curas pierde 7 de 9 muros desde Infierno 3 (gana Infierno 1 y Averno 5). ✔ a medias, como antes.
+
+**Knight ofensivo frente a defensivo** (`scripts/front-tune.ts`, nuevo): **no se cumple**. Con su equipo, el Knight sin
+defensas (Grito de guerra + Sed de sangre) gana lo mismo que el de la construcción buena (Tajo debilitante + Grito de
+guerra) en los 6 muros medidos de Averno a Tormento, y su margen es el mismo (0,85–1,26 frente a 0,85–1,10). La
+presión al frente (`BOSS_FRONT_PRESSURE`) apenas cuenta: en un muro de Averno el Knight pasa todo el minuto al
+96–100 % de vida. Probado multiplicando esa presión desde Averno:
+
+| × la presión al frente | Averno 5 (propio · ofensivo) | Tormento 8 | Lectura |
+|---|---|---|---|
+| ×1 (la de hoy: 1,3 / 1,5 / 1,7) | 1 · 0,75 | 1 · 1 | igual |
+| ×5 | 0,88 · 1 | 1 · 1 | igual |
+| ×10 | 0,88 · 0,63 | 1 · 0,88 | el defensivo empieza a ganar |
+| ×20 | 0 · 0 | 0 · 0 | los dos pierden |
+
+El jefe de mundo pega al frente un orden de magnitud por debajo de lo que haría falta para que las defensas del Knight
+decidan, y la franja en la que deciden (entre ×10 y ×20) es estrecha: el Knight defensivo apenas aguanta más que el
+ofensivo cuando de verdad le pegan. Dejo la tabla en 1 / 1,1 / 1,3 / 1,5 / 1,7 (no cambia nada medible) y lo apunto
+como decisión: hace falta que los jefes peguen mucho más al frente **y** que las defensas del Knight valgan más
+(mitigación, Tajo debilitante, Aguantar la línea), o el muro sigue siendo sólo una carrera de daño.
+
+**Resistencia mágica** (`scripts/mr-check.ts`, nuevo: el grupo con su equipo y sin ninguna tirada de resistencia
+mágica; 10 muros de 2 semillas con las instantáneas de la pasada 1, 8 combates; farmeo del X-9, 2 semillas):
+- **Muros**: sin ella pierde en 3 de 10 (Infierno 3: 88 % → 38 % de victorias; Averno 3 y 5: 38 → 13 %, 75 → 50 %); en
+  los otros 7 igual.
+- **Farmeo**: nada. Ni una muerte con o sin ella, y el tiempo de limpiar el X-9 cambia un 0–4 %. El grupo va tan
+  sobrado en las oleadas que ninguna defensa decide al farmear; Armas encantadas (40 %) no lo cambia.
+
+### Lo que queda flojo o por decidir
+
+1. **El Knight defensivo no hace falta** (arriba): hay que decidir cuánto más pegan los jefes al frente y cuánto más
+   valen sus defensas; es un cambio grande que mueve otra vez las horas.
+2. **La resistencia mágica no hace falta al farmear**: las oleadas no aprietan a un grupo con el equipo del muro. Que
+   «haga falta siempre» pide oleadas más peligrosas o un % mayor de Armas encantadas, no sólo daño mágico.
+3. **Los muros se pasan aguantando la furia** (66–71 s): por lo mismo — el jefe pega poco. Se arregla con 1.
+4. **Eterno corto** (198 h frente a las 300 orientativas) y **Tormento desigual por dentro** (mundos 2–5 largos, 7–10
+   regalados): con ±5 puntos de escalera no se corrige; haría falta salir de la escalera o tocar el ritmo del equipo.
+5. **El mundo 2 de cada dificultad casi nunca cae con el equipo anterior.**
+
+### Muro a muro (pasada 4)
+
+La columna «Escalera» es la línea sin ajustes; el objetivo de la ronda 5 es esa línea con los mundos 1–2 a ×0,85 / ×0,93
+(desde Infierno) y el desplazamiento de la dificultad (−5 / −5 / −5 / +5 / −5).
+
+
+**Normal**
+
+| Mundo | Techo (rareza) | Escalera | Pide hoy | Lleva al llegar | Lleva al tumbar | Intentos fallidos | Vida × para la escalera |
+|---|---|---:|---:|---:|---:|---:|---:|
+| 1 | T2 | 10 % | 5 % | 5 (5–6) % | 5 (5–6) % | 0 | ×2,0 |
+| 2 | T2→T4 (11 %) | 11 % | 6 % | 9 (7–14) % | 9 (7–14) % | 0 | ×1,7 |
+| 3 | T2→T4 (22 %) | 12 % | 7 % | 12 (6–16) % | 12 (6–16) % | 0 | ×1,7 |
+| 4 | T2→T4 (33 %) | 13 % | 8 % | 13 (5–16) % | 13 (10–16) % | 0 (0–2) | ×1,6 |
+| 5 | T2→T4 (44 %) | 14 % | 9 % | 13 (12–16) % | 13 (12–16) % | 0 | ×1,5 |
+| 6 | T2→T4 (56 %) | 16 % | 11 % | 11 (11–16) % | 11 (11–16) % | 0 | ×1,5 |
+| 7 | T2→T4 (67 %) | 17 % | 12 % | 11 (9–17) % | 11 (10–17) % | 0 (0–3) | ×1,4 |
+| 8 | T2→T4 (78 %) | 18 % | 13 % | 10 (10–16) % | 16 (10–20) % | 1 (0–2) | ×1,4 |
+| 9 | T2→T4 (89 %) | 19 % | 14 % | 14 (11–17) % | 14 (14–17) % | 1 (0–4) | ×1,4 |
+| 10 | T4 | 20 % | 15 (11–15) % | 16 (15–16) % | 16 (15–16) % | 0 | ×1,3 |
+
+**Infierno**
+
+| Mundo | Techo (rareza) | Escalera | Pide hoy | Lleva al llegar | Lleva al tumbar | Intentos fallidos | Vida × para la escalera |
+|---|---|---:|---:|---:|---:|---:|---:|
+| 1 | T4 | 20 % | 12 (8–12) % | 17 (15–17) % | 17 (15–17) % | 0 (0–1) | ×1,7 |
+| 2 | T4→T5 (11 %) | 24 % | 17 (13–18) % | 12 (10–14) % | 15 (12–20) % | 2 (0–3) | ×1,4 |
+| 3 | T4→T5 (22 %) | 28 % | 23 % | 12 (7–19) % | 21 (18–21) % | 4 (2–4) | ×1,2 |
+| 4 | T4→T5 (33 %) | 32 % | 27 % | 19 % | 21 (21–23) % | 1 (1–6) | ×1,2 |
+| 5 | T4→T5 (44 %) | 36 % | 31 % | 17 (16–18) % | 22 (20–22) % | 6 (5–11) | ×1,2 |
+| 6 | T4→T5 (56 %) | 39 % | 34 (33–35) % | 22 (21–23) % | 26 (26–27) % | 5 (3–7) | ×1,2 |
+| 7 | T4→T5 (67 %) | 43 % | 39 (38–39) % | 22 (21–22) % | 31 (30–32) % | 5 (4–10) | ×1,1 |
+| 8 | T4→T5 (78 %) | 47 % | 45 (44–47) % | 26 (26–29) % | 33 (29–33) % | 5 (2–8) | ×1,0 |
+| 9 | T4→T5 (89 %) | 51 % | 46 (46–47) % | 29 (28–31) % | 36 (36–37) % | 4 (3–8) | ×1,1 |
+| 10 | T5 | 55 % | 52 (49–53) % | 32 (30–33) % | 39 (33–44) % | 4 (4–7) | ×1,1 |
+
+**Averno**
+
+| Mundo | Techo (rareza) | Escalera | Pide hoy | Lleva al llegar | Lleva al tumbar | Intentos fallidos | Vida × para la escalera |
+|---|---|---:|---:|---:|---:|---:|---:|
+| 1 | T5 | 55 % | 42 (41–48) % | 40 (40–52) % | 40 (40–52) % | 0 | ×1,3 |
+| 2 | T5→T6 (11 %) | 57 % | 48 (48–51) % | 39 (30–45) % | 38 (33–45) % | 3 (0–8) | ×1,2 |
+| 3 | T5→T6 (22 %) | 58 % | 53 (52–60) % | 34 (29–35) % | 46 (41–47) % | 6 (2–7) | ×1,1 |
+| 4 | T5→T6 (33 %) | 60 % | 55 % | 40 (37–40) % | 46 (41–48) % | 11 (6–12) | ×1,1 |
+| 5 | T5→T6 (44 %) | 62 % | 57 (55–60) % | 38 (33–39) % | 44 (43–50) % | 5 (4–22) | ×1,1 |
+| 6 | T5→T6 (56 %) | 63 % | 58 (58–60) % | 37 (35–45) % | 51 (44–52) % | 2 (2–33) | ×1,1 |
+| 7 | T5→T6 (67 %) | 65 % | 62 (61–63) % | 48 (43–50) % | 51 (50–52) % | 5 (3–12) | ×1,0 |
+| 8 | T5→T6 (78 %) | 67 % | 63 (62–66) % | 43 (43–47) % | 50 (45–52) % | 3 (2–5) | ×1,1 |
+| 9 | T5→T6 (89 %) | 68 % | 64 (62–66) % | 46 (43–48) % | 52 (49–53) % | 10 (5–15) | ×1,1 |
+| 10 | T6 | 70 % | 66 (64–67) % | 44 (42–47) % | 52 (51–56) % | 13 (7–28) | ×1,1 |
+
+**Eterno**
+
+| Mundo | Techo (rareza) | Escalera | Pide hoy | Lleva al llegar | Lleva al tumbar | Intentos fallidos | Vida × para la escalera |
+|---|---|---:|---:|---:|---:|---:|---:|
+| 1 | T6 | 70 % | 66 (66–69) % | 51 (48–53) % | 52 (50–55) % | 17 (17–18) | ×1,1 |
+| 2 | T6→T7 (11 %) | 71 % | 71 (70–72) % | 38 (36–43) % | 61 (56–71) % | 17 (11–27) | ×1,0 |
+| 3 | T6→T7 (22 %) | 72 % | 73 (72–75) % | 55 (46–63) % | 57 (51–63) % | 6 (0–23) | ×1,0 |
+| 4 | T6→T7 (33 %) | 73 % | 74 (73–76) % | 52 (49–56) % | 62 (62–64) % | 4 (3–13) | ×1,0 |
+| 5 | T6→T7 (44 %) | 74 % | 75 (72–75) % | 52 (51–54) % | 61 (61–67) % | 10 (9–16) | ×1,0 |
+| 6 | T6→T7 (56 %) | 76 % | 78 (77–79) % | 56 (54–61) % | 65 (62–69) % | 18 (1–19) | ×1,0 |
+| 7 | T6→T7 (67 %) | 77 % | 80 (79–80) % | 63 (57–63) % | 68 (63–68) % | 26 (10–30) | ×1,0 |
+| 8 | T6→T7 (78 %) | 78 % | 82 % | 64 (61–66) % | 68 (66–69) % | 15 (0–19) | ×0,9 |
+| 9 | T6→T7 (89 %) | 79 % | 84 % | 66 (61–68) % | 68 (67–69) % | 6 (1–11) | ×0,9 |
+| 10 | T7 | 80 % | 85 % | 63 (60–67) % | 68 (65–73) % | 7 (6–14) | ×0,9 |
+
+**Tormento**
+
+| Mundo | Techo (rareza) | Escalera | Pide hoy | Lleva al llegar | Lleva al tumbar | Intentos fallidos | Vida × para la escalera |
+|---|---|---:|---:|---:|---:|---:|---:|
+| 1 | T7 | 80 % | 63 % | 71 (70–74) % | 71 (70–74) % | 0 | ×1,3 |
+| 2 | T7→T8 (11 %) | 81 % | 70 % | 31 (28–45) % | 55 (50–68) % | 19 (15–27) | ×1,2 |
+| 3 | T7→T8 (22 %) | 82 % | 77 % | 49 (35–49) % | 58 (56–61) % | 12 (9–26) | ×1,1 |
+| 4 | T7→T8 (33 %) | 83 % | 78 % | 46 (44–53) % | 63 (62–66) % | 36 (29–63) | ×1,1 |
+| 5 | T7→T8 (44 %) | 84 % | 80 % | 54 (53–55) % | 79 (59–113) % | 82 (23–190) | ×1,1 |
+| 6 | T7→T8 (56 %) | 86 % | 81 % | 52 (49–97) % | 97 (93–111) % | 8 (0–13) | ×1,1 |
+| 7 | T7→T8 (67 %) | 87 % | 82 % | 88 (86–103) % | 88 (86–103) % | 0 | ×1,1 |
+| 8 | T7→T8 (78 %) | 88 % | 83 % | 77 (69–91) % | 77 (75–91) % | 0 (0–2) | ×1,1 |
+| 9 | T7→T8 (89 %) | 89 % | 84 % | 68 (65–79) % | 72 (68–79) % | 11 (0–14) | ×1,1 |
+| 10 | T8 | 90 % | 85 % | 64 (61–70) % | 66 (65–70) % | 8 (2–14) | ×1,1 |

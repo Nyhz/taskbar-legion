@@ -331,16 +331,20 @@ export function wallCurveMult(S: number): number {
 // Fitted (round 4e) with the probe that plays like a player — Cube, life when it dies, gems counted — in three passes
 // of 3 seeds (scripts/ceiling-pass.ts, scripts/wall-ask.ts: the measured ask on arrival, median, × target ÷ ask).
 // Hell 1, Eternal 1 and Torment 1 sit a hair under the wall before them (same share of nearly the same ceiling).
-// Docs: PACING_REPORT.md rounds 4c–4e. Before it (round 3 · 3b, tuned for the hours ≈ 4 / 40 / 120 / 230 / 325):
+// ROUND 5 (2026-11-16, user: «horas que suban con la dificultad», «presión gradual»): worlds 1 and 2 of Hell→Torment
+// ask ×0.85 and ×0.93 of their line, and each difficulty is moved within the ±5 points the ladder allows to shape the
+// hours: Normal −5, Hell −5, Inferno −5, Eternal +5, Torment −5 (scripts/ceiling-pass.ts, 4 passes of 3 seeds with the
+// round-5 combat: harder enrage, gradual pressure, front lean, fixed physical/magic mix). Measured: 4 / 116 / 187 /
+// 198 / 419 h. Docs: PACING_REPORT.md rounds 4c–4e and 5. Before it (round 3 · 3b, tuned for the hours ≈ 4 / 40 / 120 / 230 / 325):
 // 0.27 0.193 0.2 0.16 0.16 0.135 0.14 0.16 0.141 0.15 · 0.167 0.293 0.647 0.938 0.96 0.96 0.938 0.938 1.03 1.19 ·
 // 2.15 2.29 2.45 2.6 2.92 3.55 4.35 5.21 6.11 7.12 · 8.1 8.99 9.95 11.1 12.6 14.1 16.1 18.9 20.9 23.4 ·
 // 30.5 33.8 39.9 48.4 55.7 63 74.8 89.4 88.4 90.
 export const WORLD_WALL_MULT: readonly number[] = [
-  0.421, 0.372, 0.379, 0.592, 0.574, 0.585, 0.661, 0.679, 0.697, 0.701,
-  0.577, 0.82, 1.06, 1.31, 1.82, 2.1, 2.91, 3.58, 4.29, 4.65,
-  5.03, 5.07, 7.83, 9.25, 11.7, 13.9, 16.1, 17, 20.2, 22.5,
-  21, 26.3, 31.5, 36.3, 43.3, 47.5, 54.5, 60.1, 63.4, 66.1,
-  63.2, 81.6, 123, 164, 189, 208, 238, 269, 304, 307,
+  0.236, 0.212, 0.237, 0.319, 0.36, 0.404, 0.458, 0.514, 0.558, 0.504,
+  0.342, 0.521, 0.917, 1.09, 1.46, 1.77, 2.39, 3.32, 3.76, 4.32,
+  3.72, 4.25, 7.13, 8.35, 10.6, 12.6, 14.9, 16.1, 18.5, 21.1,
+  21.2, 26.8, 32.6, 38.6, 44.2, 50.2, 58.3, 62.5, 66.8, 71.5,
+  48.8, 76.1, 115, 158, 178, 195, 227, 254, 285, 292,
 ];
 export function wallWorldMult(S: number): number {
   return WORLD_WALL_MULT[worldOf(S) - 1] ?? wallCurveMult(S);

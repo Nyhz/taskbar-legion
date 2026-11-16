@@ -72,8 +72,10 @@ describe('the retuned curves', () => {
   it('every world-boss wall is tougher than the one before inside its difficulty, and a difficulty opens near the last', () => {
     // The ladder (rounds 4c–4e, 2026-11-16): a difficulty's world 1 asks the same share of nearly the same ceiling as
     // the previous world 10 (it starts where the last one ended), so measured asks may open it a little below it.
+    // Round 5 (user: «presión gradual»): worlds 1–2 of Hell→Torment ask a little less (×0.85, ×0.93 of their line), so
+    // the gear a difficulty ends with can take them — the opening may sit up to a third under the last wall.
     for (let w = 2; w <= 50; w++) {
-      if (w % 10 === 1) expect(zoneBossHp(w * 10) / zoneBossHp((w - 1) * 10), `world ${w}`).toBeGreaterThan(0.85);
+      if (w % 10 === 1) expect(zoneBossHp(w * 10) / zoneBossHp((w - 1) * 10), `world ${w}`).toBeGreaterThan(0.65);
       else expect(zoneBossHp(w * 10), `world ${w}`).toBeGreaterThan(zoneBossHp((w - 1) * 10));
     }
     expect(WORLD_WALL_MULT).toHaveLength(50);
