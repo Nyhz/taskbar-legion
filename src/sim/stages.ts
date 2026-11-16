@@ -2,7 +2,7 @@ import type { Rng } from './rng';
 import type { Combatant, WorldState } from './world';
 import type { ResolvedAbility } from './loadout';
 import { abilityDef } from '@/data/abilities';
-import { bossFrontPressure, bossMagicShare, worldBossPressureAt, type BossRank } from '@/data/bossKit';
+import { bossMagicShare, worldBossPressureAt, type BossRank } from '@/data/bossKit';
 import { armBoss, bossKit } from './bossMechanics';
 import { pickEnemyKind, supportAuras, traitsOf, SUPPORT_KIND, TRAIT_TUNING, type EnemyKind, type EnemyRole } from '@/data/enemies';
 import { difficultyIndexOf } from '@/data/difficulties';
@@ -26,6 +26,8 @@ import {
   ZONE_ENRAGE_MS,
   STAGE_ENRAGE_MS,
   enrageRampMs,
+  zoneBossHit,
+  stageBossHit,
 } from '@/data/stageScaling';
 
 // Enemy spawning. Waves of 2–8 mixed kinds spawn ahead of the party and advance.
@@ -181,10 +183,11 @@ function dressBoss(boss: Combatant | undefined, kit: ReturnType<typeof bossKit>,
   boss.affixes = kit.affixes;
   boss.mechanic = kit.mechanic;
   boss.bossRank = rank;
-  // What it hits with and how hard it leans on the front hero are its own, by data (data/bossKit): the same boss
-  // every attempt, so a party can prepare. Its enrage ramp is its difficulty's (data/stageScaling).
+  // What it hits with is its own, by data (data/bossKit): the same boss every attempt, so a party can prepare. Its
+  // enrage ramp is its difficulty's (data/stageScaling).
   boss.magicShare = bossMagicShare(S, rank);
-  boss.frontHitMult = bossFrontPressure(S, rank);
+  // What it deals the FRONT hero is anchored to the average tank's life (data/stageScaling, round 6).
+  boss.frontHit = rank === 'world' ? zoneBossHit(S) : stageBossHit(S);
   boss.enrageRampMs = enrageRampMs(difficultyIndexOf(S));
   armBoss(boss);
 }
@@ -221,7 +224,7 @@ export function spawnZoneBoss(world: WorldState, _rng: Rng): void {
       // Decoupled zone-boss HP (own Φ-power scale — THE wall; grows steeper than party power).
       hpMult: 0,
       hpAbsolute: zoneBossHp(S),
-      dmgMult: ZONE_BOSS_DMG_MULT * worldBossPressureAt(S).hitMult, // its minute presses harder by difficulty, eased in over its first worlds (data/bossKit)
+      dmgMult: ZONE_BOSS_DMG_MULT * worldBossPressureAt(S).hitMult, // its hits behind the front, by difficulty (data/bossKit)
       backShotChance: worldBossPressureAt(S).backShotChance,
       magic: false, // its physical/magic mix is its own (dressBoss, data/bossKit BOSS_MAGIC_SHARE)
       range: RANGE.melee + 60, // towering sprite → stop well clear of the tank (+30 reach)

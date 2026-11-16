@@ -62,7 +62,9 @@ export const BOSS_AFFIX = {
  *  peguen más fuerte durante el minuto" — from Hell on, a party must need its tank's defences and its Priest's heals
  *  to see the end of the minute, however well geared). Its life and its enrage are untouched here (the wall's pace
  *  is the final pacing pass's); this is only what it does to the party while the clock runs.
- *    - hitMult:        × the damage of its every hit (basic attacks, its area blow, its affixes' blows);
+ *    - hitMult:        × the damage of its hits AWAY FROM THE FRONT (its basic attacks on the heroes behind, its area
+ *                      blow's splash, its affixes' blows). What it deals the FRONT hero is the anchor table's (round 6:
+ *                      data/stageScaling ZONE_BOSS_HIT_TUNE, Combatant.frontHit);
  *    - blowEveryMs:    its area blow comes this often (Sísmico, when faster, still wins);
  *    - blowCoeff:      the blow on the front hero, × its hit;
  *    - splashCoeff:    the blow on everyone behind, × its hit;
@@ -140,25 +142,11 @@ export function worldBossPressureAt(S: number): WorldBossPressure {
 }
 
 // ── Pressure on the front ───────────────────────────────────────────────────────────────────────────────────
-
-/** × a boss's basic hits on the FRONT hero, and × the main hit of its area blow (which lands on the front hero), by
- *  rank and difficulty, Normal … Torment (round 5, 2026-11-16, user: «cuanto más se avance, el Knight debería
- *  necesitar más habilidades, equipo y talentos defensivos» — «solo en los jefes»: the waves are untouched). Tuned
- *  so a Knight built and geared to hit just scrapes through in Hell and does not hold a wall from Inferno on. A world
- *  boss's lean eases in over the first worlds of a difficulty with the rest of its pressure. */
-export const BOSS_FRONT_PRESSURE: Readonly<Record<BossRank, readonly [number, number, number, number, number]>> = {
-  stage: [1, 1.1, 1.3, 1.5, 1.7],
-  world: [1, 1.1, 1.3, 1.5, 1.7],
-};
-
-/** The front lean of a boss of `rank` at global stage `S`. */
-export function bossFrontPressure(S: number, rank: BossRank): number {
-  const d = difficultyIndexOf(S);
-  const table = BOSS_FRONT_PRESSURE[rank];
-  const own = table[Math.max(0, Math.min(4, d))] ?? 1;
-  if (rank === 'stage' || d === 0) return own;
-  return lerp(table[d - 1] ?? 1, own, pressureWeight(S));
-}
+// Round 5 leaned a boss's hits on the front hero by difficulty (BOSS_FRONT_PRESSURE ×1 … ×1.7). Round 6 (2026-11-16,
+// user: «solo la propuesta 1») REPLACED it with the boss-hit anchor (data/stageScaling ZONE_BOSS_HIT_TUNE,
+// STAGE_BOSS_HIT_TUNE): what a boss deals the FRONT hero — its basic hits on him and its area blow's main hit — is
+// written as what it takes off the average tank a second. Its hits on the heroes behind keep the formula (× hitMult
+// above): anchoring those to the tank's life too would one-shot a Ranger with a seventh of the Knight's.
 
 // ── Physical and magic damage ───────────────────────────────────────────────────────────────────────────────
 

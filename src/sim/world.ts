@@ -78,9 +78,9 @@ export interface Combatant {
   /** Boss-only: the share of its damage that is magic (0.4 or 0.6, data/bossKit BOSS_MAGIC_SHARE) — each hit is split
    *  and each part is mitigated by its own defence. An ability with its own `magic` flag keeps it. */
   magicShare?: number;
-  /** Boss-only: × its basic hits on the FRONT hero (data/bossKit BOSS_FRONT_PRESSURE): it leans on the tank harder by
-   *  difficulty. Its area blow carries the same lean on its main target through the blow's coefficient. */
-  frontHitMult?: number;
+  /** Boss-only: what it hits the FRONT hero for — its basic hits on him and its area blow's main hit (data/stageScaling
+   *  zoneBossHit / stageBossHit: anchored to the average tank's life, round 6). Its hits behind keep enemyDamage. */
+  frontHit?: number;
   isBoss?: boolean;
   isElite?: boolean; // a beefed-up "champion" trash mob (2× hp/dmg, 2× chest) — render bigger
   // ── what kind of wave enemy it is and what it has gained with the difficulty (data/enemies.ts, sim/enemyTraits.ts) ──

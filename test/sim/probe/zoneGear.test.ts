@@ -56,7 +56,9 @@ describe('gear % of the zone', () => {
     expect(many).toBeGreaterThan(few);
     expect(many).toBeGreaterThan(naked);
     const one = gearPercent(zoneReferenceSet(party, boss, 7), boss, bonuses, 1234); // one draw, against the mean of five
-    expect(one).toBeGreaterThan(60);
+    // (Round 6: the world boss's front hit is anchored to the average tank, so one lighter draw may fall a little
+    // sooner than the mean of five — the bound below is about the same set, not a different one.)
+    expect(one).toBeGreaterThan(50);
     expect(one).toBeLessThan(160);
   });
 

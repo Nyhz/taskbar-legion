@@ -2,7 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { createWorld, Simulation, type TickContext } from '@/sim/Simulation';
 import { getBonuses } from '@/sim/bonuses';
 import { bossKit } from '@/sim/bossMechanics';
-import { BOSS_FRONT_PRESSURE, WORLD_BOSS_PRESSURE, bossFrontPressure, pressureWeight, worldBossPressure, worldBossPressureAt } from '@/data/bossKit';
+import { WORLD_BOSS_PRESSURE, pressureWeight, worldBossPressure, worldBossPressureAt } from '@/data/bossKit';
+import { ZONE_BOSS_DMG_MULT, ZONE_BOSS_HIT_TUNE, enemyDamage, zoneBossHit } from '@/data/stageScaling';
 import { globalStageOf } from '@/data/difficulties';
 import type { Combatant } from '@/sim/world';
 import { base, unit } from './_kit';
@@ -61,7 +62,7 @@ describe('world-boss pressure', () => {
         const S = globalStageOf(d, 3, 10);
         const kit = bossKit(seed, S, 'world');
         const blow = kit.abilities.find((a) => a.def.key === 'boss_shockwave')?.def;
-        expect(blow?.power?.coeff).toBeCloseTo(p.blowCoeff * bossFrontPressure(S, 'world'), 9); // its lean on the front hero rides on the main hit
+        expect(blow?.power?.coeff).toBe(p.blowCoeff);
         expect(blow?.power?.splashCoeff).toBe(p.splashCoeff);
         expect(blow?.cooldownMs).toBe(kit.affixes.includes('seismic') ? Math.min(p.blowEveryMs, 6000) : p.blowEveryMs);
       }
@@ -79,41 +80,31 @@ describe('world-boss pressure', () => {
         expect(at.blowCoeff).toBeCloseTo(prev.blowCoeff + (own.blowCoeff - prev.blowCoeff) * w, 9);
         expect(at.backShotChance).toBeCloseTo(prev.backShotChance + (own.backShotChance - prev.backShotChance) * w, 9);
         expect(at.hitMult).toBeCloseTo(prev.hitMult + (own.hitMult - prev.hitMult) * w, 9);
-        expect(bossFrontPressure(S, 'world')).toBeCloseTo((BOSS_FRONT_PRESSURE.world[d - 1] ?? 1) + ((BOSS_FRONT_PRESSURE.world[d] ?? 1) - (BOSS_FRONT_PRESSURE.world[d - 1] ?? 1)) * w, 9);
       }
     }
     // Normal has no difficulty before it: all of its pressure from its first world.
     expect(pressureWeight(globalStageOf(0, 1, 10))).toBe(1);
-    // A stage boss's lean is its difficulty's from the first world.
-    expect(bossFrontPressure(globalStageOf(2, 1, 5), 'stage')).toBe(BOSS_FRONT_PRESSURE.stage[2]);
   });
 
-  it('from Hell, part of its basic attacks land behind the front hero, and its hits carry the hit multiplier', () => {
+  it('from Hell, part of its basic attacks land behind the front hero, and its hit is the anchor table\'s', () => {
     const S = globalStageOf(1, 3, 10);
     const f = fight(S, 60);
     const share = f.basicBehind / Math.max(1, f.basicFront + f.basicBehind);
     expect(share).toBeGreaterThan(worldBossPressure(1).backShotChance - 0.15);
     expect(share).toBeLessThan(worldBossPressure(1).backShotChance + 0.15);
     expect(f.blowsBehind).toBeGreaterThan(0);
-    const row = WORLD_BOSS_PRESSURE[1] as { hitMult: number };
-    const before = row.hitMult;
-    const dmg = (): number => {
-      const w = createWorld(7, [hero('tank', 240, 60)]);
-      w.maxClearedStage = S - 1;
-      w.globalStageIndex = S - 1;
-      const sim = new Simulation(w);
-      sim.enterZoneBoss(Math.ceil(S / 10));
-      sim.tick({ bonuses: getBonuses({}, {}), ownedPetKeys: [], retryStage: true });
-      return w.enemies.find((e) => e.isBoss === true)?.enemyDamage ?? 0;
-    };
-    try {
-      row.hitMult = 1;
-      const one = dmg();
-      row.hitMult = 2;
-      expect(dmg()).toBeCloseTo(2 * one, 6);
-    } finally {
-      row.hitMult = before;
-    }
+    const w = createWorld(7, [hero('tank', 240, 60)]);
+    w.maxClearedStage = S - 1;
+    w.globalStageIndex = S - 1;
+    const sim = new Simulation(w);
+    sim.enterZoneBoss(Math.ceil(S / 10));
+    sim.tick({ bonuses: getBonuses({}, {}), ownedPetKeys: [], retryStage: true });
+    // Round 6: what it deals the FRONT hero is data (data/stageScaling ZONE_BOSS_HIT_TUNE), anchored to the average
+    // tank's life; its hits behind keep the formula × the difficulty's hitMult.
+    const boss = w.enemies.find((e) => e.isBoss === true);
+    expect(boss?.frontHit).toBe(zoneBossHit(S));
+    expect(zoneBossHit(S)).toBe(ZONE_BOSS_HIT_TUNE[Math.ceil(S / 10) - 1]);
+    expect(boss?.enemyDamage).toBeCloseTo(enemyDamage(S) * ZONE_BOSS_DMG_MULT * worldBossPressureAt(S).hitMult, 6);
   });
 });
 

@@ -2284,3 +2284,57 @@ golpe recibido y cada cura. Corrección: en la 5 · B llamé «Averno 5» a la e
    Combina con la 1; por sí sola no basta.
 
 Las tres mueven las horas: tras cablear la que se elija, hay que re-afinar los muros y las horas (punto B otra vez).
+
+## Ronda 6 · A · el daño de los jefes, anclado a la vida del tanque (16 nov)
+
+Decisión del usuario (PROGRESS.md, última entrada): sólo la propuesta 1 de la 5 · C. Las oleadas no se tocan; no hay
+presión dentro del minuto.
+
+| Qué | Antes | Ahora | Dónde |
+|---|---|---|---|
+| **Lo que un jefe pega al héroe de delante** (sus golpes normales sobre él y el golpe principal de su golpe en área) | fórmula `DMG0·Φ^1,2·1,3^d` × 7 (muro) o × 6,5 (etapa), × presión al frente 1 → 1,7 y × `hitMult` 1 → 1,45 | **tabla fija por mundo**, escrita una vez por `scripts/boss-hit-tune.ts` con el Knight medio de la sonda en cada muro: el muro le quita `BOSS_THREAT_PCT` = **1 / 4 / 9 / 14 / 24 % de su vida por segundo** (Normal → Tormento) tras su armadura y resistencia mágica contra la mezcla de ese jefe, antes de bloqueo, Piel de piedra, Tajo debilitante y curas; un jefe de etapa, `STAGE_BOSS_THREAT_SHARE` = 0,6 de eso. El objetivo entra poco a poco en los mundos 1–3 como el resto de la presión, y la furia multiplica encima. El mundo 1 conserva la fórmula (el arranque) | `src/data/stageScaling.ts` `BOSS_THREAT_PCT`, `STAGE_BOSS_THREAT_SHARE`, `ZONE_BOSS_HIT_TUNE`, `STAGE_BOSS_HIT_TUNE`, `zoneBossHit`, `stageBossHit`; `Combatant.frontHit`; `sim/combat.ts` (golpes al frente), `sim/abilities.ts` (golpe principal del golpe en área), `sim/stages.ts` |
+| **Lo que pega a la retaguardia** (golpes normales que manda detrás, la onda del golpe en área) | la fórmula × `hitMult` | igual: la fórmula × `hitMult` (1 / 1 / 1 / 1,15 / 1,45). Anclarlo también a la vida del tanque mataba al Ranger (una séptima parte de la vida del Knight) de dos golpes y el muro se perdía haga lo que haga el Knight | `src/data/bossKit.ts` `WORLD_BOSS_PRESSURE.hitMult` (comentario) |
+| **Presión al frente** | `BOSS_FRONT_PRESSURE` 1 / 1,1 / 1,3 / 1,5 / 1,7 | **quitada**, la sustituye el ancla (comentario con la regla y la fecha en `data/bossKit.ts`) | `data/bossKit.ts`, `sim/bossMechanics.ts`, `sim/world.ts` |
+
+**Por qué 1 / 4 / 9 / 14 / 24 % y no 2 / 3 / 3,5 / 4.** En la 5 · C estimé que la Priest repone «~4 % de la vida por
+segundo, pase lo que pase con el equipo». Era un error: sus curas son un % de la vida **× su poder de curación**, y
+crecen con su equipo. Medido (`scripts/heal-capacity.ts`, nuevo: el Knight apretado hasta caer, curas recibidas por
+segundo sobre su vida, 2 semillas × 3 combates):
+
+| | Infierno 3 | Infierno 8 | Averno 5 | Averno 8 | Eterno 5 | Tormento 5 | Tormento 8 |
+|---|---|---|---|---|---|---|---|
+| La Priest le cura (% de su vida por segundo) | 1,7–5,2 | 4,4–6,0 | 3,3–9,2 | 6,7–10,2 | 5,6–12,3 | 13,1–21,9 | 10,8–29,5 |
+
+Con 2–4 % el muro quedaba muy por debajo de lo que cura la Priest y nada cambiaba (×1 de esa tabla: el Knight ofensivo
+igual que el defensivo). El objetivo nuevo mantiene la intención de la decisión («cerca de lo que cura la Priest»):
+Infierno en lo que cura (el ofensivo pasa justo), desde Averno por encima en lo que quitan Piel de piedra y Tajo
+debilitante.
+
+**Comprobación** (`scripts/anchor-sweep.ts`, nuevo; el grupo de la pasada 4 de la ronda 5, semilla 1, 8 combates por
+casilla; «propio» = construcción buena, «ofensivo» = Knight con Grito de guerra + Sed de sangre, «sin curas» = Priest
+con Nova + Escudo sagrado). Victorias, propio / ofensivo / sin curas, con la tabla × el factor:
+
+| Muro | ×0,5 | ×0,75 | **×1** | ×1,5 | ×2 |
+|---|---|---|---|---|---|
+| Infierno 3 | 1 / 1 / 0 | 1 / 1 / 0 | **0,88 / 1 / 0** | 0,75 / 0,88 / 0 | 0,62 / 0,38 / 0 |
+| Infierno 8 | 0,12 / 0,75 / 0 | 0,12 / 0,75 / 0 | **0,12 / 0,5 / 0** | 0,12 / 0,75 / 0 | 0 / 0,25 / 0 |
+| Averno 5 | 0,12 / 0,25 / 0 | 0,62 / 0,25 / 0 | **0 / 0 / 0** | 0 / 0 / 0 | 0 / 0 / 0 |
+| Averno 8 | 0,38 / 0,12 / 0 | 0,38 / 0,12 / 0 | **0,5 / 0 / 0** | 0,25 / 0,25 / 0 | 0 / 0 / 0 |
+| Eterno 5 | 0,88 / 0,88 / 0,5 | 1 / 0,75 / 0,12 | **1 / 0,75 / 0** | 0,5 / 0,62 / 0 | 0 / 0 / 0 |
+| Tormento 5 | 0 / 0 / 0 | 0 / 0 / 0 | **0 / 0 / 0** | 0 / 0 / 0 | 0 / 0 / 0 |
+| Tormento 8 | 1 / 0,88 / 0 | 1 / 0,62 / 0 | **0,75 / 0,62 / 0** | 0 / 0 / 0 | 0 / 0 / 0 |
+
+- En Infierno el Knight ofensivo pasa (pasa justo o mejor que el propio: en Infierno el propio es la construcción por
+  defecto, que tampoco es defensiva).
+- Desde Averno, donde el muro es ganable, el Knight defensivo gana más que el ofensivo (Averno 8, Eterno 5, Tormento 8).
+- La Priest sin curas pierde todos los muros a ×1.
+- Sin precipicio entre ×0,5 y ×1; por encima cae escalonado, más brusco en Tormento 8 (×1 → ×1,5).
+- Ojo: este grupo se equipó contra el daño viejo; la sonda nueva se equipará contra éste (el punto B lo mide). Averno 5
+  y Tormento 5 los pierde todos a cualquier factor: con su equipo de ese momento son una carrera de daño que no gana.
+- **Farmeo** (`scripts/mr-check.ts`, X-9 de Infierno 3, Averno 5, Eterno 5, Tormento 5, 2 semillas): ni una muerte con
+  los jefes de etapa nuevos; tiempos iguales.
+
+**Tests**: `test/sim/bossHitAnchor.test.ts` (nuevo: forma de la tabla, sube con la dificultad, el de etapa por debajo
+del de mundo, mundo 1 con la fórmula); `worldBossPressure.test.ts` (el jefe lleva su golpe al frente de la tabla y su
+golpe detrás de la fórmula × `hitMult`); `zoneGear.test.ts` (un margen al límite, comentado). tsc, lint y vitest en
+verde (110 archivos, 1001 tests).

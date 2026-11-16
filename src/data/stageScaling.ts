@@ -181,6 +181,58 @@ export const TRASH_DMG_TUNE: number[] = [
   0.680, 0.748, 0.820, 0.952, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00,
   1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00,
 ];
+// ── THE BOSS-HIT ANCHOR (round 6, 2026-11-16; docs/redesign/PACING_REPORT.md «Ronda 5 · C», «Ronda 6») ──
+// A boss's life is anchored to the party's damage; since round 6 its DAMAGE is anchored to the tank's life. Round 5 · C
+// measured why nothing threatened a geared party: the formula's damage (DMG0·Φ^1.2·1.3^d) went flat against the
+// Knight from Inferno on, while the Priest's heals — a % of the life healed — refill ~4 % a second whatever the
+// gear. So the hit a boss deals is a fixed table, one entry per world, written ONCE by `scripts/boss-hit-tune.ts`
+// from the probe's average Knight at that wall (its life, its armour and magic resist against the boss's own
+// physical/magic mix): the world boss's sustained damage on him — its basic hits and its area blow's main hit —
+// takes BOSS_THREAT_PCT % of his life a second after his mitigation, before block, Stone Skin, Debilitating Cleave
+// and heals (the defensive build's tools). It is DATA, not a reaction: a player who outgears the average Knight takes
+// less, one below it more. The difficulty's target eases in over its first worlds with the rest of the world-boss
+// pressure (bossKit pressureWeight), and the enrage multiplies on top. World 1 keeps the formula (the bootstrap).
+/** % of the average Knight's life a second the WORLD boss takes off him after his mitigation, Normal … Torment.
+ *  Set against what the probe's Priest can heal him a second when he is pressed (scripts/heal-capacity.ts, round 6):
+ *  ≈ 3.5–5 % in Hell, 5–9 % in Inferno, ≈ 11 % in Eternal, 15–28 % in Torment — her heals are a % of his life × her
+ *  heal power, so they grow with her gear. Hell sits at what she heals (an offensive Knight scrapes through); from
+ *  Inferno it sits above it by about what Stone Skin and Debilitating Cleave take off (a Knight without them does
+ *  not hold the minute). The user chose 2 / 3 / 3.5 / 4 % on a first estimate of a flat ~4 % of healing, which
+ *  the measure proved wrong; these keep the decision's intent («cerca de lo que cura la Priest»). */
+export const BOSS_THREAT_PCT: readonly [number, number, number, number, number] = [1, 4, 9, 14, 24];
+/** A STAGE boss presses the front at this share of its world boss's target: the defensive build shows outside the
+ *  walls too, while a stage boss (5–10 s) never threatens the farm. */
+export const STAGE_BOSS_THREAT_SHARE = 0.6;
+/** The world boss's basic hit, world 1 … 50 (scripts/boss-hit-tune.ts). */
+export const ZONE_BOSS_HIT_TUNE: number[] = [
+  17.4, 5.45, 6.09, 6.25, 6.65, 8.3, 9.78, 10.9, 14.2, 14.4,
+  36.5, 80, 129, 167, 250, 294, 383, 421, 597, 714,
+  963, 1170, 1660, 1830, 2270, 2370, 2730, 2730, 3030, 3040,
+  3570, 5070, 5140, 5640, 6190, 6960, 7210, 7170, 7120, 8380,
+  9770, 15600, 18300, 26700, 30100, 31600, 31100, 30500, 30500, 30800,
+];
+/** The stage bosses' basic hit, world 1 … 50 (scripts/boss-hit-tune.ts; against the Knight that reaches the wall). */
+export const STAGE_BOSS_HIT_TUNE: number[] = [
+  13.2, 3.26, 3.66, 3.73, 4.01, 4.99, 5.56, 6.66, 6.63, 8.74,
+  19, 31.7, 50.3, 59.5, 65.5, 109, 115, 157, 173, 243,
+  426, 542, 661, 780, 902, 1040, 1150, 1290, 1290, 1440,
+  1700, 2030, 2960, 2800, 3100, 3380, 3600, 3840, 3890, 3810,
+  5480, 6440, 10300, 10700, 15600, 17600, 18500, 18200, 17900, 17800,
+];
+
+/** The world boss's basic hit at global stage `S`: the anchor table, or the formula where it has no entry (world 1). */
+export function zoneBossHit(S: number): number {
+  const w = worldOf(S);
+  const tuned = w >= 2 ? ZONE_BOSS_HIT_TUNE[w - 1] : undefined;
+  return tuned ?? enemyDamage(S) * ZONE_BOSS_DMG_MULT;
+}
+/** A stage boss's basic hit at global stage `S`: the anchor table, or the formula where it has no entry (world 1). */
+export function stageBossHit(S: number): number {
+  const w = worldOf(S);
+  const tuned = w >= 2 ? STAGE_BOSS_HIT_TUNE[w - 1] : undefined;
+  return tuned ?? enemyDamage(S) * BOSS_DMG_MULT;
+}
+
 export function trashDmgTune(S: number): number {
   return TRASH_DMG_TUNE[tunePoint(S)] ?? 1;
 }

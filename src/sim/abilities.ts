@@ -85,6 +85,10 @@ export function effectMagnitude(ability: AbilityDef, applied: AppliedEffect, def
   if (t === 'damage' || t === 'dot') {
     const coeff = coeffOverride ?? effectCoeff(ability, applied, steps);
     if (coeff === undefined) return 0;
+    // A boss's blow on the front hero (its main hit, not the splash) carries its anchored front hit (round 6).
+    if (t === 'damage' && coeffOverride === undefined && ability.target === 'frontEnemy' && caster.frontHit !== undefined) {
+      return coeff * caster.frontHit * foeDamageMult(caster);
+    }
     return coeff * normalAttackDamage(caster, cs);
   }
   if (t === 'heal' || t === 'hot' || t === 'shield') {
