@@ -2008,3 +2008,8 @@ Coherencia entre semillas con el muro a su vida actual: 0,81–0,85 antes → 0,
 en Averno, donde el grupo queda justo en el umbral). **Pendiente**: con la misma vida de muro el grupo de la sonda gana
 menos que antes (el Knight cambia daño por defensa y entra el Golpe demoledor): las horas subirán y hay que re-afinar
 muros y horas en la siguiente ronda.
+- **Tras la ronda 7** (16 nov, noche): el **Golpe demoledor** (nombre provisional) tendrá **nombre y arte propios**,
+  confirmados en el laboratorio. Las **tiradas firmes** (bloqueo, críticos, multigolpe sin dados) **se quedan**.
+  **Escalera de la ronda 8** (lo que pide cada muro en % del techo gradual, del mundo 1 al 10): Normal 5→10 · Infierno
+  10→20 · Averno 20→30 · Eterno 30→40 · Tormento 40→60 (el ejemplo del usuario «20-30, 30-40, 40-60» desde Averno). Horas
+  ≈ 4/20/80/200/500+, cada dificultad más larga que la anterior en cada partida.
