@@ -4,7 +4,7 @@
  * asks (its life as a % of the ceiling's 60 s of damage) with the heroes on arrival, and the % of the ceiling the
  * party deals on arrival and at the kill. One JSON line per seed to CP_OUT: hours per difficulty, and per wall the
  * failed attempts, hours on it (keyless / holding a key), top-rarity pieces worn, ask and party %.
- * Env: CP_SEED, CP_OUT, CP_SNAP (also write the wall snapshots there), CP_TO (last global stage, default 500), CP_MAXSEC (wall-clock budget, default 1.5 h). Run each seed under `taskpolicy -b`. Dev tooling only.
+ * Env: CP_SEED, CP_OUT, CP_SNAP (also write the wall snapshots there), CP_TO (last global stage, default 500), CP_MAXSEC (wall-clock budget, default 1.5 h), CP_CHEST_MULT (× chests opened, tooling). Run each seed under `taskpolicy -b`. Dev tooling only.
  */
 import { appendFileSync, writeFileSync } from 'node:fs';
 import { newProbeRun, advanceProbe, probeResult, DEFAULT_CONFIG, type ProbeConfig } from '../test/sim/probe/loop';
@@ -26,8 +26,12 @@ const arrive: Record<number, Snap> = {};
 const last: Record<number, Snap> = {};
 const run = newProbeRun(SEED);
 const t0 = Date.now();
+// Tooling (round 6 · B, the levers): CP_CHEST_MULT scales every chest the player opens (× the capture of each type), to
+// measure how the hours answer to more chests an hour. The game is not changed.
+const CHEST_MULT = Number(process.env.CP_CHEST_MULT ?? 1);
 const cfg: ProbeConfig = {
   ...DEFAULT_CONFIG,
+  capture: { normal: DEFAULT_CONFIG.capture.normal * CHEST_MULT, stageBoss: DEFAULT_CONFIG.capture.stageBoss * CHEST_MULT, zoneBoss: DEFAULT_CONFIG.capture.zoneBoss * CHEST_MULT },
   stopAtStage: TO,
   observe: (target, party, bonuses) => {
     if ((Date.now() - t0) / 1000 > MAX_SEC) return false;
@@ -61,7 +65,7 @@ const walls = r.milestones.map((m) => {
   const mk = k !== undefined ? measure(k, m.stage) : undefined;
   const range = ceilingTierRange(m.stage);
   return {
-    stage: m.stage, hours: m.hoursOnWorld, fails: m.bossFails, fight: m.bossFightSec, keyless: m.keylessHours, held: m.heldHours ?? 0,
+    stage: m.stage, hours: m.hoursOnWorld, toWall: m.toWallHours, fails: m.bossFails, fight: m.bossFightSec, keyless: m.keylessHours, held: m.heldHours ?? 0,
     topPieces: m.gear.topTierPieces, meanTier: m.gear.meanTier, slots: m.gear.slots, gems: m.gear.gems, sockets: m.gear.sockets,
     ceilFrom: range.from, ceilTo: range.to,
     askArrive: ma?.ask, askKill: mk?.ask, pctArrive: ma?.pct, pctKill: mk?.pct, level: m.partyLevel, cube: m.cube,

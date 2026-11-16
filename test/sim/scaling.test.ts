@@ -75,7 +75,8 @@ describe('the retuned curves', () => {
     // Round 5 (user: «presión gradual»): worlds 1–2 of Hell→Torment ask a little less (×0.85, ×0.93 of their line), so
     // the gear a difficulty ends with can take them — the opening may sit up to a third under the last wall.
     for (let w = 2; w <= 50; w++) {
-      if (w % 10 === 1) expect(zoneBossHp(w * 10) / zoneBossHp((w - 1) * 10), `world ${w}`).toBeGreaterThan(0.65);
+      // Round 6 (the hours first, an ascending ladder): Hell 1 opens at a little over half of Normal 10's life.
+      if (w % 10 === 1) expect(zoneBossHp(w * 10) / zoneBossHp((w - 1) * 10), `world ${w}`).toBeGreaterThan(0.5);
       else expect(zoneBossHp(w * 10), `world ${w}`).toBeGreaterThan(zoneBossHp((w - 1) * 10));
     }
     expect(WORLD_WALL_MULT).toHaveLength(50);

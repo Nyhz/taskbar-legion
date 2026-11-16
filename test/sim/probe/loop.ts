@@ -182,6 +182,7 @@ export interface WorldMilestone {
   hoursOnWorld: number; // ACTIVE hours spent on this world (since the previous world's clear)
   keylessHours: number; // of those, active hours parked at W-9 without a key (waiting for one to drop)
   heldHours?: number; // …and with a key in hand, farming for gear before a retry (retryRule)
+  toWallHours?: number; // of those, active hours from entering the world to reaching its wall (X-1 … X-9 cleared)
   firstKeyHours: number; // active hours from reaching the wall (W-9 cleared) to the first attempt
   gear: GearState; // what the party wore when the wall fell
   gearPct?: number; // its gear % of the zone at the kill (zoneGear.ts) — only with cfg.measureGear
@@ -598,6 +599,7 @@ export function advanceProbe(run: ProbeRun, cfg: ProbeConfig = DEFAULT_CONFIG): 
               hoursOnWorld: (state.activeSec - run.lastWorldClearSec) / 3600,
               keylessHours: run.keylessSec / 3600,
               heldHours: run.heldSec / 3600,
+              toWallHours: (run.wallReachedSec - run.lastWorldClearSec) / 3600,
               ...(state.cube !== undefined ? { cube: cubeSummary(state.cube, state.party) } : {}),
               firstKeyHours: (run.firstAttemptSec - run.wallReachedSec) / 3600,
               gear,

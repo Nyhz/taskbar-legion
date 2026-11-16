@@ -193,31 +193,31 @@ export const TRASH_DMG_TUNE: number[] = [
 // less, one below it more. The difficulty's target eases in over its first worlds with the rest of the world-boss
 // pressure (bossKit pressureWeight), and the enrage multiplies on top. World 1 keeps the formula (the bootstrap).
 /** % of the average Knight's life a second the WORLD boss takes off him after his mitigation, Normal … Torment.
- *  Set against what the probe's Priest can heal him a second when he is pressed (scripts/heal-capacity.ts, round 6):
- *  ≈ 3.5–5 % in Hell, 5–9 % in Inferno, ≈ 11 % in Eternal, 15–28 % in Torment — her heals are a % of his life × her
- *  heal power, so they grow with her gear. Hell sits at what she heals (an offensive Knight scrapes through); from
- *  Inferno it sits above it by about what Stone Skin and Debilitating Cleave take off (a Knight without them does
- *  not hold the minute). The user chose 2 / 3 / 3.5 / 4 % on a first estimate of a flat ~4 % of healing, which
- *  the measure proved wrong; these keep the decision's intent («cerca de lo que cura la Priest»). */
-export const BOSS_THREAT_PCT: readonly [number, number, number, number, number] = [1, 4, 9, 14, 24];
+ *  What the probe's Priest heals him a second when he is pressed (scripts/heal-capacity.ts, round 6): ≈ 3.5–5 % in
+ *  Hell, 5–9 % in Inferno, ≈ 11 % in Eternal, 15–28 % at the end of Torment (her heals are a % of his life × her heal
+ *  power). The user chose 2 / 3 / 3.5 / 4 % on my first, wrong estimate of a flat ~4 % of healing. Tried at her
+ *  capacity (1 / 4 / 9 / 14 / 24): every wall became a survival coin-toss with tens of failed attempts. Then, by the
+ *  user's rule for round 6 · B («menos daño de bosses y más vida … la amenaza es llegar a la furia»), lowered to
+ *  1 / 2 / 4 / 6 / 8: the wall is a race against the enrage, the boss's hit still the tank's business. */
+export const BOSS_THREAT_PCT: readonly [number, number, number, number, number] = [1, 2, 4, 6, 8];
 /** A STAGE boss presses the front at this share of its world boss's target: the defensive build shows outside the
  *  walls too, while a stage boss (5–10 s) never threatens the farm. */
 export const STAGE_BOSS_THREAT_SHARE = 0.6;
 /** The world boss's basic hit, world 1 … 50 (scripts/boss-hit-tune.ts). */
 export const ZONE_BOSS_HIT_TUNE: number[] = [
-  17.4, 5.45, 6.09, 6.25, 6.65, 8.3, 9.78, 10.9, 14.2, 14.4,
-  36.5, 80, 129, 167, 250, 294, 383, 421, 597, 714,
-  963, 1170, 1660, 1830, 2270, 2370, 2730, 2730, 3030, 3040,
-  3570, 5070, 5140, 5640, 6190, 6960, 7210, 7170, 7120, 8380,
-  9770, 15600, 18300, 26700, 30100, 31600, 31100, 30500, 30500, 30800,
+  17.4, 5.45, 6.09, 6.25, 6.65, 8.3, 9.24, 10.6, 11.7, 12,
+  23.2, 34, 56.3, 55.4, 56.7, 56.9, 57.3, 65.2, 64.9, 80.4,
+  107, 245, 463, 506, 557, 636, 684, 736, 827, 1050,
+  1180, 2000, 2330, 2250, 2660, 2860, 2870, 2830, 2790, 2800,
+  3140, 4770, 6930, 8830, 8850, 10600, 10400, 10900, 10700, 10600,
 ];
 /** The stage bosses' basic hit, world 1 … 50 (scripts/boss-hit-tune.ts; against the Knight that reaches the wall). */
 export const STAGE_BOSS_HIT_TUNE: number[] = [
-  13.2, 3.26, 3.66, 3.73, 4.01, 4.99, 5.56, 6.66, 6.63, 8.74,
-  19, 31.7, 50.3, 59.5, 65.5, 109, 115, 157, 173, 243,
-  426, 542, 661, 780, 902, 1040, 1150, 1290, 1290, 1440,
-  1700, 2030, 2960, 2800, 3100, 3380, 3600, 3840, 3890, 3810,
-  5480, 6440, 10300, 10700, 15600, 17600, 18500, 18200, 17900, 17800,
+  13.2, 3.26, 3.66, 3.73, 4.01, 4.99, 5.56, 6.48, 6.5, 7.21,
+  12, 15.3, 20.8, 22.9, 23.5, 23.6, 23.7, 24, 27.2, 29.2,
+  45.7, 74.7, 138, 214, 259, 262, 305, 323, 345, 386,
+  589, 674, 1160, 1250, 1200, 1430, 1540, 1540, 1530, 1510,
+  1670, 1920, 2990, 4190, 5090, 5250, 6190, 5830, 6410, 6290,
 ];
 
 /** The world boss's basic hit at global stage `S`: the anchor table, or the formula where it has no entry (world 1). */
@@ -387,16 +387,21 @@ export function wallCurveMult(S: number): number {
 // ask ×0.85 and ×0.93 of their line, and each difficulty is moved within the ±5 points the ladder allows to shape the
 // hours: Normal −5, Hell −5, Inferno −5, Eternal +5, Torment −5 (scripts/ceiling-pass.ts, 4 passes of 3 seeds with the
 // round-5 combat: harder enrage, gradual pressure, front lean, fixed physical/magic mix). Measured: 4 / 116 / 187 /
-// 198 / 419 h. Docs: PACING_REPORT.md rounds 4c–4e and 5. Before it (round 3 · 3b, tuned for the hours ≈ 4 / 40 / 120 / 230 / 325):
-// 0.27 0.193 0.2 0.16 0.16 0.135 0.14 0.16 0.141 0.15 · 0.167 0.293 0.647 0.938 0.96 0.96 0.938 0.938 1.03 1.19 ·
-// 2.15 2.29 2.45 2.6 2.92 3.55 4.35 5.21 6.11 7.12 · 8.1 8.99 9.95 11.1 12.6 14.1 16.1 18.9 20.9 23.4 ·
-// 30.5 33.8 39.9 48.4 55.7 63 74.8 89.4 88.4 90.
+// 198 / 419 h. Docs: PACING_REPORT.md rounds 4c–4e and 5.
+// ROUND 6 (2026-11-16; user: «4-20-80-200-500+ … Eterno nunca menos que Averno», then «horas aproximadas con una
+// escalera, al menos ascendente de requerimientos, aunque no sea tan alta»): with the boss-hit anchor
+// (ZONE_BOSS_HIT_TUNE) the hours come first and the ladder ascends — each wall asks, as a % of the gradual ceiling,
+// a line rising from world 1 to 10 (worlds 1–2 at ×0.85 / ×0.93 of it), each difficulty asking more than the last:
+// Normal 5→10, Hell 7→11, Inferno 12→20, Eternal 45→60, Torment 80→90 (the ideal 10→20 / 20→55 / 55→70 / 70→80 /
+// 80→90 only where the hours allow it: Torment). Fitted with scripts/ceiling-pass.ts (3 seeds a pass, the asks
+// measured on arrival). Measured: 3–4 / 13–34 / 112–121 / 231–307 / 447–708 h, each difficulty longer than the one
+// before in every seed. Docs: PACING_REPORT.md round 6 · B.
 export const WORLD_WALL_MULT: readonly number[] = [
-  0.236, 0.212, 0.237, 0.319, 0.36, 0.404, 0.458, 0.514, 0.558, 0.504,
-  0.342, 0.521, 0.917, 1.09, 1.46, 1.77, 2.39, 3.32, 3.76, 4.32,
-  3.72, 4.25, 7.13, 8.35, 10.6, 12.6, 14.9, 16.1, 18.5, 21.1,
-  21.2, 26.8, 32.6, 38.6, 44.2, 50.2, 58.3, 62.5, 66.8, 71.5,
-  48.8, 76.1, 115, 158, 178, 195, 227, 254, 285, 292,
+  0.2, 0.172, 0.174, 0.22, 0.278, 0.295, 0.328, 0.358, 0.372, 0.334,
+  0.169, 0.184, 0.252, 0.315, 0.382, 0.404, 0.497, 0.531, 0.552, 0.555,
+  0.515, 0.648, 1.12, 1.62, 2.24, 2.67, 3.17, 3.87, 4.37, 5.04,
+  8.18, 11.9, 19.8, 23.8, 28.1, 30.6, 36.3, 39.6, 42.4, 44.6,
+  48.4, 71.7, 123, 167, 189, 208, 240, 269, 302, 309,
 ];
 export function wallWorldMult(S: number): number {
   return WORLD_WALL_MULT[worldOf(S) - 1] ?? wallCurveMult(S);

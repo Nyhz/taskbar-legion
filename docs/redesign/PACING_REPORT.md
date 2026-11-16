@@ -2338,3 +2338,129 @@ con Nova + Escudo sagrado). Victorias, propio / ofensivo / sin curas, con la tab
 del de mundo, mundo 1 con la fórmula); `worldBossPressure.test.ts` (el jefe lleva su golpe al frente de la tabla y su
 golpe detrás de la fórmula × `hitMult`); `zoneGear.test.ts` (un margen al límite, comentado). tsc, lint y vitest en
 verde (110 archivos, 1001 tests).
+
+## Ronda 6 · B · horas, escalera ascendente y el daño de los jefes (16 nov, noche)
+
+*Cambió tres veces de objetivo por el camino (todo en `PROGRESS.md` y en los mensajes del coordinador): primero la
+escalera con ±5 y horas que suban; luego **horas ≈ 4 / 20 / 80 / 200 / 500+**, cada dificultad más larga que la
+anterior en cada semilla; después, rechazado un resultado con los muros al 7–21 % del techo, **escalera firme**; y por
+último **las horas primero, con una escalera al menos ascendente**, lo más alta que dejen. Esta sección es el estado
+final. 17 pasadas de 3 semillas en total (`scripts/ceiling-pass.ts`, `taskpolicy -b`).*
+
+### Lo que queda puesto
+
+- **Lo que pide cada muro** (% del techo gradual, una línea que sube del mundo 1 al 10; mundos 1–2 a ×0,85 y ×0,93):
+  Normal 5→10 · Infierno 7→11 · Averno 12→20 · Eterno 45→60 · Tormento 80→90. Asciende mundo a mundo y de una
+  dificultad a la siguiente. El ideal (10→20 / 20→55 / 55→70 / 70→80 / 80→90) sólo cabe con las horas en Tormento.
+- **Daño de los jefes al frente**: `BOSS_THREAT_PCT` = **1 / 2 / 4 / 6 / 8 %** de la vida del Knight medio por segundo
+  (la 6 · A puso 1 / 4 / 9 / 14 / 24, en la capacidad de cura de la Priest: cada muro se volvía una moneda al aire de
+  supervivencia, con decenas de intentos fallidos). Jefes de etapa al 0,6 de eso. Las tablas
+  `ZONE_BOSS_HIT_TUNE` / `STAGE_BOSS_HIT_TUNE` están reescritas con el Knight de la penúltima pasada.
+- Tabla de muros y comentarios en `src/data/stageScaling.ts`.
+
+### Horas (pasada final, 3 semillas)
+
+| Semilla | Normal | Infierno | Averno | Eterno | Tormento | Total |
+|---|---:|---:|---:|---:|---:|---:|
+| 3 | 3 | 13 | 112 | 231 | 447 | 806 |
+| 1 | 4 | 25 | 116 | 307 | 515 | 967 |
+| 2 | 3 | 34 | 121 | 267 | 708 | 1 134 |
+| **Objetivo** | 4 | 20 | 80 | 200 | 500+ | |
+
+Cada dificultad dura más que la anterior en las tres semillas (saltos ×6 · ×5 · ×2,3 · ×2). Averno queda algo largo
+(112–121 h frente a 80) y una semilla de Tormento algo corta (447 h). Unos 100–140 días de calendario.
+
+### Lo que pide cada muro frente a la escalera
+
+| Dificultad | Escalera ideal | Línea puesta | Piden (mundo 1 → 10, mediana) | Llevan al llegar | Al tumbar | Pelea media (s) | Muros que caen después del minuto |
+|---|---|---|---|---|---|---|---|
+| Normal | 10→20 % | 5→10 % | 4 → 10 % (8) | 13 % | 13 % | 39 | 1 de 30 |
+| Infierno | 20→55 % | 7→11 % | 6 → 11 % (9) | 10 % | 11 % | 41 | 3 de 30 |
+| Averno | 55→70 % | 12→20 % | 10 → 24 % (19) | 14 % | 17 % | 61 | 21 de 30 |
+| Eterno | 70→80 % | 45→60 % | 44 → 60 % (54) | 38 % | 47 % | 66 | 27 de 30 |
+| Tormento | 80→90 % | 80→90 % | 68 → 90 % (85) | 58 % | 69 % | 66 | 24 de 30 |
+
+Mundo a mundo, lo que pide cada muro (% del techo, mediana de 3 partidas):
+
+| Mundo | Normal | Infierno | Averno | Eterno | Tormento |
+|---|---:|---:|---:|---:|---:|
+| 1 | 4 | 6 | 10 | 44 | 68 |
+| 2 | 5 | 7 | 12 | 44 | 74 |
+| 3 | 7 | 8 | 14 | 55 | 82 |
+| 4 | 7 | 9 | 21 | 51 | 83 |
+| 5 | 7 | 9 | 19 | 52 | 84 |
+| 6 | 8 | 9 | 18 | 53 | 86 |
+| 7 | 8 | 10 | 19 | 56 | 87 |
+| 8 | 9 | 10 | 22 | 58 | 88 |
+| 9 | 9 | 11 | 23 | 59 | 89 |
+| 10 | 10 | 11 | 24 | 60 | 90 |
+
+
+Dos pequeñas bajadas medidas (Averno 4 → 5: 21 → 19; Eterno 3 → 4: 55 → 51) son ruido de la medida: lo que se mide
+depende del grupo con que llega cada semilla; la línea puesta sube en todos los mundos. Desde Averno los muros caen
+pasado el minuto (21–27 de 30): son carreras contra la furia, como pidió el usuario.
+
+### De dónde salen las horas de Infierno
+
+
+| Partida | Total | Limpiar X-1…X-9 | Esperando llave | Farmeando con llave | Intentos fallidos (tiempo) | Nivel del grupo al acabar |
+|---|---:|---:|---:|---:|---:|---:|
+| 3 | 13 h | 9 h | 4 h | 0 h | 2 (0.0 h) | 36 |
+| 1 | 25 h | 13 h | 10 h | 2 h | 5 (0.1 h) | 38 |
+| 2 | 34 h | 10 h | 2 h | 22 h | 10 (0.2 h) | 42 |
+
+Limpiar las etapas de Infierno lleva 9–13 h por sí solo (17 oleadas por etapa). El resto es esperar llaves y farmear
+con llave para el muro. Con muros a ~30 % del techo Infierno salía en 86–133 h; ~20 h sólo cabe con muros cerca de
+lo que el grupo lleva al llegar (7→11 %).
+
+**Palancas medidas sin tocar el juego** (1 semilla hasta el final de Averno, con muros a la escalera de la segunda
+vuelta, `CP_CHEST_MULT` en la herramienta):
+
+| Cofres por hora | Infierno | Averno |
+|---|---:|---:|
+| ×1 | 112–133 h | 121–250 h |
+| ×2 | 59–65 h | 65–161 h |
+| ×3 | 70 h | 82 h |
+| ×4 | 52 h | 46 h |
+
+Más cofres bajan las horas, pero rinden poco por encima de ×2 y con mucho ruido. Para subir la escalera de Infierno y
+Averno hacia el ideal sin alargarlas, propuestas (sin medir): (1) más cofres sólo en Infierno y Averno (×2); (2) más
+probabilidad de las rarezas altas de esas dos dificultades (el techo sube con la rareza nueva y es lo que más pesa,
+ronda 4d); (3) menos oleadas por etapa en Infierno (17 → 12: 9–13 h de limpiar etapas bajarían a 6–9 h).
+
+### Reglas (instantáneas de la pasada final)
+
+**Daño del jefe ×0,5 / ×1 / ×2** (`scripts/anchor-sweep.ts`, semilla 1, 8 combates): victorias del grupo propio /
+con el Knight ofensivo / con la Priest sin curas.
+
+| Muro | ×0,5 | ×1 | ×2 |
+|---|---|---|---|
+| Infierno 3 | 0,62 / 1,00 / 0,00 | 0,38 / 0,50 / 0,00 | 0,00 / 0,00 / 0,00 |
+| Infierno 8 | 1,00 / 1,00 / 0,00 | 1,00 / 1,00 / 0,00 | 0,50 / 0,62 / 0,00 |
+| Averno 5 | 1,00 / 0,88 / 0,38 | 1,00 / 0,75 / 0,38 | 0,62 / 0,38 / 0,00 |
+| Averno 8 | 0,62 / 0,75 / 0,00 | 0,62 / 0,38 / 0,00 | 0,12 / 0,00 / 0,00 |
+| Eterno 5 | 0,00 / 0,50 / 0,12 | 0,12 / 0,38 / 0,00 | 0,25 / 0,25 / 0,00 |
+| Eterno 8 | 0,75 / 0,50 / 0,00 | 0,50 / 0,38 / 0,00 | 0,38 / 0,12 / 0,00 |
+| Tormento 5 | 0,00 / 0,00 / 0,00 | 0,00 / 0,00 / 0,00 | 0,00 / 0,00 / 0,00 |
+| Tormento 8 | 1,00 / 1,00 / 0,00 | 1,00 / 1,00 / 0,00 | 0,88 / 0,50 / 0,00 |
+
+- **Priest sin curas**: pierde 7 de 8 muros desde Infierno (gana Averno 5 en 3 de 8). ✔
+- **Knight defensivo desde Averno**: más victorias que el ofensivo en Averno 5, Averno 8 y Eterno 8; menos en Eterno 5;
+  igual en Tormento 5 (los dos pierden) y Tormento 8 (los dos ganan). ✔ a medias: con menos daño de jefe (lo pedido)
+  el Knight casi nunca muere y su construcción pesa poco.
+- **Sin precipicio** entre ×0,5 y ×2: baja escalonado.
+- **Cambio de dificultad** (`scripts/difficulty-change-check.ts`, 2 semillas): el mundo 1 cae al pasar a Infierno
+  (8/8, 8/8) y a Averno (8/8, 7/8), **no** al pasar a Eterno (0/8, 0/8) ni a Tormento (0/8, 0/8): Eterno y Tormento
+  abren muy por encima de lo que pide el último muro anterior (Averno 10 pide 24 %, Eterno 1 44 %; Eterno 10 60 %,
+  Tormento 1 68 %). El mundo 2 sólo cae al pasar a Infierno en una semilla.
+- **Resistencia mágica** (`scripts/mr-check.ts`, Infierno 3, Averno 5, Eterno 5, Tormento 5): sin ella el grupo gana y
+  pierde los mismos muros y farmea igual. Con menos daño de jefe ya no decide nada.
+
+### Lo que queda flojo o por decidir
+
+1. **Escalera baja en Infierno y Averno** (7→11 y 12→20 frente a 20→55 y 55→70): es el precio de ~20 y ~80 h. Si el
+   usuario quiere acercarla al ideal, hacen falta otras palancas (arriba).
+2. **Saltos de Averno a Eterno y de Eterno a Tormento**: el equipo anterior no pasa el primer muro.
+3. **El Knight defensivo y la resistencia mágica pesan poco** con el daño de jefe bajo.
+4. **Tormento dentro de la dificultad**: los mundos 2–5 llevan 75–135 h y los 7, 8 y 10 caen al llegar.
+5. Las tablas de golpe se escribieron con el Knight de la penúltima pasada; en la final el Knight llega algo distinto.
