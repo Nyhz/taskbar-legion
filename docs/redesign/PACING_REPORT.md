@@ -1428,3 +1428,109 @@ Con una vara al percentil 90 en Infierno, 95 en Averno y Eterno y 97 en Tormento
 4. **Dispersión entre jugadores** (Eterno de 189 a 350 h):
    - (a) aceptable;
    - (b) suavizar la cinta del equipo, con muros más parejos dentro de cada dificultad.
+
+## Ronda 4 · el techo realista
+
+*16 nov 2026. Medido con 3 semillas de la sonda (código de hoy, `9e0cb5d`), Normal 1-1 → Tormento 10-10; las partidas duraron 658–861 h. Sin tocar el juego. Herramientas: `zoneCeilingSet` / `ceilingDamage` en `test/sim/probe/zoneGear.ts` y `scripts/ceiling-measure.ts`.*
+
+### Qué es el 100 %
+
+El techo realista de una zona: cada hueco de los tres héroes con un objeto de la **rareza más alta que cae en ese mundo** (en el mundo 1 de cada dificultad, la de la dificultad anterior), al nivel de objeto del X-9, con **todos los afijos a mitad de su tirada** (sin estrellas perfectas), y **todos los huecos con gemas de esa rareza**, del tipo que más le sirve a quien la lleva. Los afijos que tiene cada pieza son los mejores de 3 tiradas, como el set de referencia anterior. Son los mismos héroes (nivel, talentos, mejoras, construcción) que el grupo de la sonda al llegar al muro.
+
+Cada número es el daño en 60 s contra el muro, como antes:
+- **Pide hoy**: la vida del muro como % del daño del techo en 60 s. Es lo que hay que llevar para tumbarlo justo al minuto.
+- **Lleva al llegar / al tumbar**: el daño del grupo de la sonda como % del daño del techo, al llegar al muro y la última vez antes de tumbarlo.
+- **Escalera**: la que eligió el usuario, subiendo en línea recta del mundo 1 al 10 (Normal 10→20, Infierno 40→55, Averno 55→70, Eterno 65→80, Tormento 75→90).
+
+Mediana de las 3 semillas; entre paréntesis, de la menor a la mayor.
+
+**Normal** (rareza más alta T4; en el mundo 1, la de la dificultad anterior)
+
+| Mundo | Rareza techo | Escalera | Pide hoy | Lleva al llegar | Lleva al tumbar | Fuera de la escalera (× que habría que multiplicar la vida) |
+|---|---|---:|---:|---:|---:|---|
+| 1 | T2 | 10 % | 6 % | 5 % | 5 % | pide menos ×1,7 |
+| 2 | T4 | 11 % | 87 % | 103 % (103–201) | 103 % (103–201) | pide más ×0,1 |
+| 3 | T4 | 12 % | 8 % | 16 % (9–19) | 16 % (9–19) | pide menos ×1,5 |
+| 4 | T4 | 13 % | 14 % | 46 % (15–48) | 46 % (15–48) |   |
+| 5 | T4 | 14 % | 9 % | 24 % (24–31) | 24 % (24–31) | pide menos ×1,6 |
+| 6 | T4 | 16 % | 20 % | 67 % (57–76) | 67 % (57–76) | pide más ×0,8 |
+| 7 | T4 | 17 % | 10 % | 28 % (26–41) | 28 % (26–41) | pide menos ×1,7 |
+| 8 | T4 | 18 % | 5 % | 12 % (12–18) | 12 % (12–18) | pide menos ×3,3 |
+| 9 | T4 | 19 % | 5 % | 16 % (11–17) | 16 % (11–17) | pide menos ×4,0 |
+| 10 | T4 | 20 % | 4 % | 11 % (7–12) | 11 % (7–12) | pide menos ×4,7 |
+
+**Infierno** (rareza más alta T5; en el mundo 1, la de la dificultad anterior)
+
+| Mundo | Rareza techo | Escalera | Pide hoy | Lleva al llegar | Lleva al tumbar | Fuera de la escalera (× que habría que multiplicar la vida) |
+|---|---|---:|---:|---:|---:|---|
+| 1 | T4 | 40 % | 6 % | 9 % (8–13) | 9 % (6–13) | pide menos ×6,9 |
+| 2 | T5 | 42 % | 7 % | 7 % (4–8) | 5 % (4–6) | pide menos ×6,1 |
+| 3 | T5 | 43 % | 9 % | 8 % (3–8) | 10 % (9–12) | pide menos ×4,6 |
+| 4 | T5 | 45 % | 14 % | 12 % (9–12) | 12 % (12–18) | pide menos ×3,3 |
+| 5 | T5 | 47 % | 14 % | 9 % (9–12) | 12 % (12–13) | pide menos ×3,3 |
+| 6 | T5 | 48 % | 15 % | 13 % (13–17) | 13 % (13–17) | pide menos ×3,1 |
+| 7 | T5 | 50 % | 14 % (13–15) | 12 % (11–12) | 12 % (11–12) | pide menos ×3,5 |
+| 8 | T5 | 52 % | 14 % (14–16) | 11 % (10–17) | 11 % (11–17) | pide menos ×3,6 |
+| 9 | T5 | 53 % | 17 % (16–18) | 13 % (9–15) | 14 % (13–18) | pide menos ×3,2 |
+| 10 | T5 | 55 % | 21 % (21–23) | 11 % (11–13) | 15 % (15–18) | pide menos ×2,7 |
+
+**Averno** (rareza más alta T6; en el mundo 1, la de la dificultad anterior)
+
+| Mundo | Rareza techo | Escalera | Pide hoy | Lleva al llegar | Lleva al tumbar | Fuera de la escalera (× que habría que multiplicar la vida) |
+|---|---|---:|---:|---:|---:|---|
+| 1 | T5 | 55 % | 42 % | 21 % (15–24) | 27 % (26–29) | pide menos ×1,3 |
+| 2 | T6 | 57 % | 15 % (13–15) | 9 % (9–10) | 10 % | pide menos ×3,9 |
+| 3 | T6 | 58 % | 12 % | 8 % (7–9) | 9 % (7–11) | pide menos ×4,8 |
+| 4 | T6 | 60 % | 14 % | 11 % | 11 % (7–11) | pide menos ×4,4 |
+| 5 | T6 | 62 % | 14 % | 8 % (7–9) | 13 % (8–13) | pide menos ×4,5 |
+| 6 | T6 | 63 % | 16 % | 12 % (9–13) | 13 % (12–13) | pide menos ×4,1 |
+| 7 | T6 | 65 % | 19 % | 13 % (12–14) | 15 % (15–18) | pide menos ×3,4 |
+| 8 | T6 | 67 % | 21 % (21–24) | 14 % (14–18) | 17 % (16–22) | pide menos ×3,2 |
+| 9 | T6 | 68 % | 25 % (24–29) | 19 % (18–24) | 20 % (17–21) | pide menos ×2,7 |
+| 10 | T6 | 70 % | 27 % | 20 % (18–20) | 22 % (21–27) | pide menos ×2,6 |
+
+**Eterno** (rareza más alta T7; en el mundo 1, la de la dificultad anterior)
+
+| Mundo | Rareza techo | Escalera | Pide hoy | Lleva al llegar | Lleva al tumbar | Fuera de la escalera (× que habría que multiplicar la vida) |
+|---|---|---:|---:|---:|---:|---|
+| 1 | T6 | 65 % | 44 % (43–44) | 27 % (13–30) | 32 % (13–33) | pide menos ×1,5 |
+| 2 | T7 | 67 % | 11 % (11–12) | 7 % (6–8) | 9 % (7–10) | pide menos ×6,1 |
+| 3 | T7 | 68 % | 12 % | 9 % (8–10) | 9 % (9–10) | pide menos ×5,8 |
+| 4 | T7 | 70 % | 14 % | 10 % (9–11) | 11 % | pide menos ×5,2 |
+| 5 | T7 | 72 % | 16 % | 10 % (7–11) | 14 % (11–17) | pide menos ×4,6 |
+| 6 | T7 | 73 % | 18 % | 13 % (11–17) | 15 % (15–17) | pide menos ×4,0 |
+| 7 | T7 | 75 % | 20 % (20–21) | 15 % (15–17) | 16 % (16–17) | pide menos ×3,7 |
+| 8 | T7 | 77 % | 24 % (24–25) | 16 % (13–16) | 20 % (17–22) | pide menos ×3,2 |
+| 9 | T7 | 78 % | 27 % | 21 % (17–21) | 23 % (22–24) | pide menos ×2,9 |
+| 10 | T7 | 80 % | 32 % (31–33) | 22 % (21–23) | 24 % (23–26) | pide menos ×2,5 |
+
+**Tormento** (rareza más alta T8; en el mundo 1, la de la dificultad anterior)
+
+| Mundo | Rareza techo | Escalera | Pide hoy | Lleva al llegar | Lleva al tumbar | Fuera de la escalera (× que habría que multiplicar la vida) |
+|---|---|---:|---:|---:|---:|---|
+| 1 | T7 | 75 % | 45 % (40–45) | 23 % (22–24) | 34 % (32–38) | pide menos ×1,7 |
+| 2 | T8 | 77 % | 9 % | 6 % | 6 % | pide menos ×8,5 |
+| 3 | T8 | 78 % | 10 % | 7 % (6–8) | 7 % (7–9) | pide menos ×7,8 |
+| 4 | T8 | 80 % | 13 % (12–14) | 8 % (8–11) | 11 % (10–11) | pide menos ×6,1 |
+| 5 | T8 | 82 % | 14 % | 9 % (9–10) | 11 % | pide menos ×5,9 |
+| 6 | T8 | 83 % | 17 % | 11 % | 13 % (12–13) | pide menos ×5,0 |
+| 7 | T8 | 85 % | 20 % | 13 % (13–14) | 16 % (16–17) | pide menos ×4,3 |
+| 8 | T8 | 87 % | 24 % | 16 % | 19 % | pide menos ×3,6 |
+| 9 | T8 | 88 % | 23 % | 18 % | 18 % | pide menos ×3,8 |
+| 10 | T8 | 90 % | 25 % | 17 % | 19 % (18–20) | pide menos ×3,5 |
+
+
+### Lo que dicen las tablas
+
+- **Desde Infierno, todos los muros piden mucho menos que la escalera**: entre el 6 y el 45 % del techo, frente al 40–90 %. Para cumplirla habría que multiplicar su vida entre ×1,3 (los mundos 1) y ×8,5 (Tormento 2). La mediana: ×3,3 en Infierno, ×3,6 en Averno, ×3,9 en Eterno y ×4,6 en Tormento.
+- **El grupo de la sonda está muy lejos del techo**: al tumbar un muro lleva, en mediana, el 12 % del techo en Infierno, el 14 % en Averno, el 16 % en Eterno y el 15 % en Tormento, y nunca más del 34 %. En Tormento 10 lleva 21–22 piezas T8 de 30 y aun así hace una quinta parte del daño del techo.
+- **Por qué está tan lejos**, medido en Tormento 10:
+  - **Gemas.** La sonda nunca cambia una gema puesta por otra mejor: solo rellena huecos vacíos, así que lleva gemas de rarezas mezcladas (media T4 en Tormento 10). Con cada gema subida a la rareza del techo, el grupo pasa del 20 % al 45 % del techo (Averno 10: del 22 % al 40 %). Es un fallo de la sonda, no del juego: un jugador cambiaría las gemas.
+  - **Afijos.** El techo elige afijos que se multiplican entre sí (daño × velocidad × crítico). Su Ranger hace unas 5 veces el daño por segundo del Ranger de la sonda: el doble de ataque y casi el doble de velocidad. Elegir los afijos importa más de lo que parecía: con afijos al azar (1 tirada en vez de 3), el techo baja solo un 20–35 %.
+- **La forma dentro de cada dificultad sale en sierra**: el mundo 1 pide un 40–45 % (su techo es una rareza más baja) y el mundo 2 cae al 7–15 %, porque la rareza nueva entra en el techo aunque allí solo caiga en un 0,22 % de los objetos. Después sube despacio hasta el mundo 10 (21–32 %). Con esta definición el techo del mundo 2 es casi inalcanzable.
+- **Normal** es irregular (de un 4 a un 87 % según el mundo) y no dice mucho: el grupo tumba cada muro nada más llegar, con la primera llave, y en el mundo 2 el muro pide un 87 % porque la tabla de vida de Normal no es lisa.
+- Con «lleva al tumbar» por debajo de «pide hoy» el grupo tumba el muro pasado el minuto, aguantando la furia (las peleas duran 55–72 s).
+
+### Horas
+
+Para cumplir la escalera, los muros tendrían que tener de 3 a 5 veces más vida desde Infierno, y el grupo, que hoy los tumba con un 12–16 % del techo, tendría que llegar al 40–90 %. Con lo que cae hoy eso no ocurre en un tiempo razonable: **las horas subirían mucho**, varias veces el total, y más aún con las dos rarezas altas a la mitad. Antes de tocar los muros harían falta dos cosas: que la sonda cambie gemas como un jugador (sube sola el % del grupo al doble) y decidir si el techo del mundo 2–4 debe contar una rareza que casi no cae allí.

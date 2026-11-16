@@ -23,7 +23,7 @@ import { ZONE_ENRAGE_MS, worldOf } from '@/data/stageScaling';
 import type { HeroConfig } from '@/sim/loadout';
 import type { Bonuses } from '@/sim/bonuses';
 import { buildParty } from './combat';
-import { openCaptured, equipItems, socketGems } from './gear';
+import { openCaptured, equipItems, socketGems, heroScore } from './gear';
 import { composeItem } from '@/sim/loot';
 import { makeRng, deriveSeed } from '@/sim/rng';
 import { tierWeightsAt } from '@/data/difficulties';
@@ -33,7 +33,12 @@ import type { ItemInstance } from '@/sim/items';
 import type { ItemTier } from '@/data/tiers';
 import { GENERATOR_VERSION } from '@/data/lootTables';
 import { generateGem } from '@/sim/gems';
-import type { GemTier } from '@/data/gems';
+import { GEM_KEYS, type GemTier } from '@/data/gems';
+import type { SlotKey } from '@/data/itemSlots';
+import { STATS, type StatKey } from '@/data/stats';
+import { tierDef } from '@/data/tiers';
+import { round2 } from '@/sim/num';
+import { phi, EG_FLAT, GEAR_POWER, pctAffixIlvlMult } from '@/data/stageScaling';
 
 export const ZONE_SET_CHESTS = 240; // stage-boss chests of the world's X-9 the zone set is picked from
 export const ZONE_SET_SEED = 90_210; // the reference draw (per world: + the boss stage)
@@ -179,4 +184,99 @@ export function zoneSetDamage(party: readonly HeroConfig[], bossStage: number, b
 export function gearPercent(party: readonly HeroConfig[], bossStage: number, bonuses: Bonuses, seed: number): number {
   const ref = zoneSetDamage(party, bossStage, bonuses, seed);
   return ref > 0 ? (100 * wallDamage(party, bossStage, bonuses, seed)) / ref : 0;
+}
+
+// ── THE CEILING (round 4, user decision 2026-11-16) ────────────────────────────────────────────────────────────────
+// "100 % = el techo realista de la zona": every slot holds an item of the HIGHEST rarity that drops in that world
+// (tierWeightsAt — so a difficulty's world 1 tops out at the previous difficulty's cap), at the world's X-9 item level,
+// with every affix at the MIDDLE of its roll (no perfect stars), and every socket holding a gem of that rarity (gems are
+// mid-rolled by design), its kind picked per socket for the hero who wears it. The affix KEYS are the best of
+// CEILING_CANDIDATES draws per slot (a patient player keeps the piece whose stats suit him).
+
+export const CEILING_CANDIDATES = Number(process.env.CEILING_CANDIDATES ?? ZONE_REF_CANDIDATES);
+
+/** The highest rarity with any chance to drop at global stage S. */
+export function topTierAt(S: number): ItemTier {
+  const w = tierWeightsAt(S);
+  let top = 0;
+  w.forEach((x, t) => { if (x > 0) top = t; });
+  return top as ItemTier;
+}
+
+/** An affix value at the middle of its roll band (rollStatValue with r = the band's midpoint). */
+function midStatValue(key: StatKey, tierMult: number, itemLevel: number): number {
+  const band = STATS[key].rollPerIlvl;
+  const r = (band.min + band.max) / 2;
+  if (STATS[key].kind === 'percent') return round2(r * tierMult * pctAffixIlvlMult(itemLevel));
+  return round2(r * tierMult * GEAR_POWER * phi(itemLevel) ** EG_FLAT);
+}
+
+/** `item` with every affix (base and substats) at its mid roll; an armour/MR split base keeps its halves. */
+function midRolled(item: ItemInstance): ItemInstance {
+  const mult = tierDef(item.tier).statMultiplier;
+  const split = item.baseAffix.length > 1;
+  return {
+    ...item,
+    baseAffix: item.baseAffix.map((a) => ({ key: a.key, value: split ? round2(midStatValue(a.key, mult, item.ilvl) / 2) : midStatValue(a.key, mult, item.ilvl) })),
+    stats: item.stats.map((a) => ({ key: a.key, value: midStatValue(a.key, mult, item.ilvl) })),
+  };
+}
+
+/** THE CEILING SET of the world whose boss is `bossStage`, worn by the heroes of `party` (same level, talents). */
+export function zoneCeilingSet(party: readonly HeroConfig[], bossStage: number, seed = ZONE_SET_SEED): HeroConfig[] {
+  const set: HeroConfig[] = party.map((h) => ({ ...h, equipment: {} }));
+  const S = bossStage - 1;
+  const tier = topTierAt(S);
+  const ilvl = expectedLevel(S);
+  const rng = makeRng(deriveSeed(seed, bossStage) ^ 0x5eed);
+  const items: ItemInstance[] = [];
+  for (const hero of set) {
+    for (const slot of SLOT_KEYS) {
+      const jewel = SLOTS[slot].category === 'jewelry';
+      for (let c = 0; c < CEILING_CANDIDATES; c++) {
+        const origin = { rollSeed: rng.int(2 ** 31), stageIndex: S, chestType: 'stageBoss' as const, generatorVersion: GENERATOR_VERSION };
+        items.push(midRolled(composeItem(slot, tier, origin, rng, ilvl, jewel ? undefined : hero.classKey, undefined, 0)));
+      }
+    }
+  }
+  equipItems(set, items);
+  equipItems(set, items);
+  // Gems: socket by socket, the kind that adds most to the hero who wears it.
+  const gemTier = Math.max(1, tier) as GemTier;
+  for (let i = 0; i < set.length; i++) {
+    const hero = set[i];
+    if (hero === undefined) continue;
+    for (const slot of Object.keys(hero.equipment) as SlotKey[]) {
+      const sockets = hero.equipment[slot]?.sockets.length ?? 0;
+      for (let s = 0; s < sockets; s++) {
+        let best: { gem: ReturnType<typeof generateGem>; score: number } | null = null;
+        for (const key of GEM_KEYS) {
+          const gem = { ...generateGem({ rollSeed: rng.int(2 ** 31), stageIndex: S, generatorVersion: GENERATOR_VERSION }, gemTier), key };
+          const item = hero.equipment[slot];
+          if (item === undefined) continue;
+          const trial: HeroConfig = { ...hero, equipment: { ...hero.equipment, [slot]: { ...item, sockets: item.sockets.map((sk, idx) => (idx === s ? { gem } : sk)) } } };
+          const score = heroScore(trial, set);
+          if (best === null || score > best.score) best = { gem, score };
+        }
+        const item = hero.equipment[slot];
+        if (best !== null && item !== undefined) {
+          hero.equipment = { ...hero.equipment, [slot]: { ...item, sockets: item.sockets.map((sk, idx) => (idx === s ? { gem: best!.gem } : sk)) } };
+        }
+      }
+    }
+  }
+  return set;
+}
+
+/** The ceiling set's 60 s damage at a world for these heroes: geometric mean over ZONE_SET_DRAWS draws of the keys. */
+export function ceilingDamage(party: readonly HeroConfig[], bossStage: number, bonuses: Bonuses, seed: number, draws = ZONE_SET_DRAWS): number {
+  let logs = 0;
+  let n = 0;
+  for (let d = 0; d < draws; d++) {
+    const dealt = wallDamage(zoneCeilingSet(party, bossStage, ZONE_SET_SEED + 7919 * d), bossStage, bonuses, seed);
+    if (dealt <= 0) continue;
+    logs += Math.log(dealt);
+    n += 1;
+  }
+  return n > 0 ? Math.exp(logs / n) : 0;
 }
