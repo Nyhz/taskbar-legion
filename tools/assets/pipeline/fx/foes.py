@@ -8,7 +8,7 @@ Tiro cargado       foe_arrow_lit (flat) · foe_arrow_lit_arc (lofted: one frame 
                    head burning
 Fuego concentrado  foe_reticle (ONE, on the hero every focusing shooter lofts its shots at)
 Temblor            tremor_crack (the brute's blow reaching back: the ground splits under the party, cold)
-The support        aura_toughness · aura_fury · aura_vigor · aura_aegis · aura_malice (one small sign per aura it
+The support        aura_toughness · aura_fury · aura_vigor · aura_aegis · aura_malice · aura_enchant (one small sign per aura it
                    carries, in a row over its head) · support_down (it falls and its auras go: a wisp off every
                    enemy of its wave)
 """
@@ -165,6 +165,13 @@ def aura_malice(cel: Cel, i: int, t: float) -> None:
           {"a": ("crimson", 7), "b": ("crimson", 5), "c": LIGHT}, ("crimson", 0))
 
 
+def aura_enchant(cel: Cel, i: int, t: float) -> None:
+    """Armas encantadas (part of every hit is magic): a violet rune-star with a white heart — the one sign every
+    support wears, set apart from the five it draws by its colour."""
+    _sign(cel, ["...c...", "..aba..", ".abcba.", "cbcccbc", ".abcba.", "..aba..", "...c..."],
+          {"a": ("violet", 5), "b": ("violet", 7), "c": LIGHT}, ("violet", 0))
+
+
 def charge_burst(cel: Cel, i: int, t: float) -> None:
     """Embestida (a beast's first blow, twice as hard): it hits like a thrown weight — a hard white star, two
     gouges where the tusks went in, and the dust of the run thrown past the hero."""
@@ -222,6 +229,7 @@ FX = [
     Fx("aura_vigor", 9, 9, 4, 4, [1000], True, aura_vigor),
     Fx("aura_aegis", 9, 9, 4, 4, [1000], True, aura_aegis),
     Fx("aura_malice", 9, 9, 4, 4, [1000], True, aura_malice),
+    Fx("aura_enchant", 9, 9, 4, 4, [1000], True, aura_enchant),
     Fx("support_down", 23, 30, 11, 22, [60, 70, 80, 90, 100], False, support_down),
     Fx("charge_burst", 35, 31, 17, 15, [35, 45, 55, 70, 85], False, charge_burst),
 ]

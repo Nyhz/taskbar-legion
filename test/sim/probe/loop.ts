@@ -25,7 +25,8 @@
 // months"), per difficulty, with the monotonic check.
 
 import { measureFarm, measureBoss, type FarmSample } from './combat';
-import { openCaptured, equipItems, socketGems, partyPower, heroEhp, SURVIVAL_NEED } from './gear';
+import { openCaptured, equipItems, socketGems, partyPower, heroEhp, SURVIVAL_NEED, SCORE_CONTEXT } from './gear';
+import { bossMagicShare } from '@/data/bossKit';
 import { newCubeBag, cubeStep, type CubeBag } from './cubePolicy';
 import { wallDamage, zoneSetDamage } from './zoneGear';
 import { freshHero, syncGrowth, buyTech, applyBuild } from './economy';
@@ -271,6 +272,8 @@ function grantLoot(state: State, dropStage: number, captured: Record<ChestType, 
     const open = Math.floor(state.carry[type]);
     if (open <= 0) continue;
     state.carry[type] -= open;
+    // The player gears for the wall ahead: its boss's physical/magic mix weighs armour against magic resist.
+    SCORE_CONTEXT.magicShare = bossMagicShare(worldBossStageOf(dropStage), 'world');
     const loot = openCaptured(type, dropStage, open, state.seed, state.draw, bonusesGemDrop, allowed);
     if (!freezeGear && equipItems(state.party, loot.items)) state.dirty = true;
     if (!freezeGear && socketGems(state.party, loot.gems)) state.dirty = true;
@@ -411,6 +414,7 @@ export interface ProbeRun {
 
 export function newProbeRun(seed: number, cfg: ProbeConfig = DEFAULT_CONFIG): ProbeRun {
   SURVIVAL_NEED.clear();
+  SCORE_CONTEXT.magicShare = 0.5;
   return {
     state: {
       party: [freshHero('h0', 'knight', 1, cfg.build?.knight)],

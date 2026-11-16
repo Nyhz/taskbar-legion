@@ -1,7 +1,7 @@
 """Signs of the WAVE ENEMIES for the interface and the strip's chips (the enemies' own art lives in
 `fx/foes.py`; these are the pieces the interface needs as files of its own):
 
-  map_aura_*       the five auras of a Support, for the difficulty tooltip of the map — the very drawing it wears
+  map_aura_*       the six auras of a Support, for the difficulty tooltip of the map — the very drawing it wears
                    over its head on the strip (`fx/foes.py` `aura_*`), rendered from the same code so the two never
                    drift apart
   hud_s_m_tremor   the 7×7 mini sign of Temblor (a brute's area blow, Eternal on) for the chip over a shaken hero:
@@ -21,6 +21,7 @@ AURAS = [
     ("vigor", "Vigor", foes.aura_vigor),
     ("aegis", "Égida", foes.aura_aegis),
     ("malice", "Saña", foes.aura_malice),
+    ("enchant", "Armas encantadas", foes.aura_enchant),
 ]
 
 

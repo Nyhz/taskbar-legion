@@ -80,7 +80,7 @@ export function refreshPartyGuards(heroes: readonly Combatant[]): void {
  *  armour, block and damage reduction (before shields); `raw` is the same hit before any of those; `area` says
  *  it is an area blow (a splash, a wave-wide ability). A share diverted to the Knight (Guardian) is noted on
  *  the target as raw damage and settled by the combat loop at the end of the tick (`takeDiverted`). */
-export function guardedDamage(target: Combatant, dmg: number, hit: { raw: number; area: boolean; magic: boolean }): number {
+export function guardedDamage(target: Combatant, dmg: number, hit: { raw: number; area: boolean; magic: number }): number {
   if (target.side !== 'hero' || dmg <= 0) return dmg;
   let out = dmg;
   if (target.takenLessPct !== undefined) out *= 1 - target.takenLessPct / 100;
@@ -89,8 +89,10 @@ export function guardedDamage(target: Combatant, dmg: number, hit: { raw: number
   } else if (target.divertPct !== undefined) {
     const share = target.divertPct / 100;
     out *= 1 - share;
-    if (hit.magic) target.divertedMagic = (target.divertedMagic ?? 0) + hit.raw * share;
-    else target.divertedPhys = (target.divertedPhys ?? 0) + hit.raw * share;
+    // `hit.magic` is the share of the hit that is magic (sim/damageMix): each part reaches the Knight as itself.
+    const m = Math.max(0, Math.min(1, hit.magic));
+    if (m > 0) target.divertedMagic = (target.divertedMagic ?? 0) + hit.raw * share * m;
+    if (m < 1) target.divertedPhys = (target.divertedPhys ?? 0) + hit.raw * share * (1 - m);
   }
   const big = passiveOf(target, 'bigHitGuard');
   if (big !== undefined && out > target.maxHp * big.def.lifeFrac) out *= 1 - big.value / 100;

@@ -1,5 +1,5 @@
 import {
-  ROLE_TRAITS, SUPPORT_AURA_COUNT, SUPPORT_AURA_KEYS, SUPPORT_MIN_STAGE, TRAIT_TUNING, auraValue, traitsOf,
+  ROLE_TRAITS, SUPPORT_AURA_COUNT, SUPPORT_AURA_KEYS, SUPPORT_INNATE_AURAS, SUPPORT_MIN_STAGE, TRAIT_TUNING, auraValue, traitsOf,
   type EnemyRole, type EnemyTrait, type SupportAura,
 } from '@/data/enemies';
 import { STAGES_PER_DIFFICULTY, worldInDifficulty } from '@/data/difficulties';
@@ -24,8 +24,10 @@ export interface SupportFacts {
   auras: number;
   /** The first world (1–10) of this difficulty with supports; undefined when it has them from its first world. */
   fromWorld?: number;
-  /** Every aura it can carry and its strength here, in the list's order. */
+  /** Every aura it can draw and its strength here, in the list's order. */
   values: { key: SupportAura; value: number }[];
+  /** The auras it always carries besides those (Enchanted Weapons), with their strength here. */
+  innate: { key: SupportAura; value: number }[];
 }
 
 const KINDS: readonly EnemyRole[] = ['beast', 'soldier', 'shooter', 'brute'];
@@ -67,6 +69,7 @@ export function supportFacts(difficultyIndex: number): SupportFacts {
     auras: SUPPORT_AURA_COUNT[d] ?? 1,
     ...(fromWorld === undefined ? {} : { fromWorld }),
     values: SUPPORT_AURA_KEYS.map((key) => ({ key, value: auraValue(key, d) })),
+    innate: SUPPORT_INNATE_AURAS.map((key) => ({ key, value: auraValue(key, d) })),
   };
 }
 

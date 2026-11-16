@@ -63,6 +63,7 @@ export const AURA_SIGNS: Readonly<Record<SupportAura, string>> = {
   vigor: 'aura_vigor',
   aegis: 'aura_aegis',
   malice: 'aura_malice',
+  enchant: 'aura_enchant',
 };
 
 /** Distance between two signs' centres (a sign is 9 px wide with its rim: they touch, never overlap). */
@@ -70,9 +71,10 @@ export const AURA_SIGN_STEP = 9;
 /** How far over the top of the support's life bar the row sits. */
 export const AURA_SIGN_LIFT = 7;
 
-/** Where the signs of `count` auras sit, as offsets from the support's centre: one row, centred, up to five. */
+/** Where the signs of `count` auras sit, as offsets from the support's centre: one row, centred, up to six (its
+ *  Enchanted Weapons and the five it can draw in Torment). */
 export function auraSignOffsets(count: number): number[] {
-  const n = Math.max(0, Math.min(5, Math.floor(count)));
+  const n = Math.max(0, Math.min(6, Math.floor(count)));
   return Array.from({ length: n }, (_, i) => Math.round((i - (n - 1) / 2) * AURA_SIGN_STEP));
 }
 

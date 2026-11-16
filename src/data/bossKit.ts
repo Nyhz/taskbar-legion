@@ -1,6 +1,6 @@
 import type { AbilityDef } from './abilities';
 import { WHOLE_PARTY } from './abilities';
-import { worldInDifficulty } from './difficulties';
+import { difficultyIndexOf, worldInDifficulty } from './difficulties';
 import { tryWorldDef } from './worlds';
 
 // THE BOSS KIT (docs/redesign/PROGRESS.md "Combate, segunda ola", items C and D; agreed with the user 2026-11-15).
@@ -106,6 +106,83 @@ export function worldBossPressure(d: number): WorldBossPressure {
   const p = WORLD_BOSS_PRESSURE[i] ?? WORLD_BOSS_PRESSURE[0];
   if (p === undefined) throw new Error('WORLD_BOSS_PRESSURE is empty');
   return p;
+}
+
+/** How many worlds of a difficulty its world-boss pressure takes to come in whole (round 5, 2026-11-16, user:
+ *  «presión gradual»): world 1 a third of the way from the previous difficulty's pressure, world 2 two thirds, world 3
+ *  on the whole of it — so the gear a party ends a difficulty with can take the first wall or two of the next. */
+export const PRESSURE_RAMP_WORLDS = 3;
+
+const lerp = (a: number, b: number, t: number): number => a + (b - a) * t;
+
+/** How far into its difficulty's pressure the world boss of global stage `S` is (0 = the previous difficulty's,
+ *  1 = its own). Normal has no previous: always 1. */
+export function pressureWeight(S: number): number {
+  if (difficultyIndexOf(S) === 0) return 1;
+  return Math.min(1, worldInDifficulty(S) / PRESSURE_RAMP_WORLDS);
+}
+
+/** The pressure of the world boss of global stage `S`: its difficulty's, eased in over the first worlds. */
+export function worldBossPressureAt(S: number): WorldBossPressure {
+  const d = difficultyIndexOf(S);
+  const own = worldBossPressure(d);
+  const w = pressureWeight(S);
+  if (w >= 1 || d === 0) return own;
+  const prev = worldBossPressure(d - 1);
+  return {
+    hitMult: lerp(prev.hitMult, own.hitMult, w),
+    blowEveryMs: Math.round(lerp(prev.blowEveryMs, own.blowEveryMs, w)),
+    blowCoeff: lerp(prev.blowCoeff, own.blowCoeff, w),
+    splashCoeff: lerp(prev.splashCoeff, own.splashCoeff, w),
+    backShotChance: lerp(prev.backShotChance, own.backShotChance, w),
+    woundPct: lerp(prev.woundPct, own.woundPct, w),
+  };
+}
+
+// ── Pressure on the front ───────────────────────────────────────────────────────────────────────────────────
+
+/** × a boss's basic hits on the FRONT hero, and × the main hit of its area blow (which lands on the front hero), by
+ *  rank and difficulty, Normal … Torment (round 5, 2026-11-16, user: «cuanto más se avance, el Knight debería
+ *  necesitar más habilidades, equipo y talentos defensivos» — «solo en los jefes»: the waves are untouched). Tuned
+ *  so a Knight built and geared to hit just scrapes through in Hell and does not hold a wall from Inferno on. A world
+ *  boss's lean eases in over the first worlds of a difficulty with the rest of its pressure. */
+export const BOSS_FRONT_PRESSURE: Readonly<Record<BossRank, readonly [number, number, number, number, number]>> = {
+  stage: [1, 1.1, 1.3, 1.5, 1.7],
+  world: [1, 1.1, 1.3, 1.5, 1.7],
+};
+
+/** The front lean of a boss of `rank` at global stage `S`. */
+export function bossFrontPressure(S: number, rank: BossRank): number {
+  const d = difficultyIndexOf(S);
+  const table = BOSS_FRONT_PRESSURE[rank];
+  const own = table[Math.max(0, Math.min(4, d))] ?? 1;
+  if (rank === 'stage' || d === 0) return own;
+  return lerp(table[d - 1] ?? 1, own, pressureWeight(S));
+}
+
+// ── Physical and magic damage ───────────────────────────────────────────────────────────────────────────────
+
+/** The share of each boss's damage that is MAGIC, by the creature it fights as (data/worlds): 0.4 leans on steel,
+ *  0.6 on spells (round 5, 2026-11-16, user: «cada jefe tendría que ser una mezcla, intentando que sean 60/40 o
+ *  40/60, unos más heavy en daño mágico y otros en físico»). Fixed per boss, so a party can prepare for a wall, and
+ *  shown in its tooltip. It replaces the 40 % coin each boss tossed when it appeared. Every hit is split by it and
+ *  each part is mitigated by its own defence; an ability with its own `magic` flag (Chain Lightning) keeps it. */
+export const BOSS_MAGIC_SHARE: Readonly<Record<string, number>> = {
+  // stage bosses
+  king: 0.4, warden: 0.4, ferryman: 0.6, colossus: 0.4, bellbearer: 0.6,
+  admiral: 0.4, geode: 0.6, magmawyrm: 0.6, archon: 0.6, lictor: 0.4,
+  // world bosses
+  crowmother: 0.4, mistletoe: 0.6, drownedmoon: 0.6, scapegoat: 0.4, abbot: 0.6,
+  ninthwave: 0.4, amanita: 0.6, quench: 0.4, verdict: 0.4, unmaker: 0.6,
+};
+/** A boss whose creature has no entry (an unknown world). */
+export const DEFAULT_BOSS_MAGIC_SHARE = 0.4;
+
+/** The magic share of the boss of `rank` at global stage `S` (its world's stage-boss or world-boss creature). */
+export function bossMagicShare(S: number, rank: BossRank): number {
+  const world = tryWorldDef(worldInDifficulty(S));
+  const key = rank === 'world' ? world?.worldBoss?.key : world?.creatures.boss.key;
+  return (key === undefined ? undefined : BOSS_MAGIC_SHARE[key]) ?? DEFAULT_BOSS_MAGIC_SHARE;
 }
 
 /** A small deterministic hash stream (mulberry32) — NOT the simulation's rng: picking affixes must not move the

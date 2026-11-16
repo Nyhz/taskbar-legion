@@ -8,7 +8,7 @@ import { applyEffect, effectStatMods } from '@/sim/effects';
 import { spawnStageBoss, spawnZoneBoss } from '@/sim/stages';
 import { makeRng, type Rng } from '@/sim/rng';
 import { abilityDef } from '@/data/abilities';
-import { AFFIX_COUNT, AFFIX_POOL, BOSS_AFFIX, BOSS_AFFIX_KEYS, MECHANIC, SUMMONS, WORLD_BOSS_MECHANIC, bossAffixes, mechanicAbility, worldBossMechanic } from '@/data/bossKit';
+import { AFFIX_COUNT, AFFIX_POOL, BOSS_AFFIX, BOSS_AFFIX_KEYS, MECHANIC, SUMMONS, WORLD_BOSS_MECHANIC, bossAffixes, bossMagicShare, mechanicAbility, worldBossMechanic } from '@/data/bossKit';
 import { globalStageOf } from '@/data/difficulties';
 import { effectDef } from '@/data/effects';
 import { WORLDS } from '@/data/worlds';
@@ -83,7 +83,7 @@ describe('which affixes a boss carries', () => {
     expect(differs).toBe(true);
   });
 
-  it('a spawned boss wears them, and spawning one draws the same rng with or without affixes', () => {
+  it('a spawned boss wears them, and spawning one draws nothing from the combat rng', () => {
     const normal = fight([hero('tank')], [], globalStageOf(0, 2, 5));
     spawnStageBoss(normal, makeRng(1));
     expect(normal.enemies[0]?.affixes).toEqual([]);
@@ -92,7 +92,8 @@ describe('which affixes a boss carries', () => {
     spawnStageBoss(hell, rng);
     expect(hell.enemies[0]?.affixes).toEqual(bossAffixes(hell.seed, hell.globalStageIndex, 'stage', 1));
     expect(hell.enemies[0]?.bossRank).toBe('stage');
-    expect(rng.draws).toBe(1); // the one roll it always made (magic or steel)
+    expect(rng.draws).toBe(0); // its physical/magic mix is its own now (data/bossKit BOSS_MAGIC_SHARE), not a coin
+    expect(hell.enemies[0]?.magicShare).toBe(bossMagicShare(hell.globalStageIndex, 'stage'));
   });
 });
 

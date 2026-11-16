@@ -14,7 +14,8 @@ import { afterMirror, reflection, specialReady } from './mirror';
 import { foeDamageMult, foeWard } from './enemyTraits';
 import { biggestCluster, pickTarget } from './targeting';
 import { classDef } from '@/data/classes';
-import { mitigation, enrageMultiplier, MAX_DAMAGE_REDUCTION } from '@/data/stageScaling';
+import { enrageMultiplier, MAX_DAMAGE_REDUCTION } from '@/data/stageScaling';
+import { foeMagicShare, mixedMitigation } from './damageMix';
 import { healPowerEffectiveness } from '@/data/difficulties';
 import { HEAL_CLEANSE_COUNT, HEAL_URGENT_FRAC } from '@/data/healing';
 
@@ -604,20 +605,22 @@ function applyToTarget(
         return;
       }
       const ts = liveStats(target);
-      const defense = (ability.magic ?? caster.enemyMagic === true) ? ts.magicResist : ts.armor; // a spell of a boss that otherwise hits with steel
+      // A spell that names its kind keeps it; otherwise the caster's own mix (sim/damageMix: a boss's fixed share,
+      // a support's enchanted wave).
+      const magic = foeMagicShare(caster, ability.magic);
       dmg *= weakenMult(caster.effects); // a Debilitated enemy's spells hit softer too
       // A blow that takes the place of the boss's swings (holdsAttack) carries, ON ITS MAIN TARGET, the enrage
       // those swings would have had — otherwise winding it up would be a rest for the tank once the boss is
       // enraged. The splash on the heroes behind is not enraged: the enrage stays the tank's to hold.
       if (ability.holdsAttack === true && caster.isBoss === true && coeffOverride === undefined) {
-        dmg *= enrageMultiplier(caster.fightMs ?? 0, caster.enrageMs ?? Number.POSITIVE_INFINITY);
+        dmg *= enrageMultiplier(caster.fightMs ?? 0, caster.enrageMs ?? Number.POSITIVE_INFINITY, caster.enrageRampMs);
       }
       const raw = dmg;
-      dmg *= 1 - mitigation(Math.max(0, defense), S);
+      dmg *= 1 - mixedMitigation(ts.armor, ts.magicResist, magic, S);
       dmg *= 1 - Math.min(MAX_DAMAGE_REDUCTION, Math.max(0, ts.damageReduction)) / 100; // flat % off (e.g. shields/DR buffs)
       // The guard passives (sim/passives.ts). An area blow is a splash, or an ability that reaches everyone.
       const area = coeffOverride !== undefined || ability.target === 'allEnemies' || ability.power?.splashCoeff !== undefined;
-      dmg = guardedDamage(target, dmg, { raw, area, magic: (ability.magic ?? caster.enemyMagic === true) });
+      dmg = guardedDamage(target, dmg, { raw, area, magic });
     } else {
       dmg *= vulnerabilityMult(target.effects); // Ranger's Mark amplifies hero ability damage to the boss
       dmg *= dealtMult(caster, target, 'damage'); // role talents

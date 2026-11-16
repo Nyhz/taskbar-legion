@@ -1,5 +1,22 @@
 {
-  "updated": "15 nov 2026, noche",
-  "intro": "Ahora mismo no hay nada pendiente de confirmar. Confirmado entre el 15 y el 16 nov: los diez Apoyos, los enemigos separados, los rasgos, el tooltip de dificultad del mapa, las mecánicas de los diez jefes de mundo (con los seis espejos y el reflejo del Deshacedor), las formas de Certero y las seis mascotas acompañantes. Queda una ronda corta de ajustes del Deshacedor (Espejos cada 8 s, reflejo más duro y a media distancia); después, el commit y el aviso para la pasada final de balance.",
-  "sections": []
+  "updated": "16 nov 2026, tarde",
+  "intro": "Pendiente de confirmar: el signo del aura nueva del Apoyo, «Armas encantadas» (ronda 5 de equilibrio).",
+  "sections": [
+    {
+      "id": "aura-enchant",
+      "title": "Aura del Apoyo: Armas encantadas",
+      "eyebrow": "Ronda 5 · resistencia mágica",
+      "text": "Todos los Apoyos llevan ahora, además de las auras que sacan al azar, «Armas encantadas»: mientras el Apoyo vive, un 40 % de cada golpe de su oleada es mágico (lo frena la resistencia mágica, no la armadura). Su signo es la estrella violeta, a la derecha de las cinco auras que ya tenías; sale sobre la cabeza del Apoyo en la tira y en el tooltip de dificultad del mapa.",
+      "items": [
+        {
+          "title": "Las seis auras (la nueva, a la derecha)",
+          "text": "Aguante · Furia · Vigor · Égida · Saña · Armas encantadas, a 12×.",
+          "img": "img/foes/aura_enchant_row.png"
+        }
+      ],
+      "questions": [
+        "¿Te vale la estrella violeta como signo de «Armas encantadas», o prefieres otro dibujo (por ejemplo, una hoja con un destello)?"
+      ]
+    }
+  ]
 }

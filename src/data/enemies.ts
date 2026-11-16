@@ -112,12 +112,16 @@ export function traitsOf(role: EnemyRole, difficultyIndex: number): EnemyTrait[]
 }
 
 // ── The support's auras ─────────────────────────────────────────────────────────────────────────────────────
-// A support carries SUPPORT_AURA_COUNT[difficulty] DIFFERENT auras, drawn from a stream seeded by (run, stage,
-// wave) alone — not the combat rng. While it lives every enemy of its wave has them; they end the moment it dies.
+// A support carries its innate auras (SUPPORT_INNATE_AURAS) and SUPPORT_AURA_COUNT[difficulty] DIFFERENT others,
+// drawn from a stream seeded by (run, stage, wave) alone — not the combat rng. While it lives every enemy of its wave has them; they end the moment it dies.
 
-export type SupportAura = 'toughness' | 'fury' | 'vigor' | 'aegis' | 'malice';
+export type SupportAura = 'toughness' | 'fury' | 'vigor' | 'aegis' | 'malice' | 'enchant';
 
+/** The auras a support DRAWS from (SUPPORT_AURA_COUNT of them, at random). */
 export const SUPPORT_AURA_KEYS: readonly SupportAura[] = ['toughness', 'fury', 'vigor', 'aegis', 'malice'];
+/** The auras EVERY support carries besides the ones it draws (round 5, 2026-11-16, user: «la resistencia mágica
+ *  debería ser necesaria siempre» → «Aura del Apoyo»): Enchanted Weapons, so magic resist counts while farming. */
+export const SUPPORT_INNATE_AURAS: readonly SupportAura[] = ['enchant'];
 
 export interface SupportAuraDef {
   key: SupportAura;
@@ -137,6 +141,8 @@ export const SUPPORT_AURAS: Readonly<Record<SupportAura, SupportAuraDef>> = {
   aegis: { key: 'aegis', name: 'Aegis', value: [15, 15, 20, 20, 25] },
   // Saña: it deals this % more damage.
   malice: { key: 'malice', name: 'Malice', value: [15, 15, 15, 20, 20] },
+  // Armas encantadas: this % of every hit its wave lands is magic (magic resist turns it away, not armour).
+  enchant: { key: 'enchant', name: 'Enchanted Weapons', value: [40, 40, 40, 40, 40] },
 };
 
 /** How many auras a support carries, Normal … Torment. */
@@ -166,7 +172,7 @@ export function supportAuras(runSeed: number, S: number, wave: number, difficult
   const pool = [...SUPPORT_AURA_KEYS];
   const picked: SupportAura[] = [];
   while (picked.length < count && pool.length > 0) picked.push(...pool.splice(Math.floor(next() * pool.length), 1));
-  return SUPPORT_AURA_KEYS.filter((k) => picked.includes(k));
+  return [...SUPPORT_INNATE_AURAS, ...SUPPORT_AURA_KEYS.filter((k) => picked.includes(k))];
 }
 
 /** An aura's strength on a difficulty. */

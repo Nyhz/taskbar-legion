@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { createWorld, Simulation, type TickContext } from '@/sim/Simulation';
 import { getBonuses } from '@/sim/bonuses';
 import { bossKit } from '@/sim/bossMechanics';
-import { WORLD_BOSS_PRESSURE, worldBossPressure } from '@/data/bossKit';
+import { BOSS_FRONT_PRESSURE, WORLD_BOSS_PRESSURE, bossFrontPressure, pressureWeight, worldBossPressure, worldBossPressureAt } from '@/data/bossKit';
 import { globalStageOf } from '@/data/difficulties';
 import type { Combatant } from '@/sim/world';
 import { base, unit } from './_kit';
@@ -57,13 +57,35 @@ describe('world-boss pressure', () => {
     for (let d = 1; d < WORLD_BOSS_PRESSURE.length; d++) {
       const p = worldBossPressure(d);
       for (let seed = 1; seed <= 40; seed++) {
-        const kit = bossKit(seed, globalStageOf(d, 2, 10), 'world');
+        // From world 3 the difficulty's whole pressure is on (it eases in over worlds 1–2: the next test).
+        const S = globalStageOf(d, 3, 10);
+        const kit = bossKit(seed, S, 'world');
         const blow = kit.abilities.find((a) => a.def.key === 'boss_shockwave')?.def;
-        expect(blow?.power?.coeff).toBe(p.blowCoeff);
+        expect(blow?.power?.coeff).toBeCloseTo(p.blowCoeff * bossFrontPressure(S, 'world'), 9); // its lean on the front hero rides on the main hit
         expect(blow?.power?.splashCoeff).toBe(p.splashCoeff);
         expect(blow?.cooldownMs).toBe(kit.affixes.includes('seismic') ? Math.min(p.blowEveryMs, 6000) : p.blowEveryMs);
       }
     }
+  });
+
+  it('a difficulty\'s pressure eases in over its first worlds: a third in world 1, two thirds in world 2, whole from world 3', () => {
+    for (let d = 1; d < WORLD_BOSS_PRESSURE.length; d++) {
+      const prev = worldBossPressure(d - 1);
+      const own = worldBossPressure(d);
+      for (const [world, w] of [[1, 1 / 3], [2, 2 / 3], [3, 1], [10, 1]] as const) {
+        const S = globalStageOf(d, world, 10);
+        expect(pressureWeight(S)).toBeCloseTo(w, 9);
+        const at = worldBossPressureAt(S);
+        expect(at.blowCoeff).toBeCloseTo(prev.blowCoeff + (own.blowCoeff - prev.blowCoeff) * w, 9);
+        expect(at.backShotChance).toBeCloseTo(prev.backShotChance + (own.backShotChance - prev.backShotChance) * w, 9);
+        expect(at.hitMult).toBeCloseTo(prev.hitMult + (own.hitMult - prev.hitMult) * w, 9);
+        expect(bossFrontPressure(S, 'world')).toBeCloseTo((BOSS_FRONT_PRESSURE.world[d - 1] ?? 1) + ((BOSS_FRONT_PRESSURE.world[d] ?? 1) - (BOSS_FRONT_PRESSURE.world[d - 1] ?? 1)) * w, 9);
+      }
+    }
+    // Normal has no difficulty before it: all of its pressure from its first world.
+    expect(pressureWeight(globalStageOf(0, 1, 10))).toBe(1);
+    // A stage boss's lean is its difficulty's from the first world.
+    expect(bossFrontPressure(globalStageOf(2, 1, 5), 'stage')).toBe(BOSS_FRONT_PRESSURE.stage[2]);
   });
 
   it('from Hell, part of its basic attacks land behind the front hero, and its hits carry the hit multiplier', () => {

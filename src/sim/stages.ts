@@ -2,7 +2,7 @@ import type { Rng } from './rng';
 import type { Combatant, WorldState } from './world';
 import type { ResolvedAbility } from './loadout';
 import { abilityDef } from '@/data/abilities';
-import { worldBossPressure, type BossRank } from '@/data/bossKit';
+import { bossFrontPressure, bossMagicShare, worldBossPressureAt, type BossRank } from '@/data/bossKit';
 import { armBoss, bossKit } from './bossMechanics';
 import { pickEnemyKind, supportAuras, traitsOf, SUPPORT_KIND, TRAIT_TUNING, type EnemyKind, type EnemyRole } from '@/data/enemies';
 import { difficultyIndexOf } from '@/data/difficulties';
@@ -25,6 +25,7 @@ import {
   ELITE_DMG_MULT,
   ZONE_ENRAGE_MS,
   STAGE_ENRAGE_MS,
+  enrageRampMs,
 } from '@/data/stageScaling';
 
 // Enemy spawning. Waves of 2–8 mixed kinds spawn ahead of the party and advance.
@@ -175,15 +176,20 @@ function readyAbilitiesForBoss(world: WorldState): void {
 
 /** Hand a freshly made boss its kit's marks (sim/bossMechanics): its affixes — always a list, empty when it has
  *  none —, its mechanic, its rank; and what the affixes need from the first moment (the shell). */
-function dressBoss(boss: Combatant | undefined, kit: ReturnType<typeof bossKit>, rank: BossRank): void {
+function dressBoss(boss: Combatant | undefined, kit: ReturnType<typeof bossKit>, rank: BossRank, S: number): void {
   if (boss === undefined) return;
   boss.affixes = kit.affixes;
   boss.mechanic = kit.mechanic;
   boss.bossRank = rank;
+  // What it hits with and how hard it leans on the front hero are its own, by data (data/bossKit): the same boss
+  // every attempt, so a party can prepare. Its enrage ramp is its difficulty's (data/stageScaling).
+  boss.magicShare = bossMagicShare(S, rank);
+  boss.frontHitMult = bossFrontPressure(S, rank);
+  boss.enrageRampMs = enrageRampMs(difficultyIndexOf(S));
   armBoss(boss);
 }
 
-export function spawnStageBoss(world: WorldState, rng: Rng): void {
+export function spawnStageBoss(world: WorldState, _rng: Rng): void {
   const S = world.globalStageIndex;
   const kit = bossKit(world.seed, S, 'stage');
   world.enemies = [
@@ -192,7 +198,7 @@ export function spawnStageBoss(world: WorldState, rng: Rng): void {
       hpMult: 0,
       hpAbsolute: stageBossHp(S),
       dmgMult: BOSS_DMG_MULT,
-      magic: rng.chance(0.4),
+      magic: false, // its physical/magic mix is its own (dressBoss, data/bossKit BOSS_MAGIC_SHARE)
       range: RANGE.melee + 30, // bigger sprite → stop further from the tank so it doesn't overlap it (+15 reach)
       moveSpeed: MOVE_SPEED.melee,
       // A stage boss's kit: its telegraphed area blow (DIFFICULTY.md §5b) + what its affixes bring (data/bossKit).
@@ -202,12 +208,12 @@ export function spawnStageBoss(world: WorldState, rng: Rng): void {
       enrageMs: STAGE_ENRAGE_MS,
     }),
   ];
-  dressBoss(world.enemies[0], kit, 'stage');
+  dressBoss(world.enemies[0], kit, 'stage', S);
   readyAbilitiesForBoss(world);
   world.phase = 'boss';
 }
 
-export function spawnZoneBoss(world: WorldState, rng: Rng): void {
+export function spawnZoneBoss(world: WorldState, _rng: Rng): void {
   const S = world.globalStageIndex;
   const kit = bossKit(world.seed, S, 'world');
   world.enemies = [
@@ -215,9 +221,9 @@ export function spawnZoneBoss(world: WorldState, rng: Rng): void {
       // Decoupled zone-boss HP (own Φ-power scale — THE wall; grows steeper than party power).
       hpMult: 0,
       hpAbsolute: zoneBossHp(S),
-      dmgMult: ZONE_BOSS_DMG_MULT * worldBossPressure(difficultyIndexOf(S)).hitMult, // its minute presses harder by difficulty (data/bossKit)
-      backShotChance: worldBossPressure(difficultyIndexOf(S)).backShotChance,
-      magic: rng.chance(0.4),
+      dmgMult: ZONE_BOSS_DMG_MULT * worldBossPressureAt(S).hitMult, // its minute presses harder by difficulty, eased in over its first worlds (data/bossKit)
+      backShotChance: worldBossPressureAt(S).backShotChance,
+      magic: false, // its physical/magic mix is its own (dressBoss, data/bossKit BOSS_MAGIC_SHARE)
       range: RANGE.melee + 60, // towering sprite → stop well clear of the tank (+30 reach)
       moveSpeed: MOVE_SPEED.melee,
       // A world boss's kit (data/bossKit): its own mechanic, the telegraphed area blow on every difficulty, and
@@ -228,7 +234,7 @@ export function spawnZoneBoss(world: WorldState, rng: Rng): void {
       enrageMs: ZONE_ENRAGE_MS, // the DPS+survival gate
     }),
   ];
-  dressBoss(world.enemies[0], kit, 'world');
+  dressBoss(world.enemies[0], kit, 'world', S);
   readyAbilitiesForBoss(world);
   world.phase = 'zoneBoss';
 }

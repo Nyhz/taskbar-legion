@@ -1,17 +1,22 @@
 import { useStore } from '@/state/store';
 import { getEngine } from '@/game/engineRef';
 import { BOSS_ENRAGE_RAMP_MS } from '@/data/stageScaling';
-import { creatureName, useT } from '@/i18n';
+import { creatureName, getLanguage, useT } from '@/i18n';
 import { worldInDifficulty } from '@/data/difficulties';
 import { tryWorldDef } from '@/data/worlds';
 import { Bar, Sign, Tip, TipNote, TipText, TipTitle } from '@/ui/kit';
 import { bossPlateInfo, clockText } from './bossPlate';
 import { bossMarks } from './bossMarks';
 
+/** Seconds as the language writes them (1.5 → «1,5» in Spanish). */
+function secsText(value: number): string {
+  return value.toLocaleString(getLanguage() === 'es' ? 'es-ES' : 'en-US', { maximumFractionDigits: 1 });
+}
+
 // With a boss in front (stage boss or world boss) the rail's middle IS the boss's line: a sign for its rank
 // (skull: stage boss; gold crown: world boss), its NAME, the marks of its kit (a world boss's own mechanic, then
 // its affixes: a small sign each, the words in its tooltip), its life, and the clock before it enrages — then the
-// enrage stacks (×N: its damage doubles every BOSS_ENRAGE_RAMP_MS). It lives on the rail, not on the strip, so
+// enrage stacks (×N: its damage doubles every ramp — its difficulty's, data/stageScaling enrageRampMs). It lives on the rail, not on the strip, so
 // nothing covers a boss as tall as the strip; the boss wears no life bar of its own (one bar, not two). It stays
 // through the beat a fallen world boss gets (sim `bossDown`), its bar empty. Reads the live sim boss and
 // re-renders with each HUD push. Returns null when there is no boss combatant (the caller draws its bar).
@@ -31,7 +36,7 @@ export function HudBoss(): React.JSX.Element | null {
   const fight = boss.fightMs ?? 0;
   const timed = Number.isFinite(windowMs) && boss.alive;
   const enraged = timed && fight > windowMs;
-  const stacks = enraged ? Math.floor((fight - windowMs) / BOSS_ENRAGE_RAMP_MS) + 1 : 0;
+  const stacks = enraged ? Math.floor((fight - windowMs) / (boss.enrageRampMs ?? BOSS_ENRAGE_RAMP_MS)) + 1 : 0;
 
   const info = bossPlateInfo(tryWorldDef(worldInDifficulty(globalStage)), phase === 'zoneBoss');
   const rankName = info.rank === 'worldBoss' ? t('hud.worldBoss') : t('hud.stageBoss');
@@ -61,7 +66,7 @@ export function HudBoss(): React.JSX.Element | null {
           {enraged ? `×${stacks}` : clockText(windowMs - fight)}
           <Tip side="below-end">
             <TipTitle>{enraged ? t('hud.enraged') : t('hud.enrage')}</TipTitle>
-            <TipText>{t('hud.enrageHelp')}</TipText>
+            <TipText>{t('hud.enrageHelp', { s: secsText((boss.enrageRampMs ?? BOSS_ENRAGE_RAMP_MS) / 1000) })}</TipText>
           </Tip>
         </div>
       )}

@@ -109,8 +109,9 @@ a world boss always. Gems roll on the same table (boss lift included), as an **e
   difficulty. Calibrated to require the difficulty's **new top tier** in core slots (§9).
 
 **The enrage (user, 2026-11-15, round 2 of the pacing retune).** A boss hits as written for **60 s**
-(`ZONE_ENRAGE_MS`, `STAGE_ENRAGE_MS`; it was 30 s) and then its damage **doubles every 2 s**
-(`BOSS_ENRAGE_RAMP_MS`; it was 5 s): the fight is meant to END at the window. The intent: a party *geared at
+(`ZONE_ENRAGE_MS`, `STAGE_ENRAGE_MS`; it was 30 s) and then its damage **doubles every 2 s** in Normal, 1.5 s in
+Hell and **1 s from Inferno** (`ENRAGE_RAMP_MS_BY_DIFFICULTY`, round 5 2026-11-16; it was 2 s everywhere, 5 s before
+that): the fight is meant to END at the window. The intent: a party *geared at
 80–90 % of the zone* kills the world boss at about 60 s; with less it must hold some seconds of enrage; with far
 less it does not make it. "Geared at X % of the zone" is measured, not felt — `test/sim/probe/zoneGear.ts`: the
 damage the party deals to the world boss in its 60 s ÷ the damage the same heroes deal in *the zone set* (the best

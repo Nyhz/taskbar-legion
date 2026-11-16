@@ -17,6 +17,7 @@ import { tickCooldowns, castReadyAbilities, foesBehind, resolveChanneledCast } f
 import { dealtMult, liveStats } from './liveStats';
 import { checkLowHp, onBlock, onCrit, onEffectsEnded, onEnemyDeath, onEnemyEngage, tryRescue, type TriggerCtx } from './triggers';
 import { mitigation, enrageMultiplier, MAX_DAMAGE_REDUCTION } from '@/data/stageScaling';
+import { foeMagicShare, mixedMitigation } from './damageMix';
 import { WALK_SPEED, HERO_SPACING, MOVE_EPS, RANGE, RESPAWN_MS } from '@/data/field';
 import { tryAbilityDef } from '@/data/abilities';
 import { behindBack, dismissSummons, isSummon, onBossHit, shellDamage, tickBossKit } from './bossMechanics';
@@ -241,7 +242,8 @@ export function resolveCombatTick(world: WorldState, deltaMs: number, rng: Rng):
     advanceAttack(e, (e.enemyAttackSpeed ?? 0.8) * enemySpeedFactor(e, true), deltaMs, () => {
       if (frontHero === undefined || !frontHero.alive) return false;
       if (e.x - frontHero.x > e.range + MOVE_EPS) return false; // not in range yet (MOVE_EPS: same anti-deadband as nearestEnemyInRange)
-      enemyAttack(e, attackTarget(e, frontHero, heroes, rng, focus), S, rng, ctx);
+      const target = attackTarget(e, frontHero, heroes, rng, focus);
+      enemyAttack(e, target, S, rng, ctx, target === frontHero);
       return true;
     });
   }
@@ -429,7 +431,7 @@ export function heroAttack(h: Combatant, stats: EffectiveStats, target: Combatan
   // (kills are resolved inside `strike` as each hit lands — no trailing kill needed)
 }
 
-function enemyAttack(e: Combatant, target: Combatant, S: number, rng: Rng, ctx: TriggerCtx): void {
+function enemyAttack(e: Combatant, target: Combatant, S: number, rng: Rng, ctx: TriggerCtx, onFront: boolean): void {
   const { events } = ctx;
   // Last Stand invulnerability negates the hit entirely (before mitigation) — but the
   // enemy still SWINGS (the attack fires, deals 0): keep them visibly attacking.
@@ -438,20 +440,23 @@ function enemyAttack(e: Combatant, target: Combatant, S: number, rng: Rng, ctx: 
     return;
   }
   const stats = heroStats(target);
-  const defense = e.enemyMagic ? stats.magicResist : stats.armor;
-  const mit = mitigation(Math.max(0, defense), S);
-  const enrage = e.isBoss === true ? enrageMultiplier(e.fightMs ?? 0, e.enrageMs ?? Number.POSITIVE_INFINITY) : 1;
+  // Its hit is split into a physical and a magic part, each turned away by its own defence (sim/damageMix).
+  const magic = foeMagicShare(e);
+  const mit = mixedMitigation(stats.armor, stats.magicResist, magic, S);
+  const enrage = e.isBoss === true ? enrageMultiplier(e.fightMs ?? 0, e.enrageMs ?? Number.POSITIVE_INFINITY, e.enrageRampMs) : 1;
   // weakenMult: a Debilitated enemy (Knight's Debilitating Cleave) deals less damage.
   // Its support's Saña; a shooter's Tiro cargado (one basic shot in four) or a beast's Embestida (its first blow).
   const heavy = heavyHit(e);
   const charged = heavy > 1;
-  const base = (e.enemyDamage ?? 1) * foeDamageMult(e) * heavy;
+  // A boss leans on the front hero harder by difficulty (data/bossKit BOSS_FRONT_PRESSURE).
+  const lean = onFront && e.isBoss === true ? (e.frontHitMult ?? 1) : 1;
+  const base = (e.enemyDamage ?? 1) * foeDamageMult(e) * heavy * lean;
   let dmg = base * enrage * weakenMult(e.effects) * (1 - mit);
   const blocked = rng.chance(Math.min(1, stats.block / 100));
   if (blocked) dmg *= 0.5;
   dmg *= 1 - Math.min(MAX_DAMAGE_REDUCTION, Math.max(0, stats.damageReduction)) / 100; // flat % off (e.g. Stone Skin)
   // The guard passives: the Knight takes part of a hit aimed behind him, the most hurt hero takes less…
-  dmg = guardedDamage(target, dmg, { raw: base * enrage * weakenMult(e.effects), area: false, magic: e.enemyMagic === true });
+  dmg = guardedDamage(target, dmg, { raw: base * enrage * weakenMult(e.effects), area: false, magic });
   noteBlockStreak(target, blocked); // Weathered Hide counts the hit AFTER it was reduced by the stacks it had
   // "Being hit" is what LANDS on the hero, not what gets through: a shield soaking the blows does not make the
   // abilities that answer them (Hold the Line, Holy Shield, Stone Skin) think nobody is under attack.

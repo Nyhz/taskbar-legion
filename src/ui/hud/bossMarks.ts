@@ -4,12 +4,12 @@ import { difficultyIndexOf } from '@/data/difficulties';
 import { effectDef } from '@/data/effects';
 import { t } from '@/i18n';
 
-// The marks after a boss's name on the HUD's boss line (no React here — pure, unit-tested): a world boss's own
-// mechanic first, then its affixes, each a small sign with a tooltip. Every number in a tooltip is read from the
+// The marks after a boss's name on the HUD's boss line (no React here — pure, unit-tested): what it hits with (its
+// physical/magic mix), a world boss's own mechanic, then its affixes, each a small sign with a tooltip. Every number in a tooltip is read from the
 // data the simulation uses (data/bossKit.ts and the abilities/effects it names), at the stage's difficulty.
 
 export interface BossMark {
-  kind: 'mechanic' | 'affix';
+  kind: 'damage' | 'mechanic' | 'affix';
   key: string;
   /** Art stem of its 16 px sign (tools/assets icon set s9g_affixes). */
   sign: string;
@@ -108,12 +108,28 @@ function mechanicMark(key: BossMechanicKey, d: number, effects: readonly WornEff
   }
 }
 
+/** What the boss hits with: its fixed physical/magic mix (data/bossKit BOSS_MAGIC_SHARE), signed by the defence
+ *  that matters more against it. */
+function damageMark(magicShare: number): BossMark {
+  const magic = Math.round(Math.max(0, Math.min(1, magicShare)) * 100);
+  const physical = 100 - magic;
+  return {
+    kind: 'damage',
+    key: 'damage',
+    sign: magic > physical ? 'stat_magicResist' : 'stat_armor',
+    name: magic > physical ? t('boss.damageMagic') : t('boss.damagePhysical'),
+    kindName: t('boss.damageKind'),
+    help: t('boss.damageHelp', { phys: physical, magic }),
+  };
+}
+
 const isAffix = (key: string): key is BossAffixKey => (BOSS_AFFIX_KEYS as readonly string[]).includes(key);
 const isMechanic = (key: string): key is BossMechanicKey => key in MECHANIC;
 
 /** The marks of the boss in front, in the order they are drawn. Unknown keys (an old save) are skipped. */
-export function bossMarks(boss: { affixes?: readonly string[]; mechanic?: string; bossRank?: BossRank; effects?: readonly WornEffect[] }, globalStage: number): BossMark[] {
+export function bossMarks(boss: { affixes?: readonly string[]; mechanic?: string; bossRank?: BossRank; effects?: readonly WornEffect[]; magicShare?: number }, globalStage: number): BossMark[] {
   const marks: BossMark[] = [];
+  if (boss.magicShare !== undefined) marks.push(damageMark(boss.magicShare));
   if (boss.mechanic !== undefined && isMechanic(boss.mechanic)) marks.push(mechanicMark(boss.mechanic, difficultyIndexOf(globalStage), boss.effects ?? []));
   for (const key of boss.affixes ?? []) if (isAffix(key)) marks.push(affixMark(key, boss.bossRank ?? 'stage'));
   return marks;

@@ -217,11 +217,21 @@ export const STAGE_ENRAGE_MS = 60_000; // stage bosses share the window
 // Boss damage doubles every RAMP ms past the window: ×2 after 2 s, ×6 after 5 s, ×32 after 10 s. Measured: a party
 // holds about ten seconds of it in Hell and up to fifteen in Torment (its tank is sturdier there) — "unos segundos".
 export const BOSS_ENRAGE_RAMP_MS = 2000;
+/** The ramp by difficulty, Normal … Torment (round 5, 2026-11-16, user: «sí, más dura»): from Inferno a boss's
+ *  damage doubles every second past the window (×32 five seconds in), so holding its enrage is all but impossible
+ *  and the ladder's % is what a party really needs to end the fight at the minute. Normal and Hell keep the
+ *  softer ramp: a party a little short still scrapes through with a few seconds of it. */
+export const ENRAGE_RAMP_MS_BY_DIFFICULTY: readonly [number, number, number, number, number] = [2000, 1500, 1000, 1000, 1000];
 
-/** Boss damage multiplier from enrage: 1 until `windowMs`, then doubles every RAMP. */
-export function enrageMultiplier(fightMs: number, windowMs: number): number {
+/** The enrage ramp of a boss at difficulty index `d`. */
+export function enrageRampMs(d: number): number {
+  return ENRAGE_RAMP_MS_BY_DIFFICULTY[Math.max(0, Math.min(4, Math.floor(d)))] ?? BOSS_ENRAGE_RAMP_MS;
+}
+
+/** Boss damage multiplier from enrage: 1 until `windowMs`, then doubles every `rampMs`. */
+export function enrageMultiplier(fightMs: number, windowMs: number, rampMs: number = BOSS_ENRAGE_RAMP_MS): number {
   if (fightMs <= windowMs) return 1;
-  return 2 ** ((fightMs - windowMs) / BOSS_ENRAGE_RAMP_MS);
+  return 2 ** ((fightMs - windowMs) / Math.max(1, rampMs));
 }
 
 // ── Gear power ──

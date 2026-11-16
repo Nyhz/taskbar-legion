@@ -9,7 +9,7 @@ import { abilityDef } from '@/data/abilities';
 import { applyEffect } from '@/sim/effects';
 import { effectDef } from '@/data/effects';
 import {
-  ENEMY_KINDS, ROLE_TRAITS, SUPPORT_AURA_COUNT, SUPPORT_AURA_KEYS, SUPPORT_KIND, SUPPORT_MIN_STAGE, SUPPORT_WAVE_CHANCE, TRAIT_TUNING,
+  ENEMY_KINDS, ROLE_TRAITS, SUPPORT_AURA_COUNT, SUPPORT_AURA_KEYS, SUPPORT_INNATE_AURAS, SUPPORT_KIND, SUPPORT_MIN_STAGE, SUPPORT_WAVE_CHANCE, TRAIT_TUNING,
   auraValue, supportAuras, traitsOf, type EnemyRole,
 } from '@/data/enemies';
 import { attackHastePct, focusedHero, foeDamageMult, foeWard, isEnraged, refreshAuras, tickFoeTraits } from '@/sim/enemyTraits';
@@ -305,16 +305,18 @@ describe('the support', () => {
     expect(supportAuras(5, 77, 3, 0)).toEqual(supportAuras(5, 77, 3, 0));
   });
 
-  it('its auras stack with the difficulty: one in Normal … five in Torment, all different', () => {
+  it('its auras stack with the difficulty: Enchanted Weapons always, and one in Normal … five in Torment, all different', () => {
     for (let d = 0; d < 5; d++) {
       let seen = 0;
       for (let wave = 0; wave < 60; wave++) {
         const auras = supportAuras(1234, d * 100 + 55, wave, d);
         if (auras === undefined) continue;
         seen += 1;
-        expect(auras).toHaveLength(SUPPORT_AURA_COUNT[d] ?? 0);
+        expect(auras.slice(0, SUPPORT_INNATE_AURAS.length)).toEqual([...SUPPORT_INNATE_AURAS]);
+        const drawn = auras.slice(SUPPORT_INNATE_AURAS.length);
+        expect(drawn).toHaveLength(SUPPORT_AURA_COUNT[d] ?? 0);
         expect(new Set(auras).size).toBe(auras.length);
-        for (const a of auras) expect(SUPPORT_AURA_KEYS).toContain(a);
+        for (const a of drawn) expect(SUPPORT_AURA_KEYS).toContain(a);
       }
       expect(seen).toBeGreaterThan(5);
     }
@@ -322,7 +324,7 @@ describe('the support', () => {
     // In Normal every aura turns up sooner or later.
     const normal = new Set<string>();
     for (let wave = 0; wave < 400; wave++) for (const a of supportAuras(8, 60, wave, 0) ?? []) normal.add(a);
-    expect(normal.size).toBe(SUPPORT_AURA_KEYS.length);
+    expect(normal.size).toBe(SUPPORT_AURA_KEYS.length + SUPPORT_INNATE_AURAS.length);
   });
 
   it('a wave has one support at most, standing furthest back, and spawning it draws nothing from the combat rng', () => {

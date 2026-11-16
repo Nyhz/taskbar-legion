@@ -3,6 +3,10 @@ import type { boss as en } from '../en/boss';
 export const boss: Record<keyof typeof en, string> = {
   affix: 'Afijo',
   mechanic: 'Su mecánica',
+  damageKind: 'Con qué pega',
+  damagePhysical: 'Sobre todo físico',
+  damageMagic: 'Sobre todo mágico',
+  damageHelp: 'Cada golpe es un {phys} % físico, que frena la armadura, y un {magic} % mágico, que frena la resistencia mágica.',
   armored: 'Acorazado',
   armoredHelp: 'Lleva una coraza que vale el {shell} % de su vida. Mientras aguanta, el jefe recibe un {cut} % menos de daño; los críticos la gastan el doble de rápido. Vuelve {secs} s después de romperse.',
   vampiric: 'Vampírico',

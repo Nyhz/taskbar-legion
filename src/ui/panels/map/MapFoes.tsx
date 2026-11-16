@@ -34,8 +34,18 @@ export function MapFoes({ difficulty }: { difficulty: number }): React.JSX.Eleme
         <b>{kindName('support')}</b>
         <span>
           {support.fromWorld !== undefined && `${t('map.supportFrom', { n: support.fromWorld })} `}
-          {supportLine(support)}
+          {t('map.supportAlways')}
         </span>
+      </div>
+      {support.innate.map(({ key, value }) => (
+        <div key={key} className="au">
+          <AuraSign aura={key} />
+          <span>{auraLine(key, value)}</span>
+        </div>
+      ))}
+      <div className="tr sup">
+        <b />
+        <span>{supportLine(support)}</span>
       </div>
       {support.values.map(({ key, value }) => (
         <div key={key} className="au">

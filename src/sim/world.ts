@@ -74,7 +74,13 @@ export interface Combatant {
   // enemy-only precomputed combat values (stage-scaled at spawn):
   enemyDamage?: number;
   enemyAttackSpeed?: number;
-  enemyMagic?: boolean;
+  enemyMagic?: boolean; // its basic hits are all magic (a support, the Priest's reflection); a boss uses magicShare
+  /** Boss-only: the share of its damage that is magic (0.4 or 0.6, data/bossKit BOSS_MAGIC_SHARE) — each hit is split
+   *  and each part is mitigated by its own defence. An ability with its own `magic` flag keeps it. */
+  magicShare?: number;
+  /** Boss-only: × its basic hits on the FRONT hero (data/bossKit BOSS_FRONT_PRESSURE): it leans on the tank harder by
+   *  difficulty. Its area blow carries the same lean on its main target through the blow's coefficient. */
+  frontHitMult?: number;
   isBoss?: boolean;
   isElite?: boolean; // a beefed-up "champion" trash mob (2× hp/dmg, 2× chest) — render bigger
   // ── what kind of wave enemy it is and what it has gained with the difficulty (data/enemies.ts, sim/enemyTraits.ts) ──
@@ -90,6 +96,7 @@ export interface Combatant {
   aegisGiven?: boolean; // Égida: it has already been given that shield
   backShotChance?: number; // enemy-only: share of its basic attacks that go for a hero behind the front one (data/enemies)
   enrageMs?: number; // enrage window for this boss (Infinity = never; bosses = 60 s)
+  enrageRampMs?: number; // boss-only: its damage doubles every this many ms past the window (data/stageScaling enrageRampMs)
   bossUltTriggered?: boolean; // boss-only: the party's onBossEngage ults have fired for this boss
   // Channeled cast in progress (world-boss Frenzy / Mortal Wound): the ability winds up
   // `totalMs` (the cast bar) before its effect resolves. While set, the boss starts no new

@@ -57,6 +57,8 @@ export function auraLine(key: SupportAura, value: number): string {
       return t('map.auraAegis', { v });
     case 'malice':
       return t('map.auraMalice', { v });
+    case 'enchant':
+      return t('map.auraEnchant', { v });
   }
 }
 

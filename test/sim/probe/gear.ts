@@ -27,7 +27,7 @@ import type { SlotKey } from '@/data/itemSlots';
 export function heroScore(config: HeroConfig, party: readonly HeroConfig[]): number {
   const eff = aggregate(heroBaseStats(config.classKey, config.level), heroStaticMods(config, partyAuraMods(party)));
   const dps = eff.attackDamage * eff.attackSpeed * (1 + (eff.critChance / 100) * (eff.critDamage / 100));
-  const ehp = eff.health * (1 + eff.armor / 300 + eff.magicResist / 300);
+  const ehp = cushioned(eff.health, eff.armor, eff.magicResist);
   const heal = eff.health * (eff.healPower / 100);
   let score: number;
   switch (config.classKey) {
@@ -49,7 +49,19 @@ export function heroScore(config: HeroConfig, party: readonly HeroConfig[]): num
 /** The effective life the score weighs (health cushioned by armour and magic resist). */
 export function heroEhp(config: HeroConfig, party: readonly HeroConfig[]): number {
   const eff = aggregate(heroBaseStats(config.classKey, config.level), heroStaticMods(config, partyAuraMods(party)));
-  return eff.health * (1 + eff.armor / 300 + eff.magicResist / 300);
+  return cushioned(eff.health, eff.armor, eff.magicResist);
+}
+
+/** What the player gears against (round 5, 2026-11-16): the share of the damage that is magic — the next wall's
+ *  boss's own mix (data/bossKit BOSS_MAGIC_SHARE), set by the loop as the party moves on. 0.5 weighs armour and
+ *  magic resist alike (the old score). */
+export const SCORE_CONTEXT = { magicShare: 0.5 };
+
+/** Health cushioned by the defences, each weighed by the share of the damage it turns away. At magicShare 0.5 this
+ *  is the old cushion (health × (1 + armour/300 + magic resist/300)). */
+function cushioned(health: number, armor: number, magicResist: number): number {
+  const m = Math.max(0, Math.min(1, SCORE_CONTEXT.magicShare));
+  return health * (1 + ((1 - m) * armor + m * magicResist) / 150);
 }
 
 /** The effective life each class was seen to need at the walls (class → ehp), raised by the probe when a hero of

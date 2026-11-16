@@ -86,7 +86,7 @@ describe("the support's aura signs", () => {
     expect(auraSigns(undefined)).toEqual([]);
   });
 
-  it('they sit in one centred row, up to five, without overlapping', () => {
+  it('they sit in one centred row, up to six (Enchanted Weapons and five drawn), without overlapping', () => {
     expect(auraSignOffsets(0)).toEqual([]);
     expect(auraSignOffsets(1)).toEqual([0]);
     expect(auraSignOffsets(2)).toEqual([Math.round(-0.5 * AURA_SIGN_STEP), Math.round(0.5 * AURA_SIGN_STEP)]);
@@ -94,6 +94,7 @@ describe("the support's aura signs", () => {
     expect(five).toHaveLength(5);
     expect(five[2]).toBe(0);
     for (let i = 1; i < five.length; i++) expect((five[i] ?? 0) - (five[i - 1] ?? 0)).toBeGreaterThanOrEqual(AURA_SIGN_STEP - 1);
-    expect(auraSignOffsets(9)).toHaveLength(5);
+    expect(auraSignOffsets(6)).toHaveLength(6);
+    expect(auraSignOffsets(9)).toHaveLength(6);
   });
 });

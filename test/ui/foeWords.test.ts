@@ -44,11 +44,14 @@ describe('enemy traits and auras in words', () => {
       'Saña: hace un 20 % más de daño',
     ]);
     expect(auraLine('vigor', supportFacts(2).values.find((v) => v.key === 'vigor')?.value ?? 0)).toBe('Vigor: regenera un 2,5 % de vida por segundo');
-    expect(supportLine(supportFacts(0))).toBe('Su oleada tiene 1 de estas auras, al azar, hasta que muere:');
-    expect(supportLine(supportFacts(2))).toBe('Su oleada tiene 3 de estas auras, al azar, hasta que muere:');
-    expect(supportLine(torment)).toBe('Su oleada tiene las 5 auras hasta que muere:');
+    expect(supportLine(supportFacts(0))).toBe('Y 1 de estas auras, al azar:');
+    expect(supportLine(supportFacts(2))).toBe('Y 3 de estas auras, al azar:');
+    expect(supportLine(torment)).toBe('Y las 5 auras siguientes:');
+    // Every support always carries Enchanted Weapons besides the auras it draws (round 5).
+    expect(torment.innate.map((v) => auraLine(v.key, v.value))).toEqual(['Armas encantadas: un 40 % de cada golpe es mágico']);
     setLanguage('en');
     expect(SUPPORT_AURA_KEYS.map((k) => auraLine(k, 20).split(':')[0])).toEqual(['Toughness', 'Fury', 'Vigor', 'Aegis', 'Malice']);
-    expect(supportLine(supportFacts(1))).toBe('Its wave has 2 of these auras, at random, until it dies:');
+    expect(auraLine('enchant', 40)).toBe('Enchanted Weapons: 40 % of every hit is magic');
+    expect(supportLine(supportFacts(1))).toBe('And 2 of these auras, at random:');
   });
 });

@@ -1,6 +1,6 @@
 import type { AbilityDef } from '@/data/abilities';
 import { abilityDef, stageBossAbilityKeys, worldBossAbilityKeys } from '@/data/abilities';
-import { BOSS_AFFIX, MECHANIC_EXTRAS, SUMMONS, SUMMON_HOVER, bossAffixes, mechanicAbility, worldBossMechanic, worldBossPressure, MECHANIC, type BossAffixKey, type BossRank } from '@/data/bossKit';
+import { BOSS_AFFIX, MECHANIC_EXTRAS, SUMMONS, SUMMON_HOVER, bossAffixes, bossFrontPressure, mechanicAbility, worldBossMechanic, worldBossPressureAt, MECHANIC, type BossAffixKey, type BossRank } from '@/data/bossKit';
 import { difficultyIndexOf } from '@/data/difficulties';
 import { effectDef } from '@/data/effects';
 import { HERO_SPACING } from '@/data/field';
@@ -41,10 +41,15 @@ export function bossKit(runSeed: number, S: number, rank: BossRank): BossKit {
   }
   for (const key of rank === 'world' ? worldBossAbilityKeys() : stageBossAbilityKeys()) {
     let blow = abilityDef(key);
+    // Its lean on the front hero by difficulty (data/bossKit BOSS_FRONT_PRESSURE) rides on the blow's main hit.
+    const front = bossFrontPressure(S, rank);
     if (rank === 'world') {
-      // A world boss's minute presses the party by its difficulty (data/bossKit WORLD_BOSS_PRESSURE).
-      const p = worldBossPressure(d);
-      blow = { ...blow, cooldownMs: p.blowEveryMs, power: { ...blow.power, coeff: p.blowCoeff, splashCoeff: p.splashCoeff } };
+      // A world boss's minute presses the party by its difficulty, eased in over its first worlds
+      // (data/bossKit WORLD_BOSS_PRESSURE, worldBossPressureAt).
+      const p = worldBossPressureAt(S);
+      blow = { ...blow, cooldownMs: p.blowEveryMs, power: { ...blow.power, coeff: p.blowCoeff * front, splashCoeff: p.splashCoeff } };
+    } else if (front !== 1 && blow.power !== undefined) {
+      blow = { ...blow, power: { ...blow.power, coeff: blow.power.coeff * front } };
     }
     abilities.push(resolved(affixes.includes('seismic') ? { ...blow, cooldownMs: Math.min(blow.cooldownMs, BOSS_AFFIX.seismic.blowEveryMs) } : blow));
   }
@@ -120,7 +125,7 @@ export function onBossHit(boss: Combatant, target: Combatant, dealt: number, blo
  *  WORLD_BOSS_PRESSURE.woundPct % of the hero's life a second per stack; only a heal lifts it). */
 export function onWorldBlow(boss: Combatant, target: Combatant, S: number): void {
   if (boss.bossRank !== 'world' || !target.alive) return;
-  const pct = worldBossPressure(difficultyIndexOf(S)).woundPct;
+  const pct = worldBossPressureAt(S).woundPct;
   if (pct <= 0) return;
   applyEffect(target.effects, effectDef('debuff_rend'), boss.id, (target.maxHp * pct) / 100);
 }
