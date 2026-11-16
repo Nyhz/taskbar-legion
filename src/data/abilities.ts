@@ -189,7 +189,7 @@ export const ABILITIES: Record<string, AbilityDef> = {
     key: 'knight_guard', name: 'Stone Skin', icon: 'guard',
     desc: 'Harden his skin to stone — flat damage reduction to soak incoming hits.',
     cooldownMs: 20000, target: 'self',
-    // buff_guard_block: 20% damage reduction at rank 1, +5%/rank → 40% at rank 5. 6s uptime.
+    // buff_guard_block: 30% damage reduction at rank 1, +5%/rank → 50% at rank 5. 6s uptime.
     applies: [{ effectKey: 'buff_guard_block' }],
     // Not burnt before any blow comes: it waits until he is actually being hit.
     castCondition: 'enemyPresent', fires: { when: 'selfHit' }, rankScaling: { perRank: { value: 5 } },
