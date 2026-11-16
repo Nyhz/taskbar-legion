@@ -1886,3 +1886,8 @@ se mide dónde quedan los muros de hoy respecto al techo nuevo (Ronda 4 del info
   mundo 1 (todo a la rareza anterior) al mundo 10 (todo a la nueva). Quita la sierra del mundo 2.
 - **Manda la escalera** (16 nov, tras la ronda 4b): los muros se ponen en la escalera suave aunque el juego pase de
   ≈720 h; «aceptamos más horas, ya veremos si luego hacemos algún ajuste». Ronda 4c: muros en la escalera y medida.
+- **Cada dificultad empieza donde acabó la anterior** (16 nov, tras la ronda 4c): el mundo 1 pide lo mismo que el
+  mundo 10 de la anterior y sube hasta su tope (Normal 10→20 · Infierno 20→55 · Averno 55→70 · Eterno 70→80 ·
+  Tormento 80→90 % del techo). Con la escalera de saltos el equipo anterior no tumbaba ni el mundo 1 (Normal 10 → Infierno
+  1: 0 de 8). Ronda 4c: con los muros en la escalera el juego no se termina (el grupo se estanca al 55–65 % del techo en
+  Eterno/Tormento); ronda 4d diagnostica por qué antes de elegir palanca.
