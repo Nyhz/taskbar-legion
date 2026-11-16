@@ -764,3 +764,398 @@ En cuatro partidas el jefe del mundo 1 cayó entre 1,1 y 7,3 horas (mediana 2,9)
 
 `GRUNT_HP_TUNE`, `STAGE_BOSS_HP_TUNE`, `TRASH_DMG_TUNE` (59 puntos: etapas 1-1…1-10 y luego un valor por mundo, del 2 al 50) y `WORLD_WALL_MULT` (50 mundos). La referencia de lo que hizo el grupo con equipo del nivel al afinarlas está en `test/sim/probe/anchorReference.ts`.
 
+
+
+## Ronda 3 · punto de control 1: auditoría y peso de la construcción
+
+*16 nov 2026. No se ha tocado nada del juego: solo la sonda (`test/sim/probe/`) y scripts nuevos en `scripts/`. Las cifras de horas son de la sonda corregida, no de una pasada de ajuste.*
+
+### Resumen
+
+- **La sonda ve todo el contenido nuevo**: oleadas por dificultad, Apoyos y auras, rasgos, élites, afijos y las diez mecánicas con sus invocaciones. Lo comprueba la auditoría de abajo, en peleas reales de la sonda.
+- **Cuatro cosas entraban mal y están corregidas**:
+  - la sonda solo usaba dos habilidades por clase;
+  - al fallar un muro sus afijos se volvían a sortear;
+  - todas las semillas veían los mismos Apoyos;
+  - la medida de «equipo de la zona» no dejaba romper el Acorazado ni cobrar la Culpa.
+- **La construcción influye bastante en los muros, nada en el farmeo**:
+  - frente a la construcción por defecto de la sonda, la mejor aguanta un muro con entre un 14 y un 33 % más de vida (mediana por dificultad), unos 12–25 % menos de equipo;
+  - una construcción al azar aguanta entre un 0 y un 23 % menos;
+  - en el farmeo las tres van a un 0–10 % la una de la otra.
+- **En la partida entera** (6 semillas, de Normal 1-1 a Tormento 10-10; la diferencia está solo en el arranque de cada muro, el farmeo es el mismo):
+  - con la construcción buena en cada muro, 534 h;
+  - con la por defecto, 592 h;
+  - con una al azar en cada muro, 855 h (+44 %).
+- **Pero no depende del jefe.** Una sola construcción de daño iguala a la mejor de cada muro, con un ±4 %, en 22 de los 25 muros de Infierno en adelante: Grito de guerra + Sed de sangre (Azote) · Disparo certero + Punto débil (Tirador) · Infusión de poder + Castigo (Celo). Purificar sale en la mejor construcción de solo 4 de 25 muros, y quitarlo no cambia el resultado. Los muros son hoy una carrera de daño contra la furia de los 60 s.
+
+### 1. Auditoría: qué entra en la sonda
+
+Prueba: `npx vite-node scripts/probe-audit.ts`. Juega con el montaje de la sonda una etapa de farmeo por dificultad y los diez jefes de mundo de cada una, y cuenta lo que aparece.
+
+| Contenido | En la sonda | Prueba |
+|---|---|---|
+| Oleadas por etapa (8 / 12 / 16 / 20 / 20) | Entra | Contadas en cada dificultad: 8/8, 12/12, 16/16, 20/20. Las 16/17/18/19/20 que decidiste son de la pasada y no están puestas. |
+| Apoyos (desde el mundo 3 de Normal; 1 → 5 auras) | Entra | 2–7 por etapa; auras [1] en Normal, [2] en Infierno… [5] en Tormento; aviso `supportDown` al caer |
+| Rasgos por dificultad | Entra | Normal: ninguno · Infierno: Rabia, Guardia · Averno: + Embestida, Último aliento, Tiro cargado, Imparable · Eterno y Tormento: + Fuego concentrado, Temblor |
+| Élites | Entra | 6–40 por etapa |
+| Afijos de jefe de etapa (0/1/1/2/2) y de mundo (0/0/1/1/2, sin Vampírico) | Entra | Contados por dificultad en las dos tablas |
+| Mecánicas de los 10 jefes de mundo | Entra | Lanzamientos `boss_flock`, `boss_roots`, `boss_chain_bolt`, `boss_guilt`, `boss_gild`, `boss_undertow`, `boss_spores`, `boss_red_blade`, `boss_scales`, `boss_mirror`; paneles, rotura e invocaciones |
+| Invocaciones (cuervos, reflejos) | Entra | No cuentan como baja ni dan botín (`Simulation.processDeaths`, regla del juego) |
+| Prioridad de objetivo y alcance de disparo | Entra | Es del sim |
+| **Habilidades de la clase** | **Entraba mal → corregido** | La sonda aprendía siempre las dos primeras: Sanar + Infusión de poder, Piel de piedra + Tajo debilitante, Fuego rápido + Disparo certero. Purificar, Castigo, Nova, Grito de guerra, Punto débil… no se usaban nunca. Ahora cualquier construcción (`builds.ts`) |
+| Pasivos de efecto | Entran, tarde | Con la construcción por defecto: Guardián, Primera sangre y Desbordamiento desde el principio, Retribución a nivel 60; los de rama a partir de 80–100. Los de la otra rama (Piel curtida, Aguante, Perforar, Crueldad, Luz abrasadora, Condena), solo a nivel 120 |
+| **Afijos y Apoyos del run** | **Entraba mal → corregido** | En el juego salen de la semilla de la partida y son los mismos en cada intento. La sonda los sacaba de la semilla del combate: cada intento fallido volvía a sortear los afijos, y todas las semillas farmeaban con los mismos Apoyos. Ahora `fixedRunSeed` (activado por defecto). Mediana casi igual (588 → 592 h), más dispersión: la semilla 5 pasa de 699 a 807 h porque le tocan afijos malos |
+| **Medida de «equipo de la zona»** (`zoneGear.wallDamage`) | **Entraba mal → corregido** | El jefe tenía 10¹⁸ de vida: el Acorazado no se rompía nunca y la Culpa no cobraba nada. Ahora tiene su vida real y se le devuelve la mitad cada vez que baja de la mitad. Pendiente: «por debajo del 30 %» (rol de la Ranger) sigue sin aplicarse en esa medida |
+| Mascotas | No entraba → opción | `pets: 'median'`: cada mascota se tiene desde que la mitad de los jugadores la habría encontrado, y sube de rango por su objetivo. 553 h frente a 592 (−7 %). Por defecto sigue en `'none'` |
+| Llave opción A | No está | Es decisión de la pasada; no la he puesto, ni como opción |
+| Gemas | Entra | Se engastan; la tech de gemas cuenta |
+| Tech | Entra | Todo menos `synth_luck`, que es del cubo |
+| Cubo (alquimia, síntesis) | No entra | La sonda no fabrica nada: simplificación conocida |
+| Desconexión | Entra | Tope de 8 h, solo oro y experiencia; con mascotas, las horas extra del Diablillo |
+| Purificar y curas inmediatas frente a Esporas, Herida mortal y Raíces | Entra si la construcción las lleva | La construcción por defecto no tiene ni Purificar ni cura inmediata (Sanar es progresiva), así que nunca respondía a las Esporas. Con Purificar puesto, se lanza (contado en la auditoría) |
+| Pausa de jefe caído (5,2 s) y secuencia de derrota (8,7 s) | Aproximadas | El bucle cobra un mínimo de 30 s por victoria y 80 s por intento fallido |
+
+### 2. Correcciones de la sonda (sin tocar `src/`)
+
+- **`test/sim/probe/builds.ts`** (nuevo):
+  - una construcción es dos habilidades, una rama, los modificadores preferidos y el orden de gasto;
+  - `buildTalents` pasa cada punto por `canSpend`, así que el árbol siempre la acepta;
+  - si una habilidad aún no se puede aprender, la sustituye una de las de por defecto hasta que se abre;
+  - `allBuilds` enumera todas las construcciones (hasta 88 distintas por clase a nivel alto), y `randomPartyBuild` saca una al azar;
+  - la construcción por defecto (`PROBE_DEFAULT_BUILD`) es exactamente la de antes.
+- **`loop.ts`**: opciones nuevas `build`, `pets`, `fixedRunSeed` y `wallBuild` (cambio gratis de construcción antes de un muro).
+- **`combat.ts`**: `measureFarm` y `measureBoss` separan la semilla del run de la del combate.
+- **`zoneGear.ts`**: el jefe de la medida tiene su vida real y se rellena.
+- **Tests**: `test/sim/probe/builds.test.ts` (7). Comprueba que toda construcción de toda clase, a seis niveles, es válida; que la por defecto es la de siempre; las sustituciones; el azar determinista; las mascotas; el run determinista; y el relleno de la medida.
+- **Scripts**:
+  - `probe-snapshots.ts`: el grupo de la sonda en cada muro;
+  - `probe-audit.ts`;
+  - `build-study.ts`: el estudio, en 9 procesos;
+  - `build-study-extra.ts`: el equipo de la zona y el farmeo;
+  - `build-progression.ts`: la partida entera con las tres políticas.
+- `tsc`, lint y `vitest` en verde: 107 archivos, 974 tests (1 omitido).
+
+### 3. Estudio: cuánto influye construirse bien
+
+**Método**:
+- El grupo es el de la sonda al llegar a cada muro y en el momento de tumbarlo (semilla 1): nivel, tech y equipo reales. El equipo es el mismo en las tres políticas.
+- **D = por defecto**: la de la sonda.
+- **Ó = óptima**: búsqueda por coordenadas sobre todas las construcciones distintas de cada clase, desde la por defecto, con 4 semillas propias. Se evalúa después con otras 16.
+- **A = aleatoria**: una construcción distinta en cada semilla.
+- Cada semilla es un jugador distinto, con sus afijos y sus tiradas.
+- **Margen**: el mayor múltiplo de la vida del muro que la política tumba en el 75 % de 16 semillas, por bisección.
+- **Equipo necesario**: el equipo de la zona del grupo al caer, dividido por el margen. Supone que el daño escala con el equipo.
+- **Genérica**: la construcción fija Grito de guerra + Sed de sangre (Azote) · Disparo certero + Punto débil (Tirador) · Infusión de poder + Castigo (Celo), probada igual en cada muro.
+- 35 muros: los 20 de Normal e Infierno, y los mundos 1, 4, 5, 7 y 10 de Averno, Eterno y Tormento. Unas 35 000 peleas.
+
+| Muro | Mecánica | Nivel | Equipo (llegada → al caer) | Victoria D / Ó / A | Muerte D / Ó (s) | Margen D / Ó / A | Equipo necesario D / Ó / A | Genérica (margen) | Construcción óptima (Knight · Ranger · Priest) |
+|---|---|---|---|---|---|---|---|---|---|
+| Normal 1-10 | Bandada | 10 | 10 → 10 % | 94 / 88 / 94 % | 66 / 66 | ×1.02 / ×1.02 / ×1.02 | 10 % / 10 % / 10 % | — | Tajo debilitante + Baluarte (Bastión) · Fuego rápido + Disparo certero (Tirador) · Sanar + Infusión de poder (Devoción) |
+| Normal 2-10 | Raíces | 12 | 12 → 12 % | 100 / 100 / 100 % | 59 / 58 | ×1.11 / ×1.11 / ×1.07 | 11 % / 11 % / 11 % | — | Tajo debilitante + Baluarte (Bastión) · Disparo certero + Lluvia de flechas (Tirador) · Infusión de poder + Escudo sagrado (Devoción) |
+| Normal 3-10 | Rayo en cadena | 14 | 11 → 11 % | 12 / 100 / 31 % | 59 / 58 | ×0.86 / ×1.07 / ×0.90 | 13 % / 10 % / 12 % | — | Tajo debilitante + Baluarte (Bastión) · Fuego rápido + Disparo certero (Tirador) · Sanar + Infusión de poder (Devoción) |
+| Normal 4-10 | Culpa | 16 | 12 → 16 % | 75 / 100 / 81 % | 30 / 30 | ×1.02 / ×1.58 / ×1.11 | 16 % / 10 % / 14 % | — | Tajo debilitante + Baluarte (Bastión) · Fuego rápido + Disparo certero (Tirador) · Sanar + Infusión de poder (Devoción) |
+| Normal 5-10 | Silencio dorado | 17 | 13 → 13 % | 100 / 100 / 100 % | 21 / 21 | ×1.33 / ×1.72 / ×1.33 | 10 % / 8 % / 10 % | — | Tajo debilitante + Baluarte (Bastión) · Fuego rápido + Disparo certero (Tirador) · Sanar + Infusión de poder (Devoción) |
+| Normal 6-10 | Resaca | 18 | 16 → 16 % | 100 / 100 / 100 % | 16 / 17 | ×1.58 / ×2.33 / ×1.58 | 10 % / 7 % / 10 % | — | Piel de piedra + Baluarte (Bastión) · Fuego rápido + Disparo certero (Tirador) · Sanar + Infusión de poder (Devoción) |
+| Normal 7-10 | Esporas | 19 | 19 → 19 % | 100 / 100 / 100 % | 18 / 18 | ×1.58 / ×2.13 / ×1.51 | 12 % / 9 % / 13 % | — | Tajo debilitante + Baluarte (Bastión) · Fuego rápido + Disparo certero (Tirador) · Sanar + Infusión de poder (Devoción) |
+| Normal 8-10 | Hoja al rojo | 19 | 13 → 13 % | 100 / 100 / 100 % | 24 / 23 | ×1.11 / ×1.33 / ×1.11 | 12 % / 10 % / 12 % | — | Tajo debilitante + Baluarte (Bastión) · Fuego rápido + Disparo certero (Tirador) · Sanar + Infusión de poder (Devoción) |
+| Normal 9-10 | Balanza | 20 | 13 → 13 % | 100 / 100 / 100 % | 21 / 23 | ×1.22 / ×1.65 / ×1.16 | 11 % / 8 % / 11 % | — | Baluarte + Grito de guerra (Bastión) · Fuego rápido + Disparo certero (Tirador) · Sanar + Escudo sagrado (Devoción) |
+| Normal 10-10 | Espejos | 21 | 15 → 15 % | 81 / 100 / 81 % | 28 / 27 | ×1.02 / ×1.38 / ×1.02 | 15 % / 11 % / 15 % | — | Baluarte + Sed de sangre (Bastión) · Fuego rápido + Disparo certero (Tirador) · Sanar + Infusión de poder (Devoción) |
+| Infierno 1-10 | Bandada | 26 | 21 → 28 % | 62 / 75 / 50 % | 36 / 31 | ×0.98 / ×1.07 / ×0.90 | 29 % / 26 % / 31 % | ×0.90 | Tajo debilitante + Baluarte (Bastión) · Fuego rápido + Disparo certero (Tirador) · Sanar + Infusión de poder (Devoción) |
+| Infierno 2-10 | Raíces | 31 | 17 → 40 % | 100 / 100 / 75 % | 48 / 30 | ×1.22 / ×1.51 / ×1.02 | 33 % / 27 % / 39 % | ×1.51 | Grito de guerra + Sed de sangre (Bastión) · Fuego rápido + Disparo certero (Tirador) · Infusión de poder + Purificar (Devoción) |
+| Infierno 3-10 | Rayo en cadena | 34 | 31 → 70 % | 100 / 100 / 100 % | 54 / 46 | ×1.22 / ×1.51 / ×1.11 | 58 % / 46 % / 63 % | ×1.51 | Grito de guerra + Sed de sangre (Bastión) · Fuego rápido + Disparo certero (Tirador) · Sanar + Infusión de poder (Devoción) |
+| Infierno 4-10 | Culpa | 35 | 50 → 67 % | 100 / 100 / 88 % | 62 / 51 | ×1.11 / ×1.38 / ×1.07 | 60 % / 48 % / 63 % | ×1.38 | Grito de guerra + Sed de sangre (Bastión) · Disparo certero + Flecha explosiva (Tirador) · Sanar + Infusión de poder (Devoción) |
+| Infierno 5-10 | Silencio dorado | 39 | 74 → 76 % | 94 / 100 / 56 % | 66 / 60 | ×1.07 / ×1.27 / ×0.98 | 71 % / 60 % / 78 % | ×1.27 | Grito de guerra + Sed de sangre (Bastión) · Disparo certero + Flecha explosiva (Tirador) · Infusión de poder + Purificar (Devoción) |
+| Infierno 6-10 | Resaca | 39 | 72 → 72 % | 100 / 100 / 69 % | 63 / 53 | ×1.22 / ×1.38 / ×0.98 | 59 % / 52 % / 74 % | ×1.38 | Grito de guerra + Sed de sangre (Bastión) · Fuego rápido + Disparo certero (Tirador) · Sanar + Infusión de poder (Devoción) |
+| Infierno 7-10 | Esporas | 40 | 76 → 75 % | 100 / 100 / 56 % | 65 / 56 | ×1.11 / ×1.27 / ×0.94 | 67 % / 59 % / 80 % | ×1.27 | Grito de guerra + Sed de sangre (Bastión) · Fuego rápido + Disparo certero (Tirador) · Sanar + Infusión de poder (Devoción) |
+| Infierno 8-10 | Hoja al rojo | 41 | 67 → 64 % | 100 / 100 / 31 % | 66 / 61 | ×1.07 / ×1.22 / ×0.94 | 60 % / 53 % / 68 % | ×1.27 | Baluarte + Grito de guerra (Bastión) · Fuego rápido + Disparo certero (Tirador) · Sanar + Infusión de poder (Devoción) |
+| Infierno 9-10 | Balanza | 43 | 67 → 71 % | 88 / 100 / 0 % | 74 / 69 | ×1.02 / ×1.11 / ×0.86 | 69 % / 64 % / 83 % | ×1.11 | Grito de guerra + Sed de sangre (Bastión) · Disparo certero + Punto débil (Tirador) · Infusión de poder + Purificar (Devoción) |
+| Infierno 10-10 | Espejos | 50 | 75 → 94 % | 94 / 100 / 19 % | 71 / 64 | ×1.02 / ×1.16 / ×0.82 | 92 % / 81 % / 114 % | ×1.16 | Grito de guerra + Mantener la línea (Azote) · Fuego rápido + Disparo certero (Tirador) · Sanar + Infusión de poder (Devoción) |
+| Averno 1-10 | Bandada | 53 | 80 → 83 % | 6 / 81 / 0 % | 74 / 62 | ×0.90 / ×1.11 / ×0.72 | 92 % / 74 % / 115 % | ×1.07 | Grito de guerra + Réplica (Bastión) · Fuego rápido + Disparo certero (Tirador) · Infusión de poder + Castigo (Celo) |
+| Averno 4-10 | Culpa | 63 | 84 → 84 % | 88 / 100 / 19 % | 66 / 50 | ×1.02 / ×1.45 / ×0.86 | 82 % / 58 % / 98 % | ×1.27 | Grito de guerra + Réplica (Azote) · Fuego rápido + Disparo certero (Tirador) · Sanar + Infusión de poder (Devoción) |
+| Averno 5-10 | Silencio dorado | 65 | 82 → 87 % | 19 / 69 / 6 % | 72 / 62 | ×0.86 / ×0.90 / ×0.72 | 101 % / 97 % / 120 % | ×0.94 | Tajo debilitante + Grito de guerra (Bastión) · Fuego rápido + Disparo certero (Tirador) · Infusión de poder + Castigo (Devoción) |
+| Averno 7-10 | Esporas | 71 | 82 → 91 % | 75 / 100 / 25 % | 63 / 51 | ×1.02 / ×1.33 / ×0.69 | 89 % / 69 % / 132 % | ×1.38 | Grito de guerra + Sed de sangre (Bastión) · Disparo certero + Punto débil (Tirador) · Sanar + Infusión de poder (Celo) |
+| Averno 10-10 | Espejos | 79 | 89 → 99 % | 25 / 44 / 0 % | 73 / 63 | ×0.82 / ×0.82 / ×0.56 | 120 % / 120 % / 178 % | ×0.79 | Grito de guerra + Sed de sangre (Azote) · Disparo certero + Lluvia de flechas (Tirador) · Infusión de poder + Castigo (Celo) |
+| Eterno 1-10 | Bandada | 82 | 103 → 120 % | 56 / 100 / 0 % | 74 / 61 | ×0.98 / ×1.16 / ×0.75 | 123 % / 103 % / 159 % | ×1.16 | Piel de piedra + Grito de guerra (Bastión) · Disparo certero + Punto débil (Tirador) · Infusión de poder + Castigo (Celo) |
+| Eterno 3-10 | Rayo en cadena | 87 | 166 → 166 % | 100 / 100 / 38 % | 65 / 52 | ×1.11 / ×1.45 / ×0.90 | 149 % / 115 % / 185 % | ×1.38 | Grito de guerra + Sed de sangre (Azote) · Disparo certero + Punto débil (Tirador) · Sanar + Infusión de poder (Celo) |
+| Eterno 5-10 | Silencio dorado | 91 | 98 → 136 % | 100 / 100 / 38 % | 62 / 55 | ×1.22 / ×1.38 / ×0.94 | 112 % / 98 % / 145 % | ×1.38 | Grito de guerra + Mantener la línea (Azote) · Fuego rápido + Disparo certero (Tirador) · Infusión de poder + Castigo (Devoción) |
+| Eterno 7-10 | Esporas | 92 | 123 → 127 % | 25 / 100 / 6 % | 73 / 65 | ×0.98 / ×1.16 / ×0.75 | 130 % / 109 % / 168 % | ×1.16 | Grito de guerra + Sed de sangre (Azote) · Disparo certero + Punto débil (Tirador) · Nova sagrada + Purificar (Celo) |
+| Eterno 10-10 | Espejos | 101 | 122 → 143 % | 19 / 100 / 0 % | 76 / 69 | ×0.94 / ×1.11 / ×0.75 | 153 % / 128 % / 190 % | ×1.16 | Tajo debilitante + Grito de guerra (Azote) · Disparo certero + Punto débil (Tirador) · Infusión de poder + Castigo (Celo) |
+| Tormento 1-10 | Bandada | 107 | 162 → 167 % | 6 / 69 / 0 % | 81 / 74 | ×0.90 / ×0.98 / ×0.79 | 186 % / 171 % / 212 % | ×0.98 | Grito de guerra + Mantener la línea (Azote) · Fuego rápido + Disparo certero (Tirador) · Sanar + Infusión de poder (Devoción) |
+| Tormento 4-10 | Culpa | 113 | 171 → 171 % | 100 / 100 / 31 % | 74 / 61 | ×1.07 / ×1.27 / ×0.86 | 160 % / 135 % / 199 % | ×1.27 | Grito de guerra + Sed de sangre (Azote) · Disparo certero + Punto débil (Tirador) · Nova sagrada + Castigo (Celo) |
+| Tormento 5-10 | Silencio dorado | 115 | 157 → 163 % | 31 / 100 / 12 % | 78 / 72 | ×0.94 / ×1.07 / ×0.75 | 174 % / 153 % / 216 % | ×1.07 | Grito de guerra + Réplica (Azote) · Disparo certero + Punto débil (Tirador) · Infusión de poder + Nova sagrada (Celo) |
+| Tormento 7-10 | Esporas | 119 | 152 → 162 % | 31 / 100 / 0 % | 81 / 70 | ×0.90 / ×1.07 / ×0.75 | 181 % / 152 % / 215 % | ×1.07 | Grito de guerra + Sed de sangre (Azote) · Disparo certero + Punto débil (Tirador) · Infusión de poder + Castigo (Celo) |
+| Tormento 10-10 | Espejos | 120 | 247 → 282 % | 19 / 100 / 6 % | 79 / 68 | ×0.90 / ×1.11 / ×0.75 | 314 % / 253 % / 374 % | ×1.07 | Tajo debilitante + Grito de guerra (Azote) · Disparo certero + Punto débil (Acechador) · Infusión de poder + Castigo (Celo) |
+
+| Dificultad | Óptima / por defecto (margen, mediana) | Por defecto / aleatoria | Óptima / aleatoria | Genérica / óptima |
+|---|---|---|---|---|
+| Normal (10 muros) | ×1.33 | ×1.00 | ×1.33 | — |
+| Infierno (10 muros) | ×1.14 | ×1.16 | ×1.33 | ×1.00 |
+| Averno (5 muros) | ×1.24 | ×1.24 | ×1.54 | ×0.96 |
+| Eterno (5 muros) | ×1.19 | ×1.30 | ×1.54 | ×1.00 |
+| Tormento (5 muros) | ×1.19 | ×1.19 | ×1.41 | ×1.00 |
+
+Por mecánica: lo que gana la óptima sobre la por defecto, y si aparece la herramienta que le respondería.
+
+| Mecánica | Óptima / por defecto (Infierno en adelante) | ¿Aparece su «respuesta» en la óptima? |
+|---|---|---|
+| Bandada | ×1.09 · ×1.24 · ×1.19 · ×1.09 | Purificar en 0 de 4 |
+| Raíces | ×1.24 | Purificar en 1 de 1 |
+| Rayo en cadena | ×1.24 · ×1.30 | Purificar en 0 de 2 |
+| Culpa | ×1.24 · ×1.41 · ×1.19 | Purificar en 0 de 3 |
+| Silencio dorado | ×1.19 · ×1.04 · ×1.14 · ×1.14 | Purificar en 1 de 4 |
+| Resaca | ×1.14 | Purificar en 0 de 1 |
+| Esporas | ×1.14 · ×1.30 · ×1.19 · ×1.19 | Purificar en 1 de 4 |
+| Hoja al rojo | ×1.14 | Purificar en 0 de 1 |
+| Balanza | ×1.09 | Purificar en 1 de 1 |
+| Espejos | ×1.14 · ×1.00 · ×1.19 · ×1.24 | Purificar en 0 de 4 |
+
+
+**Farmeo** (una vuelta a la etapa X-5, grupo al llegar al muro de su mundo; 4 semillas, 8 en la aleatoria):
+
+| Etapa | Por defecto | Óptima del muro | Aleatoria |
+|---|---|---|---|
+| Normal 10-5 | 101 s | 104 s | 97 s |
+| Infierno 5-5 | 176 s | 156 s | 165 s |
+| Infierno 10-5 | 197 s | 188 s | 201 s |
+| Averno 5-5 | 219 s | 197 s | 226 s |
+| Averno 10-5 | 184 s | 166 s | 197 s |
+| Eterno 5-5 | 226 s | 225 s | 236 s |
+| Eterno 10-5 | 225 s | 197 s | 210 s |
+| Tormento 5-5 | 181 s | 163 s | 177 s |
+| Tormento 10-5 | 163 s | 153 s | 160 s |
+
+**La partida entera** (6 semillas, medianas; la construcción solo cambia al entrar a cada muro):
+
+| Política en los muros | Normal | Infierno | Averno | Eterno | Tormento (total) | Intentos fallidos | Por semilla |
+|---|---|---|---|---|---|---|---|
+| Por defecto | 3 h | 37 h | 128 h | 333 h | 592 h | 452 | 557–807 h |
+| Óptima | 3 h | 34 h | 120 h | 282 h | 534 h | 354 | 438–722 h |
+| Aleatoria | 3 h | 48 h | 155 h | 366 h | 855 h | 806 | 540–1 078 h |
+| Por defecto + mascotas `median` | 3 h | 37 h | 128 h | 320 h | 553 h | 442 | 495–645 h |
+| Por defecto, sonda vieja (afijos se resortean) | 3 h | 44 h | 137 h | 322 h | 588 h | 479 | 539–714 h |
+
+### 4. Lectura
+
+- **Sí influye**:
+  - en un muro, construirse bien ahorra un 12–25 % de equipo frente a la construcción por defecto, y un 25–35 % frente a una al azar;
+  - en la partida entera son −10 % y −38 % de horas;
+  - en Normal, la por defecto y la aleatoria valen lo mismo (con nivel 10–20 hay poco donde elegir), pero la óptima ya gana hasta un ×1,5 de margen sobre la por defecto, sobre todo gracias a Baluarte.
+- **No depende del jefe**:
+  - la misma construcción de daño es la mejor en casi todos los muros;
+  - las respuestas pensadas para cada mecánica (Purificar contra Raíces, Culpa y Esporas, o Mantener la línea contra Balanza y Hoja al rojo) no compensan el daño que se pierde por llevarlas;
+  - la Priest óptima lleva Infusión de poder + Castigo; Castigo cura al instante, así que limpia las Esporas de paso. El Knight óptimo lleva dos habilidades ofensivas, no Piel de piedra ni Baluarte.
+- **Los muros son una carrera de daño**: el grupo muere por la furia de los 60 s, casi nunca antes. La supervivencia apenas decide.
+- **El farmeo no depende de la construcción** (0–10 %). Es equipo y nivel.
+- **La vara de «equipo de la zona» se queda corta desde Eterno**: el grupo lleva entre un 120 y un 280 % del conjunto de referencia (240 cofres de X-9). La opción C que decidiste la sustituye en la pasada.
+
+### 5. Flojo o sin verificar
+
+- La óptima sale de una búsqueda local (por coordenadas, 2 vueltas, 4 semillas). Puede haber algo mejor, pero la genérica la iguala, así que es poco probable que se me escape una construcción mucho mejor.
+- Margen con 16 semillas y bisección de 6 pasos: resolución de un 4 %.
+- El grupo de los muros sale de una sola partida (semilla 1). Averno, Eterno y Tormento son una muestra de 5 de sus 10 muros.
+- «Equipo necesario» supone que el daño escala con el equipo. No lo he comprobado con una escalera de equipo real.
+- Las cifras de los 35 muros usan la medida de equipo de antes solo en su campo `gearPct` interno. El equipo de las tablas está medido de nuevo con la medida corregida (`build-study-extra.ts`).
+- En la partida entera el farmeo usa siempre la construcción por defecto.
+
+### 6. Preguntas para ti
+
+1. **¿Quieres que la mejor construcción dependa del jefe?** Hoy una sola construcción de daño sirve para todos.
+   - (a) Así está bien: construirse bien es encontrar una buena construcción general.
+   - (b) Que cada mecánica castigue fuerte a quien no lleva su respuesta. Ejemplos: las Esporas sin tope si nadie las limpia; las Raíces que no se sueltan solas sin Purificar; la Culpa que se dobla si sigue puesta; la Balanza que golpea más fuerte si el grupo no lleva reducción en área.
+   - (c) Que lo pidan los afijos y no las mecánicas. Por ejemplo: Venenoso mucho más duro si nadie purifica; Acorazado que solo rompen las habilidades.
+2. **¿Más presión de supervivencia en los muros?** Hoy solo cuenta el daño, y por eso el tanque lleva habilidades ofensivas y la Priest no lleva Sanar.
+   - (a) Así está bien.
+   - (b) Jefes de mundo que peguen más fuerte durante los 60 s, con más área y más disparos a la retaguardia, para que cura y tanque de verdad hagan falta.
+   - (c) Una furia más suave y un jefe que pegue más desde el principio.
+3. **¿Qué construcción juega el «jugador medio» de la pasada final?** Lo que elijas cambia el ritmo medido en torno a un 10 %.
+   - (a) La por defecto de hoy: un jugador que no optimiza.
+   - (b) La genérica: un jugador que ha encontrado la buena. Con ella los muros quedarían un 10–20 % más duros para alcanzar las mismas horas.
+   - (c) Un punto medio: la por defecto en Normal e Infierno y la genérica desde Averno.
+4. **¿Mascotas en la sonda?**
+   - (a) Sí, con `median` por defecto (−7 % de horas, lo más fiel).
+   - (b) No, que la pasada mida sin mascotas y queden como regalo.
+
+
+## Ronda 3 · punto de control 2: presión de los jefes de mundo y la sanadora
+
+*16 nov 2026, de madrugada. Con el kit nuevo de la Priest (punto de control 2A) ya dentro. No se ha tocado la vida de los muros ni las horas: eso es el siguiente punto de control.*
+
+### Resumen
+
+- **Los jefes de mundo aprietan durante su minuto desde Infierno**:
+  - golpe en área cada 6 s en vez de cada 10, que alcanza a todo el grupo por entero (1,2 en vez de 0,6);
+  - la mitad de sus golpes normales van a la retaguardia;
+  - en Eterno y Tormento pegan además un 15 % y un 45 % más.
+  - Normal queda como estaba.
+- **Las curas se lanzan más a menudo** para sostener eso: Sanar cada 14 s, Luz sanadora cada 12 s, Círculo de sanación y Santuario cada 20 s, Castigo cada 10 s. Lo que cura cada una no cambia, así que la regla de 30 / 22 / 20 / 15 % se mantiene.
+- **Objetivo 1 (sin curas no se pasa desde Infierno)**:
+  - cumplido desde Averno: la Priest sin curas gana entre un 0 y un 2 % de los muros incluso con ≥150 % del equipo de la zona;
+  - en Infierno, a medias: con ≥150 % aún gana 5 de los 10 muros, porque esos muros mueren en menos de 30 s con ese equipo, antes de que la presión desgaste a nadie;
+  - medido como aguante, cae antes de los 34 s en 20 de los 25 muros de Infierno en adelante.
+- **Objetivo 2 (en Normal pasa cualquier construcción razonable)**: cumplido. La presión de Normal no cambia, y la por defecto, la óptima y la aleatoria ganan el 100 % en 9 de 10 muros.
+- **Objetivo 3 (la mejor construcción depende del jefe)**: cumplido en buena parte.
+  - La construcción más repetida queda más de un 4 % por debajo de la mejor en 18 de 25 muros; antes la genérica la igualaba en 22 de 25.
+  - Las mejores construcciones tienen 6 parejas distintas de habilidades en el Knight, 4 en la Ranger y 6 en la Priest.
+- **Objetivo 4 (el Knight ofensivo sufre desde Averno)**: a medias.
+  - En aguante, el Knight sin defensas pierde a alguien antes o más a menudo que el que lleva defensas en 10 de 15 muros.
+  - En margen sobre los muros de hoy solo es un 4–9 % peor, porque esos muros, con un 85 % de equipo, siguen siendo una carrera de daño.
+
+### 1. Cambios
+
+**Números**
+
+| Dónde | Qué | Antes → ahora |
+|---|---|---|
+| `src/data/bossKit.ts` `WORLD_BOSS_PRESSURE` (nuevo) | Por dificultad (Normal / Infierno / Averno / Eterno / Tormento): `hitMult` × daño de todos sus golpes · `blowEveryMs` · `blowCoeff` · `splashCoeff` · `backShotChance` | Normal 1 / 10 s / 1,2 / 0,6 / 0 (como estaba) · Infierno y Averno 1 / 6 s / 1,2 / 1,2 / 0,5 · Eterno 1,15 / 6 s / 1,2 / 1,2 / 0,55 · Tormento 1,45 / 6 s / 1,2 / 1,2 / 0,55 |
+| `src/data/abilities.ts` | Recarga de Sanar · Luz sanadora · Círculo de sanación | 20 → 14 s · 20 → 12 s · 30 → 20 s |
+| `src/data/branchAbilities.ts` | Recarga de Santuario · Castigo | 30 → 20 s · 14 → 10 s |
+
+**No son números (diseño)**
+
+- **El mecanismo de presión**: una tabla por dificultad que aplica el sim.
+  - `sim/bossMechanics.bossKit` cambia el golpe en área del jefe de mundo; Sísmico sigue mandando si es más rápido.
+  - `sim/stages.spawnZoneBoss` le da el multiplicador de daño y la probabilidad de disparar a la retaguardia, la misma regla que ya tenían los tiradores.
+  - Por qué: el tanque se sostiene solo (bloqueo, robo de vida), así que donde de verdad hacen falta curas es en la retaguardia, que es la que cae.
+- **Las curas a más cadencia y no más grandes**, para respetar tu regla de tamaños (sobretiempo 30 %, instantánea 20–25 %, grupo 20 / 15 %).
+- **Definiciones para medir**:
+  - **«Priest DPS»** = Nova sagrada + Escudo sagrado (Celo). Castigo cuenta como cura, porque cura al instante y limpia.
+  - **«Knight ofensivo»** = ninguna habilidad que reduzca daño, proteja o debilite al enemigo, es decir Grito de guerra + Sed de sangre. Por debajo del nivel 31 no existe.
+
+**Herramientas** (sin efecto en el juego)
+
+- `test/sim/probe/builds.ts`: una construcción puede llevar exactamente sus habilidades (`exact`), menos de dos si hace falta.
+- `scripts/build-study.ts`:
+  - añade «Priest DPS» y «Knight ofensivo»;
+  - añade la victoria de cada construcción con ≥150 % del equipo de la zona (el grupo de la sonda, con cofres de este mundo y los siguientes);
+  - acepta curas de prueba (`HEALS`).
+- `scripts/pressure-survival.ts` (nuevo): cuánto aguanta cada grupo ante un muro que no puede morir, hasta los 60 s, sin depender de su vida.
+- `scripts/pressure-tune.ts` (nuevo): comprobación rápida.
+- **Tests**: `test/sim/worldBossPressure.test.ts` (3). Comprueba que Normal es como antes, que el golpe sale según la tabla y Sísmico sigue mandando, y que los golpes van a la retaguardia en la proporción de la tabla con el multiplicador de daño. El control de recargas de `test/sim/abilities.test.ts` está al día.
+
+### 2. Aguante ante un muro que no muere
+
+Prueba: `scripts/pressure-survival.ts`, 12 semillas por muro.
+- «Con curas» = la mejor pareja Knight + Priest con curas, con un 85 % del equipo de la zona.
+- «Priest sin curas» = esa misma pareja con la Priest DPS y un ≥150 %. Debe perder a alguien antes de 34 s: lo que tarda un grupo al 150 % en matar un muro que muere en 60 s al 85 %.
+- «Knight ofensivo» = la pareja con curas, con el Knight sin defensas.
+
+| Muro | Mecánica | Equipo 85 / 150 | Con curas (85 %): 1.ª caída · sin bajas | Priest sin curas (≥150 %): 1.ª caída · cae antes de 34 s | Knight ofensivo (85 %): 1.ª caída · sin bajas | Infusión (tiempo bajo ella) |
+|---|---|---|---|---|---|---|
+| Infierno 1-10 | Bandada | 89 / 142 % | 58 s · 83 % | 28 s · 92 % | 58 s · 83 % | 0 % |
+| Infierno 2-10 | Raíces | 78 / 147 % | 60 s · 100 % | 26 s · 100 % | 60 s · 100 % | 0 % |
+| Infierno 3-10 | Rayo en cadena | 88 / 150 % | 60 s · 100 % | 16 s · 100 % | 60 s · 100 % | 0 % |
+| Infierno 4-10 | Culpa | 88 / 147 % | 55 s · 50 % | 20 s · 100 % | 42 s · 25 % | 0 % |
+| Infierno 5-10 | Silencio dorado | 85 / 142 % | 60 s · 100 % | 20 s · 100 % | 60 s · 100 % | 0 % |
+| Infierno 6-10 | Resaca | 90 / 154 % | 59 s · 67 % | 19 s · 100 % | 55 s · 67 % | 0 % |
+| Infierno 7-10 | Esporas | 89 / 154 % | 60 s · 100 % | 22 s · 100 % | 60 s · 100 % | 0 % |
+| Infierno 8-10 | Hoja al rojo | 84 / 159 % | 58 s · 75 % | 33 s · 50 % | 60 s · 100 % | 0 % |
+| Infierno 9-10 | Balanza | 91 / 146 % | 60 s · 100 % | 30 s · 83 % | 56 s · 67 % | 0 % |
+| Infierno 10-10 | Espejos | 79 / 142 % | 19 s · 0 % | 16 s · 100 % | 13 s · 0 % | 0 % |
+| Averno 1-10 | Bandada | 78 / 145 % | 35 s · 8 % | 35 s · 42 % | 24 s · 0 % | 0 % |
+| Averno 4-10 | Culpa | 90 / 145 % | 60 s · 100 % | 25 s · 92 % | 57 s · 83 % | 0 % |
+| Averno 5-10 | Silencio dorado | 79 / 144 % | 32 s · 0 % | 24 s · 100 % | 17 s · 0 % | 0 % |
+| Averno 7-10 | Esporas | 95 / 143 % | 48 s · 42 % | 21 s · 100 % | 47 s · 42 % | 0 % |
+| Averno 10-10 | Espejos | 89 / 146 % | 54 s · 50 % | 17 s · 100 % | 39 s · 8 % | 0 % |
+| Eterno 1-10 | Bandada | 69 / 151 % | 44 s · 17 % | 24 s · 100 % | 29 s · 0 % | 0 % |
+| Eterno 3-10 | Rayo en cadena | 50 / 50 % | 7 s · 0 % | 5 s · 100 % | 5 s · 0 % | 0 % |
+| Eterno 5-10 | Silencio dorado | 80 / 153 % | 60 s · 100 % | 32 s · 67 % | 56 s · 67 % | 0 % |
+| Eterno 7-10 | Esporas | 60 / 145 % | 46 s · 42 % | 37 s · 50 % | 31 s · 8 % | 35 % |
+| Eterno 10-10 | Espejos | 82 / 94 % | 54 s · 50 % | 15 s · 100 % | 48 s · 25 % | 21 % |
+| Tormento 1-10 | Bandada | 81 / 160 % | 58 s · 83 % | 28 s · 83 % | 49 s · 25 % | 35 % |
+| Tormento 4-10 | Culpa | 88 / 181 % | 60 s · 100 % | 21 s · 100 % | 60 s · 100 % | 25 % |
+| Tormento 5-10 | Silencio dorado | 52 / 214 % | 36 s · 8 % | 36 s · 33 % | 20 s · 0 % | 24 % |
+| Tormento 7-10 | Esporas | 77 / 175 % | 59 s · 92 % | 27 s · 83 % | 60 s · 100 % | 37 % |
+| Tormento 10-10 | Espejos | 99 / 185 % | 59 s · 83 % | 24 s · 100 % | 42 s · 8 % | 43 % |
+
+Priest sin curas cae antes de 34 s en ≥75 % de las semillas: 20/25 muros; Knight ofensivo peor que con defensa (desde Averno): 10/15
+
+### 3. Peso de la construcción con la Priest nueva y la presión nueva
+
+- 35 muros (los 20 de Normal e Infierno, 5 de cada dificultad siguiente) y 16 semillas por muro y construcción.
+- D = por defecto, Ó = óptima, A = aleatoria, PD = Priest DPS, KO = Knight ofensivo.
+- «Equipo necesario» = el equipo de la zona del grupo dividido por su margen. Mide la carrera de daño contra los muros tal y como están hoy.
+
+| Muro | Mecánica | Nivel | Equipo | Victoria D / Ó / A / PD / KO | Victoria con ≥150 % D / Ó / PD / KO | Equipo necesario D / Ó / A / PD / KO | Óptima (Knight · Ranger · Priest) |
+|---|---|---|---|---|---|---|---|
+| Normal 1-10 | Bandada | 10 | 10 % (≥150: 155 %) | 81 / 50 / 75 / 0 / 50 % | 100 / 100 / 100 / 100 % | 10 / 11 / 10 / 12 / 11 % | Tajo debilitante + Baluarte (Bastión) · Disparo certero + Lluvia de flechas (Tirador) · Sanar + Luz sanadora (Devoción) |
+| Normal 2-10 | Raíces | 12 | 12 % (≥150: 161 %) | 100 / 100 / 100 / 100 / 100 % | 100 / 100 / 100 / 100 % | 9 / 9 / 10 / 11 / 9 % | Tajo debilitante + Grito de guerra (Bastión) · Fuego rápido + Disparo certero (Tirador) · Luz sanadora + Nova sagrada (Devoción) |
+| Normal 3-10 | Rayo en cadena | 14 | 12 % (≥150: 192 %) | 100 / 100 / 81 / 0 / 100 % | 100 / 100 / 100 / 100 % | 11 / 11 / 11 / 17 / 11 % | Tajo debilitante + Grito de guerra (Bastión) · Fuego rápido + Disparo certero (Tirador) · Luz sanadora + Nova sagrada (Devoción) |
+| Normal 4-10 | Culpa | 16 | 17 % (≥150: 150 %) | 100 / 100 / 100 / 75 / 100 % | 100 / 100 / 100 / 100 % | 8 / 8 / 9 / 16 / 8 % | Tajo debilitante + Grito de guerra (Bastión) · Fuego rápido + Disparo certero (Tirador) · Sanar + Luz sanadora (Devoción) |
+| Normal 5-10 | Silencio dorado | 17 | 25 % (≥150: 149 %) | 100 / 100 / 100 / 100 / 100 % | 100 / 100 / 100 / 100 % | 12 / 11 / 13 / 21 / 11 % | Tajo debilitante + Grito de guerra (Bastión) · Fuego rápido + Disparo certero (Tirador) · Sanar + Luz sanadora (Devoción) |
+| Normal 6-10 | Resaca | 18 | 33 % (≥150: 156 %) | 100 / 100 / 100 / 100 / 100 % | 100 / 100 / 100 / 100 % | 9 / 9 / 10 / 19 / 9 % | Tajo debilitante + Baluarte (Bastión) · Fuego rápido + Disparo certero (Tirador) · Sanar + Luz sanadora (Devoción) |
+| Normal 7-10 | Esporas | 19 | 35 % (≥150: 164 %) | 100 / 100 / 100 / 100 / 100 % | 100 / 100 / 100 / 100 % | 11 / 10 / 11 / 21 / 10 % | Tajo debilitante + Baluarte (Bastión) · Fuego rápido + Disparo certero (Tirador) · Luz sanadora + Nova sagrada (Devoción) |
+| Normal 8-10 | Hoja al rojo | 19 | 24 % (≥150: 169 %) | 100 / 100 / 100 / 100 / 100 % | 100 / 100 / 100 / 100 % | 13 / 10 / 14 / 19 / 10 % | Tajo debilitante + Baluarte (Bastión) · Fuego rápido + Disparo certero (Tirador) · Luz sanadora + Nova sagrada (Devoción) |
+| Normal 9-10 | Balanza | 20 | 14 % (≥150: 155 %) | 100 / 100 / 100 / 100 / 100 % | 100 / 100 / 100 / 100 % | 11 / 10 / 11 / 11 / 10 % | Tajo debilitante + Baluarte (Bastión) · Fuego rápido + Disparo certero (Tirador) · Sanar + Luz sanadora (Devoción) |
+| Normal 10-10 | Espejos | 21 | 24 % (≥150: 213 %) | 100 / 100 / 100 / 69 / 100 % | 100 / 100 / 100 / 100 % | 16 / 14 / 18 / 25 / 14 % | Baluarte + Grito de guerra (Bastión) · Fuego rápido + Disparo certero (Tirador) · Sanar + Luz sanadora (Devoción) |
+| Infierno 1-10 | Bandada | 26 | 36 % (≥150: 156 %) | 100 / 100 / 81 / 50 / 100 % | 100 / 100 / 100 / 100 % | 27 / 22 / 32 / 37 / 22 % | Tajo debilitante + Baluarte (Bastión) · Fuego rápido + Disparo certero (Tirador) · Luz sanadora + Círculo de sanación (Devoción) |
+| Infierno 2-10 | Raíces | 31 | 33 % (≥150: 230 %) | 94 / 94 / 44 / 0 / 100 % | 100 / 100 / 100 / 100 % | 26 / 25 / 40 / 44 / 25 % | Tajo debilitante + Grito de guerra (Bastión) · Fuego rápido + Disparo certero (Tirador) · Sanar + Luz sanadora (Devoción) |
+| Infierno 3-10 | Rayo en cadena | 34 | 74 % (≥150: 216 %) | 81 / 75 / 19 / 0 / 75 % | 100 / 100 / 100 / 100 % | 73 / 73 / 103 / 117 / 73 % | Grito de guerra + Sed de sangre (Bastión) · Fuego rápido + Disparo certero (Tirador) · Sanar + Luz sanadora (Devoción) |
+| Infierno 4-10 | Culpa | 35 | 79 % (≥150: 152 %) | 25 / 81 / 0 / 0 / 81 % | 100 / 100 / 0 / 100 % | 89 / 78 / 105 / 143 / 78 % | Grito de guerra + Sed de sangre (Bastión) · Disparo certero + Flecha explosiva (Tirador) · Sanar + Luz sanadora (Devoción) |
+| Infierno 5-10 | Silencio dorado | 39 | 72 % (≥150: 205 %) | 19 / 38 / 0 / 0 / 38 % | 100 / 100 / 100 / 100 % | 99 / 84 / 147 / 147 / 84 % | Grito de guerra + Sed de sangre (Bastión) · Fuego rápido + Disparo certero (Tirador) · Luz sanadora + Santuario (Devoción) |
+| Infierno 6-10 | Resaca | 39 | 85 % (≥150: 152 %) | 62 / 69 / 12 / 0 / 94 % | 100 / 100 / 0 / 100 % | 87 / 99 / 153 / 216 / 76 % | Grito de guerra + Mantener la línea (Bastión) · Fuego rápido + Disparo certero (Tirador) · Sanar + Luz sanadora (Devoción) |
+| Infierno 7-10 | Esporas | 40 | 72 % (≥150: 153 %) | 38 / 100 / 0 / 0 / 100 % | 100 / 100 / 31 / 100 % | 74 / 65 / 109 / 135 / 65 % | Grito de guerra + Sed de sangre (Bastión) · Disparo certero + Flecha explosiva (Tirador) · Luz sanadora + Santuario (Devoción) |
+| Infierno 8-10 | Hoja al rojo | 41 | 65 % (≥150: 173 %) | 6 / 88 / 0 / 0 / 69 % | 100 / 100 / 31 / 100 % | 72 / 61 / 122 / 127 / 66 % | Tajo debilitante + Grito de guerra (Bastión) · Disparo certero + Punto débil (Tirador) · Sanar + Círculo de sanación (Devoción) |
+| Infierno 9-10 | Balanza | 43 | 86 % (≥150: 168 %) | 0 / 25 / 0 / 0 / 19 % | 100 / 100 / 94 / 100 % | 109 / 96 / 142 / 169 / 96 % | Tajo debilitante + Grito de guerra (Bastión) · Disparo certero + Punto débil (Tirador) · Sanar + Luz sanadora (Celo) |
+| Infierno 10-10 | Espejos | 50 | 177 % (≥150: 162 %) | 6 / 19 / 0 / 0 / 25 % | 0 / 0 / 0 / 12 % | 215 / 198 / 305 / 512 / 198 % | Baluarte + Grito de guerra (Bastión) · Fuego rápido + Disparo certero (Tirador) · Sanar + Luz sanadora (Devoción) |
+| Averno 1-10 | Bandada | 53 | 112 % (≥150: 204 %) | 0 / 12 / 0 / 0 / 6 % | 88 / 62 / 0 / 88 % | 169 / 119 / 272 / 284 / 162 % | Tajo debilitante + Grito de guerra (Bastión) · Disparo certero + Punto débil (Tirador) · Sanar + Luz sanadora (Devoción) |
+| Averno 4-10 | Culpa | 63 | 72 % (≥150: 155 %) | 56 / 94 / 6 / 0 / 94 % | 100 / 100 / 6 / 100 % | 73 / 65 / 129 / 183 / 65 % | Grito de guerra + Sed de sangre (Azote) · Disparo certero + Lluvia de flechas (Tirador) · Sanar + Luz sanadora (Devoción) |
+| Averno 5-10 | Silencio dorado | 65 | 110 % (≥150: 206 %) | 0 / 50 / 0 / 0 / 50 % | 56 / 81 / 0 / 38 % | 146 / 118 / 280 / 256 / 123 % | Tajo debilitante + Grito de guerra (Bastión) · Fuego rápido + Disparo certero (Tirador) · Luz sanadora + Santuario (Devoción) |
+| Averno 7-10 | Esporas | 71 | 116 % (≥150: 153 %) | 25 / 19 / 6 / 0 / 25 % | 100 / 100 / 0 / 94 % | 182 / 199 / 349 / 320 / 258 % | Grito de guerra + Sed de sangre (Bastión) · Fuego rápido + Disparo certero (Tirador) · Luz sanadora + Castigo (Celo) |
+| Averno 10-10 | Espejos | 79 | 127 % (≥150: 181 %) | 0 / 0 / 0 / 0 / 6 % | 100 / 100 / 6 / 100 % | 271 / 309 / 519 / 456 / 218 % | Grito de guerra + Sed de sangre (Azote) · Fuego rápido + Disparo certero (Tirador) · Sanar + Luz sanadora (Devoción) |
+| Eterno 1-10 | Bandada | 82 | 85 % (≥150: 150 %) | 0 / 69 / 0 / 0 / 50 % | 0 / 75 / 0 / 88 % | 108 / 87 / 198 / 257 / 91 % | Tajo debilitante + Grito de guerra (Bastión) · Fuego rápido + Disparo certero (Tirador) · Sanar + Luz sanadora (Celo) |
+| Eterno 3-10 | Rayo en cadena | 87 | 319 % (≥150: 254 %) | 69 / 94 / 19 / 0 / 75 % | 69 / 94 / 0 / 75 % | 326 / 263 / 405 / 712 / 299 % | Grito de guerra + Réplica (Bastión) · Fuego rápido + Disparo certero (Tirador) · Luz sanadora + Círculo de sanación (Celo) |
+| Eterno 5-10 | Silencio dorado | 91 | 202 % (≥150: 199 %) | 94 / 100 / 6 / 0 / 100 % | 94 / 100 / 0 / 100 % | 190 / 153 / 257 / 414 / 153 % | Grito de guerra + Sed de sangre (Bastión) · Disparo certero + Punto débil (Tirador) · Santuario + Castigo (Celo) |
+| Eterno 7-10 | Esporas | 92 | 158 % (≥150: 187 %) | 0 / 88 / 0 / 0 / 81 % | 100 / 100 / 6 / 100 % | 184 / 155 / 228 / 337 / 148 % | Tajo debilitante + Grito de guerra (Azote) · Disparo certero + Punto débil (Tirador) · Círculo de sanación + Castigo (Celo) |
+| Eterno 10-10 | Espejos | 101 | 192 % (≥150: 160 %) | 0 / 19 / 0 / 0 / 12 % | 0 / 19 / 0 / 12 % | 234 / 214 / 317 / 448 / 214 % | Grito de guerra + Mantener la línea (Azote) · Fuego rápido + Disparo certero (Tirador) · Luz sanadora + Castigo (Celo) |
+| Tormento 1-10 | Bandada | 107 | 167 % (≥150: 156 %) | 0 / 25 / 0 / 0 / 6 % | 0 / 25 / 0 / 6 % | 222 / 186 / 389 / 443 / 186 % | Tajo debilitante + Grito de guerra (Azote) · Disparo certero + Punto débil (Tirador) · Sanar + Castigo (Celo) |
+| Tormento 4-10 | Culpa | 113 | 174 % (≥150: 179 %) | 62 / 100 / 12 / 0 / 69 % | 62 / 100 / 0 / 69 % | 178 / 150 / 252 / 372 / 178 % | Tajo debilitante + Grito de guerra (Bastión) · Disparo certero + Punto débil (Acechador) · Círculo de sanación + Castigo (Celo) |
+| Tormento 5-10 | Silencio dorado | 115 | 210 % (≥150: 224 %) | 0 / 19 / 0 / 0 / 6 % | 0 / 19 / 0 / 6 % | 244 / 224 / 345 / 448 / 244 % | Tajo debilitante + Grito de guerra (Bastión) · Disparo certero + Punto débil (Acechador) · Sanar + Castigo (Devoción) |
+| Tormento 7-10 | Esporas | 119 | 175 % (≥150: 180 %) | 6 / 62 / 0 / 0 / 12 % | 6 / 62 / 0 / 12 % | 204 / 179 / 253 / 358 / 213 % | Tajo debilitante + Grito de guerra (Bastión) · Disparo certero + Punto débil (Acechador) · Nova sagrada + Castigo (Celo) |
+| Tormento 10-10 | Espejos | 120 | 388 % (≥150: 314 %) | 0 / 50 / 0 / 0 / 31 % | 0 / 50 / 0 / 31 % | 493 / 414 / 586 / 1122 / 414 % | Grito de guerra + Réplica (Azote) · Disparo certero + Punto débil (Tirador) · Santuario + Castigo (Celo) |
+
+| Dificultad | Óptima / por defecto | Óptima / aleatoria | Óptima / Priest DPS | Óptima / Knight ofensivo | Priest DPS gana con ≥150 % (media) |
+|---|---|---|---|---|---|
+| Normal (10) | ×1.02 | ×1.09 | ×1.84 | ×1.00 | 100 % |
+| Infierno (10) | ×1.14 | ×1.54 | ×1.80 | ×1.00 | 56 % |
+| Averno (5) | ×1.14 | ×2.00 | ×2.18 | ×1.04 | 2 % |
+| Eterno (5) | ×1.24 | ×1.54 | ×2.71 | ×1.00 | 1 % |
+| Tormento (5) | ×1.19 | ×1.54 | ×2.38 | ×1.09 | 0 % |
+
+Construcción genérica (Tajo debilitante + Grito de guerra · Fuego rápido + Disparo certero · Sanar + Luz sanadora) frente a la mejor de cada muro, de Infierno en adelante:
+- queda más de un 4 % por debajo en 18 de 25 muros;
+- es entre un 4 y un 26 % peor;
+- en 3 muros la iguala o la supera, porque la búsqueda local no siempre da con la mejor.
+
+### 4. Lectura
+
+- **La sanadora es obligatoria desde Averno.** Sin curas, el grupo no ve el final del minuto aunque vaya muy equipado.
+- **En Infierno se nota en el aguante, pero no siempre en la victoria**: los muros de Infierno de hoy mueren antes de que la presión desgaste a nadie. Cuando la pasada de vida de los muros los ponga en 60 s con un 80–90 % de equipo, ese hueco se cierra.
+- **Los muros ahora cuestan más**: con el equipo con el que la sonda los tumbaba, la construcción por defecto gana mucho menos en Infierno y Averno (por ejemplo Infierno 9-10: 0 %). El siguiente punto de control tiene que tenerlo en cuenta al ajustar la vida y las horas.
+- **La mejor construcción ya no es una sola**: el Knight alterna Tajo debilitante + Grito de guerra, Grito de guerra + Sed de sangre y Mantener la línea o Réplica; la Priest, Sanar + Luz sanadora, Santuario, Círculo o Castigo según el jefe.
+- **Infusión** (pasivo de Celo): 0 % del tiempo en Infierno y Averno, porque las mejores sanadoras allí son de Devoción; entre un 21 y un 43 % en Eterno y Tormento, cuando la sanadora es de Celo.
+
+### 5. Flojo o sin verificar
+
+- En 3 muros la búsqueda del grupo «al 85 %» no encontró nada cerca y se quedó en un 50–69 % de equipo (Eterno 3-10, Eterno 7-10, Tormento 5-10). Allí también cae el grupo con curas.
+- Averno 1-10, Averno 5-10 e Infierno 10-10 son muy duros incluso con curas: Bandada, Silencio dorado y Espejos con la presión encima. Son candidatos a bajar la presión de su mecánica.
+- El margen del Knight ofensivo apenas cambia mientras los muros sean una carrera de daño.
+- **Recortes por los núcleos de eficiencia** (las últimas corridas van con `taskpolicy -b` y 5–6 procesos):
+  - 12 semillas en el aguante final (8 en las de exploración);
+  - 16 semillas en el estudio, como pediste;
+  - 4 semillas en la búsqueda de la óptima;
+  - 5 muros en cada dificultad desde Averno.
+
+### 6. Preguntas
+
+1. **Infierno con mucho equipo**:
+   - (a) aceptar que un grupo con ≥150 % y sin curas pase algún muro de Infierno hasta que la pasada de vida los alargue;
+   - (b) en Infierno, golpes más seguidos (cada 4 s), aunque la sanadora también sufra más.
+2. **Knight ofensivo**:
+   - (a) basta con que aguante menos;
+   - (b) más daño sobre el tanque y defensas más fuertes (Piel de piedra 40 → 50 %, Tajo debilitante 25 → 35 %), para que el margen también lo note.
+3. **Muros muy duros con curas** (Averno 1-10 y 5-10, Infierno 10-10):
+   - (a) dejarlos, que la pasada de vida los ajuste;
+   - (b) suavizar su mecánica bajo presión (los cuervos de Bandada, Silencio dorado, el reflejo de Espejos).
+4. **Infusión casi no se usa en Infierno y Averno**:
+   - (a) da igual, es de Celo;
+   - (b) hacer Celo más atractivo para una sanadora media.

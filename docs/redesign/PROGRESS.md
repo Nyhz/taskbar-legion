@@ -1267,6 +1267,31 @@ definitivas se quedan como están), afijos en élites («de momento»).
 - **CONFIRMADO (16 nov)**: los paneles, la rotura y el reflejo del Deshacedor se entienden («sí»), y las veinte formas
   de Certero valen («sí»).
 
+### Decisiones del usuario tras la auditoría de la sonda (16 nov) — la sanadora tiene que ser imprescindible
+
+- Estudio (PACING_REPORT «Ronda 3 · punto de control 1»): una construcción de daño valía para casi todos los muros y la
+  Priest iba con Infusión de poder + Castigo. Usuario: «Si puedo ir con el priest como si fuera otro dps, el balance
+  está MAL». Hay que subir su poder curativo y darle respuesta a todas las mecánicas.
+- **Huecos**: siguen siendo 2 habilidades activas por héroe.
+- **Infusión de poder** sale del kit de habilidades → talento pasivo de la rama Celo.
+  Diseño del usuario: cada vez que la Priest cura con una instantánea o APLICA una progresiva, los aliados (ella
+  incluida si se cura) reciben 4 s de +15 % de velocidad de ataque y +15 % de recarga (se renueva, no se acumula).
+  **Solo los aliados curados** (usuario, 16 nov).
+- **Purificar** desaparece como habilidad y se funde en las curas: limpian las instantáneas (directa, en grupo, Castigo)
+  al lanzarse y las progresivas (Sanar, Santuario) al aplicarse. **Quitan TODOS los efectos dañinos**, solo de los
+  aliados a los que curan (usuario, 16 nov).
+- **Dos curas nuevas en el tronco**: cura directa instantánea y cura en grupo instantánea, con un valor menor que su
+  progresiva («si las over time son 30 %, las instantáneas 20–25 %; si la grupal over time es 20, la aoe instant 15»).
+  Las curas suben en general.
+- **Objetivo**: desde Infierno, un grupo con la Priest sin curas no pasa los muros aunque vaya muy equipado.
+- **Jefes de mundo**: más fuertes durante el minuto (más área, más disparos a la retaguardia).
+- **Jugador medio de la pasada final**: construcción por defecto en Normal e Infierno, la buena desde Averno.
+- **Mascotas**: la pasada mide sin ellas.
+- **Vía libre para la pasada final (16 nov, noche)**: el usuario se va a dormir y pide un juego equilibrado por la
+  mañana. Puedo tocar números y también diseño, apuntando aparte cada cambio que no sea un número. Commit en cada
+  punto de control, sin push. Si los objetivos chocan, **mandan las reglas de juego** (construcción, sanadora,
+  exigencia de equipo) y las horas se cuadran con la vida de muros y enemigos.
+
 > El backlog vive en `docs/redesign/BACKLOG.md`.
 
 ### Enemigos — HECHO (2026-11-15, sin commit): separados al dibujarse, rasgos, Apoyo, prioridad y alcance
@@ -1790,3 +1815,43 @@ Al cerrar: `tsc` y lint limpios, 104 archivos / 937 pruebas en verde. Sin arte n
   estaba por encima de su objetivo y ahora más (sin retocar, como se pidió); todo visto solo en Normal; una sola
   semilla en la sonda; la rotura a los 49 s no se ha recapturado (cambia solo el momento); nada en la app
   empaquetada.
+
+### Kit de la Priest: sanadora imprescindible — HECHO (2026-11-16, punto de control 2A, sin commit)
+
+Decisiones del usuario: «si puedo ir con el priest como si fuera otro dps, el balance está MAL»; siguen 2 huecos;
+Infusión de poder sale del kit (pasivo de Celo); Purificar se funde en las curas; dos curas instantáneas que valen
+menos que su progresiva («si las overtime son 30 %, las instantáneas 20-25 %; si la grupal over time es 20, la AoE
+instant 15»). Corregido después por el usuario: cada cura quita TODOS los efectos dañinos, solo a quien cura; el
+pasivo de Infusión lo recibe SOLO quien es curado (ella también si se cura).
+
+- **Kit** (valores rango 1 → 5, × poder de curación):
+  | Habilidad | Qué hace | Cuándo se lanza | Valores | Limpia |
+  |---|---|---|---|---|
+  | Sanar (progresiva) | cura en 6 s al más castigado / más herido | aliado <70 % o golpe fuerte | 20 % → 30 % (antes 15 → 25) | al aplicarse |
+  | **Luz sanadora** (nueva, tronco 1) | cura instantánea | aliado con efecto dañino, <60 % o golpe fuerte; objetivo: el que está <35 %, si no el que lleva más efectos, si no el golpeado, si no el más herido | 15 % → 22 %, rec. 20 s | al curar |
+  | Escudo sagrado | escudo (sin cambios) | — | — | no |
+  | Nova sagrada | daño (sin cambios) | — | — | no (Nova radiante sí: es cura) |
+  | **Círculo de sanación** (nuevo, tronco 4) | cura instantánea a todo el grupo | 2 aliados <80 %, uno <50 %, o 2 con efecto dañino | 9 % → 15 %, rec. 30 s | a cada curado |
+  | Santuario (rama Devoción) | cura progresiva en grupo, 6 s | ídem Círculo | 12 % → 20 % (antes 6 → 10) | al aplicarse, a cada uno |
+  | Castigo (rama Celo) | cura instantánea + golpe | sin cambios | — | al curar |
+- **Limpieza** (`src/data/healing.ts` `HEAL_CLEANSE_COUNT = ∞`): toda cura de un héroe sobre un héroe quita todos sus efectos
+  dañinos antes de curar (una Herida mortal quitada ya no recorta esa cura); las progresivas al aplicarse, nunca en
+  sus ticks. Temblor no se quita (`cleanseIgnores`). Un número finito quitaría por `cleansePriority` (Raíces > Culpa
+  = Silencio > Herida > Esporas > Veneno). La sim emite el cue `cleanse` y la franja hace un destello (`cleanse_flash`).
+- **Infusión de poder**: pasivo `priest_infusion` en Celo fila 5 (donde estaba la reducción de recarga): cada cura
+  instantánea suya o cada aplicación de una progresiva da a los curados +3 %/rango de velocidad de ataque y de
+  reducción de recarga (15 % a rango 5) durante 4 s, renovado sin acumular (`to: 'healed'`, dato). Se ve con el
+  ribete amarillo fino (sin las motas de antes).
+- **Twin Infusion → Luz gemela** (`priest_mod_twin_light`): Luz sanadora cura también al siguiente aliado más herido
+  a la mitad. El objetivo `twoDpsAllies` queda en la sim sin uso.
+- **Guardados**: `REPLACED_NODES` lleva Infusión → Luz sanadora, Purificar → Círculo, reducción de Celo 5 →
+  Infusión, Twin Infusion → Luz gemela (test de migración en `test/persistence/sanitizeHero.test.ts`).
+- **Arte**: efectos `swift_gift`, `swift_light` (columna de luz que CAE sobre el curado: instantánea frente a la
+  cinta lenta de Sanar), `circle_pulse` (un anillo blanco rápido bajo el grupo, sin brillo que dure) y
+  `cleanse_flash`; signos `abil_healing_light`, `abil_circle`, `tal_e_infusion`, fichas `hud_s_m_healing_light` y
+  `hud_s_m_circle`. `abil_purify` y `hud_s_m_purify` retirados.
+- **Uso medido de Infusión** (grupo con equipo de zona, Priest Celo nivel 90, 3 semillas): muro de Infierno 4 (20 s)
+  ≈ 20 % del tiempo en Ranger y Knight; muro de Infierno 6 con equipo del 4: Ranger 8–16 %, Knight 0 %; farmeo
+  Infierno 4-5 / 6-5: 0–2 %. Hoy las curas apenas se lanzan porque casi nadie baja de los umbrales: es la falta de
+  presión que corrige el 2B; con más presión el uso subirá.
+- Capturas: `tools/assets/out/preview/priest2_*.png`.
