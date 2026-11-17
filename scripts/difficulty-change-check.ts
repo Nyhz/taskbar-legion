@@ -23,11 +23,14 @@ for (const f of files) {
     const cells: string[] = [];
     for (let w = 1; w <= WALLS; w++) {
       const S = d * 100 + w * 10;
-      const party = partyWithBuild(end.party, S > 200 ? PROBE_GOOD_BUILD : PROBE_DEFAULT_BUILD);
+      // DC_FROM=arrive (round 10): the party as it REACHES that wall (after clearing the new world's stages 1–9 — the
+      // player's real state there) instead of the one that ended the last difficulty.
+      const from = process.env.DC_FROM === 'arrive' ? (file.arrive[S] ?? end) : end;
+      const party = partyWithBuild(from.party, S > 200 ? PROBE_GOOD_BUILD : PROBE_DEFAULT_BUILD);
       let wins = 0;
       let fight = 0;
       for (let i = 0; i < SEEDS; i++) {
-        const r = measureBoss(party, S, 7_000_000 + S * 100 + i, end.bonuses, 300, 7_000_000 + S * 100 + i);
+        const r = measureBoss(party, S, 7_000_000 + S * 100 + i, from.bonuses, 300, file.seed); // the run's own boss (round 10)
         if (r.win) wins++;
         fight += r.fightSec;
       }

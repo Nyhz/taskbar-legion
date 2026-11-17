@@ -2739,3 +2739,171 @@ Fuera de ±5 o que bajan: Infierno 4, Averno 1, Averno 8, Eterno 1, Eterno 3, Et
 - Cambio de dificultad (equipo con que se acaba una dificultad contra los mundos 1–2 de la siguiente): Infierno 1 en 2 de
   3 partidas, Averno 1 en ninguna, Eterno 1 a medias en 1 de 3, Tormento 1 en las 3; el mundo 2 en ninguna. ✘ a medias.
 - La sonda poniéndose resistencia mágica cuando la necesita: no medido.
+
+## Ronda 10 · presión desde el mundo 3, Tormento con furia (17 nov, sin commit)
+
+Decisiones del usuario: «presión desde el mundo 3» (cada dificultad abre donde cerró la anterior y su presión nueva
+entra desde el mundo 3), «subir y emparejar» Tormento (≈ 55→85 % del techo, mundos parejos, > 500 h en las 3 partidas),
+y las reglas que faltaban (Priest sin curas, Knight ofensivo, coherencia). Solo mecánica: nada de botín ni topes.
+
+### Cambios
+
+| Qué | Antes | Ahora |
+|---|---|---|
+| Aperturas de Averno y Eterno (mundos 1–2) | −5 de la línea (ronda 9): el % bajaba al entrar | **las de la ronda 8**: el % sube en cada costura |
+| **Presión nueva de cada dificultad** (`pressureWeight`, `pressureDifficulty`, `PRESSURE_HOLD_WORLDS = 2`) | entraba un tercio en el mundo 1, dos tercios en el 2, entera en el 3 | **se queda en la de la dificultad anterior en los mundos 1–2** y entra en los mundos 3 (un tercio), 4 (dos tercios) y 5 (entera): golpe en área, Golpe demoledor, golpe del jefe sobre el tanque, onda anclada sobre la retaguardia, rampa de la furia y fuerza de su mecánica y afijos |
+| Tablas del golpe del jefe sobre el tanque | Tormento seguía al 6 %: el 7,5 % de la ronda 8 **nunca llegó al juego** (solo escribe las tablas, que no se re-escribieron) | re-escaladas: × objetivo nuevo / objetivo viejo por mundo (Tormento al 7,5 % y la entrada nueva) |
+| **La furia de Tormento** (`BOSS_FURY_GRACE_MS`, `Combatant.furyMs`) | — | 4 s después de cerrarse la ventana de 60 s, el jefe de mundo de Tormento (desde el mundo 3) **arrasa al grupo**. Antes un grupo corto aguantaba 5–13 s de furia según el jefe (su mecánica, Última defensa…), y por eso unos muros de Tormento caían al llegar y otros costaban 60–80 h. Texto en el tooltip del reloj (EN/ES). Test `test/sim/fury.test.ts` |
+| Golpe demoledor sobre el tanque (ronda 9, sin commit) | Eterno 1,5 · Tormento 1,7 | 1,8 · 2,0 veces la vida efectiva del Knight medio |
+| Tormento | línea 50→80 | **línea 55→85** |
+| `scripts/luck-diag.ts`, `scripts/difficulty-change-check.ts` | cada combate sacaba un jefe distinto (afijos del run al azar) | **el jefe de la partida** (afijos del run fijos, como en el juego); `DC_FROM=arrive` para medir con el grupo que llega al muro |
+| Rotación de víctimas de los hechizos «al azar» del jefe | probada en la ronda 9 | **quitada**: Culpa al azar es decisión del usuario |
+
+### Horas (medida 1, 3 partidas)
+
+| Partida | Normal | Infierno | Averno | Eterno | Tormento | Total |
+|---|---:|---:|---:|---:|---:|---:|
+| 1 | 5 | 28 | 161 | 352 | 539 | 1 084 |
+| 2 | 4 | 37 | 118 | 198 | 708 | 1 064 |
+| 3 | 3 | 34 | 113 | 252 | 578 | 981 |
+
+Tormento pasa de 500 h en las tres y es más largo que Eterno en las tres. Normal–Eterno no se mueven (la furia solo
+cambia Tormento). Tormento por mundo (mediana): 34 · 38 · 121 · 104 · 63 · 124 · **0,4** · 14 · 48 · 36 h: más parejo
+(antes T7, T9, T10 ≈ 0,4–1,4 h); queda T7, que cae al llegar porque T6 obliga a farmear de más (el grupo tumba T6 con
+el 80 % cuando pide el 72 %).
+
+Una medida 2 forzó que cada muro pidiera más que el anterior (subiendo 15 muros por proporción): lo que pide un muro
+depende del nivel con que llega el grupo y el reparto se movió (Averno 9–10 cayeron a −7 y −10 de la línea, Tormento
+bajó a 468 h en una partida). Se descartó; queda la tabla de la medida 1.
+
+### Cumplimiento muro a muro (medida 1; Tormento sobre 55→85)
+
+| Muro | Escalera | Pide (mediana · rango) | Diferencia | Sube | Cae a los |
+|---|---:|---:|---:|:---:|---:|
+| Normal 1 | 5 % | 5 % (5–5) | +0 | — | 55 s |
+| Normal 2 | 6 % | 6 % (6–6) | +0 | sí | 35 s |
+| Normal 3 | 6 % | 6 % (6–6) | +0 | sí | 24 s |
+| Normal 4 | 7 % | 7 % (7–7) | -0 | sí | 23 s |
+| Normal 5 | 7 % | 7 % (7–7) | -0 | sí | 34 s |
+| Normal 6 | 8 % | 7 % (7–8) | -0 | sí | 39 s |
+| Normal 7 | 8 % | 8 % (8–8) | +0 | sí | 45 s |
+| Normal 8 | 9 % | 9 % (9–9) | -0 | sí | 51 s |
+| Normal 9 | 9 % | 9 % (9–9) | +0 | sí | 37 s |
+| Normal 10 | 10 % | 10 % (10–10) | -0 | sí | 40 s |
+| Infierno 1 | 10 % | 12 % (12–12) | +2 | sí | 43 s |
+| Infierno 2 | 11 % | 13 % (9–13) | +2 | sí | 52 s |
+| Infierno 3 | 12 % | 15 % (11–15) | +3 | sí | 59 s |
+| Infierno 4 | 13 % | 16 % (12–17) | +3 | sí | 58 s |
+| Infierno 5 | 14 % | 18 % (17–24) | +4 | sí | 58 s |
+| Infierno 6 | 16 % | 18 % (18–18) | +3 | sí | 64 s |
+| Infierno 7 | 17 % | 20 % (19–20) | +3 | sí | 75 s |
+| Infierno 8 | 18 % | 21 % (21–21) | +3 | sí | 75 s |
+| Infierno 9 | 19 % | 22 % (21–22) | +3 | sí | 78 s |
+| Infierno 10 | 20 % | 22 % (21–23) | +2 | sí | 74 s |
+| Averno 1 | 20 % | 22 % (22–22) | +2 | igual | 71 s |
+| Averno 2 | 21 % | 19 % (19–19) | -2 | **no** | 61 s |
+| Averno 3 | 22 % | 23 % (22–23) | +1 | sí | 70 s |
+| Averno 4 | 23 % | 26 % (26–26) | +3 | sí | 69 s |
+| Averno 5 | 24 % | 25 % (23–25) | +0 | **no** | 54 s |
+| Averno 6 | 26 % | 23 % (21–23) | -3 | **no** | 68 s |
+| Averno 7 | 27 % | 23 % (22–23) | -4 | sí | 72 s |
+| Averno 8 | 28 % | 24 % (21–25) | -4 | sí | 71 s |
+| Averno 9 | 29 % | 25 % (19–25) | -4 | sí | 73 s |
+| Averno 10 | 30 % | 34 % (18–34) | +4 | sí | 67 s |
+| Eterno 1 | 30 % | 29 % (29–29) | -1 | **no** | 66 s |
+| Eterno 2 | 31 % | 31 % (28–31) | -0 | sí | 68 s |
+| Eterno 3 | 32 % | 25 % (22–25) | **-7** | **no** | 67 s |
+| Eterno 4 | 33 % | 35 % (31–37) | +2 | sí | 71 s |
+| Eterno 5 | 34 % | 31 % (30–32) | -4 | **no** | 64 s |
+| Eterno 6 | 36 % | 37 % (34–38) | +2 | sí | 65 s |
+| Eterno 7 | 37 % | 38 % (38–42) | +1 | sí | 70 s |
+| Eterno 8 | 38 % | 39 % (39–40) | +1 | sí | 74 s |
+| Eterno 9 | 39 % | 41 % (40–41) | +2 | sí | 73 s |
+| Eterno 10 | 40 % | 40 % (39–41) | -0 | **no** | 72 s |
+| Tormento 1 | 55 % | 53 % (51–54) | -2 | sí | 73 s |
+| Tormento 2 | 58 % | 60 % (56–61) | +2 | sí | 71 s |
+| Tormento 3 | 62 % | 63 % (58–65) | +1 | sí | 64 s |
+| Tormento 4 | 65 % | 65 % (65–65) | +0 | sí | 64 s |
+| Tormento 5 | 68 % | 68 % (68–68) | -1 | sí | 63 s |
+| Tormento 6 | 72 % | 72 % (72–72) | +0 | sí | 52 s |
+| Tormento 7 | 75 % | 75 % (75–75) | +0 | sí | 62 s |
+| Tormento 8 | 78 % | 78 % (78–78) | +0 | sí | 62 s |
+| Tormento 9 | 82 % | 82 % (82–82) | -0 | sí | 64 s |
+| Tormento 10 | 85 % | 85 % (85–85) | +0 | sí | 62 s |
+
+Fuera de ±5 o que bajan: Averno 2, Averno 5, Averno 6, Eterno 1, Eterno 3, Eterno 5, Eterno 10
+
+- **El % no sube en todas las costuras por una razón estructural**: el jefe del mundo 10 (los espejos) baja el daño que
+  hace el grupo, así que con una vida mayor que la del mundo 9 su % sale 5–8 puntos más alto (Averno 10 ≈ 34–37 %), y el
+  mundo 1 siguiente (otro jefe, a la vida de la línea) pide menos en %. La prueba de que la vida de cada muro sube
+  (`scaling.test.ts`) y «el % siempre sube» chocan ahí: hay que decidir cuál manda.
+- El resto de bajadas son de 1–3 puntos (Averno 2, 5, 6; Eterno 5, 10) y una de 7 (Eterno 3): lo que pide un muro en %
+  oscila ±3 con el nivel con que llega el grupo.
+
+### Cambio de dificultad (grupo con que se acaba una dificultad, contra los mundos 1–2 de la siguiente; 8 combates)
+
+- seed 1 · end of Normal → Infierno 1: 0/8 (75 s) · Infierno 2: 0/8 (76 s)
+- seed 1 · end of Infierno → Averno 1: 0/8 (78 s) · Averno 2: 0/8 (75 s)
+- seed 1 · end of Averno → Eterno 1: 0/8 (73 s) · Eterno 2: 0/8 (71 s)
+- seed 1 · end of Eterno → Tormento 1: 0/8 (75 s) · Tormento 2: 0/8 (75 s)
+- seed 2 · end of Normal → Infierno 1: 8/8 (45 s) · Infierno 2: 8/8 (62 s)
+- seed 2 · end of Infierno → Averno 1: 0/8 (78 s) · Averno 2: 0/8 (80 s)
+- seed 2 · end of Averno → Eterno 1: 0/8 (73 s) · Eterno 2: 0/8 (64 s)
+- seed 2 · end of Eterno → Tormento 1: 0/8 (74 s) · Tormento 2: 0/8 (73 s)
+- seed 3 · end of Normal → Infierno 1: 8/8 (53 s) · Infierno 2: 0/8 (76 s)
+- seed 3 · end of Infierno → Averno 1: 0/8 (78 s) · Averno 2: 0/8 (75 s)
+- seed 3 · end of Averno → Eterno 1: 0/8 (74 s) · Eterno 2: 0/8 (65 s)
+- seed 3 · end of Eterno → Tormento 1: 0/8 (73 s) · Tormento 2: 0/8 (74 s)
+
+Con el grupo **que llega** a esos muros (tras limpiar las etapas 1–9 del mundo nuevo):
+
+- seed 1 · end of Normal → Infierno 1: 0/8 (75 s) · Infierno 2: 8/8 (52 s)
+- seed 1 · end of Infierno → Averno 1: 8/8 (71 s) · Averno 2: 0/8 (75 s)
+- seed 1 · end of Averno → Eterno 1: 0/8 (73 s) · Eterno 2: 0/8 (74 s)
+- seed 1 · end of Eterno → Tormento 1: 0/8 (75 s) · Tormento 2: 0/8 (75 s)
+- seed 2 · end of Normal → Infierno 1: 8/8 (41 s) · Infierno 2: 8/8 (57 s)
+- seed 2 · end of Infierno → Averno 1: 0/8 (78 s) · Averno 2: 8/8 (55 s)
+- seed 2 · end of Averno → Eterno 1: 0/8 (68 s) · Eterno 2: 0/8 (64 s)
+- seed 2 · end of Eterno → Tormento 1: 0/8 (74 s) · Tormento 2: 0/8 (73 s)
+- seed 3 · end of Normal → Infierno 1: 8/8 (43 s) · Infierno 2: 8/8 (51 s)
+- seed 3 · end of Infierno → Averno 1: 8/8 (77 s) · Averno 2: 0/8 (75 s)
+- seed 3 · end of Averno → Eterno 1: 8/8 (73 s) · Eterno 2: 0/8 (73 s)
+- seed 3 · end of Eterno → Tormento 1: 0/8 (73 s) · Tormento 2: 0/8 (73 s)
+
+**Diagnóstico**: no es presión. Los combates acaban a los 68–80 s: es carrera de daño. Con la presión ya retenida, la vida
+del mundo 1 frente a la del 10 anterior es ×1,00 (Averno), ×1,23 (Eterno), ×1,29 (Tormento), y la del mundo 2 ×1,29 /
+×1,94 / ×2,08. El grupo con que se acaba una dificultad está, por construcción, justo en el umbral de su último muro (es
+el intento que lo tumbó): un muro igual o mayor es como mucho una moneda al aire, y con el jefe fijo de la partida el
+resultado es todo o nada (0/8 u 8/8). Para que pase los mundos 1–2 tiene que pedir **menos** que el último muro: o la
+vida de los mundos 1–2 retenida en la del mundo 10 anterior (×1,0–1,05; el % baja 3–8 puntos en la costura, sobre todo
+porque el mundo 10 sale inflado por su mecánica), o se acepta que los mundos 1–2 de Eterno y Tormento se farmeen (8–38 h
+en la sonda). Decisión del usuario.
+
+### Reglas (grupo de la sonda al tumbar cada muro, jefe fijo de su partida, 2 partidas × 8 combates)
+
+| Muro | Vida del muro | Buena | Knight ofensivo | Priest sin curas | Sin RM | Coherencia (buena) |
+|---|---:|---:|---:|---:|---:|---:|
+| Infierno 3 | ×0.9 | 100 % | 100 % | 6 % | 100 % | 1.00 |
+| Infierno 3 | ×1 | 100 % | 100 % | 0 % | 94 % | 1.00 |
+| Infierno 8 | ×0.9 | 100 % | 100 % | 0 % | 100 % | 1.00 |
+| Infierno 8 | ×1 | 100 % | 100 % | 0 % | 100 % | 1.00 |
+| Averno 5 | ×0.9 | 100 % | 0 % | 0 % | 0 % | 1.00 |
+| Averno 5 | ×1 | 100 % | 0 % | 0 % | 0 % | 1.00 |
+| Averno 8 | ×0.9 | 100 % | 100 % | 50 % | 50 % | 1.00 |
+| Averno 8 | ×1 | 100 % | 100 % | 50 % | 50 % | 1.00 |
+| Eterno 5 | ×0.9 | 100 % | 0 % | 0 % | 0 % | 1.00 |
+| Eterno 5 | ×1 | 100 % | 0 % | 0 % | 0 % | 1.00 |
+| Eterno 8 | ×0.9 | 100 % | 50 % | 50 % | 100 % | 1.00 |
+| Eterno 8 | ×1 | 100 % | 50 % | 50 % | 50 % | 1.00 |
+| Tormento 5 | ×0.9 | 100 % | 0 % | 50 % | 50 % | 1.00 |
+| Tormento 5 | ×1 | 100 % | 0 % | 0 % | 50 % | 1.00 |
+| Tormento 8 | ×0.9 | 100 % | 0 % | 100 % | 100 % | 1.00 |
+| Tormento 8 | ×1 | 100 % | 0 % | 100 % | 100 % | 1.00 |
+
+- **Coherencia 1,00 en todos**: el 0,69–0,75 de la ronda 9 era un fallo de medida (cada combate sacaba otro jefe).
+- **Knight ofensivo**: pierde Averno 5, Eterno 5, Tormento 5 y 8 (0 %); gana Averno 8 en las dos partidas y Eterno 8 en
+  una. ✘ a medias.
+- **Priest sin curas** (Nova + Escudo sagrado): pierde casi todo; gana Averno 8 y Eterno 8 en una partida de dos y
+  **Tormento 8 en las dos**. ✘ a medias. Su Escudo sagrado (con la regla de jefe, al anuncio) y la Nova radiante de la
+  rama Celo hacen de cura; falta decidir si ese escudo cuenta como «curar».
+- Sin resistencia mágica: pierde los muros más mágicos (Averno 5, Eterno 5, Tormento 5); con los físicos importa poco. ✔

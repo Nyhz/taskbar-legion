@@ -67,6 +67,7 @@ export function HudBoss(): React.JSX.Element | null {
           <Tip side="below-end">
             <TipTitle>{enraged ? t('hud.enraged') : t('hud.enrage')}</TipTitle>
             <TipText>{t('hud.enrageHelp', { s: secsText((boss.enrageRampMs ?? BOSS_ENRAGE_RAMP_MS) / 1000) })}</TipText>
+            {boss.furyMs !== undefined && Number.isFinite(windowMs) ? <TipText>{t('hud.enrageFury', { s: secsText((boss.furyMs - windowMs) / 1000) })}</TipText> : null}
           </Tip>
         </div>
       )}

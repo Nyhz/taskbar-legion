@@ -35,6 +35,7 @@ export const hud = {
   worldBoss: 'World boss',
   enrage: 'Enrage',
   enrageHelp: 'When the clock runs out, the boss hits twice as hard every {s} s.',
+  enrageFury: 'And {s} s after that, its fury wipes the party.',
   enraged: 'Enraged',
   // The tooltip of an effect chip (ui/overlay/StripEffectTip, worded by effectTipWords): one line per effect.
   // By kind — what most abilities' effects are; `{what}` is «Attack speed +25 %», or two of them joined.

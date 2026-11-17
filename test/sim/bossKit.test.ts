@@ -87,7 +87,11 @@ describe('which affixes a boss carries', () => {
     const normal = fight([hero('tank')], [], globalStageOf(0, 2, 5));
     spawnStageBoss(normal, makeRng(1));
     expect(normal.enemies[0]?.affixes).toEqual([]);
-    const hell = fight([hero('tank')], [], globalStageOf(1, 2, 5));
+    // Round 10 («presión desde el mundo 3»): Hell's worlds 1–2 still bring Normal's affixes (none); Hell's own from world 3.
+    const early = fight([hero('tank')], [], globalStageOf(1, 2, 5));
+    spawnStageBoss(early, makeRng(1));
+    expect(early.enemies[0]?.affixes).toEqual([]);
+    const hell = fight([hero('tank')], [], globalStageOf(1, 5, 5));
     const rng = quietRng();
     spawnStageBoss(hell, rng);
     expect(hell.enemies[0]?.affixes).toEqual(bossAffixes(hell.seed, hell.globalStageIndex, 'stage', 1));

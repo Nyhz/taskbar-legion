@@ -2,7 +2,7 @@ import type { Rng } from './rng';
 import type { Combatant, WorldState } from './world';
 import type { ResolvedAbility } from './loadout';
 import { abilityDef } from '@/data/abilities';
-import { BACK_SPLASH_SHARE, bossMagicShare, crushAt, CRUSH, worldBossPressureAt, type BossRank } from '@/data/bossKit';
+import { BACK_SPLASH_SHARE, bossMagicShare, crushAt, CRUSH, pressureDifficulty, worldBossPressureAt, type BossRank } from '@/data/bossKit';
 import { armBoss, bossKit } from './bossMechanics';
 import { pickEnemyKind, supportAuras, traitsOf, SUPPORT_KIND, TRAIT_TUNING, type EnemyKind, type EnemyRole } from '@/data/enemies';
 import { difficultyIndexOf } from '@/data/difficulties';
@@ -29,6 +29,7 @@ import {
   zoneBossHit,
   stageBossHit,
   areaBlowSplash,
+  BOSS_FURY_GRACE_MS,
   crushHit,
   crushShock,
 } from '@/data/stageScaling';
@@ -199,10 +200,13 @@ function dressBoss(boss: Combatant | undefined, kit: ReturnType<typeof bossKit>,
       boss.crushShock = crushShock(S, c.backLife, boss.magicShare, CRUSH.shockMagicRef);
     }
     // Its area blow on the heroes behind, anchored to the back line's life from Inferno (data/bossKit BACK_SPLASH_SHARE).
-    const splash = areaBlowSplash(S, BACK_SPLASH_SHARE[difficultyIndexOf(S)] ?? 0);
+    const splash = areaBlowSplash(S, BACK_SPLASH_SHARE[pressureDifficulty(S)] ?? 0); // the previous difficulty's in worlds 1–2 (round 10)
     if (splash > 0) boss.backSplash = splash;
   }
-  boss.enrageRampMs = enrageRampMs(difficultyIndexOf(S));
+  boss.enrageRampMs = enrageRampMs(pressureDifficulty(S)); // the previous difficulty's in worlds 1–2 (round 10)
+  // Its fury (world bosses in Torment, round 10): the enrage has an end — the party is wiped this long past the window.
+  const grace = BOSS_FURY_GRACE_MS[pressureDifficulty(S)] ?? Infinity;
+  if (rank === 'world' && Number.isFinite(grace)) boss.furyMs = (boss.enrageMs ?? ZONE_ENRAGE_MS) + grace;
   armBoss(boss);
 }
 

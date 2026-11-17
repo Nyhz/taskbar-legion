@@ -166,6 +166,8 @@ export function resolveCombatTick(world: WorldState, deltaMs: number, rng: Rng):
       // Boss enrage clock counts FIGHT time (once engaged), not the walk-up.
       if (gap <= 0) {
         e.fightMs = (e.fightMs ?? 0) + deltaMs;
+        // Its fury (round 10): past it, the party is wiped — the enrage has an end in Torment.
+        if (e.isBoss === true && e.furyMs !== undefined && e.fightMs >= e.furyMs) furyWipe(e, heroes, ctx);
         // First moment an enemy reaches the fight → fire the party's engage triggers (once):
         // the boss-engage ultimates, their elite versions, the wave triggers. A boss also seeds
         // its ability openers, so the kit's cadence is measured from ENGAGEMENT (not from spawn,
@@ -498,6 +500,16 @@ function killWithPierce(h: Combatant, victim: Combatant, enemies: Combatant[], c
   if (through === undefined) return;
   ctx.events.push({ type: 'damage', targetId: through.target.id, sourceId: h.id, amount: through.dmg, splash: true });
   if (through.target.hp <= 0) kill(through.target, ctx);
+}
+
+/** A world boss's fury (data/stageScaling BOSS_FURY_GRACE_MS): every hero still standing falls. */
+function furyWipe(boss: Combatant, heroes: Combatant[], ctx: TriggerCtx): void {
+  for (const h of heroes) {
+    if (!h.alive) continue;
+    ctx.events.push({ type: 'damage', targetId: h.id, sourceId: boss.id, amount: Math.max(0, h.hp), abilityKey: 'boss_fury' });
+    h.hp = 0;
+    kill(h, ctx);
+  }
 }
 
 function kill(c: Combatant, ctx: TriggerCtx): void {

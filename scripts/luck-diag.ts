@@ -142,7 +142,9 @@ if (files.length > 0) {
         for (const v of VARIANTS) {
           const party = variantParty(snap.party, S, v);
           const logs: FightLog[] = [];
-          for (let i = 0; i < SEEDS; i++) logs.push(fightWall(party, S, 7_000_000 + S * 1000 + i, snap.bonuses, 7_000_000 + S * 1000 + i));
+          // The boss is the one the snapshot's run meets (its affixes are drawn from the RUN seed, fixed for a whole run, as
+          // in the game and the probe — round 10: before, every fight drew a different boss); only the combat seed varies.
+          for (let i = 0; i < SEEDS; i++) logs.push(fightWall(party, S, 7_000_000 + S * 1000 + i, snap.bonuses, file.seed));
           const wins = logs.filter((l) => l.win);
           const losses = logs.filter((l) => !l.win);
           const winRate = wins.length / logs.length;

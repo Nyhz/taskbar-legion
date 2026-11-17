@@ -36,8 +36,10 @@ describe('the Crushing Blow', () => {
   it('is a world boss\'s from Inferno on — eased in over the first worlds — and never a stage boss\'s', () => {
     expect(crushAt(globalStageOf(0, 5, 10)).tankLife).toBe(0);
     expect(crushAt(globalStageOf(1, 9, 10)).tankLife).toBe(0);
-    expect(crushAt(globalStageOf(2, 1, 10)).tankLife).toBeGreaterThan(0);
-    expect(crushAt(globalStageOf(2, 1, 10)).tankLife).toBeLessThan(CRUSH.tankLife[2]);
+    // Round 10: held at Hell's (none) through Inferno 1–2, eased in over worlds 3–4, whole from world 5.
+    expect(crushAt(globalStageOf(2, 2, 10)).tankLife).toBe(0);
+    expect(crushAt(globalStageOf(2, 3, 10)).tankLife).toBeGreaterThan(0);
+    expect(crushAt(globalStageOf(2, 3, 10)).tankLife).toBeLessThan(CRUSH.tankLife[2]);
     expect(crushAt(globalStageOf(2, 5, 10)).tankLife).toBe(CRUSH.tankLife[2]);
     const has = (S: number, rank: 'stage' | 'world'): boolean => bossKit(3, S, rank).abilities.some((a) => a.def.key === CRUSH.abilityKey);
     expect(has(globalStageOf(1, 5, 10), 'world')).toBe(false);

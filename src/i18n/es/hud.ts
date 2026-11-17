@@ -36,6 +36,7 @@ export const hud: Record<keyof typeof en, string> = {
   worldBoss: 'Jefe de mundo',
   enrage: 'Furia',
   enrageHelp: 'Cuando el reloj se vacía, el jefe pega el doble cada {s} s.',
+  enrageFury: 'Y {s} s después, su furia arrasa al grupo.',
   enraged: 'Enfurecido',
   fxStats: '{what} durante {s} s.',
   fxStatsOpen: '{what}.',

@@ -1,7 +1,6 @@
 import type { AbilityDef } from '@/data/abilities';
 import { abilityDef, stageBossAbilityKeys, worldBossAbilityKeys } from '@/data/abilities';
-import { BOSS_AFFIX, CRUSH, MECHANIC_EXTRAS, SUMMONS, SUMMON_HOVER, bossAffixes, crushAt, mechanicAbility, worldBossMechanic, worldBossPressureAt, MECHANIC, type BossAffixKey, type BossRank } from '@/data/bossKit';
-import { difficultyIndexOf } from '@/data/difficulties';
+import { BOSS_AFFIX, CRUSH, MECHANIC_EXTRAS, SUMMONS, SUMMON_HOVER, bossAffixes, crushAt, mechanicAbility, pressureDifficulty, worldBossMechanic, worldBossPressureAt, MECHANIC, type BossAffixKey, type BossRank } from '@/data/bossKit';
 import { effectDef } from '@/data/effects';
 import { HERO_SPACING } from '@/data/field';
 import { MAX_DAMAGE_REDUCTION, TRASH_DMG_FRACTION, TRASH_HP_FRACTION, enemyDamage, enemyHp, trashDmgTune } from '@/data/stageScaling';
@@ -30,7 +29,8 @@ const resolved = (def: AbilityDef): ResolvedAbility => ({ def, rank: 1 });
  *  whose figure has one, and the abilities its affixes bring. The mechanic is listed FIRST: a boss starts one cast
  *  at a time, in list order, so its own mechanic is never crowded out by the rest. */
 export function bossKit(runSeed: number, S: number, rank: BossRank): BossKit {
-  const d = difficultyIndexOf(S);
+  // Its mechanic's and affixes' strength: the previous difficulty's through worlds 1–2 (round 10, «presión desde el mundo 3»).
+  const d = pressureDifficulty(S);
   const affixes = bossAffixes(runSeed, S, rank, d);
   const abilities: ResolvedAbility[] = [];
   const mechanic = rank === 'world' ? worldBossMechanic(S) : undefined;

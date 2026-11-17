@@ -2043,3 +2043,20 @@ muros y horas en la siguiente ronda.
   techo en vez de 40→60 ±5); y **ronda 9 de reglas** sobre la tabla de la 8: Priest sin curas pierde también Eterno 8 /
   Tormento 8, Knight ofensivo pierde desde Averno (Eterno 8), coherencia ≥ 0,85, el equipo final de una dificultad pasa
   los mundos 1–2 de la siguiente — sin mover las horas de Normal a Eterno.
+
+### Ronda 10 — presión desde el mundo 3 y Tormento con furia (17 nov, sin commit)
+
+- **Presión desde el mundo 3** (`data/bossKit` `PRESSURE_HOLD_WORLDS = 2`, `pressureWeight`, `pressureDifficulty`): la
+  presión nueva de una dificultad (golpe en área, Golpe demoledor, golpe del jefe sobre el tanque, onda anclada sobre la
+  retaguardia, rampa de la furia, fuerza de su mecánica y de sus afijos) se queda en la de la anterior en los mundos 1–2 y
+  entra en los mundos 3–5. Aperturas de Averno y Eterno de vuelta a las de la ronda 8.
+- **Las tablas del golpe del jefe** re-escaladas por mundo (la entrada nueva y Tormento al 7,5 %, que desde la ronda 8 no
+  había llegado al juego).
+- **La furia de Tormento** (`stageScaling` `BOSS_FURY_GRACE_MS`): 4 s después de la ventana de 60 s, el jefe de mundo de
+  Tormento arrasa al grupo (desde Tormento 3). Texto en el tooltip del reloj del jefe (EN/ES).
+- **Tormento sobre una línea 55→85 %** del techo. Medido: Tormento 539–708 h en las tres partidas.
+- **Golpe demoledor**: 1,8 (Eterno) y 2,0 (Tormento) veces la vida efectiva del Knight medio (ronda 9).
+- Herramientas: `luck-diag` y `difficulty-change-check` luchan con el jefe de su partida (afijos fijos); la coherencia del
+  0,69–0,75 era un fallo de medida (es 1,00).
+- Pendiente de decidir: en las costuras, «el % siempre sube» frente a «el grupo con que acabas pasa los mundos 1–2» (y
+  frente a «la vida de cada muro sube», por el jefe del mundo 10); si el Escudo sagrado cuenta como curar.

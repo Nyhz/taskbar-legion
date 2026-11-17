@@ -125,10 +125,14 @@ export function worldBossPressure(d: number): WorldBossPressure {
   return p;
 }
 
-/** How many worlds of a difficulty its world-boss pressure takes to come in whole (round 5, 2026-11-16, user:
- *  «presión gradual»): world 1 a third of the way from the previous difficulty's pressure, world 2 two thirds, world 3
- *  on the whole of it — so the gear a party ends a difficulty with can take the first wall or two of the next. */
+/** How many worlds of a difficulty its world-boss pressure takes to come in whole once it starts (round 5, 2026-11-16,
+ *  user: «presión gradual»). Round 10 (2026-11-17, user: «presión desde el mundo 3»): a difficulty's NEW pressure
+ *  (WORLD_BOSS_PRESSURE, the Crushing Blow, the boss's threat on the tank, the anchored back-line splash, the enrage
+ *  ramp, its mechanic's and affixes' strength) holds at the previous difficulty's level through its first
+ *  PRESSURE_HOLD_WORLDS worlds and comes in over the next PRESSURE_RAMP_WORLDS — world 3 a third, world 4 two thirds,
+ *  world 5 on the whole of it — so the gear a party ends a difficulty with takes worlds 1–2 of the next. */
 export const PRESSURE_RAMP_WORLDS = 3;
+export const PRESSURE_HOLD_WORLDS = 2;
 
 const lerp = (a: number, b: number, t: number): number => a + (b - a) * t;
 
@@ -136,7 +140,16 @@ const lerp = (a: number, b: number, t: number): number => a + (b - a) * t;
  *  1 = its own). Normal has no previous: always 1. */
 export function pressureWeight(S: number): number {
   if (difficultyIndexOf(S) === 0) return 1;
-  return Math.min(1, worldInDifficulty(S) / PRESSURE_RAMP_WORLDS);
+  const w = worldInDifficulty(S) - PRESSURE_HOLD_WORLDS;
+  return w <= 0 ? 0 : Math.min(1, w / PRESSURE_RAMP_WORLDS);
+}
+
+/** The difficulty whose STEPPED pressure (the anchored back-line splash, the enrage ramp, the boss's mechanic and
+ *  affixes) the world boss of global stage `S` brings: the previous one through a difficulty's first
+ *  PRESSURE_HOLD_WORLDS worlds, its own from world 3 (round 10). Normal: its own. */
+export function pressureDifficulty(S: number): number {
+  const d = difficultyIndexOf(S);
+  return d > 0 && worldInDifficulty(S) <= PRESSURE_HOLD_WORLDS ? d - 1 : d;
 }
 
 /** The pressure of the world boss of global stage `S`: its difficulty's, eased in over the first worlds. */
@@ -347,7 +360,10 @@ export const CRUSH = {
   everyMs: 24_000,
   openerMs: 8_000,
   castMs: 2000,
-  tankLife: [0, 0, 1.2, 1.5, 1.7] as readonly [number, number, number, number, number],
+  // Round 9 (2026-11-17): Eternal 1.5 → 1.8, Torment 1.7 → 2.0 — a Knight above the average (a seed whose Knight
+  // outgears the table) took the blow at ~99 % of his life and stood without his defences; braced (Stone Skin ×0.5,
+  // Debilitating Cleave ×0.65) he still takes ~0.6–0.65 of his effective life.
+  tankLife: [0, 0, 1.2, 1.8, 2.0] as readonly [number, number, number, number, number],
   // Inferno brings the shock in gently (a back line that wears little magic resist stands it); from Eternal it asks for
   // it. (At 0.3–0.4 in Inferno the probe's Ranger, who wears little, fell to it in most of the walls.)
   backLife: [0, 0, 0.2, 0.45, 0.5] as readonly [number, number, number, number, number],

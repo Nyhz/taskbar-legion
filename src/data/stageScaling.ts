@@ -202,7 +202,9 @@ export const TRASH_DMG_TUNE: number[] = [
 // ROUND 7 (2026-11-16): from Inferno a share of that pressure moved into the Crushing Blow (data/bossKit CRUSH) — the
 // heavy blow a Knight braces for — so the sustained part is lower there (4 / 6 / 8 → 3 / 4.5 / 6): a Knight who
 // braces for the blow takes about what he took before; one who does not, about half again as much.
-// ROUND 8 (2026-11-17): Torment 6 → 7.5, to lengthen Torment towards its 500+ h with its walls held on the ladder.
+// ROUND 8 (2026-11-17): Torment 6 → 7.5. (Round 10 found it never reached the game: the target only writes the hit
+// tables below, which were not re-written. Round 10 rescales them: × the new target over the old for every world —
+// Torment's 7.5, and the new easing, the previous difficulty's target held through worlds 1–2 and coming in over 3–5.)
 export const BOSS_THREAT_PCT: readonly [number, number, number, number, number] = [1, 2, 3, 4.5, 7.5];
 /** A STAGE boss presses the front at this share of its world boss's target: the defensive build shows outside the
  *  walls too, while a stage boss (5–10 s) never threatens the farm. */
@@ -211,18 +213,18 @@ export const STAGE_BOSS_THREAT_SHARE = 0.6;
  *  front hero — backShotChance 0 — so the per-hit value is lower for the same share of his life a second). */
 export const ZONE_BOSS_HIT_TUNE: number[] = [
   17.4, 5.45, 6.09, 6.25, 6.65, 8.16, 8.63, 8.87, 9.44, 10.2,
-  13.7, 19, 38.7, 38.1, 38.9, 38.7, 39.4, 44.1, 48.3, 49.1,
-  59.9, 86.7, 146, 225, 266, 265, 271, 280, 296, 346,
-  620, 821, 1170, 1260, 1370, 1500, 1450, 1450, 1540, 1610,
-  1640, 2340, 3630, 4640, 5510, 5310, 5340, 5190, 5290, 5350,
+  10.3, 11.4, 25.8, 31.8, 38.9, 38.7, 39.4, 44.1, 48.3, 49.1,
+  51.3, 65, 114, 200, 266, 265, 271, 280, 296, 346,
+  531, 616, 910, 1120, 1370, 1500, 1450, 1450, 1540, 1610,
+  1480, 1910, 3330, 5030, 6890, 6640, 6680, 6490, 6610, 6690,
 ];
 /** The stage bosses' basic hit, world 1 … 50 (scripts/boss-hit-tune.ts; against the Knight that reaches the wall). */
 export const STAGE_BOSS_HIT_TUNE: number[] = [
   13.2, 3.26, 3.66, 3.73, 4.01, 4.92, 5.19, 5.27, 5.66, 6.17,
-  8.26, 11.4, 15.5, 22.9, 23.4, 23.3, 23.7, 26.2, 27.2, 29.2,
-  38.6, 52.9, 66.7, 102, 161, 181, 189, 188, 206, 207,
-  280, 535, 695, 889, 988, 1080, 1160, 1130, 1130, 1210,
-  1400, 1460, 2080, 3030, 3800, 4570, 4510, 4470, 4550, 4440,
+  6.2, 6.84, 10.3, 19.1, 23.4, 23.3, 23.7, 26.2, 27.2, 29.2,
+  33.1, 39.7, 51.9, 90.7, 161, 181, 189, 188, 206, 207,
+  240, 401, 541, 790, 988, 1080, 1160, 1130, 1130, 1210,
+  1260, 1190, 1910, 3280, 4750, 5710, 5640, 5590, 5690, 5550,
 ];
 
 // THE CRUSHING BLOW's anchors (round 7; data/bossKit CRUSH says how hard, these say against whom). Written ONCE by
@@ -323,6 +325,12 @@ export const BOSS_ENRAGE_RAMP_MS = 2000;
  *  and the ladder's % is what a party really needs to end the fight at the minute. Normal and Hell keep the
  *  softer ramp: a party a little short still scrapes through with a few seconds of it. */
 export const ENRAGE_RAMP_MS_BY_DIFFICULTY: readonly [number, number, number, number, number] = [2000, 1500, 1000, 1000, 1000];
+/** THE FURY (round 10, 2026-11-17; user: «Tormento algo más difícil» and «subir y emparejar»): from Torment a WORLD
+ *  boss's enrage has an end — this long after its window closes it wipes the party. Without it a party a little short
+ *  outlived the doubling for 5–13 s depending on the boss (its mechanic holding its swings, a Last Stand…), so a wall
+ *  asked ~75–100 % of its ladder value by boss: some late Torment walls fell at once while others cost 60–80 h. With it
+ *  every wall asks what its ladder says. Normal … Torment (Infinity: none). */
+export const BOSS_FURY_GRACE_MS: readonly [number, number, number, number, number] = [Infinity, Infinity, Infinity, Infinity, 4000];
 
 /** The enrage ramp of a boss at difficulty index `d`. */
 export function enrageRampMs(d: number): number {
@@ -454,12 +462,19 @@ export function wallCurveMult(S: number): number {
 // Eternal 10 lifted by hand just enough for their life to stay above the wall before. Measured (final pass): Normal 3–5,
 // Hell 25–49, Inferno 95–124, Eternal 214–288, Torment 389–492 h, each difficulty longer than the last in every seed;
 // every wall's median ask inside ±5 of its line. Docs: PACING_REPORT.md round 8.
+// ROUND 9 (2026-11-17) set the openings at −5 (Inferno 1–2, Eternal 1–2) and Torment on 50→80 — rejected: the ask
+// descended entering those difficulties. ROUND 10 (2026-11-17; user: «presión desde el mundo 3», «subir y emparejar»):
+// the openings back at round 8's (the ask rises at every seam), each difficulty's new pressure held through worlds 1–2
+// (data/bossKit PRESSURE_HOLD_WORLDS), TORMENT on a 55→85 % line with its FURY (BOSS_FURY_GRACE_MS: the party is wiped
+// 4 s past the enrage window, so every Torment wall asks what its line says). Measured (round 10, measure 1): Normal
+// 3–5, Hell 28–37, Inferno 113–161, Eternal 198–352, Torment 539–708 h; each difficulty longer than the last in every
+// seed. Docs: PACING_REPORT.md round 10.
 export const WORLD_WALL_MULT: readonly number[] = [
   0.23, 0.18, 0.155, 0.227, 0.288, 0.269, 0.33, 0.353, 0.356, 0.335,
   0.371, 0.412, 0.498, 0.486, 0.809, 0.828, 1.01, 1.07, 1.12, 1.16,
   1.05, 1.11, 1.67, 1.65, 1.63, 2.71, 3.56, 4.04, 4.08, 4.03,
   4.58, 7.34, 8.05, 12.3, 13.3, 17.3, 22, 24.5, 26.7, 26.5,
-  27.7, 42.4, 61.3, 86.4, 107, 124, 147, 169, 195, 206,
+  34.4, 54, 80.8, 119, 138, 160, 191, 221, 256, 269,
 ];
 export function wallWorldMult(S: number): number {
   return WORLD_WALL_MULT[worldOf(S) - 1] ?? wallCurveMult(S);

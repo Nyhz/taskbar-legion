@@ -58,8 +58,8 @@ describe('world-boss pressure', () => {
     for (let d = 1; d < WORLD_BOSS_PRESSURE.length; d++) {
       const p = worldBossPressure(d);
       for (let seed = 1; seed <= 40; seed++) {
-        // From world 3 the difficulty's whole pressure is on (it eases in over worlds 1–2: the next test).
-        const S = globalStageOf(d, 3, 10);
+        // From world 5 the difficulty's whole pressure is on (held through worlds 1–2, eased in over 3–4: the next test).
+        const S = globalStageOf(d, 5, 10);
         const kit = bossKit(seed, S, 'world');
         const blow = kit.abilities.find((a) => a.def.key === 'boss_shockwave')?.def;
         expect(blow?.power?.coeff).toBe(p.blowCoeff);
@@ -69,11 +69,11 @@ describe('world-boss pressure', () => {
     }
   });
 
-  it('a difficulty\'s pressure eases in over its first worlds: a third in world 1, two thirds in world 2, whole from world 3', () => {
+  it('a difficulty\'s pressure holds at the last one\'s through worlds 1–2, then eases in: a third in world 3, two thirds in world 4, whole from world 5', () => {
     for (let d = 1; d < WORLD_BOSS_PRESSURE.length; d++) {
       const prev = worldBossPressure(d - 1);
       const own = worldBossPressure(d);
-      for (const [world, w] of [[1, 1 / 3], [2, 2 / 3], [3, 1], [10, 1]] as const) {
+      for (const [world, w] of [[1, 0], [2, 0], [3, 1 / 3], [4, 2 / 3], [5, 1], [10, 1]] as const) {
         const S = globalStageOf(d, world, 10);
         expect(pressureWeight(S)).toBeCloseTo(w, 9);
         const at = worldBossPressureAt(S);
