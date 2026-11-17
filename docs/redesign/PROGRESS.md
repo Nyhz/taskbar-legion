@@ -2190,7 +2190,7 @@ muros y horas en la siguiente ronda.
   juego: cobra, cuenta el pulido y muestra antes/ahora.
 - **Pendiente:** política de pulido en la sonda y reajuste de horas y escalera con él activo.
 
-### Ronda 17 — ausencia más baja y la sonda puliendo (18 nov, sin commit)
+### Ronda 17 — ausencia más baja y la sonda puliendo (18 nov, f142fb1)
 
 - **Ausencia** (usuario: «bajamos tanto xp como oro»): 50 % → 15 % de lo de en línea (`OFFLINE_BASE_SHARE`) y
   Expedición +2,5 → +1 % por rango, 20 rangos (35 % como mucho, nunca por encima de en línea). La cifra de la UI lee el
@@ -2201,4 +2201,6 @@ muros y horas en la siguiente ronda.
 - **Resultado:** el 120 llega en Tormento 6–10 (mediana Tormento 9, ~1 020–1 060 h). Todas las medianas de horas caen
   en banda (la partida 2 sigue lenta en Tormento, 1 178 h). Muros sin tocar; la escalera sigue subiendo.
 - **Herramientas:** `CP_AWAY` (modelo de ausencia) y `CP_POLISH` en `ceiling-pass`; oro de Pulir en la salida.
+- **Decidido (usuario, 18 nov):** la escalera sigue midiéndose con tiradas medias (Pulir es la ventaja que se compra,
+  los muros no la exigen); el oro que sobra en Tormento (13–23 h de ingreso) se acepta y la sonda no lo gasta en Pulir.
 
