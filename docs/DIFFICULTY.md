@@ -63,6 +63,8 @@ per-difficulty cap** (Phase 1/3): a tier can drop once its difficulty is reached
 
 ## 4. Drop tables — the per-world ladder (user decision, 2026-11-15)
 
+> The *wall* ladder (what each world boss asks, strictly rising) is defined in §5, "The wall ladder".
+
 Each difficulty has ONE table, but it is the table of its **last world**. The worlds climb to it: world 1 of a
 difficulty rolls the **previous difficulty's** table (Normal's world 1 rolls a starter table), world 10 rolls the
 difficulty's own, and the worlds between a straight blend of the two (`data/difficulties.tierWeightsAt`). *(This
@@ -120,6 +122,19 @@ wall with the boss's clock at 65–75 s (5–15 s of enrage held); a Normal wall
 mid-Hell wall ~85 %, late Hell and Inferno ~105 %. **Open (the user's call):** there is no "full zone set" in this
 itemisation — the set's damage keeps growing ~×1.4 per doubling of chests, with no plateau at 2,000 — so what
 counts as 100 % is a convention still to be chosen, and the walls are still tuned by hours, not by that share.
+**The wall ladder — what a wall asks (user, 2026-11-17, round 13: «grupo de referencia fijo»; supersedes the
+arrive-based measure of rounds 8–12).** A wall's *ask* is its life as a % of the 60 s of damage of a **fixed
+reference party**: Knight · Ranger · Priest at the zone's level (`expectedLevel`), in the probe's build for there,
+no account bonuses, wearing the zone's realistic ceiling (`zoneGear` `gradualCeilingDamage`: the zone's top rarity at
+its top item level, average rolls, gems of that rarity, interpolated inside the difficulty), the median of five
+fights (`test/sim/probe/referenceAsk.ts`). It is deterministic and independent of any probe run (the arrive-based ask
+moved 1–2 points from pass to pass with the party the probe happened to bring). **The hard rule: every one of the
+50 walls asks strictly more than the one before, across the difficulty seams too** — recorded in
+`test/sim/probe/referenceAskTable.ts`, held by `test/sim/ladder.test.ts`, re-measured with
+`scripts/reference-ladder.ts` (fails on a dip; `RL_WRITE=1` re-records). The lines, in this measure: Normal 4→8,
+Hell 7→12, Inferno 11→24, Eternal 25→37, Torment 59→94 (a wall within ±5 of its line is a secondary report, not a
+gate). Re-measure and re-record whenever the walls or hero power change.
+
 Wall LIFE (`WORLD_WALL_MULT`) and wall DAMAGE (`ZONE_BOSS_DMG_MULT`) are separate knobs; the damage is soft against
 Eternal/Torment tanks (they hold ×100 of it) — that is where boss mechanics and affixes come in. See
 `docs/redesign/PACING_REPORT.md`, "Ronda 2".

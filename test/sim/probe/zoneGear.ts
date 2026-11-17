@@ -152,7 +152,12 @@ export function wallDamage(party: readonly HeroConfig[], bossStage: number, bonu
       return fightMs > 1000 ? (dealt * windowMs) / fightMs : dealt;
     }
     const boss = world.enemies.find((e) => e.isBoss === true);
-    if (boss === undefined) continue;
+    if (boss === undefined || !boss.alive) {
+      // One burst took more than the half refilled (a weak wall): count the life it had left and keep the rate it was
+      // dealing, as for a wipe — stopping here would read a short fight as little damage (round 13 fix).
+      if (before !== undefined) dealt += before;
+      return fightMs > 1000 ? (dealt * windowMs) / fightMs : dealt;
+    }
     if (before !== undefined && boss.hp < before) dealt += before - boss.hp;
     if (boss.hp < boss.maxHp / 2) {
       const refill = boss.maxHp / 2;
@@ -161,7 +166,7 @@ export function wallDamage(party: readonly HeroConfig[], bossStage: number, bonu
     }
     before = boss.hp;
     fightMs = boss.fightMs ?? 0;
-    if (fightMs >= windowMs || !boss.alive) break;
+    if (fightMs >= windowMs) break;
   }
   return dealt;
 }

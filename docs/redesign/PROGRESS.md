@@ -2099,3 +2099,16 @@ muros y horas en la siguiente ronda.
   la escalera (Infierno 1, Averno 5, Eterno 1, y de paso Infierno 5, Averno 3 y Eterno 7) arregladas subiendo lo mínimo la
   vida de esos muros (y la de los que van detrás en Averno y Eterno, para que nada pida menos que el anterior); Infierno 4
   algo más bajo. `CLAUDE.md` con las horas medidas.
+
+### Ronda 13 — escalera con grupo de referencia fijo (17 nov, sin commit)
+
+- **La escalera se mide contra un grupo fijo** (usuario: «grupo de referencia fijo»): Knight · Ranger · Priest al nivel
+  de la zona con el techo realista de la zona, mediana de cinco combates (`test/sim/probe/referenceAsk.ts`). Tabla
+  grabada `test/sim/probe/referenceAskTable.ts`; `test/sim/ladder.test.ts` exige que los 50 muros pidan estrictamente
+  más que el anterior (costuras incluidas); `scripts/reference-ladder.ts` re-mide, falla en una bajada y re-graba.
+  Definición en `docs/DIFFICULTY.md` §5 («The wall ladder»).
+- **Arreglo de `wallDamage`**: un jefe tumbado de una ráfaga ya no se lee como poco daño (cuenta su vida restante y
+  mantiene el ritmo).
+- **Tabla de muros** ajustada lo mínimo para que la medida fija suba siempre: Normal −25…+38 %, Averno 1–5 −7…+19 %,
+  el resto ±5 %. Líneas re-expresadas en la medida nueva: Normal 4→8, Infierno 7→12, Averno 11→24, Eterno 25→37,
+  Tormento 59→94. Horas (3 partidas): 3–4 / 32–41 / 135–152 / 276–315 / 575–834 h. Detalle en PACING_REPORT «Ronda 13».

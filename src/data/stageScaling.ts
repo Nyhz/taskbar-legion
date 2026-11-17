@@ -492,12 +492,18 @@ export function wallCurveMult(S: number): number {
 // point under its line, Inferno at the bottom of its band, no wall asking less than the one before, Torment on
 // 60→90). Measured (round 12, measure 5): Normal 3–4, Hell 32–47, Inferno 124–174, Eternal 234–322, Torment
 // 647–740 h; each difficulty longer than the last in every seed.
+// ROUND 13 (2026-11-17; user: «grupo de referencia fijo»): the ladder is measured against a FIXED reference party
+// (test/sim/probe/referenceAsk: the zone's realistic ceiling worn by the trio at the zone's level, median of five
+// fights), recorded in test/sim/probe/referenceAskTable.ts and held strictly rising by test/sim/ladder.test.ts. The
+// table moved the least (sum of |log| changes) for that ask to rise wall after wall while the life still rises inside
+// each difficulty: Normal −25…+38 % (it moved most: the measure no longer reads a one-burst kill as a short fight),
+// Hell within ±5 %, Inferno 1–5 −7…+19 %, Eternal 1–2 +2–3 %, Torment within ±1 %.
 export const WORLD_WALL_MULT: readonly number[] = [
-  0.231, 0.2, 0.172, 0.156, 0.362, 0.344, 0.377, 0.389, 0.389, 0.371,
-  0.337, 0.368, 0.404, 0.477, 0.645, 0.702, 0.858, 0.916, 0.99, 1.08,
-  1.02, 1.35, 1.85, 1.8, 2.13, 4.02, 4.84, 5.77, 6.58, 6.5,
-  6.1, 9.59, 13.5, 15.8, 17.7, 22.4, 25.5, 29.5, 32.6, 33.1,
-  49.4, 67.7, 104, 146, 171, 195, 221, 253, 294, 303,
+  0.1739, 0.1706, 0.2008, 0.2147, 0.2846, 0.275, 0.2916, 0.3113, 0.4217, 0.372,
+  0.3525, 0.3704, 0.4223, 0.477, 0.645, 0.6835, 0.8496, 0.9357, 0.9998, 1.08,
+  0.9529, 1.269, 1.847, 1.964, 2.525, 4.02, 4.84, 5.77, 6.504, 6.329,
+  6.302, 9.821, 13.5, 15.8, 17.7, 22.4, 25.5, 29.5, 32.6, 33.1,
+  49.16, 68.03, 104, 146, 171, 195, 221, 253, 291.3, 306.3,
 ];
 export function wallWorldMult(S: number): number {
   return WORLD_WALL_MULT[worldOf(S) - 1] ?? wallCurveMult(S);

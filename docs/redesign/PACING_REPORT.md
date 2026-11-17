@@ -3268,3 +3268,64 @@ que retocar Normal 1, 4 y 5–7 (el recálculo con `wall-ask` sobre las mismas i
 la medida completa). Las horas no se han vuelto a medir: los cambios de vida son de un 2–14 % en muros que cuestan poco
 (Normal, aperturas) y en la cadena Averno 3–7 / Eterno 1–4; se esperan unas pocas horas más en Averno y Eterno.
 
+
+## Ronda 13 — la escalera con un grupo de referencia fijo (17 nov, sin commit)
+
+**Decisión del usuario: «grupo de referencia fijo».** Lo que pide un muro ya no se mide contra el grupo con el que la
+sonda llega (que cambia de pasada en pasada y movía la escalera 1–2 puntos), sino contra un grupo fijo por zona:
+Knight · Ranger · Priest al nivel de la zona (`expectedLevel`), con la build de la sonda para ahí, sin bonos de cuenta,
+vestidos con el techo realista de la zona (`gradualCeilingDamage`: la rareza alta de la zona a su ilvl, tiradas
+medias, gemas de esa rareza, interpolado dentro de la dificultad), mediana de cinco combates. Determinista: la misma
+tabla de muros da siempre la misma escalera.
+
+- **Medida** `test/sim/probe/referenceAsk.ts`; **script** `scripts/reference-ladder.ts` (los 50 muros en ~2 min con 5
+  procesos; falla si un muro no pide más que el anterior; `RL_WRITE=1` graba la tabla); **tabla grabada**
+  `test/sim/probe/referenceAskTable.ts`; **test** `test/sim/ladder.test.ts` (los 50 muros estrictamente al alza, con
+  costuras, y Normal 10 re-medido para que la tabla no se quede vieja).
+- **Arreglo de la medida** (`wallDamage`, `zoneGear.ts`): si una ráfaga se llevaba más de la mitad que se rellena, el
+  jefe moría y la medida se cortaba ahí, contando un combate corto como poco daño (Normal 4 llegó a leer 69 en vez de
+  ~4). Ahora cuenta la vida que le quedaba y mantiene el ritmo, como con un wipe. Esto movía sobre todo Normal.
+- **Tabla de muros** (`WORLD_WALL_MULT`): el cambio más pequeño (suma de |log|) para que la medida fija suba muro a muro
+  sin que la vida deje de subir dentro de cada dificultad, en tres pasadas de medir y ajustar. Cambio de vida por muro:
+  Normal −25 · −15 · +17 · +38 · −21 · −20 · −23 · −20 · +8 · 0 %; Infierno ±5 %; Averno −7 · −6 · 0 · +9 · +19 % en
+  1–5, el resto ≤3 %; Eterno 1–2 +2–3 %; Tormento ±1 %.
+
+### Las dos medidas, lado a lado
+
+| Dificultad | Medida | Mundo 1 → 10 (↓ = no sube) |
+|---|---|---|
+| Normal | al llegar · r12 | 5.3 · 5.6 · 6.1 · 10.0 · 8.2 ↓ · 8.3 · 8.7 · 8.9 · 9.4 · 10.0 |
+|  | referencia · tabla r12 | 5.7 · 5.0 ↓ · 4.2 ↓ · 3.8 ↓ · 8.2 · 8.1 ↓ · 8.6 · 8.3 ↓ · 6.3 ↓ · 7.2 |
+|  | referencia · tabla r13 (4→8) | 4.3 · 4.3 · 4.3 · 4.4 · 6.4 · 6.5 · 6.6 · 6.6 · 7.1 · 7.2 |
+| Infierno | al llegar · r12 | 10.3 · 10.6 · 11.2 · 12.5 · 13.4 · 14.5 · 15.6 · 16.5 · 17.9 · 18.9 |
+|  | referencia · tabla r12 | 6.9 ↓ · 7.2 · 7.1 ↓ · 8.4 · 10.4 · 11.2 · 11.1 ↓ · 10.9 ↓ · 11.1 · 11.7 |
+|  | referencia · tabla r13 (7→12) | 7.2 · 7.3 · 7.5 · 8.4 · 10.4 · 10.9 · 11.0 · 11.1 · 11.2 · 11.7 |
+| Averno | al llegar · r12 | 19.8 · 19.8 ↓ · 20.1 · 24.0 · 22.4 ↓ · 23.1 · 23.4 · 22.8 ↓ · 26.5 · 27.6 |
+|  | referencia · tabla r12 | 12.7 · 12.8 · 12.2 ↓ · 11.3 ↓ · 10.5 ↓ · 18.2 · 19.2 · 20.3 · 20.7 · 25.8 |
+|  | referencia · tabla r13 (11→24) | 11.9 · 12.0 · 12.1 · 12.3 · 12.4 · 18.2 · 19.2 · 20.3 · 20.5 · 25.1 |
+| Eterno | al llegar · r12 | 29.3 · 29.7 · 29.0 ↓ · 29.7 · 30.6 · 31.1 · 33.3 · 34.1 · 36.0 · 37.2 |
+|  | referencia · tabla r12 | 24.6 ↓ · 25.0 · 26.6 · 27.9 · 28.3 · 31.4 · 32.4 · 34.8 · 35.9 · 37.0 |
+|  | referencia · tabla r13 (25→37) | 25.4 · 25.7 · 26.6 · 27.9 · 28.3 · 31.4 · 32.4 · 34.8 · 35.9 · 37.0 |
+| Tormento | al llegar · r12 | 58.3 · 60.8 · 67.8 · 66.9 ↓ · 70.4 · 73.6 · 77.1 · 80.3 · 83.7 · 87.0 |
+|  | referencia · tabla r12 | 57.5 · 57.6 · 66.5 · 74.5 · 79.2 · 82.3 · 84.1 · 87.4 · 89.1 · 88.2 ↓ |
+|  | referencia · tabla r13 (59→94) | 57.3 · 57.8 · 66.5 · 74.5 · 79.2 · 82.3 · 84.1 · 87.4 · 88.2 · 89.1 |
+
+**Las líneas, en la medida nueva:** Normal 4→8, Infierno 7→12, Averno 11→24, Eterno 25→37, Tormento 59→94 (recta que
+mejor se ajusta a cada dificultad). La escala es otra: el grupo fijo va al nivel de la zona, que en Infierno y Averno
+está por encima del nivel con el que llega la sonda (Averno 1: 67 frente a ~51), así que allí cada muro "pide menos"
+del grupo fijo; en Eterno coinciden y en Tormento el grupo fijo pide algo más. **±5 de la línea (informe
+secundario):** todos dentro salvo Tormento 2 (−5,0). Hallazgo: Averno 1–5 quedan planos (~12) y saltan en Averno 6
+(18) — en horas eso es tiempo de subir de nivel, no de equipo.
+
+### Horas (3 partidas, `scripts/ceiling-pass.ts`, misma tabla)
+
+| Partida | Normal | Infierno | Averno | Eterno | Tormento | Total |
+|---|---:|---:|---:|---:|---:|---:|
+| 1 | 4 | 32 | 152 | 315 | 771 | 1 274 |
+| 2 | 3 | 41 | 141 | 276 | 834 | 1 296 |
+| 3 | 3 | 36 | 135 | 294 | 575 | 1 043 |
+| Banda | ≈4 | 20–50 | 125–175 | 200–360 | 500–800 | |
+
+Cada dificultad más larga que la anterior en las tres partidas. Tormento de la partida 2 se pasa 34 h (4 %) de 800; la
+tabla de Tormento apenas cambió (±1 %), así que es ruido de partida (un mismo muro de Tormento cuesta de 35 a 200 h según la partida: Tormento 9 = 63 / 104 /
+201 h). No lo he tocado.
