@@ -316,9 +316,11 @@ export const MECHANIC = {
   scales: { abilityKey: 'boss_scales', everyMs: [20_000, 15_000, 15_000, 15_000, 12_000] as ByDifficulty, openerMs: 9000, castMs: 1500 },
   /** ESPEJOS (the Unmaker): every `everyMs` it reflects the last ability a hero cast. What that ability does to
    *  ENEMIES falls on the heroes at `harm` of its strength (the boss's hit standing in for the hero's); what it
-   *  does for ALLIES the boss takes for itself — heals and shields at `boon` of their strength (they are shares
-   *  of ITS life), buffs at `buff` of theirs. Of the buffs a boss has a use for attack speed, damage reduction and
-   *  attack damage (it hits that much harder while it lasts); crit, lifesteal and block do nothing for it.
+   *  does for ALLIES the boss takes for itself — heals at `boon` of their strength (they are shares of ITS life),
+   *  buffs at `buff` of theirs. Of the buffs a boss has a use for attack speed and attack damage (it hits that much
+   *  harder while it lasts); crit and lifesteal do nothing for it. Round 11 (user: «rehacer los espejos»): a shield,
+   *  a defensive stat (damage reduction, armour, magic resist, block) or a weakening / attack cut on the heroes it does
+   *  NOT take — the mirror throws it back as a SHARD at the front hero, at `harm` of its hit (sim/mirror turnsToShard).
    *  Nothing to reflect yet: nothing happens.
    *
    *  THE SIX MIRRORS (user, 2026-11-15: "demasiado forgiving para ser el boss del mundo 10"). Every cast also
@@ -363,7 +365,9 @@ export const CRUSH = {
   // Round 9 (2026-11-17): Eternal 1.5 → 1.8, Torment 1.7 → 2.0 — a Knight above the average (a seed whose Knight
   // outgears the table) took the blow at ~99 % of his life and stood without his defences; braced (Stone Skin ×0.5,
   // Debilitating Cleave ×0.65) he still takes ~0.6–0.65 of his effective life.
-  tankLife: [0, 0, 1.2, 1.8, 2.0] as readonly [number, number, number, number, number],
+  // Round 11 (2026-11-17): Inferno 1.2 → 1.5, Eternal 1.8 → 2.0 — an offensive Knight still took Inferno 8 and
+  // Eternal 8 at the probe's kill (a Knight above the average stood the blow); braced he takes ~0.5 / 0.65 of his life.
+  tankLife: [0, 0, 1.5, 2.0, 2.0] as readonly [number, number, number, number, number],
   // Inferno brings the shock in gently (a back line that wears little magic resist stands it); from Eternal it asks for
   // it. (At 0.3–0.4 in Inferno the probe's Ranger, who wears little, fell to it in most of the walls.)
   backLife: [0, 0, 0.2, 0.45, 0.5] as readonly [number, number, number, number, number],

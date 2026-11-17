@@ -41,7 +41,7 @@ export const boss = {
   scales: 'The Scales',
   scalesHelp: 'Every {secs} s it levels the party: every hero drops to the share of life of the one who has the least.',
   mirror: 'Mirrors',
-  mirrorHelp: 'Every {secs} s it reflects the last ability the party used: its harm falls on the heroes at {harm} % of its strength; its heals and buffs go to the boss, weaker (attack speed, attack damage, damage reduction).',
+  mirrorHelp: 'Every {secs} s it reflects the last ability the party used: its harm falls on the heroes at {harm} % of its strength; its heals and attack buffs go to the boss, weaker. A shield, a defence or a weakening it cannot take: the mirror throws it back as a shard at the front hero.',
   mirrorPanes: 'Each reflection lights a mirror (+{pct} % damage). With all {n} lit it breaks them over the party: {blow} % of its hit.',
   mirrorTwin: 'One mirror in {every} lets out a dark reflection of that hero ({life} s).',
 } as const;

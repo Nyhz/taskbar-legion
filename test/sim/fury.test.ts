@@ -4,7 +4,7 @@ import { spawnZoneBoss } from '@/sim/stages';
 import { resolveCombatTick } from '@/sim/combat';
 import { makeRng } from '@/sim/rng';
 import { globalStageOf } from '@/data/difficulties';
-import { BOSS_FURY_GRACE_MS, ZONE_ENRAGE_MS } from '@/data/stageScaling';
+import { BOSS_FURY_GRACE_MS, OPENING_ENRAGE_MS, ZONE_ENRAGE_MS, zoneEnrageMs } from '@/data/stageScaling';
 import type { Combatant } from '@/sim/world';
 import { base, unit } from './_kit';
 
@@ -40,3 +40,18 @@ describe('the fury', () => {
     expect(world.heroes.every((h) => !h.alive)).toBe(true);
   });
 });
+
+// Round 11 (user: «solo el mundo 1»): a difficulty's opening wall gives a longer clock, so the gear a difficulty ends
+// with takes it; its life and its % of the ceiling stay on the ladder.
+describe('the opening wall', () => {
+  it('has a longer clock in world 1 of every difficulty after Normal, and only there', () => {
+    expect(OPENING_ENRAGE_MS).toBeGreaterThan(ZONE_ENRAGE_MS);
+    expect(zoneEnrageMs(globalStageOf(0, 1, 10))).toBe(ZONE_ENRAGE_MS);
+    for (const d of [1, 2, 3, 4]) {
+      expect(zoneEnrageMs(globalStageOf(d, 1, 10))).toBe(OPENING_ENRAGE_MS);
+      expect(zoneEnrageMs(globalStageOf(d, 2, 10))).toBe(ZONE_ENRAGE_MS);
+    }
+    expect(wallAt(globalStageOf(3, 1, 10))?.enrageMs).toBe(OPENING_ENRAGE_MS);
+  });
+});
+

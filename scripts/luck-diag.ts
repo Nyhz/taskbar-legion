@@ -29,7 +29,9 @@ const OUT = process.env.LD_OUT ?? 'luck-diag.jsonl';
 
 export const KNIGHT_OFF: ClassBuild = { abilities: ['knight_battlecry', 'knight_bloodlust'], branch: 'scourge', exact: true };
 export const KNIGHT_DEF: ClassBuild = { abilities: ['knight_guard', 'knight_bulwark'], branch: 'bastion', exact: true };
-export const PRIEST_DPS: ClassBuild = { abilities: ['priest_nova', 'priest_holyshield'], branch: 'zeal', exact: true };
+// The Priest without heals (round 11, user: «sí, cuenta como curar»): no heal-equivalent at all — not Holy Shield, not
+// the Radiant Nova that makes her Nova heal; only Holy Nova fielded, her talents in Zeal's damage.
+export const PRIEST_DPS: ClassBuild = { abilities: ['priest_nova'], branch: 'zeal', exact: true, avoid: ['priest_mod_radiant_nova'] };
 
 function withoutMr(party: readonly HeroConfig[]): HeroConfig[] {
   const strip = (it: ItemInstance): ItemInstance => ({

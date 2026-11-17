@@ -29,6 +29,7 @@ import {
   zoneBossHit,
   stageBossHit,
   areaBlowSplash,
+  zoneEnrageMs,
   BOSS_FURY_GRACE_MS,
   crushHit,
   crushShock,
@@ -252,7 +253,7 @@ export function spawnZoneBoss(world: WorldState, _rng: Rng): void {
       abilities: kit.abilities,
       isBoss: true,
       isElite: false,
-      enrageMs: ZONE_ENRAGE_MS, // the DPS+survival gate
+      enrageMs: zoneEnrageMs(S), // the DPS+survival gate (a difficulty's opening wall: a longer clock, round 11)
     }),
   ];
   dressBoss(world.enemies[0], kit, 'world', S);

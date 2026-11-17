@@ -18,7 +18,7 @@ const SEEDS = Number(process.env.CHECK_SEEDS ?? 8);
 const FACTORS = (process.env.FACTORS ?? '1').split(',').map(Number);
 const OUT = process.env.AS_OUT ?? 'anchor-sweep.jsonl';
 const KNIGHT_OFF: ClassBuild = { abilities: ['knight_battlecry', 'knight_bloodlust'], branch: 'scourge' };
-const PRIEST_DPS: ClassBuild = { abilities: ['priest_nova', 'priest_holyshield'], branch: 'zeal', exact: true };
+const PRIEST_DPS: ClassBuild = { abilities: ['priest_nova'], branch: 'zeal', exact: true, avoid: ['priest_mod_radiant_nova'] }; // no heal-equivalent (round 11)
 const base = [...ZONE_BOSS_HIT_TUNE];
 
 for (const f of FACTORS) {

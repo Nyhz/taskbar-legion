@@ -37,6 +37,20 @@ export function noteHeroCasts(boss: Combatant, heroes: readonly Combatant[], eve
   }
 }
 
+/** The plain damage effect a shard deals. */
+const MIRROR_SHARD_EFFECT = 'fx_damage';
+/** Stats whose gain would make the boss harder to hurt (it does not take them from a mirror). */
+const DEFENSIVE_STATS: ReadonlySet<string> = new Set(['damageReduction', 'armor', 'magicResist', 'block']);
+
+/** Whether a hero effect the mirror copies turns into a shard (round 11): a shield or a defensive stat the boss would
+ *  take for itself, or a weaken / an attack cut that would fall on the heroes. */
+export function turnsToShard(def: ReturnType<typeof effectDef>): boolean {
+  const k = def.kind;
+  if (def.beneficial) return k.type === 'shield' || (k.type === 'statMod' && DEFENSIVE_STATS.has(k.stat));
+  if (k.type === 'weaken') return true;
+  return k.type === 'statMod' && (k.stat === 'attackDamage' || k.stat === 'attackSpeed') && k.value < 0;
+}
+
 export interface Reflection {
   /** The hero ability it reflects (its sign goes up over the boss). */
   of: string;
@@ -53,6 +67,7 @@ export function reflection(boss: Combatant, scale: { harm: number; boon: number;
   const steps = Math.max(0, last.rank - 1);
   const onFoes = FOE_TARGETS.has(src.target);
   const applies: AppliedEffect[] = [];
+  let shard = false;
   for (const a of src.applies) {
     const def = effectDef(a.effectKey);
     const kind = def.kind.type;
@@ -62,9 +77,18 @@ export function reflection(boss: Combatant, scale: { harm: number; boon: number;
     const durationMsOverride = (a.durationMsOverride ?? def.durationMs) + (src.rankScaling?.perRank.durationMs ?? 0) * steps;
     const base: AppliedEffect = { effectKey: a.effectKey, durationMsOverride, ...(a.chance === undefined ? {} : { chance: a.chance }) };
     const scaledPower = (k: number): AppliedEffect => (coeff === undefined ? base : { ...base, power: { coeff: coeff * k } });
+    // Round 10/11 rework (user, 2026-11-17: «rehacer los espejos»): what would make the boss harder to hurt — a shield,
+    // damage reduction, armour, magic resist — or the heroes weaker at hurting it (a weaken, a cut to their attack) is
+    // not taken: the mirror throws it back as a SHARD on the front hero instead. Before, a Knight's Stone Skin or
+    // Debilitating Cleave reflected cut the party's damage by a quarter to a third, and the world-10 walls asked 5–8
+    // points more of the gear ceiling than their line.
+    if (turnsToShard(def)) {
+      shard = true;
+      continue;
+    }
     if (def.beneficial) {
       // What it does for allies, the boss takes for itself.
-      if (kind === 'heal' || kind === 'hot' || kind === 'shield') applies.push({ ...scaledPower(scale.boon), target: 'self' });
+      if (kind === 'heal' || kind === 'hot') applies.push({ ...scaledPower(scale.boon), target: 'self' });
       else {
         const value = a.value ?? (def.kind.type === 'statMod' || def.kind.type === 'weaken' || def.kind.type === 'healReduction' ? def.kind.value : 0);
         const perRank = a.valuePerRank ?? src.rankScaling?.perRank.value ?? 0;
@@ -84,6 +108,8 @@ export function reflection(boss: Combatant, scale: { harm: number; boon: number;
       ...(a.onSplash === true ? { onSplash: true } : {}),
     });
   }
+  // The shard: a hit on the front hero at `harm` of the boss's hit (what a defence turned into).
+  if (shard) applies.push({ effectKey: MIRROR_SHARD_EFFECT, power: { coeff: scale.harm }, target: 'frontEnemy' });
   if (applies.length === 0) return undefined;
   const splash = src.power?.splashCoeff === undefined ? undefined : (src.power.splashCoeff + (src.power.splashCoeffPerRank ?? 0) * steps) * scale.harm;
   const def: AbilityDef = {

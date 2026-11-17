@@ -4,7 +4,7 @@ import { resolveCombatTick } from '@/sim/combat';
 import { castReadyAbilities, effectCoeff, isHarmed } from '@/sim/abilities';
 import { armBoss } from '@/sim/bossMechanics';
 import { applyEffect } from '@/sim/effects';
-import { MIRROR_ABILITY, noteHeroCasts, reflection } from '@/sim/mirror';
+import { MIRROR_ABILITY, noteHeroCasts, reflection, turnsToShard } from '@/sim/mirror';
 import { makeRng, type Rng } from '@/sim/rng';
 import { ABILITIES, abilityDef, type AbilityDef } from '@/data/abilities';
 import { MECHANIC, mechanicAbility, worldBossMechanic, type BossMechanicKey } from '@/data/bossKit';
@@ -209,10 +209,12 @@ describe('Espejos (the Unmaker): what it reflects', () => {
     const blast = reflecting('ranger_focus', 1);
     expect(blast?.def.power?.splashCoeff).toBeCloseTo(0.6 * 0.25, 6);
     expect(blast?.def.power?.splashRadius).toBe(45);
-    // What it leaves on the enemies it leaves on the heroes: the cleave's weakening, whole.
+    // Round 11 («rehacer los espejos»): a weakening it does not lay on the heroes — it throws it back as a shard at the
+    // front hero, at its share of the boss's hit (the cleave's own blow still falls on them).
     const cleave = reflecting('knight_debilitate', 1);
     expect(cleave?.def.target).toBe('meleeEnemies');
-    expect(cleave?.def.applies.find((a) => a.effectKey === 'debuff_weaken')).toMatchObject({ value: 25, valuePerRank: 0 });
+    expect(cleave?.def.applies.find((a) => a.effectKey === 'debuff_weaken')).toBeUndefined();
+    expect(cleave?.def.applies.at(-1)).toEqual({ effectKey: 'fx_damage', power: { coeff: 0.25 }, target: 'frontEnemy' });
   });
 
   it('what it does for allies the boss takes for itself: heals and shields far weaker, buffs weaker', () => {
@@ -240,8 +242,9 @@ describe('Espejos (the Unmaker): what it reflects', () => {
     for (const src of heroAbilities) {
       for (const rank of [1, 3, 5]) {
         const out = reflection(boss('mirror', 0, { lastHeroCast: { key: src.key, rank } }), { harm: 1, boon: 1, buff: 1 });
-        const kept = src.applies.filter((a) => !['cleanse', 'invulnerable'].includes(effectDef(a.effectKey).kind.type));
-        expect(out?.def.applies.length ?? 0, src.key).toBe(kept.length);
+        const kept = src.applies.filter((a) => !['cleanse', 'invulnerable'].includes(effectDef(a.effectKey).kind.type) && !turnsToShard(effectDef(a.effectKey)));
+        const shards = src.applies.some((a) => turnsToShard(effectDef(a.effectKey))) ? 1 : 0; // a defence or weakening comes back as one shard
+        expect(out?.def.applies.length ?? 0, src.key).toBe(kept.length + shards);
         kept.forEach((a, i) => {
           const coeff = effectCoeff(src, a, rank - 1);
           if (coeff !== undefined) expect(out?.def.applies[i]?.power?.coeff, `${src.key} r${rank}`).toBeCloseTo(coeff, 9);
@@ -274,7 +277,7 @@ describe('Espejos in a fight', () => {
     expect(events.filter((e) => e.type === 'cue' && e.cue === 'mirror').map((e) => [e.targetId, e.abilityKey])).toEqual([['boss', 'ranger_multishot']]);
   });
 
-  it('a heal comes back as a small heal on the boss; a buff as a weaker buff on it; a stone skin makes it take less', () => {
+  it('a heal comes back as a small heal on the boss; a buff as a weaker buff on it; a stone skin as a shard at the front hero', () => {
     const hurt = mirrorBoss(0, { key: 'priest_smite', rank: 1 }, { hp: 50_000 });
     const events = run(fight(party(), [hurt], 100), firstCast('mirror') + 200);
     expect(hurt.hp - 50_000).toBeCloseTo(100_000 * 0.08 * 0.02, 3);
@@ -290,10 +293,12 @@ describe('Espejos in a fight', () => {
     const world = fight([tank, hero('archer'), hero('healer')], [stone], 100);
     const before = run(world, firstCast('mirror') - 300).filter((e) => e.type === 'damage' && e.targetId === 'boss');
     expect(before[0]?.amount).toBeCloseTo(1000, 3);
-    run(world, 500);
-    expect(effect(stone, 'buff_guard_block')).toBeDefined();
+    const cast = run(world, 500);
+    // Round 11: it does not take the stone skin (it would not take less): the mirror throws it back as a shard.
+    expect(effect(stone, 'buff_guard_block')).toBeUndefined();
+    expect(cast.some((e) => e.type === 'damage' && e.abilityKey === MIRROR_ABILITY && e.targetId === 'tank')).toBe(true);
     const after = run(world, 2000).filter((e) => e.type === 'damage' && e.targetId === 'boss');
-    expect(after[0]?.amount).toBeCloseTo(1000 * (1 - 0.3 * 0.7), 3);
+    expect(after[0]?.amount).toBeCloseTo(1000, 3);
   });
 
   it('an attack-damage buff makes it hit harder while it lasts — its blows and its abilities — by its share for the difficulty', () => {
@@ -318,11 +323,13 @@ describe('Espejos in a fight', () => {
   });
 
   it('what it lays on the heroes is harmful, so a heal lifts it; with nothing cast it does nothing', () => {
-    const b = mirrorBoss(0, { key: 'knight_debilitate', rank: 1 });
+    // (Round 11: a weakening comes back as a shard; a mark that makes its bearer take more still falls on a hero.)
+    const b = mirrorBoss(0, { key: 'ranger_weakspot', rank: 1 });
     const heroes = party();
     run(fight(heroes, [b], 100), firstCast('mirror') + 200);
-    expect(effect(heroes[0], 'debuff_weaken')).toBeDefined(); // the cleave reaches who stands in its reach: the tank
-    expect(isHarmed(heroes[0] as Combatant)).toBe(true);
+    const marked = heroes.find((h) => effect(h, 'debuff_weakspot') !== undefined);
+    expect(marked).toBeDefined();
+    expect(isHarmed(marked as Combatant)).toBe(true);
     const idle = mirrorBoss(0, undefined);
     const quiet = party();
     const events = run(fight(quiet, [idle], 100), firstCast('mirror') + 200);

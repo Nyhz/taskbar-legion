@@ -81,7 +81,7 @@ describe('boss marks', () => {
     const marks = bossMarks({ magicShare: 0.6, crushHit: 1000, bossRank: 'world' }, S);
     expect(marks[0]?.key).toBe('damage');
     expect(marks[0]?.more?.[0]).toContain('Every 24 s it winds up its Charged Strike (2 s)');
-    expect(marks[0]?.more?.[0]).toContain('180 %'); // Eternal: 1.8 × an average Knight's life (round 9)
+    expect(marks[0]?.more?.[0]).toContain('200 %'); // Eternal: 2.0 × an average Knight's life (round 11)
     expect(marks[0]?.more?.[0]).toContain('54 %'); // the shock: 0.45 × 0.6 / 0.5
     expect(bossMarks({ magicShare: 0.6 }, S)[0]?.more).toBeUndefined(); // a stage boss: no such blow
     setLanguage('es');

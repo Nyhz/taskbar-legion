@@ -41,7 +41,7 @@ export const boss: Record<keyof typeof en, string> = {
   scales: 'Balanza',
   scalesHelp: 'Cada {secs} s iguala al grupo: todos los héroes bajan al porcentaje de vida del que menos tiene.',
   mirror: 'Espejos',
-  mirrorHelp: 'Cada {secs} s refleja la última habilidad que usó el grupo: su daño cae sobre los héroes al {harm} % de su fuerza; sus curas y mejoras se las queda el jefe, más débiles (velocidad de ataque, daño de ataque, reducción de daño).',
+  mirrorHelp: 'Cada {secs} s refleja la última habilidad que usó el grupo: su daño cae sobre los héroes al {harm} % de su fuerza; sus curas y mejoras de ataque se las queda el jefe, más débiles. Un escudo, una defensa o un debilitamiento no se los puede quedar: el espejo lo devuelve como un fragmento contra el héroe de delante.',
   mirrorPanes: 'Cada reflejo enciende un espejo (+{pct} % de daño). Con los {n} encendidos los rompe sobre el grupo: {blow} % de su golpe.',
   mirrorTwin: 'De uno de cada {every} espejos sale un reflejo oscuro de ese héroe ({life} s).',
 };

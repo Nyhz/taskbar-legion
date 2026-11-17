@@ -1,3 +1,5 @@
+import { difficultyIndexOf, worldInDifficulty } from './difficulties';
+
 // THE scaling bible, implemented (DIFFICULTY.md — canonical, supersedes SPEC's
 // linear example). Phase 2: the master scale Φ(S) is now a POLYNOMIAL B-curve
 // P(S) = (1 + S/P_K)^P_EXP — NOT the old exponential product (which blew up to ~e42 by
@@ -316,6 +318,15 @@ export const MAX_DAMAGE_REDUCTION = 80;
 // seconds of enrage to finish, and a party far below does not make it. Stage bosses share the window and are
 // meant to die in 5-10 s, so theirs only bites a party that should not be there.
 export const ZONE_ENRAGE_MS = 60_000; // world boss (X-10) — the gate
+/** THE OPENING WALL (round 11, 2026-11-17; user: «solo el mundo 1»): the world boss of a difficulty's WORLD 1 (from
+ *  Hell) gives the party this long before it enrages, so the gear a party ends a difficulty with — which stands right at
+ *  its last wall's threshold, since it is the attempt that took it — takes the first wall of the next one. Its life
+ *  and its % of the ceiling stay on the ladder (the % is measured over the usual 60 s): only the clock is longer. */
+export const OPENING_ENRAGE_MS = 100_000;
+/** The enrage window of the world boss of global stage `S`: the opening wall's longer clock, else the usual one. */
+export function zoneEnrageMs(S: number): number {
+  return difficultyIndexOf(S) > 0 && worldInDifficulty(S) === 1 ? OPENING_ENRAGE_MS : ZONE_ENRAGE_MS;
+}
 export const STAGE_ENRAGE_MS = 60_000; // stage bosses share the window
 // Boss damage doubles every RAMP ms past the window: ×2 after 2 s, ×6 after 5 s, ×32 after 10 s. Measured: a party
 // holds about ten seconds of it in Hell and up to fifteen in Torment (its tank is sturdier there) — "unos segundos".
@@ -469,12 +480,16 @@ export function wallCurveMult(S: number): number {
 // 4 s past the enrage window, so every Torment wall asks what its line says). Measured (round 10, measure 1): Normal
 // 3–5, Hell 28–37, Inferno 113–161, Eternal 198–352, Torment 539–708 h; each difficulty longer than the last in every
 // seed. Docs: PACING_REPORT.md round 10.
+// ROUND 11 (2026-11-17; user: «solo el mundo 1», «rehacer los espejos»): a difficulty's world 1 gives a longer clock
+// (OPENING_ENRAGE_MS) so the gear a difficulty ends with takes it; no wall inside Inferno/Eternal asks less than the
+// one before; Torment on a 60→90 % line with Torment 8–10 evened. Measured (round 11, measure 3): Normal 3–5, Hell
+// 29–37, Inferno 105–111, Eternal 245–345, Torment 570–911 h; each difficulty longer than the last in every seed.
 export const WORLD_WALL_MULT: readonly number[] = [
   0.23, 0.18, 0.155, 0.227, 0.288, 0.269, 0.33, 0.353, 0.356, 0.335,
   0.371, 0.412, 0.498, 0.486, 0.809, 0.828, 1.01, 1.07, 1.12, 1.16,
-  1.05, 1.11, 1.67, 1.65, 1.63, 2.71, 3.56, 4.04, 4.08, 4.03,
-  4.58, 7.34, 8.05, 12.3, 13.3, 17.3, 22, 24.5, 26.7, 26.5,
-  34.4, 54, 80.8, 119, 138, 160, 191, 221, 256, 269,
+  1.05, 1.25, 1.67, 1.65, 1.79, 3.14, 4.01, 4.47, 4.4, 4.35,
+  4.58, 6.99, 10.4, 12.3, 14.6, 17.3, 22, 25.2, 27.2, 28,
+  36.8, 56.7, 87, 128, 150, 171, 214, 238, 281, 292,
 ];
 export function wallWorldMult(S: number): number {
   return WORLD_WALL_MULT[worldOf(S) - 1] ?? wallCurveMult(S);

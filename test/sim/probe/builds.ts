@@ -26,6 +26,8 @@ export interface ClassBuild {
   order?: 'trunk' | 'branch';
   /** Field exactly `abilities` (fewer than two if it names fewer): no default stands in for a missing one. */
   exact?: boolean;
+  /** Talent nodes it never raises (round 11: the rules' Priest without heals takes no heal-equivalent talent). */
+  avoid?: readonly string[];
 }
 
 /** A build per class (the party is one hero of each class). */
@@ -106,6 +108,7 @@ export function buildTalents(classKey: string, points: number, build: ClassBuild
     for (const n of nodes) {
       if (n.kind === 'ability' && (!fielded.has(n.key) || (ranks[n.key] ?? 0) >= ABILITY_RANK_CAP)) continue;
       if (n.kind === 'capstone' && n.lane !== build.branch) continue;
+      if (build.avoid?.includes(n.key) === true) continue;
       if (passedOver(n)) continue;
       if (!canSpend(classKey, ranks, points - spent, n.key).ok) continue;
       if (pick === undefined || priority(n) < priority(pick) || (priority(n) === priority(pick) && n.rowIndex < pick.rowIndex)) pick = n;

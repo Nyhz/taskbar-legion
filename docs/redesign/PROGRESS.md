@@ -2060,3 +2060,15 @@ muros y horas en la siguiente ronda.
   0,69–0,75 era un fallo de medida (es 1,00).
 - Pendiente de decidir: en las costuras, «el % siempre sube» frente a «el grupo con que acabas pasa los mundos 1–2» (y
   frente a «la vida de cada muro sube», por el jefe del mundo 10); si el Escudo sagrado cuenta como curar.
+
+### Ronda 11 — el mundo 1, los espejos y la Priest sin curas (17 nov, sin commit)
+
+- **Espejos rehechos**: un escudo, una defensa o un debilitamiento que el jefe reflejaría ya no se lo queda ni lo deja
+  en los héroes: vuelve como un fragmento contra el héroe de delante (`sim/mirror` `turnsToShard`). Texto EN/ES.
+- **El muro de apertura** (`OPENING_ENRAGE_MS` 100 s): el jefe del mundo 1 de cada dificultad da 100 s antes de
+  enfurecerse. El equipo con que se acaba una dificultad pasa su mundo 1 (8/8 en las 12 costuras).
+- **Priest sin curas** en las reglas: solo Nova, sin Escudo sagrado ni Nova radiante.
+- **Golpe demoledor**: 1,5 / 2,0 / 2,0 veces la vida del Knight medio en Averno / Eterno / Tormento.
+- **Tormento** sobre 60→90 %; ningún muro de Averno/Eterno pide menos que el anterior; Eterno 2 algo más bajo.
+- Medido: 3–5 / 29–37 / 105–111 / 245–345 / 570–911 h. Quedan Averno 10 (+6), Eterno 1 (−1), Eterno 4 (−2), Tormento
+  desigual por mundo y la Priest sin curas ganando Tormento 5 en una partida.

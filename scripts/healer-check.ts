@@ -20,7 +20,7 @@ const SNAP = process.env.STUDY_SNAP ?? 'snapshots-1.json';
 const OUT = process.env.CHECK_OUT ?? 'healer-check.jsonl';
 const SEEDS = Number(process.env.CHECK_SEEDS ?? 8);
 const JOBS = Number(process.env.CHECK_JOBS ?? 5);
-const PRIEST_DPS: ClassBuild = { abilities: ['priest_nova', 'priest_holyshield'], branch: 'zeal', exact: true };
+const PRIEST_DPS: ClassBuild = { abilities: ['priest_nova'], branch: 'zeal', exact: true, avoid: ['priest_mod_radiant_nova'] }; // no heal-equivalent (round 11)
 const KNIGHT_OFF: ClassBuild = { abilities: ['knight_battlecry', 'knight_bloodlust'], branch: 'scourge' };
 
 function rate(party: readonly HeroConfig[], snap: WallSnapshot, b: PartyBuild, m = 1): number {
