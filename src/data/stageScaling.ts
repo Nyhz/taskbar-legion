@@ -270,9 +270,18 @@ export function areaBlowSplash(S: number, share: number): number {
   if (share <= 0 || life <= 0) return 0;
   return (share * life) / Math.max(0.05, 1 - mitigation(expectedDefense(S), S));
 }
-/** The Crushing Blow's hit on the front hero at global stage `S`, for `tankLife` × the average Knight's effective life. */
+/** The Crushing Blow's hit on the front hero at global stage `S`, for `tankLife` × the average Knight's effective life.
+ *  On an OPENING wall (world 1 of Hell … Torment, round 14b, 2026-11-17) the Knight it is sized against is no stronger
+ *  than the one who beat the previous difficulty's gate: the wall holds the last difficulty's pressure (bossKit
+ *  crushAt) and is taken with the gear that difficulty ended with, but its own anchor is the Knight seen at ITS kill,
+ *  after farming its stages — 55 % above the Inferno-10 Knight at Eternal 1, so a Knight in end-of-Inferno gear took
+ *  ~2.6× his life a blow and fell to the third. */
 export function crushHit(S: number, tankLife: number): number {
-  return tankLife * (KNIGHT_EHP_TUNE[worldOf(S) - 1] ?? 0);
+  const w = worldOf(S);
+  const own = KNIGHT_EHP_TUNE[w - 1] ?? 0;
+  const opening = difficultyIndexOf(S) > 0 && worldInDifficulty(S) === 1;
+  const gate = opening ? KNIGHT_EHP_TUNE[w - 2] : undefined;
+  return tankLife * (gate !== undefined && gate > 0 ? Math.min(own, gate) : own);
 }
 /** The Crushing Blow's magic shock on each hero behind at global stage `S`: what takes `backLife` × `sideScale` (the
  *  boss's side, data/bossKit crushShockScale) × the average back-line hero's life, through on-level magic resist. */

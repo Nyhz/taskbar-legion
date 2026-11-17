@@ -72,6 +72,14 @@ describe('the Crushing Blow', () => {
     }
     const S = globalStageOf(4, 5, 10);
     expect(crushHit(S, 1.5)).toBeCloseTo(1.5 * (KNIGHT_EHP_TUNE[44] ?? 0), 6);
+    // An opening wall sizes its blow on a Knight no stronger than the previous gate's (round 14b).
+    for (const d of [3, 4]) {
+      const open = globalStageOf(d, 1, 10);
+      const own = KNIGHT_EHP_TUNE[d * 10] ?? 0;
+      const gate = KNIGHT_EHP_TUNE[d * 10 - 1] ?? 0;
+      expect(crushHit(open, 1.5)).toBeCloseTo(1.5 * Math.min(own, gate), 6);
+    }
+    expect(crushHit(globalStageOf(3, 2, 10), 1.5)).toBeCloseTo(1.5 * (KNIGHT_EHP_TUNE[31] ?? 0), 6); // world 2: its own
     // Sized against on-level magic resist: through it (half turned away) the shock takes backLife × mix of her life.
     expect(crushShock(S, 0.5, 1.2) * (1 - mitigation(expectedDefense(S), S))).toBeCloseTo(0.6 * (BACK_LIFE_TUNE[44] ?? 0), 6);
   });

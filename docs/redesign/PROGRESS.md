@@ -2141,3 +2141,11 @@ muros y horas en la siguiente ronda.
   «Ronda 14». Pendiente de decisión: costura Averno → Eterno 1 en una partida (0/8), y la partida 2 por encima de su
   banda en Eterno y Tormento.
 
+### Ronda 14b — costura Averno → Eterno 1 (17 nov, sin commit)
+
+- Decisiones del usuario: no habrá mecánica nueva de RM (75/25 basta) y las horas se aceptan como están.
+- **Golpe aplastante del muro de apertura** (`stageScaling.crushHit`): se dimensiona contra mín(Knight medio de su muro,
+  Knight medio de la puerta anterior). Eterno 1 se anclaba al Knight que ya ha farmeado Eterno, un 55 % más fuerte que el
+  de la puerta de Averno, y un Knight con equipo del final de Averno moría al tercer golpe. Solo cambia Eterno 1 (golpe
+  26 700 → 17 250). Las 12 costuras quedan a 8/8 en las 3 partidas. Escalera re-grabada (Eterno 1 25,40 → 25,39).
+

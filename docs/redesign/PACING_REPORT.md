@@ -3572,3 +3572,31 @@ partida 2 es además la lenta de las tres: ya hizo 834 h de Tormento en la ronda
 Tormento 4–6 y 10 (de 108 a 168 h cada uno) y en Eterno 5–6 (94–106 h). No lo he corregido. Dentro de ±5 de la línea
 solo caben bajadas de ~5 % en Tormento 3–5: Tormento 2 ya está en −5,0 y Tormento 1 no puede bajar sin salirse. Eso no
 asegura meter la partida 2 en la banda. Y si el usuario va a decidir una mecánica de RM, el re-afinado cambiaría otra vez.
+
+## Ronda 14b — la costura Averno → Eterno 1 (17 nov, sin commit)
+
+**Problema:** en la partida 2, el equipo del final de Averno perdía Eterno 1 en 0/8 combates. El Knight (armadura 630,
+RM 950) moría en el tercer golpe aplastante, a los 58,8 s.
+
+**Diagnóstico:** el muro de apertura arrastra la presión de la dificultad anterior (fuerza del golpe aplastante de
+Averno, ×1,5). Pero ese golpe se dimensiona contra el Knight medio que se vio al tumbar Eterno 1, cuando ya ha farmeado
+sus etapas: vida efectiva de 17 800, un 55 % más que el Knight de la puerta de Averno 10 (11 500). El golpe era de 26 700.
+A un Knight con equipo del final de Averno le quitaba de 1,8 a 2,7 veces su vida efectiva. Las defensas solo cubren dos
+golpes por minuto, así que el tercero lo mataba. La mezcla 75/25 lo agravó: ese Knight iba equipado con RM para la puerta
+mágica y llegaba a una apertura de acero (vida efectiva 9 800 frente a 14 500 en la partida 3). En Tormento 1 el ancla
+propia (38 300) y la de la puerta de Eterno (40 700) casi coinciden, y por eso allí no pasaba.
+
+**Arreglo (de sistema, no de botín):** en un muro de apertura (mundo 1 de Infierno a Tormento), el golpe aplastante se
+dimensiona contra un Knight que no sea más fuerte que el de la puerta anterior: mín(ancla propia, ancla del mundo 10
+anterior), en `stageScaling.crushHit`. Solo cambia Eterno 1, donde el golpe baja de 26 700 a 17 250. Averno 1 no tiene
+golpe aplastante y en Tormento 1 manda su propia ancla. Test en `defenceCheck.test.ts`.
+
+| Costura (equipo del final de la anterior) | Partida 1 | Partida 2 | Partida 3 |
+|---|---|---|---|
+| Normal → Infierno 1 | 8/8 (80 s) | 8/8 (39 s) | 8/8 (52 s) |
+| Infierno → Averno 1 | 8/8 (70 s) | 8/8 (69 s) | 8/8 (77 s) |
+| Averno → Eterno 1 | 8/8 (74 s) | **8/8 (72 s)**, antes 0/8 | 8/8 (79 s) |
+| Eterno → Tormento 1 | 8/8 (118 s) | 8/8 (107 s) | 8/8 (117 s) |
+
+Escalera: Eterno 1 pide 25,39 (antes 25,40); los 50 muros siguen subiendo; tabla re-grabada. Las reglas no miran muros
+de apertura y no cambian. Las horas no se han vuelto a medir: solo cambia Eterno 1, que se tumba en ~1 h.
