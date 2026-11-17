@@ -7,11 +7,12 @@ import { useWingTabs } from '../wingTabs';
 import { SynthRecipe } from './SynthRecipe';
 import { MeltRecipe } from './MeltRecipe';
 import { TransfigRecipe } from './TransfigRecipe';
+import { PolishRecipe } from './PolishRecipe';
 import { CUBE_MODES, type CubeMode } from './cubeLogic';
 import './cube.css';
 
-// The Cube: three recipes — synthesize, melt, transfigure — a RIGHT WING of the hero window, narrow and tall like
-// every wing. It reads top to bottom: the NAME of the recipe in use, the three recipes to pick from, what the
+// The Cube: four recipes — synthesize, melt, transfigure, polish — a RIGHT WING of the hero window, narrow and tall like
+// every wing. It reads top to bottom: the NAME of the recipe in use, the four recipes to pick from, what the
 // recipe does (its equation), the Cube's nine cells with what comes out, the keys with their verb, and under
 // them the pieces of the bag it can take. (The Cube was once "francamente confusa": nothing is left unnamed.)
 
@@ -19,16 +20,19 @@ const SIGN: Record<CubeMode, string> = {
   synthesize: 'cube2_synth',
   melt: 'cube2_melt',
   transfigure: 'cube2_swap',
+  polish: 'cube2_polish',
 };
 const NAME: Record<CubeMode, TextKey> = {
   synthesize: 'cube.synth',
   melt: 'cube.melt',
   transfigure: 'cube.transfig',
+  polish: 'cube.polish',
 };
 const HELP: Record<CubeMode, TextKey> = {
   synthesize: 'cube.synthHelp',
   melt: 'cube.meltHelp',
   transfigure: 'cube.transfigHelp',
+  polish: 'cube.polishHelp',
 };
 
 export function CubeWindow(): React.JSX.Element {
@@ -69,6 +73,7 @@ export function CubeWindow(): React.JSX.Element {
       {mode === 'synthesize' && <SynthRecipe />}
       {mode === 'melt' && <MeltRecipe />}
       {mode === 'transfigure' && <TransfigRecipe />}
+      {mode === 'polish' && <PolishRecipe />}
     </Window>
   );
 }

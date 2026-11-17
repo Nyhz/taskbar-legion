@@ -1,4 +1,4 @@
-// The Cube wing: three recipes — synthesize, melt, transfigure.
+// The Cube wing: four recipes — synthesize, melt, transfigure, polish.
 export const cube = {
   close: 'Close',
   synth: 'Synthesize',
@@ -56,4 +56,15 @@ export const cube = {
   keepNew: 'The new one',
   keptOld: 'You kept the original affix.',
   keptNew: 'You kept the new affix.',
+  polish: 'Polish',
+  polishHelp:
+    'Roll the value of ONE affix again, paid in gold: the stat stays, and you choose whether to keep the new value. Each polish of the same piece costs more; a perfect affix cannot be polished.',
+  eqPolishOut: 'another roll',
+  stepPolishAffix: 'The affix you polish',
+  stepPrice: 'The price',
+  polishFirst: 'Never polished. Each polish of this piece costs ×1.5 the last.',
+  polishedTimes: 'Polished {n} times. Each polish costs ×1.5 the last.',
+  noGold: 'Not enough gold.',
+  keptOldValue: 'You kept the old value.',
+  keptNewValue: 'You kept the new value.',
 } as const;

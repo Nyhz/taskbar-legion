@@ -1,6 +1,6 @@
 import type { StateCreator } from 'zustand';
 import type { GameStore } from '../store';
-import type { ItemInstance, InvEntry } from '@/sim/items';
+import type { AffixRoll, ItemInstance, InvEntry } from '@/sim/items';
 import { isItem, isGem } from '@/sim/items';
 import { entries, place, removeId, findEntry, sorted, type Slots } from '@/sim/slots';
 import type { GemInstance } from '@/data/gems';
@@ -14,7 +14,7 @@ import {
   STASH_MAX_SLOTS,
   STASH_MAX_PAGES,
 } from '@/data/inventory';
-import { synthesize, canSynthesize, synthesizeGems, canSynthesizeGems, alchemyTotal, canTransfigure, transfigureRoll, itemGoldValue } from '@/sim/cube';
+import { synthesize, canSynthesize, synthesizeGems, canSynthesizeGems, alchemyTotal, canTransfigure, transfigureRoll, itemGoldValue, canPolishAffix, polishCost, polishCount, polishRoll } from '@/sim/cube';
 import { getBonuses } from '@/sim/bonuses';
 import { SYNTH_DOUBLE_TIER_CHANCE } from '@/data/cube';
 
@@ -115,6 +115,11 @@ export interface InventorySlice {
   cubeTransfigure: (itemId: string, gemIds: string[], affixIndex: number) => boolean;
   /** Commit "keep new": replace affix #affixIndex with the rolled replacement. */
   cubeApplyTransfigure: (itemId: string, affixIndex: number) => boolean;
+  /** Pay the gold for polishing affix #affixIndex of a bag item and count the polish. Does NOT yet change the
+   *  value — the UI shows old vs new, then commits the choice. Returns the rolled value, or null if it can't. */
+  cubePolish: (itemId: string, affixIndex: number) => AffixRoll | null;
+  /** Commit "keep new" for the item's LAST polish: its affix takes the rolled value. */
+  cubeApplyPolish: (itemId: string, affixIndex: number) => boolean;
 }
 
 export const createInventorySlice: StateCreator<GameStore, [], [], InventorySlice> = (set, get) => ({
@@ -360,6 +365,39 @@ export const createInventorySlice: StateCreator<GameStore, [], [], InventorySlic
     const item = findEntry(s.inventory, itemId);
     if (item === undefined || !isItem(item) || item.stats[affixIndex] === undefined) return false;
     const rolled = transfigureRoll(item, affixIndex);
+    if (rolled === null) return false;
+    set((st) => ({
+      inventory: st.inventory.map((e) =>
+        e !== null && isItem(e) && e.id === itemId
+          ? { ...e, stats: e.stats.map((stat, i) => (i === affixIndex ? rolled : stat)) }
+          : e,
+      ),
+    }));
+    return true;
+  },
+
+  // Polish step 1: pay the gold and count the polish (the next one costs ×1.5); the value is untouched until the
+  // player keeps the new one.
+  cubePolish: (itemId, affixIndex) => {
+    const s = get();
+    const item = findEntry(s.inventory, itemId);
+    if (item === undefined || !isItem(item) || !canPolishAffix(item, affixIndex)) return null;
+    const cost = polishCost(item);
+    const rolled = polishRoll(item, affixIndex);
+    if (rolled === null || s.gold < cost) return null;
+    set((st) => ({
+      gold: st.gold - cost,
+      inventory: st.inventory.map((e) => (e !== null && isItem(e) && e.id === itemId ? { ...e, polishes: polishCount(e) + 1 } : e)),
+    }));
+    return rolled;
+  },
+
+  // Polish step 2 ("keep new"): the affix takes the value its last polish rolled.
+  cubeApplyPolish: (itemId, affixIndex) => {
+    const s = get();
+    const item = findEntry(s.inventory, itemId);
+    if (item === undefined || !isItem(item) || polishCount(item) === 0) return false;
+    const rolled = polishRoll(item, affixIndex, polishCount(item) - 1);
     if (rolled === null) return false;
     set((st) => ({
       inventory: st.inventory.map((e) =>

@@ -10,6 +10,9 @@ import {
   canTransfigure,
   transfigureRoll,
   transfigPool,
+  polishCost,
+  polishRoll,
+  canPolishAffix,
 } from '@/sim/cube';
 import { composeItem } from '@/sim/loot';
 import { makeRng } from '@/sim/rng';
@@ -122,5 +125,33 @@ describe('cube transfiguration', () => {
       expect(transfigPool(it)).toContain(rolled!.key);
       expect(transfigureRoll(it, i)).toEqual(rolled); // same item+affix → same result
     });
+  });
+});
+
+describe('cube polish', () => {
+  const piece = (): ItemInstance => items(5, 1)[0]!;
+
+  it('costs a tenth of the alchemy value, ×1.5 for every polish already done', () => {
+    const it0 = piece();
+    expect(polishCost(it0)).toBe(Math.round(0.1 * itemGoldValue(it0)));
+    expect(polishCost({ ...it0, polishes: 2 })).toBe(Math.round(0.1 * itemGoldValue(it0) * 1.5 ** 2));
+  });
+
+  it('keeps the stat, rolls deterministically per polish, and differs between polishes', () => {
+    const it0 = piece();
+    const a = polishRoll(it0, 0);
+    expect(a).not.toBeNull();
+    expect(a!.key).toBe(it0.stats[0]!.key);
+    expect(polishRoll(it0, 0)).toEqual(a); // preview = commit
+    const values = new Set(Array.from({ length: 12 }, (_, n) => polishRoll(it0, 0, n)!.value));
+    expect(values.size).toBeGreaterThan(1); // paying again rolls again
+  });
+
+  it('only polishes rolled substats that are not perfect', () => {
+    const it0 = piece();
+    expect(canPolishAffix(it0, 0)).toBe(true);
+    expect(canPolishAffix(it0, 99)).toBe(false);
+    const perfect = { ...it0, stats: it0.stats.map((s, i) => (i === 0 ? { ...s, perfect: true } : s)) };
+    expect(canPolishAffix(perfect, 0)).toBe(false);
   });
 });

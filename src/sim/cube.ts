@@ -1,4 +1,4 @@
-import type { ItemInstance } from './items';
+import type { AffixRoll, ItemInstance } from './items';
 import { composeItem, rollStatValue, perfectStatValue, itemSubstatPool, type ItemOrigin } from './loot';
 import { makeRng } from './rng';
 import { SLOT_KEYS } from '@/data/itemSlots';
@@ -7,12 +7,22 @@ import type { ItemTier } from '@/data/tiers';
 import { tierDef } from '@/data/tiers';
 import type { GemInstance, GemTier } from '@/data/gems';
 import { GENERATOR_VERSION } from '@/data/lootTables';
-import { ALCHEMY_BASE, ALCHEMY_TIER_MULT, SYNTH_DOUBLE_TIER_CHANCE, SYNTH_PERFECT_CHANCE, TRANSFIGURE_PERFECT_CHANCE } from '@/data/cube';
+import {
+  ALCHEMY_BASE,
+  ALCHEMY_TIER_MULT,
+  POLISH_COST_GROWTH,
+  POLISH_COST_SHARE,
+  POLISH_PERFECT_CHANCE,
+  SYNTH_DOUBLE_TIER_CHANCE,
+  SYNTH_PERFECT_CHANCE,
+  TRANSFIGURE_PERFECT_CHANCE,
+} from '@/data/cube';
 
-// The Cube's three recipes (all PURE + deterministic — no Math.random / Date):
+// The Cube's four recipes (all PURE + deterministic — no Math.random / Date):
 //  • Synthesize: 9 same-tier items → 1 of the next tier, ilvl = MEDIAN of the inputs.
 //  • Alchemy:    melt items → gold (per-item value by tier + ilvl).
 //  • Transfigure: re-roll ONE affix into a different stat, paid with two gems.
+//  • Polish:     re-roll the VALUE of one affix (same stat), paid with gold; dearer every time.
 
 export const CUBE_INPUT_COUNT = 9;
 
@@ -151,4 +161,37 @@ export function transfigureRoll(item: ItemInstance, affixIndex: number): { key: 
     return { key, value: perfectStatValue(key, mult, item.ilvl), perfect: true };
   }
   return { key, value };
+}
+
+// ───────────────────────────── Polish ─────────────────────────────
+
+/** Polishes already done on `item` (absent ⇒ none). */
+export function polishCount(item: ItemInstance): number {
+  return item.polishes ?? 0;
+}
+
+/** Gold the NEXT polish of `item` costs: a tenth of its alchemy value, ×1.5 for every polish already done on it. */
+export function polishCost(item: ItemInstance): number {
+  return Math.max(1, Math.round(POLISH_COST_SHARE * itemGoldValue(item) * POLISH_COST_GROWTH ** polishCount(item)));
+}
+
+/** May affix #`affixIndex` of `item` be polished? Only the rolled substats (never the base affix), and not one that is
+ *  already perfect — nothing rolls above a ★. */
+export function canPolishAffix(item: ItemInstance, affixIndex: number): boolean {
+  const stat = item.stats[affixIndex];
+  return stat !== undefined && stat.perfect !== true;
+}
+
+/** The value polish number `n` of `item`'s affix #`affixIndex` rolls — deterministic from the item's birth seed, the
+ *  affix and `n` (by default the next polish), so previewing and committing agree and paying again is the only way
+ *  to roll again. The stat never changes. */
+export function polishRoll(item: ItemInstance, affixIndex: number, n: number = polishCount(item)): AffixRoll | null {
+  const stat = item.stats[affixIndex];
+  if (stat === undefined) return null;
+  const seed = (item.origin.rollSeed ^ Math.imul(affixIndex + 1, 0x85ebca6b) ^ Math.imul(n + 1, 0xc2b2ae35)) >>> 0;
+  const rng = makeRng(seed);
+  const mult = tierDef(item.tier).statMultiplier;
+  const value = rollStatValue(stat.key, mult, item.ilvl, rng);
+  if (rng.chance(POLISH_PERFECT_CHANCE)) return { key: stat.key, value: perfectStatValue(stat.key, mult, item.ilvl), perfect: true };
+  return { key: stat.key, value };
 }

@@ -4,8 +4,8 @@ import { CUBE_INPUT_COUNT } from '@/sim/cube';
 // What may be loaded into the Cube and how the "fill" keys choose — the rules of the old Cube panel, kept as
 // they were. Pure (no React, no store): unit-tested.
 
-export type CubeMode = 'synthesize' | 'melt' | 'transfigure';
-export const CUBE_MODES: readonly CubeMode[] = ['synthesize', 'melt', 'transfigure'];
+export type CubeMode = 'synthesize' | 'melt' | 'transfigure' | 'polish';
+export const CUBE_MODES: readonly CubeMode[] = ['synthesize', 'melt', 'transfigure', 'polish'];
 
 /** Both pieces (T0–8) and gems (T1–8) stop synthesising at tier 8. */
 export const isSynthable = (e: InvEntry): boolean => e.tier < 8;

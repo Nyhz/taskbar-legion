@@ -2178,3 +2178,15 @@ muros y horas en la siguiente ronda.
 - **Pendiente de decisión:** la ausencia (que dé experiencia o no) como siguiente palanca del 120, y el precio de
   «Pulir» (0,8 × 2,2^tier × ilvl × 1,5^n, ★ al 5 %). PACING_REPORT «Ronda 16».
 
+### Pulir — el sumidero de oro del cubo (17 nov)
+
+- **Decisión del usuario:** de los sumideros propuestos (pulir, abrir hueco de gema, estandarte de caza, comprar llave)
+  eligió solo **Pulir**, con el precio propuesto, y que se reajuste el ritmo con él activo.
+- **Receta nueva del cubo** (`sim/cube.ts` `polishCost`/`polishRoll`/`canPolishAffix`, `data/cube.ts`): vuelve a tirar el
+  VALOR de un afijo secundario (la estadística no cambia) pagando oro; el jugador elige el valor de antes o el nuevo.
+  Precio = 10 % del valor de alquimia × 1,5^n (n = pulidos ya hechos a la pieza; `ItemInstance.polishes`, opcional, así
+  que las partidas guardadas siguen valiendo). ★ al 5 %; un afijo ★ no se pule. Tirada determinista por pieza, afijo y n.
+- **Interfaz:** cuarta pestaña del cubo (`PolishRecipe.tsx`, signo `cube2_polish`), textos EN/ES. Comprobada en el
+  juego: cobra, cuenta el pulido y muestra antes/ahora.
+- **Pendiente:** política de pulido en la sonda y reajuste de horas y escalera con él activo.
+

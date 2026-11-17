@@ -57,4 +57,15 @@ export const cube: Record<keyof typeof en, string> = {
   keepNew: 'El nuevo',
   keptOld: 'Te quedas el afijo original.',
   keptNew: 'Te quedas el afijo nuevo.',
+  polish: 'Pulir',
+  polishHelp:
+    'Vuelve a tirar el valor de UN afijo, pagando con oro: la estadística no cambia y tú eliges si te quedas el valor nuevo. Cada pulido de la misma pieza cuesta más; un afijo perfecto no se puede pulir.',
+  eqPolishOut: 'otra tirada',
+  stepPolishAffix: 'El afijo que pules',
+  stepPrice: 'El precio',
+  polishFirst: 'Sin pulir. Cada pulido de esta pieza cuesta ×1,5 el anterior.',
+  polishedTimes: 'Pulida {n} veces. Cada pulido cuesta ×1,5 el anterior.',
+  noGold: 'No tienes oro suficiente.',
+  keptOldValue: 'Te quedas el valor de antes.',
+  keptNewValue: 'Te quedas el valor nuevo.',
 };

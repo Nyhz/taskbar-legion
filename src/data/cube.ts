@@ -24,3 +24,14 @@ export const TRANSFIGURE_PERFECT_CHANCE = 0.15;
 // Cost is colour-AGNOSTIC and tiered (see sim/cube.ts `transfigCostOptions`): pay either
 // ONE gem at the item's tier, or TWO gems one tier below. No offensive/defensive split —
 // any gem of the right tier works, which keeps the recipe simple and uses every colour.
+
+// ── Polish: re-roll the VALUE of one affix, paid in gold ──
+// The late-game gold sink (round 16, 2026-11-17, the user's pick among the proposed sinks). The stat stays; only its
+// value is rolled again within the item's range, and the player keeps the old or the new one. Endless: every polish
+// of the same piece costs POLISH_COST_GROWTH times the last.
+// cost(item, n) = POLISH_COST_SHARE × alchemy value × POLISH_COST_GROWTH^n (n = polishes already done on the piece)
+//              = 0.8 × 2.2^tier × ilvl × 1.5^n — a tenth of what the piece melts into, so it follows the income.
+export const POLISH_COST_SHARE = 0.1;
+export const POLISH_COST_GROWTH = 1.5;
+/** Chance a polish comes out perfect (★). Below transfiguration's 15 % so a whole set can't be polished to ★. */
+export const POLISH_PERFECT_CHANCE = 0.05;

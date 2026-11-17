@@ -1,5 +1,5 @@
-"""The Cube, second pass: the signs of its three recipes as they sit beside their names on the tabs (several small
-things becoming one better thing; a flame over a coin; one thing swapped for another), and the tick box of its
+"""The Cube, second pass: the signs of its four recipes as they sit beside their names on the tabs (several small
+things becoming one better thing; a flame over a coin; one thing swapped for another; a cut stone with a glint), and the tick box of its
 labelled switches. The first pass (`s93_pets_cube.py`) keeps the Cube's face, arrows, rarity pips and result frames.
 """
 from __future__ import annotations
@@ -70,6 +70,25 @@ def swap() -> Icon:  # two arrows passing each other: one affix for another
     ], {"t": ("sea", 6), "r": ("dusk", 7)})
 
 
+def polish() -> Icon:  # a cut stone with a glint: the same affix, rolled again for a brighter value
+    return sprite([
+        "..........w...",
+        ".........wWw..",
+        "..........w...",
+        "..............",
+        "...tttttt.....",
+        "..tTTSSTTt....",
+        ".tTSSWSSTTt...",
+        ".tTTTTTTTTt...",
+        "..tTTTTTTt....",
+        "...tTTTTt.....",
+        "....tTTt...w..",
+        ".....tt...wWw.",
+        "...........w..",
+        E,
+    ], {"t": ("sea", 4), "T": ("sea", 6), "S": ("sea", 7), "W": ("sea", 8), "w": ("brass", 5)})
+
+
 def tick(on: bool) -> Image.Image:  # an 11×11 tick box
     rows = [
         "kkkkkkkkkkk",
@@ -95,7 +114,7 @@ def build() -> list[dict]:
         "title": "El Cubo · signos de receta",
         "note": "Los signos que acompañan al nombre de cada receta en su pestaña, y la casilla de los interruptores con rótulo.",
         "items": [
-            ("cube2_synth", "Sintetizar", synth().image()), ("cube2_melt", "Fundir", melt().image()), ("cube2_swap", "Transfigurar", swap().image()),
+            ("cube2_synth", "Sintetizar", synth().image()), ("cube2_melt", "Fundir", melt().image()), ("cube2_swap", "Transfigurar", swap().image()), ("cube2_polish", "Pulir", polish().image()),
             ("cube2_tick_on", "Casilla marcada", tick(True)), ("cube2_tick_off", "Casilla sin marcar", tick(False)),
         ],
     }]

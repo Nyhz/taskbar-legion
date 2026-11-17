@@ -44,6 +44,8 @@ export interface ItemInstance {
   /** Set once a Cube transfiguration has been used on this item — it can never be
    *  transfigured again (a one-time chance, win or lose). Absent ⇒ never transfigured. */
   transfigured?: boolean;
+  /** How many times the Cube has polished this item (each polish costs ×1.5 the last). Absent ⇒ never polished. */
+  polishes?: number;
   // future-proofing (present in schema, unused in v1):
   enchantLevel?: number;
   locked?: boolean;
