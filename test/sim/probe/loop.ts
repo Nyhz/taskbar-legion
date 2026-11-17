@@ -31,6 +31,7 @@ import { bossMagicShare } from '@/data/bossKit';
 import { newCubeBag, cubeStep, type CubeBag } from './cubePolicy';
 import { wallDamage, zoneSetDamage } from './zoneGear';
 import { freshHero, syncGrowth, buyTech, applyBuild } from './economy';
+import { polishGear, POLISH_INCOME_SHARE } from './polishPolicy';
 import { partyWithBuild, PROBE_GOOD_BUILD, type PartyBuild } from './builds';
 import { petMissChance, petRanks } from '@/sim/pets';
 import { PET_KEYS, petDef } from '@/data/pets';
@@ -103,6 +104,11 @@ export interface ProbeConfig {
   /** Tooling (round 15, "the well-equipped player"): tech nodes bought after the default priority list
    *  (economy.TECH_PRIORITY) — e.g. ['synth_luck']. The default run buys none. */
   extraTech?: readonly string[];
+  /** The player polishes its worn gear with the gold research leaves (probe/polishPolicy; round 17). false = never. */
+  polish?: boolean;
+  /** Tooling (round 17, the away share): what away time yields instead of data's offlineMult — base + perRank × the
+   *  Expedition ranks (at most maxRanks), never above online. */
+  awayYield?: { base: number; perRank: number; maxRanks: number };
   /** Tooling (round 16, what each research node is worth): tech nodes the player never buys. */
   skipTech?: readonly string[];
   /** The run's seed deals the affixes of each boss and the supports of each wave (as in the game: the same on every
@@ -144,6 +150,10 @@ export interface State {
   xp: number[];
   gold: number;
   techRanks: Record<string, number>;
+  polishGold: number; // gold spent on Pulir so far (round 17)
+  polishCount: number; // polishes made so far
+  polishPurse: number; // gold set aside for polishing, not yet spent
+  goldAfterSpend: number; // the gold left after the last spend (what was earned since is the new income)
   frontier: number; // highest global stage cleared (0 = none)
   draw: { n: number };
   carry: Record<ChestType, number>; // fractional captured-chest remainder
@@ -358,6 +368,15 @@ function farmChunk(state: State, S: number, dtSec: number, cfg: ProbeConfig, bon
 
 /** Recruit any affordable open slot, then spend gold on tech (which may open more slots). */
 function recruitAndTech(state: State, cfg: ProbeConfig, trace?: (line: string) => void): void {
+  // Pulir's purse (round 17): once the trio is formed, POLISH_INCOME_SHARE of the gold earned since the last spend is
+  // set aside for polishing; the rest goes to research as before.
+  if (cfg.polish !== false && state.party.length >= CLASS_KEYS.length) {
+    const gained = state.gold - state.goldAfterSpend;
+    if (gained > 0) {
+      state.polishPurse += gained * POLISH_INCOME_SHARE;
+      state.gold -= gained * POLISH_INCOME_SHARE;
+    }
+  }
   for (let pass = 0; pass < 4; pass++) {
     let bonuses = bonusesOf(state, cfg);
     while (state.party.length < bonuses.partySlots && state.party.length < CLASS_KEYS.length) {
@@ -380,6 +399,17 @@ function recruitAndTech(state: State, cfg: ProbeConfig, trace?: (line: string) =
     if (left === state.gold) break; // nothing bought ⇒ stable
     state.gold = left;
   }
+  // Pulir (round 17): the purse polishes the gear the trio wears (probe/polishPolicy).
+  if (cfg.polish !== false && state.party.length >= CLASS_KEYS.length) {
+    const p = polishGear(state.party, state.polishPurse);
+    if (p.polishes > 0) {
+      state.polishPurse = p.gold;
+      state.polishGold += p.spent;
+      state.polishCount += p.polishes;
+      state.dirty = true;
+    }
+  }
+  state.goldAfterSpend = state.gold;
 }
 
 function applyOffline(state: State, cfg: ProbeConfig, bonuses: ReturnType<typeof getBonuses>): void {
@@ -389,10 +419,13 @@ function applyOffline(state: State, cfg: ProbeConfig, bonuses: ReturnType<typeof
   if (m.clearSec <= 0) return;
   const sec = Math.min(cfg.offlineHoursPerDay * 3600, offlineCapMs(bonuses) / 1000); // one absence: the game's cap applies
   const clears = sec / m.clearSec;
-  state.gold += m.gold * clears * bonuses.offlineMult; // gold/xp only, ×offlineMult, no loot
-  addXp(state, m.xp * clears * bonuses.offlineMult);
-  state.away.gold += m.gold * clears * bonuses.offlineMult;
-  state.away.xp += m.xp * clears * bonuses.offlineMult;
+  // Tooling (round 17): cfg.awayYield replaces the game's away share (base + per Expedition rank, capped at online).
+  const y = cfg.awayYield;
+  const mult = y === undefined ? bonuses.offlineMult : Math.min(1, y.base + y.perRank * Math.min(y.maxRanks, state.techRanks.eco_offline ?? 0));
+  state.gold += m.gold * clears * mult; // gold/xp only, ×the away share, no loot
+  addXp(state, m.xp * clears * mult);
+  state.away.gold += m.gold * clears * mult;
+  state.away.xp += m.xp * clears * mult;
 }
 
 /** Farming granularity: fine in Normal (the first hours are looked at closely), three times coarser after it. */
@@ -432,6 +465,10 @@ export function newProbeRun(seed: number, cfg: ProbeConfig = DEFAULT_CONFIG): Pr
       xp: [0],
       gold: 0,
       techRanks: {},
+      polishGold: 0,
+      polishCount: 0,
+      polishPurse: 0,
+      goldAfterSpend: 0,
       frontier: 0,
       draw: { n: 0 },
       carry: { normal: 0, stageBoss: 0, zoneBoss: 0 },

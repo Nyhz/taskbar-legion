@@ -3881,3 +3881,82 @@ guardando 7–19 M (15–40 h de ingreso). Con mascotas y Fortuna es parecido: 2
   (~83 % del rango): estimo **+8–15 % de daño** sobre el equipo de tiradas medias. Es decir, lo que pide un muro baja un
   7–13 %, uno o dos muros de la escalera dentro de una dificultad, y las horas de Averno en adelante bajarían algo
   (estimo 10–20 %). La escalera en sí no cambia: se mide con tiradas medias.
+
+## Ronda 17 — menos ausencia (oro y experiencia) y la sonda puliendo (18 nov, sin commit)
+
+**Decisiones del usuario:** «Ausencia bajamos tanto xp como oro»: la ausencia sigue dando oro y experiencia, pero
+menos, para que el 120 llegue tarde en Tormento. Se aceptan los valores sueltos fuera de banda de la ronda 16. Pulir
+(lo implementó el coordinador) entra en la sonda, y luego «reajustar».
+
+### Ausencia: 50 % → 15 % de lo de en línea; Expedición +2,5 % → +1 % por rango (20 rangos, máximo 35 %)
+
+`OFFLINE_BASE_SHARE` y `EXPEDITION_PER_RANK` en `data/techTree` (las lee `sim/bonuses` y la cifra del árbol en la UI;
+texto EN/ES «+1 % … (15 % de base)»). Probadas antes con la herramienta `CP_AWAY` (sin pulir):
+
+| Ausencia | Averno | Eterno | Tormento | Total | Nivel 120 |
+|---|---|---|---|---|---|
+| 15 % + 1 %/rango | 220 · 199 · 165 | 371 · 282 · 452 | 946 · 723 · 725 | 1 588 · 1 251 · 1 385 | Tormento 6 · 9 · 7 (1 075–1 176 h) |
+| 5 % + 1 %/rango | 255 · 210 | 435 · 321 | 827 · 1 130 | 1 555 · 1 717 | Tormento 6 · 6 (1 180–1 281 h) |
+
+Bajar más la ausencia no retrasa el 120 en etapas: al llegar menos oro hay menos investigación de cofres y gemas, la
+partida se alarga y la experiencia se acumula igual. Me quedo con el 15 %.
+
+### Pulir en la sonda (`test/sim/probe/polishPolicy.ts`)
+
+- **Política:** cuando el trío está completo, el jugador aparta el 25 % de su ingreso de oro para pulir; el resto va a
+  la investigación como antes. Pule las piezas que lleva puestas, de la más valiosa a la menos, y en cada una el afijo
+  secundario más flojo. Para mientras el siguiente pulido quepa en lo apartado y se queda con el mejor valor. Deja una
+  pieza cuando todo lo que no es ★ está al 90 % de la mejor tirada normal. `CP_POLISH=0` lo apaga.
+- **Primera prueba:** con la mitad del oro guardado en cada gasto se comía el 50–75 % del ingreso y dejaba sin
+  investigación de cofres; se cambió al 25 % del ingreso.
+
+| Jugador por defecto | Normal | Infierno | Averno | Eterno | Tormento | Total | Nivel 120 |
+|---|---|---|---|---|---|---|---|
+| Sin pulir | 8 · 6 · 6 | 44 · 42 · 38 | 220 · 199 · 165 | 371 · 282 · 452 | 946 · 723 · 725 | 1 588 · 1 251 · 1 385 | Tormento 6 · 9 · 7 |
+| **Puliendo (final)** | 8 · 6 · 6 | 27 · 35 · 32 | 162 · 127 · 123 | 300 · 289 · 289 | 718 · **1 178** · 608 | 1 214 · 1 635 · 1 057 | **Tormento 9 · 6 · 10** (1 024–1 063 h) |
+
+Nivel al tumbar los muros 1 · 5 · 10 (puliendo):
+
+| Partida | Normal | Infierno | Averno | Eterno | Tormento |
+|---|---|---|---|---|---|
+| 1 | 13 · 20 · 26 | 26 · 32 · 36 | 36 · 58 · 65 | 65 · 84 · 89 | 89 · 115 · 120 |
+| 2 | 13 · 20 · 24 | 25 · 31 · 40 | 40 · 55 · 63 | 63 · 80 · 87 | 87 · 118 · 120 |
+| 3 | 13 · 20 · 24 | 25 · 30 · 39 | 39 · 56 · 62 | 62 · 81 · 87 | 87 · 111 · 120 |
+
+- **Bandas:** todas las medianas caen dentro: Infierno 32, Averno 127, Eterno 289, Tormento 718. Solo la partida 2 se
+  sale en Tormento (1 178 h), como ya pasaba con esa partida. No he tocado los muros: el «reajustar» no hace falta para
+  las bandas.
+- **Escalera:** sigue subiendo. La medida usa tiradas medias y Pulir no la toca; `ladder.test.ts` en verde.
+- **Poder:** daño del grupo al tumbar el muro, en % del techo de la zona (mediana): Averno 22 → 25, Eterno 32 → 33,
+  Tormento 71 → 71 (al llegar al muro: 18 → 21, 28 → 29, 58 → 61). Son un +3–15 % de daño.
+- **¿Debe asumirlo el grupo de referencia?** Mi propuesta es que no. La escalera mide el equipo con tiradas medias; el
+  jugador que pule va ese +3–15 % por delante, que es lo que gana por pagar. Si se quiere que la escalera lo asuma,
+  bastaría con que el techo usara afijos secundarios al ~85 % del rango en las mejores piezas; las líneas subirían
+  ~5–10 % y el orden no cambiaría.
+
+**Oro (puliendo):** Pulir se lleva, por dificultad, 0,01–0,02 M en Normal (~75 pulidos), 0,12–0,19 M en Infierno,
+1,4–1,9 M en Averno, 6,7 M en Eterno y 32–71 M en Tormento (350–540 pulidos).
+
+| Partida | Dificultad | Oro guardado | Ganado | Gastado: eco_gold · eco_xp · cofres/gemas · almacén/auto · ausencia · otros · Pulir (pulidos) | Ingreso/h (último mundo) | Guardado = h de ingreso | Rango más barato (nodo) = min de ingreso |
+|---|---|---:|---:|---|---:|---:|---|
+| 1 | Normal | 358 | 104 k | 15 k · 11 k · 24 k · 30 k · 3 k · 5 k · 16 k (71) | 29 k | 0.01 | 3 k (chest_gem) = 6 min |
+| 1 | Infierno | 15 k | 556 k | 73 k · 56 k · 133 k · 111 k · 26 k · 5 k · 138 k (193) | 25 k | 0.58 | 15 k (chest_gem) = 37 min |
+| 1 | Averno | 187 k | 8.1 M | 1.3 M · 1.0 M · 2.6 M · 631 k · 357 k · 5 k · 2.0 M (545) | 57 k | 3.27 | 298 k (chest_drop_stage) = 313 min |
+| 1 | Eterno | 824 k | 35.1 M | 4.9 M · 4.9 M · 10.8 M · 2.6 M · 2.5 M · 5 k · 8.8 M (841) | 129 k | 6.39 | 1.3 M (chest_gem) = 619 min |
+| 1 | Tormento | 6.7 M | 193.0 M | 30.5 M · 30.5 M · 62.6 M · 5.5 M · 8.9 M · 5 k · 48.3 M (1210) | 292 k | 23.02 | 6.7 M (chest_gem) = 1382 min |
+| 2 | Normal | 2 k | 96 k | 15 k · 11 k · 24 k · 14 k · 3 k · 5 k · 23 k (78) | 17 k | 0.11 | 3 k (chest_gem) = 11 min |
+| 2 | Infierno | 21 k | 855 k | 123 k · 123 k · 208 k · 137 k · 26 k · 5 k · 212 k (230) | 26 k | 0.82 | 23 k (chest_gem) = 53 min |
+| 2 | Averno | 10 k | 6.8 M | 1.0 M · 1.0 M · 2.1 M · 631 k · 357 k · 5 k · 1.7 M (542) | 77 k | 0.13 | 249 k (chest_drop_normal) = 194 min |
+| 2 | Eterno | 1.2 M | 33.9 M | 4.9 M · 4.9 M · 10.8 M · 1.2 M · 2.5 M · 5 k · 8.4 M (851) | 113 k | 10.91 | 1.3 M (auto_open) = 704 min |
+| 2 | Tormento | 5.5 M | 318.0 M | 51.6 M · 51.6 M · 107.6 M · 5.5 M · 16.9 M · 5 k · 79.4 M (1392) | 305 k | 17.91 | 12.3 M (chest_drop_normal) = 2419 min |
+| 3 | Normal | 2 k | 85 k | 15 k · 11 k · 24 k · 14 k · 3 k · 5 k · 11 k (77) | 19 k | 0.10 | 3 k (chest_gem) = 9 min |
+| 3 | Infierno | 336 | 752 k | 95 k · 95 k · 208 k · 137 k · 26 k · 5 k · 187 k (254) | 25 k | 0.01 | 23 k (chest_gem) = 55 min |
+| 3 | Averno | 140 k | 6.3 M | 1.0 M · 1.0 M · 1.9 M · 356 k · 357 k · 5 k · 1.6 M (549) | 62 k | 2.27 | 221 k (chest_drop_stage) = 214 min |
+| 3 | Eterno | 652 k | 33.1 M | 4.9 M · 4.9 M · 10.8 M · 1.2 M · 2.5 M · 5 k · 8.3 M (852) | 136 k | 4.80 | 1.3 M (auto_open) = 587 min |
+| 3 | Tormento | 3.8 M | 161.4 M | 23.5 M · 23.5 M · 55.9 M · 5.5 M · 8.9 M · 5 k · 40.3 M (1199) | 299 k | 12.82 | 6.7 M (chest_gem) = 1352 min |
+
+Ingreso más bajo que en la ronda 16, por la ausencia: ~290–305 k/h al final de Tormento, frente a 450–470 k. El oro
+guardado al final de cada dificultad baja a 0,01–3 h de ingreso hasta Averno y a 5–11 h en Eterno. En Tormento queda
+en 13–23 h (antes 15–40 h): el rango más barato del árbol cuesta 22–40 h de ingreso y esa parte se sigue acumulando.
+Si se quiere que no sobre nada, la sonda (o el jugador) puede pasar a Pulir lo que la investigación no alcanza a
+gastar en Tormento.

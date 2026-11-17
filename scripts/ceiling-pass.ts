@@ -32,7 +32,7 @@ const t0 = Date.now();
 const CHEST_MULT = Number(process.env.CP_CHEST_MULT ?? 1);
 const cap: { first?: { stage: number; hours: number }; all?: { stage: number; hours: number } } = {};
 const petsAt: Record<string, { stage: number; hours: number }> = {};
-const research: Record<number, { hours: number; ranks: Record<string, number>; xpMult: number; goldMult: number; gold: number; party: number }> = {};
+const research: Record<number, { hours: number; ranks: Record<string, number>; xpMult: number; goldMult: number; gold: number; party: number; polishGold: number; polishCount: number }> = {};
 const cfg: ProbeConfig = {
   ...DEFAULT_CONFIG,
   capture: { normal: DEFAULT_CONFIG.capture.normal * CHEST_MULT, stageBoss: DEFAULT_CONFIG.capture.stageBoss * CHEST_MULT, zoneBoss: DEFAULT_CONFIG.capture.zoneBoss * CHEST_MULT },
@@ -44,7 +44,11 @@ const cfg: ProbeConfig = {
   ...(process.env.CP_PETS === 'median' ? { pets: 'median' as const } : {}),
   ...(process.env.CP_SYNTH === '1' ? { extraTech: ['synth_luck'] } : {}),
   // CP_SKIP (tooling, round 16): a comma list of tech nodes the player never buys — what each research is worth.
+  // CP_POLISH=0 (tooling, round 17): the player never polishes.
+  ...(process.env.CP_POLISH === '0' ? { polish: false } : {}),
   ...(process.env.CP_SKIP !== undefined ? { skipTech: process.env.CP_SKIP.split(',') } : {}),
+  // CP_AWAY=base,perRank,maxRanks (tooling, round 17): the away share the probe banks instead of the data's.
+  ...(process.env.CP_AWAY !== undefined ? { awayYield: (([base, perRank, maxRanks]) => ({ base: base ?? 0.5, perRank: perRank ?? 0.025, maxRanks: maxRanks ?? 20 }))(process.env.CP_AWAY.split(',').map(Number)) } : {}),
   observe: (target, party, bonuses) => {
     if ((Date.now() - t0) / 1000 > MAX_SEC) return false;
     if (target % 10 !== 0) return;
@@ -59,7 +63,7 @@ const cfg: ProbeConfig = {
     // The research at every wall (round 16): the ranks of every node and the multipliers.
     // Gold (round 16, user: «no quiero que tengan millones de oro sin gastar»): held at every wall (spending = the ranks'
     // prices + the recruits, worked out in the report from the ranks).
-    research[target] = { hours, ranks: { ...run.state.techRanks }, xpMult: bonuses.xpMult, goldMult: bonuses.goldMult, gold: run.state.gold, party: party.length };
+    research[target] = { hours, ranks: { ...run.state.techRanks }, xpMult: bonuses.xpMult, goldMult: bonuses.goldMult, gold: run.state.gold, party: party.length, polishGold: run.state.polishGold, polishCount: run.state.polishCount };
   },
 };
 advanceProbe(run, cfg);

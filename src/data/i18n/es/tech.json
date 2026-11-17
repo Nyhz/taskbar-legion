@@ -32,8 +32,8 @@
     "es": "Expedición"
   },
   "eco_offline.description": {
-    "en": "+2.5% offline yield (50% base)",
-    "es": "+2,5 % de rendimiento en ausencia (50 % de base)"
+    "en": "+1% offline yield (15% base)",
+    "es": "+1 % de rendimiento en ausencia (15 % de base)"
   },
   "chest_drop_normal.name": {
     "en": "Common Hauls",

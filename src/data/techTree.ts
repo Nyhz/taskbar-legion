@@ -1,5 +1,10 @@
 import type { ChestType } from './chests';
 
+/** What away time yields, as a share of online, before Expedition (round 17: 15 %; it was 50 %). */
+export const OFFLINE_BASE_SHARE = 0.15;
+/** Expedition: away share bought back per rank (round 17: +1 %; it was +2.5 %). */
+export const EXPEDITION_PER_RANK = 0.01;
+
 // THE main v1 gold SINK (overrides SPEC §6's research currency). REWORKED: instead of
 // a connected DAG of one-rank-ish chain nodes, the tree is a FLAT set of upgrades —
 // ONE node per upgradeable "type", each rankable ENDLESSLY as long as you can pay.
@@ -72,7 +77,10 @@ export const TECH_NODES: TechNode[] = [
   // Offline baseline is 50% (bonuses.ts); each rank buys +2.5% back, capped at 20 ranks so it
   // tops out at exactly 100% of online — never beats it. Brutal cost curve (1k base × 1.9^rank
   // ⇒ the 20th rank costs ~200M gold), so reaching full offline parity is a true end-game sink.
-  node('eco_offline', 'Economy', '🌙', 'Expedition', '+2.5% offline yield (50% base)', [{ kind: 'offlineMult', value: 0.025 }], 1000, 1.9, 20),
+  // Round 17 (2026-11-17, user: «Ausencia bajamos tanto xp como oro»): away time yields OFFLINE_BASE_SHARE of online
+  // (15 %, was 50 %) in gold AND experience, and Expedition buys back +1 %/rank (was +2.5 %) up to 20 ranks: 35 % at
+  // most, never above online. Away time was 33–47 % of all the experience of a run, so level 120 came in Torment 4–6.
+  node('eco_offline', 'Economy', '🌙', 'Expedition', '+1% offline yield (15% base)', [{ kind: 'offlineMult', value: EXPEDITION_PER_RANK }], 1000, 1.9, 20),
 
   // ───────────────────────────── Chests ─────────────────────────────
   node('chest_drop_normal', 'Chests', '📦', 'Common Hauls', '+0.25% normal chest drop', [{ kind: 'chestTypeDropMult', type: 'normal', value: 0.0025 }], 250, 1.35),

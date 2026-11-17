@@ -67,8 +67,8 @@ describe('what an upgrade gives', () => {
   });
 
   it('offline yield and the lucky synthesis are totals on top of their base', () => {
-    expect(figureText(techFigure(techNode('eco_offline'), 0))).toBe('50%');
-    expect(figureText(techFigure(techNode('eco_offline'), 20))).toBe('100%');
+    expect(figureText(techFigure(techNode('eco_offline'), 0))).toBe('15%'); // round 17
+    expect(figureText(techFigure(techNode('eco_offline'), 20))).toBe('35%');
     expect(figureText(techFigure(techNode('synth_luck'), 0))).toBe('5%');
     expect(figureText(techFigure(techNode('synth_luck'), 20))).toBe('10%');
   });

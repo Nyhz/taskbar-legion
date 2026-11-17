@@ -320,12 +320,13 @@ Level is a slow multiplicative trickle (base stats + talent points), not a gate.
 > passives, reactive rules, boss affixes and mechanics — forces a full re-tune anyway). How to re-tune, and which
 > knob moves what: `docs/redesign/PACING_REPORT.md`, "Ronda 2", R.8. Everything from here to §9 is checkpoint 1.
 
-> **Measured, round 16 (2026-11-17; supersedes the ~720 h target below):** with full waves everywhere, full-life
-> Normal trash and Scholarship at +0.5 %/rank, the probe's player takes **≈ 6–8 h Normal · 38–44 h Hell · 158–204 h
-> Inferno · 280–378 h Eternal · 712–811 h Torment, ≈ 1 200–1 440 active hours in all** (3 seeds,
-> `scripts/ceiling-pass.ts`) — about 5–6 months at 8 h a day. The bands the user accepted: ≈ 4 / 20–50 / 125–175 /
-> 200–360 / 500–800 h (Normal longer by decision). Level 120 arrives in Torment 4–6 (≈ 830–910 h).
-> `docs/redesign/PACING_REPORT.md` «Ronda 15», «Ronda 16».
+> **Measured, round 17 (2026-11-18; supersedes the ~720 h target below):** with full waves everywhere, full-life
+> Normal trash, Scholarship at +0.5 %/rank, away time at 15 % of online (Expedition +1 %/rank, 35 % at most) and the
+> player polishing its gear (Pulir) with a quarter of its gold income, the probe's player takes **≈ 6–8 h Normal ·
+> 27–35 h Hell · 123–162 h Inferno · 289–300 h Eternal · 608–1 178 h Torment, ≈ 1 060–1 640 active hours in all**
+> (3 seeds, `scripts/ceiling-pass.ts`). The bands the user accepted: ≈ 4 / 20–50 / 125–175 / 200–360 / 500–800 h
+> (Normal longer by decision; single slow seeds accepted). Level 120 arrives in Torment 6–10 (median Torment 9,
+> ≈ 1 020–1 060 h). `docs/redesign/PACING_REPORT.md` «Ronda 15»–«Ronda 17».
 
 **The whole game — Normal 1-1 → Torment 10-10 — in about 3 calendar months at 8 hours of play a day**: ~90 days,
 ~720 active hours. Always **decelerating**: each difficulty is longer than the last. The user set only the total;

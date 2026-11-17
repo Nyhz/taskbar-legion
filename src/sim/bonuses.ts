@@ -1,5 +1,5 @@
 import type { ChestType } from '@/data/chests';
-import { TECH_NODES } from '@/data/techTree';
+import { TECH_NODES, OFFLINE_BASE_SHARE } from '@/data/techTree';
 import { isPet, petBonusAt, type PetRanks } from './pets';
 import type { StatMod } from './stats';
 
@@ -39,9 +39,9 @@ export function getBonuses(
     autoOpenUnlocked: false,
     autoOpenReduceMs: 0,
     awayCapBonusMs: 0,
-    // Offline yield is HALF of online by default; the Expedition tech (+2.5%/rank, capped at
-    // 20 ranks) buys it back up to a maximum of 1.0 — offline can equal, but never beat, online.
-    offlineMult: 0.5,
+    // Offline yield is OFFLINE_BASE_SHARE of online (15 % since round 17; it was half); the Expedition tech (+1 %/rank,
+    // capped at 20 ranks) buys it back up to 35 % — never above online.
+    offlineMult: OFFLINE_BASE_SHARE,
     combatMods: [],
     partySlots: 1,
     synthDoubleChance: 0,

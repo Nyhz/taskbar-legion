@@ -1,4 +1,4 @@
-import { nodeCost, type TechEffect, type TechNode } from '@/data/techTree';
+import { nodeCost, OFFLINE_BASE_SHARE, type TechEffect, type TechNode } from '@/data/techTree';
 import { AUTO_OPEN_BASE_INTERVAL_MS, AUTO_OPEN_FLOOR_MS, CHEST_CONFIG } from '@/data/chests';
 import { SYNTH_DOUBLE_TIER_CHANCE } from '@/data/cube';
 import { format } from '@/sim/num';
@@ -7,8 +7,8 @@ import { getLanguage } from '@/i18n/core';
 // What an upgrade is worth at a rank, as a figure the wing can print (no React). The numbers are the game's own:
 // per-rank effect × rank on top of the base the sim starts from (sim/bonuses, data/chests, data/cube).
 
-/** Offline yield before any upgrade (sim/bonuses baseBonuses.offlineMult). */
-const OFFLINE_BASE = 0.5;
+/** Offline yield before any upgrade (data/techTree, the base sim/bonuses starts from). */
+const OFFLINE_BASE = OFFLINE_BASE_SHARE;
 
 export type TechFigure =
   | { kind: 'gain'; fraction: number } // "+35 %": a bonus on top of the normal rate
