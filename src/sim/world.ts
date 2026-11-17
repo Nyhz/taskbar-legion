@@ -131,6 +131,9 @@ export interface Combatant {
    *  each hero behind (raw, before their defences; data/stageScaling crushHit / crushShock). */
   crushHit?: number;
   crushShock?: number;
+  /** Boss-only (world bosses from Inferno, round 8): what its area blow deals each hero BEHIND the front one, raw
+   *  (data/stageScaling areaBlowSplash) — in place of the formula's splash. */
+  backSplash?: number;
 }
 
 /** A role talent's bonus to what a hero deals: `pct`% more damage, or stronger heals, when the receiver meets

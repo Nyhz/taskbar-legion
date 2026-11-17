@@ -1,4 +1,5 @@
 import type { AbilityDef, AbilityPower, AbilityTarget, AppliedEffect, FireRule } from '@/data/abilities';
+import { worldBossAbilityKeys } from '@/data/abilities';
 import type { EffectDef } from '@/data/effects';
 import { effectDef } from '@/data/effects';
 import type { Combatant, CombatEvent } from './world';
@@ -47,6 +48,9 @@ export function tickCooldowns(c: Combatant, deltaMs: number): void {
   }
 }
 
+
+/** The world bosses' own area blows (Ground Slam / Shockwave): the blows whose splash is anchored from Inferno (round 8). */
+const WORLD_BLOW_KEYS: ReadonlySet<string> = new Set(worldBossAbilityKeys());
 /** Effective stats of any combatant (for scaling ability magnitudes/cooldowns). */
 function casterStats(c: Combatant): EffectiveStats {
   return liveStats(c);
@@ -89,6 +93,10 @@ export function effectMagnitude(ability: AbilityDef, applied: AppliedEffect, def
     // A boss's blow on the front hero (its main hit, not the splash) carries its anchored front hit (round 6).
     if (t === 'damage' && coeffOverride === undefined && ability.target === 'frontEnemy' && caster.frontHit !== undefined) {
       return coeff * caster.frontHit * foeDamageMult(caster);
+    }
+    // …and its area blow on the heroes behind, from Inferno, its anchored back-line splash (round 8).
+    if (t === 'damage' && coeffOverride !== undefined && caster.backSplash !== undefined && WORLD_BLOW_KEYS.has(ability.key)) {
+      return caster.backSplash * foeDamageMult(caster);
     }
     return coeff * normalAttackDamage(caster, cs);
   }

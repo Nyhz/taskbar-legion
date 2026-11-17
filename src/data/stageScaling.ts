@@ -202,7 +202,8 @@ export const TRASH_DMG_TUNE: number[] = [
 // ROUND 7 (2026-11-16): from Inferno a share of that pressure moved into the Crushing Blow (data/bossKit CRUSH) — the
 // heavy blow a Knight braces for — so the sustained part is lower there (4 / 6 / 8 → 3 / 4.5 / 6): a Knight who
 // braces for the blow takes about what he took before; one who does not, about half again as much.
-export const BOSS_THREAT_PCT: readonly [number, number, number, number, number] = [1, 2, 3, 4.5, 6];
+// ROUND 8 (2026-11-17): Torment 6 → 7.5, to lengthen Torment towards its 500+ h with its walls held on the ladder.
+export const BOSS_THREAT_PCT: readonly [number, number, number, number, number] = [1, 2, 3, 4.5, 7.5];
 /** A STAGE boss presses the front at this share of its world boss's target: the defensive build shows outside the
  *  walls too, while a stage boss (5–10 s) never threatens the farm. */
 export const STAGE_BOSS_THREAT_SHARE = 0.6;
@@ -249,6 +250,14 @@ export const BACK_LIFE_TUNE: number[] = [
   3550, 2980, 3950, 6130, 5470, 5470, 5470, 5470, 7010, 4380,
 ];
 
+/** The world boss's area blow on EACH hero behind the front one at global stage `S` (raw, before his defences):
+ *  `share` × the average back-line hero's life (BACK_LIFE_TUNE) through on-level defence (data/bossKit
+ *  BACK_SPLASH_SHARE, round 8). 0 where the table has no entry (before Inferno): the formula's splash stays. */
+export function areaBlowSplash(S: number, share: number): number {
+  const life = BACK_LIFE_TUNE[worldOf(S) - 1] ?? 0;
+  if (share <= 0 || life <= 0) return 0;
+  return (share * life) / Math.max(0.05, 1 - mitigation(expectedDefense(S), S));
+}
 /** The Crushing Blow's hit on the front hero at global stage `S`, for `tankLife` × the average Knight's effective life. */
 export function crushHit(S: number, tankLife: number): number {
   return tankLife * (KNIGHT_EHP_TUNE[worldOf(S) - 1] ?? 0);
@@ -436,12 +445,21 @@ export function wallCurveMult(S: number): number {
 // 80→90 only where the hours allow it: Torment). Fitted with scripts/ceiling-pass.ts (3 seeds a pass, the asks
 // measured on arrival). Measured: 3–4 / 13–34 / 112–121 / 231–307 / 447–708 h, each difficulty longer than the one
 // before in every seed. Docs: PACING_REPORT.md round 6 · B.
+// ROUND 8 (2026-11-17; user: «Tu ejemplo desde Averno»): THE LADDER IS FIXED — each wall asks, as a % of the gradual
+// ceiling, a straight line from world 1 to 10: Normal 5→10, Hell 10→20, Inferno 20→30, Eternal 30→40, Torment 40→60,
+// moved only inside the user's ±5 points to shape the hours: Hell +3 (the party reaches Inferno better geared — user:
+// «Infierno pide algo más»), Inferno −4, Eternal +2, Torment +4.5 (the top of its margin — user: «Tormento algo más
+// difícil»). Fitted with scripts/ceiling-pass.ts (9 passes of 3 seeds; the boss-hit anchors kept at round 7's) and
+// with the back line's share of the area blow anchored (data/bossKit BACK_SPLASH_SHARE). Inferno 4, Inferno 10 and
+// Eternal 10 lifted by hand just enough for their life to stay above the wall before. Measured (final pass): Normal 3–5,
+// Hell 25–49, Inferno 95–124, Eternal 214–288, Torment 389–492 h, each difficulty longer than the last in every seed;
+// every wall's median ask inside ±5 of its line. Docs: PACING_REPORT.md round 8.
 export const WORLD_WALL_MULT: readonly number[] = [
-  0.2, 0.172, 0.174, 0.22, 0.278, 0.295, 0.328, 0.358, 0.372, 0.334,
-  0.169, 0.184, 0.252, 0.315, 0.382, 0.404, 0.497, 0.531, 0.552, 0.555,
-  0.515, 0.648, 1.12, 1.62, 2.24, 2.67, 3.17, 3.87, 4.37, 5.04,
-  8.18, 11.9, 19.8, 23.8, 28.1, 30.6, 36.3, 39.6, 42.4, 44.6,
-  48.4, 71.7, 123, 167, 189, 208, 240, 269, 302, 309,
+  0.23, 0.18, 0.155, 0.227, 0.288, 0.269, 0.33, 0.353, 0.356, 0.335,
+  0.371, 0.412, 0.498, 0.486, 0.809, 0.828, 1.01, 1.07, 1.12, 1.16,
+  1.05, 1.11, 1.67, 1.65, 1.63, 2.71, 3.56, 4.04, 4.08, 4.03,
+  4.58, 7.34, 8.05, 12.3, 13.3, 17.3, 22, 24.5, 26.7, 26.5,
+  27.7, 42.4, 61.3, 86.4, 107, 124, 147, 169, 195, 206,
 ];
 export function wallWorldMult(S: number): number {
   return WORLD_WALL_MULT[worldOf(S) - 1] ?? wallCurveMult(S);

@@ -2,7 +2,7 @@ import type { Rng } from './rng';
 import type { Combatant, WorldState } from './world';
 import type { ResolvedAbility } from './loadout';
 import { abilityDef } from '@/data/abilities';
-import { bossMagicShare, crushAt, CRUSH, worldBossPressureAt, type BossRank } from '@/data/bossKit';
+import { BACK_SPLASH_SHARE, bossMagicShare, crushAt, CRUSH, worldBossPressureAt, type BossRank } from '@/data/bossKit';
 import { armBoss, bossKit } from './bossMechanics';
 import { pickEnemyKind, supportAuras, traitsOf, SUPPORT_KIND, TRAIT_TUNING, type EnemyKind, type EnemyRole } from '@/data/enemies';
 import { difficultyIndexOf } from '@/data/difficulties';
@@ -28,6 +28,7 @@ import {
   enrageRampMs,
   zoneBossHit,
   stageBossHit,
+  areaBlowSplash,
   crushHit,
   crushShock,
 } from '@/data/stageScaling';
@@ -197,6 +198,9 @@ function dressBoss(boss: Combatant | undefined, kit: ReturnType<typeof bossKit>,
       boss.crushHit = crushHit(S, c.tankLife);
       boss.crushShock = crushShock(S, c.backLife, boss.magicShare, CRUSH.shockMagicRef);
     }
+    // Its area blow on the heroes behind, anchored to the back line's life from Inferno (data/bossKit BACK_SPLASH_SHARE).
+    const splash = areaBlowSplash(S, BACK_SPLASH_SHARE[difficultyIndexOf(S)] ?? 0);
+    if (splash > 0) boss.backSplash = splash;
   }
   boss.enrageRampMs = enrageRampMs(difficultyIndexOf(S));
   armBoss(boss);

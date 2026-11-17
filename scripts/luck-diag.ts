@@ -60,6 +60,7 @@ export interface FightLog {
   bossLeft: number; // share of its life the boss had left at the end
   firstDeath?: string; // class of the first hero to fall
   firstDeathSec?: number;
+  firstDeathBy?: string; // what landed the last blow on the first hero to fall: a boss ability key, 'basic', or 'tick'
   knightHits: number;
   knightBlocked: number;
   heals: number;
@@ -85,10 +86,12 @@ export function fightWall(configs: readonly HeroConfig[], S: number, seed: numbe
   const heroIds = new Set(world.heroes.map((h) => h.id));
   const knight = world.heroes.find((h) => h.classKey === 'knight');
   let tracking = false;
+  const lastBlow = new Map<string, string>();
   for (let t = 0; t < (capSec * 1000) / TICK_MS; t++) {
     const events = sim.tick(ctx);
     const boss = world.enemies.find((e) => e.isBoss === true);
     for (const ev of events) {
+      if (ev.type === 'damage' && heroIds.has(ev.targetId) && (ev.amount ?? 0) > 0) lastBlow.set(ev.targetId, ev.tick === true ? 'tick' : (ev.abilityKey ?? 'basic'));
       if (ev.type === 'damage' && heroIds.has(ev.targetId) && boss !== undefined && ev.sourceId === boss.id && (ev.amount ?? 0) > 0) {
         log.bossHits++;
         if (ev.targetId === knight?.id) {
@@ -107,6 +110,7 @@ export function fightWall(configs: readonly HeroConfig[], S: number, seed: numbe
       if (ev.type === 'death' && heroIds.has(ev.targetId) && log.firstDeath === undefined && tracking) {
         log.firstDeath = world.heroes.find((h) => h.id === ev.targetId)?.classKey;
         log.firstDeathSec = log.fightSec;
+        log.firstDeathBy = lastBlow.get(ev.targetId);
       }
     }
     if (knight !== undefined && knight.alive && tracking) log.knightMinFrac = Math.min(log.knightMinFrac, knight.hp / knight.maxHp);
@@ -131,7 +135,7 @@ if (files.length > 0) {
   for (const f of files) {
     const file = JSON.parse(readFileSync(f, 'utf8')) as SnapshotFile;
     for (const S of WALLS) {
-      const snap = file.last[S];
+      const snap = (process.env.LD_SNAP === 'arrive' ? file.arrive : file.last)[S]; // LD_SNAP=arrive: the party as it reached the wall
       if (snap === undefined) continue;
       for (const m of HP_MULTS) {
         (WORLD_WALL_MULT as number[])[worldOf(S) - 1] = (baseMults[worldOf(S) - 1] ?? 1) * m;
@@ -154,7 +158,7 @@ if (files.length > 0) {
             snap: file.seed, stage: S, mult: m, variant: v, win: winRate, coherence: Math.max(winRate, 1 - winRate),
             fight: mean(logs.map((l) => l.fightSec)), bossLeft: mean(losses.map((l) => l.bossLeft)),
             lossSurvival: surv, lossRace: losses.length - surv,
-            firstDeaths: losses.map((l) => `${l.firstDeath ?? '-'}@${(l.firstDeathSec ?? 0).toFixed(0)}`).join(' '),
+            firstDeaths: losses.map((l) => `${l.firstDeath ?? '-'}@${(l.firstDeathSec ?? 0).toFixed(0)}:${l.firstDeathBy ?? '-'}`).join(' '),
             diceWin: dice(wins), diceLoss: dice(losses),
           };
           appendFileSync(OUT, JSON.stringify(line) + '\n');

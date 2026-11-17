@@ -107,6 +107,16 @@ export const WORLD_BOSS_PRESSURE: readonly WorldBossPressure[] = [
   { hitMult: 1.45, blowEveryMs: 6_000, blowCoeff: 3.1, splashCoeff: 1.2, backShotChance: 0, woundPct: 0 },
 ];
 
+/** THE AREA BLOW ON THE BACK LINE, anchored (round 8, 2026-11-17; user: «sí» to anchoring the shockwave on the heroes
+ *  behind like the blow on the tank and the Crushing Blow's shock). From Inferno, each hero BEHIND the front one takes,
+ *  per blow, this share of the average back-line hero's life at that wall (data/stageScaling BACK_LIFE_TUNE) through
+ *  ON-LEVEL defence (`expectedDefense`): a hero who wears more takes less, one who wears less more — data, not a
+ *  reaction. It replaced the formula's splash (splashCoeff × the boss's hit), which came in at ~14 % of the Ranger's
+ *  life a blow at Inferno 1–2 (the gear of Hell against Inferno's formula) and sank to ~3 % by Torment
+ *  (scripts/splash-share.ts): the share is the formula's late-difficulty level, steady across each difficulty.
+ *  Normal and Hell keep the formula (no anchor there: BACK_LIFE_TUNE starts at Inferno). Normal … Torment. */
+export const BACK_SPLASH_SHARE: readonly [number, number, number, number, number] = [0, 0, 0.06, 0.045, 0.04];
+
 /** The pressure of a world boss at difficulty index `d` (clamped to the table). */
 export function worldBossPressure(d: number): WorldBossPressure {
   const i = Math.max(0, Math.min(WORLD_BOSS_PRESSURE.length - 1, Math.floor(d)));

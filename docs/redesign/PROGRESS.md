@@ -2034,3 +2034,8 @@ muros y horas en la siguiente ronda.
   retaguardia se mide contra la vida media del Ranger y la Priest**, como el golpe al tanque (la defensa del Ranger con
   regla de jefe, descartada por ahora); **(2) Infierno pide algo más** dentro del margen (hacia 15→25 % del techo) para que
   el jugador llegue a Averno mejor equipado, aunque Infierno suba hacia ~30 h.
+- **Ronda 8, segunda parte** (17 nov; decisiones del usuario): **la onda del golpe en área sobre la retaguardia, anclada**
+  (desde Averno, 6 / 4,5 / 4 % de la vida media de la retaguardia por golpe a través de la defensa a nivel, como el golpe
+  al tanque y la sacudida del Golpe demoledor; antes era la fórmula, ~14 % en Averno 1–2); **Infierno pide algo más**
+  (+3 dentro de la escalera, 13→23 %); **Tormento en el borde alto** de su margen (+4,5). Medida final: 3–5 / 25–49 /
+  95–124 / 214–288 / 389–492 h; ningún muro fuera de ±5. Tormento no pasa de 500 h dentro de +5 (ver informe).

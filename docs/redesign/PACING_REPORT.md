@@ -2544,3 +2544,198 @@ Victorias con el muro al 80 % y al 90 % de su vida actual (la construcción buen
   por la mezcla del jefe) cuando muere antes del minuto, así que debería aprender a llevarla, pero no lo he medido en
   una partida entera.
 - **Nombres y arte provisionales:** «Golpe demoledor» y su aspecto (los dientes de roca del Golpe de suelo).
+
+## Ronda 8 · la escalera fija y las horas (17 nov, sin commit)
+
+Escalera fija del usuario («tu ejemplo desde Averno»), en % del techo gradual, línea recta del mundo 1 al 10: Normal 5→10,
+Infierno 10→20, Averno 20→30, Eterno 30→40, Tormento 40→60, ±5 puntos. Horas buscadas ≈ 4 / 20 / 80 / 200 / 500+.
+Palancas: vida de los muros dentro de la escalera y daño de los jefes. Sin tocar botín.
+
+### Cambios
+
+| Qué | Antes | Ahora |
+|---|---|---|
+| `WORLD_WALL_MULT` | escalera de la ronda 6 (5→10 / 7→11 / 12→20 / 45→60 / 80→90) | la escalera fija, movida dentro de ±5: Infierno −2, Averno −4, Eterno +2, Tormento +4 (5 vueltas de 3 partidas) |
+| `BOSS_THREAT_PCT` | 1 / 2 / 3 / 4,5 / 6 | 1 / 2 / 3 / 4,5 / **7,5** (Tormento, para alargarlo) |
+| Anclas del golpe del jefe y del Golpe demoledor | — | **se quedan las de la ronda 7**. Re-anclarlas en cada vuelta al Knight «al tumbar» hace un trinquete: muros más altos → más farmeo → Knight más fuerte → golpe más fuerte → más farmeo (Averno subió de 131 a 213 h entre la vuelta 1 y la 3) |
+| Cuatro muros a mano tras la última vuelta | — | Averno 10 (pedía 46 % frente a 26: ahora ≈ 32 %), Averno 4 y Eterno 10 subidos lo justo para que su vida no baje de la del muro anterior (test de escalera de vida) |
+| `scripts/luck-diag.ts` | — | `LD_SNAP=arrive` (combates con el grupo al llegar) y qué remató al primer héroe que cae |
+
+### Horas (vuelta 5)
+
+| Partida | Normal | Infierno | Averno | Eterno | Tormento | Total |
+|---|---:|---:|---:|---:|---:|---:|
+| 1 | 6 | 36 | 137 | 334 | 523 | 1 035 |
+| 2 | 4 | 31 | 130 | 251 | 528 | 944 |
+| 3 | 3 | 25 | 111 | 244 | 333 | 717 |
+| Objetivo | ~4 | ~20 | ~80 | ~200 | 500+ | |
+
+Cada dificultad más larga que la anterior en las tres partidas (en la vuelta 3, Eterno quedó por debajo de Averno en
+dos partidas). Lo que pide cada muro (mediana, % del techo) y a qué segundo cae:
+
+| | M1 | M2 | M3 | M4 | M5 | M6 | M7 | M8 | M9 | M10 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Normal | 5 · 55 s | 6 · 35 s | 6 · 24 s | 6 · 21 s | 7 · 33 s | 8 · 35 s | 8 · 45 s | 9 · 51 s | 9 · 37 s | 10 · 40 s |
+| Infierno | 10 · 33 s | 10 · 39 s | 10 · 29 s | 10 · 29 s | 9 · 52 s | 14 · 58 s | 15 · 64 s | 16 · 67 s | 17 · 70 s | 18 · 73 s |
+| Averno | 18 · 62 s | 18 · 56 s | 18 · 62 s | 20 · 57 s | 21 · 54 s | 22 · 63 s | 20 · 70 s | 23 · 71 s | 25 · 68 s | ≈ 32 (a mano) · 70 s |
+| Eterno | 32 · 57 s | 33 · 71 s | 33 · 70 s | 35 · 65 s | 36 · 72 s | 37 · 70 s | 39 · 71 s | 40 · 71 s | 41 · 72 s | ≈ 44 · 72 s |
+| Tormento | 44 · 72 s | 46 · 68 s | 48 · 72 s | 51 · 73 s | 53 · 68 s | 55 · 70 s | 57 · 73 s | 60 · 72 s | 62 · 66 s | 64 · 63 s |
+
+Todo dentro de ±5 de la línea salvo Averno 7–8 (20 y 23 frente a 26,7 y 27,8 de la línea: dentro del −4 elegido más el
+ruido). Desde Averno los muros caen pasado el minuto (54–74 s): se pasan aguantando la furia unos segundos.
+
+### Diagnóstico: de dónde salen las horas de Averno
+
+**Reparto** (vuelta 5, suma de los 10 mundos por partida): hasta el X-9 8–9 h · en el X-9 sin llave 29–70 h · con llave
+en la mano 51–90 h · combates fallidos 33–45, ≈ 1 h en total. Mundos largos 1, 3, 6, 8 y 10 (12–28 h), cortos 2, 4, 7
+(< 1 h). El grupo llega a cada muro con un 15 % del techo (mediana), el muro pide un 20 %, lo tumba con un 17 %
+(pasado el minuto). Cada intento fallido gasta una llave, y la siguiente tarda 1–1,5 h.
+
+**En qué se pierde a la llegada** (`ld-averno-arrive`: grupo al llegar a los 10 muros de Averno, 2 partidas × 8
+combates = 160): gana 30. De las 128 derrotas con muerte registrada:
+
+| Causa | Derrotas | Quién cae primero y con qué |
+|---|---:|---|
+| **Carrera** (el jefe llega a la furia) | 80 (63 %) | Knight a golpes normales pasado el minuto (57), Ranger a la onda pasado el minuto (21) |
+| **Supervivencia** (alguien cae antes del minuto) | 48 (37 %) | Golpe demoledor 20 (Averno 3: Knight y Priest; Averno 5 y 7: la sacudida mágica al Ranger), onda del golpe en área sobre la retaguardia 18 (Ranger, 30–47 s), resto 10 |
+
+- **El Golpe demoledor no entra de golpe en Averno 1**: ya entra gradual (0,4 / 0,8 / 1,2 veces la vida efectiva del
+  Knight medio en los mundos 1 / 2 / 3, `crushAt` con `pressureWeight`) y en Averno 1–2 no mata a nadie. Es el 16 % de
+  las primeras muertes, concentrado en Averno 3, 5 y 7.
+- **La onda del golpe en área sobre la retaguardia** sigue con la fórmula vieja (no anclada; ronda 6 · A): es la que
+  más mata al Ranger antes del minuto.
+- **Lo que pesa más es la carrera**: el grupo llega con un 15 % y el muro pide un 20 %; ese 33 % más de daño se farmea
+  a lo largo de ~100 h en Averno (con ~6 intentos fallidos por muro, cada uno una llave que tarda en volver).
+
+### Propuestas de mecánica (sin aplicar)
+
+1. **Anclar la onda del golpe en área a la vida de la retaguardia** (como el golpe al tanque y la sacudida del Golpe
+   demoledor, `BACK_LIFE_TUNE`): un % fijo de la vida del Ranger/Priest medio por golpe, del que la cura en grupo y la
+   resistencia mágica protegen. Quita las muertes del Ranger por una onda que hoy no sigue al equipo (≈ 30 % de las
+   derrotas a la llegada en Averno) → menos intentos fallidos y menos espera de llaves. Efecto estimado en horas:
+   −15 a −30 h en Averno (sin medir).
+2. **Una defensa del Ranger con regla de jefe** (doble disparador de la ronda 7): por ejemplo un talento o habilidad
+   que, al ver el anuncio del golpe en área o del Golpe demoledor, reduzca el siguiente golpe que recibe (como Piel de
+   piedra para el Knight). Da al Ranger qué construir para aguantar, en vez de depender de que la Priest llegue a tiempo.
+3. **La carrera (63 %)** no la mueve ninguna mecánica de supervivencia: es lo que el jugador tarda en ganar daño con lo
+   que cae en Averno. Con la escalera fija y sin tocar botín, las salidas son: (a) usar el margen de ±5 para que
+   Infierno pida algo más (el grupo llega a Averno con más equipo; las horas se pasan a Infierno), o (b) aceptar Averno
+   en ~110–140 h y escalar el resto (forma ≈ 4 / 30 / 125 / 275 / 500+).
+
+### Sin medir en esta ronda (por indicación del coordinador)
+
+Las reglas (Priest sin curas, Knight defensivo, resistencia mágica, coherencia ≥ 0,85, cambio de dificultad, la sonda
+poniéndose resistencia mágica) no se han vuelto a medir con estos muros; los cuatro muros corregidos a mano tampoco.
+
+### Ronda 8 · segunda parte (decisiones del usuario: onda anclada, Infierno pide algo más, Tormento algo más difícil)
+
+**Cambios**
+
+| Qué | Antes | Ahora |
+|---|---|---|
+| **Onda del golpe en área sobre la retaguardia** (jefes de mundo desde Averno) | la fórmula (`splashCoeff` × golpe del jefe): ~14 % de la vida del Ranger por golpe en Averno 1–2, ~6 % al final de Averno, ~3–4 % en Eterno y Tormento (`scripts/splash-share.ts`) | **anclada** a la vida media de la retaguardia en ese muro (`BACK_LIFE_TUNE`) a través de la defensa a nivel: 6 / 4,5 / 4 % por golpe en Averno / Eterno / Tormento (`data/bossKit` `BACK_SPLASH_SHARE`, `stageScaling.areaBlowSplash`, `Combatant.backSplash`). Normal e Infierno siguen con la fórmula. Test: `test/sim/backSplash.test.ts` |
+| Infierno en la escalera | −2 | **+3** (13→23 % del techo): el grupo llega a Averno mejor equipado |
+| Tormento en la escalera | +4 | **+4,5** (el borde alto de su margen) |
+| Muros retocados a mano | 4 sin medir | medidos en las vueltas 6–9; Averno 4, Averno 10 y Eterno 10 se quedan lo justo por encima de la vida del muro anterior |
+
+**Horas** (medida final, 3 partidas; los mundos 1–40 son idénticos a la vuelta 6 — misma tabla, simulación determinista):
+
+| Partida | Normal | Infierno | Averno | Eterno | Tormento | Total |
+|---|---:|---:|---:|---:|---:|---:|
+| 1 | 5 | 25 | 124 | 288 | 492 | 934 |
+| 2 | 4 | 49 | 95 | 214 | 438 | 799 |
+| 3 | 3 | 29 | 111 | 223 | 389 | 755 |
+| Objetivo | ~4 | ~30 | ~80–100 | ~200–250 | 500+ | |
+
+Cada dificultad más larga que la anterior en las tres partidas. **Tormento no llega a 500 h en ninguna** con su
+escalera en el borde alto (+4,5). La vuelta 6 (Tormento a +4) dio 419 / 550 / 553: Tormento varía ±20 % entre vueltas
+casi iguales (el Cubo y la rareza T8 deciden cuándo cae cada muro), así que dentro de +5 no se puede garantizar 500+ en
+las tres semillas. Para eso habría que salir del +5 en Tormento o subir más su presión (`BOSS_THREAT_PCT` ya en 7,5).
+
+Una vuelta extra intentó quitar las pequeñas bajadas de la tabla de abajo subiendo vida a 13 muros: lo que piden depende
+del nivel con que llega el grupo, el reparto cambió y cuatro muros de Averno/Eterno salieron de ±5 (Averno 9 y 10 a −9
+y −11). Se descartó y se quedó la tabla de la medida final.
+
+**Cumplimiento muro a muro** (lo que pide cada muro al llegar, % del techo gradual, mediana y rango de las 3 partidas):
+
+| Muro | Escalera | Pide (mediana · rango) | Diferencia | Sube | Cae a los |
+|---|---:|---:|---:|:---:|---:|
+| Normal 1 | 5 % | 5 % (5–5) | +0 | — | 55 s |
+| Normal 2 | 6 % | 6 % (6–6) | +0 | sí | 35 s |
+| Normal 3 | 6 % | 6 % (6–6) | +0 | sí | 24 s |
+| Normal 4 | 7 % | 7 % (7–7) | -0 | sí | 23 s |
+| Normal 5 | 7 % | 7 % (7–7) | -0 | sí | 34 s |
+| Normal 6 | 8 % | 7 % (7–8) | -0 | sí | 39 s |
+| Normal 7 | 8 % | 8 % (8–8) | +0 | sí | 45 s |
+| Normal 8 | 9 % | 9 % (9–9) | -0 | sí | 51 s |
+| Normal 9 | 9 % | 9 % (9–9) | +0 | sí | 37 s |
+| Normal 10 | 10 % | 10 % (10–10) | -0 | sí | 40 s |
+| Infierno 1 | 10 % | 13 % (13–13) | +3 | sí | 44 s |
+| Infierno 2 | 11 % | 14 % (13–14) | +3 | sí | 60 s |
+| Infierno 3 | 12 % | 15 % (11–16) | +3 | sí | 46 s |
+| Infierno 4 | 13 % | 14 % (14–14) | +0 | **no** | 51 s |
+| Infierno 5 | 14 % | 17 % (17–17) | +3 | sí | 70 s |
+| Infierno 6 | 16 % | 19 % (18–19) | +3 | sí | 64 s |
+| Infierno 7 | 17 % | 20 % (19–20) | +3 | sí | 66 s |
+| Infierno 8 | 18 % | 21 % (20–21) | +3 | sí | 74 s |
+| Infierno 9 | 19 % | 22 % (20–22) | +3 | sí | 70 s |
+| Infierno 10 | 20 % | 23 % (21–23) | +3 | sí | 73 s |
+| Averno 1 | 20 % | 22 % (22–24) | +2 | **no** | 65 s |
+| Averno 2 | 21 % | 22 % (21–22) | +1 | igual | 69 s |
+| Averno 3 | 22 % | 23 % (22–23) | +1 | sí | 68 s |
+| Averno 4 | 23 % | 24 % (22–25) | +0 | sí | 60 s |
+| Averno 5 | 24 % | 23 % (22–24) | -1 | igual | 54 s |
+| Averno 6 | 26 % | 23 % (20–23) | -3 | igual | 70 s |
+| Averno 7 | 27 % | 25 % (23–27) | -2 | sí | 72 s |
+| Averno 8 | 28 % | 24 % (24–24) | -4 | **no** | 72 s |
+| Averno 9 | 29 % | 25 % (20–25) | -4 | sí | 72 s |
+| Averno 10 | 30 % | 34 % (18–34) | +4 | sí | 68 s |
+| Eterno 1 | 30 % | 29 % (29–29) | -1 | **no** | 72 s |
+| Eterno 2 | 31 % | 33 % (32–33) | +1 | sí | 72 s |
+| Eterno 3 | 32 % | 31 % (29–33) | -2 | **no** | 64 s |
+| Eterno 4 | 33 % | 33 % (32–35) | -0 | sí | 67 s |
+| Eterno 5 | 34 % | 31 % (31–32) | -4 | **no** | 67 s |
+| Eterno 6 | 36 % | 37 % (37–38) | +2 | sí | 70 s |
+| Eterno 7 | 37 % | 41 % (38–42) | +4 | sí | 71 s |
+| Eterno 8 | 38 % | 40 % (39–40) | +2 | **no** | 71 s |
+| Eterno 9 | 39 % | 41 % (41–41) | +2 | sí | 58 s |
+| Eterno 10 | 40 % | 40 % (39–40) | -0 | **no** | 60 s |
+| Tormento 1 | 40 % | 44 % (43–45) | +4 | sí | 66 s |
+| Tormento 2 | 42 % | 47 % (46–47) | +5 | sí | 69 s |
+| Tormento 3 | 44 % | 49 % (48–49) | +4 | sí | 72 s |
+| Tormento 4 | 47 % | 50 % (50–50) | +3 | sí | 73 s |
+| Tormento 5 | 49 % | 53 % (53–53) | +4 | sí | 71 s |
+| Tormento 6 | 51 % | 56 % (56–56) | +5 | sí | 70 s |
+| Tormento 7 | 53 % | 58 % (58–58) | +4 | sí | 72 s |
+| Tormento 8 | 56 % | 60 % (60–60) | +4 | sí | 73 s |
+| Tormento 9 | 58 % | 62 % (62–62) | +4 | sí | 64 s |
+| Tormento 10 | 60 % | 65 % (65–65) | +5 | sí | 71 s |
+
+Fuera de ±5 o que bajan: Infierno 4, Averno 1, Averno 8, Eterno 1, Eterno 3, Eterno 5, Eterno 8, Eterno 10
+
+- **Ningún muro fuera de ±5.**
+- **La vida de cada muro sube siempre** respecto al anterior (test `scaling.test.ts`). Lo que «pide» en % baja 0–4 puntos
+  en ocho muros (dos son aperturas de dificultad, Averno 1 y Eterno 1, que pueden abrir algo por debajo): el % depende del
+  nivel y talentos con que llega el grupo y de la mecánica de cada jefe, y oscila ±2–3 puntos entre muros vecinos.
+
+**Reglas** (grupo de la sonda al tumbar cada muro, 2 partidas × 8 combates, tabla final):
+
+| Muro | Construcción buena | Knight ofensivo | Knight defensivo | Priest sin curas | Sin resistencia mágica |
+|---|---:|---:|---:|---:|---:|
+| Infierno 3 | 100 % | 50 % | 0 % | 0 % | 100 % |
+| Infierno 8 | 100 % | 100 % | 100 % | 0 % | 100 % |
+| Averno 5 | 69 % | 0 % | 44 % | 0 % | 0 % |
+| Averno 8 | 88 % | 0 % | 100 % | 0 % | 75 % |
+| Eterno 5 | 50 % | 0 % | 25 % | 0 % | 0 % |
+| Eterno 8 | 56 % | 50 % | 56 % | 56 % | 69 % |
+| Tormento 5 | 19 % | 0 % | 0 % | 0 % | 0 % |
+| Tormento 8 | 50 % | 6 % | 50 % | 25 % | 50 % |
+
+- Priest sin curas: pierde 6 de 8 muros (gana algo en Eterno 8 y Tormento 8). ✔ a medias.
+- Knight ofensivo: desde Averno pierde 4 de 6 (0 %), 50 % en Eterno 8, 6 % en Tormento 8. ✔ a medias.
+- Sin resistencia mágica: pierde los muros más mágicos (Averno 5, Eterno 5, Tormento 5); con los físicos importa poco. ✔
+- Coherencia con la construcción buena desde Eterno: 0,75 de media (0,50–0,94); con todas las variantes, 0,85. Es el
+  grupo «al tumbar», justo en el umbral, donde la coherencia es por fuerza más baja. ✘ frente al 0,85 pedido.
+- Cambio de dificultad (equipo con que se acaba una dificultad contra los mundos 1–2 de la siguiente): Infierno 1 en 2 de
+  3 partidas, Averno 1 en ninguna, Eterno 1 a medias en 1 de 3, Tormento 1 en las 3; el mundo 2 en ninguna. ✘ a medias.
+- La sonda poniéndose resistencia mágica cuando la necesita: no medido.
