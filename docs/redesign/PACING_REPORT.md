@@ -3712,3 +3712,172 @@ de antes del tope. La experiencia total tendría que quedarse en ×0,28–0,51 (
 | Investigación (`eco_xp`) | ×1,33 al final de Normal, ×1,78 en Averno, ×2,15 al final (×2,3 con mascotas) | Quitarla entera da ×0,47: no basta sola con la mediana; haría falta además ~×0,8 de experiencia por enemigo |
 | Mascotas (búho sabio) | +0,15–0,18 en el multiplicador (~×1,08) | Quitarla da ~×0,93: palanca pequeña. El jugador por defecto no tiene mascotas |
 | Experiencia por enemigo (`xpPerKill`) | — | ×0,37 por defecto (×0,23 bien equipado), en toda la partida: bajaría el nivel en todas partes, no solo el tope |
+
+## Ronda 16 — Erudición, la investigación y el oro, y Normal con vida completa (17 nov, sin commit)
+
+**Decisiones del usuario:** Tormento por encima de banda (mediana 980 h en la ronda 15) aceptado. Nerf de la
+investigación de experiencia (Erudición, `eco_xp`) para que el 120 llegue tarde en Tormento; medir lo que aportan el oro
+y los cofres. `NORMAL_TRASH_HP_MULT` 0,6 → 1. Un único sumidero de oro, «Pulir», del que aquí solo se propone el precio.
+
+### Normal con vida completa
+
+- **Anclas:** esbirro del mundo 1 a 2,3–2,6 golpes y jefe de etapa a 6,9–8,1 s; 1-9 bajado ×0,9 y mundo 4 ×0,8. Las
+  referencias de Normal (`anchorReference`) re-escritas; el test de la primera etapa admite ahora hasta 450 s, porque el
+  Knight solo tarda ~6 min en 1-1.
+- **Reclutas:** el Ranger llega al tumbar 1-4 (0,37 h) y el Priest al tumbar 1-8 (0,68–0,83 h), en las 3 partidas. El
+  Knight solo hace 1-1…1-4 a ~0,09 h por etapa y el dúo 1-5…1-8 sin atascarse. Para eso el daño de la morralla en
+  1-5…1-9 baja a 0,5 · 0,45 · 0,42 · 0,36 · 0,5.
+- **Textura** (vida que pierde el Knight por oleada, 3 partidas): 1-3, Knight solo, 6 % de mediana y 17 % en la peor;
+  1-9 trío 6–8 % (peor 26–65 %); 5-9 11–13 % (peor 21–33 %); 10-9 5–19 % (peor 17–32 %). Sin wipes. Esbirros a 1,4–2,4
+  golpes y élites a 6–11. El 29 % de 5-9 que salía antes en una partida se corrigió con el daño de Normal 5–10 ×0,85.
+
+### Qué aporta cada investigación (jugador por defecto, Erudición sin tocar; 3 partidas cada variante)
+
+#### Base (Erudición +2,5 %): investigación al tumbar el muro 10 (mediana de 3 partidas; rangos → multiplicador)
+
+| Nodo | Normal | Infierno | Averno | Eterno | Tormento |
+|---|---|---|---|---|---|
+| eco_xp (XP) | 13 → ×1.32 | 21 → ×1.52 | 31 → ×1.77 | 37 → ×1.93 | 44 → ×2.10 |
+| eco_gold (oro) | 13 → ×1.32 | 23 → ×1.58 | 31 → ×1.77 | 38 → ×1.95 | 44 → ×2.10 |
+| chest_drop_normal (cofre común) | 10 → ×1.02 | 17 → ×1.04 | 26 → ×1.06 | 31 → ×1.08 | 37 → ×1.09 |
+| chest_drop_stage (cofre de jefe de etapa) | 9 → ×1.04 | 16 → ×1.08 | 25 → ×1.12 | 30 → ×1.15 | 36 → ×1.18 |
+| chest_gem (gema) | 6 → ×1.15 | 11 → ×1.27 | 17 → ×1.43 | 22 → ×1.55 | 26 → ×1.65 |
+
+| Variante | Normal | Infierno | Averno | Eterno | Tormento | Total | Nivel 120 |
+|---|---|---|---|---|---|---|---|
+| Base | 8 · 6 · 6 | 27 · 31 · 34 | 161 · 129 · 131 | 343 · 232 · 279 | 776 · 561 · 625 | 1 315 · 959 · 1 075 | Tormento 3–4 · 597–657 h |
+| Sin Erudición | 8 · 6 · 6 | 30 · 54 · 40 | 189 · 163 · 218 | 350 · 331 · 273 | 685 · 1 009 · 743 | 1 261 · 1 564 · 1 279 | Tormento 5–6 · 960–968 h |
+| Sin Lucro (`eco_gold`) | 8 · 6 · 6 | 25 · 32 · 33 | 147 · 135 · 163 | 379 · 354 · 260 | 673 · 736 · 636 | 1 232 · 1 262 · 1 098 | Tormento 3 · 640–664 h |
+| Sin cofres ni gemas | 8 · 6 · 6 | 32 · 33 · 41 | 191 · 188 · 171 | 331 · 340 · 315 | 1 291 · 1 231 · 853 | 1 853 · 1 799 · 1 385 | Tormento 2–3 · 635–656 h |
+
+- **Lucro casi no importa:** sin él se compran los mismos rangos de todo (Erudición 43 frente a 44). Cada rango cuesta
+  ×1,3 más que el anterior, así que doblar el oro solo compra ~2,6 rangos más. Las horas y el 120 apenas se mueven.
+- **La investigación de cofres y gemas es fuerte:** sin ella Tormento sube de ~620 h a ~1 230 h (+600 h; el total
+  +40 %). Pesa sobre todo la de gemas (×1,68 al final); las de cofres dan ×1,09 y ×1,19. Si el usuario quiere tocarla,
+  es el gran acelerador de Tormento, pero no retrasa el 120: al contrario, una partida más larga junta más experiencia
+  antes del final.
+
+### Erudición +2,5 % → +0,5 % por rango (`techTree`, texto EN/ES)
+
+#### Final, jugador por defecto: horas por dificultad
+| Partida | Normal | Infierno | Averno | Eterno | Tormento | Total |
+|---|---:|---:|---:|---:|---:|---:|
+| 1 | 8 | 38 | 204 | 378 | 811 | 1438 |
+| 2 | 6 | 40 | 158 | 321 | 747 | 1272 |
+| 3 | 6 | 44 | 160 | 280 | 712 | 1202 |
+#### Final, jugador por defecto: nivel del grupo (mín/máx) al tumbar los muros 1 · 5 · 10
+| Partida | Normal | Infierno | Averno | Eterno | Tormento |
+|---|---|---|---|---|---|
+| 1 | 13 · 20 · 24 | 28 · 33 · 42 | 42 · 67 · 74 | 74 · 91 · 102 | 102 · 120 · 120 |
+| 2 | 13 · 20 · 24 | 25 · 33 · 42 | 43 · 63 · 71 | 71 · 87 · 98 | 98 · 117 · 120 |
+| 3 | 13 · 20 · 24 | 25 · 33 · 45 | 45 · 63 · 72 | 72 · 89 · 96 | 96 · 120 · 120 |
+#### Final, jugador por defecto: nivel 120
+| Partida | Primer héroe a 120 | Los tres a 120 | Mascotas (desde) | Fortuna del Transmutador |
+|---|---|---|---|---:|
+| 1 | Tormento 4 · 913 h | Tormento 4 · 913 h | — | 0 |
+| 2 | Tormento 6 · 840 h | Tormento 6 · 840 h | — | 0 |
+| 3 | Tormento 4 · 834 h | Tormento 4 · 834 h | — | 0 |
+
+#### Final, por defecto: investigación al tumbar el muro 10 (mediana de 3 partidas; rangos → multiplicador)
+
+| Nodo | Normal | Infierno | Averno | Eterno | Tormento |
+|---|---|---|---|---|---|
+| eco_xp (XP) | 13 → ×1.06 | 22 → ×1.11 | 33 → ×1.17 | 38 → ×1.19 | 45 → ×1.23 |
+| eco_gold (oro) | 13 → ×1.32 | 24 → ×1.60 | 33 → ×1.83 | 38 → ×1.95 | 45 → ×2.12 |
+| chest_drop_normal (cofre común) | 10 → ×1.02 | 18 → ×1.04 | 26 → ×1.06 | 32 → ×1.08 | 37 → ×1.09 |
+| chest_drop_stage (cofre de jefe de etapa) | 9 → ×1.04 | 17 → ×1.08 | 25 → ×1.12 | 31 → ×1.16 | 37 → ×1.19 |
+| chest_gem (gema) | 6 → ×1.15 | 11 → ×1.27 | 18 → ×1.45 | 22 → ×1.55 | 27 → ×1.68 |
+
+#### Final, bien equipado (mascotas en la mediana + Fortuna): horas por dificultad
+| Partida | Normal | Infierno | Averno | Eterno | Tormento | Total |
+|---|---:|---:|---:|---:|---:|---:|
+| 1 | 8 | 38 | 207 | 286 | 624 | 1163 |
+| 2 | 6 | 40 | 157 | 318 | 860 | 1380 |
+| 3 | 6 | 44 | 188 | 333 | 529 | 1100 |
+#### Final, bien equipado (mascotas en la mediana + Fortuna): nivel del grupo (mín/máx) al tumbar los muros 1 · 5 · 10
+| Partida | Normal | Infierno | Averno | Eterno | Tormento |
+|---|---|---|---|---|---|
+| 1 | 13 · 20 · 24 | 28 · 33 · 42 | 42 · 66 · 75 | 75 · 93 · 103 | 103 · 120 · 120 |
+| 2 | 13 · 20 · 24 | 25 · 33 · 42 | 43 · 62 · 71 | 71 · 90 · 102 | 102 · 120 · 120 |
+| 3 | 13 · 20 · 24 | 25 · 33 · 45 | 45 · 63 · 75 | 75 · 96 · 105 | 106 · 120 · 120 |
+#### Final, bien equipado (mascotas en la mediana + Fortuna): nivel 120
+| Partida | Primer héroe a 120 | Los tres a 120 | Mascotas (desde) | Fortuna del Transmutador |
+|---|---|---|---|---:|
+| 1 | Tormento 3 · 706 h | Tormento 3 · 706 h | coin_sprite (Eterno 2, 341 h), scholar_owl (Eterno 2, 341 h), lucky_cat (Eterno 2, 341 h), time_imp (Eterno 2, 341 h), pack_mule (Eterno 5, 424 h), hoarder (Eterno 5, 424 h) | 9 |
+| 2 | Tormento 4 · 696 h | Tormento 4 · 696 h | coin_sprite (Eterno 4, 319 h), scholar_owl (Eterno 4, 319 h), lucky_cat (Eterno 4, 319 h), time_imp (Eterno 4, 319 h), pack_mule (Eterno 6, 404 h), hoarder (Eterno 6, 404 h) | 10 |
+| 3 | Tormento 3 · 735 h | Tormento 3 · 735 h | coin_sprite (Eterno 2, 338 h), scholar_owl (Eterno 2, 338 h), lucky_cat (Eterno 2, 338 h), time_imp (Eterno 2, 338 h), pack_mule (Eterno 5, 418 h), hoarder (Eterno 5, 418 h) | 9 |
+
+- **El 120:** con el jugador por defecto llega en Tormento 4–6 (834–913 h, ~65 % de la partida; antes en Tormento 3–4,
+  ~620 h). El bien equipado lo alcanza en Tormento 3–4 (696–735 h). **No llega a Tormento 8–10:** ni quitando la
+  Erudición entera pasa de Tormento 5–6 (960 h).
+- **Efecto en horas:** los niveles más bajos alargan Averno (158–204 h; la partida 1 se sale de 175) y Eterno (280–378 h;
+  la partida 1 se sale de 360). Tormento queda en 712–811 h.
+- **Siguiente paso (sin aplicar):** ni el oro ni los cofres retrasan el 120 (ver la tabla de arriba). La palanca de
+  experiencia que queda dentro de la investigación es la **ausencia** (Expedición, `eco_offline`). Las 8 h de ausencia
+  que cuenta cada día dan experiencia a ×0,5 + 2,5 % por rango (15–16 rangos al final, ×0,88–0,9). Eso es entre el 33 y
+  el 47 % de toda la experiencia de la partida. Si la ausencia diera solo oro y no experiencia, la experiencia total
+  quedaría en ×0,53–0,67, justo lo que falta (×0,50–0,63), y el 120 caería hacia Tormento 8–10 (estimación). Efecto
+  secundario: menos nivel en todas partes, y Averno y Eterno algo más largos. La otra, solo para el jugador con mascotas:
+  el búho sabio (+0,15 de multiplicador, ~×0,93 si se quita).
+
+### El oro: ¿se acumula sin gastar? (jugador por defecto, final)
+
+| Partida | Dificultad | Oro guardado | Ganado | Gastado: eco_gold · eco_xp · cofres/gemas · almacén/auto · ausencia · otros | Ingreso/h (último mundo) | Guardado = h de ingreso | Rango más barato (nodo) = min de ingreso |
+|---|---|---:|---:|---|---:|---:|---|
+| 1 | Normal | 4 k | 97 k | 15 k · 15 k · 34 k · 18 k · 7 k · 5 k | 13 k | 0.31 | 4 k (chest_drop_stage) = 20 min |
+| 1 | Infierno | 25 k | 1.1 M | 271 k · 160 k · 366 k · 232 k · 51 k · 5 k | 30 k | 0.82 | 35 k (chest_gem) = 69 min |
+| 1 | Averno | 91 k | 14.7 M | 2.9 M · 2.9 M · 7.0 M · 1.2 M · 680 k · 5 k | 88 k | 1.04 | 613 k (eco_offline) = 419 min |
+| 1 | Eterno | 378 k | 67.3 M | 13.9 M · 13.9 M · 29.0 M · 5.5 M · 4.7 M · 5 k | 223 k | 1.69 | 3.3 M (chest_drop_stage) = 884 min |
+| 1 | Tormento | 18.8 M | 356.9 M | 67.1 M · 67.1 M · 166.4 M · 5.5 M · 32.0 M · 5 k | 470 k | 40.06 | 19.9 M (chest_drop_stage) = 2542 min |
+| 2 | Normal | 4 k | 97 k | 15 k · 15 k · 34 k · 18 k · 7 k · 5 k | 18 k | 0.22 | 4 k (chest_drop_stage) = 15 min |
+| 2 | Infierno | 13 k | 1.1 M | 271 k · 160 k · 366 k · 232 k · 51 k · 5 k | 29 k | 0.45 | 35 k (chest_gem) = 72 min |
+| 2 | Averno | 270 k | 11.8 M | 2.9 M · 2.2 M · 4.5 M · 1.2 M · 680 k · 5 k | 94 k | 2.87 | 544 k (chest_drop_stage) = 347 min |
+| 2 | Eterno | 2.4 M | 57.0 M | 10.7 M · 10.7 M · 26.0 M · 2.6 M · 4.7 M · 5 k | 161 k | 14.82 | 2.9 M (auto_open) = 1092 min |
+| 2 | Tormento | 7.0 M | 328.4 M | 67.1 M · 67.1 M · 149.8 M · 5.5 M · 32.0 M · 5 k | 451 k | 15.42 | 16.6 M (chest_drop_normal) = 2209 min |
+| 3 | Normal | 4 k | 97 k | 15 k · 15 k · 34 k · 18 k · 7 k · 5 k | 19 k | 0.21 | 4 k (chest_drop_stage) = 14 min |
+| 3 | Infierno | 4 k | 1.4 M | 271 k · 208 k · 502 k · 356 k · 98 k · 5 k | 50 k | 0.07 | 55 k (chest_drop_normal) = 67 min |
+| 3 | Averno | 189 k | 13.2 M | 3.7 M · 2.9 M · 4.5 M · 1.2 M · 680 k · 5 k | 103 k | 1.83 | 544 k (chest_drop_stage) = 316 min |
+| 3 | Eterno | 65 k | 51.9 M | 10.7 M · 10.7 M · 23.2 M · 2.6 M · 4.7 M · 5 k | 153 k | 0.42 | 2.7 M (chest_drop_normal) = 1076 min |
+| 3 | Tormento | 9.1 M | 299.9 M | 67.1 M · 51.6 M · 149.8 M · 5.5 M · 16.9 M · 5 k | 469 k | 19.37 | 15.2 M (eco_offline) = 1942 min |
+
+**No se acumula hasta Tormento:** hasta Eterno se guarda de 0,1 a 3 h de ingreso (salvo una partida, con 15 h al final
+de Eterno). El árbol sigue mordiendo: el rango más barato cuesta 15–20 min de ingreso al final de Normal, ~70 min en
+Infierno, 5–7 h en Averno y 15–18 h en Eterno. **En Tormento sí:** el rango más barato cuesta 32–42 h y se acaban
+guardando 7–19 M (15–40 h de ingreso). Con mascotas y Fortuna es parecido: 2,6–15 M al final, 3–22 h.
+
+### «Pulir» (propuesta de precio; el código lo hace el coordinador)
+
+- **Precio:** `coste = 0,8 × 2,2^tier × ilvl × 1,5^n`, donde n es cuántas veces se ha pulido ya ese objeto. Es el 10 %
+  de su valor de alquimia (`ALCHEMY_BASE` 8 × `ALCHEMY_TIER_MULT` 2,2^tier × ilvl). Ese valor sigue al ingreso del
+  jugador a lo largo de la partida: la mejor pieza de la zona vale 0,4 h de ingreso al final de Normal, 0,7 en Infierno,
+  0,85 en Averno y 1,1 en Eterno y Tormento. Así, el primer pulido de una buena pieza cuesta 3–7 min de ingreso, y el
+  quinto (×5,1), 15–35 min.
+
+| Al final de | Mejor pieza de la zona | 1.º pulido | 5 pulidos a un objeto | «Unos pocos por mundo» (3 piezas × 5) × 10 mundos | Del oro ganado en la dificultad |
+|---|---|---:|---:|---:|---:|
+| Normal | T4 · ilvl 35 | 656 | 8,7 k | ~0,2 M | ~200 % (Normal no da para tanto) |
+| Infierno | T5 · ilvl 64 | 2,6 k | 35 k | ~0,9 M | ~75 % |
+| Averno | T6 · ilvl 88 | 8,0 k | 105 k | ~3 M | ~25 % |
+| Eterno | T7 · ilvl 106 | 21 k | 279 k | ~8 M | ~17 % |
+| Tormento | T8 · ilvl 115 | 50 k | 666 k | ~20 M | ~8 % |
+
+- **Escalada:** en Tormento sobra oro, y la subida ×1,5 por pulido lo absorbe sola. Diez pulidos a una pieza T8 cuestan
+  ~5,7 M y quince ~44 M, el orden de lo que hoy se guarda.
+- **Probabilidad de ★:** 5 % por pulido (la de `PERFECT_STAT_CHANCE`), no el 15 % de la transfiguración. Con 15 % saldría
+  una ★ cada ~7 pulidos (≈ 3 valores de alquimia), al alcance de cada afijo de las mejores piezas en Tormento. Con 5 %
+  harían falta ~20, a ×1,5 cada uno: inalcanzable salvo con suerte.
+- **Poder** (grupo de referencia, techo de la zona, cinco combates; `scratchpad/r16/polish.ts`):
+
+| Muro | Todos los afijos secundarios al máximo normal | Todos ★ | Todos ★ + afijo base |
+|---|---:|---:|---:|
+| Normal 10 | +17 % | +27 % | +34 % |
+| Infierno 10 | +34 % | +46 % | +51 % |
+| Averno 10 | +32 % | +54 % | +64 % |
+| Eterno 10 | +42 % | +75 % | +83 % |
+| Tormento 10 | +39 % | +68 % | +83 % |
+
+  Un equipo pulido entero sería mucho poder: un +40–80 % de daño quita entre un tercio y casi la mitad de lo que pide
+  cada muro. Con el precio propuesto lo realista es pulir 3–4 piezas, quedándose con la mejor tirada de ~5 por afijo
+  (~83 % del rango): estimo **+8–15 % de daño** sobre el equipo de tiradas medias. Es decir, lo que pide un muro baja un
+  7–13 %, uno o dos muros de la escalera dentro de una dificultad, y las horas de Averno en adelante bajarían algo
+  (estimo 10–20 %). La escalera en sí no cambia: se mide con tiradas medias.

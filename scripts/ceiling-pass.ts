@@ -32,6 +32,7 @@ const t0 = Date.now();
 const CHEST_MULT = Number(process.env.CP_CHEST_MULT ?? 1);
 const cap: { first?: { stage: number; hours: number }; all?: { stage: number; hours: number } } = {};
 const petsAt: Record<string, { stage: number; hours: number }> = {};
+const research: Record<number, { hours: number; ranks: Record<string, number>; xpMult: number; goldMult: number; gold: number; party: number }> = {};
 const cfg: ProbeConfig = {
   ...DEFAULT_CONFIG,
   capture: { normal: DEFAULT_CONFIG.capture.normal * CHEST_MULT, stageBoss: DEFAULT_CONFIG.capture.stageBoss * CHEST_MULT, zoneBoss: DEFAULT_CONFIG.capture.zoneBoss * CHEST_MULT },
@@ -42,6 +43,8 @@ const cfg: ProbeConfig = {
   // Transmuter's Fortune (synth_luck) after the default priority. Round 15, "the well-equipped player".
   ...(process.env.CP_PETS === 'median' ? { pets: 'median' as const } : {}),
   ...(process.env.CP_SYNTH === '1' ? { extraTech: ['synth_luck'] } : {}),
+  // CP_SKIP (tooling, round 16): a comma list of tech nodes the player never buys — what each research is worth.
+  ...(process.env.CP_SKIP !== undefined ? { skipTech: process.env.CP_SKIP.split(',') } : {}),
   observe: (target, party, bonuses) => {
     if ((Date.now() - t0) / 1000 > MAX_SEC) return false;
     if (target % 10 !== 0) return;
@@ -53,6 +56,10 @@ const cfg: ProbeConfig = {
     if (cap.first === undefined && party.some((h) => h.level >= MAX_LEVEL)) cap.first = { stage: target, hours };
     if (cap.all === undefined && party.length > 0 && party.every((h) => h.level >= MAX_LEVEL)) cap.all = { stage: target, hours };
     for (const key of Object.keys(run.state.pets)) if (petsAt[key] === undefined) petsAt[key] = { stage: target, hours };
+    // The research at every wall (round 16): the ranks of every node and the multipliers.
+    // Gold (round 16, user: «no quiero que tengan millones de oro sin gastar»): held at every wall (spending = the ranks'
+    // prices + the recruits, worked out in the report from the ranks).
+    research[target] = { hours, ranks: { ...run.state.techRanks }, xpMult: bonuses.xpMult, goldMult: bonuses.goldMult, gold: run.state.gold, party: party.length };
   },
 };
 advanceProbe(run, cfg);
@@ -86,5 +93,5 @@ const walls = r.milestones.map((m) => {
     askArrive: ma?.ask, askKill: mk?.ask, pctArrive: ma?.pct, pctKill: mk?.pct, level: m.partyLevel, cube: m.cube,
   };
 });
-appendFileSync(OUT, JSON.stringify({ seed: SEED, frontier: run.state.frontier, gaveUp: run.gaveUp, completed: r.completed, stalledAt: r.stalledAtStage, hours: r.difficultyActiveHours, days: r.totalCalendarDays, fails: r.totalBossFails, walls, cap, pets: petsAt, synthLuck: run.state.techRanks.synth_luck ?? 0, sec: (Date.now() - t0) / 1000 }) + '\n');
+appendFileSync(OUT, JSON.stringify({ seed: SEED, frontier: run.state.frontier, gaveUp: run.gaveUp, completed: r.completed, stalledAt: r.stalledAtStage, hours: r.difficultyActiveHours, days: r.totalCalendarDays, fails: r.totalBossFails, walls, cap, pets: petsAt, research, synthLuck: run.state.techRanks.synth_luck ?? 0, sec: (Date.now() - t0) / 1000 }) + '\n');
 process.stdout.write(`seed ${SEED}: done, ${((Date.now() - t0) / 1000).toFixed(0)} s\n`);

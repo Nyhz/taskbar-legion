@@ -9,6 +9,7 @@
 // × the hardest hitter's per-hit multiplier, the boss DPS × the party's gain from the fixed timer (scratchpad r12).
 // Round 15 (2026-11-17): world 1 (points 1–8) and worlds 2–15 (points 10–23) rewritten with the anchor tables for the
 // full waves and the later recruits — the probe's party measured against round 14's (scripts/measure-anchors.ts).
+// Round 16 (2026-11-17): Normal's top hit (points 1–8, 10–18) re-measured once its trash took full life (NORMAL_TRASH_HP_MULT 1).
 
 /** The stage each tuning point is measured at: 1-1 … 1-9 one by one, then every world's X-5. */
 export function anchorStage(point: number): number {
@@ -17,8 +18,8 @@ export function anchorStage(point: number): number {
 
 /** Mean damage of one BASIC attack of the party's hardest hitter. */
 export const REFERENCE_TOP_HIT: readonly number[] = [
-  12.6, 27.5, 30.3, 32.8, 34.8, 54.6, 57.5, 67.1, 59, 38.6,
-  84.5, 96.5, 305, 398, 462, 439, 485, 446, 442, 514,
+  12.6, 27.7, 29.9, 33, 35.2, 55.1, 57.6, 66.1, 62.2, 38.6,
+  78.7, 96, 193, 377, 432, 417, 465, 422, 426, 514,
   767, 1050, 1550, 2060, 1930, 2460, 2510, 2870, 3170, 3490,
   4410, 4600, 4950, 5660, 6610, 8010, 9040, 9650, 11700, 14200,
   15800, 19900, 22700, 26300, 30600, 35700, 46400, 48900, 57400, 74500,

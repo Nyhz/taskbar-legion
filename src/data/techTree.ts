@@ -66,7 +66,9 @@ function node(
 export const TECH_NODES: TechNode[] = [
   // ───────────────────────────── Economy ─────────────────────────────
   node('eco_gold', 'Economy', '💰', 'Profiteering', '+2.5% gold per kill', [{ kind: 'goldDropMult', value: 0.025 }], 150, 1.3),
-  node('eco_xp', 'Economy', '📖', 'Scholarship', '+2.5% XP per kill', [{ kind: 'xpDropMult', value: 0.025 }], 150, 1.3),
+  // Round 16 (2026-11-17, user: level 120 came in Torment 3): +2.5 % → +0.5 % per rank. With it the probe's player ended
+  // Torment at ×2.1 XP (44 ranks) and reached 120 at ~600–660 h; without it at all, Torment 6 (~970 h).
+  node('eco_xp', 'Economy', '📖', 'Scholarship', '+0.5% XP per kill', [{ kind: 'xpDropMult', value: 0.005 }], 150, 1.3),
   // Offline baseline is 50% (bonuses.ts); each rank buys +2.5% back, capped at 20 ranks so it
   // tops out at exactly 100% of online — never beats it. Brutal cost curve (1k base × 1.9^rank
   // ⇒ the 20th rank costs ~200M gold), so reaching full offline parity is a true end-game sink.

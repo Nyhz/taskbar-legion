@@ -32,7 +32,7 @@ they win. The standing overrides are:
   every five to ten minutes); gem is EXTRA; a world-boss **key** is in one stage-boss chest in four (every one
   in Normal) and every attempt costs one. **Waves per stage grow with the difficulty** (`WAVES_BY_DIFFICULTY`:
   16 in Normal → 20 in Torment; full-size waves in every difficulty since 2026-11-17, `WAVE_SIZE_BY_STAGE` 9 → 22): Normal is a 3–4 hour stroll, each difficulty after it clearly longer and
-  more demanding of gear (measured 2026-11-17, round 15: ≈ 4–6 / 28–33 / 140–174 / 282–329 / 542–983 h, ≈ 1 030–1 500 h in all; the user accepted the long Inferno and Torment's slow seeds). Validated by `npm run probe`. **The wall ladder** is measured against a FIXED reference party and every wall must ask strictly more than the one before (`docs/DIFFICULTY.md` §5, `test/sim/ladder.test.ts`, `scripts/reference-ladder.ts`).
+  more demanding of gear (measured 2026-11-17, round 16: ≈ 6–8 / 38–44 / 158–204 / 280–378 / 712–811 h, ≈ 1 200–1 440 h in all; the user accepted the long Inferno and Torment's slow seeds). Validated by `npm run probe`. **The wall ladder** is measured against a FIXED reference party and every wall must ask strictly more than the one before (`docs/DIFFICULTY.md` §5, `test/sim/ladder.test.ts`, `scripts/reference-ladder.ts`).
 - **`docs/DIFFICULTY.md` supersedes SPEC §4.6 / §5.3 scaling** — gear power and difficulty are *gear-checked
   and progressive* across the finite 5-difficulty ladder, not the SPEC's linear example (linear would make the
   game impossible by ~stage 10). Flat stats scale `Φ^1.0`, percent stats are bounded. Tier drop-rate is

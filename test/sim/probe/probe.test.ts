@@ -18,7 +18,8 @@ describe('probe combat measurement', () => {
     // it is not a wall — a new game must never open on a stage its only hero cannot finish.
     expect(m.clearable).toBe(true);
     expect(m.clearSec).toBeGreaterThan(60);
-    expect(m.clearSec).toBeLessThan(300);
+    // Round 16 (2026-11-17): full waves (9 a wave at X-1) and full-life Normal trash (user decisions) make it ~6 min.
+    expect(m.clearSec).toBeLessThan(450);
   });
 
   it('a farmed party clears its stage and beats the world boss, with a measurable margin', () => {

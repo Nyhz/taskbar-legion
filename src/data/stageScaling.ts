@@ -167,8 +167,8 @@ export function tunePoint(S: number): number {
 // worlds 2–10 ×1.8 (user: «suave» — the Knight should lose ~10–20 % of his life in the bigger waves).
 /** Life of a GRUNT (the plain melee enemy) at each tuning point: 2.5 basic hits of the on-gear hardest hitter. */
 export const GRUNT_HP_TUNE: number[] = [
-  31.5, 65.9, 79.4, 85.8, 87.4, 135, 147, 154, 179, 179,
-  185, 260, 631, 899, 969, 990, 1030, 1070, 1250, 1490,
+  31.5, 65.9, 79.4, 85.8, 87.4, 135, 147, 154, 161, 161,
+  185, 260, 505, 899, 969, 990, 1030, 1070, 1250, 1490,
   2070, 3110, 4090, 4820, 4990, 5830, 6450, 7120, 7880, 9080,
   10500, 11600, 12600, 14300, 16300, 20200, 22400, 24800, 29200, 34700,
   39700, 50100, 57100, 66000, 76500, 90000, 112000, 125000, 144000, 181000,
@@ -186,8 +186,8 @@ export const STAGE_BOSS_HP_TUNE: number[] = [
 /** Trash DAMAGE at each tuning point, as a share of the formula's (`enemyDamage`): 1 where the arriving party
  *  clears the point's hardest stage cleanly, less where it would wipe. */
 export const TRASH_DMG_TUNE: number[] = [
-  1, 1, 1, 1, 0.6, 0.6, 0.5, 0.42, 0.62, 1,
-  0.702, 0.576, 0.432, 0.396, 0.36, 0.36, 0.396, 0.432, 0.36, 0.17,
+  1, 1, 1, 1, 0.5, 0.45, 0.42, 0.36, 0.5, 1,
+  0.562, 0.461, 0.346, 0.269, 0.245, 0.245, 0.269, 0.294, 0.245, 0.17,
   0.2, 0.291, 0.35, 0.39, 0.449, 0.47, 0.51, 0.56, 0.576, 0.51,
   0.5, 0.47, 0.607, 0.715, 0.75, 0.82, 0.952, 1, 0.908, 0.68,
   0.68, 0.748, 0.82, 0.952, 1, 1, 1, 1, 1, 1,
@@ -544,9 +544,10 @@ export function earlyDmgRamp(S: number): number {
 
 /** The trash REFERENCE HP: a grunt has TRASH_HP_FRACTION times it, each enemy kind its own share (data/enemies).
  *  Read from the anchor table (bosses have their own: stageBossHp / zoneBossHp). */
-/** × wave enemies' life in Normal: its stages grew from 8 waves to 16 (2026-11-16) and Normal stays a 3–4 hour
- *  stroll (the user: "en Normal puede ser más relajado") — there a grunt falls to one or two hits. */
-export const NORMAL_TRASH_HP_MULT = 0.6;
+/** × wave enemies' life in Normal. It was 0.6 (2026-11-16, the user: «en Normal puede ser más relajado» — a grunt fell
+ *  to one or two hits); since round 16 (2026-11-17, user decision) it is 1: a grunt takes its 2–3 hits and an elite
+ *  ~10 in Normal too, at the cost of a longer Normal. Kept as a knob. */
+export const NORMAL_TRASH_HP_MULT = 1;
 
 export function enemyHp(S: number): number {
   return ((GRUNT_HP_TUNE[tunePoint(S)] ?? 1) / TRASH_HP_FRACTION) * (S <= 100 ? NORMAL_TRASH_HP_MULT : 1);

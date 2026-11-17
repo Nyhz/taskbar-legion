@@ -24,8 +24,8 @@
     "es": "Erudición"
   },
   "eco_xp.description": {
-    "en": "+2.5% XP per kill",
-    "es": "+2,5 % de experiencia por baja"
+    "en": "+0.5% XP per kill",
+    "es": "+0,5 % de experiencia por baja"
   },
   "eco_offline.name": {
     "en": "Expedition",

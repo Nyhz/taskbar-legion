@@ -77,10 +77,11 @@ export function syncGrowth(config: HeroConfig, xp: number, build?: ClassBuild): 
 /** Spend gold on tech by priority until nothing affordable/beneficial remains. Mutates
  *  `techRanks`; returns leftover gold. Recruiting (party_size's payoff) is handled in the loop. `only` restricts
  *  the buying to those nodes (the loop saves for the party before anything else); `extra` (tooling, ProbeConfig.extraTech)
- *  appends nodes after the default priority. */
-export function buyTech(gold: number, techRanks: Record<string, number>, only?: readonly string[], extra?: readonly string[]): number {
+ *  appends nodes after the default priority; `skip` (tooling, ProbeConfig.skipTech) never buys those. */
+export function buyTech(gold: number, techRanks: Record<string, number>, only?: readonly string[], extra?: readonly string[], skip?: readonly string[]): number {
   let purse = gold;
-  const list = only ?? (extra !== undefined && extra.length > 0 ? [...TECH_PRIORITY, ...extra] : TECH_PRIORITY);
+  const base = only ?? (extra !== undefined && extra.length > 0 ? [...TECH_PRIORITY, ...extra] : TECH_PRIORITY);
+  const list = skip !== undefined && skip.length > 0 ? base.filter((k) => !skip.includes(k)) : base;
   for (;;) {
     let bought = false;
     for (const key of list) {

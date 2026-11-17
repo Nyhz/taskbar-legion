@@ -2165,3 +2165,16 @@ muros y horas en la siguiente ronda.
 - **Pendiente de decisión:** Tormento por defecto en mediana 980 h (por encima de la banda); el 120 llega en Tormento 2–3;
   los golpes por esbirro en Normal dependen de `NORMAL_TRASH_HP_MULT` 0,6. Detalle en PACING_REPORT «Ronda 15».
 
+### Ronda 16 — Erudición, investigación y oro, Normal con vida completa (17 nov, sin commit)
+
+- **`NORMAL_TRASH_HP_MULT` 1** (usuario). Re-anclaje de Normal y de su referencia. Daño de la morralla del dúo
+  (1-5…1-9) y de Normal 5–10 ajustado. Reclutas en 1-4 y 1-8 sin atascos; textura del Knight al 5–19 % de mediana por
+  oleada, sin wipes. El test de la primera etapa admite hasta 450 s.
+- **Erudición** +2,5 → +0,5 % por rango (usuario: nerf de la investigación de experiencia; texto EN/ES). El 120 pasa de
+  Tormento 3–4 a Tormento 4–6 (por defecto). Con mascotas, Tormento 3–4. No alcanza Tormento 8–10: ni quitándola entera.
+- **Medido:** Lucro apenas cuenta (la subida exponencial del precio). La investigación de cofres y gemas acelera
+  Tormento en ~600 h. El oro no se acumula hasta Tormento, donde llega a 15–40 h de ingreso.
+- **Herramientas:** `ProbeConfig.skipTech` (`CP_SKIP`) y, en `ceiling-pass`, oro y rangos en cada muro.
+- **Pendiente de decisión:** la ausencia (que dé experiencia o no) como siguiente palanca del 120, y el precio de
+  «Pulir» (0,8 × 2,2^tier × ilvl × 1,5^n, ★ al 5 %). PACING_REPORT «Ronda 16».
+
