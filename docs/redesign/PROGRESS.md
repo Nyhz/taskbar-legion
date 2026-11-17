@@ -2039,3 +2039,7 @@ muros y horas en la siguiente ronda.
   al tanque y la sacudida del Golpe demoledor; antes era la fórmula, ~14 % en Averno 1–2); **Infierno pide algo más**
   (+3 dentro de la escalera, 13→23 %); **Tormento en el borde alto** de su margen (+4,5). Medida final: 3–5 / 25–49 /
   95–124 / 214–288 / 389–492 h; ningún muro fuera de ±5. Tormento no pasa de 500 h dentro de +5 (ver informe).
+- **Tras la ronda 8** (17 nov): **Tormento sale del margen** de la escalera para pasar de 500 h (orientativo 45→70 % del
+  techo en vez de 40→60 ±5); y **ronda 9 de reglas** sobre la tabla de la 8: Priest sin curas pierde también Eterno 8 /
+  Tormento 8, Knight ofensivo pierde desde Averno (Eterno 8), coherencia ≥ 0,85, el equipo final de una dificultad pasa
+  los mundos 1–2 de la siguiente — sin mover las horas de Normal a Eterno.
