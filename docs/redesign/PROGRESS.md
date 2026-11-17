@@ -2120,3 +2120,10 @@ muros y horas en la siguiente ronda.
   Averno 1 → 6 pide 11,9 · 13,2 · 14,4 · 15,7 · 16,9 · 18,2. Tabla de referencia re-grabada; Averno 1 a 8/8 con equipo
   del final de Infierno. Horas: 3–4 / 32–41 / 134–178 / 280–340 / 577–695 h (Averno +12 h de mediana). PACING_REPORT
   «Ronda 13b».
+
+### Lab confirmado (17 nov)
+
+- **Confirmados por el usuario** («Lo del lab todo ok»): el signo del aura del Apoyo «Armas encantadas» (estrella
+  violeta) y el golpe cargado de los jefes de mundo (nombre «Charged Strike · Golpe cargado», carga en hierro o violeta
+  según la mezcla del jefe, golpe limpio delante) con la separación de render entre jefe y héroe de delante. El lab queda
+  sin nada pendiente.
