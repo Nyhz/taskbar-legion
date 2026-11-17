@@ -3356,3 +3356,79 @@ tabla de Tormento apenas cambió (±1 %), así que es ruido de partida (un mismo
 12 h de mediana (141 → 153) y la partida 1 se pasa 3 h de 175; Tormento de la partida 2 vuelve a la banda (834 →
 577). Las horas de un mismo muro cambian mucho de partida a partida, así que no he compensado el aumento. Si hiciera
 falta, se puede bajar un poco la vida de Averno 6–9, que van holgados por encima de la rampa.
+
+## MR en una partida completa (17 nov, sin commit)
+
+**Pregunta:** ¿la resistencia mágica importa en una partida entera, no solo en las pruebas de un muro? Intención: siempre
+necesaria, y decisiva contra los jefes mágicos (60 % magia) y las oleadas con Armas Encantadas.
+
+**Cómo:** opción nueva de la sonda `ProbeConfig.ignoreStat` (herramienta; `CP_IGNORE=magicResist` en
+`scripts/ceiling-pass.ts`). El jugador cuenta la RM como cero al comparar piezas, en el Cubo y al elegir gemas, y no
+engasta nunca un Diamante (la única gema con RM). La vida que el jugador aprende a pedir tras morir en un muro
+(`SURVIVAL_NEED`) se mide con esa misma vida sin RM, así que responde con vida y armadura y no puede recuperar la RM por
+ahí. El techo de la medida no usa la opción. Base: la pasada de la ronda 13b (mismo código de combate). 3 partidas.
+
+### Horas por dificultad (partida 1 · 2 · 3)
+
+| Dificultad | Base (13b) | Sin RM | Δ mediana |
+|---|---|---|---:|
+| Normal | 4 · 3 · 3 | 5 · 3 · 3 | -0 |
+| Infierno | 32 · 41 · 36 | 39 · 42 · 33 | +3 |
+| Averno | 178 · 134 · 153 | 134 · 105 · 154 | -19 |
+| Eterno | 280 · 340 · 312 | 309 · 315 · 218 | -3 |
+| Tormento | 695 · 577 · 584 | 626 · 1093 · 634 | +51 |
+
+Atascos: base — · — · — · sin RM — · — · —; completas: base true/true/true · sin RM true/true/true
+
+### Intentos fallidos por muro (suma de las 3 partidas), jefe mágico (60 % magia) vs físico (40 %)
+
+| Dificultad | Mágicos: base → sin RM | Físicos: base → sin RM | Horas en muros mágicos: base → sin RM | Horas en muros físicos: base → sin RM |
+|---|---:|---:|---:|---:|
+| Normal | 1 → 1 | 0 → 0 | 5 → 6 | 5 → 5 |
+| Infierno | 16 → 17 | 16 → 12 | 54 → 71 | 54 → 42 |
+| Averno | 140 → 118 | 60 → 53 | 325 → 274 | 139 → 119 |
+| Eterno | 345 → 326 | 235 → 147 | 526 → 600 | 406 → 241 |
+| Tormento | 1012 → 1718 | 1102 → 918 | 907 → 1590 | 948 → 763 |
+
+### RM media del grupo al final de cada dificultad (muro 10; mitigación mágica media)
+
+| Dificultad | Base: RM (mitigación) | Sin RM: RM (mitigación) | Armadura base → sin RM |
+|---|---|---|---|
+| Normal | 139 (16 %) · 104 (12 %) · 77 (10 %) | 83 (10 %) · 69 (9 %) · 47 (6 %) | 68/148/88 → 91/131/104 |
+| Infierno | 307 (22 %) · 226 (17 %) · 309 (22 %) | 195 (15 %) · 153 (12 %) · 167 (13 %) | 177/210/232 → 231/295/233 |
+| Averno | 661 (29 %) · 696 (29 %) · 877 (36 %) | 316 (17 %) · 233 (13 %) · 507 (25 %) | 676/529/579 → 562/529/579 |
+| Eterno | 1444 (40 %) · 1320 (38 %) · 1493 (41 %) | 803 (27 %) · 602 (21 %) · 614 (22 %) | 1094/1324/1290 → 1108/1134/1051 |
+| Tormento | 3470 (53 %) · 3123 (48 %) · 3300 (52 %) | 1342 (31 %) · 1037 (26 %) · 1155 (28 %) | 2789/2558/2627 → 2250/2618/2378 |
+
+Muros mágicos por dificultad: Normal 2,3,5,7,10 · Infierno 2,3,5,7,10 · Averno 2,3,5,7,10 · Eterno 2,3,5,7,10 · Tormento 2,3,5,7,10
+
+Ninguna partida se atasca. En Tormento, la partida 2 sin RM cae en los muros mágicos: Tormento 7 falla 189 veces (base:
+15) y Tormento 10, 449 (base: 124). Las partidas 1 y 3 sin RM fallan como la base.
+
+**Resultado: no se cumple lo esperado.** Hasta Eterno, ignorar la RM no cuesta nada: Averno sale 19 h *más rápido* de
+mediana y Eterno igual, con menos intentos fallidos en los dos tipos de muro. Solo en Tormento se nota, y ahí sí se
+concentra en los muros mágicos: +70 % de intentos fallidos en los mágicos y −17 % en los físicos. En horas son +51 h de
+mediana, pero sobre todo una de las tres partidas (+516 h).
+
+**Por qué (diagnóstico):**
+1. **«Ignorar» deja media RM.** La armadura y la joyería sacan sus afijos de una bolsa mezclada, así que la RM llega
+   sola. El grupo sin RM lleva el 40–60 % de la RM de la base (Averno 233–507 frente a 661–877; Tormento 1 037–1 342
+   frente a 3 123–3 470), y el 87–99 % sale del equipo. El rival de la prueba no es "sin RM": es "media RM".
+2. **Esa media RM apenas cambia el daño recibido antes de Tormento.** Contra un jefe 60 % mágico, el Knight recibe en
+   Averno 0,73–0,75 del golpe frente a 0,58–0,65 en la base (+15–25 %). El Ranger casi no lleva RM en ninguno de los
+   dos. La vida del grupo es parecida en las dos pasadas. En Tormento el Knight recibe 0,60–0,68 frente
+   a 0,36–0,37 (+80 %) con solo +35 % de vida, y ahí ya pesa.
+3. **Hasta Eterno los muros parecen decidirse por el reloj del jefe, no por la supervivencia** (deducido: con menos RM
+   fallan *menos*, no más). El daño del jefe es suave contra un tanque equipado, y lo que no se gasta en RM va a daño. El golpe aplastante (choque
+   mágico a la retaguardia, `CRUSH.backLife` 0,2 / 0,45 en Averno / Eterno) se calcula contra una RM *a nivel*. Una
+   retaguardia con media RM lo aguanta (no he medido las muertes por separado).
+4. **Armas Encantadas** (40 % de cada golpe de la oleada pasa a ser mágico) no pesa en las horas: el tiempo se va en los
+   muros, no en las oleadas.
+
+**Propuesta (sin aplicar; la decide el usuario):** que el golpe del jefe mágico se mida contra la RM *a nivel*, igual que
+hoy el choque del golpe aplastante, con un umbral. A partir de Averno, la parte mágica de los golpes de un jefe 60 % mágico
+(golpe, golpe de área y choque) pesaría ×(RM a nivel / RM del héroe) cuando el héroe lleva menos del ~70 % de la RM a
+nivel. Así "media RM" pierde contra un jefe mágico y lo aguanta contra uno físico, sin topar ninguna estadística. La
+alternativa es separar más las mezclas (mágico 75 %, físico 25 % desde Averno), que es más simple pero castiga menos la
+RM a medias. Cualquiera de las dos pide volver a pasar las reglas (Knight ofensivo, Priest sin curas, sin RM) y una
+pasada de horas.

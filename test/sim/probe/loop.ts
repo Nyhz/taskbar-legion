@@ -25,6 +25,7 @@
 // months"), per difficulty, with the monotonic check.
 
 import { measureFarm, measureBoss, type FarmSample } from './combat';
+import type { StatKey } from '@/data/stats';
 import { openCaptured, equipItems, socketGems, partyPower, heroEhp, SURVIVAL_NEED, SCORE_CONTEXT } from './gear';
 import { bossMagicShare } from '@/data/bossKit';
 import { newCubeBag, cubeStep, type CubeBag } from './cubePolicy';
@@ -75,6 +76,9 @@ export interface ProbeConfig {
   measureGear?: boolean;
   /** Tooling: called at the wall each time a key for it is in hand that was not there a moment ago. */
   onKey?: (run: ProbeRun) => void;
+  /** Tooling (MR over a whole run, 2026-11-17): the player values this stat at zero — comparing pieces, in the Cube,
+   *  choosing gems — and never sockets a gem that grants it (gear.SCORE_CONTEXT.ignoreStat). */
+  ignoreStat?: StatKey;
   /** Tooling: stop once this much active time has been played (seconds). */
   stopAtActiveSec?: number;
   maxDays: number; // hard stop (stall guard)
@@ -416,6 +420,7 @@ export interface ProbeRun {
 export function newProbeRun(seed: number, cfg: ProbeConfig = DEFAULT_CONFIG): ProbeRun {
   SURVIVAL_NEED.clear();
   SCORE_CONTEXT.magicShare = 0.5;
+  SCORE_CONTEXT.ignoreStat = cfg.ignoreStat;
   return {
     state: {
       party: [freshHero('h0', 'knight', 1, cfg.build?.knight)],
@@ -507,6 +512,7 @@ export function advanceProbe(run: ProbeRun, cfg: ProbeConfig = DEFAULT_CONFIG): 
   const state = run.state;
   const lastStage = Math.min(MAX_GLOBAL_STAGE, cfg.stopAtStage ?? MAX_GLOBAL_STAGE);
   const timeUp = (): boolean => cfg.stopAtActiveSec !== undefined && state.activeSec >= cfg.stopAtActiveSec;
+  SCORE_CONTEXT.ignoreStat = cfg.ignoreStat;
   while (state.frontier < lastStage && state.calendarDays < cfg.maxDays && !run.gaveUp && !timeUp()) {
     let bonuses = bonusesOf(state, cfg);
 

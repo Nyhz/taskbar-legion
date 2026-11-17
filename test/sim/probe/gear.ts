@@ -20,12 +20,14 @@ import type { GemInstance } from '@/data/gems';
 import type { Bonuses } from '@/sim/bonuses';
 import type { ChestType } from '@/data/chests';
 import type { SlotKey } from '@/data/itemSlots';
+import type { StatKey } from '@/data/stats';
+import { GEMS } from '@/data/gems';
 
 /** Role-weighted power score for a hero config (higher = stronger). Stage-free heuristic:
  *  a DPS proxy (damage × speed × crit) and an EHP proxy (health × armor/MR cushion), blended
  *  by class role. Used only to compare equip candidates. */
 export function heroScore(config: HeroConfig, party: readonly HeroConfig[]): number {
-  const eff = aggregate(heroBaseStats(config.classKey, config.level), heroStaticMods(config, partyAuraMods(party)));
+  const eff = scoredStats(config, party);
   const dps = eff.attackDamage * eff.attackSpeed * (1 + (eff.critChance / 100) * (eff.critDamage / 100));
   const ehp = cushioned(eff.health, eff.armor, eff.magicResist);
   const heal = eff.health * (eff.healPower / 100);
@@ -48,14 +50,30 @@ export function heroScore(config: HeroConfig, party: readonly HeroConfig[]): num
 
 /** The effective life the score weighs (health cushioned by armour and magic resist). */
 export function heroEhp(config: HeroConfig, party: readonly HeroConfig[]): number {
-  const eff = aggregate(heroBaseStats(config.classKey, config.level), heroStaticMods(config, partyAuraMods(party)));
+  const eff = scoredStats(config, party);
   return cushioned(eff.health, eff.armor, eff.magicResist);
 }
 
 /** What the player gears against (round 5, 2026-11-16): the share of the damage that is magic — the next wall's
  *  boss's own mix (data/bossKit BOSS_MAGIC_SHARE), set by the loop as the party moves on. 0.5 weighs armour and
  *  magic resist alike (the old score). */
-export const SCORE_CONTEXT = { magicShare: 0.5 };
+export const SCORE_CONTEXT: { magicShare: number; ignoreStat?: StatKey } = { magicShare: 0.5 };
+
+/** The hero's stats as the player weighs them: with SCORE_CONTEXT.ignoreStat (tooling, ProbeConfig.ignoreStat — "a
+ *  player who never looks at magic resist") that stat counts as zero. heroEhp reads the same, so the life a hero learns
+ *  to ask for after dying at a wall (SURVIVAL_NEED) is life without it: the player answers with health and armour,
+ *  never by learning the ignored stat back. */
+function scoredStats(config: HeroConfig, party: readonly HeroConfig[]): ReturnType<typeof aggregate> {
+  const eff = aggregate(heroBaseStats(config.classKey, config.level), heroStaticMods(config, partyAuraMods(party)));
+  const k = SCORE_CONTEXT.ignoreStat;
+  return k === undefined ? eff : { ...eff, [k]: 0 };
+}
+
+/** A gem the player never sockets: one that grants the ignored stat (with magic resist, the Diamond). */
+function ignoredGem(gem: GemInstance): boolean {
+  const k = SCORE_CONTEXT.ignoreStat;
+  return k !== undefined && GEMS[gem.key].grants.includes(k);
+}
 
 /** Health cushioned by the defences, each weighed by the share of the damage it turns away. At magicShare 0.5 this
  *  is the old cushion (health × (1 + armour/300 + magic resist/300)). */
@@ -147,6 +165,7 @@ export function equipItems(party: HeroConfig[], items: readonly ItemInstance[]):
 export function socketGems(party: HeroConfig[], gems: readonly GemInstance[], replace = true): boolean {
   let changed = false;
   for (const gem of gems) {
+    if (ignoredGem(gem)) continue;
     let best: { cfgIdx: number; slot: SlotKey; socketIdx: number; delta: number } | null = null;
     for (let i = 0; i < party.length; i++) {
       const cfg = party[i];

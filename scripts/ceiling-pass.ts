@@ -10,7 +10,8 @@ import { appendFileSync, writeFileSync } from 'node:fs';
 import { newProbeRun, advanceProbe, probeResult, DEFAULT_CONFIG, type ProbeConfig } from '../test/sim/probe/loop';
 import { gradualCeilingDamage, wallDamage, ceilingTierRange } from '../test/sim/probe/zoneGear';
 import { partyWithBuild, PROBE_DEFAULT_BUILD, PROBE_GOOD_BUILD } from '../test/sim/probe/builds';
-import { SURVIVAL_NEED } from '../test/sim/probe/gear';
+import { SURVIVAL_NEED, SCORE_CONTEXT } from '../test/sim/probe/gear';
+import type { StatKey } from '@/data/stats';
 import { zoneBossHp } from '@/data/stageScaling';
 import type { HeroConfig } from '@/sim/loadout';
 import type { Bonuses } from '@/sim/bonuses';
@@ -33,6 +34,8 @@ const cfg: ProbeConfig = {
   ...DEFAULT_CONFIG,
   capture: { normal: DEFAULT_CONFIG.capture.normal * CHEST_MULT, stageBoss: DEFAULT_CONFIG.capture.stageBoss * CHEST_MULT, zoneBoss: DEFAULT_CONFIG.capture.zoneBoss * CHEST_MULT },
   stopAtStage: TO,
+  // CP_IGNORE (tooling): the player values this stat at zero and never sockets its gems (ProbeConfig.ignoreStat).
+  ...(process.env.CP_IGNORE !== undefined ? { ignoreStat: process.env.CP_IGNORE as StatKey } : {}),
   observe: (target, party, bonuses) => {
     if ((Date.now() - t0) / 1000 > MAX_SEC) return false;
     if (target % 10 !== 0) return;
@@ -50,6 +53,7 @@ process.stdout.write(`seed ${SEED}: probe ${r.totalActiveHours.toFixed(0)} h in 
 // The ceiling set is dressed by the plain role score: the life the probe's heroes learned to ask for at the walls
 // (gear.SURVIVAL_NEED, end-of-run values by now) is the probe player's habit, not part of the ceiling.
 SURVIVAL_NEED.clear();
+SCORE_CONTEXT.ignoreStat = undefined;
 
 function measure(snap: Snap, S: number): { ask: number; pct: number } {
   const party = partyWithBuild(snap.party, S > 200 ? PROBE_GOOD_BUILD : PROBE_DEFAULT_BUILD);
