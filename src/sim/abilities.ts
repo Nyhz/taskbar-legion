@@ -1,3 +1,4 @@
+import { cadenceHitMult } from '@/data/cadence';
 import type { AbilityDef, AbilityPower, AbilityTarget, AppliedEffect, FireRule } from '@/data/abilities';
 import { worldBossAbilityKeys } from '@/data/abilities';
 import type { EffectDef } from '@/data/effects';
@@ -63,7 +64,9 @@ function casterStats(c: Combatant): EffectiveStats {
  *  hero abilities (enemies carry no attackDamage stat). */
 export function normalAttackDamage(caster: Combatant, cs: EffectiveStats): number {
   if (caster.side === 'enemy') return (caster.enemyDamage ?? 0) * foeDamageMult(caster); // its support's Saña
-  return cs.attackDamage * (1 + cs.damageIncrease / 100);
+  // A hero's normal attack carries his speed past the cadence curve (data/cadence, round 12): an ability that takes his
+  // swing and hits for a multiple of his attack keeps its worth against the (bigger, fewer) swing it replaces.
+  return cs.attackDamage * (1 + cs.damageIncrease / 100) * cadenceHitMult(caster.classKey, cs.attackSpeed);
 }
 
 /** The power an applied effect resolves against: its own, or the ability's. */

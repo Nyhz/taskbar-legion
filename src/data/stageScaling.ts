@@ -155,23 +155,27 @@ export function tunePoint(S: number): number {
   const g = Math.max(1, Math.floor(S));
   return g <= 10 ? g - 1 : Math.min(TUNE_POINTS - 1, 8 + worldOf(g));
 }
+// ROUND 12 (2026-11-17): rescaled for the swing-timer fix and the cadence curve (data/cadence), from the probe's party
+// arriving at each wall (round-11 snapshots, three-world running median): GRUNT_HP_TUNE × the hardest hitter's per-hit
+// multiplier (bigger, fewer hits: still 2.5 hits), STAGE_BOSS_HP_TUNE × the party's damage gain from the fixed timer
+// (still 7.5 s). TRASH_DMG_TUNE unchanged.
 /** Life of a GRUNT (the plain melee enemy) at each tuning point: 2.5 basic hits of the on-gear hardest hitter. */
 export const GRUNT_HP_TUNE: number[] = [
-  31.5, 54.7, 60.7, 70.1, 74.0, 84.4, 92.1, 100, 101, 101,
-  113, 149, 342, 531, 685, 782, 821, 846, 881, 1070,
-  1560, 2350, 3310, 4050, 4700, 5490, 6070, 6620, 7260, 8140,
-  9330, 10100, 10900, 12200, 13800, 15500, 17200, 19400, 22900, 27200,
-  30800, 34500, 39300, 45600, 53300, 62700, 72100, 79700, 89600, 101000,
-  109000, 117000, 129000, 147000, 169000, 190000, 210000, 233000, 254000,
+  31.5, 54.7, 60.7, 70.1, 74, 84.4, 92.1, 100, 101, 101,
+  113, 150, 346, 537, 694, 793, 832, 861, 897, 1100,
+  1610, 2420, 3410, 4170, 4990, 5830, 6450, 7120, 7880, 9080,
+  10500, 11600, 12600, 14300, 16300, 20200, 22400, 24800, 29200, 34700,
+  39700, 50100, 57100, 66000, 76500, 90000, 112000, 125000, 144000, 181000,
+  196000, 225000, 314000, 391000, 550000, 660000, 729000, 788000, 858000,
 ];
 /** Life of the STAGE BOSS at each tuning point: 7.5 seconds of the on-gear party. */
 export const STAGE_BOSS_HP_TUNE: number[] = [
-  86.9, 148, 180, 194, 504, 583, 666, 845, 943, 943,
-  1100, 1560, 2990, 4720, 5900, 6720, 7080, 7430, 8180, 10300,
-  16100, 27500, 40200, 50100, 57500, 62300, 66900, 75600, 88300, 99300,
-  109000, 121000, 134000, 156000, 197000, 237000, 277000, 333000, 399000, 462000,
-  531000, 634000, 790000, 963000, 1100000, 1280000, 1510000, 1670000, 1850000, 2110000,
-  2250000, 2310000, 2600000, 3120000, 3680000, 4090000, 4490000, 5080000, 5550000,
+  92.7, 158, 192, 207, 538, 622, 710, 901, 1010, 1010,
+  1180, 1670, 3200, 5070, 6280, 7160, 7510, 7890, 8710, 11000,
+  17600, 30200, 44300, 55200, 62500, 65700, 70500, 81200, 97100, 109000,
+  122000, 132000, 154000, 170000, 226000, 272000, 318000, 369000, 443000, 513000,
+  590000, 705000, 878000, 1.01e+06, 1.15e+06, 1.34e+06, 1.76e+06, 1.99e+06, 2.25e+06, 3.02e+06,
+  3.22e+06, 3.24e+06, 3.61e+06, 4.78e+06, 5.63e+06, 5.66e+06, 5.69e+06, 5.71e+06, 5.74e+06,
 ];
 /** Trash DAMAGE at each tuning point, as a share of the formula's (`enemyDamage`): 1 where the arriving party
  *  clears the point's hardest stage cleanly, less where it would wipe. */
@@ -322,7 +326,7 @@ export const ZONE_ENRAGE_MS = 60_000; // world boss (X-10) — the gate
  *  Hell) gives the party this long before it enrages, so the gear a party ends a difficulty with — which stands right at
  *  its last wall's threshold, since it is the attempt that took it — takes the first wall of the next one. Its life
  *  and its % of the ceiling stay on the ladder (the % is measured over the usual 60 s): only the clock is longer. */
-export const OPENING_ENRAGE_MS = 100_000;
+export const OPENING_ENRAGE_MS = 120_000;
 /** The enrage window of the world boss of global stage `S`: the opening wall's longer clock, else the usual one. */
 export function zoneEnrageMs(S: number): number {
   return difficultyIndexOf(S) > 0 && worldInDifficulty(S) === 1 ? OPENING_ENRAGE_MS : ZONE_ENRAGE_MS;
@@ -484,12 +488,16 @@ export function wallCurveMult(S: number): number {
 // (OPENING_ENRAGE_MS) so the gear a difficulty ends with takes it; no wall inside Inferno/Eternal asks less than the
 // one before; Torment on a 60→90 % line with Torment 8–10 evened. Measured (round 11, measure 3): Normal 3–5, Hell
 // 29–37, Inferno 105–111, Eternal 245–345, Torment 570–911 h; each difficulty longer than the last in every seed.
+// ROUND 12 (2026-11-17; the swing-timer fix and the cadence curve, data/cadence): re-fitted on the ladder (Hell one
+// point under its line, Inferno at the bottom of its band, no wall asking less than the one before, Torment on
+// 60→90). Measured (round 12, measure 5): Normal 3–4, Hell 32–47, Inferno 124–174, Eternal 234–322, Torment
+// 647–740 h; each difficulty longer than the last in every seed.
 export const WORLD_WALL_MULT: readonly number[] = [
-  0.23, 0.18, 0.155, 0.227, 0.288, 0.269, 0.33, 0.353, 0.356, 0.335,
-  0.371, 0.412, 0.498, 0.486, 0.809, 0.828, 1.01, 1.07, 1.12, 1.16,
-  1.05, 1.25, 1.67, 1.65, 1.79, 3.14, 4.01, 4.47, 4.4, 4.35,
-  4.58, 6.99, 10.4, 12.3, 14.6, 17.3, 22, 25.2, 27.2, 28,
-  36.8, 56.7, 87, 128, 150, 171, 214, 238, 281, 292,
+  0.255, 0.2, 0.172, 0.192, 0.317, 0.318, 0.36, 0.389, 0.389, 0.371,
+  0.295, 0.351, 0.404, 0.531, 0.645, 0.702, 0.858, 0.916, 0.99, 1.08,
+  1.02, 1.35, 1.79, 1.76, 1.95, 3.53, 4.37, 5.77, 6.58, 6.5,
+  5.69, 8.91, 12.5, 15.4, 17.7, 22.4, 25.3, 29.5, 32.6, 33.1,
+  49.4, 67.7, 104, 146, 171, 195, 221, 253, 294, 303,
 ];
 export function wallWorldMult(S: number): number {
   return WORLD_WALL_MULT[worldOf(S) - 1] ?? wallCurveMult(S);

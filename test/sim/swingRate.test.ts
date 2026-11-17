@@ -11,7 +11,8 @@ import { base, unit } from './_kit';
 // the interval rounded up to whole ticks (9.65 a second swung 5 times).
 
 function swingsPerSec(attackSpeed: number): number {
-  const hero = unit({ id: 'h', side: 'hero', hp: 1e9, maxHp: 1e9, x: 0, range: 400, baseStats: base({ health: 1e9, attackDamage: 1, attackSpeed, critChance: 0, multistrike: 0 }), attackTimerMs: 0 });
+  // A combatant outside the cadence curve (data/cadence): the timer alone is under test here.
+  const hero = unit({ id: 'h', side: 'hero', classKey: 'curveless', hp: 1e9, maxHp: 1e9, x: 0, range: 400, baseStats: base({ health: 1e9, attackDamage: 1, attackSpeed, critChance: 0, multistrike: 0 }), attackTimerMs: 0 });
   const dummy = unit({ id: 'd', side: 'enemy', hp: 1e15, maxHp: 1e15, x: 30, range: 0, enemyDamage: 0, enemyAttackSpeed: 0.05, attackTimerMs: 1e12 });
   const world = createWorld(7, [hero]);
   world.globalStageIndex = 5;

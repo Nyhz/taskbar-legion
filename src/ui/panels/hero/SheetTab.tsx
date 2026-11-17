@@ -55,7 +55,7 @@ export function SheetTab({ heroId }: { heroId: string }): React.JSX.Element | nu
           </div>
         )}
       </Head>
-      <SheetStats stats={stats} stage={stage} auras={auras} />
+      <SheetStats stats={stats} stage={stage} auras={auras} classKey={hero.classKey} />
       <Rule />
       <div className="tk-sheet-accts">
         <Account

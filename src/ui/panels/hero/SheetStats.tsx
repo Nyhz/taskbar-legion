@@ -3,7 +3,7 @@ import type { EffectiveStats } from '@/sim/stats';
 import type { PartyAura } from '@/sim/partyStats';
 import { className, statLabel, talentNodeName, useT } from '@/i18n';
 import { StatRow, Tip, TipLine, TipTag, TipText, TipTitle, type TipSide } from '@/ui/kit';
-import { auraFigure, defenseAgainstStage, statFigure } from './sheetFigures';
+import { auraFigure, cadenceFigures, defenseAgainstStage, statFigure } from './sheetFigures';
 import { SHEET_REST_STATS, sheetColumns } from './sheetLayout';
 
 // The two stat columns of the sheet (sheetLayout): offence on the left, defence on the right (armour and magic
@@ -16,10 +16,13 @@ export function SheetStats({
   stats,
   stage,
   auras,
+  classKey,
 }: {
   stats: EffectiveStats;
   stage: number;
   auras: readonly PartyAura[];
+  /** The hero's class: his attack speed shows through its cadence curve (data/cadence). */
+  classKey?: string;
 }): React.JSX.Element {
   // EVERY stat is always listed, at 0 when the hero has none: a buff that grants one (Stone Skin's damage
   // reduction, Bloodlust's lifesteal) only changes its number — a row appearing would shift the whole sheet.
@@ -36,6 +39,7 @@ export function SheetStats({
               side="right"
               stage={stage}
               auras={auras.filter((a) => a.mod.key === k)}
+              classKey={classKey}
             />
           ))}
         </div>
@@ -50,6 +54,7 @@ function StatLine({
   side,
   stage,
   auras,
+  classKey,
 }: {
   stat: StatKey;
   value: number;
@@ -57,6 +62,7 @@ function StatLine({
   stage?: number;
   /** The party auras that raise this stat. */
   auras: readonly PartyAura[];
+  classKey?: string;
 }): React.JSX.Element {
   const t = useT();
   const name = statLabel(stat);
@@ -113,6 +119,17 @@ function StatLine({
         {given}
       </Tip>
     );
+  } else if (stat === 'attackSpeed' && classKey !== undefined) {
+    const c = cadenceFigures(classKey, value);
+    tip = (
+      <Tip side={side}>
+        <TipTitle>{name}</TipTitle>
+        <TipLine label={t('hero.cadenceSwings')} value={c.swings} />
+        <TipLine label={t('hero.cadenceSpeed')} value={c.speed} />
+        <TipLine label={t('hero.cadencePerHit')} value={c.perHit} />
+        {given}
+      </Tip>
+    );
   } else if (stat === 'damageReduction') {
     tip = (
       <Tip side={side}>
@@ -133,7 +150,7 @@ function StatLine({
   }
 
   return (
-    <StatRow sign={`stat_${stat}`} alt={name} value={statFigure(stat, value)} extra={extra}>
+    <StatRow sign={`stat_${stat}`} alt={name} value={statFigure(stat, value, classKey)} extra={extra}>
       {tip}
     </StatRow>
   );

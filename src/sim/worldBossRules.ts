@@ -1,3 +1,4 @@
+import { heroSwingsPerSec } from '@/data/cadence';
 import { effectDef } from '@/data/effects';
 import { WALK_SPEED } from '@/data/field';
 import { MAX_DAMAGE_REDUCTION, enrageMultiplier } from '@/data/stageScaling';
@@ -89,7 +90,7 @@ export function dragParty(caster: Combatant, heroes: readonly Combatant[], dragP
   for (const h of heroes) {
     if (!h.alive) continue;
     h.x -= dragPx;
-    h.attackTimerMs = Math.max(h.attackTimerMs, 1000 / Math.max(0.05, liveStats(h).attackSpeed));
+    h.attackTimerMs = Math.max(h.attackTimerMs, 1000 / Math.max(0.05, heroSwingsPerSec(h.classKey, liveStats(h).attackSpeed)));
   }
   caster.holdMs = (dragPx / WALK_SPEED) * 1000 + UNDERTOW_HOLD_EXTRA_MS;
 }

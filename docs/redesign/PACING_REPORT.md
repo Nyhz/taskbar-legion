@@ -3105,3 +3105,144 @@ y el resto daño.
 
 **Recomendación**: A (o C si se quiere sin umbral). No toca el generador ni los guardados, conserva todo el daño que da
 la velocidad y deja la cadencia en el rango pedido. B es más limpia como diseño de objetos pero obliga a migrar el generador.
+
+### Ronda 12 · segunda parte: la curva de cadencia y el re-afinado
+
+**La curva** (`src/data/cadence.ts`): golpes = velocidad hasta la base de la clase; por encima,
+base + (paso − base)·(1 − e^(−0,7·(velocidad − base)/(paso − base))). Ranger 1,5 → 3,0, Knight 1,4 → 2,2,
+Priest 1,0 → 2,0. Cada golpe se multiplica por velocidad / golpes. Las habilidades que pegan con el ataque también.
+
+**Golpes reales por segundo al tumbar el último muro de cada dificultad** (golpes, entre paréntesis la velocidad bruta y
+el multiplicador por golpe; partidas 1 · 2 · 3):
+
+| Dificultad | Knight | Ranger | Priest |
+|---|---|---|---|
+| Normal 10 | 1.45 (raw 1.5, ×1.01) · 1.42 (raw 1.4, ×1.01) · 1.44 (raw 1.5, ×1.01) | 1.57 (raw 1.6, ×1.02) · 1.55 (raw 1.6, ×1.01) · 1.62 (raw 1.7, ×1.04) | 1.00 (raw 1.0, ×1.00) · 1.01 (raw 1.0, ×1.01) · 1.04 (raw 1.1, ×1.02) |
+| Infierno 10 | 1.49 (raw 1.5, ×1.03) · 1.52 (raw 1.6, ×1.04) · 1.52 (raw 1.6, ×1.04) | 1.88 (raw 2.1, ×1.13) · 1.85 (raw 2.1, ×1.12) · 1.73 (raw 1.9, ×1.07) | 1.07 (raw 1.1, ×1.03) · 1.05 (raw 1.1, ×1.02) · 1.07 (raw 1.1, ×1.03) |
+| Averno 10 | 1.49 (raw 1.5, ×1.03) · 1.61 (raw 1.7, ×1.08) · 1.58 (raw 1.7, ×1.07) | 2.13 (raw 2.7, ×1.25) · 2.33 (raw 3.2, ×1.39) · 2.29 (raw 3.1, ×1.36) | 1.11 (raw 1.2, ×1.05) · 1.09 (raw 1.1, ×1.04) · 1.13 (raw 1.2, ×1.06) |
+| Eterno 10 | 1.77 (raw 2.1, ×1.19) · 1.76 (raw 2.1, ×1.18) · 1.80 (raw 2.2, ×1.21) | 2.69 (raw 4.9, ×1.82) · 2.63 (raw 4.5, ×1.72) · 2.64 (raw 4.5, ×1.72) | 1.34 (raw 1.6, ×1.19) · 1.45 (raw 1.8, ×1.28) · 1.37 (raw 1.7, ×1.21) |
+| Tormento 10 | 2.11 (raw 3.9, ×1.85) · 2.04 (raw 3.3, ×1.59) · 1.98 (raw 2.9, ×1.46) | 2.98 (raw 10.6, ×3.55) · 2.97 (raw 10.2, ×3.42) · 2.98 (raw 10.8, ×3.63) | 1.37 (raw 1.7, ×1.21) · 1.43 (raw 1.8, ×1.26) · 1.79 (raw 3.2, ×1.80) |
+
+
+**Re-afinado**: vida de los enemigos normales × el multiplicador por golpe del que más pega (siguen 2,5 golpes; ×1,0 en
+Normal, ×1,1–1,4 en Averno, hasta ×3,3 en Tormento), jefes de etapa × la ganancia del temporizador (×1,05–1,5), la
+referencia de las anclas igual, y la tabla de muros en la escalera (5 medidas). Reloj del muro de apertura: 120 s.
+
+**Horas** (medida 5):
+
+| Partida | Normal | Infierno | Averno | Eterno | Tormento | Total |
+|---|---:|---:|---:|---:|---:|---:|
+| 1 | 4 | 32 | 163 | 322 | 740 | 1 261 |
+| 2 | 3 | 47 | 124 | 285 | 668 | 1 127 |
+| 3 | 3 | 35 | 174 | 234 | 647 | 1 093 |
+
+**Tormento**: entre 647 y 740 h (antes de esta ronda 570–911): la dispersión entre partidas baja de 341 a 93 h. Por mundo
+(mediana): 0,6 · 91 · 73 · 79 · 37 · 65 · 35 · 76 · 89 · 46 h — ningún muro gratis salvo el de apertura (antes
+0,3–0,5 h en tres mundos y 139 h en otros). **Averno sigue largo** (124–174 h, banda 80–135).
+
+**Por qué Averno cuesta más**: no son muertes. Con el grupo que llega a los muros de Averno, las derrotas son casi todas
+carrera (el jefe llega a la furia); solo Averno 5 se pierde por supervivencia (el Abad dorado congela las recargas y la
+Piel de piedra no llega al Golpe demoledor). Lo que sube son las horas de farmeo: sin llave 57–76 h y con llave 59–89 h
+(ronda 11: 26–55 y 43–71). Dos causas medidas:
+- **Los enemigos normales tienen ×1,1–1,4 de vida en Averno** (para seguir cayendo en 2,5 golpes, que ahora son más
+  grandes y menos): limpiar el X-9 cuesta un 10–15 % más y salen menos cofres y llaves por hora.
+- **El techo de equipo sube más que el grupo**: el grupo del techo tiene mucha más velocidad bruta, y su multiplicador
+  por golpe (también en las habilidades) le da más que al grupo de la sonda. Con el mismo % de la escalera, el muro
+  pide más vida real; el grupo llega con un 7–19 % del techo frente a un 16 % antes.
+Bajar los muros por debajo de la banda queda descartado. Opciones (sin aplicar): (a) anclar la vida de los enemigos
+normales a su tiempo de muerte en vez de a los golpes (en Averno ~2 golpes, en Tormento ~1); (b) medir el techo con su
+cadencia real (sin el multiplicador de habilidades, o con la curva aplicada a su velocidad bruta) para que el % de la
+escalera vuelva a significar lo mismo que antes; (c) aceptar Averno en ~125–175 h.
+
+### Cumplimiento muro a muro (medida 5; Tormento sobre 60→90)
+
+| Muro | Escalera | Pide (mediana · rango) | Diferencia | Sube | Cae a los |
+|---|---:|---:|---:|:---:|---:|
+| Normal 1 | 5 % | 5 % (5–5) | -0 | — | 56 s |
+| Normal 2 | 6 % | 6 % (6–6) | +0 | sí | 39 s |
+| Normal 3 | 6 % | 6 % (6–6) | -0 | sí | 25 s |
+| Normal 4 | 7 % | 7 % (7–7) | +0 | sí | 19 s |
+| Normal 5 | 7 % | 7 % (7–7) | -0 | sí | 33 s |
+| Normal 6 | 8 % | 8 % (8–8) | +0 | sí | 40 s |
+| Normal 7 | 8 % | 8 % (8–8) | -0 | sí | 44 s |
+| Normal 8 | 9 % | 9 % (9–9) | +0 | sí | 51 s |
+| Normal 9 | 9 % | 9 % (9–9) | -0 | sí | 38 s |
+| Normal 10 | 10 % | 10 % (10–10) | -0 | sí | 44 s |
+| Infierno 1 | 10 % | 9 % (9–9) | -1 | **no** | 32 s |
+| Infierno 2 | 11 % | 10 % (10–10) | -1 | sí | 47 s |
+| Infierno 3 | 12 % | 11 % (11–11) | -1 | sí | 46 s |
+| Infierno 4 | 13 % | 14 % (12–16) | +1 | sí | 58 s |
+| Infierno 5 | 14 % | 13 % (13–17) | -1 | igual | 61 s |
+| Infierno 6 | 16 % | 15 % (14–15) | -1 | sí | 70 s |
+| Infierno 7 | 17 % | 16 % (16–16) | -1 | sí | 73 s |
+| Infierno 8 | 18 % | 17 % (17–17) | -1 | sí | 66 s |
+| Infierno 9 | 19 % | 18 % (18–18) | -1 | sí | 66 s |
+| Infierno 10 | 20 % | 19 % (19–20) | -1 | sí | 67 s |
+| Averno 1 | 20 % | 20 % (18–20) | -0 | sí | 77 s |
+| Averno 2 | 21 % | 20 % (19–20) | -1 | sí | 68 s |
+| Averno 3 | 22 % | 19 % (16–20) | -3 | igual | 68 s |
+| Averno 4 | 23 % | 23 % (22–25) | -1 | sí | 70 s |
+| Averno 5 | 24 % | 21 % (20–21) | -4 | **no** | 60 s |
+| Averno 6 | 26 % | 21 % (21–22) | -5 | sí | 69 s |
+| Averno 7 | 27 % | 22 % (21–22) | **-5** | sí | 72 s |
+| Averno 8 | 28 % | 25 % (25–27) | -2 | sí | 70 s |
+| Averno 9 | 29 % | 26 % (24–26) | -2 | sí | 72 s |
+| Averno 10 | 30 % | 29 % (22–29) | -1 | sí | 72 s |
+| Eterno 1 | 30 % | 27 % (27–28) | -3 | **no** | 67 s |
+| Eterno 2 | 31 % | 27 % (27–28) | -4 | sí | 66 s |
+| Eterno 3 | 32 % | 27 % (26–30) | -5 | sí | 70 s |
+| Eterno 4 | 33 % | 29 % (29–32) | -4 | sí | 71 s |
+| Eterno 5 | 34 % | 30 % (30–32) | -4 | sí | 67 s |
+| Eterno 6 | 36 % | 34 % (31–34) | -2 | sí | 70 s |
+| Eterno 7 | 37 % | 34 % (33–34) | -3 | sí | 70 s |
+| Eterno 8 | 38 % | 35 % (34–35) | -3 | sí | 71 s |
+| Eterno 9 | 39 % | 36 % (36–37) | -2 | sí | 72 s |
+| Eterno 10 | 40 % | 38 % (37–38) | -2 | sí | 70 s |
+| Tormento 1 | 60 % | 58 % (57–60) | -2 | sí | 111 s |
+| Tormento 2 | 63 % | 61 % (60–61) | -3 | sí | 69 s |
+| Tormento 3 | 67 % | 66 % (62–70) | -0 | sí | 64 s |
+| Tormento 4 | 70 % | 67 % (67–68) | -3 | sí | 64 s |
+| Tormento 5 | 73 % | 70 % (70–70) | -3 | sí | 63 s |
+| Tormento 6 | 77 % | 74 % (74–74) | -3 | sí | 64 s |
+| Tormento 7 | 80 % | 77 % (77–77) | -3 | sí | 64 s |
+| Tormento 8 | 83 % | 80 % (80–80) | -3 | sí | 64 s |
+| Tormento 9 | 87 % | 84 % (84–84) | -3 | sí | 63 s |
+| Tormento 10 | 90 % | 87 % (87–87) | -3 | sí | 63 s |
+
+Fuera de ±5 o que bajan: Infierno 1, Averno 5, Averno 7, Eterno 1
+
+- Infierno 1 queda 1 punto por debajo de Normal 10 (lo dejé en su línea −1; se corrige subiendo su vida un 10 %).
+- Averno 5 y Eterno 1 bajan 1–2 puntos frente al muro anterior; Averno 7 en −5.
+
+### Mundo 1 con el equipo con que se acaba la dificultad anterior (8 combates)
+
+- seed 1 · end of Normal → Infierno 1: 8/8 (66 s) · Infierno 2: 0/8 (76 s)
+- seed 1 · end of Infierno → Averno 1: 8/8 (72 s) · Averno 2: 0/8 (78 s)
+- seed 1 · end of Averno → Eterno 1: 8/8 (67 s) · Eterno 2: 0/8 (70 s)
+- seed 1 · end of Eterno → Tormento 1: 8/8 (109 s) · Tormento 2: 0/8 (74 s)
+- seed 2 · end of Normal → Infierno 1: 8/8 (32 s) · Infierno 2: 8/8 (53 s)
+- seed 2 · end of Infierno → Averno 1: 8/8 (78 s) · Averno 2: 0/8 (79 s)
+- seed 2 · end of Averno → Eterno 1: 8/8 (67 s) · Eterno 2: 0/8 (64 s)
+- seed 2 · end of Eterno → Tormento 1: 8/8 (121 s) · Tormento 2: 0/8 (73 s)
+- seed 3 · end of Normal → Infierno 1: 8/8 (38 s) · Infierno 2: 8/8 (60 s)
+- seed 3 · end of Infierno → Averno 1: 8/8 (87 s) · Averno 2: 0/8 (78 s)
+- seed 3 · end of Averno → Eterno 1: 8/8 (72 s) · Eterno 2: 0/8 (74 s)
+- seed 3 · end of Eterno → Tormento 1: 8/8 (109 s) · Tormento 2: 0/8 (73 s)
+
+**12 de 12 costuras a 8/8.**
+
+### Reglas (grupo al tumbar el muro, jefe fijo de su partida, 2 partidas × 8 combates)
+
+| Muro | Vida del muro | Buena | Knight ofensivo | Priest sin curas | Sin RM | Coherencia (buena) |
+|---|---:|---:|---:|---:|---:|---:|
+| Infierno 3 | ×1 | 100 % | 100 % | 50 % | 100 % | 1.00 |
+| Infierno 8 | ×1 | 100 % | 100 % | 0 % | 100 % | 1.00 |
+| Averno 5 | ×1 | 100 % | 0 % | 0 % | 50 % | 1.00 |
+| Averno 8 | ×1 | 100 % | 0 % | 0 % | 100 % | 1.00 |
+| Eterno 5 | ×1 | 100 % | 0 % | 0 % | 0 % | 1.00 |
+| Eterno 8 | ×1 | 100 % | 0 % | 0 % | 50 % | 1.00 |
+| Tormento 5 | ×1 | 100 % | 0 % | 0 % | 100 % | 1.00 |
+| Tormento 8 | ×1 | 100 % | 50 % | 0 % | 100 % | 1.00 |
+
+- Knight ofensivo: pierde todos desde Averno salvo Tormento 8 en una partida. Priest sin curas: pierde todos desde
+  Averno. Sin resistencia mágica: pierde los muros mágicos. Coherencia 1,00.

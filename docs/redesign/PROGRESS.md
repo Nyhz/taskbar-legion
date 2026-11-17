@@ -2083,3 +2083,15 @@ muros y horas en la siguiente ronda.
   `test/sim/swingRate.test.ts` (2,4 / 4,9 / 9,65 / 15 golpes/s, ±1 %).
 - **El re-afinado queda en espera**: el usuario va a rediseñar la escala de la velocidad de ataque (un Ranger a ~10
   golpes/s es absurdo; debería rondar 2–3). Auditoría y opciones en PACING_REPORT «Ronda 12».
+- **La curva de cadencia** (`src/data/cadence.ts`; usuario: «curva suave»): hasta la velocidad base de la clase cada
+  punto es un golpe; por encima, los golpes crecen cada vez menos hacia el paso de la clase y lo que la curva no da en
+  golpes vuelve como daño en cada golpe (multiplicador = velocidad / golpes: el daño por segundo no cambia). Ranger
+  1,5 → 3,0 (la vista previa aprobada: 3 → ≈ 2,3, 5 → ≈ 2,7, 10 → ≈ 3,0); **elección mía**: Knight 1,4 → 2,2 y
+  Priest 1,0 → 2,0, la misma forma (pendiente 0,7 al empezar). Enemigos y jefes golpean a su velocidad (0,6–1,3/s).
+  Las habilidades que pegan con el ataque llevan también el multiplicador (si no, lanzar una habilidad costaba un golpe
+  mucho mayor que ella y el daño de los Ranger rápidos caía un 20 %). Crítico, multigolpe y robo de vida dan lo mismo
+  de media. Hoja del héroe: la velocidad se muestra en golpes por segundo, con la velocidad bruta y el bonus por golpe
+  (EN/ES). Tests `test/sim/cadence.test.ts`.
+- **Re-afinado**: vida de los enemigos normales × el multiplicador por golpe del que más pega (siguen cayendo en 2,5
+  golpes), jefes de etapa × la ganancia de daño del temporizador (siguen durando 7,5 s), tabla de muros en la escalera,
+  reloj del muro de apertura 120 s (Tormento 1 se pasaba a los 109–121 s).

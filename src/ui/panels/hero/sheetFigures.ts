@@ -1,14 +1,15 @@
 import { STATS, type StatKey } from '@/data/stats';
 import { expectedDefense, mitigation } from '@/data/stageScaling';
 import { format } from '@/sim/num';
+import { cadenceHitMult, heroSwingsPerSec } from '@/data/cadence';
 
 // Figures of the sheet tab, as text — pure, no React. The numbers are the ones combat uses (the caller passes
 // the aggregate of gear + talents + account + live effects); this only says how each is written.
 
 /** A stat's value as the sheet writes it: attack speed as attacks per second, percents with one decimal,
  *  flats as big numbers. */
-export function statFigure(key: StatKey, value: number): string {
-  if (key === 'attackSpeed') return value.toFixed(2);
+export function statFigure(key: StatKey, value: number, classKey?: string): string {
+  if (key === 'attackSpeed') return heroSwingsPerSec(classKey, value).toFixed(2); // the swings a second (data/cadence)
   return STATS[key].kind === 'percent' ? `${value.toFixed(1)} %` : format(Math.round(value));
 }
 
@@ -54,3 +55,14 @@ export function chanceFigure(chance: number): string {
   const pct = chance * 100;
   return `${pct.toFixed(pct < 10 ? 2 : 1)} %`;
 }
+
+/** Attack speed through the cadence curve (data/cadence, round 12): the swings a second it gives, the raw speed, and
+ *  what each hit is multiplied by for the speed past the class's pace ("+0 %" below the curve's start). */
+export function cadenceFigures(classKey: string, raw: number): { swings: string; speed: string; perHit: string } {
+  return {
+    swings: heroSwingsPerSec(classKey, raw).toFixed(2),
+    speed: raw.toFixed(2),
+    perHit: `+${Math.round((cadenceHitMult(classKey, raw) - 1) * 100)} %`,
+  };
+}
+

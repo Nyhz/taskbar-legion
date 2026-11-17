@@ -1,3 +1,4 @@
+import { cadenceHitMult, heroSwingsPerSec } from '@/data/cadence';
 import type { Combatant, WorldState, CombatEvent } from './world';
 import type { Rng } from './rng';
 import type { EffectiveStats } from './stats';
@@ -197,7 +198,8 @@ export function resolveCombatTick(world: WorldState, deltaMs: number, rng: Rng):
     if (!h.alive) continue;
     if (isDisarmed(h.effects)) continue; // bound (a world boss's Roots): no attack, no cast, while it lasts
     const stats = heroStats(h);
-    advanceAttack(h, stats.attackSpeed, deltaMs, () => {
+    // The cadence curve (data/cadence, round 12): he swings what the curve gives; each hit carries the rest.
+    advanceAttack(h, heroSwingsPerSec(h.classKey, stats.attackSpeed), deltaMs, () => {
       const cast = castReadyAbilities(h, heroes, enemies, S, rng, events);
       if (cast.length > 0) {
         for (const key of cast) events.push({ type: 'cast', targetId: h.id, abilityKey: key });
@@ -397,8 +399,9 @@ export function heroAttack(h: Combatant, stats: EffectiveStats, target: Combatan
   // One resolved hit (own crit roll) on `victim`, scaled by `mult` (1 = full; <1 = AoE splash).
   // Auto-attacks land one of these on the target, plus a capped multistrike chance for a
   // second — each hit heals lifesteal + can crit independently.
+  const cadenceMult = cadenceHitMult(h.classKey, stats.attackSpeed);
   const strike = (victim: Combatant, mult: number, multi: boolean): void => {
-    let dmg = stats.attackDamage * (1 + stats.damageIncrease / 100) * mult;
+    let dmg = stats.attackDamage * (1 + stats.damageIncrease / 100) * mult * cadenceMult; // the speed past the curve, as damage
     const crit = steadyRoll(h, 'crit', stats.critChance); // a steady roll, not dice (sim/steady, round 7)
     if (crit) dmg *= 1 + stats.critDamage / 100;
     dmg = Math.max(1, dmg);
