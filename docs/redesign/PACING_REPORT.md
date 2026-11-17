@@ -3246,3 +3246,25 @@ Fuera de ±5 o que bajan: Infierno 1, Averno 5, Averno 7, Eterno 1
 
 - Knight ofensivo: pierde todos desde Averno salvo Tormento 8 en una partida. Priest sin curas: pierde todos desde
   Averno. Sin resistencia mágica: pierde los muros mágicos. Coherencia 1,00.
+
+### Ronda 12 · cierre
+
+- **El usuario acepta Averno largo** (~125–175 h).
+- **Bajadas de la escalera arregladas** con la mínima subida de vida de muro (o bajada, en Infierno 4), sobre las
+  instantáneas de la medida 5: Infierno 1–2 por encima de Normal 10, Infierno 4 por debajo de Infierno 5, Averno 3
+  por encima de Averno 2, Averno 4–7 en cadena por encima del anterior, Eterno 1–4 por encima de Averno 10, Eterno 7 por
+  encima de Eterno 6. Lo que pide cada muro, recalculado (`scripts/wall-ask.ts`), abajo.
+
+| Dificultad | Lo que pide cada muro, mundo 1 → 10 (% del techo, mediana de 3 partidas) |
+|---|---|
+| Normal | 5.4 · 5.6 · 6.1 · 8.0 · 8.2 · 8.3 · 8.7 · 8.9 · 9.4 · 9.9 |
+| Infierno | 10.3 · 10.6 · 11.2 · 12.4 · 13.4 · 14.5 · 15.6 · 16.5 · 17.8 · 18.9 |
+| Averno | 19.7 · 19.7 · 20.1 · 23.3 · 23.6 · 23.8 · 24.0 · 25.3 · 26.5 · 28.8 |
+| Eterno | 28.9 · 29.1 · 29.6 · 29.8 · 30.5 · 33.7 · 34.0 · 35.1 · 36.5 · 37.6 |
+| Tormento | 58.3 · 60.7 · 66.3 · 66.9 · 70.3 · 73.7 · 77.0 · 80.4 · 83.6 · 87.0 |
+
+Ningún muro pide lo mismo o menos que el anterior y todos están dentro de ±5 de su línea. Para cuadrarlo también hubo
+que retocar Normal 1, 4 y 5–7 (el recálculo con `wall-ask` sobre las mismas instantáneas da en Normal algo distinto que
+la medida completa). Las horas no se han vuelto a medir: los cambios de vida son de un 2–14 % en muros que cuestan poco
+(Normal, aperturas) y en la cadena Averno 3–7 / Eterno 1–4; se esperan unas pocas horas más en Averno y Eterno.
+

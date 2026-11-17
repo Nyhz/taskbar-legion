@@ -2095,3 +2095,7 @@ muros y horas en la siguiente ronda.
 - **Re-afinado**: vida de los enemigos normales × el multiplicador por golpe del que más pega (siguen cayendo en 2,5
   golpes), jefes de etapa × la ganancia de daño del temporizador (siguen durando 7,5 s), tabla de muros en la escalera,
   reloj del muro de apertura 120 s (Tormento 1 se pasaba a los 109–121 s).
+- **Averno largo, aceptado** (17 nov; usuario): Averno se queda en ~125–175 h. Cierre de la ronda 12: las tres bajadas de
+  la escalera (Infierno 1, Averno 5, Eterno 1, y de paso Infierno 5, Averno 3 y Eterno 7) arregladas subiendo lo mínimo la
+  vida de esos muros (y la de los que van detrás en Averno y Eterno, para que nada pida menos que el anterior); Infierno 4
+  algo más bajo. `CLAUDE.md` con las horas medidas.

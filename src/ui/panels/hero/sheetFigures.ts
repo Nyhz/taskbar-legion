@@ -62,7 +62,7 @@ export function cadenceFigures(classKey: string, raw: number): { swings: string;
   return {
     swings: heroSwingsPerSec(classKey, raw).toFixed(2),
     speed: raw.toFixed(2),
-    perHit: `+${Math.round((cadenceHitMult(classKey, raw) - 1) * 100)} %`,
+    perHit: `+${Math.round((cadenceHitMult(classKey, raw) - 1) * 100)}\u00A0%`, // no-break space: "+16 %" never wraps in a tooltip
   };
 }
 
