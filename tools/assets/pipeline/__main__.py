@@ -52,7 +52,12 @@ def main(argv: list[str]) -> int:
 
         export_pets()
         return 0
-    print("commands: chars [names…], scene, lab, icons, export-ui, export-strip, export-figs, export-fx, export-pets")
+    if cmd == "readme":
+        from .readme_banners import main as readme
+
+        readme()
+        return 0
+    print("commands: chars [names…], scene, lab, icons, export-ui, export-strip, export-figs, export-fx, export-pets, readme")
     return 1
 
 
