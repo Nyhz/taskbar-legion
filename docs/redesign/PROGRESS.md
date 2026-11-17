@@ -2112,3 +2112,11 @@ muros y horas en la siguiente ronda.
 - **Tabla de muros** ajustada lo mínimo para que la medida fija suba siempre: Normal −25…+38 %, Averno 1–5 −7…+19 %,
   el resto ±5 %. Líneas re-expresadas en la medida nueva: Normal 4→8, Infierno 7→12, Averno 11→24, Eterno 25→37,
   Tormento 59→94. Horas (3 partidas): 3–4 / 32–41 / 135–152 / 276–315 / 575–834 h. Detalle en PACING_REPORT «Ronda 13».
+
+### Ronda 13b — Averno 1–6 en rampa (17 nov, sin commit)
+
+- Averno 1–5 pedían lo mismo (~12) y saltaban en Averno 6 (18) porque la vida de esos muros crecía al ritmo del
+  daño de referencia (nivel y equipo del grupo fijo suben lisos). Vida de Averno 2–5 +10 / +19 / +36 / +36 %:
+  Averno 1 → 6 pide 11,9 · 13,2 · 14,4 · 15,7 · 16,9 · 18,2. Tabla de referencia re-grabada; Averno 1 a 8/8 con equipo
+  del final de Infierno. Horas: 3–4 / 32–41 / 134–178 / 280–340 / 577–695 h (Averno +12 h de mediana). PACING_REPORT
+  «Ronda 13b».

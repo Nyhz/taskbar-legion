@@ -498,10 +498,13 @@ export function wallCurveMult(S: number): number {
 // table moved the least (sum of |log| changes) for that ask to rise wall after wall while the life still rises inside
 // each difficulty: Normal −25…+38 % (it moved most: the measure no longer reads a one-burst kill as a short fight),
 // Hell within ±5 %, Inferno 1–5 −7…+19 %, Eternal 1–2 +2–3 %, Torment within ±1 %.
+// ROUND 13b (2026-11-17; user): Inferno 2–5 lifted +10 / +19 / +36 / +36 % so the reference ask climbs 11.9 · 13.2 ·
+// 14.4 · 15.7 · 16.9 · 18.2 across Inferno 1–6 instead of sitting at ~12 and jumping at 6 (the flat stretch was the
+// wall lives, not the reference party: its level and gear grow smoothly there).
 export const WORLD_WALL_MULT: readonly number[] = [
   0.1739, 0.1706, 0.2008, 0.2147, 0.2846, 0.275, 0.2916, 0.3113, 0.4217, 0.372,
   0.3525, 0.3704, 0.4223, 0.477, 0.645, 0.6835, 0.8496, 0.9357, 0.9998, 1.08,
-  0.9529, 1.269, 1.847, 1.964, 2.525, 4.02, 4.84, 5.77, 6.504, 6.329,
+  0.9529, 1.392, 2.189, 2.662, 3.439, 4.02, 4.84, 5.77, 6.504, 6.329,
   6.302, 9.821, 13.5, 15.8, 17.7, 22.4, 25.5, 29.5, 32.6, 33.1,
   49.16, 68.03, 104, 146, 171, 195, 221, 253, 291.3, 306.3,
 ];

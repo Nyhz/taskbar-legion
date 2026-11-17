@@ -3329,3 +3329,30 @@ secundario):** todos dentro salvo Tormento 2 (−5,0). Hallazgo: Averno 1–5 qu
 Cada dificultad más larga que la anterior en las tres partidas. Tormento de la partida 2 se pasa 34 h (4 %) de 800; la
 tabla de Tormento apenas cambió (±1 %), así que es ruido de partida (un mismo muro de Tormento cuesta de 35 a 200 h según la partida: Tormento 9 = 63 / 104 /
 201 h). No lo he tocado.
+
+## Ronda 13b — Averno 1–6 en rampa (17 nov, sin commit)
+
+**Petición:** en la medida fija, Averno 1–5 estaban planos (~12) y saltaban a 18 en Averno 6; repartir esa subida.
+
+- **Causa: la vida de los muros, no el grupo de referencia.** Su nivel sube liso (67 · 70 · 72 · 75 · 77 · 79) y su
+  equipo también: el techo mezcla el set de la rareza de Averno 1 con el de Averno 10 a partes lineales en daño
+  (el segundo pega ~3× más), así que el daño de referencia crece ×1,4–1,5 por mundo al principio y ×1,1–1,2 al final.
+  La vida de Averno 2–5 crecía al mismo ritmo (×1,1–1,5) y por eso lo que pedían se quedaba plano; en Averno 6 la vida
+  salta ×1,65. No hace falta un arreglo de sistema.
+- **Cambio:** vida de Averno 2 · 3 · 4 · 5 +10 · +19 · +36 · +36 % (`WORLD_WALL_MULT`). Lo que pide cada muro, Averno
+  1 → 6: **11,9 · 13,2 · 14,4 · 15,7 · 16,9 · 18,2** (antes 11,9 · 12,0 · 12,1 · 12,3 · 12,4 · 18,2). La escalera entera
+  sigue subiendo muro a muro; tabla grabada re-escrita, `ladder.test.ts` en verde.
+- **Costura Infierno → Averno** (`difficulty-change-check`, equipo del final de Infierno): Averno 1 **8/8** en las
+  tres partidas (74–84 s); las otras tres costuras también 8/8.
+
+| Partida | Normal | Infierno | Averno | Eterno | Tormento | Total |
+|---|---:|---:|---:|---:|---:|---:|
+| 1 | 4 | 32 | 178 (152) | 280 | 695 | 1 189 |
+| 2 | 3 | 41 | 134 (141) | 340 | 577 | 1 095 |
+| 3 | 3 | 36 | 153 (135) | 312 | 584 | 1 087 |
+| Banda | ≈4 | 20–50 | 125–175 | 200–360 | 500–800 | |
+
+(Entre paréntesis, Averno en la ronda 13.) Cada dificultad más larga que la anterior en las tres. Averno sube unas
+12 h de mediana (141 → 153) y la partida 1 se pasa 3 h de 175; Tormento de la partida 2 vuelve a la banda (834 →
+577). Las horas de un mismo muro cambian mucho de partida a partida, así que no he compensado el aumento. Si hiciera
+falta, se puede bajar un poco la vida de Averno 6–9, que van holgados por encima de la rampa.
