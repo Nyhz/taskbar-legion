@@ -2013,3 +2013,24 @@ muros y horas en la siguiente ronda.
   **Escalera de la ronda 8** (lo que pide cada muro en % del techo gradual, del mundo 1 al 10): Normal 5→10 · Infierno
   10→20 · Averno 20→30 · Eterno 30→40 · Tormento 40→60 (el ejemplo del usuario «20-30, 30-40, 40-60» desde Averno). Horas
   ≈ 4/20/80/200/500+, cada dificultad más larga que la anterior en cada partida.
+
+### Ronda 8 — muros en la escalera fija (17 nov, sin commit)
+
+- **Muros** en la escalera fija del usuario (Normal 5→10, Infierno 10→20, Averno 20→30, Eterno 30→40, Tormento 40→60,
+  ±5): Infierno −2, Averno −4, Eterno +2, Tormento +4 dentro del margen. Horas (vuelta 5): 3–6 / 25–36 / 111–137 /
+  244–334 / 333–528, cada dificultad más larga que la anterior en las tres partidas. Averno sigue largo (~80 buscado).
+- **Daño del muro en Tormento** (`BOSS_THREAT_PCT`) 6 → 7,5 % de la vida del Knight medio por segundo, para alargar
+  Tormento.
+- **Las anclas del golpe del jefe y del Golpe demoledor se quedan las de la ronda 7**: re-anclarlas al Knight «al
+  tumbar» en cada ajuste hace un trinquete (Averno 131 → 213 h).
+- **Cuatro muros corregidos a mano** tras la última vuelta (Averno 10, Averno 4, Eterno 10: vida que no baje del muro
+  anterior). Sin medir con ellos.
+- **Diagnóstico de Averno** y tres propuestas de mecánica (onda anclada a la retaguardia, defensa del Ranger con regla
+  de jefe, qué hacer con la carrera) en PACING_REPORT «Ronda 8». Ninguna aplicada.
+- **Tras el diagnóstico de Averno** (17 nov, ronda 8): Averno 111–137 h (objetivo ~80) se va en farmear el hueco de 2–5
+  puntos de techo; al llegar se pierde un 63 % por la carrera (furia) y un 37 % por muertes antes del minuto, casi siempre
+  el Ranger por la onda del golpe en área (fórmula vieja, sin ancla). Las mecánicas que suben el daño de todos no acortan
+  horas (la escalera se mide contra el techo, que sube con ellas). Decisiones: **(1) la onda del golpe en área sobre la
+  retaguardia se mide contra la vida media del Ranger y la Priest**, como el golpe al tanque (la defensa del Ranger con
+  regla de jefe, descartada por ahora); **(2) Infierno pide algo más** dentro del margen (hacia 15→25 % del techo) para que
+  el jugador llegue a Averno mejor equipado, aunque Infierno suba hacia ~30 h.
