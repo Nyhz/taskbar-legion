@@ -100,6 +100,9 @@ export interface ProbeConfig {
    *  would have found it — the chance of having missed it falls to 50 % with the kills so far — and climbs its
    *  ranks through its own objective, counted from then, as in the game). */
   pets?: 'none' | 'median';
+  /** Tooling (round 15, "the well-equipped player"): tech nodes bought after the default priority list
+   *  (economy.TECH_PRIORITY) — e.g. ['synth_luck']. The default run buys none. */
+  extraTech?: readonly string[];
   /** The run's seed deals the affixes of each boss and the supports of each wave (as in the game: the same on every
    *  attempt at a wall). false = the old probe: they came from the combat seed, so a failed wall rerolled them. */
   fixedRunSeed?: boolean;
@@ -371,7 +374,7 @@ function recruitAndTech(state: State, cfg: ProbeConfig, trace?: (line: string) =
     // Until the trio is complete the player SAVES for it: only the party slot is bought (a purse drained by cheap
     // economy ranks would push the first recruit back by half an hour).
     const partyFull = state.party.length >= CLASS_KEYS.length;
-    const left = buyTech(state.gold, state.techRanks, partyFull ? undefined : ['party_size']);
+    const left = buyTech(state.gold, state.techRanks, partyFull ? undefined : ['party_size'], cfg.extraTech);
     if (left === state.gold) break; // nothing bought ⇒ stable
     state.gold = left;
   }

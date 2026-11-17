@@ -2149,3 +2149,19 @@ muros y horas en la siguiente ronda.
   de la puerta de Averno, y un Knight con equipo del final de Averno moría al tercer golpe. Solo cambia Eterno 1 (golpe
   26 700 → 17 250). Las 12 costuras quedan a 8/8 en las 3 partidas. Escalera re-grabada (Eterno 1 25,40 → 25,39).
 
+### Ronda 15 — oleadas llenas, reclutas y textura de Normal (17 nov, sin commit)
+
+- **Oleadas** (usuario): `WAVE_SIZE_BY_STAGE` 9 → 22 y las de Normal igual de llenas (`WAVE_SIZE_MULT_BY_DIFFICULTY` 1).
+- **Reclutas** (usuario: «el Ranger en 1-5, el Priest justo antes del jefe»): party_size 1 500 / 3 450 de oro (era
+  300/600). El Ranger llega al tumbar 1-4 y el Priest al tumbar 1-8, en las 3 partidas, sin atascos del Knight solo ni
+  del dúo.
+- **Re-anclaje §6b:** mundo 1 etapa a etapa y mundos 2–15 por razón con la ronda 14; `anchorReference` re-escrito. Daño
+  de la morralla: 1-5…1-8 más bajo para el dúo y Normal 2–10 ×1,8 («suave»: el Knight pierde ~5–15 % de mediana por
+  oleada, el peor 20–50 %, sin wipes).
+- **Herramientas:** `ProbeConfig.extraTech` y, en `ceiling-pass`, `CP_PETS=median` / `CP_SYNTH=1`, más el tope de
+  nivel y las mascotas en la salida.
+- **Docs:** CLAUDE.md (oleadas, horas, comandos de `run.sh`), DIFFICULTY §8 (horas medidas), texto del Relicario
+  («world-boss chest»), test de respawn relativo.
+- **Pendiente de decisión:** Tormento por defecto en mediana 980 h (por encima de la banda); el 120 llega en Tormento 2–3;
+  los golpes por esbirro en Normal dependen de `NORMAL_TRASH_HP_MULT` 0,6. Detalle en PACING_REPORT «Ronda 15».
+

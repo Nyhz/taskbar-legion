@@ -89,10 +89,12 @@ describe('toughness anchors — measured in a real fight (the opening of a new g
     expect(b.seconds).toBeLessThanOrEqual(11);
   });
 
-  it('1-9: the trio — a first weapon may already have dropped, and it is most of a hero\'s hit', () => {
+  it('1-9: the duo that takes the Priest — a first weapon may already have dropped, and it is most of a hero\'s hit', () => {
+    // Round 15 (user: «el Ranger en 1-5, el Priest justo antes del jefe»): the Priest joins as the duo clears 1-8
+    // (data/techTree party_size), so the party that reaches 1-9 is the Knight and the Ranger.
     advanceProbe(run, { ...DEFAULT_CONFIG, stopAtStage: 8 });
     const party = runParty(run);
-    expect(party).toHaveLength(3);
+    expect(party).toHaveLength(2);
     const g = gruntHits(party, 9, DEFAULT_CONFIG.measureSeed, bonuses);
     // This seed's party found a weapon in its first hour, so it is ahead of the table (tuned on the median
     // party): the grunt still takes more than one hit, and no more than the band allows.

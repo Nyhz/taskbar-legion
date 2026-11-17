@@ -3600,3 +3600,115 @@ golpe aplastante y en Tormento 1 manda su propia ancla. Test en `defenceCheck.te
 
 Escalera: Eterno 1 pide 25,39 (antes 25,40); los 50 muros siguen subiendo; tabla re-grabada. Las reglas no miran muros
 de apertura y no cambian. Las horas no se han vuelto a medir: solo cambia Eterno 1, que se tumba en ~1 h.
+
+## Ronda 15 — oleadas llenas, reclutas más caros, textura suave en Normal (17 nov, sin commit)
+
+**Decisiones del usuario:** oleadas más llenas al empezar cada mundo y las de Normal tan llenas como las demás
+(`WAVE_SIZE_BY_STAGE` 9 · 10 · 11 · 12 · 13 · 15 · 17 · 19 · 22, `WAVE_SIZE_MULT_BY_DIFFICULTY` 1 en todas). El
+Ranger se recluta en 1-5 y el Priest justo antes del jefe del mundo 1. Normal «suave»: con buen equipo, el Knight pierde
+un 10–20 % de su vida en las oleadas grandes, el Priest tiene algo que curar y casi nunca hay peligro real.
+
+### Reclutas (`techTree` party_size: 300/600 → 1 500/3 450 de oro; desbloqueo de clase 150)
+
+| Partida | Ranger | Priest | 1-1…1-4 (Knight solo) | 1-5…1-8 (dúo) | Mundo 1 tumbado |
+|---|---|---|---|---|---|
+| 1 | 0,26 h, al tumbar 1-4 | 0,50 h, al tumbar 1-8 | 0,06–0,07 h por etapa | 0,06–0,07 h por etapa | 0,56 h |
+| 2 | 0,26 h, al tumbar 1-4 | 0,57 h, al tumbar 1-8 | igual | 0,07–0,09 h | 0,68 h |
+| 3 | 0,26 h, al tumbar 1-4 | 0,63 h, al tumbar 1-8 | igual | 0,07–0,11 h | 0,71 h |
+
+Ni el Knight solo ni el dúo se atascan; el trío hace 1-9 y el jefe. Para que el dúo pase de 1-5 a 1-8 sin sanador, el
+daño de la morralla en 1-5…1-8 baja a 0,6 · 0,6 · 0,5 · 0,42 de la fórmula (`TRASH_DMG_TUNE`).
+
+### Re-anclaje (§6b)
+
+Con ~1,7× más muertes en Normal, el grupo iba sobrado de nivel y equipo (un esbirro caía en 0,6 golpes en 1-9).
+`scripts/measure-anchors.ts` contra el grupo de la ronda 14:
+- **Mundo 1, etapa a etapa:** golpes por esbirro 1,41–1,73 (con el ×0,6 de Normal, objetivo 1,5) y jefe de etapa
+  6,9–8,1 s (objetivo 7,5).
+- **Mundos 2–15:** vida ×la razón con la ronda 14. Normal: esbirro ×1,25–2,4 y jefe ×1,1–1,6. Infierno 1–5: ×1,15–1,3.
+  Desde Infierno 6 queda igual, porque la diferencia cae dentro del ruido de la medida.
+- **Comprobación, mundos 1–20:** ya iguala a la ronda 14.
+
+`anchorReference.ts` re-escrito para esos puntos. El test de 1-9 mide ahora el dúo que va a recibir al Priest.
+
+### Textura en Normal (vida que pierde el Knight por oleada, desde su vida al empezarla; 3 partidas)
+
+| Etapa | Grupo | Mediana por oleada | Peor oleada | Wipes | Esbirro / élite, golpes |
+|---|---|---|---|---|---|
+| 1-3 | Knight solo | 4 % | 14 % | 0 | 1,4 / 6,3 |
+| 1-9 | trío | 6 · 6 · 16 % | 24–37 % | 0 | 0,9–2,2 / 3,9–9,8 |
+| 5-9 | trío | 8 · 11 · 12 % | 22–50 % | 0 | 0,9–1,1 / 4,0–4,8 |
+| 10-9 | trío | 5 · 9 · 15 % | 20–36 % | 0 | 0,8–1,0 / 3,5–4,4 |
+
+Daño de la morralla en Normal 2–10 ×1,8 (10-9 ×1,55). **Élites:** el ×4,5 sí da 4,5 esbirros. En Normal, un esbirro
+está hecho para 1,5 golpes (`NORMAL_TRASH_HP_MULT` 0,6, decisión anterior del usuario: «en Normal puede ser más
+relajado»), así que un élite son ~6,75. Con suerte de arma bajan a 3,5–5. Para tener 2–3 golpes y élites de ~10 en
+Normal habría que subir ese 0,6 a 1, con unas Normal más lentas (estimo ×1,5–1,7). Queda para el usuario.
+
+#### Jugador por defecto: horas por dificultad
+
+| Partida | Normal | Infierno | Averno | Eterno | Tormento | Total |
+|---|---:|---:|---:|---:|---:|---:|
+| 1 | 6 | 33 | 140 | 310 | 983 | 1471 |
+| 2 | 5 | 32 | 151 | 329 | 980 | 1498 |
+| 3 | 4 | 28 | 174 | 282 | 542 | 1030 |
+
+#### Jugador por defecto: nivel del grupo (mín/máx) al tumbar los muros 1 · 5 · 10
+
+| Partida | Normal | Infierno | Averno | Eterno | Tormento |
+|---|---|---|---|---|---|
+| 1 | 13 · 20 · 26 | 27 · 35 · 42 | 43 · 67 · 75 | 75 · 101 · 106 | 106 · 120 · 120 |
+| 2 | 13 · 20 · 26 | 27 · 34 · 44 | 44 · 69 · 75 | 75 · 97 · 110 | 110 · 120 · 120 |
+| 3 | 13 · 21 · 26 | 27 · 36 · 44 | 44 · 66 · 80 | 80 · 97 · 108 | 108 · 120 · 120 |
+
+#### Jugador por defecto: nivel 120
+
+| Partida | Primer héroe a 120 | Los tres a 120 | Mascotas (desde) | Fortuna del Transmutador |
+|---|---|---|---|---:|
+| 1 | Tormento 3 · 657 h | Tormento 3 · 657 h | — | 0 |
+| 2 | Tormento 3 · 624 h | Tormento 3 · 624 h | — | 0 |
+| 3 | Tormento 3 · 619 h | Tormento 3 · 619 h | — | 0 |
+
+#### Jugador bien equipado (mascotas en la mediana + Fortuna del Transmutador): horas por dificultad
+
+| Partida | Normal | Infierno | Averno | Eterno | Tormento | Total |
+|---|---:|---:|---:|---:|---:|---:|
+| 1 | 6 | 33 | 138 | 356 | 677 | 1209 |
+| 2 | 5 | 32 | 139 | 262 | 947 | 1385 |
+| 3 | 4 | 28 | 153 | 257 | 571 | 1013 |
+
+#### Jugador bien equipado (mascotas en la mediana + Fortuna del Transmutador): nivel del grupo (mín/máx) al tumbar los muros 1 · 5 · 10
+
+| Partida | Normal | Infierno | Averno | Eterno | Tormento |
+|---|---|---|---|---|---|
+| 1 | 13 · 20 · 26 | 27 · 35 · 42 | 43 · 65 · 74 | 75 · 97 · 116 | 116 · 120 · 120 |
+| 2 | 13 · 20 · 26 | 27 · 34 · 44 | 44 · 67 · 73 | 74 · 96 · 106 | 106 · 120 · 120 |
+| 3 | 13 · 21 · 26 | 27 · 36 · 44 | 44 · 69 · 77 | 77 · 97 · 109 | 109 · 120 · 120 |
+
+#### Jugador bien equipado (mascotas en la mediana + Fortuna del Transmutador): nivel 120
+
+| Partida | Primer héroe a 120 | Los tres a 120 | Mascotas (desde) | Fortuna del Transmutador |
+|---|---|---|---|---:|
+| 1 | Tormento 2 · 566 h | Tormento 2 · 566 h | coin_sprite (Eterno 4, 341 h), scholar_owl (Eterno 4, 341 h), lucky_cat (Eterno 4, 341 h), time_imp (Eterno 4, 341 h), pack_mule (Eterno 6, 422 h), hoarder (Eterno 6, 422 h) | 9 |
+| 2 | Tormento 3 · 542 h | Tormento 3 · 542 h | coin_sprite (Eterno 5, 329 h), scholar_owl (Eterno 5, 329 h), lucky_cat (Eterno 5, 329 h), time_imp (Eterno 5, 329 h), pack_mule (Eterno 8, 409 h), hoarder (Eterno 8, 409 h) | 10 |
+| 3 | Tormento 3 · 529 h | Tormento 3 · 529 h | coin_sprite (Eterno 5, 316 h), scholar_owl (Eterno 5, 316 h), lucky_cat (Eterno 5, 316 h), time_imp (Eterno 5, 316 h), pack_mule (Eterno 7, 389 h), hoarder (Eterno 7, 389 h) | 9 |
+
+**Horas:** Normal pasa de 3–4 h a 4–6 h (más oleadas llenas). Infierno 28–33 h, Averno 140–174 h y Eterno 282–329 h
+siguen en banda. **Tormento, jugador por defecto: 983 · 980 · 542 h, mediana 980, por encima de 500–800** (en la
+ronda 14: 750 · 934 · 616). El bien equipado: 677 · 947 · 571, mediana 677. No he retocado muros.
+
+**Nivel 120:** llega en Tormento 3, a ~620–660 h (por defecto), o en Tormento 2–3, a ~530–570 h (bien equipado):
+entre el 45 y el 60 % de la partida. Las cuatro primeras mascotas llegan a la vez en Eterno 4–5 (~320–340 h), y el
+mulo y el acaparador en Eterno 6–8. Fortuna del Transmutador: 9–10 rangos.
+
+### Qué haría falta para que el 120 llegue al final de Tormento (estimación, sin aplicar)
+
+Se toma la experiencia de cada muro (la que pide el nivel que tiene el grupo) y, pasado el 120, se sigue sumando al ritmo
+de antes del tope. La experiencia total tendría que quedarse en ×0,28–0,51 (por defecto, mediana ×0,37) o en
+×0,22–0,37 (bien equipado, mediana ×0,23).
+
+| Palanca | Cuánto aporta hoy | Qué haría falta |
+|---|---|---|
+| Investigación (`eco_xp`) | ×1,33 al final de Normal, ×1,78 en Averno, ×2,15 al final (×2,3 con mascotas) | Quitarla entera da ×0,47: no basta sola con la mediana; haría falta además ~×0,8 de experiencia por enemigo |
+| Mascotas (búho sabio) | +0,15–0,18 en el multiplicador (~×1,08) | Quitarla da ~×0,93: palanca pequeña. El jugador por defecto no tiene mascotas |
+| Experiencia por enemigo (`xpPerKill`) | — | ×0,37 por defecto (×0,23 bien equipado), en toda la partida: bajaría el nivel en todas partes, no solo el tope |

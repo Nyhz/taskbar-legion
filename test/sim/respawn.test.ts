@@ -34,7 +34,7 @@ describe('death → respawn', () => {
     // …and shortly after, it's back at full HP with the timer cleared.
     for (let i = 0; i < 4; i++) sim.tick(ctx);
     expect(dead.alive).toBe(true);
-    expect(dead.hp).toBe(dead.maxHp);
+    expect(dead.hp / dead.maxHp).toBeCloseTo(1, 9); // full life, to float error (1e15 life: 1e15 − 0.1 is a rounding)
     expect(dead.respawnMs).toBeUndefined();
   });
 

@@ -12,7 +12,7 @@ import { gradualCeilingDamage, wallDamage, ceilingTierRange } from '../test/sim/
 import { partyWithBuild, PROBE_DEFAULT_BUILD, PROBE_GOOD_BUILD } from '../test/sim/probe/builds';
 import { SURVIVAL_NEED, SCORE_CONTEXT } from '../test/sim/probe/gear';
 import type { StatKey } from '@/data/stats';
-import { zoneBossHp } from '@/data/stageScaling';
+import { zoneBossHp, MAX_LEVEL } from '@/data/stageScaling';
 import type { HeroConfig } from '@/sim/loadout';
 import type { Bonuses } from '@/sim/bonuses';
 
@@ -30,18 +30,29 @@ const t0 = Date.now();
 // Tooling (round 6 · B, the levers): CP_CHEST_MULT scales every chest the player opens (× the capture of each type), to
 // measure how the hours answer to more chests an hour. The game is not changed.
 const CHEST_MULT = Number(process.env.CP_CHEST_MULT ?? 1);
+const cap: { first?: { stage: number; hours: number }; all?: { stage: number; hours: number } } = {};
+const petsAt: Record<string, { stage: number; hours: number }> = {};
 const cfg: ProbeConfig = {
   ...DEFAULT_CONFIG,
   capture: { normal: DEFAULT_CONFIG.capture.normal * CHEST_MULT, stageBoss: DEFAULT_CONFIG.capture.stageBoss * CHEST_MULT, zoneBoss: DEFAULT_CONFIG.capture.zoneBoss * CHEST_MULT },
   stopAtStage: TO,
   // CP_IGNORE (tooling): the player values this stat at zero and never sockets its gems (ProbeConfig.ignoreStat).
   ...(process.env.CP_IGNORE !== undefined ? { ignoreStat: process.env.CP_IGNORE as StatKey } : {}),
+  // CP_PETS=median (tooling): each pet owned from when half the players would have it. CP_SYNTH=1: also buys
+  // Transmuter's Fortune (synth_luck) after the default priority. Round 15, "the well-equipped player".
+  ...(process.env.CP_PETS === 'median' ? { pets: 'median' as const } : {}),
+  ...(process.env.CP_SYNTH === '1' ? { extraTech: ['synth_luck'] } : {}),
   observe: (target, party, bonuses) => {
     if ((Date.now() - t0) / 1000 > MAX_SEC) return false;
     if (target % 10 !== 0) return;
     const snap = { stage: target, activeHours: run.state.activeSec / 3600, party: structuredClone([...party]), bonuses: { ...bonuses } };
     if (arrive[target] === undefined) arrive[target] = snap;
     last[target] = snap;
+    // Level pacing (round 15): when the first hero and the whole party reach the cap, and when each pet joined.
+    const hours = run.state.activeSec / 3600;
+    if (cap.first === undefined && party.some((h) => h.level >= MAX_LEVEL)) cap.first = { stage: target, hours };
+    if (cap.all === undefined && party.length > 0 && party.every((h) => h.level >= MAX_LEVEL)) cap.all = { stage: target, hours };
+    for (const key of Object.keys(run.state.pets)) if (petsAt[key] === undefined) petsAt[key] = { stage: target, hours };
   },
 };
 advanceProbe(run, cfg);
@@ -75,5 +86,5 @@ const walls = r.milestones.map((m) => {
     askArrive: ma?.ask, askKill: mk?.ask, pctArrive: ma?.pct, pctKill: mk?.pct, level: m.partyLevel, cube: m.cube,
   };
 });
-appendFileSync(OUT, JSON.stringify({ seed: SEED, frontier: run.state.frontier, gaveUp: run.gaveUp, completed: r.completed, stalledAt: r.stalledAtStage, hours: r.difficultyActiveHours, days: r.totalCalendarDays, fails: r.totalBossFails, walls, sec: (Date.now() - t0) / 1000 }) + '\n');
+appendFileSync(OUT, JSON.stringify({ seed: SEED, frontier: run.state.frontier, gaveUp: run.gaveUp, completed: r.completed, stalledAt: r.stalledAtStage, hours: r.difficultyActiveHours, days: r.totalCalendarDays, fails: r.totalBossFails, walls, cap, pets: petsAt, synthLuck: run.state.techRanks.synth_luck ?? 0, sec: (Date.now() - t0) / 1000 }) + '\n');
 process.stdout.write(`seed ${SEED}: done, ${((Date.now() - t0) / 1000).toFixed(0)} s\n`);

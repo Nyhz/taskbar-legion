@@ -102,13 +102,14 @@ describe('what an upgrade gives', () => {
 
 describe('where an upgrade stands for a purse', () => {
   it('mirrors the store: affordable when the gold reaches the next rank, never past the cap', () => {
-    const node = techNode('party_size'); // 300, then 600, two ranks
-    expect(techState(node, 0, 299)).toMatchObject({ affordable: false, maxed: false, cost: 300, short: 1 });
-    expect(techState(node, 0, 300)).toMatchObject({ affordable: true, short: 0 });
-    expect(techState(node, 1, 300)).toMatchObject({
+    const node = techNode('party_size'); // 1,500, then 3,600, two ranks (round 15)
+    const first = nodeCost(node, 0);
+    expect(techState(node, 0, first - 1)).toMatchObject({ affordable: false, maxed: false, cost: first, short: 1 });
+    expect(techState(node, 0, first)).toMatchObject({ affordable: true, short: 0 });
+    expect(techState(node, 1, first)).toMatchObject({
       affordable: false,
       cost: nodeCost(node, 1),
-      short: 300,
+      short: nodeCost(node, 1) - first,
     });
     expect(techState(node, 2, 1e9)).toMatchObject({ affordable: false, maxed: true, short: 0 });
   });

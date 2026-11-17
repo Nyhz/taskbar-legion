@@ -95,11 +95,11 @@ export function wavesPerStage(S: number): number {
 // so difficulty climbs across a world instead of within a single stage's waves. Indexed by
 // stageInWorld 1..9; X-10 is the boss (no trash waves). A wave teleports in as WAVE_BATCHES
 // batches (field.ts), each spread across a band so they arrive as loose groups.
-const WAVE_SIZE_BY_STAGE = [5, 6, 7, 8, 10, 12, 15, 18, 22] as const; // tune-pass: steeper X-7/8/9 spike (more mobs = more incoming pressure late in a world)
+const WAVE_SIZE_BY_STAGE = [9, 10, 11, 12, 13, 15, 17, 19, 22] as const; // 2026-11-17: fuller openings (X-1 was 5, 3 in Normal: one enemy per batch); X-9 unchanged
 
-/** × wave size by difficulty (Normal → Torment). Normal's stage went from 8 waves to 16 (2026-11-16) and Normal must
- *  stay a 3–4 hour stroll: its waves are smaller instead of its enemies weaker (an enemy still takes its 2–3 hits). */
-export const WAVE_SIZE_MULT_BY_DIFFICULTY: readonly number[] = [0.6, 1, 1, 1, 1];
+/** × wave size by difficulty (Normal → Torment). Normal ran at 0.6 to stay a 3–4 hour stroll; since 2026-11-17 its waves
+ *  are as full as every other difficulty's (the user's call: thin waves felt empty), at the cost of a longer Normal. */
+export const WAVE_SIZE_MULT_BY_DIFFICULTY: readonly number[] = [1, 1, 1, 1, 1]; // 2026-11-17: Normal's waves are as full as the others (user decision; was 0.6)
 
 /** Enemies per wave for a stage, ramped by its position within the world (X-1..X-9), × its difficulty's share. */
 export function waveSizeForStage(globalStageIndex: number): number {
@@ -159,20 +159,26 @@ export function tunePoint(S: number): number {
 // arriving at each wall (round-11 snapshots, three-world running median): GRUNT_HP_TUNE × the hardest hitter's per-hit
 // multiplier (bigger, fewer hits: still 2.5 hits), STAGE_BOSS_HP_TUNE × the party's damage gain from the fixed timer
 // (still 7.5 s). TRASH_DMG_TUNE unchanged.
+// ROUND 15 (2026-11-17; user: full waves everywhere, Ranger at 1-5, Priest before the world-1 boss): with ~1.7× the
+// kills in Normal the party out-levelled and out-geared the tables (a grunt took 0.6 hits at 1-9). Re-anchored against
+// the probe's party (scripts/measure-anchors.ts, round 14's party as the reference): world 1 stage by stage, worlds 2–15
+// by the ratio to round 14 (Normal ×1.25–2.4 grunt life, ×1.1–1.6 stage-boss life; Hell 1–5 ×1.15–1.3), the rest
+// unchanged (within the measure's noise). TRASH_DMG_TUNE: 1-5…1-8 softened for the healer-less duo (0.42–0.6), Normal
+// worlds 2–10 ×1.8 (user: «suave» — the Knight should lose ~10–20 % of his life in the bigger waves).
 /** Life of a GRUNT (the plain melee enemy) at each tuning point: 2.5 basic hits of the on-gear hardest hitter. */
 export const GRUNT_HP_TUNE: number[] = [
-  31.5, 54.7, 60.7, 70.1, 74, 84.4, 92.1, 100, 101, 101,
-  113, 150, 346, 537, 694, 793, 832, 861, 897, 1100,
-  1610, 2420, 3410, 4170, 4990, 5830, 6450, 7120, 7880, 9080,
+  31.5, 65.9, 79.4, 85.8, 87.4, 135, 147, 154, 179, 179,
+  185, 260, 631, 899, 969, 990, 1030, 1070, 1250, 1490,
+  2070, 3110, 4090, 4820, 4990, 5830, 6450, 7120, 7880, 9080,
   10500, 11600, 12600, 14300, 16300, 20200, 22400, 24800, 29200, 34700,
   39700, 50100, 57100, 66000, 76500, 90000, 112000, 125000, 144000, 181000,
   196000, 225000, 314000, 391000, 550000, 660000, 729000, 788000, 858000,
 ];
 /** Life of the STAGE BOSS at each tuning point: 7.5 seconds of the on-gear party. */
 export const STAGE_BOSS_HP_TUNE: number[] = [
-  92.7, 158, 192, 207, 538, 622, 710, 901, 1010, 1010,
-  1180, 1670, 3200, 5070, 6280, 7160, 7510, 7890, 8710, 11000,
-  17600, 30200, 44300, 55200, 62500, 65700, 70500, 81200, 97100, 109000,
+  92.7, 209, 253, 273, 314, 905, 1040, 1180, 1260, 1010,
+  1490, 2220, 4420, 6520, 7030, 7880, 8160, 8280, 9590, 12700,
+  20600, 38500, 56800, 58000, 62500, 65700, 70500, 81200, 97100, 109000,
   122000, 132000, 154000, 170000, 226000, 272000, 318000, 369000, 443000, 513000,
   590000, 705000, 878000, 1.01e+06, 1.15e+06, 1.34e+06, 1.76e+06, 1.99e+06, 2.25e+06, 3.02e+06,
   3.22e+06, 3.24e+06, 3.61e+06, 4.78e+06, 5.63e+06, 5.66e+06, 5.69e+06, 5.71e+06, 5.74e+06,
@@ -180,12 +186,12 @@ export const STAGE_BOSS_HP_TUNE: number[] = [
 /** Trash DAMAGE at each tuning point, as a share of the formula's (`enemyDamage`): 1 where the arriving party
  *  clears the point's hardest stage cleanly, less where it would wipe. */
 export const TRASH_DMG_TUNE: number[] = [
-  1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 0.620, 0.750, 0.620, 1.00,
-  0.390, 0.320, 0.240, 0.220, 0.200, 0.200, 0.220, 0.240, 0.234, 0.170,
-  0.200, 0.291, 0.350, 0.390, 0.449, 0.470, 0.510, 0.560, 0.576, 0.510,
-  0.500, 0.470, 0.607, 0.715, 0.750, 0.820, 0.952, 1.00, 0.908, 0.680,
-  0.680, 0.748, 0.820, 0.952, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00,
-  1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00,
+  1, 1, 1, 1, 0.6, 0.6, 0.5, 0.42, 0.62, 1,
+  0.702, 0.576, 0.432, 0.396, 0.36, 0.36, 0.396, 0.432, 0.36, 0.17,
+  0.2, 0.291, 0.35, 0.39, 0.449, 0.47, 0.51, 0.56, 0.576, 0.51,
+  0.5, 0.47, 0.607, 0.715, 0.75, 0.82, 0.952, 1, 0.908, 0.68,
+  0.68, 0.748, 0.82, 0.952, 1, 1, 1, 1, 1, 1,
+  1, 1, 1, 1, 1, 1, 1, 1, 1,
 ];
 // ── THE BOSS-HIT ANCHOR (round 6, 2026-11-16; docs/redesign/PACING_REPORT.md «Ronda 5 · C», «Ronda 6») ──
 // A boss's life is anchored to the party's damage; since round 6 its DAMAGE is anchored to the tank's life. Round 5 · C

@@ -7,6 +7,8 @@
 // boss's stage, which has no trash and no stage boss of its own.
 // Round 12 (2026-11-17): rescaled with the anchor tables for the swing-timer fix and the cadence curve — the top hit
 // × the hardest hitter's per-hit multiplier, the boss DPS × the party's gain from the fixed timer (scratchpad r12).
+// Round 15 (2026-11-17): world 1 (points 1–8) and worlds 2–15 (points 10–23) rewritten with the anchor tables for the
+// full waves and the later recruits — the probe's party measured against round 14's (scripts/measure-anchors.ts).
 
 /** The stage each tuning point is measured at: 1-1 … 1-9 one by one, then every world's X-5. */
 export function anchorStage(point: number): number {
@@ -15,9 +17,9 @@ export function anchorStage(point: number): number {
 
 /** Mean damage of one BASIC attack of the party's hardest hitter. */
 export const REFERENCE_TOP_HIT: readonly number[] = [
-  12.6, 21.9, 24.3, 28, 29.6, 33.8, 36.8, 40.2, 38.6, 38.6,
-  42.6, 51.6, 165, 206, 301, 317, 334, 349, 345, 399,
-  666, 948, 1470, 1680, 1930, 2460, 2510, 2870, 3170, 3490,
+  12.6, 27.5, 30.3, 32.8, 34.8, 54.6, 57.5, 67.1, 59, 38.6,
+  84.5, 96.5, 305, 398, 462, 439, 485, 446, 442, 514,
+  767, 1050, 1550, 2060, 1930, 2460, 2510, 2870, 3170, 3490,
   4410, 4600, 4950, 5660, 6610, 8010, 9040, 9650, 11700, 14200,
   15800, 19900, 22700, 26300, 30600, 35700, 46400, 48900, 57400, 74500,
   77200, 90900, 122000, 159000, 219000, 265000, 295000, 307000, 365000,
@@ -25,9 +27,9 @@ export const REFERENCE_TOP_HIT: readonly number[] = [
 
 /** Damage per second the party put into the stage boss. */
 export const REFERENCE_BOSS_DPS: readonly number[] = [
-  12.7, 21.7, 23.7, 28.4, 71.7, 83, 92.8, 124, 135, 135,
-  152, 189, 506, 702, 890, 994, 1030, 1040, 1160, 1330,
-  2300, 4490, 5990, 7510, 8310, 8890, 9080, 10500, 13200, 14300,
+  12.7, 28.7, 31.2, 37.5, 41.8, 113, 127, 161, 156, 135,
+  209, 276, 773, 1120, 1090, 1180, 1220, 1160, 1300, 1500,
+  2500, 5270, 6610, 7740, 8310, 8890, 9080, 10500, 13200, 14300,
   15500, 17300, 20900, 21300, 32000, 33300, 41200, 49000, 58600, 65900,
   72400, 94400, 112000, 145000, 150000, 181000, 238000, 274000, 285000, 430000,
   433000, 420000, 470000, 648000, 739000, 575000, 597000, 703000, 799000,

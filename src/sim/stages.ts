@@ -133,11 +133,11 @@ function partitionWave(total: number, rng: Rng): number[] {
  *  Each batch is a random slice of the wave (partitionWave); its mobs land a fixed distance
  *  ahead of the party's frontline at release (Simulation.releaseWave), spread across a band
  *  so they arrive as a loose summoned group. The wave SIZE ramps by the stage's position in
- *  its world (X-1 = 5 … X-9 = 15), so a world gets harder the deeper its stage. Composition
+ *  its world (X-1 = 9 … X-9 = 22), so a world gets harder the deeper its stage. Composition
  *  also ramps with stage (ranged gating). Each mob has an ELITE_CHANCE to be a champion. */
 export function spawnWave(world: WorldState, rng: Rng): void {
   const S = world.globalStageIndex;
-  const count = waveSizeForStage(S); // ramps X-1 (5) … X-9 (15)
+  const count = waveSizeForStage(S); // ramps X-1 (9) … X-9 (22), × the difficulty share
   const batches = partitionWave(count, rng);
   world.enemies = [];
   world.waveQueue = [];

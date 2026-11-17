@@ -31,8 +31,8 @@ they win. The standing overrides are:
   hero power changes. Drops follow the **per-world rarity ladder** (§4); common chests **0.2%**/kill (about one
   every five to ten minutes); gem is EXTRA; a world-boss **key** is in one stage-boss chest in four (every one
   in Normal) and every attempt costs one. **Waves per stage grow with the difficulty** (`WAVES_BY_DIFFICULTY`:
-  8 in Normal → 20 in Eternal/Torment): Normal is a 3–4 hour stroll, each difficulty after it clearly longer and
-  more demanding of gear (measured 2026-11-17, round 13b: ≈ 3–4 / 32–41 / 134–178 / 280–340 / 577–695 h, ≈ 1 090–1 190 h in all; the user accepted the long Inferno). Validated by `npm run probe`. **The wall ladder** is measured against a FIXED reference party and every wall must ask strictly more than the one before (`docs/DIFFICULTY.md` §5, `test/sim/ladder.test.ts`, `scripts/reference-ladder.ts`).
+  16 in Normal → 20 in Torment; full-size waves in every difficulty since 2026-11-17, `WAVE_SIZE_BY_STAGE` 9 → 22): Normal is a 3–4 hour stroll, each difficulty after it clearly longer and
+  more demanding of gear (measured 2026-11-17, round 15: ≈ 4–6 / 28–33 / 140–174 / 282–329 / 542–983 h, ≈ 1 030–1 500 h in all; the user accepted the long Inferno and Torment's slow seeds). Validated by `npm run probe`. **The wall ladder** is measured against a FIXED reference party and every wall must ask strictly more than the one before (`docs/DIFFICULTY.md` §5, `test/sim/ladder.test.ts`, `scripts/reference-ladder.ts`).
 - **`docs/DIFFICULTY.md` supersedes SPEC §4.6 / §5.3 scaling** — gear power and difficulty are *gear-checked
   and progressive* across the finite 5-difficulty ladder, not the SPEC's linear example (linear would make the
   game impossible by ~stage 10). Flat stats scale `Φ^1.0`, percent stats are bounded. Tier drop-rate is
@@ -132,7 +132,7 @@ src/                     ← the game (structure mirrors SPEC §2; see ARCHITECT
   ui/kit/                ← the interface kit every panel is built from (`tk-` prefix; gallery at /#kit)
   i18n/                  ← texts in English and Spanish; names from data via data/i18n/es/*.json
   assets/ui, assets/strip← art exported by the pipeline (never hand-edited)
-tools/assets/            ← the asset pipeline (Python/Pillow): `sh tools/assets/run.sh icons|export-ui|export-strip|export-figs|lab`
+tools/assets/            ← the asset pipeline (Python/Pillow): `sh tools/assets/run.sh chars|scene|lab|icons|export-ui|export-strip|export-figs|export-fx|export-pets|readme`
 scripts/shot-app.mjs     ← headless capture of the running game (see docs/TESTING.md); scripts/dev-seed.js seeds a party
 test/                    ← vitest specs (sim/ first; never import Pixi/React)
 ```

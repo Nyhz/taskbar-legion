@@ -320,6 +320,12 @@ Level is a slow multiplicative trickle (base stats + talent points), not a gate.
 > passives, reactive rules, boss affixes and mechanics — forces a full re-tune anyway). How to re-tune, and which
 > knob moves what: `docs/redesign/PACING_REPORT.md`, "Ronda 2", R.8. Everything from here to §9 is checkpoint 1.
 
+> **Measured, round 15 (2026-11-17; supersedes the ~720 h target below):** with full waves everywhere and the walls
+> of rounds 8–14, the probe's player takes **≈ 4–6 h Normal · 28–33 h Hell · 140–174 h Inferno · 282–329 h Eternal ·
+> 542–983 h Torment, ≈ 1 030–1 500 active hours in all** (3 seeds, `scripts/ceiling-pass.ts`) — about 4–6 months at
+> 8 h a day. The bands the user accepted: ≈ 4 / 20–50 / 125–175 / 200–360 / 500–800 h. Level 120 arrives in Torment
+> 2–3 (≈ 530–660 h). `docs/redesign/PACING_REPORT.md` «Ronda 15».
+
 **The whole game — Normal 1-1 → Torment 10-10 — in about 3 calendar months at 8 hours of play a day**: ~90 days,
 ~720 active hours. Always **decelerating**: each difficulty is longer than the last. The user set only the total;
 the shape follows from two of his other decisions — enemies that take two or three hits (§6b: a stage lasts

@@ -81,18 +81,19 @@ export const TECH_NODES: TechNode[] = [
   // zone 4+4=8. Costs ramp hard so filling the cap is a real long-game gold sink.
   node('store_normal', 'Chests', '🗄', 'Stockpile', '+1 normal chest storage', [{ kind: 'chestStorage', type: 'normal', value: 1 }], 1200, 2.0, 6),
   node('store_stage', 'Chests', '🗃', 'Vault', '+1 stage-boss chest storage', [{ kind: 'chestStorage', type: 'stageBoss', value: 1 }], 1500, 2.0, 4),
-  node('store_zone', 'Chests', '⛩', 'Reliquary', '+1 zone-boss chest storage', [{ kind: 'chestStorage', type: 'zoneBoss', value: 1 }], 2000, 2.0, 4),
+  node('store_zone', 'Chests', '⛩', 'Reliquary', '+1 world-boss chest storage', [{ kind: 'chestStorage', type: 'zoneBoss', value: 1 }], 2000, 2.0, 4),
 
   // ───────────────────────────── Utility ─────────────────────────────
   // Auto-open: rank 1 UNLOCKS it; each rank also shaves the interval (floored at 60s in
   // chests.ts, so ranks past the floor are wasted — hence a finite cap).
   node('auto_open', 'Utility', '⚡', 'Auto-Open', 'Unlock auto-open · 30m base, −90s / rank', [{ kind: 'unlockAutoOpen' }, { kind: 'autoOpenReduce', value: 90_000 }], 500, 2.2, 12),
-  // Party size: each rank unlocks the next active slot (2 then 3). Hand-priced LOW so the
-  // tank·dps·healer trio forms in early world 1 (BALANCE) — NOT behind the deep sink.
-  // costGrowth 2.0 ⇒ slot 2 = 300g, slot 3 = 600g (2026-11-15 retune, round 2: Normal is a four-hour stroll of
-  // six-wave stages, so a world yields under 2,000 gold — the trio must form in its first half hour; it was
-  // 1000g/2500g).
-  node('party_size', 'Utility', '👥', 'Recruitment', 'Unlock the next party slot', [{ kind: 'partySlot' }], 300, 2.0, 2),
+  // Party size: each rank unlocks the next active slot (2 then 3). Hand-priced so the tank·dps·healer trio forms
+  // inside world 1 (BALANCE) — NOT behind the deep sink. Round 15 (2026-11-17, user: recruiting was too cheap once
+  // Normal's waves became full — the Ranger joined at 1-1, the Priest at 1-3; «el Ranger en 1-5, el Priest justo antes
+  // del jefe»): slot 2 = 1,500g, slot 3 = 3,450g (costGrowth 2.3). With the class unlock (150g, data/classes) the
+  // Ranger joins as the Knight clears 1-4 (~16 min) and the Priest as the duo clears 1-8 (~35 min), for 1-9 and the
+  // world-1 boss. (It was 300g/600g; 1000g/2500g before that.)
+  node('party_size', 'Utility', '👥', 'Recruitment', 'Unlock the next party slot', [{ kind: 'partySlot' }], 1500, 2.3, 2),
   // Transmuter's Fortune: each rank adds +0.25% to the Cube's "lucky" Synthesize roll (base
   // 5%), capped at +5% over 20 ranks (so the chance tops out at 10%). EXTREMELY expensive —
   // 50k base × 2.0^rank ⇒ the final ranks cost tens of billions, a true end-game gold sink.
