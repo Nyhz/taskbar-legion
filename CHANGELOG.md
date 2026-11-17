@@ -15,6 +15,23 @@ While the project is pre-1.0, minor versions may include breaking save changes.
 
 ### Fixed
 
+## [0.5.1] - 2026-11-17
+
+### Added
+
+- **Polish, a new Cube recipe** — pay gold to roll the value of one affix again (the stat stays) and choose whether to keep the new value. Each polish of the same piece costs ×1.5 the last, and a polish comes out perfect (★) 5 % of the time. It gives late-game gold a use.
+
+### Changed
+
+- **Fuller waves** — every stage's waves are bigger (from 9 enemies at X-1 up to 22 at X-9), in Normal too.
+- **Normal enemies have their full life** — a plain enemy takes two or three hits and an elite about ten, with waves that wear the Knight down a little without real danger. Normal is a longer stroll (about 6–8 hours).
+- **Recruits cost more** — the Ranger joins around 1-5 and the Priest just before the first world boss.
+- **Scholarship gives +0.5 % XP per rank** (was +2.5 %), so level 120 arrives late in Torment instead of halfway through.
+- **Away time yields 15 % of online gold and experience** (was 50 %); Expedition buys back +1 % per rank, up to 35 %.
+- Refreshed README with new art and screenshots.
+
+### Fixed
+
 ## [0.5.0] - 2026-11-17
 
 ### Added
@@ -132,7 +149,8 @@ While the project is pre-1.0, minor versions may include breaking save changes.
 - Initial desktop builds: Tauri v2 transparent, always-on-top, bottom-docked overlay.
 - Multi-platform release pipeline (macOS universal, Windows, Linux) via GitHub Actions.
 
-[Unreleased]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.1...HEAD
+[0.5.1]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/Nyhz/taskbar-legion/compare/v0.4.1...v0.5.0
 [0.4.1]: https://github.com/Nyhz/taskbar-legion/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/Nyhz/taskbar-legion/compare/v0.3.0...v0.4.0
