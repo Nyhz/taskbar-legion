@@ -3432,3 +3432,143 @@ nivel. Así "media RM" pierde contra un jefe mágico y lo aguanta contra uno fí
 alternativa es separar más las mezclas (mágico 75 %, físico 25 % desde Averno), que es más simple pero castiga menos la
 RM a medias. Cualquiera de las dos pide volver a pasar las reglas (Knight ofensivo, Priest sin curas, sin RM) y una
 pasada de horas.
+
+## Ronda 14 — jefes 75/25 (17 nov, sin commit)
+
+**Decisión del usuario:** «Los jefes son ahora 60/40, ¿no? Pues los podemos volver 75/25 siempre». Cada jefe (de etapa y
+de mundo, en todas las dificultades) pega ahora un 75 % de su lado: los de acero 25 % mágico y los de hechizo 75 %. Cada
+jefe conserva su lado (`BOSS_MAGIC_SHARE`, por defecto 0,25).
+
+- **Anclas del golpe al frente:** `ZONE_BOSS_HIT_TUNE`, `STAGE_BOSS_HIT_TUNE` y `KNIGHT_EHP_TUNE` se reescalan por lo
+  que el Knight medio deja pasar con la mezcla vieja frente a la nueva (instantáneas de la ronda 13b, mediana de 3). El
+  cambio queda dentro de ±2,2 %, porque el Knight medio lleva más o menos tanta RM como armadura: la amenaza sobre él no
+  cambia.
+- **Choque del golpe aplastante:** antes crecía con la proporción de magia (mezcla / 0,5). Con 75/25 eso habría dejado
+  el choque de los jefes de acero a la mitad: la retaguardia aguantaba Eterno 1 sin un rasguño y lo que pedía ese muro
+  caía de 25,4 a 18,4. Ahora va por lado (`CRUSH.shockBySide`): 1,2 para hechizo y 0,8 para acero, lo mismo que con
+  60/40. La marca del jefe sigue diciendo 54 % en Eterno.
+- **Golpe de área (salpicadura) y Armas Encantadas:** no leen la mezcla del jefe para dimensionarse; no se tocan.
+- **Escalera:** solo se movió Averno 5 (16,9 → 17,3). Los 50 muros siguen subiendo uno tras otro; tabla re-grabada y sin
+  tocar ninguna vida de muro.
+
+### Reglas (grupo al tumbar el muro, 2 partidas × 8 combates)
+
+| Muro | Vida del muro | Buena | Knight ofensivo | Priest sin curas | Sin RM | Coherencia (buena) |
+|---|---:|---:|---:|---:|---:|---:|
+| Infierno 3 | ×1 | 100 % | 100 % | 25 % | 100 % | 1.00 |
+| Infierno 8 | ×1 | 100 % | 100 % | 0 % | 100 % | 1.00 |
+| Averno 5 | ×1 | 100 % | 0 % | 0 % | 50 % | 1.00 |
+| Averno 8 | ×1 | 100 % | 0 % | 0 % | 50 % | 1.00 |
+| Eterno 5 | ×1 | 100 % | 0 % | 0 % | 0 % | 1.00 |
+| Eterno 8 | ×1 | 100 % | 0 % | 0 % | 100 % | 1.00 |
+| Tormento 5 | ×1 | 100 % | 0 % | 0 % | 0 % | 1.00 |
+| Tormento 8 | ×1 | 100 % | 50 % | 0 % | 100 % | 1.00 |
+
+Los muros 3 y 5 de cada dificultad son mágicos y los 8, físicos. Sin RM se pierden los mágicos: Eterno 5 y Tormento 5,
+al 0 % (con 60/40, Tormento 5 se ganaba al 100 %). Los físicos se ganan: Eterno 8 y Tormento 8, al 100 %. Averno 5 y
+Averno 8 quedan al 50 %. Knight ofensivo y Priest sin curas pierden desde Averno, salvo Tormento 8 en una partida.
+Coherencia 1,00.
+
+### Costuras (equipo del final de la dificultad anterior contra el mundo 1)
+
+8/8 en 11 de 12. Falla la partida 2, final de Averno → Eterno 1: **0/8** (muere a los 82 s). Ese Knight (armadura 630,
+RM 950, vida 6 400) se equipó contra la puerta mágica de Averno 10 y llega a una apertura de acero. Cae en el tercer
+golpe aplastante (58,8 s). Además, esa partida pasó poco tiempo en Averno (110 h), así que llega con menos equipo. Con
+60/40, la misma partida ganaba 8/8 (68 s).
+
+### MR en una partida completa (75/25)
+
+#### Horas por dificultad (partida 1 · 2 · 3)
+
+| Dificultad | Base (75/25) | Sin RM | Δ mediana |
+|---|---|---|---:|
+| Normal | 4 · 3 · 3 | 5 · 3 · 3 | -0 |
+| Infierno | 32 · 51 · 38 | 38 · 33 · 40 | -0 |
+| Averno | 145 · 110 · 148 | 148 · 123 · 111 | -21 |
+| Eterno | 302 · 371 · 282 | 241 · 281 · 315 | -21 |
+| Tormento | 750 · 934 · 616 | 891 · 1142 · 591 | +141 |
+
+Atascos: base — · — · — · sin RM — · — · —; completas: base true/true/true · sin RM true/true/true
+
+#### Intentos fallidos por muro (suma de las 3 partidas), jefe mágico (75 % magia) vs físico (25 %)
+
+| Dificultad | Mágicos: base → sin RM | Físicos: base → sin RM | Horas en muros mágicos: base → sin RM | Horas en muros físicos: base → sin RM |
+|---|---:|---:|---:|---:|
+| Normal | 1 → 1 | 0 → 0 | 5 → 6 | 5 → 5 |
+| Infierno | 23 → 11 | 12 → 25 | 75 → 58 | 46 → 52 |
+| Averno | 105 → 115 | 61 → 36 | 285 → 288 | 118 → 94 |
+| Eterno | 290 → 434 | 209 → 50 | 570 → 722 | 384 → 116 |
+| Tormento | 1388 → 2163 | 1129 → 738 | 1296 → 1968 | 1004 → 655 |
+
+#### RM media del grupo al final de cada dificultad (muro 10; mitigación mágica media)
+
+| Dificultad | Base: RM (mitigación) | Sin RM: RM (mitigación) | Armadura base → sin RM |
+|---|---|---|---|
+| Normal | 139 (16 %) · 109 (13 %) · 69 (9 %) | 83 (10 %) · 69 (9 %) · 47 (6 %) | 68/140/99 → 91/131/104 |
+| Infierno | 334 (24 %) · 303 (22 %) · 273 (20 %) | 222 (17 %) · 121 (10 %) · 172 (14 %) | 167/248/265 → 158/225/262 |
+| Averno | 709 (31 %) · 602 (27 %) · 839 (34 %) | 340 (18 %) · 299 (16 %) · 394 (20 %) | 467/511/600 → 585/452/479 |
+| Eterno | 1425 (39 %) · 1387 (39 %) · 1377 (39 %) | 765 (26 %) · 880 (28 %) · 878 (30 %) | 1321/1285/1268 → 874/1019/1092 |
+| Tormento | 3428 (52 %) · 3784 (55 %) · 3250 (51 %) | 1637 (36 %) · 1086 (27 %) · 1451 (34 %) | 2647/3000/2449 → 2118/2383/2015 |
+
+Muros mágicos por dificultad: Normal 2,3,5,7,10 · Infierno 2,3,5,7,10 · Averno 2,3,5,7,10 · Eterno 2,3,5,7,10 · Tormento 2,3,5,7,10
+
+Ahora sí cuesta: en Eterno los intentos fallidos en muros mágicos suben +50 % (290 → 434) y en los físicos bajan
+(209 → 50). En Tormento, mágicos +56 % (1 388 → 2 163) y físicos −35 %. Horas de Tormento +141 h de mediana. **En Averno
+todavía no:** misma mediana de horas (−21 h) y mismos fallos en los mágicos (105 → 115).
+
+### RM medida sin botín (grupo de referencia fijo, `scratchpad/mix/mrRef.ts`)
+
+Grupo de referencia (nivel de la zona, techo realista, sin bonos) contra cada jefe de mundo mágico, 5 combates. Tres
+filas: tal cual, con la RM de cada héroe al 50 % (lo que lleva el jugador de la sonda que ignora la RM) y a 0. Equipo:
+el set de la rareza más cercana al mundo dentro de la dificultad.
+
+| Muro | Gana (tal cual · 50 % RM · sin RM, de 5) | Duración mediana, s | Muertes (tal cual → 50 % → 0) | Daño recibido/s: 50 % RM · sin RM, vs tal cual |
+|---|---|---|---|---|
+| Normal 2 | 5 · 5 · 5 | 4 · 4 · 4 | 0 → 0 → 0 | +9 % · +21 % |
+| Normal 3 | 5 · 5 · 5 | 4 · 4 · 4 | 0 → 0 → 0 | +7 % · +15 % |
+| Normal 5 | 5 · 5 · 5 | 6 · 6 · 6 | 0 → 0 → 0 | +8 % · +18 % |
+| Normal 7 | 5 · 5 · 5 | 3 · 3 · 3 | 0 → 0 → 0 | +15 % · +38 % |
+| Normal 10 | 5 · 5 · 5 | 5 · 5 · 5 | 0 → 0 → 0 | +11 % · +27 % |
+| Infierno 2 | 5 · 5 · 5 | 5 · 5 · 5 | 0 → 0 → 0 | +12 % · +30 % |
+| Infierno 3 | 5 · 5 · 5 | 5 · 5 · 5 | 0 → 0 → 0 | +17 % · +45 % |
+| Infierno 5 | 5 · 5 · 5 | 6 · 6 · 6 | 0 → 0 → 0 | +13 % · +33 % |
+| Infierno 7 | 5 · 5 · 5 | 5 · 5 · 5 | 0 → 0 → 0 | +19 % · +50 % |
+| Infierno 10 | 5 · 5 · 5 | 6 · 6 · 6 | 0 → 0 → 0 | +22 % · +64 % |
+| Averno 2 | 5 · 5 · 5 | 7 · 7 · 7 | 0 → 0 → 0 | +16 % · +44 % |
+| Averno 3 | 5 · 5 · 5 | 10 · 10 · 10 | 0 → 0 → 0 | +18 % · +49 % |
+| Averno 5 | 5 · 5 · 5 | 19 · 19 · 19 | 0 → 0 → 0 | +20 % · +55 % |
+| Averno 7 | 5 · 5 · 5 | 9 · 9 · 9 | 0 → 0 → 0 | +23 % · +74 % |
+| Averno 10 | 5 · 5 · 5 | 10 · 10 · 10 | 0 → 0 → 0 | +69 % · +196 % |
+| Eterno 2 | 5 · 5 · 5 | 18 · 18 · 18 | 0 → 0 → 0 | +31 % · +91 % |
+| Eterno 3 | 5 · 5 · 5 | 22 · 23 · 23 | 0 → 1 → 1 | +20 % · +63 % |
+| Eterno 5 | 5 · 5 · 5 | 33 · 33 · 34 | 0 → 0 → 0 | +12 % · +63 % |
+| Eterno 7 | 5 · 5 · 5 | 14 · 14 · 14 | 0 → 0 → 0 | +32 % · +120 % |
+| Eterno 10 | 5 · 5 · 5 | 22 · 22 · 22 | 0 → 0 → 0 | +35 % · +124 % |
+| Tormento 2 | 5 · 5 · 5 | 49 · 49 · 49 | 0 → 0 → 0 | +36 % · +103 % |
+| Tormento 3 | 0 · 0 · 0 | 64 · 64 · 64 | 10 → 10 → 10 | +15 % · +43 % |
+| Tormento 5 | 0 · 0 · 0 | 64 · 63 · 42 | 10 → 10 → 10 | +10 % · +59 % |
+| Tormento 7 | 5 · 5 · 5 | 34 · 34 · 34 | 0 → 0 → 0 | +39 % · +125 % |
+| Tormento 10 | 5 · 5 · 5 | 48 · 48 · 48 | 0 → 0 → 0 | +35 % · +145 % |
+
+Con equipo del techo, el grupo tumba casi todos los muros mucho antes del minuto (4–49 s), así que la RM no llega a
+decidir: gana igual con ella, a la mitad o a cero. Aun así, el daño que recibe crece mucho sin ella: con media RM, +16–23 %
+en Averno 2–7 y +69 % en Averno 10; +12–35 % en Eterno y +10–39 % en Tormento. Sin RM, +44–196 % en Averno, +63–124 % en
+Eterno y +43–145 % en Tormento. Tormento 3 y 5 los pierde el grupo de referencia también tal cual, con su set de la
+rareza más cercana: muere a los 64 s, por la furia. Donde la RM decide es con el equipo del jugador al tumbar el muro,
+que pelea cerca del minuto (las reglas de arriba).
+
+### Horas con 75/25 (base, 3 partidas)
+
+| Partida | Normal | Infierno | Averno | Eterno | Tormento |
+|---|---:|---:|---:|---:|---:|
+| 1 | 4 | 32 | 145 | 302 | 750 |
+| 2 | 3 | **51** | **110** | **371** | **934** |
+| 3 | 3 | 38 | 148 | 282 | 616 |
+
+Cada dificultad más larga que la anterior. La partida 2 se sale por arriba en Infierno, Eterno y Tormento, y por abajo
+en Averno. **Por qué:** con 75/25 los muros mágicos de Tormento cuestan más a cualquier jugador. Tormento 2 (mágico, con
+la presión de Eterno) pasa de 43–80 h a 121–140 h en las tres partidas, y la mediana de Tormento sube de 584 a 750 h. La
+partida 2 es además la lenta de las tres: ya hizo 834 h de Tormento en la ronda 13. Aquí pierde muchas horas en
+Tormento 4–6 y 10 (de 108 a 168 h cada uno) y en Eterno 5–6 (94–106 h). No lo he corregido. Dentro de ±5 de la línea
+solo caben bajadas de ~5 % en Tormento 3–5: Tormento 2 ya está en −5,0 y Tormento 1 no puede bajar sin salirse. Eso no
+asegura meter la partida 2 en la banda. Y si el usuario va a decidir una mecánica de RM, el re-afinado cambiaría otra vez.

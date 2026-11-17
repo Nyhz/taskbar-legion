@@ -56,7 +56,7 @@ export interface BlowLook {
   magic: string;
 }
 
-/** The look of a sign for a boss that hits with `magicShare` of its damage as magic (data/bossKit: 0.4 or 0.6):
+/** The look of a sign for a boss that hits with `magicShare` of its damage as magic (data/bossKit: 0.25 or 0.75):
  *  the magic one when magic is the larger part. */
 export function bossLook(look: BlowLook, magicShare: number | undefined): string {
   return (magicShare ?? 0) > 0.5 ? look.magic : look.fx;

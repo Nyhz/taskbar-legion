@@ -215,22 +215,26 @@ export const BOSS_THREAT_PCT: readonly [number, number, number, number, number] 
 /** A STAGE boss presses the front at this share of its world boss's target: the defensive build shows outside the
  *  walls too, while a stage boss (5–10 s) never threatens the farm. */
 export const STAGE_BOSS_THREAT_SHARE = 0.6;
+// ROUND 14 (2026-11-17; user: «los podemos volver 75/25 siempre»): the boss mixes went 0.4/0.6 → 0.25/0.75. The
+// three anchors above and below (ZONE_BOSS_HIT_TUNE, STAGE_BOSS_HIT_TUNE, KNIGHT_EHP_TUNE) were rescaled by the ratio of
+// what the average Knight lets through at the old mix to the new (round 13b snapshots, median of 3): within ±2.2 %,
+// since he wears about as much magic resist as armour — the threat on him is the same.
 /** The world boss's basic hit, world 1 … 50 (scripts/boss-hit-tune.ts; rewritten in round 7 with every swing on the
  *  front hero — backShotChance 0 — so the per-hit value is lower for the same share of his life a second). */
 export const ZONE_BOSS_HIT_TUNE: number[] = [
-  17.4, 5.45, 6.09, 6.25, 6.65, 8.16, 8.63, 8.87, 9.44, 10.2,
-  10.3, 11.4, 25.8, 31.8, 38.9, 38.7, 39.4, 44.1, 48.3, 49.1,
-  51.3, 65, 114, 200, 266, 265, 271, 280, 296, 346,
-  531, 616, 910, 1120, 1370, 1500, 1450, 1450, 1540, 1610,
-  1480, 1910, 3330, 5030, 6890, 6640, 6680, 6490, 6610, 6690,
+  17.4, 5.45, 6.11, 6.28, 6.63, 8.13, 8.63, 8.87, 9.52, 10.1,
+  10.4, 11.3, 25.6, 32, 38.6, 39, 39.1, 44.4, 48.4, 49.7,
+  50.7, 65.4, 116, 198, 269, 264, 272, 279, 295, 352,
+  522, 623, 923, 1110, 1400, 1490, 1460, 1450, 1550, 1600,
+  1490, 1920, 3380, 5000, 6900, 6630, 6670, 6530, 6670, 6650,
 ];
 /** The stage bosses' basic hit, world 1 … 50 (scripts/boss-hit-tune.ts; against the Knight that reaches the wall). */
 export const STAGE_BOSS_HIT_TUNE: number[] = [
-  13.2, 3.26, 3.66, 3.73, 4.01, 4.92, 5.19, 5.27, 5.66, 6.17,
-  6.2, 6.84, 10.3, 19.1, 23.4, 23.3, 23.7, 26.2, 27.2, 29.2,
-  33.1, 39.7, 51.9, 90.7, 161, 181, 189, 188, 206, 207,
-  240, 401, 541, 790, 988, 1080, 1160, 1130, 1130, 1210,
-  1260, 1190, 1910, 3280, 4750, 5710, 5640, 5590, 5690, 5550,
+  13.2, 3.26, 3.67, 3.75, 4, 4.9, 5.19, 5.27, 5.61, 6.22,
+  6.25, 6.88, 10.2, 19.2, 23.3, 23.5, 23.5, 26, 27.1, 29.3,
+  32.7, 39.3, 52.6, 88.9, 163, 179, 190, 189, 207, 205,
+  236, 395, 547, 779, 998, 1060, 1170, 1140, 1130, 1220,
+  1270, 1200, 1920, 3240, 4780, 5700, 5650, 5580, 5660, 5600,
 ];
 
 // THE CRUSHING BLOW's anchors (round 7; data/bossKit CRUSH says how hard, these say against whom). Written ONCE by
@@ -245,9 +249,9 @@ export const STAGE_BOSS_HIT_TUNE: number[] = [
 export const KNIGHT_EHP_TUNE: number[] = [
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  2320, 3080, 4780, 7380, 8730, 8660, 8860, 9180, 9690, 11300,
-  18100, 21800, 29600, 32000, 34700, 38000, 36700, 36800, 39000, 40900,
-  38100, 50700, 73500, 93900, 111000, 107000, 108000, 105000, 107000, 108000,
+  2290, 3100, 4880, 7290, 8830, 8630, 8890, 9150, 9660, 11500,
+  17800, 22000, 30000, 31700, 35500, 37700, 37000, 36700, 39200, 40700,
+  38300, 51100, 74500, 93300, 111000, 107000, 108000, 106000, 108000, 107000,
 ];
 /** The average back-line hero's life at each world's wall, world 1 … 50. */
 export const BACK_LIFE_TUNE: number[] = [
@@ -270,11 +274,11 @@ export function areaBlowSplash(S: number, share: number): number {
 export function crushHit(S: number, tankLife: number): number {
   return tankLife * (KNIGHT_EHP_TUNE[worldOf(S) - 1] ?? 0);
 }
-/** The Crushing Blow's magic shock on each hero behind at global stage `S`: what takes `backLife` × the average
- *  back-line hero's life, × the boss's magic share over `magicRef`, through on-level magic resist. */
-export function crushShock(S: number, backLife: number, magicShare: number, magicRef: number): number {
+/** The Crushing Blow's magic shock on each hero behind at global stage `S`: what takes `backLife` × `sideScale` (the
+ *  boss's side, data/bossKit crushShockScale) × the average back-line hero's life, through on-level magic resist. */
+export function crushShock(S: number, backLife: number, sideScale: number): number {
   const through = 1 - mitigation(expectedDefense(S), S);
-  return (backLife * (magicShare / Math.max(0.01, magicRef)) * (BACK_LIFE_TUNE[worldOf(S) - 1] ?? 0)) / Math.max(0.05, through);
+  return (backLife * sideScale * (BACK_LIFE_TUNE[worldOf(S) - 1] ?? 0)) / Math.max(0.05, through);
 }
 
 /** The world boss's basic hit at global stage `S`: the anchor table, or the formula where it has no entry (world 1). */

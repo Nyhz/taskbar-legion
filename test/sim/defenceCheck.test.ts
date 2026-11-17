@@ -73,7 +73,7 @@ describe('the Crushing Blow', () => {
     const S = globalStageOf(4, 5, 10);
     expect(crushHit(S, 1.5)).toBeCloseTo(1.5 * (KNIGHT_EHP_TUNE[44] ?? 0), 6);
     // Sized against on-level magic resist: through it (half turned away) the shock takes backLife × mix of her life.
-    expect(crushShock(S, 0.5, 0.6, 0.5) * (1 - mitigation(expectedDefense(S), S))).toBeCloseTo(0.6 * (BACK_LIFE_TUNE[44] ?? 0), 6);
+    expect(crushShock(S, 0.5, 1.2) * (1 - mitigation(expectedDefense(S), S))).toBeCloseTo(0.6 * (BACK_LIFE_TUNE[44] ?? 0), 6);
   });
 });
 

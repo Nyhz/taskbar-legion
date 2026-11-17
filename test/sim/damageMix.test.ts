@@ -16,9 +16,9 @@ import { unit } from './_kit';
 afterEach(() => setLanguage('en'));
 
 describe('physical and magic damage', () => {
-  it('every stage and world boss has its own mix, 40 % or 60 % magic, the same every time it appears', () => {
+  it('every stage and world boss has its own mix, 25 % or 75 % magic (round 14), the same every time it appears', () => {
     for (const w of WORLDS) {
-      for (const key of [w.creatures.boss.key, w.worldBoss?.key ?? '']) expect([0.4, 0.6]).toContain(BOSS_MAGIC_SHARE[key]);
+      for (const key of [w.creatures.boss.key, w.worldBoss?.key ?? '']) expect([0.25, 0.75]).toContain(BOSS_MAGIC_SHARE[key]);
     }
     const shares = Object.values(BOSS_MAGIC_SHARE);
     expect(shares.filter((m) => m > 0.5).length).toBeGreaterThan(5); // some lean on spells…
@@ -66,11 +66,11 @@ describe('physical and magic damage', () => {
 
   it("the boss's mark says what it hits with, signed by the defence that matters more", () => {
     setLanguage('es');
-    const steel = bossMarks({ magicShare: 0.4, bossRank: 'world' }, 110)[0];
+    const steel = bossMarks({ magicShare: 0.25, bossRank: 'world' }, 110)[0];
     expect(steel?.kind).toBe('damage');
     expect(steel?.sign).toBe('stat_armor');
-    expect(steel?.help).toBe('Cada golpe es un 60 % físico, que frena la armadura, y un 40 % mágico, que frena la resistencia mágica.');
-    const spells = bossMarks({ magicShare: 0.6, bossRank: 'stage' }, 110)[0];
+    expect(steel?.help).toBe('Cada golpe es un 75 % físico, que frena la armadura, y un 25 % mágico, que frena la resistencia mágica.');
+    const spells = bossMarks({ magicShare: 0.75, bossRank: 'stage' }, 110)[0];
     expect(spells?.sign).toBe('stat_magicResist');
     expect(spells?.name).toBe('Sobre todo mágico');
     // A boss with no mix on record (an old save) shows no such mark.

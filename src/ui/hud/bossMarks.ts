@@ -1,5 +1,5 @@
 import { abilityDef } from '@/data/abilities';
-import { BOSS_AFFIX, BOSS_AFFIX_KEYS, CRUSH, MECHANIC, SUMMONS, crushAt, mechanicAbility, type BossAffixKey, type BossMechanicKey, type BossRank } from '@/data/bossKit';
+import { BOSS_AFFIX, BOSS_AFFIX_KEYS, CRUSH, MECHANIC, SUMMONS, crushAt, crushShockScale, mechanicAbility, type BossAffixKey, type BossMechanicKey, type BossRank } from '@/data/bossKit';
 import { difficultyIndexOf } from '@/data/difficulties';
 import { effectDef } from '@/data/effects';
 import { t } from '@/i18n';
@@ -116,7 +116,7 @@ function damageMark(magicShare: number, globalStage: number, crush: boolean): Bo
   const physical = 100 - magic;
   const c = crushAt(globalStage);
   const more = crush && c.tankLife > 0
-    ? [t('boss.crushHelp', { secs: secs(CRUSH.everyMs), cast: secs(CRUSH.castMs), tank: Math.round(c.tankLife * 100), back: Math.round(c.backLife * (magicShare / CRUSH.shockMagicRef) * 100) })]
+    ? [t('boss.crushHelp', { secs: secs(CRUSH.everyMs), cast: secs(CRUSH.castMs), tank: Math.round(c.tankLife * 100), back: Math.round(c.backLife * crushShockScale(magicShare) * 100) })]
     : undefined;
   return {
     kind: 'damage',

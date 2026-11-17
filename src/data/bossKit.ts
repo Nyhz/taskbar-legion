@@ -178,21 +178,22 @@ export function worldBossPressureAt(S: number): WorldBossPressure {
 
 // ── Physical and magic damage ───────────────────────────────────────────────────────────────────────────────
 
-/** The share of each boss's damage that is MAGIC, by the creature it fights as (data/worlds): 0.4 leans on steel,
- *  0.6 on spells (round 5, 2026-11-16, user: «cada jefe tendría que ser una mezcla, intentando que sean 60/40 o
- *  40/60, unos más heavy en daño mágico y otros en físico»). Fixed per boss, so a party can prepare for a wall, and
- *  shown in its tooltip. It replaces the 40 % coin each boss tossed when it appeared. Every hit is split by it and
+/** The share of each boss's damage that is MAGIC, by the creature it fights as (data/worlds): 0.25 leans on steel,
+ *  0.75 on spells (round 5, 2026-11-16, user: «cada jefe tendría que ser una mezcla, intentando que sean 60/40 o
+ *  40/60, unos más heavy en daño mágico y otros en físico»; round 14, 2026-11-17: «los podemos volver 75/25 siempre» —
+ *  at 60/40 a player who ignored magic resist lost nothing until Torment, PACING_REPORT «MR en una partida completa»).
+ *  Fixed per boss, so a party can prepare for a wall, and shown in its tooltip. It replaces the 40 % coin each boss tossed when it appeared. Every hit is split by it and
  *  each part is mitigated by its own defence; an ability with its own `magic` flag (Chain Lightning) keeps it. */
 export const BOSS_MAGIC_SHARE: Readonly<Record<string, number>> = {
   // stage bosses
-  king: 0.4, warden: 0.4, ferryman: 0.6, colossus: 0.4, bellbearer: 0.6,
-  admiral: 0.4, geode: 0.6, magmawyrm: 0.6, archon: 0.6, lictor: 0.4,
+  king: 0.25, warden: 0.25, ferryman: 0.75, colossus: 0.25, bellbearer: 0.75,
+  admiral: 0.25, geode: 0.75, magmawyrm: 0.75, archon: 0.75, lictor: 0.25,
   // world bosses
-  crowmother: 0.4, mistletoe: 0.6, drownedmoon: 0.6, scapegoat: 0.4, abbot: 0.6,
-  ninthwave: 0.4, amanita: 0.6, quench: 0.4, verdict: 0.4, unmaker: 0.6,
+  crowmother: 0.25, mistletoe: 0.75, drownedmoon: 0.75, scapegoat: 0.25, abbot: 0.75,
+  ninthwave: 0.25, amanita: 0.75, quench: 0.25, verdict: 0.25, unmaker: 0.75,
 };
 /** A boss whose creature has no entry (an unknown world). */
-export const DEFAULT_BOSS_MAGIC_SHARE = 0.4;
+export const DEFAULT_BOSS_MAGIC_SHARE = 0.25;
 
 /** The magic share of the boss of `rank` at global stage `S` (its world's stage-boss or world-boss creature). */
 export function bossMagicShare(S: number, rank: BossRank): number {
@@ -349,7 +350,7 @@ export const MECHANIC = {
  *  than its shockwave, so the party sees it coming — and strikes the FRONT hero for `tankLife` × the average Knight's
  *  life at that wall, after his own armour and magic resist against the boss's physical/magic mix (data/stageScaling
  *  KNIGHT_EHP_TUNE); everyone BEHIND him takes its MAGIC shock: `backLife` × the average back-line hero's life
- *  (BACK_LIFE_TUNE) through ON-LEVEL magic resist, × the boss's magic share over `shockMagicRef` — twice that with
+ *  (BACK_LIFE_TUNE) through ON-LEVEL magic resist, × the boss's side (`shockBySide`) — twice that with
  *  none. It cannot be blocked, and it is not dice: a Knight who carries a defence for it (Stone Skin, Bulwark,
  *  Debilitating Cleave on the boss, Hold the Line; a Holy Shield on him) takes it, one who carries none falls; a back
  *  line with no magic resist falls to a spell-heavy boss's shock, and stands a steel-heavy one's. The defences wait for its wind-up against a boss (their
@@ -371,8 +372,16 @@ export const CRUSH = {
   // Inferno brings the shock in gently (a back line that wears little magic resist stands it); from Eternal it asks for
   // it. (At 0.3–0.4 in Inferno the probe's Ranger, who wears little, fell to it in most of the walls.)
   backLife: [0, 0, 0.2, 0.45, 0.5] as readonly [number, number, number, number, number],
-  shockMagicRef: 0.5,
+  // × backLife by the boss's side (round 14, 2026-11-17): the shock is what it was at 60/40 — 1.2 for a spell-heavy
+  // boss, 0.8 for a steel-heavy one — now that the mixes are 75/25. (Scaling it with the share, as before, halved the
+  // steel-heavy shock: the back line stood Eternal 1 untouched and the wall's ask fell by a quarter.)
+  shockBySide: { steel: 0.8, spell: 1.2 },
 } as const;
+
+/** The Crushing Blow's shock on the back line, × CRUSH.backLife, for a boss that hits with `magicShare` magic. */
+export function crushShockScale(magicShare: number): number {
+  return magicShare > 0.5 ? CRUSH.shockBySide.spell : CRUSH.shockBySide.steel;
+}
 
 /** The Crushing Blow's strength at global stage `S` — its difficulty's, eased in from the previous one's over the
  *  first worlds (pressureWeight). Zero on both: the boss does not wield it. */

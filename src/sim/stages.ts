@@ -2,7 +2,7 @@ import type { Rng } from './rng';
 import type { Combatant, WorldState } from './world';
 import type { ResolvedAbility } from './loadout';
 import { abilityDef } from '@/data/abilities';
-import { BACK_SPLASH_SHARE, bossMagicShare, crushAt, CRUSH, pressureDifficulty, worldBossPressureAt, type BossRank } from '@/data/bossKit';
+import { BACK_SPLASH_SHARE, bossMagicShare, crushAt, crushShockScale, pressureDifficulty, worldBossPressureAt, type BossRank } from '@/data/bossKit';
 import { armBoss, bossKit } from './bossMechanics';
 import { pickEnemyKind, supportAuras, traitsOf, SUPPORT_KIND, TRAIT_TUNING, type EnemyKind, type EnemyRole } from '@/data/enemies';
 import { difficultyIndexOf } from '@/data/difficulties';
@@ -198,7 +198,7 @@ function dressBoss(boss: Combatant | undefined, kit: ReturnType<typeof bossKit>,
     const c = crushAt(S);
     if (c.tankLife > 0) {
       boss.crushHit = crushHit(S, c.tankLife);
-      boss.crushShock = crushShock(S, c.backLife, boss.magicShare, CRUSH.shockMagicRef);
+      boss.crushShock = crushShock(S, c.backLife, crushShockScale(boss.magicShare));
     }
     // Its area blow on the heroes behind, anchored to the back line's life from Inferno (data/bossKit BACK_SPLASH_SHARE).
     const splash = areaBlowSplash(S, BACK_SPLASH_SHARE[pressureDifficulty(S)] ?? 0); // the previous difficulty's in worlds 1–2 (round 10)

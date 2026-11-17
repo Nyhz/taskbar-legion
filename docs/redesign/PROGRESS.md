@@ -2127,3 +2127,17 @@ muros y horas en la siguiente ronda.
   violeta) y el golpe cargado de los jefes de mundo (nombre «Charged Strike · Golpe cargado», carga en hierro o violeta
   según la mezcla del jefe, golpe limpio delante) con la separación de render entre jefe y héroe de delante. El lab queda
   sin nada pendiente.
+
+### Ronda 14 — jefes 75/25 (17 nov, sin commit)
+
+- **Mezcla de daño de los jefes** (usuario: «los podemos volver 75/25 siempre»): 0,4/0,6 → 0,25/0,75 en todos los
+  jefes de etapa y de mundo (`BOSS_MAGIC_SHARE`); cada uno conserva su lado.
+- **Anclas** del golpe al frente y de la vida del Knight para el golpe aplastante reescaladas por la mezcla (±2,2 %:
+  la amenaza sobre el Knight medio no cambia).
+- **Choque del golpe aplastante:** ahora va por lado (`CRUSH.shockBySide` 0,8 acero / 1,2 hechizo, lo de 60/40) en vez
+  de crecer con la proporción de magia. Si no, el choque de los jefes de acero se quedaba a la mitad.
+- **Escalera** re-medida y re-grabada: sigue subiendo, sin tocar vidas.
+- Reglas, costuras, MR en partida completa, MR sin botín (`scratchpad/mix/mrRef.ts`) y horas: en PACING_REPORT
+  «Ronda 14». Pendiente de decisión: costura Averno → Eterno 1 en una partida (0/8), y la partida 2 por encima de su
+  banda en Eterno y Tormento.
+
