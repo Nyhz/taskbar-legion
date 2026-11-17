@@ -15,6 +15,34 @@ While the project is pre-1.0, minor versions may include breaking save changes.
 
 ### Fixed
 
+## [0.5.0] - 2026-11-17
+
+### Added
+
+- **A complete visual redesign** — new pixel-art heroes, enemies and world bosses with engine-driven animation, battle-strip backdrops for all ten worlds (each with its own Torment atmosphere), new item icons, and a rebuilt interface (HUD, hero window, cube, map, pets and upgrades) in a hand-made pixel style.
+- **Spanish (Spain)** — every text in the game is now available in English and Spanish.
+- **Redesigned classes** — Knight, Ranger and Priest have new talent trees, role talents, reactive abilities and passives.
+- **Pets, party supports and the Support's Enchanted Weapons aura.**
+- **Boss mechanics** — world bosses now enrage, press the front hero, telegraph a **Charged Strike** that tests the tank's defences, and hit with a fixed physical or magic mix that the boss portal shows. Mirror bosses turn reflected buffs back into shards.
+- **The back line takes damage** — ranged enemies shoot past the tank and area blows splash the whole party.
+- **The hero sheet** shows real swings per second, with the raw attack speed and the per-hit bonus in the tooltip.
+
+### Changed
+
+- **Full progression rebalance** across the five difficulties — each one is clearly longer and asks for more gear than the one before, and every world boss is a harder wall than the previous one.
+- **Magic resistance matters** — bosses deal 75 % of their damage in their own type, so skipping magic resistance loses the magic bosses from Eternal on.
+- **Attack speed follows a soft per-class cadence** — past each class's natural pace, extra attack speed turns into damage per hit instead of absurd swing rates.
+- **More waves per stage in the higher difficulties**, rarer top-tier drops, better boss-chest tables and a world-boss key in every boss chest where it's needed.
+- **The Priest is the party healer**; a party without heals no longer survives the late walls.
+
+### Fixed
+
+- Attack speed is no longer lost to timer rounding: heroes swing exactly as often as their attack speed says.
+- Bag pages keep their height, so the page keys stay under the pointer.
+- A game scale saved before the whole-pixel system no longer shrinks the desktop app.
+- Wide bosses stand behind their contact point, and ability hits land with the blow.
+- Switching class refunds talent points; a removed ability in an old save no longer breaks the game.
+
 ## [0.4.1] - 2026-06-08
 
 ### Added
@@ -104,7 +132,8 @@ While the project is pre-1.0, minor versions may include breaking save changes.
 - Initial desktop builds: Tauri v2 transparent, always-on-top, bottom-docked overlay.
 - Multi-platform release pipeline (macOS universal, Windows, Linux) via GitHub Actions.
 
-[Unreleased]: https://github.com/Nyhz/taskbar-legion/compare/v0.4.1...HEAD
+[Unreleased]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/Nyhz/taskbar-legion/compare/v0.4.1...v0.5.0
 [0.4.1]: https://github.com/Nyhz/taskbar-legion/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/Nyhz/taskbar-legion/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/Nyhz/taskbar-legion/compare/v0.2.0...v0.3.0
