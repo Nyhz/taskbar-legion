@@ -368,15 +368,28 @@ function nearestEnemyInRange(hero: Combatant, enemies: Combatant[]): Combatant |
   return best;
 }
 
+/** A sane bound on the swings one combatant takes in one tick — a guard against a runaway loop, not a cap on attack
+ *  speed (100 swings in a 100 ms tick is 1 000 attacks a second). */
+const MAX_SWINGS_PER_TICK = 100;
+
 function advanceAttack(c: Combatant, attacksPerSec: number, deltaMs: number, doAttack: () => boolean): void {
   // The swing cooldown counts down even while closing in, so the combatant arrives
   // "loaded" and strikes the instant it stops — no dead pause after the march.
   if (c.attackTimerMs > 0) c.attackTimerMs -= deltaMs;
   if (c.movedThisTick === true) return; // ...but it can't actually swing on a tick it moved
   if (c.attackTimerMs > 0) return; // still recharging
-  const fired = doAttack();
   const interval = 1000 / Math.max(0.05, attacksPerSec);
-  c.attackTimerMs = fired ? interval : 0;
+  // Round 12 (2026-11-17; user: «arreglar y reafinar todo»): the overflow of a tick carries into the next swing, and a
+  // combatant faster than the tick swings as many times as its speed gives (no cap on attack speed). Before, the timer
+  // was reset to a whole interval and the overflow lost: the real interval rounded UP to whole ticks of 100 ms (9.65
+  // attacks a second swung 5 times; 10.3 swung 10), so a small gain in attack speed could double a hero's damage.
+  for (let swings = 0; c.attackTimerMs <= 0 && swings < MAX_SWINGS_PER_TICK; swings++) {
+    if (!doAttack()) {
+      c.attackTimerMs = 0; // nothing to swing at: ready, without banking the wait
+      return;
+    }
+    c.attackTimerMs += interval;
+  }
 }
 
 export function heroAttack(h: Combatant, stats: EffectiveStats, target: Combatant, enemies: Combatant[], _rng: Rng, events: CombatEvent[], heroes: Combatant[] = [h]): void {

@@ -2072,3 +2072,14 @@ muros y horas en la siguiente ronda.
 - **Tormento** sobre 60→90 %; ningún muro de Averno/Eterno pide menos que el anterior; Eterno 2 algo más bajo.
 - Medido: 3–5 / 29–37 / 105–111 / 245–345 / 570–911 h. Quedan Averno 10 (+6), Eterno 1 (−1), Eterno 4 (−2), Tormento
   desigual por mundo y la Priest sin curas ganando Tormento 5 en una partida.
+
+### Ronda 12 — el temporizador de golpes (17 nov, sin commit)
+
+- **Arreglo** (`src/sim/combat.ts` `advanceAttack`; usuario: «arreglar y reafinar todo»): el temporizador de golpes
+  conserva lo que sobra de cada tick y deja golpear varias veces en un tick a quien es más rápido que él (sin tope de
+  velocidad de ataque; un guarda de 100 golpes por tick solo contra bucles). Antes el intervalo real se redondeaba hacia
+  arriba a múltiplos de 100 ms: 9,65 golpes/s golpeaba 5 veces, 10,3 golpeaba 10, y una mejora pequeña podía doblar el
+  daño del Ranger. Vale para héroes, enemigos y jefes, y para las habilidades atadas al golpe. Test
+  `test/sim/swingRate.test.ts` (2,4 / 4,9 / 9,65 / 15 golpes/s, ±1 %).
+- **El re-afinado queda en espera**: el usuario va a rediseñar la escala de la velocidad de ataque (un Ranger a ~10
+  golpes/s es absurdo; debería rondar 2–3). Auditoría y opciones en PACING_REPORT «Ronda 12».

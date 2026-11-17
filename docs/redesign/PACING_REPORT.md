@@ -3040,3 +3040,68 @@ Fuera de ±5 o que bajan: Averno 10, Eterno 1, Eterno 4
   las recargas: las curas pesan menos ahí). Infierno 3: 6 %. ✔ casi.
 - **Sin resistencia mágica**: pierde los muros mágicos (Averno 5, Eterno 5, Tormento 5 en una). ✔
 - **Coherencia 1,00** en todos.
+
+## Ronda 12 · el Cubo de la sonda, el temporizador de golpes y la velocidad de ataque (17 nov, sin commit)
+
+### 1. El Cubo de la sonda es realista; los saltos venían del temporizador
+
+La sonda pasa por el Cubo cada 30 min de juego, fabrica en cuanto junta 9 piezas de una rareza y transfigura una vez
+cada pieza top que lleva. No acumula durante un muro largo para soltarlo después. En Tormento (partida 1) el salto de
+T6 (57 → 92 % del techo, 8,8 h) llega **sin una sola pieza del Cubo**: entre llegar y tumbarlo solo cambian unas botas
+del Knight y 6 gemas, pero el Ranger pasa de 9,65 a 10,33 golpes/s. Con 100 ms por tick y el sobrante perdido, 9,65
+golpes/s golpeaban 5 veces por segundo y 10,33 golpeaban 10: el daño del Ranger se doblaba (escalones en 10, 5, 3,33 y
+2,5 golpes/s, con pérdidas de hasta el 48 %). Eso explicaba los muros de 140–377 h seguidos de muros gratis y la
+dispersión de Tormento entre partidas.
+
+**Arreglo hecho** (`sim/combat` `advanceAttack`): el sobrante pasa al golpe siguiente y caben varios golpes en un tick
+(sin tope de velocidad). Test `test/sim/swingRate.test.ts`. El re-afinado completo queda en espera por el punto 2.
+
+### 2. La velocidad de ataque real, al tumbar el último muro de cada dificultad (3 partidas)
+
+| | Knight | Ranger | Priest |
+|---|---:|---:|---:|
+| Normal 10 | 1,43–1,45 | 1,57–1,68 | 1,00–1,06 |
+| Infierno 10 | 1,48–1,58 | 1,84–2,32 | 1,08–1,10 |
+| Averno 10 | 1,40–1,86 | 2,63–2,88 | 1,11–1,35 |
+| Eterno 10 | 2,06–2,43 | 4,81–4,97 | 1,54–2,05 |
+| Tormento 10 | 2,91–3,96 | **10,0–10,4** | 1,47–2,15 |
+
+**De dónde sale** (Ranger en Tormento 10): base 1,5 × (1 + afijos de equipo +264–313 % + **gemas +255–286 %** +
+talentos +18 %). El Knight y la Priest no llevan gemas de velocidad; su +47–183 % es de afijos. Las auras de grupo no
+aportan velocidad. En combate hay además mejoras de rato (Infusión de poder +15 % a quien cura la Priest; Fuego
+rápido +45 % si el Ranger la lleva).
+
+**El afijo**: `attackSpeed` tira 1,5–3,0 puntos por nivel de objeto × el multiplicador de la rareza × un factor de
+nivel que se satura en el nivel 80 (×1,5). Una pieza T8 al nivel de Tormento 10 (122) tira **+20–41 %**; la mejor
+pieza de cada héroe ronda +33–40 %. La Amatista da la mitad de un afijo de su rareza por hueco, y el Ranger llena
+~37 huecos con ellas: de ahí el +255–286 %.
+
+### 3. Opciones para un ritmo de 1,5–3 golpes/s sin capar una estadística de poder
+
+**A · Paso por clase y el resto en daño por golpe.** Cada clase tiene un paso (por ejemplo Ranger 3/s, Knight 2/s,
+Priest 1,5/s). La velocidad de ataque por encima de ese paso no da más golpes: multiplica el daño de cada golpe en la
+misma proporción (a 10/s con paso 3, cada golpe pega ×3,33). El daño por segundo es el que da toda la velocidad (nada se
+pierde) y la cadencia que se ve es razonable.
+- *Habilidades atadas al golpe*: se lanzan en un golpe cuando están listas; con 3 golpes/s siguen saliendo en cuanto
+  acaba su recarga (las recargas son de 8–24 s), así que apenas cambian. Las que escalan con el golpe (×daño de ataque)
+  ganan lo mismo que el golpe.
+- *Por golpe*: crítico firme, multigolpe y robo de vida van por golpe; con golpes más grandes y menos numerosos dan lo
+  mismo en media. Los efectos «al golpear» que no escalan con el daño (marcas, procs de cuenta fija) salen menos.
+- *Ranger*: sigue siendo la más rápida (el paso más alto) y la velocidad de ataque sigue siendo su estadística.
+
+**B · Re-escalar el afijo y la gema.** `attackSpeed` pasa a un % acotado que no crece con la rareza ni el nivel
+(p. ej. +3–6 % por afijo en cualquier pieza), y su presupuesto de rareza/nivel se va a `attackDamage`; la Amatista da
+daño de ataque además de un poco de velocidad. El Ranger acaba en ~2,2–2,8/s; la base sube algo para marcar su
+identidad (1,5 → 1,8).
+- *Habilidades*: sin cambios de cadencia.
+- *Riesgo*: cambia el generador de objetos y gemas (`GENERATOR_VERSION`, guardados) y hay que re-afinar todo igual.
+- *Ranger*: la velocidad pasa a ser un rasgo de clase y de talentos más que de equipo.
+
+**C · Curva con devolución.** La cadencia sigue una curva que se suaviza (p. ej. golpes/s = base × (1 + v)^0,4 en vez
+de × (1 + v)) y lo que la curva no da en golpes se devuelve como aumento de daño (`damageIncrease`) para que el daño
+por segundo sea el de hoy. Como A pero sin un umbral: cada punto de velocidad sigue sumando cadencia, cada vez menos,
+y el resto daño.
+- *Habilidades y Ranger*: como A, con una transición más suave.
+
+**Recomendación**: A (o C si se quiere sin umbral). No toca el generador ni los guardados, conserva todo el daño que da
+la velocidad y deja la cadencia en el rango pedido. B es más limpia como diseño de objetos pero obliga a migrar el generador.
