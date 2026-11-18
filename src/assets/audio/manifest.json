@@ -1,4 +1,246 @@
 {
+ "ab_knight_battlecry": {
+  "channel": "sfx",
+  "group": "ability",
+  "files": [
+   "sfx/ab_knight_battlecry_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 0.62,
+  "loudness": -28.0,
+  "peak": -17.4
+ },
+ "ab_knight_bloodlust": {
+  "channel": "sfx",
+  "group": "ability",
+  "files": [
+   "sfx/ab_knight_bloodlust_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 0.4,
+  "loudness": -28.0,
+  "peak": -11.4
+ },
+ "ab_knight_bulwark": {
+  "channel": "sfx",
+  "group": "ability",
+  "files": [
+   "sfx/ab_knight_bulwark_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 0.5,
+  "loudness": -28.0,
+  "peak": -11.5
+ },
+ "ab_knight_debilitate": {
+  "channel": "sfx",
+  "group": "ability",
+  "files": [
+   "sfx/ab_knight_debilitate_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 0.36,
+  "loudness": -28.0,
+  "peak": -13.6
+ },
+ "ab_knight_guard": {
+  "channel": "sfx",
+  "group": "ability",
+  "files": [
+   "sfx/ab_knight_guard_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 0.32,
+  "loudness": -29.0,
+  "peak": -11.8
+ },
+ "ab_knight_holdtheline": {
+  "channel": "sfx",
+  "group": "ability",
+  "files": [
+   "sfx/ab_knight_holdtheline_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 0.6,
+  "loudness": -28.0,
+  "peak": -8.6
+ },
+ "ab_knight_riposte": {
+  "channel": "sfx",
+  "group": "ability",
+  "files": [
+   "sfx/ab_knight_riposte_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 0.26,
+  "loudness": -28.0,
+  "peak": -14.1
+ },
+ "ab_knight_riposte_charge": {
+  "channel": "sfx",
+  "group": "ability",
+  "files": [
+   "sfx/ab_knight_riposte_charge_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 0.1,
+  "loudness": -34.0,
+  "peak": -21.2
+ },
+ "ab_priest_circle": {
+  "channel": "sfx",
+  "group": "ability",
+  "files": [
+   "sfx/ab_priest_circle_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 0.6,
+  "loudness": -28.0,
+  "peak": -17.1
+ },
+ "ab_priest_healing_light": {
+  "channel": "sfx",
+  "group": "ability",
+  "files": [
+   "sfx/ab_priest_healing_light_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 0.55,
+  "loudness": -28.0,
+  "peak": -17.8
+ },
+ "ab_priest_holyshield": {
+  "channel": "sfx",
+  "group": "ability",
+  "files": [
+   "sfx/ab_priest_holyshield_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 0.52,
+  "loudness": -28.0,
+  "peak": -18.3
+ },
+ "ab_priest_mend": {
+  "channel": "sfx",
+  "group": "ability",
+  "files": [
+   "sfx/ab_priest_mend_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 1.0,
+  "loudness": -28.0,
+  "peak": -16.0
+ },
+ "ab_priest_nova": {
+  "channel": "sfx",
+  "group": "ability",
+  "files": [
+   "sfx/ab_priest_nova_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 0.45,
+  "loudness": -28.0,
+  "peak": -13.4
+ },
+ "ab_priest_sanctuary": {
+  "channel": "sfx",
+  "group": "ability",
+  "files": [
+   "sfx/ab_priest_sanctuary_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 0.9,
+  "loudness": -28.0,
+  "peak": -15.7
+ },
+ "ab_priest_smite": {
+  "channel": "sfx",
+  "group": "ability",
+  "files": [
+   "sfx/ab_priest_smite_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 0.34,
+  "loudness": -28.0,
+  "peak": -15.1
+ },
+ "ab_ranger_aimedshot": {
+  "channel": "sfx",
+  "group": "ability",
+  "files": [
+   "sfx/ab_ranger_aimedshot_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 0.36,
+  "loudness": -28.0,
+  "peak": -13.8
+ },
+ "ab_ranger_fast_fire": {
+  "channel": "sfx",
+  "group": "ability",
+  "files": [
+   "sfx/ab_ranger_fast_fire_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 0.36,
+  "loudness": -28.0,
+  "peak": -10.9
+ },
+ "ab_ranger_focus": {
+  "channel": "sfx",
+  "group": "ability",
+  "files": [
+   "sfx/ab_ranger_focus_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 0.5,
+  "loudness": -28.0,
+  "peak": -11.3
+ },
+ "ab_ranger_frozentrap": {
+  "channel": "sfx",
+  "group": "ability",
+  "files": [
+   "sfx/ab_ranger_frozentrap_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 0.4,
+  "loudness": -28.0,
+  "peak": -10.7
+ },
+ "ab_ranger_multishot": {
+  "channel": "sfx",
+  "group": "ability",
+  "files": [
+   "sfx/ab_ranger_multishot_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 0.36,
+  "loudness": -28.0,
+  "peak": -15.5
+ },
+ "ab_ranger_tarflask": {
+  "channel": "sfx",
+  "group": "ability",
+  "files": [
+   "sfx/ab_ranger_tarflask_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 0.46,
+  "loudness": -28.0,
+  "peak": -13.4
+ },
+ "ab_ranger_weakspot": {
+  "channel": "sfx",
+  "group": "ability",
+  "files": [
+   "sfx/ab_ranger_weakspot_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 0.4,
+  "loudness": -28.0,
+  "peak": -15.1
+ },
  "amb_w1": {
   "channel": "ambient",
   "group": "ambient",
@@ -14,6 +256,40 @@
   ],
   "seconds": 24.0,
   "loudness": -35.7,
+  "peak": -14.0
+ },
+ "amb_w10": {
+  "channel": "ambient",
+  "group": "ambient",
+  "files": [
+   "ambient/amb_w10_0.mp3"
+  ],
+  "loop": true,
+  "loopPoints": [
+   {
+    "start": 0.0,
+    "length": 24.0
+   }
+  ],
+  "seconds": 24.0,
+  "loudness": -34.0,
+  "peak": -15.2
+ },
+ "amb_w10_torment": {
+  "channel": "ambient",
+  "group": "ambient",
+  "files": [
+   "ambient/amb_w10_torment_0.mp3"
+  ],
+  "loop": true,
+  "loopPoints": [
+   {
+    "start": 0.0,
+    "length": 24.0
+   }
+  ],
+  "seconds": 24.0,
+  "loudness": -34.8,
   "peak": -14.0
  },
  "amb_w1_torment": {
@@ -32,6 +308,312 @@
   "seconds": 24.0,
   "loudness": -37.1,
   "peak": -14.0
+ },
+ "amb_w2": {
+  "channel": "ambient",
+  "group": "ambient",
+  "files": [
+   "ambient/amb_w2_0.mp3"
+  ],
+  "loop": true,
+  "loopPoints": [
+   {
+    "start": 0.0,
+    "length": 24.0
+   }
+  ],
+  "seconds": 24.0,
+  "loudness": -34.0,
+  "peak": -14.8
+ },
+ "amb_w2_torment": {
+  "channel": "ambient",
+  "group": "ambient",
+  "files": [
+   "ambient/amb_w2_torment_0.mp3"
+  ],
+  "loop": true,
+  "loopPoints": [
+   {
+    "start": 0.0,
+    "length": 24.0
+   }
+  ],
+  "seconds": 24.0,
+  "loudness": -34.0,
+  "peak": -15.0
+ },
+ "amb_w3": {
+  "channel": "ambient",
+  "group": "ambient",
+  "files": [
+   "ambient/amb_w3_0.mp3"
+  ],
+  "loop": true,
+  "loopPoints": [
+   {
+    "start": 0.0,
+    "length": 24.0
+   }
+  ],
+  "seconds": 24.0,
+  "loudness": -35.5,
+  "peak": -14.0
+ },
+ "amb_w3_torment": {
+  "channel": "ambient",
+  "group": "ambient",
+  "files": [
+   "ambient/amb_w3_torment_0.mp3"
+  ],
+  "loop": true,
+  "loopPoints": [
+   {
+    "start": 0.0,
+    "length": 24.0
+   }
+  ],
+  "seconds": 24.0,
+  "loudness": -38.1,
+  "peak": -14.0
+ },
+ "amb_w4": {
+  "channel": "ambient",
+  "group": "ambient",
+  "files": [
+   "ambient/amb_w4_0.mp3"
+  ],
+  "loop": true,
+  "loopPoints": [
+   {
+    "start": 0.0,
+    "length": 24.0
+   }
+  ],
+  "seconds": 24.0,
+  "loudness": -34.3,
+  "peak": -14.0
+ },
+ "amb_w4_torment": {
+  "channel": "ambient",
+  "group": "ambient",
+  "files": [
+   "ambient/amb_w4_torment_0.mp3"
+  ],
+  "loop": true,
+  "loopPoints": [
+   {
+    "start": 0.0,
+    "length": 24.0
+   }
+  ],
+  "seconds": 24.0,
+  "loudness": -36.5,
+  "peak": -14.0
+ },
+ "amb_w5": {
+  "channel": "ambient",
+  "group": "ambient",
+  "files": [
+   "ambient/amb_w5_0.mp3"
+  ],
+  "loop": true,
+  "loopPoints": [
+   {
+    "start": 0.0,
+    "length": 24.0
+   }
+  ],
+  "seconds": 24.0,
+  "loudness": -35.1,
+  "peak": -14.0
+ },
+ "amb_w5_torment": {
+  "channel": "ambient",
+  "group": "ambient",
+  "files": [
+   "ambient/amb_w5_torment_0.mp3"
+  ],
+  "loop": true,
+  "loopPoints": [
+   {
+    "start": 0.0,
+    "length": 24.0
+   }
+  ],
+  "seconds": 24.0,
+  "loudness": -34.0,
+  "peak": -15.0
+ },
+ "amb_w6": {
+  "channel": "ambient",
+  "group": "ambient",
+  "files": [
+   "ambient/amb_w6_0.mp3"
+  ],
+  "loop": true,
+  "loopPoints": [
+   {
+    "start": 0.0,
+    "length": 24.0
+   }
+  ],
+  "seconds": 24.0,
+  "loudness": -34.0,
+  "peak": -15.7
+ },
+ "amb_w6_torment": {
+  "channel": "ambient",
+  "group": "ambient",
+  "files": [
+   "ambient/amb_w6_torment_0.mp3"
+  ],
+  "loop": true,
+  "loopPoints": [
+   {
+    "start": 0.0,
+    "length": 24.0
+   }
+  ],
+  "seconds": 24.0,
+  "loudness": -34.0,
+  "peak": -14.9
+ },
+ "amb_w7": {
+  "channel": "ambient",
+  "group": "ambient",
+  "files": [
+   "ambient/amb_w7_0.mp3"
+  ],
+  "loop": true,
+  "loopPoints": [
+   {
+    "start": 0.0,
+    "length": 24.0
+   }
+  ],
+  "seconds": 24.0,
+  "loudness": -34.0,
+  "peak": -16.2
+ },
+ "amb_w7_torment": {
+  "channel": "ambient",
+  "group": "ambient",
+  "files": [
+   "ambient/amb_w7_torment_0.mp3"
+  ],
+  "loop": true,
+  "loopPoints": [
+   {
+    "start": 0.0,
+    "length": 24.0
+   }
+  ],
+  "seconds": 24.0,
+  "loudness": -34.0,
+  "peak": -14.2
+ },
+ "amb_w8": {
+  "channel": "ambient",
+  "group": "ambient",
+  "files": [
+   "ambient/amb_w8_0.mp3"
+  ],
+  "loop": true,
+  "loopPoints": [
+   {
+    "start": 0.0,
+    "length": 24.0
+   }
+  ],
+  "seconds": 24.0,
+  "loudness": -37.3,
+  "peak": -14.0
+ },
+ "amb_w8_torment": {
+  "channel": "ambient",
+  "group": "ambient",
+  "files": [
+   "ambient/amb_w8_torment_0.mp3"
+  ],
+  "loop": true,
+  "loopPoints": [
+   {
+    "start": 0.0,
+    "length": 24.0
+   }
+  ],
+  "seconds": 24.0,
+  "loudness": -35.3,
+  "peak": -14.0
+ },
+ "amb_w9": {
+  "channel": "ambient",
+  "group": "ambient",
+  "files": [
+   "ambient/amb_w9_0.mp3"
+  ],
+  "loop": true,
+  "loopPoints": [
+   {
+    "start": 0.0,
+    "length": 24.0
+   }
+  ],
+  "seconds": 24.0,
+  "loudness": -34.0,
+  "peak": -14.3
+ },
+ "amb_w9_torment": {
+  "channel": "ambient",
+  "group": "ambient",
+  "files": [
+   "ambient/amb_w9_torment_0.mp3"
+  ],
+  "loop": true,
+  "loopPoints": [
+   {
+    "start": 0.0,
+    "length": 24.0
+   }
+  ],
+  "seconds": 24.0,
+  "loudness": -35.5,
+  "peak": -14.0
+ },
+ "block": {
+  "channel": "sfx",
+  "group": "combat",
+  "files": [
+   "sfx/block_0.mp3",
+   "sfx/block_1.mp3"
+  ],
+  "loop": false,
+  "seconds": 0.17,
+  "loudness": -29.0,
+  "peak": -14.4
+ },
+ "boss_appear": {
+  "channel": "sfx",
+  "group": "boss",
+  "files": [
+   "sfx/boss_appear_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 1.0,
+  "loudness": -27.0,
+  "peak": -16.0
+ },
+ "boss_chain_bolt": {
+  "channel": "sfx",
+  "group": "boss",
+  "files": [
+   "sfx/boss_chain_bolt_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 0.62,
+  "loudness": -27.0,
+  "peak": -11.7
  },
  "boss_charge_impact": {
   "channel": "sfx",
@@ -55,6 +637,182 @@
   "loudness": -27.0,
   "peak": -16.2
  },
+ "boss_deadeye": {
+  "channel": "sfx",
+  "group": "boss",
+  "files": [
+   "sfx/boss_deadeye_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 0.34,
+  "loudness": -28.0,
+  "peak": -13.1
+ },
+ "boss_down": {
+  "channel": "sfx",
+  "group": "boss",
+  "files": [
+   "sfx/boss_down_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 1.4,
+  "loudness": -25.0,
+  "peak": -12.3
+ },
+ "boss_flock": {
+  "channel": "sfx",
+  "group": "boss",
+  "files": [
+   "sfx/boss_flock_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 1.0,
+  "loudness": -27.0,
+  "peak": -11.1
+ },
+ "boss_fury": {
+  "channel": "sfx",
+  "group": "boss",
+  "files": [
+   "sfx/boss_fury_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 0.92,
+  "loudness": -27.0,
+  "peak": -13.3
+ },
+ "boss_gild": {
+  "channel": "sfx",
+  "group": "boss",
+  "files": [
+   "sfx/boss_gild_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 0.82,
+  "loudness": -27.0,
+  "peak": -12.4
+ },
+ "boss_guilt": {
+  "channel": "sfx",
+  "group": "boss",
+  "files": [
+   "sfx/boss_guilt_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 1.3,
+  "loudness": -27.0,
+  "peak": -13.3
+ },
+ "boss_mirror": {
+  "channel": "sfx",
+  "group": "boss",
+  "files": [
+   "sfx/boss_mirror_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 0.6,
+  "loudness": -27.0,
+  "peak": -14.3
+ },
+ "boss_mortal_wound": {
+  "channel": "sfx",
+  "group": "boss",
+  "files": [
+   "sfx/boss_mortal_wound_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 0.64,
+  "loudness": -27.0,
+  "peak": -12.8
+ },
+ "boss_red_blade": {
+  "channel": "sfx",
+  "group": "boss",
+  "files": [
+   "sfx/boss_red_blade_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 0.8,
+  "loudness": -27.0,
+  "peak": -12.9
+ },
+ "boss_roots": {
+  "channel": "sfx",
+  "group": "boss",
+  "files": [
+   "sfx/boss_roots_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 0.9,
+  "loudness": -27.0,
+  "peak": -11.8
+ },
+ "boss_scales": {
+  "channel": "sfx",
+  "group": "boss",
+  "files": [
+   "sfx/boss_scales_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 0.92,
+  "loudness": -27.0,
+  "peak": -19.0
+ },
+ "boss_shatter": {
+  "channel": "sfx",
+  "group": "boss",
+  "files": [
+   "sfx/boss_shatter_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 0.8,
+  "loudness": -26.0,
+  "peak": -13.1
+ },
+ "boss_shockwave": {
+  "channel": "sfx",
+  "group": "boss",
+  "files": [
+   "sfx/boss_shockwave_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 0.8,
+  "loudness": -27.0,
+  "peak": -9.4
+ },
+ "boss_slam": {
+  "channel": "sfx",
+  "group": "boss",
+  "files": [
+   "sfx/boss_slam_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 0.7,
+  "loudness": -27.0,
+  "peak": -8.9
+ },
+ "boss_spores": {
+  "channel": "sfx",
+  "group": "boss",
+  "files": [
+   "sfx/boss_spores_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 0.8,
+  "loudness": -27.0,
+  "peak": -13.6
+ },
+ "boss_undertow": {
+  "channel": "sfx",
+  "group": "boss",
+  "files": [
+   "sfx/boss_undertow_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 1.2,
+  "loudness": -27.0,
+  "peak": -11.5
+ },
  "chest_drop": {
   "channel": "sfx",
   "group": "loot",
@@ -66,6 +824,40 @@
   "seconds": 0.3,
   "loudness": -28.0,
   "peak": -10.5
+ },
+ "chest_drop_boss": {
+  "channel": "sfx",
+  "group": "loot",
+  "files": [
+   "sfx/chest_drop_boss_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 0.42,
+  "loudness": -29.8,
+  "peak": -8.0
+ },
+ "chest_drop_world": {
+  "channel": "sfx",
+  "group": "loot",
+  "files": [
+   "sfx/chest_drop_world_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 1.1,
+  "loudness": -26.3,
+  "peak": -8.0
+ },
+ "chest_open": {
+  "channel": "sfx",
+  "group": "loot",
+  "files": [
+   "sfx/chest_open_0.mp3",
+   "sfx/chest_open_1.mp3"
+  ],
+  "loop": false,
+  "seconds": 0.26,
+  "loudness": -28.0,
+  "peak": -13.9
  },
  "chest_open_rare": {
   "channel": "sfx",
@@ -90,6 +882,39 @@
   "loudness": -27.0,
   "peak": -12.6
  },
+ "cube_lucky": {
+  "channel": "ui",
+  "group": "cube",
+  "files": [
+   "ui/cube_lucky_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 1.15,
+  "loudness": -28.0,
+  "peak": -15.0
+ },
+ "cube_melt": {
+  "channel": "ui",
+  "group": "cube",
+  "files": [
+   "ui/cube_melt_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 0.45,
+  "loudness": -29.0,
+  "peak": -15.6
+ },
+ "cube_perfect": {
+  "channel": "ui",
+  "group": "cube",
+  "files": [
+   "ui/cube_perfect_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 1.0,
+  "loudness": -28.0,
+  "peak": -17.2
+ },
  "cube_polish": {
   "channel": "ui",
   "group": "cube",
@@ -99,7 +924,64 @@
   "loop": false,
   "seconds": 0.5,
   "loudness": -30.0,
-  "peak": -15.7
+  "peak": -15.9
+ },
+ "cube_synth": {
+  "channel": "ui",
+  "group": "cube",
+  "files": [
+   "ui/cube_synth_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 0.7,
+  "loudness": -29.0,
+  "peak": -16.5
+ },
+ "cube_transfig": {
+  "channel": "ui",
+  "group": "cube",
+  "files": [
+   "ui/cube_transfig_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 0.65,
+  "loudness": -29.0,
+  "peak": -19.5
+ },
+ "elite_arrive": {
+  "channel": "sfx",
+  "group": "combat",
+  "files": [
+   "sfx/elite_arrive_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 0.45,
+  "loudness": -29.0,
+  "peak": -17.8
+ },
+ "elite_die": {
+  "channel": "sfx",
+  "group": "combat",
+  "files": [
+   "sfx/elite_die_0.mp3",
+   "sfx/elite_die_1.mp3"
+  ],
+  "loop": false,
+  "seconds": 0.3,
+  "loudness": -28.0,
+  "peak": -13.4
+ },
+ "enemy_bolt": {
+  "channel": "sfx",
+  "group": "combat",
+  "files": [
+   "sfx/enemy_bolt_0.mp3",
+   "sfx/enemy_bolt_1.mp3"
+  ],
+  "loop": false,
+  "seconds": 0.23,
+  "loudness": -31.0,
+  "peak": -19.6
  },
  "enemy_die": {
   "channel": "sfx",
@@ -114,6 +996,63 @@
   "loudness": -31.0,
   "peak": -16.5
  },
+ "enemy_shot": {
+  "channel": "sfx",
+  "group": "combat",
+  "files": [
+   "sfx/enemy_shot_0.mp3",
+   "sfx/enemy_shot_1.mp3"
+  ],
+  "loop": false,
+  "seconds": 0.18,
+  "loudness": -31.0,
+  "peak": -15.7
+ },
+ "enemy_smash": {
+  "channel": "sfx",
+  "group": "combat",
+  "files": [
+   "sfx/enemy_smash_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 0.32,
+  "loudness": -29.0,
+  "peak": -16.1
+ },
+ "gem_get": {
+  "channel": "sfx",
+  "group": "loot",
+  "files": [
+   "sfx/gem_get_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 0.75,
+  "loudness": -27.0,
+  "peak": -15.9
+ },
+ "hero_down": {
+  "channel": "sfx",
+  "group": "combat",
+  "files": [
+   "sfx/hero_down_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 0.4,
+  "loudness": -28.0,
+  "peak": -15.4
+ },
+ "hero_hurt": {
+  "channel": "sfx",
+  "group": "combat",
+  "files": [
+   "sfx/hero_hurt_0.mp3",
+   "sfx/hero_hurt_1.mp3"
+  ],
+  "loop": false,
+  "seconds": 0.22,
+  "loudness": -28.0,
+  "peak": -15.9
+ },
  "hit": {
   "channel": "sfx",
   "group": "combat",
@@ -126,6 +1065,39 @@
   "seconds": 0.13,
   "loudness": -30.0,
   "peak": -17.0
+ },
+ "item_epic": {
+  "channel": "sfx",
+  "group": "loot",
+  "files": [
+   "sfx/item_epic_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 0.95,
+  "loudness": -26.0,
+  "peak": -13.3
+ },
+ "item_legendary": {
+  "channel": "sfx",
+  "group": "loot",
+  "files": [
+   "sfx/item_legendary_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 1.5,
+  "loudness": -25.0,
+  "peak": -11.4
+ },
+ "key_get": {
+  "channel": "sfx",
+  "group": "loot",
+  "files": [
+   "sfx/key_get_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 0.36,
+  "loudness": -27.0,
+  "peak": -13.2
  },
  "knight_swing": {
   "channel": "sfx",
@@ -151,16 +1123,40 @@
   "loudness": -26.0,
   "peak": -14.5
  },
- "priest_mend": {
+ "multi": {
   "channel": "sfx",
-  "group": "ability",
+  "group": "combat",
   "files": [
-   "sfx/priest_mend_0.mp3"
+   "sfx/multi_0.mp3"
   ],
   "loop": false,
-  "seconds": 1.0,
-  "loudness": -28.0,
-  "peak": -15.6
+  "seconds": 0.11,
+  "loudness": -32.0,
+  "peak": -16.4
+ },
+ "pet_found": {
+  "channel": "sfx",
+  "group": "loot",
+  "files": [
+   "sfx/pet_found_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 1.25,
+  "loudness": -26.0,
+  "peak": -12.1
+ },
+ "priest_strike": {
+  "channel": "sfx",
+  "group": "combat",
+  "files": [
+   "sfx/priest_strike_0.mp3",
+   "sfx/priest_strike_1.mp3",
+   "sfx/priest_strike_2.mp3"
+  ],
+  "loop": false,
+  "seconds": 0.24,
+  "loudness": -29.0,
+  "peak": -14.4
  },
  "ranger_shot": {
   "channel": "sfx",
@@ -173,7 +1169,29 @@
   "loop": false,
   "seconds": 0.26,
   "loudness": -29.0,
-  "peak": -14.0
+  "peak": -13.7
+ },
+ "stage_clear": {
+  "channel": "sfx",
+  "group": "progress",
+  "files": [
+   "sfx/stage_clear_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 1.05,
+  "loudness": -27.0,
+  "peak": -12.1
+ },
+ "ui_buy": {
+  "channel": "ui",
+  "group": "interface",
+  "files": [
+   "ui/ui_buy_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 0.22,
+  "loudness": -29.0,
+  "peak": -10.9
  },
  "ui_click": {
   "channel": "ui",
@@ -186,6 +1204,63 @@
   "loudness": -27.0,
   "peak": -12.9
  },
+ "ui_drop": {
+  "channel": "ui",
+  "group": "interface",
+  "files": [
+   "ui/ui_drop_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 0.15,
+  "loudness": -30.0,
+  "peak": -15.4
+ },
+ "ui_equip": {
+  "channel": "ui",
+  "group": "interface",
+  "files": [
+   "ui/ui_equip_0.mp3",
+   "ui/ui_equip_1.mp3"
+  ],
+  "loop": false,
+  "seconds": 0.16,
+  "loudness": -30.0,
+  "peak": -16.2
+ },
+ "ui_error": {
+  "channel": "ui",
+  "group": "interface",
+  "files": [
+   "ui/ui_error_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 0.2,
+  "loudness": -30.0,
+  "peak": -12.7
+ },
+ "ui_hover": {
+  "channel": "ui",
+  "group": "interface",
+  "files": [
+   "ui/ui_hover_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 0.035,
+  "loudness": -39.0,
+  "peak": -26.6
+ },
+ "ui_panel_close": {
+  "channel": "ui",
+  "group": "interface",
+  "files": [
+   "ui/ui_panel_close_0.mp3",
+   "ui/ui_panel_close_1.mp3"
+  ],
+  "loop": false,
+  "seconds": 0.108,
+  "loudness": -32.0,
+  "peak": -17.8
+ },
  "ui_panel_open": {
   "channel": "ui",
   "group": "interface",
@@ -197,5 +1272,93 @@
   "seconds": 0.11,
   "loudness": -31.0,
   "peak": -16.5
+ },
+ "ui_tab": {
+  "channel": "ui",
+  "group": "interface",
+  "files": [
+   "ui/ui_tab_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 0.07,
+  "loudness": -32.0,
+  "peak": -15.2
+ },
+ "ui_talent": {
+  "channel": "ui",
+  "group": "interface",
+  "files": [
+   "ui/ui_talent_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 0.22,
+  "loudness": -29.0,
+  "peak": -18.0
+ },
+ "ui_toggle": {
+  "channel": "ui",
+  "group": "interface",
+  "files": [
+   "ui/ui_toggle_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 0.13,
+  "loudness": -31.0,
+  "peak": -13.5
+ },
+ "ult_knight_laststand": {
+  "channel": "sfx",
+  "group": "ability",
+  "files": [
+   "sfx/ult_knight_laststand_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 1.2,
+  "loudness": -27.0,
+  "peak": -8.4
+ },
+ "ult_priest_enrage": {
+  "channel": "sfx",
+  "group": "ability",
+  "files": [
+   "sfx/ult_priest_enrage_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 1.2,
+  "loudness": -27.0,
+  "peak": -12.6
+ },
+ "ult_ranger_mark": {
+  "channel": "sfx",
+  "group": "ability",
+  "files": [
+   "sfx/ult_ranger_mark_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 1.1,
+  "loudness": -27.0,
+  "peak": -16.3
+ },
+ "wipe": {
+  "channel": "sfx",
+  "group": "progress",
+  "files": [
+   "sfx/wipe_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 1.3,
+  "loudness": -27.0,
+  "peak": -17.0
+ },
+ "world_boss_enter": {
+  "channel": "sfx",
+  "group": "boss",
+  "files": [
+   "sfx/world_boss_enter_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 1.6,
+  "loudness": -26.0,
+  "peak": -10.5
  }
 }
