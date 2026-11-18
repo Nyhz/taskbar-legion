@@ -1,16 +1,16 @@
 {
   "updated": "18 nov 2026",
-  "intro": "Tercera muestra de sonido (R7): ya no viene de ElevenLabs. Cada sonido está sintetizado por código, con Stardew Valley como referencia.",
+  "intro": "El catálogo de sonido completo (R7), sintetizado en el estilo que aprobaste. Ya suena dentro del juego (v0.5.2).",
   "sections": [
     {
       "id": "sonido-muestra",
       "eyebrow": "R7 · Sonido",
-      "title": "Muestra de sonido 3: síntesis propia, estilo Stardew",
-      "text": "Sonidos pequeños, redondos y acogedores, hechos con osciladores, cuerdas pulsadas, campanitas y ruido filtrado. Son muy cortos (los de combate duran 0,1–0,3 s) y no tienen siseo: los agudos del ruido están recortados. Los volúmenes son bajos, para tenerlos de fondo todo el día. El clic de interfaz es tu toma aprobada. Escúchalo al volumen al que tendrías el juego.",
+      "title": "Sonido: catálogo completo (111 sonidos)",
+      "text": "Combate, las 25 habilidades y definitivas, las mecánicas de los jefes, botín, interfaz, cubo y los ambientes de los 10 mundos con su versión de Tormento. Los ambientes siguen tu indicación: el fondo constante es casi inaudible y lo que se oye son los detalles (unos 17–23 dB por encima). En el juego, los golpes solo suenan mientras miras (ventana abierta o puntero sobre el juego); se cambia en Ajustes → «Sonido de cada golpe».",
       "questions": [
-        "¿Esta dirección (síntesis suave estilo Stardew) sí va por buen camino?",
-        "¿Qué sonidos valen y cuáles no? (nombre + qué falla: demasiado agudo, grave, largo, raro…)",
-        "Ambientes: ¿encajan? El reproductor del navegador puede dejar un hueco mínimo al repetir; en el juego el bucle es continuo."
+        "¿Qué sonidos no te convencen? Dime el nombre y qué falla (agudo, grave, largo, raro…): cada uno es una receta y se corrige en segundos.",
+        "Ambientes: ¿alguno no encaja con su mundo?",
+        "En el juego: ¿el volumen y la cantidad de sonido de fondo están bien?"
       ],
       "html": "sound.html"
     }
