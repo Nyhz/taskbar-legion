@@ -15,6 +15,27 @@ While the project is pre-1.0, minor versions may include breaking save changes.
 
 ### Fixed
 
+## [0.5.6] - 2026-11-18
+
+### Added
+
+- **Melee enemies fight as a platoon**: they stand at the hero in two columns of four, the back column stepping in to
+  strike, so every one of them is seen attacking (the queue behind used to stand idle).
+
+### Changed
+
+- **Waves hit the Knight for real**: their damage is anchored to the life of a Knight on the gear of his point in the
+  game — about 1.5 / 2 / 2.5 / 3 / 3.5 % of it a second while a wave fights him, Normal … Torment. Better gear takes
+  much less; under-geared, much more.
+- **The back line has its own share**: what reaches the Ranger and the Priest is steady and moderate (about 0.5–0.75 %
+  of their life a second, never much above 1 % even in a world's last stage) — enough to fall if the party isn't ready.
+- **Normal has 12 waves a stage** (was 16).
+- **The menu key** is three steel bars and the word, in the rail's own style, centred on it.
+- **A support's auras** sit on the strip itself, centred under the rail, instead of inside it.
+- **The heal still to come** shows on a life bar as the life's own green, dimmed (the mint looked like a shield).
+
+### Fixed
+
 ## [0.5.5] - 2026-11-18
 
 ### Added
@@ -229,7 +250,8 @@ While the project is pre-1.0, minor versions may include breaking save changes.
 - Initial desktop builds: Tauri v2 transparent, always-on-top, bottom-docked overlay.
 - Multi-platform release pipeline (macOS universal, Windows, Linux) via GitHub Actions.
 
-[Unreleased]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.5...HEAD
+[Unreleased]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.6...HEAD
+[0.5.6]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.5...v0.5.6
 [0.5.5]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.4...v0.5.5
 [0.5.4]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.3...v0.5.4
 [0.5.3]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.2...v0.5.3
