@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { KitRoot } from '@/ui/kit';
 import { placeOptions } from './optionsPlace';
@@ -24,23 +24,29 @@ export function OptionsAnchor({
   children: ReactNode;
 }): React.JSX.Element | null {
   const [pos, setPos] = useState<{ right: number; bottom: number } | null>(null);
+  // Shown only once it has been placed with its REAL size (2026-11-18): the first placement runs before the box
+  // exists, measures it 0×0 — which covers no panel — and put it on the sign, over the hero window, until the next
+  // look moved it right. So it mounts hidden, is placed again as soon as it can be measured, and only then shows.
+  const [shown, setShown] = useState(false);
   const box = useRef<HTMLDivElement>(null);
+
+  const place = useCallback((): void => {
+    if (anchor === null) return;
+    const sign = anchor.getBoundingClientRect();
+    const panels = [...document.querySelectorAll('[data-panel-box]')].map((el) => el.getBoundingClientRect());
+    const next = placeOptions({
+      sign,
+      size: { width: box.current?.offsetWidth ?? 0, height: box.current?.offsetHeight ?? 0 },
+      panels,
+      viewport: { width: window.innerWidth, height: window.innerHeight },
+      gap: GAP_ART * zoom,
+      edge: EDGE,
+    });
+    setPos((prev) => (prev !== null && prev.right === next.right && prev.bottom === next.bottom ? prev : next));
+  }, [anchor, zoom]);
 
   useLayoutEffect(() => {
     if (anchor === null) return;
-    const place = (): void => {
-      const sign = anchor.getBoundingClientRect();
-      const panels = [...document.querySelectorAll('[data-panel-box]')].map((el) => el.getBoundingClientRect());
-      const next = placeOptions({
-        sign,
-        size: { width: box.current?.offsetWidth ?? 0, height: box.current?.offsetHeight ?? 0 },
-        panels,
-        viewport: { width: window.innerWidth, height: window.innerHeight },
-        gap: GAP_ART * zoom,
-        edge: EDGE,
-      });
-      setPos((prev) => (prev !== null && prev.right === next.right && prev.bottom === next.bottom ? prev : next));
-    };
     place();
     const raf = requestAnimationFrame(place); // once more after layout settles (a scale change moves the sign)
     const timer = window.setInterval(place, REPLACE_MS);
@@ -50,13 +56,20 @@ export function OptionsAnchor({
       window.clearInterval(timer);
       window.removeEventListener('resize', place);
     };
-  }, [anchor, zoom]);
+  }, [anchor, place]);
+
+  // The box exists now (mounted hidden): place it with its real size before the first paint, then show it.
+  useLayoutEffect(() => {
+    if (pos === null || shown || box.current === null) return;
+    place();
+    setShown(true);
+  }, [pos, shown, place]);
 
   if (pos === null) return null;
   return createPortal(
     <div
       ref={box}
-      style={{ position: 'fixed', right: pos.right, bottom: pos.bottom, zIndex: 9000, pointerEvents: 'auto' }}
+      style={{ position: 'fixed', right: pos.right, bottom: pos.bottom, zIndex: 9000, pointerEvents: 'auto', visibility: shown ? 'visible' : 'hidden' }}
     >
       <KitRoot zoom={zoom}>{children}</KitRoot>
     </div>,
