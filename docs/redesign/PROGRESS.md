@@ -2309,3 +2309,6 @@ Decisiones del usuario (18 nov), tras discutirlas una a una:
   la retaguardia 0,13–0,2 %/s de mediana con picos de 1,3–1,8 en algún mundo. Cada mundo escalado por la mediana de las
   semillas; la retaguardia además sin pasar de ~1 %/s en la etapa 9; los mundos 33–50 (sin medir) con la proporción de
   su dificultad, y la retaguardia ahí a 3× lo de antes como mucho. `trash-threat-tune.ts` admite `AT` (la etapa medida).
+- **Medido (probe, 5 semillas con traza, 18 nov):** horas por dificultad (mediana) **7 / 43 / 133 / 262 / 732**, unas
+  **1 145 h** en total (986–1 281 por semilla; antes del ancla 6,9 / 33 / 144 / 280 / 693, 1 157 h). Las caídas, 25–49
+  en Normal, repartidas (3–5 como mucho en una etapa). La escalera sigue al día (`ladder.test`).
