@@ -5,7 +5,7 @@ import { BOSS_DOWN_MS, RANGE } from '@/data/field';
 import { hexToNum } from '@/styles/palette';
 import { auraCategories, drawCategoryAuras, totalShield, type AuraRegion } from './effectAuras';
 import { BodyFx, fxLoop, type FxLoop } from './BodyFx';
-import { ENEMY_Z, ELITE_ARRIVE_FX, ELITE_CREST_FX, ELITE_FIGURE_SCALE, ELITE_RIM_INNER, ELITE_RIM_OFFSETS, ELITE_SPARKS_FX, eliteAuraFx, eliteAuraSpots, eliteRimOuter } from './eliteLook';
+import { ENEMY_Z, ELITE_ARRIVE_FX, ELITE_CREST_FX, ELITE_FIGURE_SCALE, ELITE_RIM_INNER, ELITE_RIM_OFFSETS, ELITE_SPARKS_FX, eliteRimOuter } from './eliteLook';
 import { figureMask } from './figureMask';
 import { FigureBody } from './FigureBody';
 import { DEATH } from './figureClip';
@@ -25,7 +25,7 @@ import { isEnraged } from '@/sim/enemyTraits';
 
 // An enemy display object: a creature of the world the party is in (the redesign's figures — FigureBody), drawn
 // 1 art pixel = 1 strip pixel and mirrored to face the heroes, with its feet on the ground line it is given.
-// What an enemy IS is told by its figure; its RANK is told by its marking: an elite stands in cold ghost-fire,
+// What an enemy IS is told by its figure; its RANK is told by its marking: an elite wears a violet rim (its aura),
 // wears a crown at the end of its life bar and is drawn a size up (render/eliteLook — the one place the art is
 // scaled, and why), a stage boss has its own large figure, a world boss its own larger one (or, in a world that
 // has none yet, the stage boss's figure with gold rings). A boss wears no life bar: its name,
@@ -85,8 +85,7 @@ export class EnemySprite extends Container {
   private readonly enrageAura = new Graphics();
   private readonly castBar = new LifeBar(BARS.cast, 'hud_s_fill_cast'); // under-boss cast bar while channeling a special
   private readonly rankAura = new Graphics(); // ground pulse marking a world boss that has no figure of its own
-  private readonly eliteFire = new Container(); // an elite's fire, behind everything of the body (render/eliteLook)
-  private readonly eliteLoops: FxLoop[] = [];
+  private readonly eliteLoops: FxLoop[] = []; // an elite's motes, climbing in front of the body (render/eliteLook)
   private eliteCrest: FxLoop | null = null; // the crown over an elite's life bar
   private readonly eliteRim = new Container(); // an elite's rim: tinted copies of its shape, a pixel or two off, behind the figure
   private readonly rimOuter: Sprite[] = [];
@@ -133,6 +132,7 @@ export class EnemySprite extends Container {
   private leaving = false; // a summon whose time is up: it flies off instead of falling
   private drift = 0; // …and how far it has flown off sideways
   private crowdLift = 0; // how much higher it is drawn as the back row of its pile (render/crowdLayout)
+  private queued = false; // waiting in line behind the fighters (render/crowdLayout): it is not shown swinging
   private readonly bodyTint: number; // the tint of its own body when nothing else colours it (a support in a borrowed figure)
   private readonly auraSigns = new Container(); // a support's auras: one small sign each, in a row over its head (render/foeFx)
 
@@ -199,8 +199,8 @@ export class EnemySprite extends Container {
     // The rank rings + frenzy pool sit on the ground UNDER the feet, then enrageAura behind the
     // body; HP bar + cast bar on top.
     this.bodyFx = new BodyFx({ cx: this.cx, feetY: FEET_Y, height, halfW: this.halfW, facing: -1 });
-    if (rank === 'elite') this.wearElite(height);
-    this.addChild(this.eliteFire, this.rankAura, this.enrageAura, this.bodyFx.under, this.eliteRim, this.figure);
+    if (rank === 'elite') this.wearElite();
+    this.addChild(this.rankAura, this.enrageAura, this.bodyFx.under, this.eliteRim, this.figure);
     if (this.panes !== null) this.addChild(this.panes);
     this.addChild(this.bodyFx.over, this.aura, this.lifeBar, this.castBar, this.tpRing);
     if (this.eliteCrest !== null) this.addChild(this.eliteCrest.sprite);
@@ -215,18 +215,9 @@ export class EnemySprite extends Container {
     if (signs.length > 0) this.addChild(this.auraSigns);
   }
 
-  // An elite's marks (render/eliteLook): fire standing behind the body and well above it (as many drawings side
-  // by side as the body is wide, each a little out of step), motes of it climbing in front, the rim on its
-  // silhouette and the crown over its life bar.
-  private wearElite(height: number): void {
-    const fx = eliteAuraFx(height);
-    eliteAuraSpots(this.halfW).forEach((dx, i) => {
-      const loop = fxLoop(fx, i * 230);
-      if (loop === null) return;
-      loop.sprite.position.set(Math.round(this.cx + dx), FEET_Y);
-      this.eliteFire.addChild(loop.sprite);
-      this.eliteLoops.push(loop);
-    });
+  // An elite's marks (render/eliteLook): violet motes climbing in front of the body, the rim on its silhouette (its
+  // aura) and the crown over its life bar. (No fire stands behind it any more: it read as purple lightning.)
+  private wearElite(): void {
     const sparks = fxLoop(ELITE_SPARKS_FX);
     if (sparks !== null) {
       sparks.sprite.position.set(Math.round(this.cx), FEET_Y);
@@ -252,7 +243,6 @@ export class EnemySprite extends Container {
   private advanceElite(dtMs: number, alive: boolean): void {
     if (!this.elite) return;
     const shown = alive && !this.dying;
-    this.eliteFire.visible = shown;
     for (const loop of this.eliteLoops) {
       loop.advance(dtMs);
       loop.sprite.visible = shown;
@@ -384,6 +374,7 @@ export class EnemySprite extends Container {
   /** Play the creature's attack animation. Returns how long its hit should wait to show (see HeroSprite.attack):
    *  a blow nothing announced starts at the blow; a shot plays its whole wind-up, hurried, and the shot waits. */
   swing(): number {
+    if (this.queued) return 0; // waiting its turn behind the fighters: its blow lands, unseen, with no swing from afar
     if (this.lead.claim()) return 0; // its clip was started early (leadAttack)
     const windup = this.lead.windupMs;
     if (this.style === 'melee') {
@@ -403,7 +394,8 @@ export class EnemySprite extends Container {
     if (c.attackTimerMs > this.swingTimerMs + TICK_MS) this.lead.setPace(this.attackMs, c.attackTimerMs);
     this.swingTimerMs = c.attackTimerMs;
     const eta = swingEtaMs(c.attackTimerMs, TICK_MS);
-    if (!c.alive || !heroInReach || c.movedThisTick === true || c.casting !== undefined || !this.lead.due(eta)) return;
+    // (One waiting in line behind the fighters is not shown swinging: render/crowdLayout.)
+    if (!c.alive || !heroInReach || this.queued || c.movedThisTick === true || c.casting !== undefined || !this.lead.due(eta)) return;
     if (this.figure.clips.act(ATTACK_CLIP, false, this.lead.rate(eta))) this.lead.started();
   }
 
@@ -507,7 +499,12 @@ export class EnemySprite extends Container {
     this.tickDeath(dtMs);
   }
 
-  /** Its place in the pile it stands in (render/crowdLayout): the back row is drawn a little higher and behind. */
+  /** Whether it waits in line behind the fighters (render/crowdLayout): a melee enemy there is not shown swinging. */
+  setQueued(queued: boolean): void {
+    this.queued = queued;
+  }
+
+  /** Its place in the line it stands in (render/crowdLayout): the back rows are drawn a little higher and behind. */
   setCrowd(lift: number, order: number): void {
     this.crowdLift = lift;
     // A support — and the signs over its head — is drawn over the enemies it stands among, elites included.

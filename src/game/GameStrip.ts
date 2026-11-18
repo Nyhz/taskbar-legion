@@ -20,7 +20,7 @@ import { PortalSprite } from './render/PortalSprite';
 import { PetCompanion } from './render/PetCompanion';
 import { PORTAL_ENTER_FX, PORTAL_FROM_RIGHT } from './render/portalLook';
 import { ENEMY_Z } from './render/eliteLook';
-import { crowdPlaces, easeCrowd, type CrowdMember } from './render/crowdLayout';
+import { CrowdLayout, type CrowdMember } from './render/crowdLayout';
 import { CHARGED_SHOT, CHARGE_HIT_FX, CHARGE_HIT_LIFT, FOCUS_RETICLE_FX, FOCUS_RETICLE_LIFT, FOE_CUES } from './render/foeFx';
 import { focusedHero } from '@/sim/enemyTraits';
 import { Delayed } from './render/delayed';
@@ -45,7 +45,7 @@ import type { Combatant, CombatEvent, WorldState } from '@/sim/world';
 import { worldOf, stageInWorld, isZoneBossStage } from '@/data/stageScaling';
 import { isFinalStage, worldInDifficulty } from '@/data/difficulties';
 import { CLASS_KEYS } from '@/data/classes';
-import { MOVE_EPS, SPAWN_AHEAD, WALK_SPEED, TELEPORT_HOLD_MS, TELEPORT_LIFT_AT } from '@/data/field';
+import { MOVE_EPS, RANGE, SPAWN_AHEAD, WALK_SPEED, TELEPORT_HOLD_MS, TELEPORT_LIFT_AT } from '@/data/field';
 import { hexToNum } from '@/styles/palette';
 import { useStore } from '@/state/store';
 import { isStripDragging } from '@/platform/dragState';
@@ -159,9 +159,9 @@ export class GameStrip {
   // (no "teleporting" between ticks). The camera reads the smoothed party position.
   private displayPartyX = -1;
   private readonly enemyDisplayX = new Map<string, number>();
-  private readonly enemyCrowd = new Map<string, { dx: number; lift: number }>();
+  private readonly crowd = new CrowdLayout(); // where each wave enemy is drawn as it comes and in its line (render/crowdLayout)
   private focusReticle: FxLoop | null = null; // Fuego concentrado's one reticle (render/foeFx)
-  private pointer: { x: number; y: number } | null = null; // where the pointer is over the strip (the stage's space), for the chip tooltip // where each enemy is drawn in its pile (render/crowdLayout)
+  private pointer: { x: number; y: number } | null = null; // where the pointer is over the strip (the stage's space), for the chip tooltip
   private readonly heroDisplayX = new Map<string, number>();
 
   get logicalHeight(): number {
@@ -580,16 +580,21 @@ export class GameStrip {
     const worldBossStage = isZoneBossStage(w.globalStageIndex);
 
     // Where each enemy is this frame (velocity-matched to its sim x: smooth, no surge, capped at its own advance
-    // speed), and — presentation only — where its pile wants it drawn: enemies that share a spot fan out a few
-    // pixels behind the first one, in two depth rows (render/crowdLayout).
+    // speed), and — presentation only — where a wave enemy is drawn: walking where it walks, then in the line at
+    // its spot, the first few fighting at the hero and the rest queued behind (render/crowdLayout).
     const crowd: CrowdMember[] = [];
     for (const c of enemies) {
       const prev = this.enemyDisplayX.get(c.id);
-      const disp = prev === undefined ? c.x : trackDisplay(prev, c.x, dtMs, c.moveSpeed > 0 ? c.moveSpeed : WALK_SPEED);
+      const speed = c.moveSpeed > 0 ? c.moveSpeed : WALK_SPEED;
+      const disp = prev === undefined ? c.x : trackDisplay(prev, c.x, dtMs, speed);
       this.enemyDisplayX.set(c.id, disp);
-      if (c.alive && c.isBoss !== true && c.summon === undefined) crowd.push({ id: c.id, x: disp, prominent: c.isElite === true || c.enemyRole === 'support' });
+      if (c.alive && c.isBoss !== true && c.summon === undefined) {
+        const melee = c.enemyMagic !== true && c.range < RANGE.ranged; // as EnemySprite tells its style
+        const arrived = c.movedThisTick !== true && inReach(c, w.heroes);
+        crowd.push({ id: c.id, x: disp, line: c.range, melee, arrived, speed, prominent: c.isElite === true || c.enemyRole === 'support' });
+      }
     }
-    const places = crowdPlaces(crowd);
+    const places = this.crowd.update(crowd, dtMs);
 
     const placed: { sprite: EnemySprite; x: number }[] = [];
     for (const c of enemies) {
@@ -614,13 +619,11 @@ export class GameStrip {
         const double = sprite.doubleLook;
         if (double !== null) this.fxAir.play(double.enter, toScreen(c.x), groundY - double.mirrorUp, -1);
       }
-      // Its place in its pile, eased (a dead enemy keeps the place it fell in).
-      const want = places.get(c.id);
-      const had = this.enemyCrowd.get(c.id);
-      const at = want === undefined ? (had ?? { dx: 0, lift: 0 }) : had === undefined ? { dx: want.dx, lift: want.lift } : easeCrowd(had, want, dtMs);
-      this.enemyCrowd.set(c.id, at);
-      if (want !== undefined) sprite.setCrowd(at.lift, want.order);
-      const sx = toScreen(this.enemyDisplayX.get(c.id) ?? c.x) + at.dx;
+      // Its place as it comes and in its line (a dead enemy keeps the place it fell in; a boss or a summon has none).
+      const place = places.get(c.id) ?? this.crowd.last(c.id);
+      if (place !== undefined) sprite.setCrowd(place.lift, place.order);
+      sprite.setQueued(place?.fighting === false);
+      const sx = toScreen(place?.x ?? this.enemyDisplayX.get(c.id) ?? c.x);
       sprite.leadAttack(c, inReach(c, w.heroes), dtMs);
       if (c.casting !== undefined) {
         this.showBlowWarning(c, groundY);
@@ -637,12 +640,13 @@ export class GameStrip {
     for (const [id, sprite] of this.enemySprites) {
       if (live.has(id)) continue;
       const disp = this.enemyDisplayX.get(id);
-      sprite.updateOrphan(disp === undefined ? sprite.x : toScreen(disp) + (this.enemyCrowd.get(id)?.dx ?? 0), groundY, dtMs);
+      const at = this.crowd.last(id)?.x ?? disp;
+      sprite.updateOrphan(at === undefined ? sprite.x : toScreen(at), groundY, dtMs);
       if (sprite.isExpired()) {
         this.combatants.removeChild(sprite);
         this.enemySprites.delete(id);
         this.enemyDisplayX.delete(id);
-        this.enemyCrowd.delete(id);
+        this.crowd.forget(id);
       }
     }
   }

@@ -2,14 +2,15 @@
 // creature, stronger, and it must be picked out at a glance even in the middle of a pack (the simulation stacks
 // melee enemies on one spot) — so the FIGURE carries the mark, not only something behind it:
 //   - a two-pixel RIM on its silhouette, a pale line then a violet one, pulsing (render/figureMask: the figure's
-//     own frames as a white shape, tinted and drawn offset behind it);
-//   - violet fire with a white heart standing behind it and well ABOVE it — its tongues show over the heads of a
-//     whole pack — and motes of that fire climbing in front of the body;
+//     own frames as a white shape, tinted and drawn offset behind it) — its aura;
+//   - violet motes climbing in front of the body;
 //   - a thicker life bar in a violet frame with a gold crown over its middle (render/stripHud BARS.elite: the
 //     art is the strip HUD's, `hud_s_bar_elite`), always shown, while a common enemy's shows only when hurt;
 //   - it is drawn a size up, and IN FRONT of the enemies it overlaps;
 //   - a burst on it the moment it steps into the wave.
-// The art is tools/assets/pipeline/fx/flow.py (elite_aura_s / _m / _l, elite_sparks, elite_arrive, elite_crest).
+// It no longer stands in tall violet fire: the tongues rose well above the pack and read as purple lightning bolts
+// over every elite (user, 2026-11-18: «quitarles los rayos morados verticales y dejarles solo el aura»).
+// The art is tools/assets/pipeline/fx/flow.py (elite_sparks, elite_arrive, elite_crest).
 // Violet with white: nothing else an enemy wears burns like it — fire and gold are the party's, yellow and
 // crimson rims are the Priest's blessings on heroes, red is a boss's rage.
 
@@ -40,28 +41,6 @@ export const ELITE_RIM_OFFSETS: { outer: readonly (readonly [number, number])[];
 export function eliteRimOuter(ms: number): number {
   const k = 0.5 - 0.5 * Math.cos(((ms % ELITE_RIM_PULSE_MS) / ELITE_RIM_PULSE_MS) * Math.PI * 2);
   return k < 0.5 ? ELITE_RIM_OUTER[0] : ELITE_RIM_OUTER[1];
-}
-
-/** The fire for a body `height` art pixels tall (as drawn on the strip, scale included): each drawing stands
- *  well above the bodies it is for. */
-export function eliteAuraFx(height: number): string {
-  if (height <= 30) return 'elite_aura_s';
-  if (height <= 52) return 'elite_aura_m';
-  return 'elite_aura_l';
-}
-
-/** Width of one fire drawing that a body is measured against (they overlap a little when repeated). */
-const AURA_SPAN = 28;
-
-/** Where the fire stands behind a body `halfW` wide (offsets from its centre, in art pixels): one for a fighter,
- *  two or three side by side for a wide beast — never a stretched one. */
-export function eliteAuraSpots(halfW: number): number[] {
-  const count = Math.max(1, Math.min(3, Math.round((halfW * 2) / AURA_SPAN)));
-  const step = count === 1 ? 0 : (halfW * 2 - AURA_SPAN * 0.5) / count;
-  return Array.from({ length: count }, (_, i) => {
-    const off = (i - (count - 1) / 2) * step;
-    return Math.sign(off) * Math.round(Math.abs(off)); // the same on both sides of the centre
-  });
 }
 
 /** Drawing order among the enemies (the party is above them all): an elite goes in front of the common enemies

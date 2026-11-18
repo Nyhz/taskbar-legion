@@ -2205,6 +2205,20 @@ muros y horas en la siguiente ronda.
   los muros no la exigen); el oro que sobra en Tormento (13–23 h de ingreso) se acepta y la sonda no lo gasta en Pulir.
 
 
+### Arreglos visuales del combate (18 nov)
+
+- **Cuerpo a cuerpo que pegaba desde lejos:** la pila se reordenaba cada fotograma (élites primero, luego por id) y se
+  abría hasta 72 px detrás del primero, así que los que el sim tenía golpeando se dibujaban lejos. Ahora
+  (`render/crowdLayout.ts`, clase `CrowdLayout`) los que llegan forman cola por orden de llegada: los 3 primeros pegan
+  en el sitio (a ≤ 4 px del punto del sim, algo inclinados hacia el héroe para que la hoja llegue) y el resto espera
+  detrás sin animación de golpe (`EnemySprite.setQueued`). Medido: de 91 % de fotogramas de golpe dibujados > 3 px
+  detrás a 0 %.
+- **Élites sin rayos morados:** fuera el fuego violeta alto (`elite_aura_*`); quedan el contorno (el aura), las motas,
+  la corona y el tamaño (`render/eliteLook.ts`, `EnemySprite.wearElite`). El arte sigue exportado, sin usar.
+- **Llegada fluida:** cada sitio de la cola solo avanza (el hueco solo se estrecha, nadie se cuela delante) y la figura
+  nunca se dibuja más atrás que el fotograma anterior. Medido: de 61 pasos hacia atrás (peor deslizamiento 65 px) a 0
+  (peor 0,9 px, redondeo a píxel entero). Sonda temporal y capturas en el scratchpad de la sesión (`motion/`).
+
 ### Pendiente al final (tras el sonido y los arreglos visuales del combate) — cofres comunes y curva (18 nov)
 
 - **Decisión del usuario (18 nov, sustituye a la anterior de 0,4 %):** cofre común base de 0,2 % a **0,5 %** por muerte

@@ -10,42 +10,13 @@ import {
   ELITE_RIM_PULSE_MS,
   ELITE_SPARKS_FX,
   ENEMY_Z,
-  eliteAuraFx,
-  eliteAuraSpots,
   eliteRimOuter,
 } from '@/game/render/eliteLook';
 import { fxMeta } from '@/game/render/fxData';
-import { figureMeta } from '@/game/render/figureData';
-import { WORLDS } from '@/data/worlds';
 
 describe('the look of an elite', () => {
-  it('has a ghost-fire drawn for every body height, each taller than the last, and a crest — all loops', () => {
-    const keys = [eliteAuraFx(18), eliteAuraFx(40), eliteAuraFx(70)];
-    expect(new Set(keys).size).toBe(3);
-    let last = 0;
-    for (const key of keys) {
-      const meta = fxMeta(key);
-      expect(meta, key).toBeDefined();
-      expect(meta?.loop).toBe(true);
-      expect(meta?.h ?? 0).toBeGreaterThan(last);
-      last = meta?.h ?? 0;
-    }
+  it('has a crest over its bar (a loop)', () => {
     expect(fxMeta(ELITE_CREST_FX)?.loop).toBe(true);
-  });
-
-  it('gives every creature that can be an elite a fire that stands well ABOVE it — it must show over a pack', () => {
-    for (const world of WORLDS) {
-      for (const role of ['beast', 'melee', 'ranged'] as const) {
-        const key = world.creatures[role].key;
-        const box = figureMeta(key)?.box;
-        expect(box, key).toBeDefined();
-        if (box === undefined) continue;
-        const height = -box[1] * ELITE_FIGURE_SCALE;
-        const fire = fxMeta(eliteAuraFx(height));
-        // The drawing's base-to-top is at least a third taller than the body (the tallest figures: at least its height).
-        expect(fire?.ay ?? 0, `${key} (${Math.round(height)} px)`).toBeGreaterThanOrEqual(Math.min(height * 1.3, 110));
-      }
-    }
   });
 
   it('has motes in front of the body (a loop) and a burst for stepping into the wave (a one-shot)', () => {
@@ -72,14 +43,6 @@ describe('the look of an elite', () => {
     expect(BARS.elite.ih).toBeGreaterThan(BARS.foe.ih);
     expect(ENEMY_Z.elite).toBeGreaterThan(ENEMY_Z.common);
     expect(ENEMY_Z.elite).toBeLessThan(2); // the heroes' zIndex
-  });
-
-  it('stands once behind a fighter and side by side behind a wide beast, centred on it', () => {
-    expect(eliteAuraSpots(8)).toEqual([0]);
-    const wide = eliteAuraSpots(26);
-    expect(wide.length).toBeGreaterThan(1);
-    expect(wide.reduce((a, b) => a + b, 0)).toBe(0);
-    expect(eliteAuraSpots(200).length).toBeLessThanOrEqual(3);
   });
 
   it('is drawn bigger, but nowhere near a boss', () => {
