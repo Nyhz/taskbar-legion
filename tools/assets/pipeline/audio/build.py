@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import json
 
-from .catalog import SOUNDS, Sound
+from .catalog import SOUND_MAP, SOUNDS, Sound
 from .eleven import ROOT, api_key, generate, missing_takes, takes
 from .recipes import render
 from .process import CHANNELS, decode, encode_mp3, loop_offset, prepare
@@ -45,6 +45,10 @@ def main(argv: list[str]) -> None:
 
     manifest_path = OUT / "manifest.json"
     manifest: dict = json.loads(manifest_path.read_text()) if manifest_path.exists() else {}
+    for gone in [sid for sid in manifest if sid not in SOUND_MAP]:  # renamed or removed ids (priest_mend → ab_priest_mend)
+        for f in manifest.pop(gone).get("files", []):
+            (OUT / f).unlink(missing_ok=True)
+        print(f"  removed {gone} (no longer in the catalogue)")
     for s in sounds:  # a sound's old files go: it may now have fewer takes
         for f in manifest.get(s.id, {}).get("files", []):
             (OUT / f).unlink(missing_ok=True)

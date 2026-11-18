@@ -2213,5 +2213,6 @@ muros y horas en la siguiente ronda.
   escalera estrictamente ascendente). Motivo: en 1-8 le habían caído 2 cofres, y el nodo era casi decorativo (+1 % dejaba
   el 0,2 % en 0,202 %).
 - Arreglar el texto del nodo para que diga que es un porcentaje sobre la probabilidad base, no puntos sumados.
-- Por decidir en ese paso: el nodo «Botín de jefe» (+0,5 %/rango → ×1,19) tiene el mismo problema.
+- **También (usuario, 18 nov: «2.5% por rango también los otros»):** el nodo «Botín de jefe» (cofres de jefe de etapa) de
+  +0,5 % a **+2,5 % por rango**. «Sentido de gemas» ya da +2,5 %. Erudición sigue en +0,5 % (recorte del nivel 120).
 - Orden acordado: sonido → arreglos visuales del combate (backlog) → cofres y curva al final.

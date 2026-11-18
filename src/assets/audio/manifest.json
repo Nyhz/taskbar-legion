@@ -13,8 +13,8 @@
    }
   ],
   "seconds": 24.0,
-  "loudness": -34.0,
-  "peak": -17.7
+  "loudness": -35.7,
+  "peak": -14.0
  },
  "amb_w1_torment": {
   "channel": "ambient",
@@ -30,8 +30,8 @@
    }
   ],
   "seconds": 24.0,
-  "loudness": -34.0,
-  "peak": -16.8
+  "loudness": -37.1,
+  "peak": -14.0
  },
  "boss_charge_impact": {
   "channel": "sfx",
