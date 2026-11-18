@@ -193,18 +193,19 @@ export const STAGE_BOSS_HP_TUNE: number[] = [
 // (TRASH_BACK_DMG_TUNE). World 1 keeps its own values (the bootstrap). Both written by `scripts/trash-threat-tune.ts`,
 // measured in a real fight against the probe's party.
 /** % of the average Knight's life a second a wave takes off him while it fights him, Normal … Torment (user: ~3 % in
- *  Normal, «subir un poco cada una»). */
-export const TRASH_THREAT_PCT: readonly number[] = [3, 3.5, 4, 4.5, 5];
+ *  Normal, «subir un poco cada una»; lowered one point each the same day, when 3–5 % stretched Normal from 6–10 h to
+ *  ~14 h in the probe — the table scaled by the ratio, not re-measured). */
+export const TRASH_THREAT_PCT: readonly number[] = [2, 2.5, 3, 3.5, 4];
 /** Trash DAMAGE at each tuning point, as a share of the formula's (`enemyDamage`). World 1 (points 0–9): 1 where the
  *  arriving party clears the point's hardest stage cleanly, less where it would wipe. Worlds 2–50: the trash-threat
  *  anchor above. */
 export const TRASH_DMG_TUNE: number[] = [
   1, 1, 1, 1, 0.5, 0.45, 0.42, 0.36, 0.5, 1,
-  1.36, 1.32, 1.32, 1.74, 1.84, 1.54, 1.83, 1.89, 1.74, 1.51,
-  1.35, 1.78, 2.73, 2.42, 2.28, 2.57, 3.28, 3.01, 2.54, 1.86,
-  3.39, 3.85, 4.41, 4.81, 7.96, 7.95, 7.75, 7.63, 7.37, 6.06,
-  5.25, 10.6, 14, 15.7, 12.5, 13.6, 15.8, 14.4, 16.3, 10.3,
-  10.4, 14.7, 26.1, 27.8, 34.1, 38.3, 39.6, 31.8, 34.3,
+  0.907, 0.88, 0.88, 1.16, 1.23, 1.03, 1.22, 1.26, 1.16, 1.08,
+  0.964, 1.27, 1.95, 1.73, 1.63, 1.84, 2.34, 2.15, 1.81, 1.4,
+  2.54, 2.89, 3.31, 3.61, 5.97, 5.96, 5.81, 5.72, 5.53, 4.71,
+  4.08, 8.24, 10.9, 12.2, 9.72, 10.6, 12.3, 11.2, 12.7, 8.24,
+  8.32, 11.8, 20.9, 22.2, 27.3, 30.6, 31.7, 25.4, 27.4,
 ];
 /** The share of the formula's damage a wave enemy deals to a hero BEHIND the front one (its shots over the front line,
  *  the brute's area blow on the back line), per tuning point. The trash-threat anchor raises the waves' hit on the

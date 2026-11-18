@@ -256,7 +256,8 @@ key at once arrives with half its slots empty and needs more hits; nobody walks 
 | Elite | 4.5 × its kind — about 11 hits for a grunt | `ELITE_HP_MULT` |
 | Stage boss | 5–10 s against the full party | `STAGE_BOSS_HP_TUNE` (its life) |
 | World boss | the wall: its world's length (§8) | `WORLD_WALL_MULT` |
-| Trash damage | what the arriving party clears without a wipe; never above the formula | `TRASH_DMG_TUNE` (a share) |
+| Trash damage (front) | world 1: what the arriving party clears without a wipe; worlds 2–50: a wave takes 2 / 2.5 / 3 / 3.5 / 4 % of the average Knight's life a second, Normal … Torment (2026-11-18) | `TRASH_DMG_TUNE` (a share), `TRASH_THREAT_PCT` |
+| Trash damage (back line) | what reaches the heroes behind the front one: 0.5 → 1 % of their life a second | `TRASH_BACK_DMG_TUNE`, `TRASH_BACK_THREAT_PCT` |
 
 - **One entry per tuning point**: the stages of world 1 one by one (the opening: one naked Knight becomes a trio
   in under an hour), then one per world, 2 … 50. A party's power moves while it farms at a wall, not during the

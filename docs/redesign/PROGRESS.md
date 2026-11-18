@@ -2282,3 +2282,17 @@ Decisiones del usuario (18 nov), tras discutirlas una a una:
   centradas bajo la barra (no la mueven nunca); la cura pendiente en la barra de vida es el verde de la vida apagado
   (opción 2 del lab v87; el menta se confundía con un escudo); la ventana de opciones se coloca con su tamaño real antes
   de mostrarse (ya no salta desde encima del panel del héroe).
+- **Pelotón con estocada (usuario, 18 nov):** los cuerpo a cuerpo forman dos columnas de cuatro filas ante el héroe y la
+  de atrás avanza a golpear (`crowdLayout` `CONTACT_PLACES`, `CrowdPlace.lunge`); más de ocho se aprietan en el bloque.
+  Todos se ven atacar, como en la simulación (la cola de detrás estaba quieta).
+- **Amenaza de las oleadas anclada al Knight (usuario: «literalmente no recibe daño» en 4-6):** el golpe de la basura al
+  héroe de delante es ahora `frontHit` con su propia tabla (`TRASH_DMG_TUNE`), anclada a la vida media del Knight:
+  3 / 3,5 / 4 / 4,5 / 5 % por segundo mientras una oleada le pega, Normal … Tormento (`TRASH_THREAT_PCT`). Lo que llega
+  a la retaguardia (disparos por encima, el área del bruto) va por otra tabla (`TRASH_BACK_DMG_TUNE`) a 0,5 → 1 %/s
+  (`TRASH_BACK_THREAT_PCT`; el usuario: «separar la retaguardia» — con una sola tabla la Priest se atascaba en
+  Tormento). El mundo 1 conserva sus valores (el arranque). Medidas y escritas por `scripts/trash-threat-tune.ts`
+  (cuatro pasadas, la última amortiguada: media geométrica, porque cada mundo oscila con el azar del equipo); la última
+  medida daba al Knight 2,6 / 2,7 / 3,9 / 4,2 / 5,0 %/s de media por dificultad y a la retaguardia 0,2–1,4 %/s.
+- **Presión rebajada (usuario, 18 nov):** con 3–5 %/s Normal pasaba de 6–10 h a ~14 h (probe con traza, semilla 5) y
+  el probe iba muy lento; el usuario pide bajar los objetivos: **2 / 2,5 / 3 / 3,5 / 4 %/s** (`TRASH_THREAT_PCT`). La
+  tabla de delante se escala por la proporción de cada dificultad (no se re-mide); la retaguardia no cambia.
