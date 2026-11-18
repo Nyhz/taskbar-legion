@@ -2316,3 +2316,5 @@ Decisiones del usuario (18 nov), tras discutirlas una a una:
   ×1/0,7 para mantener la presión): Normal 6,8–11 h (mediana 8,4) y más caídas — una oleada tarda casi lo mismo con
   menos enemigos (llegan en tres tandas y caminan; el área del grupo mata a varios a la vez) y el grupo sube más
   despacio. Revertido; en su lugar **12 oleadas por etapa en Normal** (16 → 12, `WAVES_BY_DIFFICULTY`), llenas.
+- **Medido (probe, 5 semillas, 12 oleadas en Normal, 18 nov):** horas por dificultad (mediana) **7 / 45 / 146 / 272 /
+  644**, unas **1 087 h** en total (1 033–1 201 por semilla). Suite, lint y escalera en verde. El usuario deja Normal así.
