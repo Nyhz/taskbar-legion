@@ -1,4 +1,4 @@
-import { Container, Sprite, TilingSprite } from 'pixi.js';
+import { Container, Sprite } from 'pixi.js';
 import { barSegments, type BarSpec } from './stripHud';
 import { stripHudTexture } from './stripHudTextures';
 
@@ -11,8 +11,8 @@ export class LifeBar extends Container {
   private readonly life = new Sprite();
   private readonly ghost = new Sprite();
   private readonly shield = new Sprite();
-  // What a heal over time still has to give: the life's green in stripes after it (repeated, not stretched).
-  private readonly coming = new TilingSprite();
+  // What a heal over time still has to give: the life's green, dimmed, right after it (option 2, lab v87).
+  private readonly coming = new Sprite();
   private readonly overlay = new Sprite(); // notches, drawn over the fills
   private casingStem = '';
   private lifeStem = '';
@@ -24,7 +24,6 @@ export class LifeBar extends Container {
     this.ghost.texture = stripHudTexture('hud_s_fill_ghost');
     this.shield.texture = stripHudTexture('hud_s_fill_shield');
     this.coming.texture = stripHudTexture('hud_s_fill_coming');
-    this.coming.tilePosition.x = 1; // a gap first, so the stripes do not run into the life
     for (const part of [this.life, this.ghost, this.shield, this.coming]) {
       part.position.set(spec.ix, spec.iy);
       part.height = spec.ih;

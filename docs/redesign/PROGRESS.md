@@ -2277,3 +2277,8 @@ Decisiones del usuario (18 nov), tras discutirlas una a una:
   Tormento 2 y 5; `WORLD_WALL_MULT`, ronda 19) y re-grabada: los 50 suben.
 - **La Priest en W1–3:** con el grupo real del probe lanza 0,6–1 veces por minuto en las etapas x-4 y unas 3 en las x-9;
   la regeneración del Knight (5 → 4) casi no cambia nada (el daño enemigo es la palanca). El usuario: dejarlo así.
+- **Retoques tras la v0.5.5 (usuario, 18 nov):** el botón de menú en el lenguaje de la barra — tres barras de acero y
+  «Menú» en la fuente de los números, centrado (opción A del lab v86); las auras del apoyo sobre la propia tira,
+  centradas bajo la barra (no la mueven nunca); la cura pendiente en la barra de vida es el verde de la vida apagado
+  (opción 2 del lab v87; el menta se confundía con un escudo); la ventana de opciones se coloca con su tamaño real antes
+  de mostrarse (ya no salta desde encima del panel del héroe).

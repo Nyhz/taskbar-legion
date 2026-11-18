@@ -80,15 +80,6 @@ def column(tones: list[Tone]) -> Image.Image:
     return img
 
 
-def stripes(tones: list[Tone]) -> Image.Image:
-    """A fill that REPEATS across the well instead of stretching: a column of `tones` and an empty one beside it —
-    the life's own green in stripes, what is still to come (2026-11-18: in mint it was taken for a shield)."""
-    img = Image.new("RGBA", (2, len(tones)), (0, 0, 0, 0))
-    for y, tone in enumerate(tones):
-        img.putpixel((0, y), _rgba(tone))
-    return img
-
-
 #: (stem, image): casings are named by what wears them; `inner` sizes are in render/stripHud.ts.
 def bars() -> list[tuple[str, str, Image.Image]]:
     return [
@@ -102,7 +93,7 @@ def bars() -> list[tuple[str, str, Image.Image]]:
         ("hud_s_fill_low", "Poca vida", column([("crimson", 6), ("crimson", 5), ("crimson", 3)])),
         ("hud_s_fill_ghost", "Lo que acaba de perder", column([("light", 0), ("bone", 6), ("bone", 4)])),
         ("hud_s_fill_shield", "Escudo que absorbe", column([("azure", 8), ("azure", 6), ("azure", 4)])),
-        ("hud_s_fill_coming", "Lo que una cura en el tiempo aún va a dar: la vida a rayas (se repite, no se estira)", stripes([("moss", 7), ("moss", 6), ("moss", 4)])),
+        ("hud_s_fill_coming", "Lo que una cura en el tiempo aún va a dar: el verde de la vida, apagado", column([("moss", 4), ("moss", 3), ("moss", 2)])),
         ("hud_s_fill_respawn", "Cuenta para reaparecer", column([("azure", 5), ("azure", 4), ("azure", 3)])),
         ("hud_s_fill_foe", "Vida de un enemigo", column([("crimson", 5), ("crimson", 4), ("crimson", 3)])),
         ("hud_s_fill_cast", "Lanzamiento", column([("brass", 6), ("brass", 5), ("brass", 3)])),
