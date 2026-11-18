@@ -15,6 +15,41 @@ While the project is pre-1.0, minor versions may include breaking save changes.
 
 ### Fixed
 
+## [0.5.5] - 2026-11-18
+
+### Added
+
+- **A global cooldown of 2 s between a hero's abilities**: no hero fires two abilities back to back any more (basic
+  attacks go on meanwhile). When several are ready, the most urgent goes first — a defence against a boss's winding
+  blow, then a heal while an ally is in danger.
+- **Heals over time read on the ally**: Mend winds a mint ribbon round the one it heals, Mending Light leaves glints
+  of light, Sanctuary a double ring with rays; each pulse of healing runs a band of light up the hero, and the life
+  bar shows in mint what the heal still has to give.
+- **The Priest's abilities are told from her attacks**: each one opens with a ring of runes at her feet and a pillar
+  of light — mint for a heal, azure for a shield, gold for wrath.
+- **A support's auras on the HUD**: while a wave's support lives, its auras show in the middle of the rail, each
+  with a tooltip saying what it gives the wave.
+
+### Changed
+
+- Hero ability cooldowns are about 3 s longer.
+- Mend, Sanctuary and Mending Light heal the same, over longer (12 / 10 / 8 s), in pulses once a second; casting
+  one again on an ally who still has it adds what was left.
+- The bosses' Crushing Blow falls every 15 s and is weaker: one can be stood without a defence, two in a row without
+  a heal or a defence in between cannot.
+- Against a boss, defences also go up in an emergency (under 30 % life), not only for its heavy blow.
+- The Ranger and the Priest send one basic shot in four to the back of the wave and the rest to its front, so
+  supports live long enough to buff their wave.
+- The Knight's base life regeneration is 4 (was 5).
+- The rail's launcher is a MENU sign-board; new signs for Upgrades (a green arrow), Eternal (a serpent eating its
+  tail) and the everyday gear preset.
+- Enemy shooters that are not archers throw a magic bolt instead of arrows.
+- Wall difficulty re-balanced so every world boss still asks more than the one before.
+
+### Fixed
+
+- The options window no longer opens over the hero window and then jumps to the side.
+
 ## [0.5.4] - 2026-11-18
 
 ### Added
@@ -194,7 +229,8 @@ While the project is pre-1.0, minor versions may include breaking save changes.
 - Initial desktop builds: Tauri v2 transparent, always-on-top, bottom-docked overlay.
 - Multi-platform release pipeline (macOS universal, Windows, Linux) via GitHub Actions.
 
-[Unreleased]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.4...HEAD
+[Unreleased]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.5...HEAD
+[0.5.5]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.4...v0.5.5
 [0.5.4]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.3...v0.5.4
 [0.5.3]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.2...v0.5.3
 [0.5.2]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.1...v0.5.2
