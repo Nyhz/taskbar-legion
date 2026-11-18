@@ -17,3 +17,7 @@ coverage
 tools/assets/.venv/
 tools/assets/out/
 __pycache__/
+
+# Local secrets (ElevenLabs API key for the sound pipeline) — never committed
+.env.local
+.env*.local

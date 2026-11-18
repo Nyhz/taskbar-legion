@@ -57,7 +57,17 @@ def main(argv: list[str]) -> int:
 
         readme()
         return 0
-    print("commands: chars [names…], scene, lab, icons, export-ui, export-strip, export-figs, export-fx, export-pets, readme")
+    if cmd == "audio":
+        from .audio.build import main as audio
+
+        audio(argv[1:])
+        return 0
+    if cmd == "audio-lab":
+        from .audio.lab import main as audio_lab
+
+        audio_lab()
+        return 0
+    print("commands: chars [names…], scene, lab, icons, export-ui, export-strip, export-figs, export-fx, export-pets, readme, audio [--sample] [--dry] [ids…]")
     return 1
 
 

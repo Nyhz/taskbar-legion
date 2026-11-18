@@ -1,5 +1,18 @@
 {
-  "updated": "17 nov 2026",
-  "intro": "Nada pendiente de confirmar. Lo último (el aura «Armas encantadas» y el golpe cargado) quedó confirmado el 17 nov.",
-  "sections": []
+  "updated": "18 nov 2026",
+  "intro": "Primera muestra de sonido (R7), generada con ElevenLabs en estilo «híbrido suave». Escúchala con el volumen al que usarías el juego de fondo.",
+  "sections": [
+    {
+      "id": "sonido-muestra",
+      "eyebrow": "R7 · Sonido",
+      "title": "Muestra de sonido: 16 sonidos",
+      "text": "Foley real pero corto, redondo y con un punto retro. Los sonidos de cada golpe tienen varias variantes que el juego alterna al azar. Los volúmenes ya están igualados por canal (efectos, interfaz, ambiente). Los ambientes están en bucle: déjalos sonar para oír si se nota el empalme.",
+      "questions": [
+        "¿El carácter general (híbrido suave) es el que buscas, o más retro / más realista?",
+        "¿Qué sonidos no te convencen? (dime el nombre y qué cambiarías)",
+        "Ambiente: ¿el de las praderas y el de Tormento encajan con el mundo? ¿Se nota el empalme del bucle?"
+      ],
+      "html": "sound.html"
+    }
+  ]
 }

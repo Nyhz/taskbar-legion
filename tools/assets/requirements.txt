@@ -1,3 +1,9 @@
 # Pinned so that `npm run assets:build` is byte-for-byte reproducible.
 Pillow==12.2.0
 pytest==8.4.2
+# Audio (R7): numpy for loudness and trimming, soundfile (libsndfile with Vorbis, bundled in its wheels) for decoding
+# ElevenLabs' MP3s and encoding Ogg; cffi and pycparser are soundfile's own dependencies.
+numpy==2.5.3
+soundfile==0.14.0
+cffi==2.1.1
+pycparser==3.0

@@ -154,6 +154,16 @@ def main() -> None:
         return cache[rel]
 
     out = re.sub(r"img/[a-z0-9_]+/[A-Za-z0-9_]+\.png", inline, out)
+
+    def inline_audio(match: re.Match[str]) -> str:  # the sound section's players: audio/<channel>/<file>.mp3
+        rel = match.group(1)
+        path = ROOT / "src" / "assets" / "audio" / rel
+        if not path.is_file():
+            missing.append(rel)
+            return match.group(0)
+        return 'src="data:audio/mpeg;base64,' + base64.b64encode(path.read_bytes()).decode() + '"'
+
+    out = re.sub(r'src="audio/([a-z]+/[A-Za-z0-9_]+\.mp3)"', inline_audio, out)
     OUT.mkdir(parents=True, exist_ok=True)
     (OUT / "index.html").write_text(out)
     print(f"pending page: {len(built)} sections, {len(cache)} images inlined, {len(out) / 1e6:.1f} MB → {OUT / 'index.html'}")
