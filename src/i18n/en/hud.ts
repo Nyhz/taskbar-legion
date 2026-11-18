@@ -1,6 +1,8 @@
 // The rail above the battle strip: panel launchers, stage, chests, keys, purse.
 export const hud = {
   panelParty: 'Heroes',
+  menu: 'Menu',
+  menuTip: 'Heroes, gear, talents, map and the rest',
   panelStash: 'Stash',
   panelTalents: 'Talents',
   panelSheet: 'Sheet',
@@ -10,6 +12,8 @@ export const hud = {
   panelPets: 'Pets',
   stageOf: 'stage {n} of {total}',
   bossComing: 'When the bar fills, the stage boss arrives.',
+  supportAura: 'The support’s aura',
+  supportAuraHelp: 'The whole wave carries it while the support lives. Kill the support and the wave loses it.',
   bossHere: 'The stage boss is in front of you.',
   worldBossHere: 'The world boss is in front of you.',
   stored: 'Stored',

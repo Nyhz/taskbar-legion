@@ -16,6 +16,18 @@ export const FOE_SHOT: Readonly<Record<'ranged' | 'caster', FoeShot>> = {
   caster: { fx: 'foe_bolt', land: 'foe_hit' },
 };
 
+/** The ranged creatures that shoot ARROWS (a crossbow, a bow): the shooter kind is drawn with its world's ranged
+ *  creature (render/foeFx ROLE_FIGURE), and most of those are no archers — a witch whose lantern-light goes hunting,
+ *  a wraith casting ice, a cantor calling lightning. Every other one throws the caster's bolt (2026-11-18; user: «tiran
+ *  proyectiles que parecen flechas, no tiene mucho sentido»), until each has its own shot drawn. */
+export const ARROW_SHOOTERS: ReadonlySet<string> = new Set(['poacher']);
+
+/** How a foe that attacks from afar is drawn shooting: an archer's arrow, or a caster's bolt for every figure that
+ *  is no archer. */
+export function rangedStyle(figureKey: string): 'ranged' | 'caster' {
+  return ARROW_SHOOTERS.has(figureKey) ? 'ranged' : 'caster';
+}
+
 /** How high a shot is lofted over the front line (art pixels): clear of a hero's head and his life bar. */
 export const FOE_ARC_HEIGHT = 34;
 

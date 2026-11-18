@@ -57,23 +57,23 @@ def stash() -> Icon:  # a tied sack
     ], {"l": ("leather", 2), "L": ("leather", 5), "W": ("leather", 7), "D": ("leather", 3), "c": ("brass", 5)})
 
 
-def tech() -> Icon:  # a scroll of plans
+def tech() -> Icon:  # the upgrades: a green arrow going up (2026-11-18; the scroll did not say what was inside)
     return sprite([
+        "......mm......",
+        ".....mMMm.....",
+        "....mMWMMm....",
+        "...mMWMMMMm...",
+        "..mMWMMMMMMm..",
+        ".mMMMMMMMMMMm.",
+        ".mmmmMMMMmmmm.",
+        "....mMWMMm....",
+        "....mMWMMm....",
+        "....mMWMMm....",
+        "....mMMMMm....",
+        "....mMMMMm....",
+        "....mmmmmm....",
         E,
-        ".bbbbbbbbbbbb.",
-        ".bPPPPPPPPPPb.",
-        ".bbbbbbbbbbbb.",
-        "..bPPPPPPPPb..",
-        "..bPkkkkkkPb..",
-        "..bPPPPPPPPb..",
-        "..bPkkkkPPPb..",
-        "..bPPPPPPPPb..",
-        "..bPkkkkkkPb..",
-        ".bbbbbbbbbbbb.",
-        ".bPPPPPPPPPPb.",
-        ".bbbbbbbbbbbb.",
-        E,
-    ], {"b": ("bone", 2), "P": ("bone", 6), "k": ("bone", 3)})
+    ], {"m": ("moss", 3), "M": ("moss", 6), "W": ("moss", 8)})
 
 
 def cube() -> Icon:  # the cube, three faces
@@ -334,6 +334,69 @@ def scene(world: str, grade: str, heroes: list[tuple], foes: list[tuple]) -> Ima
     return im
 
 
+# ── The menu plaque (2026-11-18; user: «convertir este botón en algo que deje más claro que es el botón para abrir el
+# menú… un asset que ponga Menu así en pixel art bonito y claro»): the one launcher on the rail, as a small sign-board
+# with the word on it — gold capitals with 2-px stems and a dark drop shadow, in a dark well framed in bevelled
+# brass. One per language: MENU / MENÚ (the accent sits over the U, clear of it).
+
+MENU_GLYPHS = {
+    "M": ["XX...XX", "XXX.XXX", "XXXXXXX", "XX.X.XX", "XX...XX", "XX...XX", "XX...XX"],
+    "E": ["XXXXX", "XX...", "XX...", "XXXX.", "XX...", "XX...", "XXXXX"],
+    "N": ["XX..XX", "XXX.XX", "XXXXXX", "XX.XXX", "XX..XX", "XX..XX", "XX..XX"],
+    "U": ["XX..XX", "XX..XX", "XX..XX", "XX..XX", "XX..XX", "XX..XX", ".XXXX."],
+}
+ACUTE = ["...XX", "..XX."]
+
+
+def _tone(ramp: str, i: int) -> tuple[int, int, int, int]:
+    v = RAMPS[ramp][i].lstrip("#")
+    return (int(v[0:2], 16), int(v[2:4], 16), int(v[4:6], 16), 255)
+
+
+def menu_plaque(accent: bool) -> Image.Image:
+    word = "MENU"
+    width = sum(len(MENU_GLYPHS[c][0]) for c in word) + len(word) - 1
+    w, h = width + 6, 16
+    im = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    edge, hi, lo = _tone("ink", 0), _tone("brass", 4), _tone("brass", 2)
+    well, well_hi = _tone("ink", 2), _tone("ink", 3)
+    for y in range(h):
+        for x in range(w):
+            if x in (0, w - 1) and y in (0, h - 1):
+                continue  # the corners cut
+            if x in (0, w - 1) or y in (0, h - 1):
+                im.putpixel((x, y), edge)
+            elif y == 1 or x == 1:
+                im.putpixel((x, y), hi)  # the brass catches the light top and left…
+            elif y == h - 2 or x == w - 2:
+                im.putpixel((x, y), lo)  # …and falls dark bottom and right
+            else:
+                im.putpixel((x, y), well_hi if y == 2 else well)
+    # The word: 7 rows, centred in the well (with the accent, room is made above it).
+    top = 6 if accent else 4
+    gold, gold_hi, shadow = _tone("brass", 6), _tone("brass", 7), edge
+    x0 = 3
+    marks: list[tuple[int, int, bool]] = []  # (x, y, top row of a stroke)
+    for c in word:
+        glyph = MENU_GLYPHS[c]
+        for gy, row in enumerate(glyph):
+            for gx, ch in enumerate(row):
+                if ch == "X":
+                    marks.append((x0 + gx, top + gy, gy == 0 or glyph[gy - 1][gx] != "X"))
+        if accent and c == "U":
+            for ay, row in enumerate(ACUTE):
+                for ax, ch in enumerate(row):
+                    if ch == "X":
+                        marks.append((x0 + ax, top - 3 + ay, ay == 0))
+        x0 += len(glyph[0]) + 1
+    for x, y, _ in marks:  # the shadow first, one pixel down and right
+        if im.getpixel((x + 1, y + 1)) != gold:
+            im.putpixel((x + 1, y + 1), shadow)
+    for x, y, lit in marks:
+        im.putpixel((x, y), gold_hi if lit else gold)
+    return im
+
+
 def build() -> list[dict]:
     wave = scene("w01", "normal",
                  [("priest", 176, "cast", 0.5, 1.0), ("ranger", 232, "attack", 0.45, 0.9), ("knight", 292, "attack", 0.55, 0.7)],
@@ -350,7 +413,7 @@ def build() -> list[dict]:
     ]
     return [
         {"key": "hud", "title": "Signos del HUD", "note": "Lo que la barra sobre la tira dice sin palabras: los paneles, los cofres, la llave, el jefe.",
-         "items": [(stem, name, ic.image()) for stem, name, ic in signs] + [("hud_rail", "Barra del HUD", rail())]},
+         "items": [(stem, name, ic.image()) for stem, name, ic in signs] + [("hud_menu_en", "Menú (inglés)", menu_plaque(False)), ("hud_menu_es", "Menú (español)", menu_plaque(True)), ("hud_rail", "Barra del HUD", rail())]},
         {"key": "mock_scenes", "title": "Escenas de la tira", "note": "Dos momentos de la tira compuestos para las maquetas.",
          "items": [("hud_scene_wave", "Oleada en las Praderas doradas", wave), ("hud_scene_boss", "El Rey de la Cosecha", fight)]},
     ]

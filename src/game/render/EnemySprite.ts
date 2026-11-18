@@ -3,6 +3,7 @@ import type { Combatant } from '@/sim/world';
 import type { AttackStyle } from '@/data/field';
 import { BOSS_DOWN_MS, RANGE } from '@/data/field';
 import { hexToNum } from '@/styles/palette';
+import { rangedStyle } from './enemyFx';
 import { auraCategories, drawCategoryAuras, totalShield, type AuraRegion } from './effectAuras';
 import { BodyFx, fxLoop, type FxLoop } from './BodyFx';
 import { ENEMY_Z, ELITE_ARRIVE_FX, ELITE_CREST_FX, ELITE_FIGURE_SCALE, ELITE_RIM_INNER, ELITE_RIM_OFFSETS, ELITE_SPARKS_FX, eliteRimOuter } from './eliteLook';
@@ -149,7 +150,8 @@ export class EnemySprite extends Container {
     this.summon = c.summon === undefined ? null : (SUMMON_LOOKS[c.summon.key] ?? null);
     this.double = c.summon === undefined ? null : (DOUBLE_LOOKS[c.summon.key] ?? null);
     // (A summon strikes with its own body — a dive — whatever reach the simulation gives it.)
-    this.style = this.boss || c.summon !== undefined ? 'melee' : c.enemyMagic === true ? 'caster' : c.range >= RANGE.ranged ? 'ranged' : 'melee';
+    // A shooter is drawn shooting what its figure would (render/enemyFx rangedStyle): an arrow only from an archer.
+    this.style = this.boss || c.summon !== undefined ? 'melee' : c.enemyMagic === true ? 'caster' : c.range >= RANGE.ranged ? rangedStyle(sheet.key) : 'melee';
     this.look = ownFigure ? { ...RANK[rank], rings: null } : RANK[rank];
     // The standing figure's box, mirrored (the art faces right; enemies face the party on their left).
     // An elite is drawn a size up (render/eliteLook): its box grows with it, from the feet.

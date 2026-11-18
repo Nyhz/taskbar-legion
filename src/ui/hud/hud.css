@@ -8,6 +8,12 @@
 .tk-hud-key > img { opacity: .6; }
 .tk-hud-key:hover > img, .tk-hud-key.on > img { opacity: 1; }
 .tk-hud-key.on::after { content: ''; position: absolute; left: 3px; right: 2px; bottom: 1px; height: 1px; background: var(--gold); }
+/* The menu's sign-board: as wide as its word, always lit (a word dimmed reads as disabled); it brightens under the
+   pointer, and while the menu is open the gold line under it says so. */
+.tk-hud-menu { width: 37px; padding: 3px 0 0 2px; }
+.tk-hud-menu > img { opacity: 1; }
+.tk-hud-menu:hover > img { opacity: 1; filter: brightness(1.2); }
+.tk-hud-menu.on::after { left: 4px; right: 3px; bottom: 0; }
 
 /* Where the party is: difficulty, world-stage on a pennant of the difficulty's colour, progress to the boss. */
 .tk-hud-mid { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center; }
@@ -21,6 +27,12 @@
 .tk-hud-prog { width: 132px; height: 9px; }
 .tk-hud-end { margin-left: -2px; opacity: .45; }
 .tk-hud-at { position: relative; display: flex; align-items: center; gap: 4px; }
+/* A living support's auras (HudSupport): its signs after the progress bar, drawn twice their size (9 → 18) so they
+   read on the rail; a violet underline says whose they are (the support's own tint). */
+.tk-hud-auras { display: flex; align-items: center; gap: 1px; padding: 0 2px 1px; margin-left: 2px; border-bottom: 1px solid #7c6fb0; }
+.tk-hud-aura { position: relative; display: flex; }
+.tk-hud-aura > img { width: 18px; height: 18px; image-rendering: pixelated; }
+.tk-hud-aura:hover > img { filter: brightness(1.25); }
 
 /* The boss in front (HudBoss): the middle of the rail becomes its line — rank sign, name, life, enrage clock.
    On the rail, so nothing is laid over a boss as tall as the strip. The name is gold for a world boss. */

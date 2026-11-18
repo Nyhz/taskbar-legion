@@ -79,23 +79,25 @@ def diff_inferno() -> Icon:  # fire on the horizon: a horned skull with coals fo
     ], {"h": ("crimson", 3), "H": ("crimson", 5), "b": ("bone", 3), "B": ("bone", 6), "r": ("crimson", 2), "O": ("brass", 6), "k": ("ink", 1)})
 
 
-def diff_eternal() -> Icon:  # time stopped: an hourglass whose sand hangs
+def diff_eternal() -> Icon:  # what never ends, and bites: a cold serpent eating its own tail, its eye alight
+    # (2026-11-18, in the hourglass's place; user: «no cuadra con el estilo… siendo la penúltima le falta amenaza»)
     return sprite([
-        "..aaaaaaaaaa..",
-        "..aAAAAAAAAa..",
-        "...c......c...",
-        "...cwwwwwwc...",
-        "....cwwwwc....",
-        ".....cwwc.....",
-        "......cc......",
-        "......cc......",
-        ".....c.wc.....",
-        "....c..w.c....",
-        "...c..www.c...",
-        "...c.wwwwwc...",
-        "..aAAAAAAAAa..",
-        "..aaaaaaaaaa..",
-    ], {"a": ("ink", 5), "A": ("ink", 8), "c": ("sea", 6), "w": ("bone", 7)})
+        "......sss.....",
+        "....ssHHHs....",
+        "..ssHHSSSHss..",
+        ".sHHSs..sHHHs.",
+        ".sHS...sHHeeHs",
+        "sHS....sHHEeHs",
+        "sHS.....sHHHs.",
+        "sHS.....fdfd..",
+        "sHS......tTs..",
+        "sHHS....tTSs..",
+        ".sHSS..tTSs...",
+        ".sSSSSSTSSs...",
+        "..ssSSSSs.....",
+        "....ssss......",
+    ], {"s": ("azure", 2), "S": ("azure", 4), "H": ("azure", 6), "e": ("crimson", 7), "E": ("crimson", 5), "f": ("light", 0),
+        "d": ("azure", 1), "T": ("azure", 5), "t": ("azure", 3)})
 
 
 def diff_torment() -> Icon:  # the Rift looks back: an eye

@@ -3,6 +3,7 @@ import { STAGES_PER_WORLD, difficultyOf, stageInWorldOf, worldInDifficulty } fro
 import { difficultyName, useT, worldName } from '@/i18n';
 import { Bar, Sign, Tip, TipLine, TipText, TipTitle } from '@/ui/kit';
 import { HudBoss } from './HudBoss';
+import { HudSupport } from './HudSupport';
 
 // Where the party is: the difficulty's sign, world-stage on a pennant of the difficulty's colour, and the bar
 // that fills towards the stage boss. With a boss in front the bar gives way to the boss's line (HudBoss).
@@ -55,6 +56,7 @@ export function HudStage(): React.JSX.Element {
         )}
         {tip}
       </div>
+      {!boss && <HudSupport />}
       {foe}
     </div>
   );

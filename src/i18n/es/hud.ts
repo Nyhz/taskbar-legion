@@ -2,6 +2,8 @@ import type { hud as en } from '../en/hud';
 
 export const hud: Record<keyof typeof en, string> = {
   panelParty: 'Héroes',
+  menu: 'Menú',
+  menuTip: 'Héroes, equipo, talentos, mapa y lo demás',
   panelStash: 'Alijo',
   panelTalents: 'Talentos',
   panelSheet: 'Hoja',
@@ -11,6 +13,8 @@ export const hud: Record<keyof typeof en, string> = {
   panelPets: 'Mascotas',
   stageOf: 'etapa {n} de {total}',
   bossComing: 'Al llenarse la barra llega el jefe de la etapa.',
+  supportAura: 'Aura del apoyo',
+  supportAuraHelp: 'Toda la oleada la lleva mientras el apoyo siga vivo. Mata al apoyo y la oleada la pierde.',
   bossHere: 'El jefe de la etapa está delante.',
   worldBossHere: 'El jefe del mundo está delante.',
   stored: 'Guardados',

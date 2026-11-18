@@ -51,23 +51,24 @@ def gems_out() -> Icon:  # a gem dropping into a chest: send every gem to the st
     ], {"r": ("crimson", 3), "R": ("crimson", 5), "W": ("crimson", 7), "a": ("ink", 8), "c": ("leather", 2), "L": ("leather", 6), "C": ("leather", 4), "g": ("brass", 6)})
 
 
-def farm() -> Icon:  # an ear of wheat: the everyday preset
+def farm() -> Icon:  # the everyday preset: round and round for the loot — a looping arrow round a gold coin
+    # (2026-11-18, in the ear of wheat's place: «eso es farm literal»)
     return sprite([
         E,
-        ".......g......",
-        "......gGg.....",
-        ".....gGgGg....",
-        "......gGg.....",
-        ".....gGgGg....",
-        "......gGg.....",
-        ".....gGgGg....",
-        "......gGg.....",
-        ".......l......",
-        ".......l......",
-        ".......l......",
-        E,
-        E,
-    ], {"g": ("brass", 3), "G": ("brass", 6), "l": ("moss", 5)})
+        "...aaaaaa.A...",
+        "..aAAAAAAaAA..",
+        ".aA......AAA..",
+        "aA......AAAA..",
+        "aA..ggg.......",
+        "aA.gYYYg......",
+        "...gYwYg...Aa.",
+        "...gYYYg...Aa.",
+        "....ggg....Aa.",
+        "..AAAA....Aa..",
+        "..AAA....aAa..",
+        "..AA.aAAAAa...",
+        "...A.aaaaa....",
+    ], {"a": ("ink", 6), "A": ("ink", 8), "g": ("brass", 3), "Y": ("brass", 5), "w": ("brass", 7)})
 
 
 def down() -> Icon:  # under-geared for this stage
