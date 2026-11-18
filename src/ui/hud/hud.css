@@ -8,12 +8,10 @@
 .tk-hud-key > img { opacity: .6; }
 .tk-hud-key:hover > img, .tk-hud-key.on > img { opacity: 1; }
 .tk-hud-key.on::after { content: ''; position: absolute; left: 3px; right: 2px; bottom: 1px; height: 1px; background: var(--gold); }
-/* The menu's sign-board: as wide as its word, always lit (a word dimmed reads as disabled); it brightens under the
-   pointer, and while the menu is open the gold line under it says so. */
-.tk-hud-menu { width: 37px; padding: 3px 0 0 2px; }
-.tk-hud-menu > img { opacity: 1; }
-.tk-hud-menu:hover > img { opacity: 1; filter: brightness(1.2); }
-.tk-hud-menu.on::after { left: 4px; right: 3px; bottom: 0; }
+/* The menu: its sign and its word, dim like the other keys until hovered or open (then the gold line under both). */
+.tk-hud-menu { width: auto; display: flex; align-items: center; gap: 1px; padding: 3px 4px 0 2px; color: var(--k7); }
+.tk-hud-menu > .w { margin-top: 0; }
+.tk-hud-menu:hover, .tk-hud-menu.on { color: var(--k9); }
 
 /* Where the party is: difficulty, world-stage on a pennant of the difficulty's colour, progress to the boss. */
 .tk-hud-mid { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center; }
