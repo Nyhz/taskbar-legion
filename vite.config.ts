@@ -18,6 +18,10 @@ export default defineConfig({
     assetsInlineLimit(filePath) {
       // The interface's pixel fonts are inlined for the same reason: no fetch over tauri://, no flash of fallback type.
       if (filePath.endsWith('.png') || filePath.endsWith('.ttf')) return true;
+      // The game's effect and interface sounds (src/assets/audio/sfx|ui, ~1 MB) too: the engine fetches and decodes
+      // them, and a data: URI behaves the same in every webview, with no tauri:// fetch to go wrong in the packaged app.
+      // The ambient beds (~6.5 MB) stay files: audio/soundEngine falls back to an <audio> element if one won't fetch.
+      if (/\/assets\/audio\/(sfx|ui)\/.*\.mp3$/.test(filePath)) return true;
       return undefined; // everything else keeps Vite's default 4KB threshold
     },
   },

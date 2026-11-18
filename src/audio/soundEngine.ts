@@ -33,7 +33,7 @@ let voices = 0;
 let prefs: SoundPrefs = loadSoundPrefs();
 let attention = false;
 let lastUiMs = -1; // when an interface sound last played: a click that already made its own sound gets no plain click
-let ambient: { id: string; source: AudioBufferSourceNode | null; gain: GainNode } | null = null;
+let ambient: { id: string; source: AudioBufferSourceNode | null; element?: HTMLAudioElement; gain: GainNode } | null = null;
 let wantedAmbient: string | null = null;
 const listeners = new Set<() => void>();
 
@@ -113,7 +113,10 @@ function load(file: string): AudioBuffer | null {
       buffers.set(file, buf);
       if (wantedAmbient !== null && MANIFEST[wantedAmbient]?.files.includes(file)) setAmbience(wantedAmbient);
     })
-    .catch(() => buffers.set(file, 'failed'));
+    .catch(() => {
+      buffers.set(file, 'failed');
+      if (wantedAmbient !== null && MANIFEST[wantedAmbient]?.files.includes(file)) setAmbience(wantedAmbient); // the <audio> fallback
+    });
   return null;
 }
 
@@ -163,23 +166,41 @@ export function setAmbience(id: string | null): void {
   wantedAmbient = id;
   if (ctx === null) return;
   if (ambient !== null && ambient.id === id && ambient.source !== null) return;
+  if (ambient !== null && ambient.id === id && ambient.element !== undefined) return;
   const entry = id === null ? undefined : MANIFEST[id];
   const file = entry?.files[0];
   const buf = file === undefined ? null : load(file);
-  if (id !== null && buf === null && entry !== undefined) return; // loading: load() calls back here when it lands
+  const failed = file !== undefined && buffers.get(file) === 'failed';
+  if (id !== null && buf === null && entry !== undefined && !failed) return; // loading: load() calls back here when it lands
   const now = ctx.currentTime;
   if (ambient !== null) {
     const old = ambient;
     old.gain.gain.setTargetAtTime(0, now, AMBIENT_FADE_S / 4);
     window.setTimeout(() => {
       old.source?.stop();
+      old.element?.pause();
       old.gain.disconnect();
     }, AMBIENT_FADE_S * 1500);
     ambient = null;
   }
-  if (id === null || buf === null || entry === undefined) return;
+  if (id === null || entry === undefined) return;
   const out = channels.get('ambient');
   if (out === undefined) return;
+  if (buf === null) {
+    // The file would not fetch or decode (a webview's protocol): play it through an <audio> element instead, the way
+    // the title music plays in every build, routed into the same ambient channel.
+    const url = file === undefined ? undefined : URLS[file];
+    if (url === undefined) return;
+    const el = new Audio(url);
+    el.loop = true;
+    const g = ctx.createGain();
+    g.gain.value = 0;
+    g.gain.setTargetAtTime(1, now, AMBIENT_FADE_S / 4);
+    ctx.createMediaElementSource(el).connect(g).connect(out);
+    void el.play().catch(() => undefined);
+    ambient = { id, source: null, element: el, gain: g };
+    return;
+  }
   const src = ctx.createBufferSource();
   src.buffer = buf;
   src.loop = true;
