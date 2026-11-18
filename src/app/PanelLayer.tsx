@@ -128,7 +128,7 @@ export function PanelLayer(): React.JSX.Element {
           onAnimationEnd={animEnd('party', hero.phase)}
           style={{ position: 'relative', pointerEvents: 'none' }}
         >
-          <div className="tk-raise" style={{ position: 'relative', zIndex: 10, pointerEvents: 'auto' }}>
+          <div className="tk-raise" data-panel-box style={{ position: 'relative', zIndex: 10, pointerEvents: 'auto' }}>
             <PanelSpaceContext.Provider value={panelSpace}>
               <KitRoot zoom={kitZoom}>{KIT_PANELS.party?.()}</KitRoot>
             </PanelSpaceContext.Provider>
@@ -139,6 +139,7 @@ export function PanelLayer(): React.JSX.Element {
             return (
               <div
                 key={key}
+                data-panel-box
                 className={`tk-raise${phase === 'steady' ? '' : ` tl-panel-${side}-${phase}`}`}
                 onAnimationEnd={animEnd(key, phase)}
                 style={{
