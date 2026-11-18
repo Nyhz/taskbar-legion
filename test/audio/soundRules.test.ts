@@ -6,19 +6,17 @@ import type { Combatant } from '@/sim/world';
 import manifest from '@/assets/audio/manifest.json';
 
 describe('sound rules', () => {
-  it('plays the sounds of every blow only while the player looks, by default', () => {
-    expect(allowed('hit', 'combat', 'attention', false)).toBe(false);
-    expect(allowed('hit', 'combat', 'attention', true)).toBe(true);
-    expect(allowed('hit', 'combat', 'always', false)).toBe(true);
-    expect(allowed('hit', 'combat', 'off', true)).toBe(false);
-    expect(allowed('ab_priest_mend', 'ability', 'attention', false)).toBe(false);
+  it('plays the sounds of every blow unless they are switched off', () => {
+    expect(allowed('hit', 'combat', true)).toBe(true);
+    expect(allowed('hit', 'combat', false)).toBe(false);
+    expect(allowed('ab_priest_mend', 'ability', false)).toBe(false);
   });
 
   it('always plays the big moments and the interface', () => {
-    expect(allowed('level_up', 'progress', 'off', false)).toBe(true);
-    expect(allowed('boss_down', 'boss', 'attention', false)).toBe(true);
-    expect(allowed('ui_click', 'interface', 'off', false)).toBe(true);
-    expect(allowed('hero_down', 'combat', 'attention', false)).toBe(true);
+    expect(allowed('level_up', 'progress', false)).toBe(true);
+    expect(allowed('boss_down', 'boss', false)).toBe(true);
+    expect(allowed('ui_click', 'interface', false)).toBe(true);
+    expect(allowed('hero_down', 'combat', false)).toBe(true);
   });
 
   it('never repeats the take just played when there are others', () => {
@@ -48,7 +46,9 @@ describe('sound settings', () => {
   it('fall back to the quiet defaults on anything broken', () => {
     expect(parseSoundPrefs(null)).toEqual(DEFAULT_SOUND_PREFS);
     expect(parseSoundPrefs({ sfx: 7, combat: 'loud', muted: 'yes' })).toEqual({ ...DEFAULT_SOUND_PREFS, sfx: 1 });
-    expect(DEFAULT_SOUND_PREFS.combat).toBe('attention');
+    expect(DEFAULT_SOUND_PREFS.combat).toBe(true);
+    expect(parseSoundPrefs({ combat: 'attention' }).combat).toBe(true); // an older build's setting
+    expect(parseSoundPrefs({ combat: 'off' }).combat).toBe(false);
   });
 });
 

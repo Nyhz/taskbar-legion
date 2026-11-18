@@ -31,7 +31,6 @@ const lastAt = new Map<string, number>();
 const ringing = new Map<string, number>();
 let voices = 0;
 let prefs: SoundPrefs = loadSoundPrefs();
-let attention = false;
 let lastUiMs = -1; // when an interface sound last played: a click that already made its own sound gets no plain click
 let ambient: { id: string; source: AudioBufferSourceNode | null; element?: HTMLAudioElement; gain: GainNode } | null = null;
 let wantedAmbient: string | null = null;
@@ -131,7 +130,7 @@ export function playSound(id: string, opts: { gain?: number } = {}): void {
   if (ctx === null || prefs.muted) return;
   const entry = MANIFEST[id];
   if (entry === undefined || entry.loop || entry.files.length === 0) return;
-  if (!allowed(id, entry.group, prefs.combat, attention)) return;
+  if (!allowed(id, entry.group, prefs.combat)) return;
   const limits = limitsOf(entry.group);
   const nowMs = ctx.currentTime * 1000;
   if (nowMs - (lastAt.get(id) ?? -1e9) < limits.gapMs) return;
@@ -215,11 +214,6 @@ export function setAmbience(id: string | null): void {
   src.connect(g).connect(out);
   src.start(now, points?.start ?? 0);
   ambient = { id, source: src, gain: g };
-}
-
-/** Is the player looking (a panel open, the pointer over the strip)? Combat sounds follow it by default. */
-export function setSoundAttention(on: boolean): void {
-  attention = on;
 }
 
 export function soundPrefs(): SoundPrefs {

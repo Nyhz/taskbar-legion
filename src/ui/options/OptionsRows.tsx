@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { useStore } from '@/state/store';
 import { displayPixelRatio, displayViewportHeight } from '@/state/slices/uiSlice';
 import { gameScaleStops, screenPixelsPerArtPixel } from '@/state/pixelScale';
@@ -10,12 +11,22 @@ import { SoundRows } from './SoundRows';
 // The settings themselves, one row each: its sign, then its control. Language; the game's size (the whole-pixel
 // stops this display allows — state/pixelScale); the game's sound (SoundRows); and the title music.
 
+function useRedrawOnResize(): void {
+  const [, force] = useState(0);
+  useEffect(() => {
+    const redraw = (): void => force((n) => n + 1);
+    window.addEventListener('resize', redraw);
+    return () => window.removeEventListener('resize', redraw);
+  }, []);
+}
+
 export function OptionsRows(): React.JSX.Element {
   const t = useT();
   const language = useLanguage();
   const gameScale = useStore((s) => s.gameScale);
   const setGameScale = useStore((s) => s.setGameScale);
   const music = useMusic();
+  useRedrawOnResize(); // the stops depend on the window's height and display (the window moves between screens)
   const dpr = displayPixelRatio();
   const stops = gameScaleStops(dpr, displayViewportHeight());
 

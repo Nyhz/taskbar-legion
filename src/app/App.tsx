@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import { armSound } from '@/audio/soundEngine';
-import { startSoundAttention } from '@/audio/attention';
 import { startStoreSounds } from '@/audio/storeSounds';
 import { useStore } from '@/state/store';
 import { loadGame, resetGame } from '@/persistence/saveManager';
@@ -36,7 +35,6 @@ export function App(): React.JSX.Element {
   useEffect(() => {
     (window as unknown as { resetGame: () => void }).resetGame = () => void resetGame();
     armSound(); // the game's sound starts on the first gesture (audio/soundEngine)
-    startSoundAttention();
     startStoreSounds();
     let cancelled = false;
     void (async () => {

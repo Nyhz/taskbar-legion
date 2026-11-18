@@ -1,10 +1,9 @@
-import type { CombatSounds, SoundChannel } from './soundPrefs';
+import type { SoundChannel } from './soundPrefs';
 
 // When a sound may play — pure rules, unit-tested. A wave of twenty enemies trades dozens of blows a second: without
 // these the strip would be a wall of noise. Each sound has a minimum gap between two plays of itself and a cap on
 // how many of it ring at once; the whole mix has a cap too. Combat and ability sounds follow the player's
-// "combat sounds" setting (by default only while the player is looking); the big moments, the interface and the
-// ambience always play.
+// "sounds of every blow" switch; the big moments, the interface and the ambience always play.
 
 /** What the manifest says of a sound (src/assets/audio/manifest.json, written by the pipeline). */
 export interface SoundEntry {
@@ -34,11 +33,9 @@ export function limitsOf(group: string): Limits {
   return { gapMs: 120, voices: 2 };
 }
 
-/** May a sound of `group` play now, given the setting and whether the player is looking? */
-export function allowed(id: string, group: string, combat: CombatSounds, attention: boolean): boolean {
-  if (!BLOW_GROUPS.has(group) || ALWAYS.has(id)) return true;
-  if (combat === 'off') return false;
-  return combat === 'always' || attention;
+/** May a sound of `group` play, given the "sounds of every blow" switch? */
+export function allowed(id: string, group: string, combat: boolean): boolean {
+  return combat || !BLOW_GROUPS.has(group) || ALWAYS.has(id);
 }
 
 /** Which take to play: random, but never the one just played when there are others (no machine-gun repeats). */

@@ -75,6 +75,9 @@ export interface UiSlice {
   setHideSocketWarning: (on: boolean) => void;
   setMenuScale: (scale: number) => void;
   setGameScale: (scale: number) => void;
+  /** Snap the player's chosen game scale again for the display and window the game is on now (it moved to another
+   *  monitor, or the window was resized). The choice is kept: back on the first screen, the same scale returns. */
+  resnapGameScale: () => void;
   /** The effect chip of the strip the pointer is on (not persisted): the effects behind it and where its top-left
    *  corner is, in art pixels of the strip. The strip sets it; ui/overlay/StripEffectTip words it. */
   stripTip: StripTip | null;
@@ -101,6 +104,9 @@ export function displayViewportHeight(): number | undefined {
 
 export const createUiSlice: StateCreator<UiSlice, [], [], UiSlice> = (set, get) => {
   const persisted = loadSettings();
+  // The scale the player picked, before snapping it to this display's stops — kept apart so that a window moved to a
+  // screen where it is not allowed falls back for now and gets it again on a screen where it is.
+  let wantedGameScale = storedGameScale(persisted) ?? 1;
   // The language lives in @/i18n (so `t()` works outside React and the store); this slice only persists it.
   // It is written to the shim ONLY once chosen — until then the game follows the system language.
   let chosenLanguage: Lang | undefined = isLang(persisted.language) ? persisted.language : undefined;
@@ -110,7 +116,7 @@ export const createUiSlice: StateCreator<UiSlice, [], [], UiSlice> = (set, get) 
     saveSettings({
       uiScale: get().uiScale,
       menuScale: get().menuScale,
-      gameScale: get().gameScale,
+      gameScale: wantedGameScale,
       wholePixelScale: true,
       dockOrientation: get().dockOrientation,
       retryStage: get().retryStage,
@@ -128,7 +134,7 @@ export const createUiSlice: StateCreator<UiSlice, [], [], UiSlice> = (set, get) 
     windowPos: {},
     uiScale: UI_SCALE, // fixed baseline — the user knobs are menuScale / gameScale
     menuScale: Math.min(MENU_SCALE_MAX, persisted.menuScale ?? 1), // clamp a stale 1.25 down
-    gameScale: snapGameScale(storedGameScale(persisted) ?? 1, displayPixelRatio(), displayViewportHeight()), // whole screen pixels per art pixel
+    gameScale: snapGameScale(wantedGameScale, displayPixelRatio(), displayViewportHeight()), // whole screen pixels per art pixel
     dockOrientation: persisted.dockOrientation ?? 'bottom',
     retryStage: persisted.retryStage ?? false,
     hideSocketWarning: persisted.hideSocketWarning ?? false,
@@ -184,8 +190,13 @@ export const createUiSlice: StateCreator<UiSlice, [], [], UiSlice> = (set, get) 
 
     // Always lands on a whole-pixel stop for the display the window is on (also called when that display changes).
     setGameScale: (scale) => {
+      wantedGameScale = scale;
       set({ gameScale: snapGameScale(scale, displayPixelRatio(), displayViewportHeight()) });
       persist();
+    },
+    resnapGameScale: () => {
+      const gameScale = snapGameScale(wantedGameScale, displayPixelRatio(), displayViewportHeight());
+      if (gameScale !== get().gameScale) set({ gameScale });
     },
   };
 };

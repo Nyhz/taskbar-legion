@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { setSoundPrefs, soundPrefs, subscribeSound } from '@/audio/soundEngine';
-import type { CombatSounds, SoundChannel } from '@/audio/soundPrefs';
+import type { SoundChannel } from '@/audio/soundPrefs';
 import { useT, type TextKey } from '@/i18n';
 import { Segment, Sign, Switch, Tip, TipText, TipTitle } from '@/ui/kit';
 
 // The game's sound in the options: on or off, a volume per channel (five stops) and when the sounds of every blow
-// play (audio/soundRules). Device-local settings (audio/soundPrefs), like the rest of the options.
+// sound (a switch; audio/soundRules). Device-local settings (audio/soundPrefs), like the rest of the options.
 
 const STOPS = [0, 0.25, 0.5, 0.75, 1] as const;
 
@@ -13,12 +13,6 @@ const CHANNEL_ROWS: { ch: SoundChannel; sign: string; name: TextKey; help: TextK
   { ch: 'sfx', sign: 'opt_effects', name: 'options.effects', help: 'options.effectsHelp' },
   { ch: 'ui', sign: 'opt_click', name: 'options.interface', help: 'options.interfaceHelp' },
   { ch: 'ambient', sign: 'opt_ambience', name: 'options.ambience', help: 'options.ambienceHelp' },
-];
-
-const COMBAT: { key: CombatSounds; name: TextKey }[] = [
-  { key: 'attention', name: 'options.combatWatching' },
-  { key: 'always', name: 'options.combatAlways' },
-  { key: 'off', name: 'options.combatNever' },
 ];
 
 /** The stop nearest a stored volume. */
@@ -65,7 +59,9 @@ export function SoundRows(): React.JSX.Element {
       ))}
       <div className="tk-opt-row has">
         <Sign name="opt_watch" alt={t('options.combatSounds')} />
-        <Segment items={COMBAT.map((c) => ({ key: c.key, label: t(c.name), on: prefs.combat === c.key, onPick: () => setSoundPrefs({ combat: c.key }) }))} />
+        <div>
+          <Switch on={prefs.combat} onChange={(on) => setSoundPrefs({ combat: on })} label={t('options.combatSounds')} />
+        </div>
         <Tip side="left">
           <TipTitle>{t('options.combatSounds')}</TipTitle>
           <TipText>{t('options.combatSoundsHelp')}</TipText>

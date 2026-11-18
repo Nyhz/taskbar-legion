@@ -205,4 +205,14 @@ describe('the screens the game must fit', () => {
       }),
     ).toBe(1);
   });
+
+  it('offers ×2 on a 900-tall screen at 1:1 but keeps 720p and 768p screens at ×1', () => {
+    const labels = (dpr: number, viewportH: number): number[] =>
+      gameScaleStops(dpr, viewportH).map((stop) => Math.round(screenPixelsPerArtPixel(stop, dpr)));
+    expect(labels(1, 900 - 80)).toEqual([1, 2]);
+    expect(labels(1, 1080 - 80)).toEqual([1, 2]);
+    expect(labels(1, 768 - 80)).toEqual([1]);
+    expect(labels(1, 720 - 80)).toEqual([1]);
+    expect(labels(2, 982 - 80)).toEqual([2, 3, 4]); // MacBook Pro 14"
+  });
 });

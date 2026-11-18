@@ -17,9 +17,11 @@ export function screenPixelsPerArtPixel(gameScale: number, dpr: number): number 
   return UI_SCALE * gameScale * dpr;
 }
 
-/** The strip (with its HUD) may take at most this share of the screen's height: it is an ambient strip, and the
- *  panels need the rest. On a 720p screen this leaves ×1 only (×2 would take half the screen). */
-export const STRIP_MAX_HEIGHT_SHARE = 0.42;
+/** The strip (with its HUD) may take at most this share of the window's height: it is an ambient strip, and the
+ *  panels need the rest. On a 720p or 768p screen this leaves ×1 only (×2 would take more than half the window).
+ *  Was 0.42 until 2026-11-18, which also hid ×2 on a 900-pt-tall screen (window 820, ×2 = 364 = 44 %): too small to
+ *  play there (user). The panels above shrink to fit whatever room is left (fitPanelPixels). */
+export const STRIP_MAX_HEIGHT_SHARE = 0.5;
 const STRIP_AND_HUD_ART_HEIGHT = 182; // STRIP_ART_HEIGHT + HUD_ART_HEIGHT (declared below)
 
 /** The game scales that land on whole screen pixels for this display, smallest first. Never empty. With

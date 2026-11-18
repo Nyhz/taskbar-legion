@@ -2,10 +2,9 @@
 // (localStorage), like the other interface preferences — a sound setting belongs to the machine, not the save.
 //
 // Defaults (user, 2026-11-18, «bajo y escaso»): the game plays all day behind other work, so the ambience is very
-// low, the big moments always sound, and the sounds of every blow only play while the player is looking — a panel
-// open or the pointer over the strip ('attention').
-
-export type CombatSounds = 'attention' | 'always' | 'off';
+// low and the sounds of every blow are kept sparse by the rules (audio/soundRules). The sounds of every blow can be
+// switched off on their own; the big moments always sound. (A third "only while looking" mode was dropped the same
+// day: the overlay is always on top, so the player is always looking.)
 export type SoundChannel = 'sfx' | 'ui' | 'ambient';
 
 export interface SoundPrefs {
@@ -14,7 +13,8 @@ export interface SoundPrefs {
   sfx: number;
   ui: number;
   ambient: number;
-  combat: CombatSounds;
+  /** The sounds of every blow (swings, hits, abilities). */
+  combat: boolean;
 }
 
 export const DEFAULT_SOUND_PREFS: SoundPrefs = {
@@ -23,7 +23,7 @@ export const DEFAULT_SOUND_PREFS: SoundPrefs = {
   sfx: 0.8,
   ui: 0.7,
   ambient: 0.5,
-  combat: 'attention',
+  combat: true,
 };
 
 const KEY = 'taskbar-legion.sound.v1';
@@ -39,7 +39,8 @@ export function parseSoundPrefs(raw: unknown): SoundPrefs {
   const d = DEFAULT_SOUND_PREFS;
   if (typeof raw !== 'object' || raw === null) return { ...d };
   const p = raw as Partial<Record<keyof SoundPrefs, unknown>>;
-  const combat = p.combat === 'always' || p.combat === 'off' || p.combat === 'attention' ? p.combat : d.combat;
+  // An older build stored 'attention' | 'always' | 'off': only 'off' meant silence.
+  const combat = typeof p.combat === 'boolean' ? p.combat : p.combat === 'off' ? false : d.combat;
   return {
     muted: p.muted === true,
     master: unit(p.master, d.master),

@@ -125,18 +125,14 @@ export function GameView({ bootSave, onReady }: { bootSave: SaveV1 | null; onRea
     if (typeof window.matchMedia !== 'function') return;
     let query = window.matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`);
     const resnap = (): void => {
-      const store = useStore.getState();
-      store.setGameScale(store.gameScale);
+      useStore.getState().resnapGameScale();
       query.removeEventListener('change', resnap);
       query = window.matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`);
       query.addEventListener('change', resnap);
     };
     query.addEventListener('change', resnap);
     // The stops also depend on the window's height (the strip may not take too much of it).
-    const onResize = (): void => {
-      const store = useStore.getState();
-      store.setGameScale(store.gameScale);
-    };
+    const onResize = (): void => useStore.getState().resnapGameScale();
     window.addEventListener('resize', onResize);
     return () => {
       query.removeEventListener('change', resnap);

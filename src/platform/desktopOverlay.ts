@@ -1,8 +1,7 @@
-import type { Window } from '@tauri-apps/api/window';
+import type { Monitor, Window } from '@tauri-apps/api/window';
 import { isTauri } from './tauri';
 import { isItemDragging } from './dragState';
 import { saveGame } from '@/persistence/saveManager';
-import { setCursorOverGame } from '@/audio/attention';
 import { cursorInViewport, isMacWebview } from './cursorMapping';
 
 // Turns the Tauri webview into the ambient overlay: a transparent, borderless,
@@ -97,6 +96,7 @@ export async function setupTitleWindow(): Promise<void> {
     // the window is positioned, so showing here is flash-free.
     if (isLinuxWebview()) await win.show().catch(() => {});
     await startClickThrough(win);
+    await followMonitor(win);
   } finally {
     // The window boots HIDDEN (tauri.conf `visible:false`) so the user never sees the opaque
     // page paint at the wrong spot — reveal it only now that it's transparent + docked. In a
@@ -162,6 +162,61 @@ async function dockBottomPosition(win: Window, currentMonitor: CurrentMonitor): 
   };
 }
 
+// When the player drags the window onto another screen, fit its footprint to THAT screen (it was sized for the one
+// it booted on: a window born on a MacBook stays MacBook-short on a big monitor, and the strip's larger scales — which
+// need the room — never show up there). The bottom edge stays where it was dropped and the window stays centred on
+// the same spot, kept inside the new screen sideways. Waits for the drag to settle; only acts on a change of screen.
+const REFIT_SETTLE_MS = 600;
+
+async function followMonitor(win: Window): Promise<void> {
+  const { currentMonitor, LogicalSize, LogicalPosition, PhysicalPosition } = await import('@tauri-apps/api/window');
+  const mac = isMacWebview(navigator.userAgent);
+  const keyOf = (m: Monitor | null): string => (m === null ? '' : `${m.name ?? ''}@${m.position.x},${m.position.y}`);
+  let fittedTo = keyOf(await currentMonitor().catch(() => null));
+  let busy = false;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+
+  const refit = async (): Promise<void> => {
+    if (busy) return;
+    const mon = await currentMonitor().catch(() => null);
+    if (mon === null || keyOf(mon) === fittedTo) return;
+    busy = true;
+    try {
+      fittedTo = keyOf(mon);
+      const before = await win.outerPosition();
+      const winScale = await win.scaleFactor();
+      const oldW = overlayW;
+      const oldH = overlayH;
+      await fitOverlayToMonitor(win, currentMonitor);
+      if (overlayW === oldW && overlayH === oldH) return;
+      // Positions compared in one unit: points on macOS (tao gives each value in its OWN screen's scale, see
+      // cursorMapping), physical pixels elsewhere (where the window's size is its logical size × its scale).
+      const posK = mac ? winScale : 1;
+      const monK = mac ? mon.scaleFactor : 1;
+      const sizeK = mac ? 1 : winScale;
+      const centre = before.x / posK + (oldW * sizeK) / 2;
+      const bottom = before.y / posK + oldH * sizeK;
+      const monLeft = mon.position.x / monK;
+      const monWidth = mon.size.width / monK;
+      const w = overlayW * sizeK;
+      const h = overlayH * sizeK;
+      const x = Math.round(Math.min(Math.max(centre - w / 2, monLeft), monLeft + monWidth - w));
+      const y = Math.round(bottom - h);
+      await win.setSize(new LogicalSize(overlayW, overlayH));
+      await win.setPosition(mac ? new LogicalPosition(x, y) : new PhysicalPosition(x, y));
+    } catch {
+      // best effort: the window keeps its old footprint
+    } finally {
+      busy = false;
+    }
+  };
+
+  await win.onMoved(() => {
+    clearTimeout(timer);
+    timer = setTimeout(() => void refit(), REFIT_SETTLE_MS);
+  });
+}
+
 async function startClickThrough(win: Window): Promise<void> {
   const { cursorPosition, primaryMonitor } = await import('@tauri-apps/api/window');
   const mac = isMacWebview(navigator.userAgent);
@@ -211,7 +266,6 @@ async function startClickThrough(win: Window): Promise<void> {
         // pointer-events:none gaps between panels, and toggling click-through mid-gesture makes
         // the webview drop the drag. Otherwise fall back to the hit-test under the cursor.
         const ignore = isItemDragging() ? false : isBackground(document.elementFromPoint(x, y));
-        setCursorOverGame(!ignore); // the sounds of every blow play while the player looks (audio/attention)
         if (ignore !== ignoring) {
           ignoring = ignore;
           await win.setIgnoreCursorEvents(ignore);
