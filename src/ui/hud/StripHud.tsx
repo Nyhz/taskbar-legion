@@ -35,7 +35,7 @@ export function StripHud(): React.JSX.Element {
         <HudChests />
         <div className={`tk-hud-res has${keys > 0 ? '' : ' zero'}`}>
           <Sign name="hud_key" alt={t('hud.keys')} />
-          {keys}
+          <span className="tk-hud-n">{keys}</span>
           <Tip side="below-end">
             <TipTitle>{t('hud.keys')}</TipTitle>
             <TipText>{t('hud.keysHelp')}</TipText>
@@ -43,7 +43,7 @@ export function StripHud(): React.JSX.Element {
         </div>
         <div className="tk-gold has">
           <Sign name="ui_gold" alt={t('hud.gold')} />
-          {format(gold)}
+          <span className="tk-hud-n gold">{format(gold)}</span>
           <TipTag side="below-end">{t('hud.gold')}</TipTag>
         </div>
         <button

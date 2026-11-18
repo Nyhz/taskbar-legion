@@ -50,3 +50,8 @@
 .tk-hud-pips.zoneBoss > i.on { background: #cba2dd; }
 .tk-hud-res.full .tk-hud-pips > i.on { background: var(--bad); }
 .tk-hud .tk-gold { position: relative; margin-left: 2px; padding-right: 4px; }
+/* The numbers on the rail keep a fixed room, so a changing amount never shifts the rest of the rail sideways (user,
+   2026-11-18: every element moved as the gold ticked). Measured in the rail's font: "88.8M" is 20 art px wide (up
+   to trillions fits; "Qa" and beyond grow past it), two digits of keys 9. Left-aligned against their sign. */
+.tk-hud-n { display: inline-block; min-width: 9px; text-align: left; }
+.tk-hud-n.gold { min-width: 20px; }
