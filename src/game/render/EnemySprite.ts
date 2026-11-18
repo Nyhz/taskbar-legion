@@ -133,6 +133,7 @@ export class EnemySprite extends Container {
   private leaving = false; // a summon whose time is up: it flies off instead of falling
   private drift = 0; // …and how far it has flown off sideways
   private crowdLift = 0; // how much higher it is drawn as the back row of its pile (render/crowdLayout)
+  private crowdLunge = 0; // how far it steps in to strike from the platoon's back column (render/crowdLayout)
   private queued = false; // waiting in line behind the fighters (render/crowdLayout): it is not shown swinging
   private readonly bodyTint: number; // the tint of its own body when nothing else colours it (a support in a borrowed figure)
   private readonly auraSigns = new Container(); // a support's auras: one small sign each, in a row over its head (render/foeFx)
@@ -507,8 +508,9 @@ export class EnemySprite extends Container {
   }
 
   /** Its place in the line it stands in (render/crowdLayout): the back rows are drawn a little higher and behind. */
-  setCrowd(lift: number, order: number): void {
+  setCrowd(lift: number, order: number, lunge = 0): void {
     this.crowdLift = lift;
+    this.crowdLunge = lunge;
     // A support — and the signs over its head — is drawn over the enemies it stands among, elites included.
     this.zIndex = (this.auraSigns.children.length > 0 ? ENEMY_Z.elite + 0.2 : this.elite ? ENEMY_Z.elite : ENEMY_Z.common) + order / 100000;
   }
@@ -517,7 +519,9 @@ export class EnemySprite extends Container {
   private place(x: number, groundY: number): void {
     // A dive goes most of the way to its mark and back, in one smooth swing.
     const k = this.dive === null ? 0 : Math.sin((this.dive.t / this.dive.ms) * Math.PI) * DIVE_REACH;
-    this.x = Math.round(x + this.drift + (this.dive?.dx ?? 0) * k);
+    // From the platoon's back column it steps in to strike and back, with its attack clip (render/crowdLayout).
+    const step = this.crowdLunge > 0 && this.figure.clips.acting && this.figure.clips.clip === ATTACK_CLIP ? Math.sin(this.figure.clips.progress * Math.PI) * this.crowdLunge : 0;
+    this.x = Math.round(x + this.drift + (this.dive?.dx ?? 0) * k - step);
     this.y = Math.round(groundY - FEET_BELOW_ORIGIN - this.lift - this.crowdLift + (this.dive?.dy ?? 0) * k);
   }
 

@@ -49,6 +49,10 @@ export class ClipPlayer {
   get acting(): boolean {
     return this.state === 'action';
   }
+  /** How far the current clip has played, 0 → 1. */
+  get progress(): number {
+    return this.totalMs > 0 ? Math.min(1, this.playedMs / this.totalMs) : 0;
+  }
 
   has(clip: string): boolean {
     return this.anims[clip] !== undefined;

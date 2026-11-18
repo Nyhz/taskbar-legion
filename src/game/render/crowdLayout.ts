@@ -3,8 +3,11 @@
 // every shooter to another; there all of them swing. PRESENTATION ONLY: the simulation's positions do not change.
 //
 // When DRAWN, the enemies that reach a spot form a LINE there, first come first served:
-//   - the first few (CONTACT_PLACES) stand at the spot itself, in depth rows — they are the ones seen fighting;
-//   - the rest queue behind them, a gap apart, and wait for a place. A queued melee enemy is not shown swinging;
+//   - melee enemies form a PLATOON at the spot (2026-11-18; user: the ones queued behind «no les veo hacer la animación
+//     de atacar… idealmente todos deberían avanzar y pegar… que peguen pero no se stackeen mucho»): two columns of four
+//     depth rows (CONTACT_PLACES). The front column's blows reach the hero; the back column steps in to strike
+//     (`lunge`) and back. More than eight squeeze into the back of the block — every one of them is shown fighting,
+//     as in the simulation every one of them strikes;
 //   - shooters have no contact to keep: their whole line fans out behind its first one, and all of them shoot.
 // An enemy still walking is drawn where it walks, until it reaches the tail of the line, where it waits.
 //
@@ -16,15 +19,25 @@
 // paran y dan un deslizamiento hacia atrás; no va smooth»).
 // Bosses and summons are not part of it (the caller leaves them out).
 
-/** The places at the spot itself, from the front (offset from the spot in strip pixels, + = further from the
- *  party; lift: how much higher it is drawn, the back rows). Within 4 px of where the simulation strikes from, and
- *  leaning a little towards the hero: the simulation stops a soldier 55 px from him, root to root, and a scarecrow's
- *  blade reaches 32 px in front of its root against the Knight's 19 — at 55 its blow fell 4 px short of him. */
-export const CONTACT_PLACES: readonly { dx: number; lift: number }[] = [
-  { dx: -4, lift: 0 },
-  { dx: -2, lift: 3 },
-  { dx: 0, lift: 6 },
+/** The platoon's places at the spot, in the order they are filled (offset from the spot in strip pixels, + = further
+ *  from the party; lift: how much higher it is drawn, the back rows; lunge: how far it steps in to strike). The front
+ *  column stands within 4 px of where the simulation strikes from, leaning a little towards the hero (the simulation
+ *  stops a soldier 55 px from him, root to root, and a scarecrow's blade reaches 32 px in front of its root against the
+ *  Knight's 19 — at 55 its blow fell 4 px short of him); the back column a body's width behind, stepping in to reach. */
+export const CONTACT_PLACES: readonly { dx: number; lift: number; lunge: number }[] = [
+  { dx: -4, lift: 0, lunge: 0 },
+  { dx: -3, lift: 3, lunge: 0 },
+  { dx: -2, lift: 6, lunge: 0 },
+  { dx: -1, lift: 9, lunge: 0 },
+  { dx: 9, lift: 1, lunge: 12 },
+  { dx: 10, lift: 4, lunge: 12 },
+  { dx: 11, lift: 7, lunge: 12 },
+  { dx: 12, lift: 10, lunge: 12 },
 ];
+/** Past the platoon's eight, each one more stands this much further back in the block (squeezed: it never grows past
+ *  PLATOON_DEPTH_PX), in its rows, and steps in further to strike. */
+const PLATOON_EXTRA_PX = 2;
+const PLATOON_DEPTH_PX = 24;
 /** A melee enemy this close to its place at the spot (px) stands there: its blow still lands on the hero. */
 const CONTACT_SLACK_PX = 3;
 /** How far behind the spot the first one queued waits: clear of the fighters, so it reads as waiting, yet near
@@ -65,8 +78,10 @@ export interface CrowdPlace {
   lift: number;
   /** Draw order inside its line: higher is nearer the viewer. */
   order: number;
-  /** False for a melee enemy queued behind the fighters: it waits and is not shown swinging. */
+  /** False while a melee enemy is still stepping up to its place in the platoon: it is not shown swinging yet. */
   fighting: boolean;
+  /** How far it steps in towards the hero to strike (the platoon's back column), in strip pixels. */
+  lunge: number;
 }
 
 interface Line {
@@ -76,18 +91,21 @@ interface Line {
 }
 
 /** The place of index `k` in a line, as an offset from its spot. */
-function placeOf(line: Line, k: number, melee: boolean): { dx: number; lift: number } {
-  const contact = melee ? CONTACT_PLACES.length : 0;
-  const near = CONTACT_PLACES[k];
-  if (k < contact && near !== undefined) return near;
-  const j = k - contact;
-  return { dx: (melee ? QUEUE_FROM_PX : 0) + j * line.gap, lift: j % 2 === 1 ? CROWD_ROW_LIFT_PX : 0 };
+function placeOf(line: Line, k: number, melee: boolean): { dx: number; lift: number; lunge: number } {
+  if (melee) {
+    const near = CONTACT_PLACES[k];
+    if (near !== undefined) return near;
+    // Past the eight: into the back of the block, squeezed, still in its rows — and still striking.
+    const j = k - CONTACT_PLACES.length;
+    const dx = Math.min(PLATOON_DEPTH_PX, 12 + (j + 1) * PLATOON_EXTRA_PX);
+    return { dx, lift: 1 + (j % 4) * 3, lunge: dx };
+  }
+  return { dx: k * line.gap, lift: k % 2 === 1 ? CROWD_ROW_LIFT_PX : 0, lunge: 0 };
 }
 
 function queueGap(count: number, melee: boolean): number {
-  const queued = count - (melee ? CONTACT_PLACES.length : 0);
-  const room = CROWD_MAX_SPREAD_PX - (melee ? QUEUE_FROM_PX : 0);
-  return queued > 1 ? Math.min(CROWD_GAP_PX, room / (queued - 1)) : CROWD_GAP_PX;
+  if (melee) return CROWD_GAP_PX; // a platoon has no queue
+  return count > 1 ? Math.min(CROWD_GAP_PX, CROWD_MAX_SPREAD_PX / (count - 1)) : CROWD_GAP_PX;
 }
 
 const toward = (from: number, to: number, step: number): number => (Math.abs(to - from) <= step ? to : from + Math.sign(to - from) * step);
@@ -132,7 +150,7 @@ export class CrowdLayout {
     for (const m of waiting) {
       if (!m.arrived) {
         const tail = line.ids.length;
-        const atTail = Number.isFinite(line.spot) && tail >= (melee ? CONTACT_PLACES.length : 0) && m.x <= line.spot + placeOf(line, tail, melee).dx;
+        const atTail = Number.isFinite(line.spot) && m.x <= line.spot + placeOf(line, tail, melee).dx;
         if (!atTail) continue;
       }
       line.ids.push(m.id);
@@ -151,9 +169,11 @@ export class CrowdLayout {
       // A place at the spot is stood on once the simulation has it there; one in the queue is where it waits — it
       // walks on until it gets there.
       const want = Number.isFinite(line.spot) ? Math.max(m.x + Math.min(0, place.dx), line.spot + place.dx) : m.x;
-      const shown = this.step(m, want, place.lift, (place.lift === 0 ? 1000 : 0) + (count - k), dtMs);
-      // A melee enemy fights from a place at the spot, once it stands there — not while it is still stepping up to it.
-      shown.fighting = !melee || (k < CONTACT_PLACES.length && shown.x <= want + CONTACT_SLACK_PX);
+      // Drawn nearer the viewer the lower its row (the front rows over the back ones), then the earlier it came.
+      const shown = this.step(m, want, place.lift, 1000 - place.lift * 10 + (count - k) / 100, dtMs);
+      // A melee enemy fights from its place in the platoon, once it stands there — not while still stepping up to it.
+      shown.fighting = !melee || shown.x <= want + CONTACT_SLACK_PX;
+      shown.lunge = melee ? place.lunge : 0;
       out.set(id, shown);
     });
     for (const m of group) if (!out.has(m.id)) out.set(m.id, this.step(m, m.x, 0, 0, dtMs)); // still on its way
@@ -165,7 +185,7 @@ export class CrowdLayout {
     const had = this.shown.get(m.id);
     const reach = (m.speed * SPEED_SLACK * dtMs) / 1000;
     const x = had === undefined ? want : want < had.x ? Math.max(want, had.x - reach) : had.x;
-    const place = { x, lift: had === undefined ? lift : toward(had.lift, lift, (LIFT_PX_S * dtMs) / 1000), order, fighting: true };
+    const place = { x, lift: had === undefined ? lift : toward(had.lift, lift, (LIFT_PX_S * dtMs) / 1000), order, fighting: true, lunge: 0 };
     this.shown.set(m.id, place);
     return place;
   }

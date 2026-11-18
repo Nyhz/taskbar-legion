@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CONTACT_PLACES, CROWD_MAX_SPREAD_PX, CrowdLayout, QUEUE_FROM_PX, type CrowdMember, type CrowdPlace } from '@/game/render/crowdLayout';
+import { CONTACT_PLACES, CrowdLayout, type CrowdMember, type CrowdPlace } from '@/game/render/crowdLayout';
 
 const DT = 1000 / 60;
 const SPOT = 200;
@@ -19,34 +19,39 @@ describe('enemies drawn as they come and in their line', () => {
     expect(places.get('a')).toMatchObject({ x: 320, lift: 0, fighting: true });
   });
 
-  it('stands the first ones at the spot, within 4 px of where the simulation strikes from, all fighting', () => {
-    const line = ['a', 'b', 'c'].map((id) => foe(id, SPOT));
+  it('stands a platoon at the spot: the front column within 4 px of where the simulation strikes from, the back column stepping in to reach', () => {
+    const line = ['a', 'b', 'c', 'd'].map((id) => foe(id, SPOT));
     const places = settle(new CrowdLayout(), line);
     for (const m of line) {
       const p = places.get(m.id);
       expect(p?.fighting).toBe(true);
       expect(Math.abs((p?.x ?? 0) - SPOT)).toBeLessThanOrEqual(4);
     }
-    for (const place of CONTACT_PLACES) expect(Math.abs(place.dx)).toBeLessThanOrEqual(4);
+    for (const place of CONTACT_PLACES) {
+      if (place.lunge === 0) expect(Math.abs(place.dx)).toBeLessThanOrEqual(4);
+      else expect(place.dx - place.lunge).toBeLessThanOrEqual(4); // its step brings its blow to the hero
+    }
   });
 
-  it('queues the rest behind the fighters: further back, not fighting, never past the spread limit', () => {
+  it('every melee enemy of a big wave fights (2026-11-18): the block squeezes, it never queues', () => {
     const line = Array.from({ length: 22 }, (_, i) => foe(`e${String(i).padStart(2, '0')}`, SPOT));
     const places = settle(new CrowdLayout(), line);
-    const queued = line.map((m) => places.get(m.id)).filter((p) => p?.fighting === false);
-    expect(queued).toHaveLength(22 - CONTACT_PLACES.length);
-    for (const p of queued) expect(p?.x ?? 0).toBeGreaterThanOrEqual(SPOT + QUEUE_FROM_PX - 0.01);
-    expect(Math.max(...queued.map((p) => p?.x ?? 0)) - SPOT).toBeLessThanOrEqual(CROWD_MAX_SPREAD_PX + 0.01);
+    for (const m of line) expect(places.get(m.id)?.fighting).toBe(true);
+    const xs = line.map((m) => places.get(m.id)?.x ?? 0);
+    expect(Math.max(...xs) - SPOT).toBeLessThanOrEqual(24 + 0.01); // the platoon's depth
+    for (const m of line) {
+      const p = places.get(m.id);
+      expect((p?.x ?? 0) - SPOT - (p?.lunge ?? 0)).toBeLessThanOrEqual(4); // each one's step reaches the hero
+    }
   });
 
-  it('first come, first served: one that reaches the line later never takes the place of one already fighting', () => {
+  it('first come, first served: one that reaches the line later never takes the place of one already there', () => {
     const layout = new CrowdLayout();
     const first = ['a', 'b', 'c'].map((id) => foe(id, SPOT));
     const before = settle(layout, first);
-    // An elite arrives after them: it queues — the fighters are not sent back.
     const after = settle(layout, [...first, foe('z-elite', SPOT, { prominent: true })]);
     for (const m of first) expect(after.get(m.id)).toMatchObject({ x: before.get(m.id)?.x, lift: before.get(m.id)?.lift, fighting: true });
-    expect(after.get('z-elite')?.fighting).toBe(false);
+    expect(after.get('z-elite')?.lift).toBeGreaterThan(0); // the next place in the block, not the front one
   });
 
   it('of those that reach the line together, an elite goes first', () => {
@@ -55,18 +60,16 @@ describe('enemies drawn as they come and in their line', () => {
     expect(places.get('z-elite')?.lift).toBe(0);
   });
 
-  it('when a fighter falls, the first one queued steps forward — at its own pace — and fights once it stands there', () => {
+  it('when a fighter falls, the ones behind step up — at their own pace — and fight from their new place', () => {
     const layout = new CrowdLayout();
-    const line = ['a', 'b', 'c', 'd'].map((id) => foe(id, SPOT));
+    const line = Array.from({ length: 9 }, (_, i) => foe(`e${i}`, SPOT));
     const before = settle(layout, line);
-    expect(before.get('d')?.fighting).toBe(false);
-    const step = layout.update(line.slice(1), DT).get('d');
-    expect(step?.fighting).toBe(false); // not shown swinging until it stands at the hero
-    expect(step?.x ?? 0).toBeLessThan(before.get('d')?.x ?? 0);
-    expect((before.get('d')?.x ?? 0) - (step?.x ?? 0)).toBeLessThanOrEqual((50 * 1.1 * DT) / 1000 + 1e-9);
+    const step = layout.update(line.slice(1), DT).get('e8');
+    expect(step?.x ?? 0).toBeLessThanOrEqual(before.get('e8')?.x ?? 0);
+    expect((before.get('e8')?.x ?? 0) - (step?.x ?? 0)).toBeLessThanOrEqual((50 * 1.1 * DT) / 1000 + 1e-9);
     const settled = settle(layout, line.slice(1));
-    expect(Math.abs((settled.get('d')?.x ?? 0) - SPOT)).toBeLessThanOrEqual(4);
-    expect(settled.get('d')?.fighting).toBe(true);
+    expect(settled.get('e8')?.fighting).toBe(true);
+    expect(settled.get('e8')?.x ?? 0).toBeLessThan(before.get('e8')?.x ?? 0);
   });
 
   it('never draws anyone further back than the frame before — as they come, join, wait and die', () => {
@@ -110,8 +113,7 @@ describe('enemies drawn as they come and in their line', () => {
   it('the back rows are drawn behind the front row', () => {
     const line = ['a', 'b', 'c', 'd', 'e'].map((id) => foe(id, SPOT));
     const places = [...settle(new CrowdLayout(), line).values()];
-    const front = places.filter((p) => p.lift === 0).map((p) => p.order);
-    const back = places.filter((p) => p.lift !== 0).map((p) => p.order);
-    expect(Math.min(...front)).toBeGreaterThan(Math.max(...back));
+    const byLift = [...places].sort((p, q) => p.lift - q.lift);
+    for (let i = 1; i < byLift.length; i++) expect(byLift[i]!.order).toBeLessThan(byLift[i - 1]!.order);
   });
 });

@@ -581,7 +581,7 @@ export class GameStrip {
 
     // Where each enemy is this frame (velocity-matched to its sim x: smooth, no surge, capped at its own advance
     // speed), and — presentation only — where a wave enemy is drawn: walking where it walks, then in the line at
-    // its spot, the first few fighting at the hero and the rest queued behind (render/crowdLayout).
+    // its spot, a melee platoon all fighting at the hero (render/crowdLayout).
     const crowd: CrowdMember[] = [];
     for (const c of enemies) {
       const prev = this.enemyDisplayX.get(c.id);
@@ -621,7 +621,7 @@ export class GameStrip {
       }
       // Its place as it comes and in its line (a dead enemy keeps the place it fell in; a boss or a summon has none).
       const place = places.get(c.id) ?? this.crowd.last(c.id);
-      if (place !== undefined) sprite.setCrowd(place.lift, place.order);
+      if (place !== undefined) sprite.setCrowd(place.lift, place.order, place.lunge);
       sprite.setQueued(place?.fighting === false);
       const sx = toScreen(place?.x ?? this.enemyDisplayX.get(c.id) ?? c.x);
       sprite.leadAttack(c, inReach(c, w.heroes), dtMs);
