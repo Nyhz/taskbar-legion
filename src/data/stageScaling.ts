@@ -99,7 +99,7 @@ const WAVE_SIZE_BY_STAGE = [9, 10, 11, 12, 13, 15, 17, 19, 22] as const; // 2026
 
 /** × wave size by difficulty (Normal → Torment). Normal ran at 0.6 to stay a 3–4 hour stroll; since 2026-11-17 its waves
  *  are as full as every other difficulty's (the user's call: thin waves felt empty), at the cost of a longer Normal. */
-export const WAVE_SIZE_MULT_BY_DIFFICULTY: readonly number[] = [1, 1, 1, 1, 1]; // 2026-11-17: Normal's waves are as full as the others (user decision; was 0.6)
+export const WAVE_SIZE_MULT_BY_DIFFICULTY: readonly number[] = [0.7, 1, 1, 1, 1]; // 2026-11-18: Normal's waves ×0.7 (6–15 enemies) so Normal takes 4–6 h (user; it took ~7 h at full size, 0.6 before 2026-11-17)
 
 /** Enemies per wave for a stage, ramped by its position within the world (X-1..X-9), × its difficulty's share. */
 export function waveSizeForStage(globalStageIndex: number): number {
@@ -201,7 +201,7 @@ export const TRASH_THREAT_PCT: readonly number[] = [1.5, 2, 2.5, 3, 3.5];
  *  anchor above. */
 export const TRASH_DMG_TUNE: number[] = [
   1, 1, 1, 1, 0.5, 0.45, 0.42, 0.36, 0.5, 1,
-  0.674, 0.584, 0.518, 0.59, 0.634, 0.772, 0.769, 0.926, 0.849, 0.732,
+  0.963, 0.834, 0.74, 0.843, 0.906, 1.1, 1.1, 1.32, 1.21, 0.732,
   0.824, 0.944, 1.04, 1.73, 1.45, 1.46, 1.27, 1.33, 1.68, 1.42,
   1.58, 1.52, 2.92, 5.16, 5.11, 5.54, 5.11, 4.1, 5.2, 4.47,
   4.01, 10.7, 9.42, 11, 9.23, 10.1, 11.7, 10.6, 12.1, 7.99,
@@ -218,7 +218,7 @@ export const TRASH_DMG_TUNE: number[] = [
  *  at 3× their old values (the measure asked ~6×, on two worlds only). The Knight's table likewise, to TRASH_THREAT_PCT. */
 export const TRASH_BACK_DMG_TUNE: number[] = [
   1, 1, 1, 1, 0.5, 0.45, 0.42, 0.36, 0.5, 1,
-  0.54, 0.744, 0.911, 0.289, 0.942, 1.53, 0.445, 1.34, 1.53, 0.179,
+  0.771, 1.06, 1.3, 0.413, 1.35, 2.19, 0.636, 1.91, 2.19, 0.179,
   0.342, 0.297, 0.246, 1.59, 1.45, 1.62, 0.445, 1.78, 1.95, 1.4,
   1.14, 2.35, 3.04, 3.97, 3, 4.1, 3.07, 3, 3.03, 2.8,
   2.27, 2.24, 2.46, 2.86, 3, 3, 3, 3, 3, 3,
