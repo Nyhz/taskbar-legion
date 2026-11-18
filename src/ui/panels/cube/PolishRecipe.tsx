@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { playSound } from '@/audio/soundEngine';
 import { useStore } from '@/state/store';
 import { canPolishAffix, polishCost, polishCount } from '@/sim/cube';
 import { isItem, type AffixRoll, type ItemInstance } from '@/sim/items';
@@ -65,7 +66,9 @@ export function PolishRecipe(): React.JSX.Element {
     if (item === null || affixIndex === null) return;
     const oldStat = item.stats[affixIndex];
     const newStat = cubePolish(item.id, affixIndex);
-    if (oldStat !== undefined && newStat !== null) setPending({ itemId: item.id, affixIndex, oldStat, newStat });
+    if (oldStat === undefined || newStat === null) return;
+    setPending({ itemId: item.id, affixIndex, oldStat, newStat });
+    playSound(newStat.perfect === true ? 'cube_perfect' : 'cube_polish');
   };
   const finish = (line: string): void => {
     setPending(null);

@@ -5,9 +5,10 @@ import { toggleMute } from '@/platform/audio';
 import { LANGS, LANG_NAMES, setLanguage, useLanguage, useT } from '@/i18n';
 import { Segment, Sign, Switch, Tip, TipText, TipTitle } from '@/ui/kit';
 import { useMusic } from './useMusic';
+import { SoundRows } from './SoundRows';
 
 // The settings themselves, one row each: its sign, then its control. Language; the game's size (the whole-pixel
-// stops this display allows — state/pixelScale); and the one sound setting the game has today, the title music.
+// stops this display allows — state/pixelScale); the game's sound (SoundRows); and the title music.
 
 export function OptionsRows(): React.JSX.Element {
   const t = useT();
@@ -48,9 +49,11 @@ export function OptionsRows(): React.JSX.Element {
         </Tip>
       </div>
 
+      <SoundRows />
+
       {music.available && (
         <div className="tk-opt-row has">
-          <Sign name={music.muted ? 'opt_mute' : 'opt_sound'} alt={t('options.music')} />
+          <Sign name="opt_music" alt={t('options.music')} />
           <div>
             <Switch on={!music.muted} onChange={() => toggleMute()} label={t('options.music')} />
           </div>

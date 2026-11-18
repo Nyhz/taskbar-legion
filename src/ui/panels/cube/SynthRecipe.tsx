@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { playSound } from '@/audio/soundEngine';
 import { useStore } from '@/state/store';
 import { CUBE_INPUT_COUNT } from '@/sim/cube';
 import { SYNTH_DOUBLE_TIER_CHANCE } from '@/data/cube';
@@ -49,6 +50,7 @@ export function SynthRecipe(): React.JSX.Element {
     const out = cubeCombine(loaded.map((e) => e.id));
     if (out === null) return;
     setMade({ entry: out, lucky: out.tier > first.tier + 1 }); // two rarities above the inputs: the lucky strike
+    playSound(out.tier > first.tier + 1 ? 'cube_lucky' : 'cube_synth');
     setSelected([]);
   };
 

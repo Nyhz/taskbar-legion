@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { playSound } from '@/audio/soundEngine';
 import { useStore } from '@/state/store';
 import {
   canTransfigure,
@@ -97,7 +98,10 @@ export function TransfigRecipe(): React.JSX.Element {
       pay.map((g) => g.id),
       affixIndex,
     );
-    if (spent) setPending({ itemId: item.id, affixIndex, oldStat, newStat });
+    if (spent) {
+      setPending({ itemId: item.id, affixIndex, oldStat, newStat });
+      playSound(newStat.perfect === true ? 'cube_perfect' : 'cube_transfig');
+    }
   };
   const finish = (line: string): void => {
     setPending(null);

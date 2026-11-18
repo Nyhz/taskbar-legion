@@ -1,4 +1,6 @@
 import { Container, Graphics, Text } from 'pixi.js';
+import { StripSounds, hitSound } from './stripSounds';
+import { playSound } from '@/audio/soundEngine';
 import type { Application } from 'pixi.js';
 import { GameEngine } from './engine';
 import { setEngine } from './engineRef';
@@ -147,6 +149,7 @@ export class GameStrip {
   private heroesSeeded = false; // false until the initial party is placed; a hero sprite born AFTER is a fresh recruit → materialises in
   private enemySprites = new Map<string, EnemySprite>();
   private engine: GameEngine | null = null;
+  private readonly sounds = new StripSounds(); // what the strip sounds like (game/stripSounds)
   private uiScale = 1;
   private logicalWidth = 0;
   private cameraX = -1; // world x at screen-left; -1 = uninitialized
@@ -301,6 +304,7 @@ export class GameStrip {
       this.arriveParty(w.heroes);
     }
     if (wipeMs === undefined) this.wipeArrived = false;
+    this.sounds.update(w); // the ambience, what steps in, chests, wipes (game/stripSounds)
     this.reconcileHeroes(w.heroes, w.enemies, groundY, dtMs, toScreen, wipeDead, wipeHidden);
     this.reconcileEnemies(w, groundY, dtMs, toScreen);
     this.updatePet(w, events, groundY, dtMs, toScreen, wipeDead, wipeHidden);
@@ -308,6 +312,7 @@ export class GameStrip {
     this.refreshChipTip();
     this.delayed.tick(dtMs);
     this.applyEvents(events, groundY);
+    this.sounds.events(events, w);
     this.fxGround.update(dtMs);
     this.fxAir.update(dtMs);
     this.blowWarn.update(dtMs);
@@ -759,6 +764,8 @@ export class GameStrip {
   // A hit shows: the number, the flash and flinch of whoever took it, and the callouts that go with it.
   private landHit(ev: CombatEvent, sprite: HeroSprite | EnemySprite, amt: number): void {
     const onHero = sprite instanceof HeroSprite;
+    const world = this.engine?.world;
+    playSound(hitSound(ev, world === undefined ? undefined : (onHero ? world.heroes : world.enemies).find((c) => c.id === ev.targetId)));
     const color = onHero ? hexToNum('#ff7a7a') : ev.crit === true ? hexToNum('#ffd35d') : 0xffffff;
     sprite.flashHit();
     // The hit of an ability with its own look leaves its mark on the enemy (render/abilityFx `hit`).

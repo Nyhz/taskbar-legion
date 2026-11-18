@@ -120,6 +120,25 @@ def click() -> Icon:  # the pointer: the sounds of the interface
     ], {"w": ("ink", 7), "W": ("ink", 9)})
 
 
+def watch() -> Icon:  # an open eye: when the sounds of every blow play (while you look at the game)
+    return sprite([
+        E,
+        E,
+        E,
+        "....kkkkkk....",
+        "..kkWWWWWWkk..",
+        ".kWWWiiiiWWWk.",
+        "kWWWiIIIIiWWWk",
+        "kWWWiIppIiWWWk",
+        ".kWWWiiiiWWWk.",
+        "..kkWWWWWWkk..",
+        "....kkkkkk....",
+        E,
+        E,
+        E,
+    ], {"k": ("ink", 6), "W": ("bone", 6), "i": ("sea", 4), "I": ("sea", 6), "p": ("ink", 1)})
+
+
 def menu_scale() -> Icon:  # a panel with its brass corners: the size of the menus
     return sprite([
         E,
@@ -386,7 +405,7 @@ def build() -> list[dict]:
     back_im, fore_im = scene()
     glyphs = [
         ("opt_lang", "Idioma", lang()), ("opt_sound", "Sonido", sound(True)), ("opt_mute", "Silencio", sound(False)),
-        ("opt_music", "Música", music()), ("opt_ambience", "Ambiente", ambience()), ("opt_effects", "Efectos", effects()), ("opt_click", "Interfaz", click()),
+        ("opt_music", "Música", music()), ("opt_ambience", "Ambiente", ambience()), ("opt_effects", "Efectos", effects()), ("opt_click", "Interfaz", click()), ("opt_watch", "Sonidos de combate", watch()),
         ("opt_menu_scale", "Tamaño de los menús", menu_scale()), ("opt_game_scale", "Tamaño del juego", game_scale()),
         ("opt_export", "Exportar partida", tray(True)), ("opt_import", "Importar partida", tray(False)), ("opt_new", "Partida nueva", new_game()),
         ("opt_quit", "Salir", quit_game()), ("opt_back", "Volver", back()), ("opt_gear", "Opciones", gear()), ("title_play", "Jugar", play()),

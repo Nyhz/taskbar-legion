@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { playSound } from '@/audio/soundEngine';
 import { useStore } from '@/state/store';
 import { CUBE_INPUT_COUNT, alchemyTotal } from '@/sim/cube';
 import { isItem, type ItemInstance } from '@/sim/items';
@@ -33,6 +34,7 @@ export function MeltRecipe(): React.JSX.Element {
   const melt = (): void => {
     if (loaded.length === 0) return;
     const gold = cubeAlchemy(loaded.map((i) => i.id));
+    playSound('cube_melt');
     setSaid(t('cube.melted', { n: loaded.length, gold: format(gold) }));
     setSelected([]);
   };

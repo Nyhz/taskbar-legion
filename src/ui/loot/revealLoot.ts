@@ -13,6 +13,7 @@ import { KIT_TOKENS, type KitToken } from '@/ui/kit/tokens';
 import { gemArtStem, itemArtStem } from '@/ui/itemArt';
 import { itemKindName } from '@/ui/panels/items/itemText';
 import { encodeLootLine, type LootLine } from './lootLine';
+import { playSound } from '@/audio/soundEngine';
 
 // Opening a chest popup: ask the engine to crack every chest of that type, then drop
 // the rolled loot into the bag ONE AT A TIME (a floating toast per entry) so the haul
@@ -39,9 +40,15 @@ function tierTone(tier: number): KitToken {
   return `t${Math.max(0, Math.min(8, Math.round(tier)))}` as KitToken;
 }
 
+/** The sound of a revealed piece: the top rarities have their own (T7–T8, then T5–T6); others are quiet. */
+function itemSound(tier: number): string | null {
+  return tier >= 7 ? 'item_legendary' : tier >= 5 ? 'item_epic' : null;
+}
+
 function revealLoot(loot: Loot): void {
   const store = useStore.getState();
   const reveal: InvEntry[] = [...loot.items, ...loot.gems];
+  if (reveal.length > 0) playSound(loot.items.some((i) => i.tier >= 5) ? 'chest_open_rare' : 'chest_open');
   const as = store.autoSalvage;
   const keyDrops = Object.entries(loot.keys);
   keyDrops.forEach(([bossStage, count], k) => {
@@ -52,6 +59,7 @@ function revealLoot(loot: Loot): void {
         const text =
           count > 1 ? t('overlay.lootKeyMany', { zone, n: count }) : t('overlay.lootKey', { zone });
         say({ text, sign: 'hud_key' }, 'gold-hi');
+        playSound('key_get');
       },
       (reveal.length + k) * STAGGER_MS,
     );
@@ -63,6 +71,7 @@ function revealLoot(loot: Loot): void {
       if (isGem(entry)) {
         // Coloured by TIER (like gear), not by the gem's own stat colour — so a T1 gem reads green.
         const text = t('overlay.lootGem', { gem: gemName(entry.key), rarity });
+        playSound('gem_get');
         say({ text, art: gemArtStem(entry), tier: entry.tier }, tierTone(entry.tier));
       } else if (as.enabled && as.tiers[entry.tier] === true) {
         say(
@@ -71,6 +80,8 @@ function revealLoot(loot: Loot): void {
         );
       } else {
         const text = t('overlay.lootItem', { kind: itemKindName(entry), rarity });
+        const sound = itemSound(entry.tier);
+        if (sound !== null) playSound(sound);
         say(
           { text, art: itemArtStem(entry), tier: entry.tier, stars: itemPerfectCount(entry) },
           tierTone(entry.tier),
@@ -90,6 +101,7 @@ export function openChestPopup(type: ChestType): void {
     const short = itemCount - free;
     const text = short === 1 ? t('overlay.bagFullOne') : t('overlay.bagFullMany', { n: short });
     say({ text, sign: 'bag_pack' }, 'bad');
+    playSound('ui_error');
     return; // do NOT open — chests stay stacked, no gear spills to the stash
   }
   const loot = getEngine()?.openChestType(type);

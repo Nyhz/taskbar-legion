@@ -2,6 +2,7 @@ import type { Window } from '@tauri-apps/api/window';
 import { isTauri } from './tauri';
 import { isItemDragging } from './dragState';
 import { saveGame } from '@/persistence/saveManager';
+import { setCursorOverGame } from '@/audio/attention';
 
 // Turns the Tauri webview into the ambient overlay: a transparent, borderless,
 // always-on-top, NON-MAXIMIZED window that the user can drag freely across monitors.
@@ -203,6 +204,7 @@ async function startClickThrough(win: Window): Promise<void> {
         // pointer-events:none gaps between panels, and toggling click-through mid-gesture makes
         // the webview drop the drag. Otherwise fall back to the hit-test under the cursor.
         const ignore = isItemDragging() ? false : isBackground(document.elementFromPoint(x, y));
+        setCursorOverGame(!ignore); // the sounds of every blow play while the player looks (audio/attention)
         if (ignore !== ignoring) {
           ignoring = ignore;
           await win.setIgnoreCursorEvents(ignore);

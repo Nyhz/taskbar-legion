@@ -1,4 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
+import { armSound } from '@/audio/soundEngine';
+import { startSoundAttention } from '@/audio/attention';
+import { startStoreSounds } from '@/audio/storeSounds';
 import { useStore } from '@/state/store';
 import { loadGame, resetGame } from '@/persistence/saveManager';
 import type { SaveV1 } from '@/persistence/saveSchema';
@@ -32,6 +35,9 @@ export function App(): React.JSX.Element {
   // the title screen runs on defaults and the offline summary fires on the game, not here).
   useEffect(() => {
     (window as unknown as { resetGame: () => void }).resetGame = () => void resetGame();
+    armSound(); // the game's sound starts on the first gesture (audio/soundEngine)
+    startSoundAttention();
+    startStoreSounds();
     let cancelled = false;
     void (async () => {
       const save = await loadGame();
