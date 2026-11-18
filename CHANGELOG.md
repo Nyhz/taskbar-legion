@@ -15,6 +15,25 @@ While the project is pre-1.0, minor versions may include breaking save changes.
 
 ### Fixed
 
+## [0.5.2] - 2026-11-18
+
+### Added
+
+- **Sound** — the game now has sound: soft, hand-synthesised effects for blows, every ability and ultimate, boss mechanics, chests and loot, the interface and the Cube, plus a quiet ambience for each of the ten worlds (and its Torment version). By default, combat blows only sound while you are looking at the game (a panel open or the pointer over the strip); the big moments always do.
+- **Sound options** — a sound switch, volume for effects, interface and ambience, and when combat sounds play (while watching, always or never).
+
+### Changed
+
+- **More common chests** — a common chest now drops on 0.5 % of kills (was 0.2 %), about one every three minutes.
+- **Chest research is worth buying** — Common Hauls and Boss Spoils add +2.5 % per rank on top of the base chance (were +0.25 % and +0.5 %); their texts now say so.
+- **Difficulty curve re-tuned** for the extra loot — enemies from world 2 on and the world bosses of Hell to Torment are tougher, so each difficulty keeps its length and every wall still asks more than the one before.
+
+### Fixed
+
+- Melee enemies no longer hit the party from a distance: the front ones fight in contact and the rest wait their turn.
+- Enemies walking in no longer stop or slide backwards.
+- Elite enemies keep only their aura (no more purple bolts).
+
 ## [0.5.1] - 2026-11-17
 
 ### Added
@@ -149,7 +168,8 @@ While the project is pre-1.0, minor versions may include breaking save changes.
 - Initial desktop builds: Tauri v2 transparent, always-on-top, bottom-docked overlay.
 - Multi-platform release pipeline (macOS universal, Windows, Linux) via GitHub Actions.
 
-[Unreleased]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.1...HEAD
+[Unreleased]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.2...HEAD
+[0.5.2]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.1...v0.5.2
 [0.5.1]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/Nyhz/taskbar-legion/compare/v0.4.1...v0.5.0
 [0.4.1]: https://github.com/Nyhz/taskbar-legion/compare/v0.4.0...v0.4.1
