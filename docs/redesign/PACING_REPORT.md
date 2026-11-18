@@ -3960,3 +3960,107 @@ guardado al final de cada dificultad baja a 0,01–3 h de ingreso hasta Averno y
 en 13–23 h (antes 15–40 h): el rango más barato del árbol cuesta 22–40 h de ingreso y esa parte se sigue acumulando.
 Si se quiere que no sobre nada, la sonda (o el jugador) puede pasar a Pulir lo que la investigación no alcanza a
 gastar en Tormento.
+
+## Ronda 18 — más cofres comunes y su investigación, y la curva reajustada (18 nov, sin commit)
+
+**Decisiones del usuario:** cofre común 0,2 % → **0,5 %** por baja (en 1-8 solo había 2 cofres). «Botín común» y
+«Despojos de jefe» +0,25 % / +0,5 % → **+2,5 % por rango**, sobre la probabilidad base (textos EN/ES lo dicen así).
+Erudición como está. Reajustar la curva: escalera estrictamente al alza, medianas de horas en banda, el 120 tarde en
+Tormento, Normal y sus reclutas como están, Pulir activo.
+
+### Cofres por hora (mediana; entre paréntesis, comunes abiertos)
+
+| Variante | Normal | Infierno | Averno | Eterno | Tormento |
+|---|---|---|---|---|---|
+| Ronda 17 (partida 1, datos viejos) | 9.6 (5.1 com.) | 5.8 (3.5 com.) | 9.0 (6.2 com.) | 12.0 (8.4 com.) | 20.0 (14.0 com.) |
+| Ronda 18, antes del reajuste | 31.5 (22.3 com.) | 19.5 (14.2 com.) | 27.1 (21.7 com.) | 40.4 (32.7 com.) | 68.6 (56.0 com.) |
+| Ronda 18 final | 25.6 (18.2 com.) | 15.9 (12.3 com.) | 39.7 (32.0 com.) | 60.4 (49.0 com.) | 92.2 (75.2 com.) |
+
+Entre 3 y 5 veces más cofres por hora. Sin reajuste, el equipo llegaba tan rápido que Infierno se quedaba en 11–20 h,
+Averno en 76–91 h y Eterno en 140–149 h.
+
+### Re-anclaje (§6b)
+
+Con más equipo, los esbirros de Normal e Infierno 1–5 caían en 0,6–0,75 de los golpes de antes. Mundos 2–24 llevados
+otra vez a 2,1–2,9 golpes y a 5,3–9,7 s el jefe de etapa (`GRUNT_HP_TUNE`, `STAGE_BOSS_HP_TUNE`, subiendo mundo a
+mundo); referencia (`anchorReference`) re-escrita para esos puntos. El mundo 1 no cambia: 2,3–2,4 golpes y 6,9–7,5 s.
+
+### Muros (`WORLD_WALL_MULT`, frente a la ronda 17)
+
+| Dificultad | Cambio de vida, mundo 1 → 10 |
+|---|---|
+| Normal | sin cambio (Normal 1 ×0,99) |
+| Infierno | ×1,6 en todos |
+| Averno | ×2,69 en todos |
+| Eterno | ×3,79 · 3,79 · 3,84 · 3,79 · 3,79 · 3,79 · 3,71 · 3,49 · 3,41 · 3,34 |
+| Tormento | ×2,59 · 2,58 · 2,27 · 2,04 · 1,94 · 1,89 · 1,86 · 1,84 · 1,84 · 1,84 |
+
+Cinco pasadas para llegar. Subir una dificultad acorta la siguiente: el jugador llega con más oro, más investigación de
+cofres y gemas y más equipo. Por eso Tormento bajó hasta 374–383 h cuando se subió Eterno, y hubo que subirlo también.
+
+**Escalera** (contra el grupo de referencia fijo; estrictamente al alza, re-grabada; `ladder.test.ts` en verde):
+
+| Dificultad | Lo que pide cada muro, mundo 1 → 10 |
+|---|---|
+| Normal | 4.28 · 4.32 · 4.35 · 4.44 · 6.42 · 6.50 · 6.57 · 6.63 · 7.13 · 7.17 |
+| Infierno | 11.64 · 11.75 · 11.93 · 13.75 · 16.60 · 17.47 · 17.63 · 17.81 · 18.00 · 18.92 |
+| Averno | 32.01 · 35.55 · 38.69 · 42.84 · 46.62 · 49.60 · 51.73 · 54.50 · 55.07 · 67.72 |
+| Eterno | 96.22 · 101.09 · 102.34 · 105.65 · 107.28 · 118.96 · 120.12 · 121.41 · 122.57 · 123.82 |
+| Tormento | 147.96 · 149.38 · 150.74 · 152.07 · 153.66 · 155.18 · 156.57 · 160.89 · 162.62 · 164.23 |
+
+Las líneas en esta medida: Normal 4→8, Infierno 11→19, Averno 32→68, Eterno 96→124 y Tormento 148→164. **Ojo:** desde
+Eterno, los muros piden más del 100 % de lo que el techo realista (tiradas medias) hace en 60 s. Con 3–5× los cofres y
+Pulir, el jugador real va por encima de ese techo: al tumbar el muro hace un 80–135 % de él en Eterno. La escalera sigue
+siendo la regla del orden, pero su escala ya no es «qué parte del techo».
+
+### Horas (3 partidas)
+
+#### Jugador por defecto: horas por dificultad
+| Partida | Normal | Infierno | Averno | Eterno | Tormento | Total |
+|---|---:|---:|---:|---:|---:|---:|
+| 1 | 9 | 34 | 159 | 231 | 824 | 1257 |
+| 2 | 6 | 25 | 154 | 306 | 568 | 1059 |
+| 3 | 6 | 39 | 138 | 239 | 640 | 1063 |
+#### Jugador por defecto: nivel del grupo (mín/máx) al tumbar los muros 1 · 5 · 10
+| Partida | Normal | Infierno | Averno | Eterno | Tormento |
+|---|---|---|---|---|---|
+| 1 | 13 · 20 · 25 | 26 · 30 · 39 | 39 · 61 · 70 | 70 · 85 · 93 | 93 · 118 · 120 |
+| 2 | 13 · 20 · 24 | 25 · 30 · 36 | 36 · 60 · 70 | 70 · 91 · 97 | 97 · 117 · 120 |
+| 3 | 13 · 20 · 24 | 25 · 30 · 42 | 42 · 61 · 68 | 68 · 88 · 93 | 93 · 112 · 120 |
+#### Jugador por defecto: nivel 120
+| Partida | Primer héroe a 120 | Los tres a 120 | Mascotas (desde) | Fortuna del Transmutador |
+|---|---|---|---|---:|
+| 1 | Tormento 6 · 856 h | Tormento 6 · 856 h | — | 0 |
+| 2 | Tormento 6 · 857 h | Tormento 6 · 857 h | — | 0 |
+| 3 | Tormento 7 · 835 h | Tormento 7 · 835 h | — | 0 |
+
+#### Bien equipado (mascotas en la mediana + Fortuna): horas por dificultad
+| Partida | Normal | Infierno | Averno | Eterno | Tormento | Total |
+|---|---:|---:|---:|---:|---:|---:|
+| 1 | 9 | 34 | 175 | 244 | 648 | 1111 |
+| 2 | 6 | 25 | 138 | 190 | 628 | 987 |
+| 3 | 6 | 39 | 122 | 187 | 490 | 844 |
+#### Bien equipado (mascotas en la mediana + Fortuna): nivel del grupo (mín/máx) al tumbar los muros 1 · 5 · 10
+| Partida | Normal | Infierno | Averno | Eterno | Tormento |
+|---|---|---|---|---|---|
+| 1 | 13 · 20 · 25 | 26 · 30 · 39 | 39 · 62 · 71 | 71 · 92 · 97 | 97 · 117 · 120 |
+| 2 | 13 · 20 · 24 | 25 · 30 · 36 | 36 · 61 · 68 | 68 · 83 · 91 | 91 · 120 · 120 |
+| 3 | 13 · 20 · 24 | 25 · 30 · 42 | 42 · 61 · 67 | 67 · 85 · 91 | 91 · 114 · 120 |
+#### Bien equipado (mascotas en la mediana + Fortuna): nivel 120
+| Partida | Primer héroe a 120 | Los tres a 120 | Mascotas (desde) | Fortuna del Transmutador |
+|---|---|---|---|---:|
+| 1 | Tormento 6 · 731 h | Tormento 6 · 731 h | coin_sprite (Eterno 2, 265 h), scholar_owl (Eterno 2, 265 h), lucky_cat (Eterno 2, 265 h), time_imp (Eterno 2, 265 h), pack_mule (Eterno 3, 319 h), hoarder (Eterno 3, 319 h) | 8 |
+| 2 | Tormento 5 · 684 h | Tormento 5 · 684 h | coin_sprite (Eterno 3, 239 h), scholar_owl (Eterno 3, 239 h), lucky_cat (Eterno 3, 239 h), time_imp (Eterno 3, 239 h), pack_mule (Eterno 6, 291 h), hoarder (Eterno 6, 291 h) | 8 |
+| 3 | Tormento 8 · 680 h | Tormento 8 · 680 h | coin_sprite (Eterno 3, 240 h), scholar_owl (Eterno 3, 240 h), lucky_cat (Eterno 3, 240 h), time_imp (Eterno 3, 240 h), pack_mule (Eterno 5, 294 h), hoarder (Eterno 5, 294 h) | 8 |
+
+- **Medianas, jugador por defecto:** Normal 6 · Infierno 34 · Averno 154 · Eterno 239 · Tormento 640. Todas en banda;
+  la partida 1 se va a 824 h en Tormento. El 120 llega en Tormento 6–7 (835–857 h).
+- **Bien equipado:** el 120 llega en Tormento 5–8 (680–731 h). Eterno 187–244 h.
+
+**Reclutas** (3 partidas, sin cambios): el Ranger llega al tumbar 1-4 (0,37 h) y el Priest al tumbar 1-8 (0,70–0,84 h).
+Ni el Knight solo ni el dúo se atascan.
+
+**Textura de Normal** (vida que pierde el Knight por oleada): 1-3, Knight solo, 6 % de mediana (peor 17 %); 1-9 trío
+3–8 % (peor 11–33 %); 5-9 10–19 % (peor 20–32 %); 10-9 5–10 % (peor 9–31 %). Sin wipes.
+
+**Oro guardado al final de Tormento:** 2,2–7,9 M (6–23 h de ingreso). Hasta Averno, 0,1–1,6 h.

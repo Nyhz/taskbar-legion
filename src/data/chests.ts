@@ -31,9 +31,9 @@ export const CHEST_CONFIG: ChestDropConfig = {
   // Nerfed again (player feedback: tech mults flooded the bag): at 1% a full stage
   // (~100 trash kills over 20 waves) drops ~1 normal chest before tech bonuses; stage
   // bosses (W-1..W-9) drop their chest 25% of the time; the zone boss (W-10) always does.
-  // Common chests: 0.2% per kill (user decision, 2026-11-15: "caen demasiados cofres normales" at 1.5% —
+  // Common chests: 0.5% per kill since round 18 (was 0.2%, user decision 2026-11-15: "caen demasiados cofres normales" at 1.5% —
   // one or two a minute; now about one every five minutes of play, so the storage of 6 fills in half an hour).
-  baseDropChance: { normal: 0.002, stageBoss: 0.25, zoneBoss: 1.0 },
+  baseDropChance: { normal: 0.005, stageBoss: 0.25, zoneBoss: 1.0 }, // round 18 (2026-11-18, user): common 0.2 % → 0.5 % (1 in 200)
   capacity: { normal: 6, stageBoss: 4, zoneBoss: 4 },
   itemsPerChest: { normal: 1, stageBoss: 1, zoneBoss: 1 }, // every chest = exactly 1 item
   // Gem chance per chest opened (× gemDropMult tech, capped at 1.0). The ONLY thing that

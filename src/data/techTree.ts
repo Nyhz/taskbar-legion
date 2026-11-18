@@ -83,8 +83,10 @@ export const TECH_NODES: TechNode[] = [
   node('eco_offline', 'Economy', '🌙', 'Expedition', '+1% offline yield (15% base)', [{ kind: 'offlineMult', value: EXPEDITION_PER_RANK }], 1000, 1.9, 20),
 
   // ───────────────────────────── Chests ─────────────────────────────
-  node('chest_drop_normal', 'Chests', '📦', 'Common Hauls', '+0.25% normal chest drop', [{ kind: 'chestTypeDropMult', type: 'normal', value: 0.0025 }], 250, 1.35),
-  node('chest_drop_stage', 'Chests', '🎁', 'Boss Spoils', '+0.5% stage-boss chest drop', [{ kind: 'chestTypeDropMult', type: 'stageBoss', value: 0.005 }], 300, 1.35),
+  // Round 18 (2026-11-18, user): +0.25 % / +0.5 % → +2.5 % a rank each, a share ON TOP of the base chance (×1.025 a
+  // rank: 40 ranks double it), not points added to it.
+  node('chest_drop_normal', 'Chests', '📦', 'Common Hauls', '+2.5% common chests (on the base chance)', [{ kind: 'chestTypeDropMult', type: 'normal', value: 0.025 }], 250, 1.35),
+  node('chest_drop_stage', 'Chests', '🎁', 'Boss Spoils', '+2.5% stage-boss chests (on the base chance)', [{ kind: 'chestTypeDropMult', type: 'stageBoss', value: 0.025 }], 300, 1.35),
   // (no zone-boss chest node — zone bosses already drop a chest 100% of the time)
   node('chest_gem', 'Chests', '💎', 'Gem Sense', '+2.5% gem drop chance', [{ kind: 'gemDropMult', value: 0.025 }], 400, 1.5),
   // Storage nodes are now FINITE (base capacity + max ranks): normal 6+6=12, stage 4+4=8,

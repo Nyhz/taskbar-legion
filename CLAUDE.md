@@ -28,11 +28,11 @@ they win. The standing overrides are:
   (retuned 2026-11-15: `scripts/tune-pacing.ts`, targets in `test/sim/probe/targets.ts`). **Enemy toughness is
   ANCHORED** (DIFFICULTY.md §6b): a normal enemy takes 2–3 hits of the on-gear party's hardest hitter, a stage
   boss 5–10 s — measured tables (`GRUNT_HP_TUNE`, `STAGE_BOSS_HP_TUNE`, `TRASH_DMG_TUNE`), re-tuned whenever
-  hero power changes. Drops follow the **per-world rarity ladder** (§4); common chests **0.2%**/kill (about one
-  every five to ten minutes); gem is EXTRA; a world-boss **key** is in one stage-boss chest in four (every one
+  hero power changes. Drops follow the **per-world rarity ladder** (§4); common chests **0.5%**/kill (about one
+  every three minutes; round 18); gem is EXTRA; a world-boss **key** is in one stage-boss chest in four (every one
   in Normal) and every attempt costs one. **Waves per stage grow with the difficulty** (`WAVES_BY_DIFFICULTY`:
   16 in Normal → 20 in Torment; full-size waves in every difficulty since 2026-11-17, `WAVE_SIZE_BY_STAGE` 9 → 22): Normal is a 3–4 hour stroll, each difficulty after it clearly longer and
-  more demanding of gear (measured 2026-11-18, round 17: ≈ 6–8 / 27–35 / 123–162 / 289–300 / 608–1 178 h, ≈ 1 060–1 640 h in all; the user accepted the long Inferno and Torment's slow seeds). Validated by `npm run probe`. **The wall ladder** is measured against a FIXED reference party and every wall must ask strictly more than the one before (`docs/DIFFICULTY.md` §5, `test/sim/ladder.test.ts`, `scripts/reference-ladder.ts`).
+  more demanding of gear (measured 2026-11-18, round 18: ≈ 6–9 / 25–39 / 138–159 / 231–306 / 568–824 h, ≈ 1 060–1 260 h in all; the user accepted the long Inferno and Torment's slow seeds). Validated by `npm run probe`. **The wall ladder** is measured against a FIXED reference party and every wall must ask strictly more than the one before (`docs/DIFFICULTY.md` §5, `test/sim/ladder.test.ts`, `scripts/reference-ladder.ts`).
 - **`docs/DIFFICULTY.md` supersedes SPEC §4.6 / §5.3 scaling** — gear power and difficulty are *gear-checked
   and progressive* across the finite 5-difficulty ladder, not the SPEC's linear example (linear would make the
   game impossible by ~stage 10). Flat stats scale `Φ^1.0`, percent stats are bounded. Tier drop-rate is

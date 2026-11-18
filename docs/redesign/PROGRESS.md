@@ -2230,3 +2230,14 @@ muros y horas en la siguiente ronda.
 - **También (usuario, 18 nov: «2.5% por rango también los otros»):** el nodo «Botín de jefe» (cofres de jefe de etapa) de
   +0,5 % a **+2,5 % por rango**. «Sentido de gemas» ya da +2,5 %. Erudición sigue en +0,5 % (recorte del nivel 120).
 - Orden acordado: sonido → arreglos visuales del combate (backlog) → cofres y curva al final.
+
+### Ronda 18 — cofres comunes al 0,5 % y su investigación a +2,5 %, curva reajustada (18 nov, sin commit)
+
+- **Cofres** (usuario): común 0,2 → 0,5 % por baja; «Botín común» y «Despojos de jefe» a +2,5 % por rango sobre la
+  probabilidad base (textos EN/ES y cifra del árbol). Entre 3 y 5 veces más cofres por hora.
+- **Re-anclaje** de los mundos 2–24 y su referencia: el esbirro vuelve a 2,1–2,9 golpes y el jefe de etapa a 5–10 s.
+- **Muros:** Infierno ×1,6, Averno ×2,7, Eterno ×3,3–3,8 y Tormento ×1,8–2,6, con la escalera estrictamente al alza
+  (re-grabada; sus líneas re-expresadas en DIFFICULTY §5). Medianas de horas 6 / 34 / 154 / 239 / 640; el 120 llega en
+  Tormento 6–7. Reclutas y textura de Normal sin cambios.
+- **Herramientas:** kills, cofres y comunes abiertos por muro en la salida de `ceiling-pass`.
+

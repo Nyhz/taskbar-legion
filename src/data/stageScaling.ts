@@ -167,18 +167,18 @@ export function tunePoint(S: number): number {
 // worlds 2–10 ×1.8 (user: «suave» — the Knight should lose ~10–20 % of his life in the bigger waves).
 /** Life of a GRUNT (the plain melee enemy) at each tuning point: 2.5 basic hits of the on-gear hardest hitter. */
 export const GRUNT_HP_TUNE: number[] = [
-  31.5, 65.9, 79.4, 85.8, 87.4, 135, 147, 154, 161, 161,
-  185, 260, 505, 899, 969, 990, 1030, 1070, 1250, 1490,
-  2070, 3110, 4090, 4820, 4990, 5830, 6450, 7120, 7880, 9080,
+  31.5, 65.9, 79.4, 85.8, 87.4, 135, 146, 146, 146, 161,
+  245, 493, 1260, 1280, 1330, 1360, 1390, 1440, 1800, 2250,
+  3330, 5030, 6000, 7040, 7180, 7830, 8750, 9160, 9340, 9530,
   10500, 11600, 12600, 14300, 16300, 20200, 22400, 24800, 29200, 34700,
   39700, 50100, 57100, 66000, 76500, 90000, 112000, 125000, 144000, 181000,
   196000, 225000, 314000, 391000, 550000, 660000, 729000, 788000, 858000,
 ];
 /** Life of the STAGE BOSS at each tuning point: 7.5 seconds of the on-gear party. */
 export const STAGE_BOSS_HP_TUNE: number[] = [
-  92.7, 209, 253, 273, 314, 905, 1040, 1180, 1260, 1010,
-  1490, 2220, 4420, 6520, 7030, 7880, 8160, 8280, 9590, 12700,
-  20600, 38500, 56800, 58000, 62500, 65700, 70500, 81200, 97100, 109000,
+  92.7, 209, 253, 273, 314, 905, 1040, 1180, 1260, 1260,
+  1800, 2920, 6760, 7400, 8080, 8710, 8880, 9660, 11800, 15200,
+  25900, 54500, 64600, 65900, 67200, 80900, 86200, 96700, 98600, 109000,
   122000, 132000, 154000, 170000, 226000, 272000, 318000, 369000, 443000, 513000,
   590000, 705000, 878000, 1.01e+06, 1.15e+06, 1.34e+06, 1.76e+06, 1.99e+06, 2.25e+06, 3.02e+06,
   3.22e+06, 3.24e+06, 3.61e+06, 4.78e+06, 5.63e+06, 5.66e+06, 5.69e+06, 5.71e+06, 5.74e+06,
@@ -520,12 +520,15 @@ export function wallCurveMult(S: number): number {
 // ROUND 13b (2026-11-17; user): Inferno 2–5 lifted +10 / +19 / +36 / +36 % so the reference ask climbs 11.9 · 13.2 ·
 // 14.4 · 15.7 · 16.9 · 18.2 across Inferno 1–6 instead of sitting at ~12 and jumping at 6 (the flat stretch was the
 // wall lives, not the reference party: its level and gear grow smoothly there).
+// ROUND 18 (2026-11-18; user: common chests 0.2 → 0.5 %, chest research +2.5 %/rank): ~3–5× the chests an hour made
+// gear come much faster, so the walls rose — Hell ×1.6, Inferno ×2.7, Eternal ×3.3–3.8, Torment ×1.8–2.6 (its first
+// worlds most, to stay above Eternal 10) — keeping every wall above the one before against the fixed reference party.
 export const WORLD_WALL_MULT: readonly number[] = [
-  0.1739, 0.1706, 0.2008, 0.2147, 0.2846, 0.275, 0.2916, 0.3113, 0.4217, 0.372,
-  0.3525, 0.3704, 0.4223, 0.477, 0.645, 0.6835, 0.8496, 0.9357, 0.9998, 1.08,
-  0.9529, 1.392, 2.189, 2.662, 3.439, 4.02, 4.84, 5.77, 6.504, 6.329,
-  6.302, 9.821, 13.5, 15.8, 17.7, 22.4, 25.5, 29.5, 32.6, 33.1,
-  49.16, 68.03, 104, 146, 171, 195, 221, 253, 291.3, 306.3,
+  0.1713, 0.1706, 0.2008, 0.2147, 0.2846, 0.275, 0.2916, 0.3113, 0.4217, 0.372,
+  0.564, 0.5926, 0.6757, 0.7632, 1.032, 1.094, 1.359, 1.497, 1.6, 1.728,
+  2.562, 3.741, 5.884, 7.156, 9.244, 10.81, 13.01, 15.51, 17.49, 17.01,
+  23.88, 37.24, 51.78, 59.89, 67.09, 84.91, 94.52, 103.1, 111.3, 110.7,
+  127.1, 175.7, 235.8, 298.1, 331.8, 367.7, 411.6, 466.2, 536.8, 564.5,
 ];
 export function wallWorldMult(S: number): number {
   return WORLD_WALL_MULT[worldOf(S) - 1] ?? wallCurveMult(S);

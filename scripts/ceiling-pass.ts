@@ -32,7 +32,7 @@ const t0 = Date.now();
 const CHEST_MULT = Number(process.env.CP_CHEST_MULT ?? 1);
 const cap: { first?: { stage: number; hours: number }; all?: { stage: number; hours: number } } = {};
 const petsAt: Record<string, { stage: number; hours: number }> = {};
-const research: Record<number, { hours: number; ranks: Record<string, number>; xpMult: number; goldMult: number; gold: number; party: number; polishGold: number; polishCount: number }> = {};
+const research: Record<number, { hours: number; ranks: Record<string, number>; xpMult: number; goldMult: number; gold: number; party: number; polishGold: number; polishCount: number; kills: number; chests: number; commonOpened: number }> = {};
 const cfg: ProbeConfig = {
   ...DEFAULT_CONFIG,
   capture: { normal: DEFAULT_CONFIG.capture.normal * CHEST_MULT, stageBoss: DEFAULT_CONFIG.capture.stageBoss * CHEST_MULT, zoneBoss: DEFAULT_CONFIG.capture.zoneBoss * CHEST_MULT },
@@ -63,7 +63,7 @@ const cfg: ProbeConfig = {
     // The research at every wall (round 16): the ranks of every node and the multipliers.
     // Gold (round 16, user: «no quiero que tengan millones de oro sin gastar»): held at every wall (spending = the ranks'
     // prices + the recruits, worked out in the report from the ranks).
-    research[target] = { hours, ranks: { ...run.state.techRanks }, xpMult: bonuses.xpMult, goldMult: bonuses.goldMult, gold: run.state.gold, party: party.length, polishGold: run.state.polishGold, polishCount: run.state.polishCount };
+    research[target] = { hours, ranks: { ...run.state.techRanks }, xpMult: bonuses.xpMult, goldMult: bonuses.goldMult, gold: run.state.gold, party: party.length, polishGold: run.state.polishGold, polishCount: run.state.polishCount, kills: run.state.tally.kills, chests: run.state.tally.chestsFound, commonOpened: run.state.tally.normalChestsOpened };
   },
 };
 advanceProbe(run, cfg);

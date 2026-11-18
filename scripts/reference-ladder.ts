@@ -10,7 +10,7 @@ import { readFileSync, writeFileSync, appendFileSync } from 'node:fs';
 import { referenceAsk } from '../test/sim/probe/referenceAsk';
 
 const NAMES = ['Normal', 'Hell', 'Inferno', 'Eternal', 'Torment'];
-const LAD: [number, number][] = JSON.parse(process.env.LAD ?? '[[4,8],[7,12],[11,24],[25,37],[59,94]]');
+const LAD: [number, number][] = JSON.parse(process.env.LAD ?? '[[4,8],[11,19],[32,68],[96,124],[148,164]]');
 const shard = process.env.RL_SHARD;
 if (shard !== undefined) {
   const [i, n] = shard.split('/').map(Number);

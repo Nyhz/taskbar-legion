@@ -40,16 +40,16 @@
     "es": "Botín común"
   },
   "chest_drop_normal.description": {
-    "en": "+0.25% normal chest drop",
-    "es": "+0,25 % de cofres comunes"
+    "en": "+2.5% common chests (on the base chance)",
+    "es": "+2,5 % de cofres comunes (sobre la probabilidad base)"
   },
   "chest_drop_stage.name": {
     "en": "Boss Spoils",
     "es": "Despojos de jefe"
   },
   "chest_drop_stage.description": {
-    "en": "+0.5% stage-boss chest drop",
-    "es": "+0,5 % de cofres de jefe de etapa"
+    "en": "+2.5% stage-boss chests (on the base chance)",
+    "es": "+2,5 % de cofres de jefe de etapa (sobre la probabilidad base)"
   },
   "chest_gem.name": {
     "en": "Gem Sense",

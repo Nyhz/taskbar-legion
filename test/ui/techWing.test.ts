@@ -63,7 +63,7 @@ describe('what an upgrade gives', () => {
   it('a rate bonus grows by its per-rank value', () => {
     expect(techFigure(techNode('eco_gold'), 0)).toEqual({ kind: 'gain', fraction: 0 });
     expect(figureText(techFigure(techNode('eco_gold'), 14))).toBe('+35%');
-    expect(figureText(techFigure(techNode('chest_drop_normal'), 9))).toBe('+2.25%');
+    expect(figureText(techFigure(techNode('chest_drop_normal'), 9))).toBe('+22.5%'); // round 18: +2.5 % a rank, on the base chance
   });
 
   it('offline yield and the lucky synthesis are totals on top of their base', () => {

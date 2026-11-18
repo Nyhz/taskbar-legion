@@ -95,8 +95,8 @@ between the row's lowest tier with weight and its second-highest — in proporti
 the two top rarities** of that table — **×1.5** for a stage boss, **×3** for a world boss — and scales the rest
 down so it still sums to 100 (`chestTierWeightsAt`; user, 2026-11-16). Gem chance differs too (common 10 %,
 stage-boss 50 %, world-boss 100 %). Cadence (user decisions,
-2026-11-15): a **common chest** drops on **0.2 %** of kills — about one every five minutes of play, so the storage
-of 6 fills in half an hour (it was 1.5 %: one or two a minute); a stage boss drops its chest **25 %** of the time,
+2026-11-15): a **common chest** drops on **0.5 %** of kills (round 18, 2026-11-18; it was 0.2 %, and 1.5 % before that) — about one every three minutes
+of play; a stage boss drops its chest **25 %** of the time,
 a world boss always. Gems roll on the same table (boss lift included), as an **extra** roll on top of the item.
 
 ## 5. Bosses — two roles
@@ -131,8 +131,8 @@ fights (`test/sim/probe/referenceAsk.ts`). It is deterministic and independent o
 moved 1–2 points from pass to pass with the party the probe happened to bring). **The hard rule: every one of the
 50 walls asks strictly more than the one before, across the difficulty seams too** — recorded in
 `test/sim/probe/referenceAskTable.ts`, held by `test/sim/ladder.test.ts`, re-measured with
-`scripts/reference-ladder.ts` (fails on a dip; `RL_WRITE=1` re-records). The lines, in this measure: Normal 4→8,
-Hell 7→12, Inferno 11→24, Eternal 25→37, Torment 59→94 (a wall within ±5 of its line is a secondary report, not a
+`scripts/reference-ladder.ts` (fails on a dip; `RL_WRITE=1` re-records). The lines, in this measure (round 18): Normal 4→8,
+Hell 11→19, Inferno 32→68, Eternal 96→124, Torment 148→164 (a wall within ±5 of its line is a secondary report, not a
 gate). Re-measure and re-record whenever the walls or hero power change.
 
 Wall LIFE (`WORLD_WALL_MULT`) and wall DAMAGE (`ZONE_BOSS_DMG_MULT`) are separate knobs; the damage is soft against
@@ -320,13 +320,12 @@ Level is a slow multiplicative trickle (base stats + talent points), not a gate.
 > passives, reactive rules, boss affixes and mechanics — forces a full re-tune anyway). How to re-tune, and which
 > knob moves what: `docs/redesign/PACING_REPORT.md`, "Ronda 2", R.8. Everything from here to §9 is checkpoint 1.
 
-> **Measured, round 17 (2026-11-18; supersedes the ~720 h target below):** with full waves everywhere, full-life
-> Normal trash, Scholarship at +0.5 %/rank, away time at 15 % of online (Expedition +1 %/rank, 35 % at most) and the
-> player polishing its gear (Pulir) with a quarter of its gold income, the probe's player takes **≈ 6–8 h Normal ·
-> 27–35 h Hell · 123–162 h Inferno · 289–300 h Eternal · 608–1 178 h Torment, ≈ 1 060–1 640 active hours in all**
-> (3 seeds, `scripts/ceiling-pass.ts`). The bands the user accepted: ≈ 4 / 20–50 / 125–175 / 200–360 / 500–800 h
-> (Normal longer by decision; single slow seeds accepted). Level 120 arrives in Torment 6–10 (median Torment 9,
-> ≈ 1 020–1 060 h). `docs/redesign/PACING_REPORT.md` «Ronda 15»–«Ronda 17».
+> **Measured, round 18 (2026-11-18; supersedes the ~720 h target below):** with common chests at 0.5 % a kill and the
+> chest research at +2.5 %/rank (≈ 3–5× the chests an hour of round 17), away time at 15 %, Scholarship +0.5 %/rank and
+> the player polishing with a quarter of its gold income, the probe's player takes **≈ 6–9 h Normal · 25–39 h Hell ·
+> 138–159 h Inferno · 231–306 h Eternal · 568–824 h Torment, ≈ 1 060–1 260 active hours in all** (3 seeds,
+> `scripts/ceiling-pass.ts`; medians 6 / 34 / 154 / 239 / 640). Level 120 arrives in Torment 6–7 (≈ 835–860 h).
+> `docs/redesign/PACING_REPORT.md` «Ronda 15»–«Ronda 18».
 
 **The whole game — Normal 1-1 → Torment 10-10 — in about 3 calendar months at 8 hours of play a day**: ~90 days,
 ~720 active hours. Always **decelerating**: each difficulty is longer than the last. The user set only the total;
