@@ -2296,3 +2296,9 @@ Decisiones del usuario (18 nov), tras discutirlas una a una:
 - **Presión rebajada (usuario, 18 nov):** con 3–5 %/s Normal pasaba de 6–10 h a ~14 h (probe con traza, semilla 5) y
   el probe iba muy lento; el usuario pide bajar los objetivos: **2 / 2,5 / 3 / 3,5 / 4 %/s** (`TRASH_THREAT_PCT`). La
   tabla de delante se escala por la proporción de cada dificultad (no se re-mide); la retaguardia no cambia.
+- **Las caídas del mundo 4 eran la retaguardia (18 nov, `scripts/wipe-diagnose.ts`):** con la presión rebajada Normal
+  seguía en 10–14 h y con 30–129 caídas, casi todas en las etapas 4-6…4-9. El diagnóstico (semilla 5, grupo del probe en
+  la frontera 35, 300 s por etapa): con las tablas actuales el Ranger y la Priest perdían 2–4,5 %/s y el grupo caía
+  2–6 veces por etapa; con la tabla de la retaguardia de antes del ancla, 0,2–1,3 %/s y 0–2 caídas; con las dos de
+  antes, ninguna. El afinador medía una sola semilla en la etapa x-5 (0,1–0,3 %/s) y subió la tabla hasta 7×. La
+  retaguardia vuelve a sus valores de antes (siguen en su tabla propia); el Knight conserva su ancla a 2–4 %/s.

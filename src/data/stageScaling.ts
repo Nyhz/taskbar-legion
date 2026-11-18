@@ -210,14 +210,17 @@ export const TRASH_DMG_TUNE: number[] = [
 /** The share of the formula's damage a wave enemy deals to a hero BEHIND the front one (its shots over the front line,
  *  the brute's area blow on the back line), per tuning point. The trash-threat anchor raises the waves' hit on the
  *  Knight; this one keeps what reaches the Priest and the Ranger at TRASH_BACK_THREAT_PCT of their life a second
- *  (user, 2026-11-18: «separar la retaguardia»). World 1: the values the waves had before. */
+ *  (user, 2026-11-18: «separar la retaguardia»). Back on the values the waves had before the anchor (2026-11-18): the
+ *  tuner, measuring one seed at each world's 5th stage, read 0.1–0.3 %/s and raised the table up to 7×, but another
+ *  seed's party at the 6th–9th stages took 2–4.5 %/s and wiped again and again (scripts/wipe-diagnose.ts); on these
+ *  values the back line takes ~0.2–1.3 %/s there. */
 export const TRASH_BACK_DMG_TUNE: number[] = [
   1, 1, 1, 1, 0.5, 0.45, 0.42, 0.36, 0.5, 1,
-  0.601, 0.986, 2.38, 1.99, 2.02, 1.87, 2.14, 2.17, 2.08, 1.25,
-  1.66, 1.64, 2.16, 2.5, 1.77, 2.42, 2.13, 2.77, 2.51, 0.987,
-  2.44, 3.09, 3.88, 4.83, 3.76, 4.74, 4.09, 4.05, 4.71, 3.4,
-  3.1, 5.6, 5.19, 5.25, 5.79, 5.98, 5.75, 5.46, 6.03, 5.11,
-  4.87, 5.71, 6.67, 5.69, 6.93, 6.44, 6.55, 7.45, 8.25,
+  0.562, 0.461, 0.346, 0.269, 0.245, 0.245, 0.269, 0.294, 0.245, 0.17,
+  0.2, 0.291, 0.35, 0.39, 0.449, 0.47, 0.51, 0.56, 0.576, 0.51,
+  0.5, 0.47, 0.607, 0.715, 0.75, 0.82, 0.952, 1, 0.908, 0.68,
+  0.68, 0.748, 0.82, 0.952, 1, 1, 1, 1, 1, 1,
+  1, 1, 1, 1, 1, 1, 1, 1, 1,
 ];
 /** % of the back line's life a second the waves take off it while they fight, Normal … Torment (the user's ~0.5 % in
  *  Normal up to ~1 % in Torment). */
