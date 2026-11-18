@@ -31,7 +31,7 @@ they win. The standing overrides are:
   hero power changes. Drops follow the **per-world rarity ladder** (§4); common chests **0.5%**/kill (about one
   every three minutes; round 18); gem is EXTRA; a world-boss **key** is in one stage-boss chest in four (every one
   in Normal) and every attempt costs one. **Waves per stage grow with the difficulty** (`WAVES_BY_DIFFICULTY`:
-  16 in Normal → 20 in Torment; full-size waves in every difficulty since 2026-11-17, `WAVE_SIZE_BY_STAGE` 9 → 22): Normal is a 3–4 hour stroll, each difficulty after it clearly longer and
+  12 in Normal (2026-11-18, was 16), 17 in Hell → 20 in Torment; full-size waves in every difficulty since 2026-11-17, `WAVE_SIZE_BY_STAGE` 9 → 22): Normal is a 3–4 hour stroll, each difficulty after it clearly longer and
   more demanding of gear (measured 2026-11-18, round 20 — the 2 s global cooldown, longer cooldowns, the Crushing Blow every 15 s, the waves anchored to the Knight's life: ≈ 7 / 43 / 133 / 262 / 732 h by median, ≈ 1 145 h in all). Validated by `npm run probe`. **The wall ladder** is measured against a FIXED reference party and every wall must ask strictly more than the one before (`docs/DIFFICULTY.md` §5, `test/sim/ladder.test.ts`, `scripts/reference-ladder.ts`).
 - **`docs/DIFFICULTY.md` supersedes SPEC §4.6 / §5.3 scaling** — gear power and difficulty are *gear-checked
   and progressive* across the finite 5-difficulty ladder, not the SPEC's linear example (linear would make the
