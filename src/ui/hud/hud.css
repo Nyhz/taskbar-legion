@@ -8,9 +8,9 @@
 .tk-hud-key > img { opacity: .6; }
 .tk-hud-key:hover > img, .tk-hud-key.on > img { opacity: 1; }
 .tk-hud-key.on::after { content: ''; position: absolute; left: 3px; right: 2px; bottom: 1px; height: 1px; background: var(--gold); }
-/* The menu: its sign and its word, dim like the other keys until hovered or open (then the gold line under both). */
-.tk-hud-menu { width: auto; display: flex; align-items: center; gap: 1px; padding: 3px 4px 0 2px; color: var(--k7); }
-.tk-hud-menu > .w { margin-top: 0; }
+/* The menu (option A on lab v86): its sign and its word in the rail's type, both centred on the rail's height (the
+   sign keys' 3 px top padding does not apply), dim like the other keys until hovered or open (then the gold line). */
+.tk-hud-menu { width: auto; height: 22px; display: flex; align-items: center; gap: 2px; padding: 0 4px 0 2px; color: var(--k7); }
 .tk-hud-menu:hover, .tk-hud-menu.on { color: var(--k9); }
 
 /* Where the party is: difficulty, world-stage on a pennant of the difficulty's colour, progress to the boss. */

@@ -1,7 +1,42 @@
 {
   "updated": "18 nov 2026",
-  "intro": "El catálogo de sonido completo (R7), sintetizado en el estilo que aprobaste. Ya suena dentro del juego.",
+  "intro": "Elige cómo se ve la cura pendiente en la barra de vida. Debajo sigue el catálogo de sonido.",
   "sections": [
+    {
+      "id": "hot-barra",
+      "eyebrow": "Combate · barra de vida",
+      "title": "La cura pendiente en la barra: seis opciones",
+      "text": "Cada animación es una cura en el tiempo con cuatro pulsos: la vida sube a saltos y el tramo pendiente se acorta. Debajo de cada una, la misma barra con un escudo (el azul), para ver que no se confunden. La 1 es la que hay ahora mismo en el juego.",
+      "questions": [
+        "¿Cuál te gusta? Dime el número (1–6)."
+      ],
+      "items": [
+        {
+          "title": "1 · Rayas del verde de la vida",
+          "img": "img/hotbar/hot_stripes.gif"
+        },
+        {
+          "title": "2 · Verde apagado (la vida, en oscuro)",
+          "img": "img/hotbar/hot_dim.gif"
+        },
+        {
+          "title": "3 · Verde que late (claro y oscuro alternando)",
+          "img": "img/hotbar/hot_beat.gif"
+        },
+        {
+          "title": "4 · Verde apagado con un brillo que lo recorre",
+          "img": "img/hotbar/hot_sweep.gif"
+        },
+        {
+          "title": "5 · Solo el contorno en verde (hueco por dentro)",
+          "img": "img/hotbar/hot_outline.gif"
+        },
+        {
+          "title": "6 · Crucecitas verdes encima: una por pulso que queda",
+          "img": "img/hotbar/hot_pips.gif"
+        }
+      ]
+    },
     {
       "id": "sonido-muestra",
       "eyebrow": "R7 · Sonido",
