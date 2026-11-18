@@ -80,9 +80,9 @@ describe('boss marks', () => {
     const S = globalStageOf(3, 5, 10);
     const marks = bossMarks({ magicShare: 0.75, crushHit: 1000, bossRank: 'world' }, S);
     expect(marks[0]?.key).toBe('damage');
-    expect(marks[0]?.more?.[0]).toContain('Every 24 s it winds up its Charged Strike (2 s)');
-    expect(marks[0]?.more?.[0]).toContain('200 %'); // Eternal: 2.0 × an average Knight's life (round 11)
-    expect(marks[0]?.more?.[0]).toContain('54 %'); // the shock: 0.45 × 1.2, a spell-heavy boss's side (round 14: the same as at 60/40)
+    expect(marks[0]?.more?.[0]).toContain('Every 15 s it winds up its Charged Strike (2 s)');
+    expect(marks[0]?.more?.[0]).toContain('60 %'); // Eternal: 0.6 × an average Knight's life (2026-11-18: every 15 s, one stood bare)
+    expect(marks[0]?.more?.[0]).toContain('32 %'); // the shock: 0.27 × 1.2, a spell-heavy boss's side
     expect(bossMarks({ magicShare: 0.75 }, S)[0]?.more).toBeUndefined(); // a stage boss: no such blow
     setLanguage('es');
     expect(bossMarks({ magicShare: 0.75, crushHit: 1000 }, S)[0]?.more?.[0]).toContain('Golpe cargado');

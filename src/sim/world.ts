@@ -23,6 +23,8 @@ export interface Combatant {
   cooldowns: Record<string, number>; // abilityKey -> remainingMs
   cooldownTotals?: Record<string, number>; // abilityKey -> full cooldown of the last cast (for UI fill); display-only
   charges?: Record<string, number>; // abilityKey -> charges banked (charge-gated abilities, e.g. Aimed Shot)
+  gcdMs?: number; // heroes: ms left of the global cooldown after a cast (data/abilities HERO_GLOBAL_COOLDOWN_MS)
+  hotPending?: number; // heroes and foes: healing over time gathered since the last pulse (sim/combat, once a second)
   attackTimerMs: number;
   x: number; // world position (heroes derived from partyX; enemies advance left)
   range: number; // attack reach (world px) — melee short, ranged/caster long
@@ -126,7 +128,7 @@ export interface Combatant {
   };
   dealtToBoss?: number; // hero-only: damage dealt to the boss of the fight under way (who Roots binds)
   /** hero-only: the meters of its steady rolls (sim/steady.ts) — a blocked blow, a critical hit or heal, a second strike. */
-  steady?: Partial<Record<'block' | 'healCrit' | 'crit' | 'multi', number>>;
+  steady?: Partial<Record<'block' | 'healCrit' | 'crit' | 'multi' | 'backShot', number>>;
   /** Boss-only, the Crushing Blow (data/bossKit CRUSH): what it deals the front hero, and what its magic shock deals
    *  each hero behind (raw, before their defences; data/stageScaling crushHit / crushShock). */
   crushHit?: number;

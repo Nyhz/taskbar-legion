@@ -150,7 +150,7 @@ describe('Triage (heals that depend on the target)', () => {
       Object.assign(priest, { dealtBonuses: buildHeroCombatant(cfg('p', 'priest', talents), []).dealtBonuses });
       const ally = unit({ id: 'k', side: 'hero', hp: allyHp });
       castReadyAbilities(priest, [priest, ally], [], 1, quietRng(), []);
-      return (effect(ally, 'fx_hot')?.value ?? 0) * 6;
+      return (effect(ally, 'fx_hot')?.value ?? 0) * 12;
     };
     expect(mend({ priest_mend: 1 }, 300)).toBeCloseTo(200, 6);
     expect(mend({ priest_mend: 1, priest_triage: 5 }, 300)).toBeCloseTo(200 * 1.15, 6); // under 40%

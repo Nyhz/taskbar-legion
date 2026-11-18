@@ -1,5 +1,6 @@
 import type { StatKey } from './stats';
 import type { TriggerDef } from './triggers';
+import { EMERGENCY_LIFE_FRAC } from './casting';
 import { BRANCH_ABILITIES } from './branchAbilities';
 import { BOSS_ABILITIES } from './bossAbilities';
 
@@ -11,7 +12,9 @@ import { BOSS_ABILITIES } from './bossAbilities';
 // The combat AI casts when the cooldown is ready and the cast condition holds.
 //
 // COOLDOWNS are PER-ABILITY: each ability declares its own `cooldownMs` (the source of
-// truth) — there is no category/baseline system. Late-game CDR (talents/tech/gear)
+// truth) — there is no category/baseline system. 2026-11-18: every hero cooldown ~3 s longer (user: «4-8 s más de
+// media», then «un punto medio entre lo de antes y ahora»; every base cooldown even or ending in 5), not compensated, and a global cooldown between a hero's casts
+// (HERO_GLOBAL_COOLDOWN_MS). Late-game CDR (talents/tech/gear)
 // reduces these further at cast time (sim/abilities.effectiveCooldown).
 
 export interface AbilityPower {
@@ -124,6 +127,8 @@ export type FireRule =
   | { when: 'cluster'; foes: number }
   // The caster has taken damage in the last RECENT_HIT_MS (a defence is not burnt before any blow comes).
   | { when: 'selfHit' }
+  // The caster is under `frac` of its life (a defence's emergency rule against a boss: EMERGENCY_LIFE_FRAC).
+  | { when: 'selfBelow'; frac: number }
   // Someone of the party has taken damage in the last RECENT_HIT_MS. `atAreaBlow`: while an enemy that
   // telegraphs an area blow (a boss) is in the fight, it fires as that blow winds up instead.
   | { when: 'partyHit'; atAreaBlow?: boolean }
@@ -146,6 +151,7 @@ export const RECENT_HIT_MS = 2500;
 export const HEAVY_HIT_LIFE_FRAC = 0.15;
 /** A hero's running tally of damage taken halves every this long (who is taking the MOST damage right now). */
 export const RECENT_DAMAGE_HALF_LIFE_MS = 1500;
+
 
 export interface AbilityDef {
   key: string;
@@ -201,17 +207,18 @@ export const ABILITIES: Record<string, AbilityDef> = {
   knight_guard: {
     key: 'knight_guard', name: 'Stone Skin', icon: 'guard',
     desc: 'Harden his skin to stone — flat damage reduction to soak incoming hits.',
-    cooldownMs: 20000, target: 'self',
+    cooldownMs: 22000, target: 'self',
     // buff_guard_block: 30% damage reduction at rank 1, +5%/rank → 50% at rank 5. 6s uptime.
     applies: [{ effectKey: 'buff_guard_block' }],
     // Not burnt before any blow comes: it waits until he is actually being hit. Against a boss (round 7) it is kept
     // for the wind-up of its heavy blow (the Crushing Blow) — or of any blow, when the boss has no heavy one.
-    castCondition: 'enemyPresent', fires: { when: 'selfHit' }, firesBoss: [{ when: 'bossWindup', heavy: true }], rankScaling: { perRank: { value: 5 } },
+    // Between the blows it goes up only in an emergency (EMERGENCY_LIFE_FRAC).
+    castCondition: 'enemyPresent', fires: { when: 'selfHit' }, firesBoss: [{ when: 'bossWindup', heavy: true }, { when: 'selfBelow', frac: EMERGENCY_LIFE_FRAC }], rankScaling: { perRank: { value: 5 } },
   },
   knight_debilitate: {
     key: 'knight_debilitate', name: 'Debilitating Cleave', icon: 'expose',
     desc: 'A sweeping blow — heavy damage to every enemy in melee range, sapping the damage they deal.',
-    cooldownMs: 12000, target: 'meleeEnemies',
+    cooldownMs: 15000, target: 'meleeEnemies',
     // Bonus damage (1.2×→2.0× AD) + debuff_weaken to EVERY enemy in melee reach: each deals
     // 15%→25% less damage for 6s.
     applies: [{ effectKey: 'fx_damage' }, { effectKey: 'debuff_weaken' }],
@@ -223,15 +230,15 @@ export const ABILITIES: Record<string, AbilityDef> = {
   knight_bulwark: {
     key: 'knight_bulwark', name: 'Bulwark', icon: 'shield',
     desc: 'Brace behind a bulwark — a heavy absorb shield on himself.',
-    cooldownMs: 24000, target: 'self',
+    cooldownMs: 26000, target: 'self',
     applies: [{ effectKey: 'fx_shield', durationMsOverride: 8000 }],
     // Self-shield: 30%→50% of his max HP absorbed (+5%/rank). Against a boss (round 7): raised as its heavy blow winds up.
-    castCondition: 'enemyPresent', fires: { when: 'selfHit' }, firesBoss: [{ when: 'bossWindup', heavy: true }], power: { coeff: 0.3, coeffPerRank: 0.05 },
+    castCondition: 'enemyPresent', fires: { when: 'selfHit' }, firesBoss: [{ when: 'bossWindup', heavy: true }, { when: 'selfBelow', frac: EMERGENCY_LIFE_FRAC }], power: { coeff: 0.3, coeffPerRank: 0.05 },
   },
   knight_battlecry: {
     key: 'knight_battlecry', name: 'Battle Cry', icon: 'cry',
     desc: 'A war cry that sharpens the whole party’s offense.',
-    cooldownMs: 24000, target: 'allAllies',
+    cooldownMs: 28000, target: 'allAllies',
     // buff_battlecry_ad 15%→25% AD + buff_battlecry_crit 5%→15% crit (both +2.5/rank). 8s uptime.
     applies: [{ effectKey: 'buff_battlecry_ad' }, { effectKey: 'buff_battlecry_crit' }],
     // Eight seconds of party offence are not spent on the last stragglers of a wave.
@@ -240,7 +247,7 @@ export const ABILITIES: Record<string, AbilityDef> = {
   knight_bloodlust: {
     key: 'knight_bloodlust', name: 'Bloodlust', icon: 'flurry',
     desc: 'Fly into a bloodlust — faster swings that leech life from every hit.',
-    cooldownMs: 24000, target: 'self',
+    cooldownMs: 28000, target: 'self',
     // buff_bloodlust_as 24%→40% attack speed (+4/rank) + buff_bloodlust_ls 8%→12%
     // lifesteal (+1/rank) — the two scale at different rates, so per-effect valuePerRank.
     applies: [
@@ -254,11 +261,12 @@ export const ABILITIES: Record<string, AbilityDef> = {
   priest_mend: {
     key: 'priest_mend', name: 'Mend', icon: 'heal',
     desc: 'A rolling heal on whoever is hurt — amplified by heal power.',
-    // Recast every 14 s (was 20): the world bosses' minute presses the back line from Hell on (data/bossKit
-    // WORLD_BOSS_PRESSURE), and a party must be kept standing by its heals — round 3, checkpoint 2.
-    cooldownMs: 14000, target: 'hurtAlly', applies: [{ effectKey: 'fx_hot', durationMsOverride: 6000 }],
+    // Every 16 s (2026-11-18, the longer cooldowns: was 14). It heals over 12 s (was 6; user: «que curasen lo mismo
+    // pero durante más tiempo»): the same total, a mending that keeps going — the instant heals answer the bursts.
+    // A heal laid again on an ally who still carries one adds what was left of it (sim/effects.applyEffect).
+    cooldownMs: 16000, target: 'hurtAlly', applies: [{ effectKey: 'fx_hot', durationMsOverride: 12000 }],
     // HoT coeff is the TOTAL heal over the duration (× target max HP × healPower), spread
-    // per-tick. 20%→30% of max HP over 6s (+2.5/rank) — raised with the heal kit (2026-11-16): a heal over time
+    // per-tick. 20%→30% of max HP over 12s (+2.5/rank) — raised with the heal kit (2026-11-16): a heal over time
     // is worth MORE than the instant one beside it (Healing Light), which pays for landing at once.
     // On whoever has just taken a heavy hit; otherwise on the most hurt, once someone is under 70 %. As it is
     // applied it lifts the ally's harmful effects (data/healing).
@@ -273,7 +281,7 @@ export const ABILITIES: Record<string, AbilityDef> = {
   priest_healing_light: {
     key: 'priest_healing_light', name: 'Healing Light', icon: 'heal',
     desc: 'An instant heal on the ally who needs it most — and every harmful effect lifted from them.',
-    cooldownMs: 12000, target: 'triageAlly', applies: [{ effectKey: 'fx_heal' }], // every 12 s (was 20): see Mend
+    cooldownMs: 14000, target: 'triageAlly', applies: [{ effectKey: 'fx_heal' }], // every 14 s (12 until 2026-11-18)
     // An ally under 60 %, one just struck hard, or one carrying a harmful effect: the one in danger first
     // (data/healing HEAL_URGENT_FRAC), then the one carrying something, then the most hurt.
     castCondition: 'allyBelowHpPct', fires: { when: 'harmedOrBelow', frac: 0.6, orHeavyHit: true }, power: { coeff: 0.15, coeffPerRank: 0.0175 },
@@ -281,16 +289,16 @@ export const ABILITIES: Record<string, AbilityDef> = {
   priest_holyshield: {
     key: 'priest_holyshield', name: 'Holy Shield', icon: 'shield',
     desc: 'A divine barrier on the ally taking the most damage — absorbs a burst of the hits it’s taking.',
-    cooldownMs: 24000, target: 'mostHitAlly', applies: [{ effectKey: 'fx_shield', durationMsOverride: 4000 }],
+    cooldownMs: 26000, target: 'mostHitAlly', applies: [{ effectKey: 'fx_shield', durationMsOverride: 4000 }],
     // Shield = 10%→20% of that ally's max HP (+2.5/rank). On whoever is taking the most damage right now —
     // the tank most of the time, an archer's target behind him when that is where the blows land.
     // Against a boss (round 7): raised on the hero its heavy blow will strike, as it winds up.
-    castCondition: 'tankEngaged', fires: { when: 'allyHit' }, firesBoss: [{ when: 'bossWindup', heavy: true }], power: { coeff: 0.1, coeffPerRank: 0.025 },
+    castCondition: 'tankEngaged', fires: { when: 'allyHit' }, firesBoss: [{ when: 'bossWindup', heavy: true }, { when: 'allyBelow', frac: EMERGENCY_LIFE_FRAC }], power: { coeff: 0.1, coeffPerRank: 0.025 },
   },
   priest_nova: {
     key: 'priest_nova', name: 'Holy Nova', icon: 'holy',
     desc: 'A burst of holy light damaging the whole wave.',
-    cooldownMs: 20000, target: 'allEnemies', applies: [{ effectKey: 'fx_damage' }],
+    cooldownMs: 24000, target: 'allEnemies', applies: [{ effectKey: 'fx_damage' }],
     // Per-target wave damage: 1.2× → 2.8× AD (+0.4/rank).
     castCondition: 'enemyPresent', fires: { when: 'worthIt', foes: 3 }, power: { coeff: 1.2, coeffPerRank: 0.4, canCrit: true },
   },
@@ -300,7 +308,7 @@ export const ABILITIES: Record<string, AbilityDef> = {
   priest_circle: {
     key: 'priest_circle', name: 'Circle of Healing', icon: 'holy',
     desc: 'An instant heal on the whole party — and every harmful effect lifted from each of them.',
-    cooldownMs: 20000, target: 'allAllies', applies: [{ effectKey: 'fx_heal' }], // every 20 s (was 30): see Mend
+    cooldownMs: 22000, target: 'allAllies', applies: [{ effectKey: 'fx_heal' }], // every 22 s (20 until 2026-11-18)
     // A party heal is for a hurt party (two heroes under 80 %, or one under half) — or two of them carrying a
     // harmful effect.
     castCondition: 'allyBelowHpPct', fires: { when: 'partyHurt', allies: 2, frac: 0.8, orOneBelow: 0.5, orHarmed: 2 }, power: { coeff: 0.09, coeffPerRank: 0.015 },
@@ -310,7 +318,7 @@ export const ABILITIES: Record<string, AbilityDef> = {
   ranger_fast_fire: {
     key: 'ranger_fast_fire', name: 'Rapid Fire', icon: 'fast',
     desc: 'A sustained burst of attack speed.',
-    cooldownMs: 24000, target: 'self', applies: [{ effectKey: 'buff_fast_fire' }],
+    cooldownMs: 28000, target: 'self', applies: [{ effectKey: 'buff_fast_fire' }],
     // buff_fast_fire 25%→45% attack speed (+5/rank). 8s uptime.
     castCondition: 'enemyPresent', fires: { when: 'worthIt', foes: 3 }, rankScaling: { perRank: { value: 5 } },
   },
@@ -325,14 +333,14 @@ export const ABILITIES: Record<string, AbilityDef> = {
   ranger_multishot: {
     key: 'ranger_multishot', name: 'Raining Arrows', icon: 'arrows',
     desc: 'A volley spread across the whole wave.',
-    cooldownMs: 20000, target: 'allEnemies', applies: [{ effectKey: 'fx_damage' }],
+    cooldownMs: 24000, target: 'allEnemies', applies: [{ effectKey: 'fx_damage' }],
     // Per-target wave damage: 1.2× → 2.8× AD (+0.4/rank).
     castCondition: 'enemyPresent', fires: { when: 'worthIt', foes: 3 }, power: { coeff: 1.2, coeffPerRank: 0.4, canCrit: true },
   },
   ranger_focus: {
     key: 'ranger_focus', name: 'Explosive Arrow', icon: 'explosion',
     desc: 'A detonating arrow: a heavy hit where its blast catches the most enemies, and a lesser one on those nearby.',
-    cooldownMs: 18000, target: 'biggestCluster', applies: [{ effectKey: 'fx_damage' }],
+    cooldownMs: 20000, target: 'biggestCluster', applies: [{ effectKey: 'fx_damage' }],
     // The enemy whose blast catches the most (user decision 2026-11-15: the pile, not the priority) 1.6×→3.2× AD (+0.4/rank, can crit); splash 0.6×→1.2× AD (+0.15/rank) to
     // enemies within ~1.5 bodies (45 world-px) of the primary target.
     // The blast needs something to catch: two in it, or a tough target.
@@ -342,7 +350,7 @@ export const ABILITIES: Record<string, AbilityDef> = {
   ranger_frozentrap: {
     key: 'ranger_frozentrap', name: 'Caltrops', icon: 'dot',
     desc: 'Hurl a spray of caltrops that spread across the ground ahead — bleeding every enemy in the field for 4s.',
-    cooldownMs: 24000, target: 'allEnemies', applies: [{ effectKey: 'fx_dot', durationMsOverride: 4000 }],
+    cooldownMs: 26000, target: 'allEnemies', applies: [{ effectKey: 'fx_dot', durationMsOverride: 4000 }],
     // Wave DoT over 4s: total damage per enemy = 0.6×→1.4× AD (+0.2/rank), dealt in 100ms ticks.
     castCondition: 'enemyPresent', fires: { when: 'worthIt', foes: 3 }, power: { coeff: 0.6, coeffPerRank: 0.2 },
   },

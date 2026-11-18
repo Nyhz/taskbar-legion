@@ -37,7 +37,9 @@ export interface ClassDef {
 export const CLASSES: Record<string, ClassDef> = {
   knight: {
     key: 'knight', name: 'Knight', role: 'tank',
-    // hpRegen 5 (was 2): a flat early-game cushion (~+15 HP/wave at L1) so the FRESH
+    // hpRegen 4 (2026-11-18, was 5; user: with 5 the Knight barely needed healing through Normal's first three worlds
+    // and the Priest cast next to nothing — «bajarla a 3 o así y ver cómo afecta». At 3 the naked solo Knight of a new game took 27 min over 1-1, dying again
+    // and again; at 4 he takes ~6 min, as at 5 — the lowest that keeps the opening). Before: hpRegen 5 (was 2): a flat early-game cushion (~+15 HP/wave at L1) so the FRESH
     // solo knight survives 1-1 and can farm at all (it was getting deleted before it
     // could earn gold/items, blocking the whole loop). Tapers to irrelevance once
     // Φ-scaled enemy damage dominates. Per design request; verified by the fresh-start
@@ -48,8 +50,8 @@ export const CLASSES: Record<string, ClassDef> = {
     // class-locked (a solo knight rarely gets a Sword early) and armor is pure mitigation,
     // so the tank needs an innate damage floor instead of leaning on any-weapon + offensive
     // armor. The Sword stacks on top. (Starting value — tune the knight's offense here.)
-    baseStats: { health: 145, armor: 15, magicResist: 11, attackDamage: 12, attackSpeed: 1.4, critChance: 8, critDamage: 60, hpRegen: 5, block: 5 },
-    // hpRegen is intentionally NOT in the growth: it's a FLAT early-game cushion (5),
+    baseStats: { health: 145, armor: 15, magicResist: 11, attackDamage: 12, attackSpeed: 1.4, critChance: 8, critDamage: 60, hpRegen: 4, block: 5 },
+    // hpRegen is intentionally NOT in the growth: it's a FLAT early-game cushion (4),
     // not a stat that scales with level — it tapers to irrelevance as enemy damage grows.
     statGrowthPerLevel: { health: 5, armor: 0.5, magicResist: 0.3, attackDamage: 2.8 },
     unlock: { type: 'free' },

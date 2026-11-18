@@ -8,7 +8,7 @@ import { abilityDef } from '@/data/abilities';
 import { classDef } from '@/data/classes';
 import { SUPPORT_KIND, TARGET_PRIORITY, ENEMY_KINDS } from '@/data/enemies';
 import { RANGE } from '@/data/field';
-import { biggestCluster, caughtBy, pickTarget, reachOf, targetRank } from '@/sim/targeting';
+import { biggestCluster, caughtBy, pickTarget, reachOf, shotTarget, targetRank } from '@/sim/targeting';
 import type { Combatant, CombatEvent, WorldState } from '@/sim/world';
 import { anyMoment, base, quietRng, unit } from './_kit';
 
@@ -124,7 +124,8 @@ describe('reach apart from where she stands', () => {
     const now = joined(true);
     expect(now.hitIds.has('r>support')).toBe(true);
     expect(now.hitIds.has('p>support')).toBe(true);
-    expect(now.hitIds.has('r>soldier')).toBe(false); // the support never dies here (1e9 life): she stays on it
+    // One shot in four goes to the back (data/enemies BACK_LINE_SHOT_PCT); the rest to the front of the wave.
+    expect(now.hitIds.has('r>soldier')).toBe(true);
     const before = joined(false);
     expect(before.hitIds.has('r>support')).toBe(false);
     expect(before.hitIds.has('r>soldier')).toBe(true);
@@ -210,5 +211,24 @@ describe('the abilities that pick by priority', () => {
     const ranger = shooterHero('ranger_weakspot');
     const far = [foe('support', { enemyRole: 'support', x: 300, hp: 1000, maxHp: 1000 })];
     expect(castReadyAbilities(ranger, [ranger], far, 30, quietRng(), [])).toEqual([]);
+  });
+});
+
+describe('where a basic shot goes (2026-11-18: one in four to the back, the rest to the front)', () => {
+  it('every fourth shot goes by the order, evenly — the others at the front of the wave', () => {
+    const ranger = unit({ id: 'r', side: 'hero', x: 0, range: 160, shotReach: 340 });
+    const front = foe('front', { x: 150, enemyRole: 'soldier' });
+    const support = foe('sup', { x: 300, enemyRole: 'support' });
+    const picks = Array.from({ length: 12 }, () => shotTarget(ranger, [front, support], front).id);
+    expect(picks.filter((id) => id === 'sup')).toHaveLength(3);
+    expect(picks.filter((id) => id === 'front')).toHaveLength(9);
+    expect(picks.slice(0, 4).filter((id) => id === 'sup')).toHaveLength(1); // spread, not in a burst
+  });
+
+  it('a summon a boss sent over the party is shot every time', () => {
+    const ranger = unit({ id: 'r', side: 'hero', x: 0, range: 160, shotReach: 340 });
+    const front = foe('front', { x: 150 });
+    const crow = foe('crow', { x: 40, summon: { key: 'crow', leftMs: 10_000, slot: 0 } });
+    for (let i = 0; i < 4; i++) expect(shotTarget(ranger, [front, crow], front).id).toBe('crow');
   });
 });

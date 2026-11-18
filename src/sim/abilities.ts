@@ -1,12 +1,14 @@
 import { cadenceHitMult } from '@/data/cadence';
 import type { AbilityDef, AbilityPower, AbilityTarget, AppliedEffect, FireRule } from '@/data/abilities';
 import { worldBossAbilityKeys } from '@/data/abilities';
+import { HERO_GLOBAL_COOLDOWN_MS } from '@/data/casting';
 import type { EffectDef } from '@/data/effects';
 import { effectDef } from '@/data/effects';
 import type { Combatant, CombatEvent } from './world';
+import type { ResolvedAbility } from './loadout';
 import type { Rng } from './rng';
 import type { EffectiveStats } from './stats';
-import { applyEffect, absorbDamage, liftHealCleansed, isCooldownFrozen, isSilenced, isInvulnerable, vulnerabilityMult, weakenMult, healReceivedMult } from './effects';
+import { applyEffect, absorbDamage, hotStillToCome, liftHealCleansed, isCooldownFrozen, isSilenced, isInvulnerable, vulnerabilityMult, weakenMult, healReceivedMult } from './effects';
 import { noteStruck, dealtMult, liveStats } from './liveStats';
 import { onCrit, type TriggerCtx } from './triggers';
 import { noteDamageTaken, recentlyHit, recentlyHitHard } from './recent';
@@ -30,6 +32,8 @@ const ALLY_HELP_THRESHOLD = 0.7; // 'allyBelowHpPct' triggers below 70% HP
 const MAX_CDR = 75; // cap cooldown reduction so abilities can't go free
 
 export function tickCooldowns(c: Combatant, deltaMs: number): void {
+  // The global cooldown runs whatever happens to the others (a boss's Silencio dorado freezes those, not this).
+  if (c.gcdMs !== undefined && c.gcdMs > 0) c.gcdMs = Math.max(0, c.gcdMs - deltaMs);
   const keys = Object.keys(c.cooldowns);
   if (keys.length === 0) return;
   if (isCooldownFrozen(c.effects)) return; // Silencio dorado (a world boss's mechanic): they stand still
@@ -286,6 +290,8 @@ function fireRuleMet(rule: FireRule, ability: AbilityDef, caster: Combatant, all
     }
     case 'selfHit':
       return recentlyHit(caster);
+    case 'selfBelow':
+      return caster.alive && lifeFrac(caster) < rule.frac;
     case 'partyHit': {
       if (rule.atAreaBlow === true) {
         // An enemy in the fight that telegraphs an area blow: the ability is kept for that blow's wind-up.
@@ -339,7 +345,7 @@ function bracing(ability: AbilityDef, caster: Combatant, allies: Combatant[], en
 /** A rule that answers what happens to the party (a heal, a ward): it does not wait for the caster to be in
  *  reach of an enemy, unlike a buff. */
 function isReactive(ability: AbilityDef, enemies: readonly Combatant[]): boolean {
-  const reactive = (w: FireRule['when'] | undefined): boolean => w === 'allyHit' || w === 'allyBelow' || w === 'partyHurt' || w === 'harmedOrBelow' || w === 'bossWindup';
+  const reactive = (w: FireRule['when'] | undefined): boolean => w === 'allyHit' || w === 'allyBelow' || w === 'partyHurt' || w === 'harmedOrBelow' || w === 'bossWindup' || w === 'selfBelow';
   const rules = fireRules(ability, enemies);
   return (rules !== undefined && rules.some((r) => reactive(r.when))) || ability.castCondition === 'allyBelowHpPct';
 }
@@ -509,13 +515,19 @@ function selectTargets(caster: Combatant, target: AbilityTarget, allies: Combata
       return best !== undefined ? [best] : [];
     }
     case 'hurtAlly': {
-      // An ally that has just taken a heavy hit (the one that lost the largest share), else the most hurt.
+      // An ally that has just taken a heavy hit (the one that lost the largest share), else the most hurt — counting
+      // as his what a heal over time on him still has to give (2026-11-18: Mend goes to whoever is not mended yet).
       let hard: Combatant | undefined;
       let low: Combatant | undefined;
+      let lowFrac = Number.POSITIVE_INFINITY;
       for (const a of allies) {
         if (!a.alive) continue;
         if (recentlyHitHard(a) && a.hp < a.maxHp && (hard === undefined || (a.recentDamage ?? 0) / a.maxHp > (hard.recentDamage ?? 0) / hard.maxHp)) hard = a;
-        if (low === undefined || lifeFrac(a) < lifeFrac(low)) low = a;
+        const f = (a.hp + hotStillToCome(a.effects)) / Math.max(1, a.maxHp);
+        if (low === undefined || f < lowFrac) {
+          low = a;
+          lowFrac = f;
+        }
       }
       const pick = hard ?? low;
       return pick !== undefined ? [pick] : [];
@@ -721,6 +733,31 @@ function applyToTarget(
   applyEffect(target.effects, def, caster.id, value, duration);
 }
 
+/** A hero's abilities in the order he looks at them when more than one is ready (2026-11-18, with the global cooldown:
+ *  «por urgencia»): first what braces against a boss's winding blow, then a heal while an ally is in danger (under
+ *  data/healing HEAL_URGENT_FRAC), then the rest in their slots' order. Stable; the slots' order breaks ties. */
+function byUrgency(caster: Combatant, allies: Combatant[], enemies: Combatant[]): readonly ResolvedAbility[] {
+  const list = caster.abilities;
+  if (list.length < 2) return list;
+  const danger = allies.some((a) => a.alive && lifeFrac(a) < HEAL_URGENT_FRAC);
+  const urgency = (ability: AbilityDef): number => {
+    if (bracing(ability, caster, allies, enemies)) return 0;
+    if (danger && healsAllies(ability)) return 1;
+    return 2;
+  };
+  const ranked = list.map((a, i) => ({ a, i, u: urgency(a.def) }));
+  if (ranked.every((r) => r.u === 2)) return list;
+  return ranked.sort((x, y) => x.u - y.u || x.i - y.i).map((r) => r.a);
+}
+
+/** Whether an ability heals (an instant heal or one over time), on whomever it lands. */
+function healsAllies(ability: AbilityDef): boolean {
+  return ability.applies.some((a) => {
+    const t = effectDef(a.effectKey).kind.type;
+    return t === 'heal' || t === 'hot';
+  });
+}
+
 /** Try to cast ready abilities for a combatant. Returns the keys cast (render).
  *
  *  Heroes act once per SWING: their cast cadence IS the attack timer (combat.ts calls this
@@ -740,9 +777,11 @@ export function castReadyAbilities(
   // cast resolves in combat.resolveChanneledCast when the bar fills.
   if (caster.casting !== undefined) return [];
   const single = caster.side === 'hero'; // one ability per swing for heroes
+  // The global cooldown: a hero who has just cast waits it out before the next (his swings go on meanwhile).
+  if (single && (caster.gcdMs ?? 0) > 0) return [];
   const cs = casterStats(caster);
   const cast: string[] = [];
-  for (const { def: ability, rank } of caster.abilities) {
+  for (const { def: ability, rank } of single ? byUrgency(caster, allies, enemies) : caster.abilities) {
     if (ability.aura !== undefined) continue; // passive aura — never cast (applied at build time)
     // Ready check: charge-gated abilities fire at full charge (no cooldown); the rest
     // gate on their remaining cooldown.
@@ -781,6 +820,7 @@ export function castReadyAbilities(
     const firstEvent = events.length;
     const healed = applyAbilityEffectsTo(caster, ability, rank, cs, targets, allies, enemies, S, rng, events);
     commitCooldown(caster, ability, rank);
+    if (single) caster.gcdMs = HERO_GLOBAL_COOLDOWN_MS;
     cast.push(ability.key);
     if (single && healed.length > 0) healInfusion(caster, allies, healed); // Power Infusion: each of her heals quickens the party
     if (single && caster.triggers !== undefined) critTriggers(caster, allies, enemies, events, firstEvent);

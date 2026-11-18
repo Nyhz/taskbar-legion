@@ -1,6 +1,7 @@
 import type { Combatant } from './world';
 import { behindBack } from './bossMechanics';
-import { TARGET_PRIORITY } from '@/data/enemies';
+import { BACK_LINE_SHOT_PCT, TARGET_PRIORITY } from '@/data/enemies';
+import { steadyRoll } from './steady';
 import { MOVE_EPS } from '@/data/field';
 
 // Who the heroes that shoot (the Ranger, the Priest) pick. Two distances, kept apart on purpose:
@@ -47,6 +48,16 @@ export function pickTarget(hero: Combatant, enemies: readonly Combatant[]): Comb
     }
   }
   return best;
+}
+
+/** Where a shooting hero's BASIC shot goes (data/enemies BACK_LINE_SHOT_PCT): a summon a boss sent over the party
+ *  first, always; otherwise one shot in four by the order (the back of the wave: the support, the shooters…) and the
+ *  rest at `front`, the enemy nearest her — the front of the wave. */
+export function shotTarget(hero: Combatant, enemies: readonly Combatant[], front: Combatant): Combatant {
+  const best = pickTarget(hero, enemies);
+  if (best === undefined) return front;
+  if (best.summon !== undefined) return best;
+  return steadyRoll(hero, 'backShot', BACK_LINE_SHOT_PCT) ? best : front;
 }
 
 /** How many living enemies a blast of `radius` centred on `centre` catches (itself included). */

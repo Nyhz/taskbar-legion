@@ -432,6 +432,7 @@ describe('Power Infusion (a passive of Zeal): each heal quickens whoever it heal
     const buff = effect(a, 'buff_infusion_as');
     if (buff !== undefined) buff.remainingMs = 1000;
     priest.cooldowns = {};
+    priest.gcdMs = 0;
     castReadyAbilities(priest, [a, priest], [foe('g')], 1, quietRng(), []);
     expect(a.effects.filter((e) => e.defKey === 'buff_infusion_as')).toHaveLength(1);
     expect(effect(a, 'buff_infusion_as')).toMatchObject({ value: 15, remainingMs: 4000, stacks: 1 });

@@ -38,6 +38,16 @@ export function applyEffect(
     effects.push({ defKey: def.key, sourceId, remainingMs: duration, totalMs: duration, stacks: 1, value: resolvedValue });
     return;
   }
+  if (def.kind.type === 'hot' && def.stackRule === 'refresh' && def.maxStacks === 1) {
+    // A heal over time laid again on a body that still carries it (2026-11-18, the longer heals): what was left of
+    // the old one is added to the new one, all of it given over the new duration — nothing is thrown away.
+    const left = existing.remainingMs > 0 ? (existing.value * existing.remainingMs) / 1000 : 0;
+    existing.remainingMs = duration;
+    existing.totalMs = duration;
+    existing.value = resolvedValue + left / Math.max(0.001, duration / 1000);
+    existing.sourceId = sourceId;
+    return;
+  }
   if (def.stackRule === 'extend') {
     existing.remainingMs += duration;
     existing.totalMs = existing.remainingMs; // gauge reads "full" against the extended time
@@ -166,6 +176,15 @@ export function dotDps(effects: readonly ActiveEffect[]): number {
   let total = 0;
   for (const e of effects) {
     if (effectDef(e.defKey).kind.type === 'dot') total += e.value * e.stacks;
+  }
+  return total;
+}
+
+/** What the heals over time on a body still have to give before they run out (value is per second). */
+export function hotStillToCome(effects: readonly ActiveEffect[]): number {
+  let total = 0;
+  for (const e of effects) {
+    if (effectDef(e.defKey).kind.type === 'hot' && e.remainingMs > 0) total += (e.value * e.stacks * e.remainingMs) / 1000;
   }
   return total;
 }

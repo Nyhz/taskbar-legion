@@ -192,6 +192,8 @@ function ruleLine(rule: FireRule): string {
       return t('talents.firesCluster', { n: rule.foes });
     case 'selfHit':
       return t('talents.firesSelfHit');
+    case 'selfBelow':
+      return t('talents.firesSelfBelow', { pct: figure(rule.frac * 100, 0) });
     case 'partyHit':
       return rule.atAreaBlow === true ? t('talents.firesPartyHitBoss') : t('talents.firesPartyHit');
     case 'allyHit':

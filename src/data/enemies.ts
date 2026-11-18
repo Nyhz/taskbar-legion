@@ -186,3 +186,10 @@ export function auraValue(key: SupportAura, difficultyIndex: number): number {
  *  first the support, then the shooters, the beasts, the soldiers and the brutes last. Within a kind, an elite
  *  before the rest. */
 export const TARGET_PRIORITY: readonly EnemyRole[] = ['support', 'shooter', 'beast', 'soldier', 'brute'];
+
+/** The share of the Ranger's and the Priest's BASIC shots that go by that order, at the back of the wave; the rest go
+ *  to its front, the enemy nearest the party (2026-11-18; user: «que el 25 % de los disparos del ranger y 25 % de
+ *  los de la priest vayan a la backline, el resto a la frontline» — the supports died at once and never got to
+ *  buff their wave). Kept on a steady meter (sim/steady), not dice: every fourth shot, evenly. Abilities that pick a
+ *  priority target (Aimed Shot, Weak Spot, Smite's strike) still go by the order. */
+export const BACK_LINE_SHOT_PCT = 25;

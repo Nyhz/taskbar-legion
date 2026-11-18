@@ -240,17 +240,17 @@ describe('Priest abilities and modifiers', () => {
     expect(castReadyAbilities(priest, [priest, ally], [unit({ id: 'e', side: 'enemy', x: 10 })], 1, quietRng(), [])).toEqual([]);
   });
 
-  it('Mending Light: Smite’s heal leaves a heal of 4% over 4s on the same ally', () => {
+  it('Mending Light: Smite’s heal leaves a heal of 4% over 8s on the same ally', () => {
     const priest = priestWith({ priest_smite: 1, priest_mod_mending_light: 1 }, 'priest_smite');
     const ally = unit({ id: 'k', side: 'hero', hp: 500 });
     castReadyAbilities(priest, [priest, ally], [], 1, quietRng(), []);
     expect(ally.hp).toBe(580);
-    expect(effect(ally, 'fx_light')?.remainingMs).toBe(4000);
-    expect((effect(ally, 'fx_light')?.value ?? 0) * 4).toBeCloseTo(40, 5);
+    expect(effect(ally, 'fx_light')?.remainingMs).toBe(8000);
+    expect((effect(ally, 'fx_light')?.value ?? 0) * 8).toBeCloseTo(40, 5);
     expect(effect(priest, 'fx_light')).toBeUndefined();
   });
 
-  it('Sanctuary: a heal over 6s on the whole party once someone is hurt; Deep Sanctuary adds a small shield to each', () => {
+  it('Sanctuary: a heal over 10s on the whole party once someone is hurt; Deep Sanctuary adds a small shield to each', () => {
     const run = (talents: Record<string, number>, hurtHp: number): ReturnType<typeof unit>[] => {
       const priest = priestWith(talents, 'priest_sanctuary');
       const party = [priest, unit({ id: 'k', side: 'hero', hp: hurtHp, maxHp: 2000 })];
@@ -259,10 +259,10 @@ describe('Priest abilities and modifiers', () => {
     };
     expect(run({ priest_sanctuary: 1 }, 1900).every((h) => h.effects.length === 0)).toBe(true); // nobody under 70%
     const [p, k] = run({ priest_sanctuary: 1 }, 1000);
-    expect((effect(p, 'fx_sanctuary')?.value ?? 0) * 6).toBeCloseTo(120, 5); // 12% of her 1000
-    expect((effect(k, 'fx_sanctuary')?.value ?? 0) * 6).toBeCloseTo(240, 5); // 12% of his 2000
+    expect((effect(p, 'fx_sanctuary')?.value ?? 0) * 10).toBeCloseTo(120, 5); // 12% of her 1000
+    expect((effect(k, 'fx_sanctuary')?.value ?? 0) * 10).toBeCloseTo(240, 5); // 12% of his 2000
     const [, k5] = run({ priest_sanctuary: 5 }, 1000);
-    expect((effect(k5, 'fx_sanctuary')?.value ?? 0) * 6).toBeCloseTo(400, 5); // 20%
+    expect((effect(k5, 'fx_sanctuary')?.value ?? 0) * 10).toBeCloseTo(400, 5); // 20%
     const [pd, kd] = run({ priest_sanctuary: 1, priest_mod_deep_sanctuary: 1 }, 1000);
     expect(effect(pd, 'fx_ward')?.value).toBeCloseTo(40, 5); // 4% of 1000
     expect(effect(kd, 'fx_ward')?.value).toBeCloseTo(80, 5);
@@ -285,12 +285,12 @@ describe('Priest abilities and modifiers', () => {
       const priest = priestWith(talents, 'priest_mend');
       const ally = unit({ id: 'k', side: 'hero', hp: 100 });
       castReadyAbilities(priest, [priest, ally], [], 1, quietRng(), []);
-      return { hp: ally.hp, hot: (effect(ally, 'fx_hot')?.value ?? 0) * 6 };
+      return { hp: ally.hp, hot: (effect(ally, 'fx_hot')?.value ?? 0) * 12 };
     };
     const plain = cast({ priest_mend: 1 });
     const swift = cast({ priest_mend: 1, priest_mod_swift_mend: 1 });
     expect(plain.hp).toBe(100);
-    expect(plain.hot).toBeCloseTo(200, 5); // 20% of 1000 over 6s
+    expect(plain.hot).toBeCloseTo(200, 5); // 20% of 1000 over 12s
     expect(swift.hp).toBeCloseTo(160, 5); // 30% of it at once
     expect(swift.hot).toBeCloseTo(140, 5);
   });

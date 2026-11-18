@@ -31,7 +31,7 @@ import {
 } from './passives';
 import { noteStruck } from './liveStats';
 import { attackHastePct, backShotChance, cannotBeSlowed, focusedHero, foeDamageMult, foeWard, heavyHit, onFoeDeath, tickFoeTraits } from './enemyTraits';
-import { pickTarget } from './targeting';
+import { shotTarget } from './targeting';
 import { TRAIT_TUNING } from '@/data/enemies';
 
 // Deterministic lane-pusher combat. The party holds a formation around `partyX`
@@ -210,12 +210,13 @@ export function resolveCombatTick(world: WorldState, deltaMs: number, rng: Rng):
         }
         return true; // the ability used up this swing — no auto-attack this turn
       }
-      // The Knight strikes the nearest enemy he can touch. The Ranger and the Priest pick by priority across their
-      // shot's reach (sim/targeting) — which is longer than where they stand, so the support at the back is theirs.
+      // The Knight strikes the nearest enemy he can touch. The Ranger and the Priest shoot the front of the wave, and
+      // one shot in four goes by priority across their shot's reach (sim/targeting.shotTarget) — which is longer than
+      // where they stand, so the support at the back is within it.
       // What says she can shoot is unchanged: an enemy has come as near as she stands from it.
       const near = nearestEnemyInRange(h, enemies);
       if (near === undefined) return false;
-      const target = h.shotReach !== undefined ? (pickTarget(h, enemies) ?? near) : near;
+      const target = h.shotReach !== undefined ? shotTarget(h, enemies, near) : near;
       heroAttack(h, stats, target, enemies, rng, events, heroes);
       return true;
     });
@@ -287,16 +288,21 @@ function tickCombatantUpkeep(c: Combatant, worldTick: number, deltaMs: number, d
   if (c.side === 'hero') tickRecent(c, deltaMs);
   // Mortal Wound (healReduction) cuts every heal the target receives — HoT ticks + regen.
   const healMult = healReceivedMult(c.effects);
+  // Heals over time land in PULSES, once a second (2026-11-18; user: «pulsos de 1 s»): what they give is gathered
+  // tick by tick and handed over on the second — or at once when the last of them has just run out. The same total;
+  // a rhythm the strip shows as a pulse and a number.
   const hot = hotHps(c.effects) * dtSec * healMult;
-  if (hot > 0) {
-    overflowShield(c, c.hp + hot - c.maxHp); // Overflow: a rolling heal on a full bar becomes a shield
-    c.hp = Math.min(c.maxHp, c.hp + hot);
+  if (hot > 0) c.hotPending = (c.hotPending ?? 0) + hot;
+  const pending = c.hotPending ?? 0;
+  if (pending > 0 && (worldTick % HOT_PULSE_TICKS === 0 || hot <= 0)) {
+    c.hotPending = 0;
+    overflowShield(c, c.hp + pending - c.maxHp); // Overflow: a rolling heal on a full bar becomes a shield
+    c.hp = Math.min(c.maxHp, c.hp + pending);
+    events.push({ type: 'heal', targetId: c.id, amount: pending, tick: true });
   }
   if (worldTick % 10 === 0) {
     const dps = dotDps(c.effects);
     if (dps > 0) events.push({ type: 'damage', targetId: c.id, amount: dps, tick: true });
-    const hps = hotHps(c.effects) * healMult;
-    if (hps > 0) events.push({ type: 'heal', targetId: c.id, amount: hps, tick: true });
   }
   if (c.side === 'hero') {
     const regen = ((heroStats(c).hpRegen ?? 0) + (c.maxHp * partyRegenPct) / 100) * dtSec * healMult;
@@ -304,6 +310,9 @@ function tickCombatantUpkeep(c: Combatant, worldTick: number, deltaMs: number, d
   }
   if (c.hp <= 0) kill(c, ctx);
 }
+
+/** World ticks between two pulses of a heal over time (100 ms ticks: one a second). */
+const HOT_PULSE_TICKS = 10;
 
 // A brief, varied hold (ms) before a ranged/caster hero resumes a forward chase. Derived
 // DETERMINISTICALLY from the hero id + tick via an FNV-1a hash — it consumes NO combat rng,

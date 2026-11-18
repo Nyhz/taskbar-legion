@@ -357,10 +357,12 @@ export const MECHANIC = {
  *  boss rule, data/abilities `firesBoss`). Eased in over a difficulty's first worlds with the rest of the pressure. */
 export const CRUSH = {
   abilityKey: 'boss_crush',
-  // Every 24 s from 8 s: three in a wall's minute (8 s, 32 s, 56 s) — the Knight's Last Stand takes one blow once a
-  // stage, so a Knight who braces for none still meets two. No shorter than the defences' cooldowns (Stone Skin 20 s,
-  // Bulwark and Hold the Line 24 s), so the one kept for it is ready every time.
-  everyMs: 24_000,
+  // Every 15 s from 8 s: four in a wall's minute (8, 23, 38, 53 s). 2026-11-18 (user: «los golpes deberían caer cada
+  // 15 s, pero ser más débiles para ser aguantables sin defensivo en todas ellas, pero aun así hacer mella y requerir
+  // de healing o un defensivo para la siguiente»): one blow is stood bare; two without a heal or a defence between
+  // them are not. The defences (22–26 s) and the 2 s global cooldown give each hero one defence a blow: a Knight
+  // with two takes turns with them, one with none lives on the Priest's heals.
+  everyMs: 15_000,
   openerMs: 8_000,
   castMs: 2000,
   // Round 9 (2026-11-17): Eternal 1.5 → 1.8, Torment 1.7 → 2.0 — a Knight above the average (a seed whose Knight
@@ -368,10 +370,14 @@ export const CRUSH = {
   // Debilitating Cleave ×0.65) he still takes ~0.6–0.65 of his effective life.
   // Round 11 (2026-11-17): Inferno 1.2 → 1.5, Eternal 1.8 → 2.0 — an offensive Knight still took Inferno 8 and
   // Eternal 8 at the probe's kill (a Knight above the average stood the blow); braced he takes ~0.5 / 0.65 of his life.
-  tankLife: [0, 0, 1.5, 2.0, 2.0] as readonly [number, number, number, number, number],
+  // 2026-11-18: 1.5 / 2.0 / 2.0 → 0.5 / 0.6 / 0.65 — the share of his life one blow takes from a Knight with no
+  // defence up (it killed him before; now it is the blow that comes four times a minute).
+  tankLife: [0, 0, 0.5, 0.6, 0.65] as readonly [number, number, number, number, number],
   // Inferno brings the shock in gently (a back line that wears little magic resist stands it); from Eternal it asks for
   // it. (At 0.3–0.4 in Inferno the probe's Ranger, who wears little, fell to it in most of the walls.)
-  backLife: [0, 0, 0.2, 0.45, 0.5] as readonly [number, number, number, number, number],
+  // 2026-11-18: 0.2 / 0.45 / 0.5 → 0.12 / 0.27 / 0.3 — the blow falls 1.6 times as often (every 15 s, was 24): the
+  // shock a minute is what it was.
+  backLife: [0, 0, 0.12, 0.27, 0.3] as readonly [number, number, number, number, number],
   // × backLife by the boss's side (round 14, 2026-11-17): the shock is what it was at 60/40 — 1.2 for a spell-heavy
   // boss, 0.8 for a steel-heavy one — now that the mixes are 75/25. (Scaling it with the share, as before, halved the
   // steel-heavy shock: the back line stood Eternal 1 untouched and the wall's ask fell by a quarter.)

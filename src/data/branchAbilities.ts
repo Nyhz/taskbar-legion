@@ -1,4 +1,5 @@
 import type { AbilityDef } from './abilities';
+import { EMERGENCY_LIFE_FRAC } from './casting';
 
 // The six branch abilities of the class redesign's first wave (docs/redesign/CLASSES.md §3–§5): one per
 // specialisation branch, learned at tier 5. Starting numbers are the document's; names are provisional.
@@ -9,13 +10,14 @@ export const BRANCH_ABILITIES: Record<string, AbilityDef> = {
   knight_holdtheline: {
     key: 'knight_holdtheline', name: 'Hold the Line', icon: 'banner',
     desc: 'Plant the shield: the whole party takes less damage for a short window.',
-    // Every 24 s (was 26; round 7): ready for each Crushing Blow it is kept for (data/bossKit CRUSH, every 24 s).
-    cooldownMs: 24000, target: 'allAllies',
+    // Every 26 s (24 until 2026-11-18, the longer cooldowns): with the Crushing Blow every 15 s it meets one blow in
+    // two — a party's defences take turns (data/bossKit CRUSH).
+    cooldownMs: 26000, target: 'allAllies',
     // buff_holdline_dr: 10% less damage taken at rank 1, +2.5/rank → 20% at rank 5. 6s.
     applies: [{ effectKey: 'buff_holdline_dr' }],
     // When the party is being hit. Against a boss (round 7: a rule for the waves, another for the bosses) it is kept
     // for the wind-up of its heavy blow (the Crushing Blow), or of its area blow when it wields no heavy one.
-    castCondition: 'enemyPresent', fires: { when: 'partyHit' }, firesBoss: [{ when: 'bossWindup', heavy: true }], rankScaling: { perRank: { value: 2.5 } },
+    castCondition: 'enemyPresent', fires: { when: 'partyHit' }, firesBoss: [{ when: 'bossWindup', heavy: true }, { when: 'allyBelow', frac: EMERGENCY_LIFE_FRAC }], rankScaling: { perRank: { value: 2.5 } },
   },
   // ── Knight · Scourge ──
   knight_riposte: {
@@ -36,7 +38,7 @@ export const BRANCH_ABILITIES: Record<string, AbilityDef> = {
   ranger_weakspot: {
     key: 'ranger_weakspot', name: 'Weak Spot', icon: 'aim',
     desc: 'A shot at her priority target that leaves it marked: it takes more damage from everyone.',
-    cooldownMs: 18000, target: 'priorityEnemy',
+    cooldownMs: 20000, target: 'priorityEnemy',
     // 1.2×→2.0× AD (+0.2/rank) + debuff_weakspot: +6%→+12% damage taken (+1.5/rank) for 6s.
     applies: [{ effectKey: 'fx_damage' }, { effectKey: 'debuff_weakspot', value: 6, valuePerRank: 1.5 }],
     castCondition: 'enemyPresent', fires: { when: 'inReach', foes: 1 }, power: { coeff: 1.2, coeffPerRank: 0.2, canCrit: true },
@@ -45,7 +47,7 @@ export const BRANCH_ABILITIES: Record<string, AbilityDef> = {
   ranger_tarflask: {
     key: 'ranger_tarflask', name: 'Tar Flask', icon: 'fire',
     desc: 'Burning tar over the whole wave: damage over time, and the tarred attack and advance slower.',
-    cooldownMs: 22000, target: 'allEnemies',
+    cooldownMs: 25000, target: 'allEnemies',
     // fx_tar: 0.8×→1.6× AD in total over 5s (+0.2/rank) + debuff_tar_slow: −15%→−30% speed (−3.75/rank).
     applies: [{ effectKey: 'fx_tar' }, { effectKey: 'debuff_tar_slow', valuePerRank: -3.75 }],
     castCondition: 'enemyPresent', fires: { when: 'worthIt', foes: 3 }, power: { coeff: 0.8, coeffPerRank: 0.2 },
@@ -55,8 +57,8 @@ export const BRANCH_ABILITIES: Record<string, AbilityDef> = {
   priest_sanctuary: {
     key: 'priest_sanctuary', name: 'Sanctuary', icon: 'holy',
     desc: 'When someone is hurt, a rolling heal on the whole party.',
-    cooldownMs: 20000, target: 'allAllies', // every 20 s (was 30): the world bosses press harder (data/bossKit WORLD_BOSS_PRESSURE)
-    // fx_sanctuary: 12%→20% of each one's max HP over 6s (+2/rank), × heal power — raised with the heal kit
+    cooldownMs: 22000, target: 'allAllies', // every 22 s (20 until 2026-11-18, the longer cooldowns)
+    // fx_sanctuary: 12%→20% of each one's max HP over 10s (6 until 2026-11-18: the same total, for longer) (+2/rank), × heal power — raised with the heal kit
     // (2026-11-16): the party heal over time is worth more than the instant one (Circle of Healing). As it is
     // applied it lifts every harmful effect from each of them (data/healing).
     applies: [{ effectKey: 'fx_sanctuary' }],
@@ -68,7 +70,7 @@ export const BRANCH_ABILITIES: Record<string, AbilityDef> = {
   priest_smite: {
     key: 'priest_smite', name: 'Smite', icon: 'lightning',
     desc: 'An instant heal on whoever is hurt most and, with it, a strike of light on her priority target.',
-    cooldownMs: 10000, target: 'lowestAllyHp', // every 10 s (was 14): see Sanctuary
+    cooldownMs: 12000, target: 'lowestAllyHp', // every 12 s (10 until 2026-11-18, the longer cooldowns)
     // Heal 8%→14% of the ally's max HP (+1.5/rank, × heal power); the strike is an effect of its own:
     // 0.6×→1.0× AD (+0.1/rank) on her priority target, skipped when no enemy has reached her.
     applies: [

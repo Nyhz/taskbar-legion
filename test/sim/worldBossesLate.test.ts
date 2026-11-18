@@ -220,7 +220,7 @@ describe('Espejos (the Unmaker): what it reflects', () => {
   it('what it does for allies the boss takes for itself: heals and shields far weaker, buffs weaker', () => {
     const mend = reflecting('priest_mend', 1);
     expect(mend?.def.target).toBe('self');
-    expect(mend?.def.applies).toEqual([{ effectKey: 'fx_hot', durationMsOverride: 6000, power: { coeff: 0.2 * 0.02 }, target: 'self' }]);
+    expect(mend?.def.applies).toEqual([{ effectKey: 'fx_hot', durationMsOverride: 12000, power: { coeff: 0.2 * 0.02 }, target: 'self' }]);
     const battlecry = reflecting('knight_battlecry', 1);
     expect(battlecry?.def.applies.every((a) => a.target === 'self')).toBe(true);
     // Smite both heals an ally and strikes an enemy: the heal goes to the boss, the strike to a hero.

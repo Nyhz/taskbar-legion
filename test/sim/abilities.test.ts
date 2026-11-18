@@ -3,6 +3,7 @@ import { castReadyAbilities, tickCooldowns } from '@/sim/abilities';
 import { applyEffect, absorbDamage } from '@/sim/effects';
 import { effectDef } from '@/data/effects';
 import { abilityDef, ABILITIES } from '@/data/abilities';
+import { HERO_GLOBAL_COOLDOWN_MS } from '@/data/casting';
 import { partyAuraMods, heroBaseStats, heroStaticMods, type HeroConfig } from '@/sim/loadout';
 import { aggregate } from '@/sim/stats';
 import type { Combatant, CombatEvent } from '@/sim/world';
@@ -95,14 +96,14 @@ describe('ability mechanics', () => {
     const priest = unit({
       id: 'p', side: 'hero', hp: 100, maxHp: 100,
       baseStats: base({ healPower: 100 }), // ×2 amplifier raw — but devalued by the zone debuff
-      abilities: [{ def: plain('priest_mend'), rank: 1 }], // coeff 0.20 total over 6s × maxHp
+      abilities: [{ def: plain('priest_mend'), rank: 1 }], // coeff 0.20 total over 12s × maxHp
     });
     const ally = unit({ id: 'a', side: 'hero', hp: 10, maxHp: 100 });
     castReadyAbilities(priest, [priest, ally], [], 1, makeRng(1), []); // stage 1 = Normal (heal eff 1.0)
     // ally is lowest (10%) and below 70% → HoT total = 0.20 × 100 × (1 + 100×1.0/100) = 40
-    // over 6s, stored as 6.67/sec on the effect (Normal has no heal debuff).
+    // over 12s, stored as 3.33/sec on the effect (Normal has no heal debuff).
     const hot = ally.effects.find((e) => e.defKey === 'fx_hot');
-    expect(hot?.value).toBeCloseTo(40 / 6, 1);
+    expect(hot?.value).toBeCloseTo(40 / 12, 1);
   });
 
   it('the zone heal-power debuff shrinks the SAME heal as difficulty rises (Mend)', () => {
@@ -118,12 +119,12 @@ describe('ability mechanics', () => {
     };
     // Same priest (healPower 200), same target — only the zone changes. Normal (1.0) heals more
     // than Hell (0.33) than Torment (0.11): the treadmill devalues stale gear each difficulty.
-    const normal = hotPerSec(1); // 0.20×100×(1+200×1.0/100)/6 = (0.20×300)/6 = 10
-    const hell = hotPerSec(105); // (1+200×0.33/100) → 0.20×166/6 = 5.53
-    const torment = hotPerSec(450); // (1+200×0.11/100) → 0.20×122/6 = 4.07
-    expect(normal).toBeCloseTo(10, 1);
-    expect(hell).toBeCloseTo(0.2 * 166 / 6, 1);
-    expect(torment).toBeCloseTo(0.2 * 122 / 6, 1);
+    const normal = hotPerSec(1); // 0.20×100×(1+200×1.0/100)/12 = (0.20×300)/12 = 5
+    const hell = hotPerSec(105); // (1+200×0.33/100) → 0.20×166/12 = 2.77
+    const torment = hotPerSec(450); // (1+200×0.11/100) → 0.20×122/12 = 2.03
+    expect(normal).toBeCloseTo(5, 1);
+    expect(hell).toBeCloseTo(0.2 * 166 / 12, 1);
+    expect(torment).toBeCloseTo(0.2 * 122 / 12, 1);
     expect(normal).toBeGreaterThan(hell);
     expect(hell).toBeGreaterThan(torment);
   });
@@ -153,7 +154,7 @@ describe('ability mechanics', () => {
     expect(knight.cooldowns.knight_bulwark ?? 0).toBeGreaterThan(0);
   });
 
-  it('a hero casts at most ONE ability per swing (no global cooldown — the swing paces them)', () => {
+  it('a hero casts at most ONE ability per swing, and waits out the global cooldown before the next', () => {
     const caster = unit({
       id: 'm', side: 'hero',
       baseStats: base({ attackDamage: 50 }),
@@ -164,7 +165,11 @@ describe('ability mechanics', () => {
     const enemy = unit({ id: 'e', side: 'enemy' });
     const first = castReadyAbilities(caster, [caster], [enemy], 1, makeRng(1), []);
     expect(first).toHaveLength(1); // only one despite both being ready
-    // No global cooldown: the OTHER ready ability fires on the very next swing (call).
+    // The global cooldown (data/casting): the OTHER ready ability waits it out — nothing on the next swing…
+    expect(caster.gcdMs).toBe(HERO_GLOBAL_COOLDOWN_MS);
+    expect(castReadyAbilities(caster, [caster], [enemy], 1, makeRng(1), [])).toHaveLength(0);
+    // …and fires once it has run (cooldown reduction does not shorten it).
+    tickCooldowns(caster, HERO_GLOBAL_COOLDOWN_MS);
     const second = castReadyAbilities(caster, [caster], [enemy], 1, makeRng(1), []);
     expect(second).toHaveLength(1);
     expect(second[0]).not.toBe(first[0]); // the second ability, not a repeat of the first
@@ -184,16 +189,16 @@ describe('ability mechanics', () => {
     const caster = unit({
       id: 'm', side: 'hero',
       baseStats: base({ attackDamage: 50, cooldownReduction: 50 }),
-      abilities: [{ def: plain('priest_nova'), rank: 1 }], // AoE damage → 20000ms base
+      abilities: [{ def: plain('priest_nova'), rank: 1 }], // AoE damage → 24000ms base
     });
     const enemy = unit({ id: 'e', side: 'enemy' });
     castReadyAbilities(caster, [caster], [enemy], 1, makeRng(1), []);
     // The stored cooldown is the BASE (no CDR baked in) — CDR is applied while it ticks.
-    expect(caster.cooldowns['priest_nova']).toBe(20_000);
-    // raw 50 CDR → diminishing-returns effective ≈ 27.8% → effective total 14444 → drains at
-    // 20000/14444 ≈ 1.385× speed: 1000ms of ticking removes ~1385ms.
+    expect(caster.cooldowns['priest_nova']).toBe(24_000);
+    // raw 50 CDR → diminishing-returns effective ≈ 27.8% → drains at ≈ 1.385× speed: 1000ms of ticking
+    // removes ~1385ms.
     tickCooldowns(caster, 1000);
-    expect(caster.cooldowns['priest_nova']).toBeCloseTo(20_000 - 1384.6, 0);
+    expect(caster.cooldowns['priest_nova']).toBeCloseTo(24_000 - 1384.6, 0);
   });
 
   it('a CDR buff gained AFTER the cast still shortens the remaining cooldown', () => {
@@ -205,12 +210,12 @@ describe('ability mechanics', () => {
     const enemy = unit({ id: 'e', side: 'enemy' });
     castReadyAbilities(caster, [caster], [enemy], 1, makeRng(1), []);
     tickCooldowns(caster, 1000); // no CDR yet → drains 1:1
-    expect(caster.cooldowns['priest_nova']).toBe(19_000);
+    expect(caster.cooldowns['priest_nova']).toBe(23_000);
     // Now a buff grants CDR mid-cooldown (e.g. Power Infusion). The SAME remaining cooldown
     // must now drain faster, instead of the old behaviour where CDR only mattered at cast.
     caster.staticMods = [{ key: 'cooldownReduction', mode: 'percent', value: 50 }];
     tickCooldowns(caster, 1000); // effective ≈27.8% → ~1.385× speed
-    expect(caster.cooldowns['priest_nova']).toBeCloseTo(19_000 - 1384.6, 0);
+    expect(caster.cooldowns['priest_nova']).toBeCloseTo(23_000 - 1384.6, 0);
   });
 });
 
@@ -223,23 +228,24 @@ describe('per-ability cooldowns', () => {
   });
 
   it('Knight cooldown spot-checks', () => {
-    expect(ABILITIES.knight_guard?.cooldownMs).toBe(20_000);
-    expect(ABILITIES.knight_debilitate?.cooldownMs).toBe(12_000);
-    expect(ABILITIES.knight_bulwark?.cooldownMs).toBe(24_000);
-    expect(ABILITIES.knight_battlecry?.cooldownMs).toBe(24_000);
-    expect(ABILITIES.knight_bloodlust?.cooldownMs).toBe(24_000);
+    // 2026-11-18: every one ~3 s longer, even or ending in 5.
+    expect(ABILITIES.knight_guard?.cooldownMs).toBe(22_000);
+    expect(ABILITIES.knight_debilitate?.cooldownMs).toBe(15_000);
+    expect(ABILITIES.knight_bulwark?.cooldownMs).toBe(26_000);
+    expect(ABILITIES.knight_battlecry?.cooldownMs).toBe(28_000);
+    expect(ABILITIES.knight_bloodlust?.cooldownMs).toBe(28_000);
   });
 
   it('Priest & Ranger cooldown spot-checks', () => {
-    expect(ABILITIES.priest_mend?.cooldownMs).toBe(14_000); // heal cadence raised with the world-boss pressure (round 3, checkpoint 2)
-    expect(ABILITIES.priest_healing_light?.cooldownMs).toBe(12_000);
-    expect(ABILITIES.priest_circle?.cooldownMs).toBe(20_000);
-    expect(ABILITIES.priest_holyshield?.cooldownMs).toBe(24_000);
-    expect(ABILITIES.priest_nova?.cooldownMs).toBe(20_000);
-    expect(ABILITIES.ranger_fast_fire?.cooldownMs).toBe(24_000);
-    expect(ABILITIES.ranger_multishot?.cooldownMs).toBe(20_000);
-    expect(ABILITIES.ranger_focus?.cooldownMs).toBe(18_000);
-    expect(ABILITIES.ranger_frozentrap?.cooldownMs).toBe(24_000);
+    expect(ABILITIES.priest_mend?.cooldownMs).toBe(16_000);
+    expect(ABILITIES.priest_healing_light?.cooldownMs).toBe(14_000);
+    expect(ABILITIES.priest_circle?.cooldownMs).toBe(22_000);
+    expect(ABILITIES.priest_holyshield?.cooldownMs).toBe(26_000);
+    expect(ABILITIES.priest_nova?.cooldownMs).toBe(24_000);
+    expect(ABILITIES.ranger_fast_fire?.cooldownMs).toBe(28_000);
+    expect(ABILITIES.ranger_multishot?.cooldownMs).toBe(24_000);
+    expect(ABILITIES.ranger_focus?.cooldownMs).toBe(20_000);
+    expect(ABILITIES.ranger_frozentrap?.cooldownMs).toBe(26_000);
     expect(ABILITIES.ranger_aimedshot?.charge).toEqual({ perAttack: 1, toCast: 10 }); // charge-gated, no cd
   });
 

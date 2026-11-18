@@ -71,6 +71,7 @@ export const talents = {
   firesWorthIt: 'With {n} or more enemies up, or against an elite or a boss.',
   firesCluster: 'When its blast catches {n} or more enemies, or on an elite or a boss.',
   firesSelfHit: 'Once the hero is taking damage.',
+  firesSelfBelow: 'When the hero is under {pct} % of its life.',
   firesPartyHit: 'When the party is taking damage.',
   firesPartyHitBoss: 'When the party is taking damage. Against a boss it waits for its area blow.',
   firesAllyHit: 'When an ally is taking damage.',

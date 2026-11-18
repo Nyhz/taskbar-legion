@@ -67,6 +67,7 @@ export const talents: Record<keyof typeof en, string> = {
   firesWorthIt: 'Con {n} o más enemigos en pie, o contra un élite o un jefe.',
   firesCluster: 'Cuando la explosión alcanza a {n} o más enemigos, o sobre un élite o un jefe.',
   firesSelfHit: 'Cuando el héroe está recibiendo daño.',
+  firesSelfBelow: 'Cuando el héroe baja del {pct} % de su vida.',
   firesPartyHit: 'Cuando el grupo está recibiendo daño.',
   firesPartyHitBoss: 'Cuando el grupo está recibiendo daño. Contra un jefe espera a su golpe en área.',
   firesAllyHit: 'Cuando un aliado está recibiendo daño.',

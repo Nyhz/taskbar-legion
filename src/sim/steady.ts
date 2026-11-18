@@ -11,7 +11,7 @@ import type { Combatant } from './world';
 /** Where a fresh meter starts: half-way, so the first roll comes after about half the usual wait. */
 export const STEADY_START = 50;
 
-export type SteadyRoll = 'block' | 'healCrit' | 'crit' | 'multi';
+export type SteadyRoll = 'block' | 'healCrit' | 'crit' | 'multi' | 'backShot';
 
 /** A roll at `pct` % for `c`, kept on its meter `key`: true when the meter passes 100. A chance of 0 or less never
  *  comes up and leaves the meter as it was; 100 or more always does. */

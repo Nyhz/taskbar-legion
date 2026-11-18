@@ -79,15 +79,16 @@ export const BRANCH_EFFECTS: Record<string, EffectDef> = {
   },
 
   // ── Priest ──
-  // Sanctuary: a heal over 6s on every ally (total from the ability's power).
+  // Sanctuary: a heal over 10s on every ally (total from the ability's power; 6 s until 2026-11-18 — the same total,
+  // for longer).
   fx_sanctuary: {
     ...base, key: 'fx_sanctuary', name: 'Sanctuary', icon: 'holy',
-    kind: { type: 'hot', healPerTick: 0 }, durationMs: 6000, beneficial: true,
+    kind: { type: 'hot', healPerTick: 0 }, durationMs: 10000, beneficial: true,
   },
-  // Mending Light (modifier): Smite's heal leaves a heal over 4s.
+  // Mending Light (modifier): Smite's heal leaves a heal over 8s (4 until 2026-11-18 — the same total, for longer).
   fx_light: {
     ...base, key: 'fx_light', name: 'Mending Light', icon: 'heal',
-    kind: { type: 'hot', healPerTick: 0 }, durationMs: 4000, beneficial: true,
+    kind: { type: 'hot', healPerTick: 0 }, durationMs: 8000, beneficial: true,
   },
   // A small ward: the shields of Deep Sanctuary (modifier) and Second Wind (capstone). Its own key, so it
   // stands beside Bulwark / Holy Shield instead of replacing them. 6s.
