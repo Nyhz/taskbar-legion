@@ -13,7 +13,7 @@ from __future__ import annotations
 import json
 
 from .catalog import SOUNDS, Sound
-from .eleven import ROOT, api_key, generate, missing_takes, take_path
+from .eleven import ROOT, api_key, generate, missing_takes, takes
 from .process import CHANNELS, encode_mp3, prepare
 
 OUT = ROOT / "src" / "assets" / "audio"
@@ -44,11 +44,14 @@ def main(argv: list[str]) -> None:
 
     manifest_path = OUT / "manifest.json"
     manifest: dict = json.loads(manifest_path.read_text()) if manifest_path.exists() else {}
+    for s in sounds:  # a sound's old files go: it may now have fewer takes
+        for f in manifest.get(s.id, {}).get("files", []):
+            (OUT / f).unlink(missing_ok=True)
     for s in sounds:
         files = []
         stats = []
-        for t in range(s.variants):
-            x, info = prepare(take_path(s, t), s.channel, s.level, s.loop)
+        for t, raw in enumerate(takes(s)):
+            x, info = prepare(raw, s.channel, s.level, s.loop)
             rel = f"{s.channel}/{s.id}_{t}.mp3"
             encode_mp3(x, OUT / rel, CHANNELS[s.channel][2])
             files.append(rel)

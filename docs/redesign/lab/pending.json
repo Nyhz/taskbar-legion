@@ -1,16 +1,16 @@
 {
   "updated": "18 nov 2026",
-  "intro": "Primera muestra de sonido (R7), generada con ElevenLabs en estilo «híbrido suave». Escúchala con el volumen al que usarías el juego de fondo.",
+  "intro": "Segunda muestra de sonido (R7): más fina y sutil, con un punto 16 bits. La primera se descartó («imagínate escuchar esos sonidos constantemente»).",
   "sections": [
     {
       "id": "sonido-muestra",
       "eyebrow": "R7 · Sonido",
-      "title": "Muestra de sonido: 16 sonidos",
-      "text": "Foley real pero corto, redondo y con un punto retro. Los sonidos de cada golpe tienen varias variantes que el juego alterna al azar. Los volúmenes ya están igualados por canal (efectos, interfaz, ambiente). Los ambientes están en bucle: déjalos sonar para oír si se nota el empalme.",
+      "title": "Muestra de sonido 2: 16 sonidos, más sutiles",
+      "text": "Cambios frente a la primera: descripciones de sonidos mínimos («un leve siseo de hoja», «un toquecito apagado»), estilo 16 bits lo-fi, agudos recortados en todos los sonidos (filtro paso bajo), ataque suavizado y volúmenes mucho más bajos (efectos −25 dB, interfaz −27 dB, ambiente −34 dB, antes −18/−20/−28). El clic de interfaz es tu toma aprobada. Casi todos tienen 2–3 tomas: dime cuáles valen. Escúchalo al volumen al que tendrías el juego de fondo.",
       "questions": [
-        "¿El carácter general (híbrido suave) es el que buscas, o más retro / más realista?",
-        "¿Qué sonidos no te convencen? (dime el nombre y qué cambiarías)",
-        "Ambiente: ¿el de las praderas y el de Tormento encajan con el mundo? ¿Se nota el empalme del bucle?"
+        "¿Ahora el carácter va por buen camino (fino, sutil, 16 bits)?",
+        "¿Qué tomas valen y cuáles no? (nombre + número de toma)",
+        "Ambientes: ¿la toma 1 o la 2 de cada uno? ¿Se nota el empalme del bucle?"
       ],
       "html": "sound.html"
     }

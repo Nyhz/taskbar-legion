@@ -15,7 +15,7 @@ LAB = ROOT / "docs" / "redesign" / "lab"
 
 #: What each sample is for, as the user reads it.
 WHAT_ES: dict[str, str] = {
-    "knight_swing": "Golpe de espada del Caballero (cada golpe; 3 variantes al azar)",
+    "knight_swing": "Golpe de espada del Caballero (cada golpe; el juego alterna las tomas al azar)",
     "hit_flesh": "Impacto sobre un enemigo (3 variantes)",
     "ranger_shot": "Disparo del Cazador: cuerda y flecha (3 variantes)",
     "crit_hit": "Golpe crítico (2 variantes)",

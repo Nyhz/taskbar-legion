@@ -55,6 +55,11 @@ def missing_takes(sounds: list[Sound]) -> list[tuple[Sound, int]]:
     return [(s, t) for s in sounds for t in range(s.variants) if not take_path(s, t).exists()]
 
 
+def takes(sound: Sound) -> list[Path]:
+    """Every raw take of a sound, in play order: the approved ones it keeps, then the generated ones."""
+    return [RAW / name for name in sound.kept] + [take_path(sound, t) for t in range(sound.variants)]
+
+
 def generate(sound: Sound, take: int, key: str) -> Path:
     """Asks ElevenLabs for one take (unless cached) and returns its file."""
     path = take_path(sound, take)

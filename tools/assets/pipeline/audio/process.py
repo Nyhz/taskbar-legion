@@ -1,8 +1,9 @@
-"""From a raw ElevenLabs take to a game-ready sound: decode, trim, level, loop, encode.
+"""From a raw ElevenLabs take to a game-ready sound: decode, trim, soften, level, loop, encode.
 
-Loudness is the coop-game pipeline's measure (gated 50 ms RMS after a 100 Hz high-pass), so the channels keep the same
-references: sfx −18 dB, ui −20 dB, ambient −28 dB. One-shots are mono (the strip is a thin band; stereo would double
-the size for nothing); ambient beds stay stereo.
+Loudness is the coop-game pipeline's measure (gated 50 ms RMS after a 100 Hz high-pass). The channel references sit
+well below a normal game's (sfx −25 dB, ui −27 dB, ambient −34 dB): the user rejected the first sample as too much
+for something heard all day. Every sound is softened: a low-pass takes the highs off (a 16-bit, muted top) and the
+attack is eased in. One-shots are mono (the strip is a thin band); ambient beds stay stereo.
 """
 from __future__ import annotations
 
@@ -17,10 +18,12 @@ LOUDNESS_WINDOW_S = 0.05
 
 #: Channel → (reference loudness dB, peak limit dBFS, MP3 bitrate).
 CHANNELS: dict[str, tuple[float, float, str]] = {
-    "sfx": (-18.0, -1.5, "96k"),
-    "ui": (-20.0, -3.0, "96k"),
-    "ambient": (-28.0, -6.0, "112k"),
+    "sfx": (-25.0, -8.0, "96k"),
+    "ui": (-27.0, -9.0, "96k"),
+    "ambient": (-34.0, -14.0, "112k"),
 }
+#: Low-pass corner (Hz) of the softening: one-shots lose their bite above it, the beds keep a little more air.
+SOFT_CUTOFF = {"sfx": 6500.0, "ui": 7000.0, "ambient": 5000.0}
 
 
 def decode(path: Path) -> np.ndarray:
@@ -42,6 +45,24 @@ def _highpass(x: np.ndarray, cutoff: float = 100.0) -> np.ndarray:
         prev_x = v
         y[i] = prev_y
     return y
+
+
+def _lowpass(x: np.ndarray, cutoff: float) -> np.ndarray:
+    """Two cascaded one-pole low-passes (12 dB/octave): a soft, muted top like a 16-bit sampler's."""
+    a = float(np.exp(-2.0 * np.pi * cutoff / RATE))
+    y = x
+    for _ in range(2):
+        out = np.empty_like(y)
+        prev = 0.0
+        for i, v in enumerate(y):
+            prev = (1.0 - a) * v + a * prev
+            out[i] = prev
+        y = out
+    return y
+
+
+def soften(x: np.ndarray, channel: str) -> np.ndarray:
+    return np.stack([_lowpass(x[:, c], SOFT_CUTOFF[channel]) for c in range(x.shape[1])], axis=1)
 
 
 def loudness_db(x: np.ndarray) -> float:
@@ -89,7 +110,7 @@ def trim(x: np.ndarray, floor_db: float = -48.0, keep_ms: float = 15.0) -> np.nd
     return x[max(0, loud[0] - pad) : min(len(x), loud[-1] + pad * 4)]
 
 
-def fade(x: np.ndarray, in_ms: float = 3.0, out_ms: float = 40.0) -> np.ndarray:
+def fade(x: np.ndarray, in_ms: float = 8.0, out_ms: float = 60.0) -> np.ndarray:
     y = x.copy()
     k_in = min(len(y) // 2, max(1, int(RATE * in_ms / 1000)))
     k_out = min(len(y) // 2, max(1, int(RATE * out_ms / 1000)))
@@ -111,6 +132,7 @@ def prepare(raw: Path, channel: str, level: float, loop: bool) -> tuple[np.ndarr
     x = decode(raw)
     if channel != "ambient":
         x = x.mean(axis=1, keepdims=True)
+    x = soften(x, channel)
     x = seamless(x) if loop else fade(trim(x))
     ref, limit, _ = CHANNELS[channel]
     x = normalise(x, ref + level, limit)
