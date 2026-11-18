@@ -15,6 +15,7 @@ import json
 from .catalog import SOUND_MAP, SOUNDS, Sound
 from .eleven import ROOT, api_key, generate, missing_takes, takes
 from .recipes import render
+from .harsh import MAX_BITE_PEAK_DB, measure
 from .process import CHANNELS, decode, encode_mp3, loop_offset, prepare
 
 OUT = ROOT / "src" / "assets" / "audio"
@@ -58,6 +59,7 @@ def main(argv: list[str]) -> None:
         recorded = takes(s)
         sources = [(decode(p), True) for p in recorded] + [(render(s.id, t), False) for t in range(0 if s.source == "eleven" else s.variants)]
         offsets = []
+        bites = []
         for t, (raw, is_recorded) in enumerate(sources):
             x, info = prepare(raw, s.channel, s.level, s.loop, recorded=is_recorded)
             rel = f"{s.channel}/{s.id}_{t}.mp3"
@@ -66,6 +68,11 @@ def main(argv: list[str]) -> None:
                 offsets.append({"start": loop_offset(OUT / rel, x), "length": round(len(x) / 44100, 6)})
             files.append(rel)
             stats.append(info)
+            if s.channel == "ambient":  # heard all day: nothing may pierce (harsh.py)
+                h = measure(x)
+                bites.append(h.bite_peak_db)
+                if h.shrill:
+                    print(f"  ⚠ {s.id} take {t} is shrill: 2–8 kHz peak {h.bite_peak_db:+.1f} dB over the bed, share {h.bite_share:.2f} (tone {h.tonal_hz:.0f} Hz)")
         manifest[s.id] = {
             "channel": s.channel,
             "group": s.group,
@@ -75,6 +82,7 @@ def main(argv: list[str]) -> None:
             "seconds": max(i["seconds"] for i in stats),
             "loudness": round(sum(i["loudness"] for i in stats) / len(stats), 1),
             "peak": max(i["peak"] for i in stats),
+            **({"bite": round(max(bites), 1)} if bites else {}),
         }
     manifest = dict(sorted(manifest.items()))
     manifest_path.write_text(json.dumps(manifest, indent=1) + "\n")
@@ -90,12 +98,15 @@ def write_report(manifest: dict) -> None:
         + ", ".join(f"{c} {ref:.0f} dB" for c, (ref, _, _) in CHANNELS.items())
         + ".",
         "",
-        "| Id | Canal | Grupo | Tomas | Duración (s) | Sonoridad | Pico | Bucle |",
-        "| --- | --- | --- | ---: | ---: | ---: | ---: | --- |",
+        f"Agudos (solo ambientes): pico de la banda 2–8 kHz sobre la sonoridad del ambiente; por encima de "
+        f"{MAX_BITE_PEAK_DB:+.0f} dB algo pita (`pipeline/audio/harsh.py`).",
+        "",
+        "| Id | Canal | Grupo | Tomas | Duración (s) | Sonoridad | Pico | Agudos | Bucle |",
+        "| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | --- |",
     ]
     for sid, m in manifest.items():
         lines.append(
-            f"| `{sid}` | {m['channel']} | {m['group']} | {len(m['files'])} | {m['seconds']:.2f} | {m['loudness']:.1f} | {m['peak']:.1f} | {'sí' if m['loop'] else ''} |"
+            f"| `{sid}` | {m['channel']} | {m['group']} | {len(m['files'])} | {m['seconds']:.2f} | {m['loudness']:.1f} | {m['peak']:.1f} | {'' if 'bite' not in m else f"{m['bite']:+.1f}"} | {'sí' if m['loop'] else ''} |"
         )
     REPORT.parent.mkdir(parents=True, exist_ok=True)
     REPORT.write_text("\n".join(lines) + "\n")

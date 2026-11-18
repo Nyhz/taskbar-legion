@@ -255,8 +255,9 @@
    }
   ],
   "seconds": 24.0,
-  "loudness": -35.7,
-  "peak": -14.0
+  "loudness": -35.0,
+  "peak": -14.0,
+  "bite": 0.5
  },
  "amb_w10": {
   "channel": "ambient",
@@ -273,7 +274,8 @@
   ],
   "seconds": 24.0,
   "loudness": -34.0,
-  "peak": -15.2
+  "peak": -15.2,
+  "bite": -11.0
  },
  "amb_w10_torment": {
   "channel": "ambient",
@@ -290,7 +292,8 @@
   ],
   "seconds": 24.0,
   "loudness": -34.8,
-  "peak": -14.0
+  "peak": -14.0,
+  "bite": -19.8
  },
  "amb_w1_torment": {
   "channel": "ambient",
@@ -307,7 +310,8 @@
   ],
   "seconds": 24.0,
   "loudness": -37.1,
-  "peak": -14.0
+  "peak": -14.0,
+  "bite": -25.8
  },
  "amb_w2": {
   "channel": "ambient",
@@ -324,7 +328,8 @@
   ],
   "seconds": 24.0,
   "loudness": -34.0,
-  "peak": -14.8
+  "peak": -15.6,
+  "bite": -4.1
  },
  "amb_w2_torment": {
   "channel": "ambient",
@@ -341,7 +346,8 @@
   ],
   "seconds": 24.0,
   "loudness": -34.0,
-  "peak": -15.0
+  "peak": -15.0,
+  "bite": -31.3
  },
  "amb_w3": {
   "channel": "ambient",
@@ -358,7 +364,8 @@
   ],
   "seconds": 24.0,
   "loudness": -35.5,
-  "peak": -14.0
+  "peak": -14.0,
+  "bite": -32.5
  },
  "amb_w3_torment": {
   "channel": "ambient",
@@ -375,7 +382,8 @@
   ],
   "seconds": 24.0,
   "loudness": -38.1,
-  "peak": -14.0
+  "peak": -14.0,
+  "bite": -8.9
  },
  "amb_w4": {
   "channel": "ambient",
@@ -391,8 +399,9 @@
    }
   ],
   "seconds": 24.0,
-  "loudness": -34.3,
-  "peak": -14.0
+  "loudness": -36.2,
+  "peak": -14.0,
+  "bite": -14.1
  },
  "amb_w4_torment": {
   "channel": "ambient",
@@ -409,7 +418,8 @@
   ],
   "seconds": 24.0,
   "loudness": -36.5,
-  "peak": -14.0
+  "peak": -14.0,
+  "bite": -12.3
  },
  "amb_w5": {
   "channel": "ambient",
@@ -426,7 +436,8 @@
   ],
   "seconds": 24.0,
   "loudness": -35.1,
-  "peak": -14.0
+  "peak": -14.0,
+  "bite": -8.5
  },
  "amb_w5_torment": {
   "channel": "ambient",
@@ -443,7 +454,8 @@
   ],
   "seconds": 24.0,
   "loudness": -34.0,
-  "peak": -15.0
+  "peak": -15.0,
+  "bite": -28.7
  },
  "amb_w6": {
   "channel": "ambient",
@@ -460,7 +472,8 @@
   ],
   "seconds": 24.0,
   "loudness": -34.0,
-  "peak": -15.7
+  "peak": -15.7,
+  "bite": -7.4
  },
  "amb_w6_torment": {
   "channel": "ambient",
@@ -477,7 +490,8 @@
   ],
   "seconds": 24.0,
   "loudness": -34.0,
-  "peak": -14.9
+  "peak": -14.9,
+  "bite": -9.6
  },
  "amb_w7": {
   "channel": "ambient",
@@ -494,7 +508,8 @@
   ],
   "seconds": 24.0,
   "loudness": -34.0,
-  "peak": -16.2
+  "peak": -16.0,
+  "bite": -20.4
  },
  "amb_w7_torment": {
   "channel": "ambient",
@@ -511,7 +526,8 @@
   ],
   "seconds": 24.0,
   "loudness": -34.0,
-  "peak": -14.2
+  "peak": -14.2,
+  "bite": -31.3
  },
  "amb_w8": {
   "channel": "ambient",
@@ -528,7 +544,8 @@
   ],
   "seconds": 24.0,
   "loudness": -37.3,
-  "peak": -14.0
+  "peak": -14.0,
+  "bite": -6.7
  },
  "amb_w8_torment": {
   "channel": "ambient",
@@ -545,7 +562,8 @@
   ],
   "seconds": 24.0,
   "loudness": -35.3,
-  "peak": -14.0
+  "peak": -14.0,
+  "bite": -6.7
  },
  "amb_w9": {
   "channel": "ambient",
@@ -561,8 +579,9 @@
    }
   ],
   "seconds": 24.0,
-  "loudness": -34.0,
-  "peak": -14.3
+  "loudness": -35.1,
+  "peak": -14.0,
+  "bite": -2.1
  },
  "amb_w9_torment": {
   "channel": "ambient",
@@ -579,7 +598,8 @@
   ],
   "seconds": 24.0,
   "loudness": -35.5,
-  "peak": -14.0
+  "peak": -14.0,
+  "bite": -18.3
  },
  "block": {
   "channel": "sfx",

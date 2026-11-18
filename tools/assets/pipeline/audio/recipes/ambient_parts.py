@@ -53,18 +53,27 @@ def sprinkle(out: np.ndarray, rng: Rng, make, count: int, gain: tuple[float, flo
 # ── W1 (moved verbatim from the approved meadow) ──
 
 
+# Softened 2026-11-18 (user: the meadow's bird was «súper estridente»): the birds sang pure sines at 2.4–3.7 kHz and
+# the crickets at 4.3 kHz — right where the ear is sharpest, heard all day. Now every call sits lower, starts and ends
+# softly and goes through a dark top; `harsh.py` measures the beds so nothing piercing comes back.
+
+
 def cricket(rng: Rng) -> np.ndarray:
-    """One chirp: three tiny pulses of a high sine."""
-    f = 4300.0 * jit(rng, 0.03)
-    p = osc("sine", f, length(0.012, RATE), RATE) * np.hanning(length(0.012, RATE))
-    return mix(0.08, RATE, (0.0, p, 0.0), (0.028, p, -1.0), (0.056, p, -2.0))
+    """One chirp: three soft pulses of a mid-high tone, far off in the grass."""
+    f = 2900.0 * jit(rng, 0.03)
+    m = length(0.018, RATE)
+    p = osc("sine", f, m, RATE) * np.hanning(m)
+    return dark(mix(0.1, RATE, (0.0, p, 0.0), (0.03, p, -1.5), (0.06, p, -3.0)), 3200)
 
 
-def bird(rng: Rng) -> np.ndarray:
-    n = length(0.09, RATE)
-    k = n // 3
-    f = np.concatenate([np.geomspace(2400, 3700, k), np.geomspace(3700, 2900, n - k)]) * jit(rng, 0.05)
-    return osc("sine", f, n, RATE) * np.hanning(n)
+def bird(rng: Rng, low: float = 1250.0, high: float = 1750.0) -> np.ndarray:
+    """One round note of a small songbird: a soft rise and fall with a little flutter, no sharp edge."""
+    n = length(float(rng.uniform(0.11, 0.16)), RATE)
+    a = float(rng.uniform(low, high))
+    c = arch(n, a * 0.92, a * 1.12, a * 0.97, at=0.35)
+    c = c * (1.0 + 0.012 * np.sin(2 * np.pi * float(rng.uniform(22, 30)) * time_axis(n, RATE)))
+    x = osc("sine", c, n, RATE) + 0.08 * osc("sine", c * 2, n, RATE)
+    return dark(x * smooth_env(n, RATE, 0.03, 0.06), 2400)
 
 
 def cricket_song(rng: Rng) -> np.ndarray:
@@ -75,18 +84,20 @@ def cricket_song(rng: Rng) -> np.ndarray:
 
 
 def tweet(rng: Rng) -> np.ndarray:
-    """A small bird: one to three quick rising-falling notes."""
+    """A small bird: one to three round notes, each a little lower (a gentle warble, not a chirp)."""
     notes = int(rng.integers(1, 4))
-    return mix(0.12 * notes + 0.1, RATE, *[(0.12 * i, bird(rng), -1.5 * i) for i in range(notes)])
+    top = float(rng.uniform(1500, 1800))
+    calls = [(0.17 * i, bird(rng, top * 0.9**i * 0.85, top * 0.9**i), -2.0 * i) for i in range(notes)]
+    return mix(0.17 * notes + 0.15, RATE, *calls)
 
 
 def whistle(rng: Rng) -> np.ndarray:
     """A two-note whistle, the second lower (a far blackbird)."""
     j = jit(rng, 0.05)
-    n1, n2 = length(0.16, RATE), length(0.22, RATE)
-    hi = osc("sine", np.geomspace(2100 * j, 2300 * j, n1), n1, RATE) * np.hanning(n1)
-    lo = osc("sine", np.geomspace(1750 * j, 1600 * j, n2), n2, RATE) * np.hanning(n2)
-    return mix(0.5, RATE, (0.0, hi, 0.0), (0.2, lo, -2.0))
+    n1, n2 = length(0.2, RATE), length(0.28, RATE)
+    hi = osc("sine", np.geomspace(1450 * j, 1580 * j, n1), n1, RATE) * smooth_env(n1, RATE, 0.05, 0.1)
+    lo = osc("sine", np.geomspace(1220 * j, 1120 * j, n2), n2, RATE) * smooth_env(n2, RATE, 0.05, 0.15)
+    return dark(mix(0.6, RATE, (0.0, hi, 0.0), (0.24, lo, -2.0)), 2200)
 
 
 def rustle(rng: Rng, dur: float = 1.2) -> np.ndarray:
@@ -112,6 +123,17 @@ def thunder(rng: Rng) -> np.ndarray:
 def drip(rng: Rng) -> np.ndarray:
     """A heavy drop landing: a tiny low plink."""
     return blip(0.09, 900 * jit(rng, 0.15), 520 * jit(rng, 0.1), 0.06)
+
+
+def windmill(rng: Rng) -> np.ndarray:
+    """A windmill's sails turning in the breeze: a slow wooden creak at each pass and the soft whoosh of a sail."""
+    passes = int(rng.integers(2, 4))
+    gap = float(rng.uniform(1.4, 1.9))
+    layers = []
+    for i in range(passes):
+        layers.append((i * gap, creak(rng, float(rng.uniform(0.5, 0.8))), -1.0 * i))
+        layers.append((i * gap + 0.5, normalise_peak(dark(band(rng.standard_normal(length(0.9, RATE)), RATE, 200, 900, order=2), 1000)) * smooth_env(length(0.9, RATE), RATE, 0.35, 0.45), -9.0 - i))
+    return normalise_peak(mix(passes * gap + 1.0, RATE, *layers))
 
 
 # ── Forest ──
@@ -210,23 +232,24 @@ def pebbles(rng: Rng) -> np.ndarray:
     count = int(rng.integers(3, 8))
     at, gap, layers = 0.0, float(rng.uniform(0.1, 0.16)), []
     for i in range(count):
-        layers.append((at, knock(float(rng.uniform(1300, 2200)), 0.05, 0.25), -1.2 * i))
+        layers.append((at, knock(float(rng.uniform(750, 1250)), 0.06, 0.3), -1.2 * i))  # was 1.3–2.2 kHz: clicky
         at += gap
         gap *= 0.72
-    return normalise_peak(dark(mix(at + 0.08, RATE, *layers), 3000))
+    return normalise_peak(dark(mix(at + 0.08, RATE, *layers), 2000))
 
 
 def hawk(rng: Rng) -> np.ndarray:
     """A far hawk: one or two long falling cries."""
     def cry(j: float) -> np.ndarray:
-        n = length(0.55, RATE)
-        c = arch(n, 1600 * j, 2250 * j, 1400 * j, at=0.22)
+        n = length(0.6, RATE)
+        c = arch(n, 1050 * j, 1400 * j, 900 * j, at=0.22)
         c = c * (1.0 + 0.01 * np.sin(2 * np.pi * 12.0 * time_axis(n, RATE)))
-        return osc("sine", c, n, RATE) * smooth_env(n, RATE, 0.04, 0.3)
+        breath = band(rng.standard_normal(n), RATE, 800, 1800, order=2) * 0.15
+        return (osc("sine", c, n, RATE) + breath) * smooth_env(n, RATE, 0.08, 0.32)
 
     j = jit(rng, 0.05)
-    calls = [(0.0, cry(j), 0.0)] + ([(0.75, cry(j * 0.97), -3.0)] if rng.uniform() < 0.5 else [])
-    return normalise_peak(dark(mix(1.4, RATE, *calls), 3200))
+    calls = [(0.0, cry(j), 0.0)] + ([(0.8, cry(j * 0.97), -3.0)] if rng.uniform() < 0.5 else [])
+    return normalise_peak(dark(mix(1.5, RATE, *calls), 1900))
 
 
 # ── Monastery ──
@@ -241,8 +264,8 @@ def chimes(rng: Rng, notes: tuple[float, ...] = (74, 76, 79, 81, 83, 86)) -> np.
     """Wind chimes stirred by a breeze: a few glass tones, clustered."""
     count = int(rng.integers(4, 9))
     times = np.sort(rng.uniform(0, 1.6, count))
-    layers = [(float(t), tone(1.3, note(float(rng.choice(notes))), GLASS, 0.6, attack=0.003), float(rng.uniform(-6, 0))) for t in times]
-    return normalise_peak(mix(3.0, RATE, *layers))
+    layers = [(float(t), tone(1.3, note(float(rng.choice(notes))), GLASS, 0.6, attack=0.006), float(rng.uniform(-6, 0))) for t in times]
+    return normalise_peak(dark(mix(3.0, RATE, *layers), 2800))
 
 
 # ── Coast ──
@@ -282,11 +305,11 @@ def cave_drip(rng: Rng, f: float | None = None) -> np.ndarray:
 
 def crystal(rng: Rng) -> np.ndarray:
     """A crystal ringing on its own: one glass tone, sometimes with its fifth."""
-    m = float(rng.choice([79, 81, 84, 86]))
-    layers = [(0.0, tone(1.3, note(m), GLASS, 0.8, attack=0.004), 0.0)]
+    m = float(rng.choice([72, 74, 76, 79]))
+    layers = [(0.0, tone(1.3, note(m), GLASS, 0.8, attack=0.006), 0.0)]
     if rng.uniform() < 0.5:
-        layers.append((0.18, tone(1.1, note(m + 7), GLASS, 0.6, attack=0.004), -5.0))
-    return normalise_peak(verb(mix(1.5, RATE, *layers), rng, seconds=1.0, wet=0.35, tail=0.6))
+        layers.append((0.18, tone(1.1, note(m + 7), GLASS, 0.6, attack=0.006), -5.0))
+    return normalise_peak(verb(dark(mix(1.5, RATE, *layers), 2800), rng, seconds=1.0, wet=0.35, tail=0.6))
 
 
 def hum(rng: Rng, lo: float = 45.0) -> np.ndarray:
@@ -342,8 +365,9 @@ def flag(rng: Rng, rate: tuple[float, float] = (5.0, 8.0)) -> np.ndarray:
 
 def airy_chime(rng: Rng) -> np.ndarray:
     """Two glass tones hanging in thin air."""
-    a, b = (float(v) for v in rng.choice([79, 84, 86, 91], 2, replace=False))
-    return normalise_peak(verb(mix(2.0, RATE, (0.0, tone(1.6, note(a), GLASS, 1.0), 0.0), (0.3, tone(1.5, note(b), GLASS, 0.9), -3.0)), rng, seconds=1.2, wet=0.35, tail=0.6))
+    a, b = (float(v) for v in rng.choice([72, 76, 79, 84], 2, replace=False))
+    x = mix(2.0, RATE, (0.0, tone(1.6, note(a), GLASS, 1.0, attack=0.008), 0.0), (0.3, tone(1.5, note(b), GLASS, 0.9, attack=0.008), -3.0))
+    return normalise_peak(verb(dark(x, 2800), rng, seconds=1.2, wet=0.35, tail=0.6))
 
 
 def high_wind(rng: Rng) -> np.ndarray:

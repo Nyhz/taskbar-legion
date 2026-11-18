@@ -12,26 +12,24 @@ from ..synth import colored_noise, length, pan
 from .ambient_parts import (
     LOOP_S, airy_chime, bed, cave_drip, chimes, cricket_song, crystal, drip, embers, far_bell, flag, frogs, furnace, gull,
     hammer, hawk, high_wind, hum, lap, lava, owl, pebbles, plop, rift_shimmer, rift_tone, rift_whoosh, rustle, scatter,
-    sprinkle, swell, tweet, wave, whistle, wind_whistle, woodpecker,
+    sprinkle, swell, tweet, wave, whistle, wind_whistle, windmill, woodpecker,
 )
 from .common import RATE, Recipe, Rng
 
 
 def amb_w1(rng: Rng) -> np.ndarray:  # ★ golden meadow at dusk
-    """The constant bed is barely there (a breath of low wind); what is heard are the details on top of it: crickets
-    that sing for a while and stop, small birds and a far whistle, now and then the grass stirring (user: «el sonido
-    de fondo constante debe ser extremadamente sutil y debe notarse el resto de soniditos que adornan»)."""
+    """The constant bed is barely there (a breath of low wind); what is heard are the details on top of it: small
+    birds warbling, a far whistle, the grass stirring, the windmill's sails creaking round, crickets far off in the
+    grass (user: «el sonido de fondo constante debe ser extremadamente sutil y debe notarse el resto de soniditos que
+    adornan»). Cozy, not bright (user, 2026-11-18: «campos, con molinos, buen tiempo»; the old bird was shrill)."""
     n = length(LOOP_S, RATE)
     bed_ = np.stack([colored_noise(n, RATE, rng, 90, 600, tilt=-4.0, order=4) * swell(n, 3, 0.5, p) for p in (0.0, 1.3)], axis=1) * 0.004
     out = np.zeros((n, 2))
-    for at in rng.uniform(0, LOOP_S, 5):
-        scatter(out, pan(cricket_song(rng), float(rng.uniform(-0.8, 0.8))), at, float(rng.uniform(0.05, 0.09)))
-    for at in rng.uniform(0, LOOP_S, 6):
-        scatter(out, pan(tweet(rng), float(rng.uniform(-0.9, 0.9))), at, float(rng.uniform(0.05, 0.08)))
-    for at in rng.uniform(0, LOOP_S, 2):
-        scatter(out, pan(whistle(rng), float(rng.uniform(-0.6, 0.6))), at, 0.045)
-    for at in rng.uniform(0, LOOP_S, 3):
-        scatter(out, pan(rustle(rng, float(rng.uniform(0.9, 1.6))), float(rng.uniform(-0.7, 0.7))), at, 0.06)
+    sprinkle(out, rng, cricket_song, 3, (0.02, 0.03), width=0.8)
+    sprinkle(out, rng, tweet, 5, (0.035, 0.05), width=0.9)
+    sprinkle(out, rng, whistle, 2, (0.035, 0.045), width=0.6)
+    sprinkle(out, rng, lambda r: rustle(r, float(r.uniform(1.0, 1.8))), 4, (0.06, 0.08), width=0.7)
+    sprinkle(out, rng, windmill, 2, (0.06, 0.075), width=0.5, jitter=0.4)
     return bed_ + out
 
 
