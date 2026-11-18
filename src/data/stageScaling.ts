@@ -523,12 +523,15 @@ export function wallCurveMult(S: number): number {
 // ROUND 18 (2026-11-18; user: common chests 0.2 → 0.5 %, chest research +2.5 %/rank): ~3–5× the chests an hour made
 // gear come much faster, so the walls rose — Hell ×1.6, Inferno ×2.7, Eternal ×3.3–3.8, Torment ×1.8–2.6 (its first
 // worlds most, to stay above Eternal 10) — keeping every wall above the one before against the fixed reference party.
+// ROUND 19 (2026-11-18; the 2 s global cooldown, longer cooldowns, the Crushing Blow every 15 s): nine walls stopped
+// rising against the reference party; only those moved, by what they asked — Normal 3 / 10 and Hell 3 +0.6 / +1.8 /
+// +3.4 %, Eternal 4–5 +2.9 / +7.6 % and 6 −1.8 %, Torment 2 −7.6 % and 5 +3.2 % (user: keep the ~1 157 h it came to).
 export const WORLD_WALL_MULT: readonly number[] = [
-  0.1713, 0.1706, 0.2008, 0.2147, 0.2846, 0.275, 0.2916, 0.3113, 0.4217, 0.372,
-  0.564, 0.5926, 0.6757, 0.7632, 1.032, 1.094, 1.359, 1.497, 1.6, 1.728,
+  0.1713, 0.1706, 0.2019, 0.2147, 0.2846, 0.275, 0.2916, 0.3113, 0.4217, 0.3787,
+  0.564, 0.5926, 0.6988, 0.7632, 1.032, 1.094, 1.359, 1.497, 1.6, 1.728,
   2.562, 3.741, 5.884, 7.156, 9.244, 10.81, 13.01, 15.51, 17.49, 17.01,
-  23.88, 37.24, 51.78, 59.89, 67.09, 84.91, 94.52, 103.1, 111.3, 110.7,
-  127.1, 175.7, 235.8, 298.1, 331.8, 367.7, 411.6, 466.2, 536.8, 564.5,
+  23.88, 37.24, 51.78, 61.64, 72.2, 83.37, 94.52, 103.1, 111.3, 110.7,
+  127.1, 162.3, 235.8, 298.1, 342.3, 367.7, 411.6, 466.2, 536.8, 564.5,
 ];
 export function wallWorldMult(S: number): number {
   return WORLD_WALL_MULT[worldOf(S) - 1] ?? wallCurveMult(S);

@@ -2271,3 +2271,9 @@ Decisiones del usuario (18 nov), tras discutirlas una a una:
   cada pulso de 1 s pasa una banda de luz por el héroe (`hot_pulse`); la barra de vida enseña en menta lo que la cura
   aún va a dar (`hud_s_fill_coming`, `stripHud.barSegments` `comingW`). Cada habilidad de la Priest abre con su sello de
   runas y el pilar de luz (`sigil_heal/ward/wrath`, `render/abilityFx` `SIGIL`). Arte en `pipeline/fx/priest_care.py`.
+- **Medido (probe, 5 semillas, antes del ajuste de muros):** horas por dificultad 6,9 / 33 / 144 / 280 / 693 (ronda 18:
+  6 / 34 / 154 / 239 / 640), unas **1 157 h** en total (+8 %), 4,4–5,1 meses. El usuario elige quedarse ahí.
+- **Escalera arreglada** tocando solo los nueve muros que dejaron de subir (Normal 3 y 10, Hell 3, Eternal 4–6,
+  Tormento 2 y 5; `WORLD_WALL_MULT`, ronda 19) y re-grabada: los 50 suben.
+- **La Priest en W1–3:** con el grupo real del probe lanza 0,6–1 veces por minuto en las etapas x-4 y unas 3 en las x-9;
+  la regeneración del Knight (5 → 4) casi no cambia nada (el daño enemigo es la palanca). El usuario: dejarlo así.
