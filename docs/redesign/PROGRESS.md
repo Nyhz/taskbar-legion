@@ -2205,13 +2205,13 @@ muros y horas en la siguiente ronda.
   los muros no la exigen); el oro que sobra en Tormento (13–23 h de ingreso) se acepta y la sonda no lo gasta en Pulir.
 
 
-### Pendiente tras el sonido — cofres comunes (18 nov)
+### Pendiente al final (tras el sonido y los arreglos visuales del combate) — cofres comunes y curva (18 nov)
 
-- **Decisión del usuario:** cofre común de 0,2 % a **0,4 %** por muerte (1 cada 250 en lugar de 1 cada 500), y reajustar la
-  curva (horas y escalera) con ello. Motivo: en 1-8 le habían caído 2 cofres (lo esperado eran 4–5 con los de jefe).
-  «Lo hacemos tras los sonidos.»
-- **Junto al reajuste de la curva (18 nov):** los nodos «Botín común» (+0,25 %/rango → ×1,09 al final de Tormento) y
-  «Botín de jefe» (+0,5 %/rango → ×1,19) son casi decorativos y su texto confunde (multiplica la base, no suma puntos:
-  +1 % deja el 0,2 % en 0,202 %). Opciones propuestas: rangos que se noten con tope (p. ej. 10 × +10 %, mi
-  recomendación), infinito a +2,5 %/rango, o quitarlos. Pendiente de la elección del usuario. Orden acordado: sonido →
-  arreglos visuales del combate (backlog) → cofres y curva al final.
+- **Decisión del usuario (18 nov, sustituye a la anterior de 0,4 %):** cofre común base de 0,2 % a **0,5 %** por muerte
+  (1 cada 200), y el nodo «Botín común» de +0,25 % a **+2,5 % por rango** (sigue infinito y multiplicando la base; al
+  ritmo de compra medido, ~×1,9 al final de Tormento). Con ello, **reajustar la curva** (horas por dificultad y
+  escalera estrictamente ascendente). Motivo: en 1-8 le habían caído 2 cofres, y el nodo era casi decorativo (+1 % dejaba
+  el 0,2 % en 0,202 %).
+- Arreglar el texto del nodo para que diga que es un porcentaje sobre la probabilidad base, no puntos sumados.
+- Por decidir en ese paso: el nodo «Botín de jefe» (+0,5 %/rango → ×1,19) tiene el mismo problema.
+- Orden acordado: sonido → arreglos visuales del combate (backlog) → cofres y curva al final.
