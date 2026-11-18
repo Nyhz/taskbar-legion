@@ -86,7 +86,7 @@ export function zoneBossHp(S: number): number {
 // minutes). Normal's stages are eight waves (about 1¼ minutes at X-1, 3½ at X-9: a world in some 20 minutes), and
 // the count grows with each difficulty until the full twenty.
 // Normal 16 · Hell 17 · Inferno 18 · Eternal 19 · Torment 20 (user decision, 2026-11-15; wired 2026-11-16).
-export const WAVES_BY_DIFFICULTY: readonly number[] = [16, 17, 18, 19, 20];
+export const WAVES_BY_DIFFICULTY: readonly number[] = [12, 17, 18, 19, 20]; // 2026-11-18: Normal 16 → 12 so it takes 4–6 h (user; ×0.7 smaller waves did not shorten it — a wave has a fixed arrival time)
 export function wavesPerStage(S: number): number {
   return WAVES_BY_DIFFICULTY[Math.max(0, Math.min(4, Math.floor((Math.max(1, S) - 1) / 100)))] ?? 20;
 }

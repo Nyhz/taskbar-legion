@@ -2312,3 +2312,7 @@ Decisiones del usuario (18 nov), tras discutirlas una a una:
 - **Medido (probe, 5 semillas con traza, 18 nov):** horas por dificultad (mediana) **7 / 43 / 133 / 262 / 732**, unas
   **1 145 h** en total (986–1 281 por semilla; antes del ancla 6,9 / 33 / 144 / 280 / 693, 1 157 h). Las caídas, 25–49
   en Normal, repartidas (3–5 como mucho en una etapa). La escalera sigue al día (`ladder.test`).
+- **Normal más corto (usuario, 18 nov; objetivo 4–6 h):** probado primero con oleadas ×0,7 (6–15 enemigos, cada uno
+  ×1/0,7 para mantener la presión): Normal 6,8–11 h (mediana 8,4) y más caídas — una oleada tarda casi lo mismo con
+  menos enemigos (llegan en tres tandas y caminan; el área del grupo mata a varios a la vez) y el grupo sube más
+  despacio. Revertido; en su lugar **12 oleadas por etapa en Normal** (16 → 12, `WAVES_BY_DIFFICULTY`), llenas.
