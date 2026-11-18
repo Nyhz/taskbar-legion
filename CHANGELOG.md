@@ -15,6 +15,22 @@ While the project is pre-1.0, minor versions may include breaking save changes.
 
 ### Fixed
 
+## [0.5.4] - 2026-11-18
+
+### Added
+
+### Changed
+
+- **Softer ambience** — no shrill sounds in any world: the meadow's birds now warble low and round, the crickets and far whistle are quieter, and the windmills creak in World 1; the canyon's hawk and pebbles and the glass chimes of the monastery, caverns and citadel are lower and softer.
+- **Combat sounds are a simple on/off switch** (the "only while looking" mode is gone: the game is always on top, so it made no difference).
+
+### Fixed
+
+- **Second screens** — dragging the game onto another monitor now fits the window to that monitor, so larger strip scales (×2) are available there, and the scale you chose comes back when it fits.
+- The strip may take up to half the window's height (×2 was hidden on 900-pixel-tall screens).
+- The options window no longer covers the hero window or other open panels; it steps to their right.
+- The gold and key amounts on the HUD keep a fixed width, so the rail no longer shifts sideways as gold changes.
+
 ## [0.5.3] - 2026-11-18
 
 ### Added
@@ -178,7 +194,8 @@ While the project is pre-1.0, minor versions may include breaking save changes.
 - Initial desktop builds: Tauri v2 transparent, always-on-top, bottom-docked overlay.
 - Multi-platform release pipeline (macOS universal, Windows, Linux) via GitHub Actions.
 
-[Unreleased]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.3...HEAD
+[Unreleased]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.4...HEAD
+[0.5.4]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.3...v0.5.4
 [0.5.3]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.2...v0.5.3
 [0.5.2]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.1...v0.5.2
 [0.5.1]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.0...v0.5.1
