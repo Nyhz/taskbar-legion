@@ -7,8 +7,9 @@ import { Sign, Tip, TipNote, TipText, TipTitle } from '@/ui/kit';
 import { auraLine } from '@/ui/panels/map/foeWords';
 
 // The SUPPORT's auras on the rail (2026-11-18; user: «siempre que un support esté activo en una oleada, que se pueda
-// consultar lo que está dando a la oleada»): while a wave's support lives, the middle of the rail shows, after the
-// progress bar, the signs it wears over its head (the same drawings: tools/assets icon set s9i_foes `map_aura_*`),
+// consultar lo que está dando a la oleada»): while a wave's support lives, the signs it wears over its head show at the
+// top of the strip, centred under the rail and laid over the scene (user: «abajo, en la propia strip… centradas, para
+// que no desplacen contenido de arriba nunca») (the same drawings: tools/assets icon set s9i_foes `map_aura_*`),
 // each with its words and strength in a tooltip. Gone with the support. Reads the live sim; re-renders with each
 // HUD push.
 

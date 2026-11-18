@@ -6,6 +6,7 @@ import { KitRoot, Sign, Tip, TipTag, TipText, TipTitle } from '@/ui/kit';
 import { HudDock } from './HudDock';
 import { HudStage } from './HudStage';
 import { HudChests } from './HudChests';
+import { HudSupport } from './HudSupport';
 import { OptionsAnchor } from '@/ui/options/OptionsAnchor';
 import { OptionsWindow } from '@/ui/options/OptionsWindow';
 import './hud.css';
@@ -32,6 +33,8 @@ export function StripHud(): React.JSX.Element {
         <div className="tk-hud-mid">
           <HudStage />
         </div>
+        {/* A living support's auras: over the strip, centred under the rail — they never move the rail's contents. */}
+        <HudSupport />
         <HudChests />
         <div className={`tk-hud-res has${keys > 0 ? '' : ' zero'}`}>
           <Sign name="hud_key" alt={t('hud.keys')} />

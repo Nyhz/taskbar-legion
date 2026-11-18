@@ -25,9 +25,10 @@
 .tk-hud-prog { width: 132px; height: 9px; }
 .tk-hud-end { margin-left: -2px; opacity: .45; }
 .tk-hud-at { position: relative; display: flex; align-items: center; gap: 4px; }
-/* A living support's auras (HudSupport): its signs after the progress bar, drawn twice their size (9 → 18) so they
-   read on the rail; a violet underline says whose they are (the support's own tint). */
-.tk-hud-auras { display: flex; align-items: center; gap: 1px; padding: 0 2px 1px; margin-left: 2px; border-bottom: 1px solid #7c6fb0; }
+/* A living support's auras (HudSupport): over the strip, centred just under the rail (absolutely placed, so nothing
+   on the rail moves), its signs drawn twice their size (9 → 18) on a dark plate with the support's violet under it. */
+.tk-hud-auras { position: absolute; top: calc(100% + 3px); left: 50%; transform: translateX(-50%); display: flex;
+  align-items: center; gap: 1px; padding: 1px 3px; background: rgba(11, 13, 23, .55); border-bottom: 1px solid #7c6fb0; }
 .tk-hud-aura { position: relative; display: flex; }
 .tk-hud-aura > img { width: 18px; height: 18px; image-rendering: pixelated; }
 .tk-hud-aura:hover > img { filter: brightness(1.25); }
