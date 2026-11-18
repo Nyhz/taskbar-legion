@@ -2219,7 +2219,7 @@ muros y horas en la siguiente ronda.
   nunca se dibuja más atrás que el fotograma anterior. Medido: de 61 pasos hacia atrás (peor deslizamiento 65 px) a 0
   (peor 0,9 px, redondeo a píxel entero). Sonda temporal y capturas en el scratchpad de la sesión (`motion/`).
 
-### Pendiente al final (tras el sonido y los arreglos visuales del combate) — cofres comunes y curva (18 nov)
+### ✅ Hecho en la ronda 18 — cofres comunes y curva (18 nov)
 
 - **Decisión del usuario (18 nov, sustituye a la anterior de 0,4 %):** cofre común base de 0,2 % a **0,5 %** por muerte
   (1 cada 200), y el nodo «Botín común» de +0,25 % a **+2,5 % por rango** (sigue infinito y multiplicando la base; al
@@ -2231,7 +2231,7 @@ muros y horas en la siguiente ronda.
   +0,5 % a **+2,5 % por rango**. «Sentido de gemas» ya da +2,5 %. Erudición sigue en +0,5 % (recorte del nivel 120).
 - Orden acordado: sonido → arreglos visuales del combate (backlog) → cofres y curva al final.
 
-### Ronda 18 — cofres comunes al 0,5 % y su investigación a +2,5 %, curva reajustada (18 nov, sin commit)
+### Ronda 18 — cofres comunes al 0,5 % y su investigación a +2,5 %, curva reajustada (18 nov; c37457e, publicado en v0.5.2)
 
 - **Cofres** (usuario): común 0,2 → 0,5 % por baja; «Botín común» y «Despojos de jefe» a +2,5 % por rango sobre la
   probabilidad base (textos EN/ES y cifra del árbol). Entre 3 y 5 veces más cofres por hora.
