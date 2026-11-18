@@ -2210,3 +2210,8 @@ muros y horas en la siguiente ronda.
 - **Decisión del usuario:** cofre común de 0,2 % a **0,4 %** por muerte (1 cada 250 en lugar de 1 cada 500), y reajustar la
   curva (horas y escalera) con ello. Motivo: en 1-8 le habían caído 2 cofres (lo esperado eran 4–5 con los de jefe).
   «Lo hacemos tras los sonidos.»
+- **Junto al reajuste de la curva (18 nov):** los nodos «Botín común» (+0,25 %/rango → ×1,09 al final de Tormento) y
+  «Botín de jefe» (+0,5 %/rango → ×1,19) son casi decorativos y su texto confunde (multiplica la base, no suma puntos:
+  +1 % deja el 0,2 % en 0,202 %). Opciones propuestas: rangos que se noten con tope (p. ej. 10 × +10 %, mi
+  recomendación), infinito a +2,5 %/rango, o quitarlos. Pendiente de la elección del usuario. Orden acordado: sonido →
+  arreglos visuales del combate (backlog) → cofres y curva al final.
