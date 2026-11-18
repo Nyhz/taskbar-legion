@@ -15,6 +15,16 @@ While the project is pre-1.0, minor versions may include breaking save changes.
 
 ### Fixed
 
+## [0.5.3] - 2026-11-18
+
+### Added
+
+### Changed
+
+### Fixed
+
+- **macOS:** the game can be clicked and dragged again after moving it to a second screen with a different scale (for example a Retina MacBook next to an external monitor). Before, the whole window let clicks pass through to the apps behind it.
+
 ## [0.5.2] - 2026-11-18
 
 ### Added
@@ -168,7 +178,8 @@ While the project is pre-1.0, minor versions may include breaking save changes.
 - Initial desktop builds: Tauri v2 transparent, always-on-top, bottom-docked overlay.
 - Multi-platform release pipeline (macOS universal, Windows, Linux) via GitHub Actions.
 
-[Unreleased]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.2...HEAD
+[Unreleased]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.3...HEAD
+[0.5.3]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.2...v0.5.3
 [0.5.2]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.1...v0.5.2
 [0.5.1]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/Nyhz/taskbar-legion/compare/v0.4.1...v0.5.0
