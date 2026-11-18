@@ -1,16 +1,16 @@
 {
   "updated": "18 nov 2026",
-  "intro": "Segunda muestra de sonido (R7): más fina y sutil, con un punto 16 bits. La primera se descartó («imagínate escuchar esos sonidos constantemente»).",
+  "intro": "Tercera muestra de sonido (R7): ya no viene de ElevenLabs. Cada sonido está sintetizado por código, con Stardew Valley como referencia.",
   "sections": [
     {
       "id": "sonido-muestra",
       "eyebrow": "R7 · Sonido",
-      "title": "Muestra de sonido 2: 16 sonidos, más sutiles",
-      "text": "Cambios frente a la primera: descripciones de sonidos mínimos («un leve siseo de hoja», «un toquecito apagado»), estilo 16 bits lo-fi, agudos recortados en todos los sonidos (filtro paso bajo), ataque suavizado y volúmenes mucho más bajos (efectos −25 dB, interfaz −27 dB, ambiente −34 dB, antes −18/−20/−28). El clic de interfaz es tu toma aprobada. Casi todos tienen 2–3 tomas: dime cuáles valen. Escúchalo al volumen al que tendrías el juego de fondo.",
+      "title": "Muestra de sonido 3: síntesis propia, estilo Stardew",
+      "text": "Sonidos pequeños, redondos y acogedores, hechos con osciladores, cuerdas pulsadas, campanitas y ruido filtrado. Son muy cortos (los de combate duran 0,1–0,3 s) y no tienen siseo: los agudos del ruido están recortados. Los volúmenes son bajos, para tenerlos de fondo todo el día. El clic de interfaz es tu toma aprobada. Escúchalo al volumen al que tendrías el juego.",
       "questions": [
-        "¿Ahora el carácter va por buen camino (fino, sutil, 16 bits)?",
-        "¿Qué tomas valen y cuáles no? (nombre + número de toma)",
-        "Ambientes: ¿la toma 1 o la 2 de cada uno? ¿Se nota el empalme del bucle?"
+        "¿Esta dirección (síntesis suave estilo Stardew) sí va por buen camino?",
+        "¿Qué sonidos valen y cuáles no? (nombre + qué falla: demasiado agudo, grave, largo, raro…)",
+        "Ambientes: ¿encajan? El reproductor del navegador puede dejar un hueco mínimo al repetir; en el juego el bucle es continuo."
       ],
       "html": "sound.html"
     }

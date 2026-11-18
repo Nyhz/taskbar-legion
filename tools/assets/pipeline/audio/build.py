@@ -14,7 +14,8 @@ import json
 
 from .catalog import SOUNDS, Sound
 from .eleven import ROOT, api_key, generate, missing_takes, takes
-from .process import CHANNELS, encode_mp3, prepare
+from .recipes import render
+from .process import CHANNELS, decode, encode_mp3, loop_offset, prepare
 
 OUT = ROOT / "src" / "assets" / "audio"
 REPORT = ROOT / "tools" / "assets" / "out" / "audio-report.md"
@@ -33,7 +34,7 @@ def main(argv: list[str]) -> None:
     sounds, dry = pick(argv)
     todo = missing_takes(sounds)
     seconds = sum(s.seconds for s, _ in todo)
-    print(f"audio: {len(sounds)} sounds, {len(todo)} ElevenLabs calls to make (~{seconds:.0f} s of audio asked)")
+    print(f"audio: {len(sounds)} sounds, {len(todo)} ElevenLabs calls to make (~{seconds:.0f} s of audio asked); the rest is synthesised")
     if dry:
         return
     if todo:
@@ -50,10 +51,15 @@ def main(argv: list[str]) -> None:
     for s in sounds:
         files = []
         stats = []
-        for t, raw in enumerate(takes(s)):
-            x, info = prepare(raw, s.channel, s.level, s.loop)
+        recorded = takes(s)
+        sources = [(decode(p), True) for p in recorded] + [(render(s.id, t), False) for t in range(0 if s.source == "eleven" else s.variants)]
+        offsets = []
+        for t, (raw, is_recorded) in enumerate(sources):
+            x, info = prepare(raw, s.channel, s.level, s.loop, recorded=is_recorded)
             rel = f"{s.channel}/{s.id}_{t}.mp3"
             encode_mp3(x, OUT / rel, CHANNELS[s.channel][2])
+            if s.loop:  # the client loops from the real start over the source's exact length (gapless)
+                offsets.append({"start": loop_offset(OUT / rel, x), "length": round(len(x) / 44100, 6)})
             files.append(rel)
             stats.append(info)
         manifest[s.id] = {
@@ -61,6 +67,7 @@ def main(argv: list[str]) -> None:
             "group": s.group,
             "files": files,
             "loop": s.loop,
+            **({"loopPoints": offsets} if s.loop else {}),
             "seconds": max(i["seconds"] for i in stats),
             "loudness": round(sum(i["loudness"] for i in stats) / len(stats), 1),
             "peak": max(i["peak"] for i in stats),

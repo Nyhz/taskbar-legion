@@ -3,49 +3,57 @@
   "channel": "ambient",
   "group": "ambient",
   "files": [
-   "ambient/amb_w1_0.mp3",
-   "ambient/amb_w1_1.mp3"
+   "ambient/amb_w1_0.mp3"
   ],
   "loop": true,
-  "seconds": 22.5,
-  "loudness": -39.2,
-  "peak": -14.0
+  "loopPoints": [
+   {
+    "start": 0.0,
+    "length": 24.0
+   }
+  ],
+  "seconds": 24.0,
+  "loudness": -34.0,
+  "peak": -17.7
  },
  "amb_w1_torment": {
   "channel": "ambient",
   "group": "ambient",
   "files": [
-   "ambient/amb_w1_torment_0.mp3",
-   "ambient/amb_w1_torment_1.mp3"
+   "ambient/amb_w1_torment_0.mp3"
   ],
   "loop": true,
-  "seconds": 22.5,
-  "loudness": -41.8,
-  "peak": -14.0
+  "loopPoints": [
+   {
+    "start": 0.0,
+    "length": 24.0
+   }
+  ],
+  "seconds": 24.0,
+  "loudness": -34.0,
+  "peak": -16.8
  },
  "boss_charge_impact": {
   "channel": "sfx",
   "group": "boss",
   "files": [
-   "sfx/boss_charge_impact_0.mp3",
-   "sfx/boss_charge_impact_1.mp3"
+   "sfx/boss_charge_impact_0.mp3"
   ],
   "loop": false,
-  "seconds": 0.8,
-  "loudness": -30.1,
-  "peak": -8.0
+  "seconds": 0.5,
+  "loudness": -26.0,
+  "peak": -12.0
  },
  "boss_charge_windup": {
   "channel": "sfx",
   "group": "boss",
   "files": [
-   "sfx/boss_charge_windup_0.mp3",
-   "sfx/boss_charge_windup_1.mp3"
+   "sfx/boss_charge_windup_0.mp3"
   ],
   "loop": false,
-  "seconds": 1.36,
-  "loudness": -25.0,
-  "peak": -11.8
+  "seconds": 1.2,
+  "loudness": -27.0,
+  "peak": -16.2
  },
  "chest_drop": {
   "channel": "sfx",
@@ -55,21 +63,20 @@
    "sfx/chest_drop_1.mp3"
   ],
   "loop": false,
-  "seconds": 0.6,
-  "loudness": -27.4,
-  "peak": -8.0
+  "seconds": 0.3,
+  "loudness": -28.0,
+  "peak": -10.5
  },
  "chest_open_rare": {
   "channel": "sfx",
   "group": "loot",
   "files": [
-   "sfx/chest_open_rare_0.mp3",
-   "sfx/chest_open_rare_1.mp3"
+   "sfx/chest_open_rare_0.mp3"
   ],
   "loop": false,
-  "seconds": 1.2,
-  "loudness": -25.0,
-  "peak": -12.6
+  "seconds": 1.1,
+  "loudness": -27.6,
+  "peak": -8.0
  },
  "crit_hit": {
   "channel": "sfx",
@@ -79,21 +86,20 @@
    "sfx/crit_hit_1.mp3"
   ],
   "loop": false,
-  "seconds": 0.48,
-  "loudness": -30.8,
-  "peak": -8.0
+  "seconds": 0.32,
+  "loudness": -27.0,
+  "peak": -12.6
  },
  "cube_polish": {
   "channel": "ui",
   "group": "cube",
   "files": [
-   "ui/cube_polish_0.mp3",
-   "ui/cube_polish_1.mp3"
+   "ui/cube_polish_0.mp3"
   ],
   "loop": false,
-  "seconds": 0.8,
-  "loudness": -35.8,
-  "peak": -9.0
+  "seconds": 0.5,
+  "loudness": -30.0,
+  "peak": -15.7
  },
  "enemy_die": {
   "channel": "sfx",
@@ -104,22 +110,22 @@
    "sfx/enemy_die_2.mp3"
   ],
   "loop": false,
-  "seconds": 0.6,
-  "loudness": -30.8,
-  "peak": -8.0
+  "seconds": 0.24,
+  "loudness": -31.0,
+  "peak": -16.5
  },
- "hit_flesh": {
+ "hit": {
   "channel": "sfx",
   "group": "combat",
   "files": [
-   "sfx/hit_flesh_0.mp3",
-   "sfx/hit_flesh_1.mp3",
-   "sfx/hit_flesh_2.mp3"
+   "sfx/hit_0.mp3",
+   "sfx/hit_1.mp3",
+   "sfx/hit_2.mp3"
   ],
   "loop": false,
-  "seconds": 0.48,
-  "loudness": -30.2,
-  "peak": -8.0
+  "seconds": 0.13,
+  "loudness": -30.0,
+  "peak": -17.0
  },
  "knight_swing": {
   "channel": "sfx",
@@ -130,33 +136,31 @@
    "sfx/knight_swing_2.mp3"
   ],
   "loop": false,
-  "seconds": 0.48,
-  "loudness": -29.5,
-  "peak": -8.0
+  "seconds": 0.16,
+  "loudness": -29.0,
+  "peak": -15.9
  },
  "level_up": {
   "channel": "sfx",
   "group": "progress",
   "files": [
-   "sfx/level_up_0.mp3",
-   "sfx/level_up_1.mp3"
+   "sfx/level_up_0.mp3"
   ],
   "loop": false,
-  "seconds": 1.2,
-  "loudness": -25.0,
-  "peak": -14.3
+  "seconds": 1.4,
+  "loudness": -26.0,
+  "peak": -14.5
  },
  "priest_mend": {
   "channel": "sfx",
   "group": "ability",
   "files": [
-   "sfx/priest_mend_0.mp3",
-   "sfx/priest_mend_1.mp3"
+   "sfx/priest_mend_0.mp3"
   ],
   "loop": false,
-  "seconds": 0.88,
-  "loudness": -27.2,
-  "peak": -8.0
+  "seconds": 1.0,
+  "loudness": -28.0,
+  "peak": -15.6
  },
  "ranger_shot": {
   "channel": "sfx",
@@ -167,9 +171,9 @@
    "sfx/ranger_shot_2.mp3"
   ],
   "loop": false,
-  "seconds": 0.48,
-  "loudness": -28.0,
-  "peak": -11.4
+  "seconds": 0.26,
+  "loudness": -29.0,
+  "peak": -14.0
  },
  "ui_click": {
   "channel": "ui",
@@ -190,8 +194,8 @@
    "ui/ui_panel_open_1.mp3"
   ],
   "loop": false,
-  "seconds": 0.48,
+  "seconds": 0.11,
   "loudness": -31.0,
-  "peak": -9.0
+  "peak": -16.5
  }
 }

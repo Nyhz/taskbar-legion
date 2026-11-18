@@ -52,12 +52,14 @@ def take_path(sound: Sound, take: int) -> Path:
 
 
 def missing_takes(sounds: list[Sound]) -> list[tuple[Sound, int]]:
-    return [(s, t) for s in sounds for t in range(s.variants) if not take_path(s, t).exists()]
+    """The ElevenLabs calls still to make (synthesised sounds never call it)."""
+    return [(s, t) for s in sounds if s.source == "eleven" for t in range(s.variants) if not take_path(s, t).exists()]
 
 
 def takes(sound: Sound) -> list[Path]:
-    """Every raw take of a sound, in play order: the approved ones it keeps, then the generated ones."""
-    return [RAW / name for name in sound.kept] + [take_path(sound, t) for t in range(sound.variants)]
+    """Every raw ElevenLabs take of a sound, in play order: the approved ones it keeps, then the generated ones."""
+    generated = [take_path(sound, t) for t in range(sound.variants)] if sound.source == "eleven" else []
+    return [RAW / name for name in sound.kept] + generated
 
 
 def generate(sound: Sound, take: int, key: str) -> Path:

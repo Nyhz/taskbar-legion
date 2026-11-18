@@ -8,29 +8,28 @@ from __future__ import annotations
 import html
 import json
 
-from .catalog import SOUND_MAP
 from .eleven import ROOT
 
 LAB = ROOT / "docs" / "redesign" / "lab"
 
 #: What each sample is for, as the user reads it.
 WHAT_ES: dict[str, str] = {
-    "knight_swing": "Golpe de espada del Caballero (cada golpe; el juego alterna las tomas al azar)",
-    "hit_flesh": "Impacto sobre un enemigo (3 variantes)",
-    "ranger_shot": "Disparo del Cazador: cuerda y flecha (3 variantes)",
-    "crit_hit": "Golpe crítico (2 variantes)",
-    "enemy_die": "Muerte de un enemigo (3 variantes)",
-    "priest_mend": "Sanación del Sacerdote (Mend)",
-    "boss_charge_windup": "Jefe cargando el golpe cargado (aviso)",
-    "boss_charge_impact": "Impacto del golpe cargado",
-    "chest_drop": "Cae un cofre",
-    "chest_open_rare": "Abrir un cofre raro",
-    "level_up": "Subida de nivel",
-    "ui_click": "Clic de interfaz (2 variantes)",
-    "ui_panel_open": "Abrir un panel",
-    "cube_polish": "Pulir en el cubo",
-    "amb_w1": "Ambiente del mundo 1, Praderas Doradas (bucle de ~22 s)",
-    "amb_w1_torment": "Ambiente del mundo 1 en Tormento (bucle de ~22 s)",
+    "knight_swing": "Golpe de espada del Caballero: un «fiu» de aire (3 tomas que el juego alterna)",
+    "hit": "Impacto sobre un enemigo: un «tup» pequeño y redondo (3 tomas)",
+    "ranger_shot": "Disparo del Cazador: cuerda grave y suave y un soplo de flecha (3 tomas)",
+    "crit_hit": "Golpe crítico: el impacto con un «ping» diminuto encima (2 tomas)",
+    "enemy_die": "Muerte de un enemigo: un «puf» (3 tomas)",
+    "priest_mend": "Sanación del Sacerdote: dos notas de cristal suaves",
+    "boss_charge_windup": "Jefe cargando el golpe cargado: un zumbido grave que crece",
+    "boss_charge_impact": "Impacto del golpe cargado: un golpe sordo y grave",
+    "chest_drop": "Cae un cofre: un toque de madera y dos monedas (2 tomas)",
+    "chest_open_rare": "Abrir un cofre raro: la tapa y un pequeño destello que sube",
+    "level_up": "Subida de nivel: tres notas cálidas que suben",
+    "ui_click": "Clic de interfaz: tu toma aprobada de ElevenLabs",
+    "ui_panel_open": "Abrir un panel: un «fiu» de papel muy corto (2 tomas)",
+    "cube_polish": "Pulir en el cubo: un frotado corto y un destello",
+    "amb_w1": "Ambiente del mundo 1: brisa suave, grillos y algún pájaro lejano (bucle de 24 s)",
+    "amb_w1_torment": "Ambiente del mundo 1 en Tormento: viento oscuro y truenos lejanos y suaves (bucle de 24 s)",
 }
 
 GROUP_ES = {
@@ -57,9 +56,8 @@ def main() -> None:
                 f'<audio controls preload="none" {"loop " if m["loop"] else ""}src="audio/{f}" style="height:32px;max-width:100%"></audio>'
                 for f in m["files"]
             )
-            prompt = html.escape(SOUND_MAP[sid].prompt)
             out.append(
-                f'<tr><td>{sid}</td><td>{html.escape(WHAT_ES.get(sid, ""))}<br><span class="muted mono">«{prompt}»</span></td>'
+                f'<tr><td>{sid}</td><td>{html.escape(WHAT_ES.get(sid, ""))}</td>'
                 f'<td style="display:grid;gap:4px">{players}</td></tr>'
             )
         out.append("</table></div>")

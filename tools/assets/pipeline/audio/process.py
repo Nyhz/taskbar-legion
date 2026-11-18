@@ -1,9 +1,8 @@
-"""From a raw ElevenLabs take to a game-ready sound: decode, trim, soften, level, loop, encode.
+"""From a take (synthesised, or an approved ElevenLabs file) to a game-ready sound: shape, level, encode.
 
 Loudness is the coop-game pipeline's measure (gated 50 ms RMS after a 100 Hz high-pass). The channel references sit
-well below a normal game's (sfx −25 dB, ui −27 dB, ambient −34 dB): the user rejected the first sample as too much
-for something heard all day. Every sound is softened: a low-pass takes the highs off (a 16-bit, muted top) and the
-attack is eased in. One-shots are mono (the strip is a thin band); ambient beds stay stereo.
+well below a normal game's (sfx −25 dB, ui −27 dB, ambient −34 dB): the sound plays all day behind other work. One-shots
+are mono (the strip is a thin band); ambient beds stay stereo.
 """
 from __future__ import annotations
 
@@ -22,8 +21,6 @@ CHANNELS: dict[str, tuple[float, float, str]] = {
     "ui": (-27.0, -9.0, "96k"),
     "ambient": (-34.0, -14.0, "112k"),
 }
-#: Low-pass corner (Hz) of the softening: one-shots lose their bite above it, the beds keep a little more air.
-SOFT_CUTOFF = {"sfx": 6500.0, "ui": 7000.0, "ambient": 5000.0}
 
 
 def decode(path: Path) -> np.ndarray:
@@ -45,24 +42,6 @@ def _highpass(x: np.ndarray, cutoff: float = 100.0) -> np.ndarray:
         prev_x = v
         y[i] = prev_y
     return y
-
-
-def _lowpass(x: np.ndarray, cutoff: float) -> np.ndarray:
-    """Two cascaded one-pole low-passes (12 dB/octave): a soft, muted top like a 16-bit sampler's."""
-    a = float(np.exp(-2.0 * np.pi * cutoff / RATE))
-    y = x
-    for _ in range(2):
-        out = np.empty_like(y)
-        prev = 0.0
-        for i, v in enumerate(y):
-            prev = (1.0 - a) * v + a * prev
-            out[i] = prev
-        y = out
-    return y
-
-
-def soften(x: np.ndarray, channel: str) -> np.ndarray:
-    return np.stack([_lowpass(x[:, c], SOFT_CUTOFF[channel]) for c in range(x.shape[1])], axis=1)
 
 
 def loudness_db(x: np.ndarray) -> float:
@@ -128,12 +107,15 @@ def seamless(x: np.ndarray, cross_s: float = 1.5) -> np.ndarray:
     return np.concatenate([head, x[k:-k]])
 
 
-def prepare(raw: Path, channel: str, level: float, loop: bool) -> tuple[np.ndarray, dict]:
-    x = decode(raw)
+def prepare(x: np.ndarray, channel: str, level: float, loop: bool, *, recorded: bool) -> tuple[np.ndarray, dict]:
+    """`x` is (n, channels). A recorded take (ElevenLabs) is trimmed and, as a loop, cross-faded into itself; a
+    synthesised one is already shaped and, as a loop, already seamless (built circularly)."""
     if channel != "ambient":
         x = x.mean(axis=1, keepdims=True)
-    x = soften(x, channel)
-    x = seamless(x) if loop else fade(trim(x))
+    if loop:
+        x = seamless(x) if recorded else x
+    else:
+        x = fade(trim(x)) if recorded else fade(x, in_ms=1.0, out_ms=10.0)
     ref, limit, _ = CHANNELS[channel]
     x = normalise(x, ref + level, limit)
     return x, {"seconds": round(len(x) / RATE, 3), "loudness": round(loudness_db(x), 1), "peak": round(peak_db(x), 1)}
@@ -150,3 +132,13 @@ def encode_mp3(x: np.ndarray, out: Path, bitrate: str) -> None:
         str(out),
     ]
     subprocess.run(cmd, input=pcm, check=True)
+
+
+def loop_offset(encoded: Path, x: np.ndarray) -> float:
+    """Where the loop really starts in the MP3 (seconds): the encoder pads the start with silence, and a gapless loop
+    must skip it. Found by matching the first samples of the source against the decoded file."""
+    y, _ = sf.read(str(encoded), dtype="float64", always_2d=True)
+    probe = x[:4096, 0]
+    window = y[: 8192, 0]
+    best = max(range(0, 4096), key=lambda k: float(np.dot(window[k : k + len(probe)], probe)))
+    return round(best / RATE, 6)

@@ -1,30 +1,19 @@
-"""What the game sounds like: one entry per sound, with the words ElevenLabs gets.
+"""What the game sounds like: one entry per sound.
 
-Style: FINE AND SUBTLE, with a 16-bit flavour. The first sample (2026-11-18, a "soft hybrid" of real foley) was rejected
-outright: "tienen que ser más finos, sutiles. Imagínate escuchar esos sonidos constantemente". The game is a taskbar
-overlay that plays all day, so every sound is heard thousands of times. Each prompt asks for something faint and short,
-and the pipeline softens it further (low-pass, gentle attack, low channel levels). Every prompt ends with the shared
-STYLE words so the whole set keeps one character.
+Since 2026-11-18 the sounds are SYNTHESISED (recipes.py), with Stardew Valley as the reference: small, round, cosy,
+bearable all day. Two ElevenLabs samples were rejected ("No puedo empezar a describir lo malos que son"), so a sound
+comes from ElevenLabs only when the user approved a take of it (`kept`, the raw files in audio_raw/).
 
-`variants` asks for that many NEW takes of the prompt; the client picks one at random each time it plays, so the sounds
-heard dozens of times a minute do not tire. `kept` lists raw takes the user already approved (files in audio_raw/);
-they stay as the first takes whatever the prompt says now. `sample` marks the batch that goes to the lab for approval
-before the rest is generated.
+`variants` is how many takes are rendered (or asked of ElevenLabs); the client picks one at random each time, so the
+sounds heard dozens of times a minute never machine-gun. `sample` marks the batch that goes to the lab for approval.
 """
 from __future__ import annotations
 
 from dataclasses import dataclass
 
-#: Shared words appended to every effect and interface prompt.
-STYLE = (
-    "very subtle and quiet, faint, short, 16-bit retro game sound effect, SNES era, lo-fi, gentle attack, muted highs, "
-    "unobtrusive, no reverb tail, no music, no voice"
-)
-#: Shared words for the ambient beds.
-AMBIENT_STYLE = (
-    "very subtle and sparse 16-bit retro game ambience, soft, muted, low and even, unobtrusive background, "
-    "no music, no melody, no voices, no sudden sounds"
-)
+#: Shared words appended to an ElevenLabs prompt (kept for sounds that still come from there).
+STYLE = "very subtle and quiet, faint, short, cosy retro game sound effect, no music, no voice"
+AMBIENT_STYLE = "very subtle calm background ambience for a cosy game, no music, no voices, no sudden sounds"
 
 
 @dataclass(frozen=True)
@@ -44,8 +33,10 @@ class Sound:
     #: How literally ElevenLabs follows the words (0–1). High: the "subtle" words must win.
     influence: float = 0.7
     sample: bool = False
-    #: Raw takes the user approved (file names in audio_raw/), kept as the first takes.
+    #: Raw ElevenLabs takes the user approved (file names in audio_raw/), kept as the first takes.
     kept: tuple[str, ...] = ()
+    #: 'synth' (recipes.py) or 'eleven' (the API; `prompt` is then what it is asked).
+    source: str = "synth"
 
     def full_prompt(self) -> str:
         return f"{self.prompt}, {AMBIENT_STYLE if self.channel == 'ambient' else STYLE}"
@@ -56,28 +47,28 @@ class Sound:
 
 SOUNDS: list[Sound] = [
     # ── Combat ── (heard most: the faintest)
-    Sound("knight_swing", "sfx", "combat", "a faint quick blade swish", 0.5, variants=3, level=-3, sample=True),
-    Sound("hit_flesh", "sfx", "combat", "a tiny soft muffled tap of a hit", 0.5, variants=3, level=-4, sample=True),
-    Sound("ranger_shot", "sfx", "combat", "a faint soft bowstring pluck with a tiny whoosh", 0.5, variants=3, level=-3, sample=True),
-    Sound("crit_hit", "sfx", "combat", "a small crisp hit with a tiny bright ping", 0.5, variants=2, level=-1, sample=True),
-    Sound("enemy_die", "sfx", "combat", "a tiny soft puff, a small creature vanishing", 0.6, variants=3, level=-5, sample=True),
+    Sound("knight_swing", "sfx", "combat", "a soft fwip of air", 0.2, variants=3, level=-4, sample=True),
+    Sound("hit", "sfx", "combat", "a small round tup", 0.2, variants=3, level=-5, sample=True),
+    Sound("ranger_shot", "sfx", "combat", "a soft low twang and a breath of arrow", 0.3, variants=3, level=-4, sample=True),
+    Sound("crit_hit", "sfx", "combat", "the hit with a tiny ping on top", 0.3, variants=2, level=-2, sample=True),
+    Sound("enemy_die", "sfx", "combat", "a little poof", 0.3, variants=3, level=-6, sample=True),
     # ── Abilities ──
-    Sound("priest_mend", "sfx", "ability", "a soft short twinkle of healing, two gentle chime notes", 0.9, variants=2, level=-2, sample=True),
+    Sound("priest_mend", "sfx", "ability", "two soft glass notes, a fifth apart", 0.8, variants=1, level=-3, sample=True),
     # ── Bosses ──
-    Sound("boss_charge_windup", "sfx", "boss", "a low soft rising hum, something gathering power", 1.4, variants=2, sample=True),
-    Sound("boss_charge_impact", "sfx", "boss", "a muffled heavy thump, deep and short", 0.8, variants=2, sample=True),
+    Sound("boss_charge_windup", "sfx", "boss", "a low hum that swells and rises", 1.2, variants=1, level=-2, sample=True),
+    Sound("boss_charge_impact", "sfx", "boss", "a deep soft thump", 0.5, variants=1, level=-1, sample=True),
     # ── Loot and progress ──
-    Sound("chest_drop", "sfx", "loot", "a small soft wooden thunk with a faint coin clink", 0.6, variants=2, level=-2, sample=True),
-    Sound("chest_open_rare", "sfx", "loot", "a soft lid creak and a short gentle sparkle", 1.2, variants=2, sample=True),
-    Sound("level_up", "sfx", "progress", "a short soft rising three-note chime, gentle and warm", 1.2, variants=2, sample=True),
+    Sound("chest_drop", "sfx", "loot", "a small wooden knock and two coin clinks", 0.3, variants=2, level=-3, sample=True),
+    Sound("chest_open_rare", "sfx", "loot", "the lid, then a little rising sparkle", 0.9, variants=1, level=-2, sample=True),
+    Sound("level_up", "sfx", "progress", "three warm tine notes going up", 1.1, variants=1, level=-1, sample=True),
     # ── Interface and Cube ──
-    Sound("ui_click", "ui", "interface", "a soft short wooden button click", 0.5, variants=0, sample=True,
-          kept=("ui_click_1_afecdac125.mp3",)),  # take 2 of the first sample: «el segundo aceptable»
-    Sound("ui_panel_open", "ui", "interface", "a faint soft paper rustle", 0.5, variants=2, level=-3, sample=True),
-    Sound("cube_polish", "ui", "cube", "a faint short polishing rub ending in a tiny glint", 0.8, variants=2, level=-2, sample=True),
+    Sound("ui_click", "ui", "interface", "a soft short wooden button click", 0.5, variants=0, sample=True, source="eleven",
+          kept=("ui_click_1_afecdac125.mp3",)),  # take 2 of the first ElevenLabs sample: «el segundo aceptable»
+    Sound("ui_panel_open", "ui", "interface", "a tiny paper fwip upwards", 0.1, variants=2, level=-4, sample=True),
+    Sound("cube_polish", "ui", "cube", "a short soft rub and a tiny glint", 0.5, variants=1, level=-3, sample=True),
     # ── Ambient beds (seamless loops) ──
-    Sound("amb_w1", "ambient", "ambient", "quiet golden meadow at dusk, very soft breeze, faint distant crickets", 24, loop=True, variants=2, sample=True),
-    Sound("amb_w1_torment", "ambient", "ambient", "dark quiet meadow, low soft wind and very faint distant thunder", 24, loop=True, variants=2, sample=True),
+    Sound("amb_w1", "ambient", "ambient", "golden meadow at dusk: soft breeze, crickets, a few far birds", 24, loop=True, sample=True),
+    Sound("amb_w1_torment", "ambient", "ambient", "the meadow under a storm: low dark wind, far soft thunder", 24, loop=True, sample=True),
 ]
 
 SOUND_MAP = {s.id: s for s in SOUNDS}
