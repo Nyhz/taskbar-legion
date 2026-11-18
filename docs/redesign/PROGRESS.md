@@ -2302,3 +2302,10 @@ Decisiones del usuario (18 nov), tras discutirlas una a una:
   2–6 veces por etapa; con la tabla de la retaguardia de antes del ancla, 0,2–1,3 %/s y 0–2 caídas; con las dos de
   antes, ninguna. El afinador medía una sola semilla en la etapa x-5 (0,1–0,3 %/s) y subió la tabla hasta 7×. La
   retaguardia vuelve a sus valores de antes (siguen en su tabla propia); el Knight conserva su ancla a 2–4 %/s.
+- **Nuevos objetivos (usuario, 18 nov):** Knight **1,5 / 2 / 2,5 / 3 / 3,5 %/s** («así si te pasas un poco no es muy
+  grave»), retaguardia **0,5 / 0,55 / 0,6 / 0,7 / 0,75 %/s**, semiestable — que muera si el grupo no está preparado —,
+  y las horas de vuelta a lo de antes (Normal 4–6 h…). Medido con las tablas anteriores (semillas 1, 3 y 5 en la etapa
+  5 de cada mundo, 1 y 5 en la 9; mundos 2–32): el Knight 2,4 / 2,6 / 2,8 / 3,1 %/s en la etapa 5 y 1,5–1,9× en la 9;
+  la retaguardia 0,13–0,2 %/s de mediana con picos de 1,3–1,8 en algún mundo. Cada mundo escalado por la mediana de las
+  semillas; la retaguardia además sin pasar de ~1 %/s en la etapa 9; los mundos 33–50 (sin medir) con la proporción de
+  su dificultad, y la retaguardia ahí a 3× lo de antes como mucho. `trash-threat-tune.ts` admite `AT` (la etapa medida).

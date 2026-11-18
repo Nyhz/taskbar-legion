@@ -194,18 +194,18 @@ export const STAGE_BOSS_HP_TUNE: number[] = [
 // measured in a real fight against the probe's party.
 /** % of the average Knight's life a second a wave takes off him while it fights him, Normal … Torment (user: ~3 % in
  *  Normal, «subir un poco cada una»; lowered one point each the same day, when 3–5 % stretched Normal from 6–10 h to
- *  ~14 h in the probe — the table scaled by the ratio, not re-measured). */
-export const TRASH_THREAT_PCT: readonly number[] = [2, 2.5, 3, 3.5, 4];
+ *  ~14 h in the probe; then 1.5 / 2 / 2.5 / 3 / 3.5 — «so a little over is not serious» — and the table re-measured). */
+export const TRASH_THREAT_PCT: readonly number[] = [1.5, 2, 2.5, 3, 3.5];
 /** Trash DAMAGE at each tuning point, as a share of the formula's (`enemyDamage`). World 1 (points 0–9): 1 where the
  *  arriving party clears the point's hardest stage cleanly, less where it would wipe. Worlds 2–50: the trash-threat
  *  anchor above. */
 export const TRASH_DMG_TUNE: number[] = [
   1, 1, 1, 1, 0.5, 0.45, 0.42, 0.36, 0.5, 1,
-  0.907, 0.88, 0.88, 1.16, 1.23, 1.03, 1.22, 1.26, 1.16, 1.08,
-  0.964, 1.27, 1.95, 1.73, 1.63, 1.84, 2.34, 2.15, 1.81, 1.4,
-  2.54, 2.89, 3.31, 3.61, 5.97, 5.96, 5.81, 5.72, 5.53, 4.71,
-  4.08, 8.24, 10.9, 12.2, 9.72, 10.6, 12.3, 11.2, 12.7, 8.24,
-  8.32, 11.8, 20.9, 22.2, 27.3, 30.6, 31.7, 25.4, 27.4,
+  0.674, 0.584, 0.518, 0.59, 0.634, 0.772, 0.769, 0.926, 0.849, 0.732,
+  0.824, 0.944, 1.04, 1.73, 1.45, 1.46, 1.27, 1.33, 1.68, 1.42,
+  1.58, 1.52, 2.92, 5.16, 5.11, 5.54, 5.11, 4.1, 5.2, 4.47,
+  4.01, 10.7, 9.42, 11, 9.23, 10.1, 11.7, 10.6, 12.1, 7.99,
+  8.06, 11.4, 20.3, 21.5, 26.5, 29.7, 30.7, 24.6, 26.6,
 ];
 /** The share of the formula's damage a wave enemy deals to a hero BEHIND the front one (its shots over the front line,
  *  the brute's area blow on the back line), per tuning point. The trash-threat anchor raises the waves' hit on the
@@ -213,18 +213,20 @@ export const TRASH_DMG_TUNE: number[] = [
  *  (user, 2026-11-18: «separar la retaguardia»). Back on the values the waves had before the anchor (2026-11-18): the
  *  tuner, measuring one seed at each world's 5th stage, read 0.1–0.3 %/s and raised the table up to 7×, but another
  *  seed's party at the 6th–9th stages took 2–4.5 %/s and wiped again and again (scripts/wipe-diagnose.ts); on these
- *  values the back line takes ~0.2–1.3 %/s there. */
+ *  values the back line takes ~0.2–1.3 %/s there. Then re-measured (three seeds at stage 5, two at stage 9, worlds 2–32)
+ *  and scaled per world by the median to TRASH_BACK_THREAT_PCT, never above ~1 %/s at stage 9; worlds 33–50, unmeasured,
+ *  at 3× their old values (the measure asked ~6×, on two worlds only). The Knight's table likewise, to TRASH_THREAT_PCT. */
 export const TRASH_BACK_DMG_TUNE: number[] = [
   1, 1, 1, 1, 0.5, 0.45, 0.42, 0.36, 0.5, 1,
-  0.562, 0.461, 0.346, 0.269, 0.245, 0.245, 0.269, 0.294, 0.245, 0.17,
-  0.2, 0.291, 0.35, 0.39, 0.449, 0.47, 0.51, 0.56, 0.576, 0.51,
-  0.5, 0.47, 0.607, 0.715, 0.75, 0.82, 0.952, 1, 0.908, 0.68,
-  0.68, 0.748, 0.82, 0.952, 1, 1, 1, 1, 1, 1,
-  1, 1, 1, 1, 1, 1, 1, 1, 1,
+  0.54, 0.744, 0.911, 0.289, 0.942, 1.53, 0.445, 1.34, 1.53, 0.179,
+  0.342, 0.297, 0.246, 1.59, 1.45, 1.62, 0.445, 1.78, 1.95, 1.4,
+  1.14, 2.35, 3.04, 3.97, 3, 4.1, 3.07, 3, 3.03, 2.8,
+  2.27, 2.24, 2.46, 2.86, 3, 3, 3, 3, 3, 3,
+  3, 3, 3, 3, 3, 3, 3, 3, 3,
 ];
 /** % of the back line's life a second the waves take off it while they fight, Normal … Torment (the user's ~0.5 % in
  *  Normal up to ~1 % in Torment). */
-export const TRASH_BACK_THREAT_PCT: readonly number[] = [0.5, 0.625, 0.75, 0.875, 1];
+export const TRASH_BACK_THREAT_PCT: readonly number[] = [0.5, 0.55, 0.6, 0.7, 0.75];
 export function trashBackDmgTune(S: number): number {
   return TRASH_BACK_DMG_TUNE[tunePoint(S)] ?? 1;
 }
