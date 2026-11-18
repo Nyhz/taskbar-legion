@@ -94,7 +94,7 @@ describe('the Priest', () => {
   it('a heal that keeps working, a shield and a buff sit in different slots: all three show at once', () => {
     const got = wornLooks([worn('fx_hot'), worn('fx_shield', { remainingMs: 3000, totalMs: 4000 }), worn('buff_infusion_as'), worn('fx_sanctuary')], knight);
     expect([...got.slots.keys()].sort()).toEqual(['around', 'front', 'ground']);
-    expect(got.slots.get('around')?.look.fx).toBe('mend_petals'); // the heal's petals…
+    expect(got.slots.get('around')?.look.fx).toBe('mend_wrap'); // the heal's ribbon…
     expect(got.rim?.look.rim).toBe('infused'); // …which still shows by its rim
   });
 

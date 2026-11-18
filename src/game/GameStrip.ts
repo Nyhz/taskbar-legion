@@ -711,8 +711,10 @@ export class GameStrip {
         // reads on the target, not just as a number.
         if (sprite !== undefined && amt > 0) {
           if (ev.type === 'heal') {
-            // The heal that keeps working is seen on the body itself (its lasting look: render/abilityFx).
+            // The heal that keeps working is seen on the body itself (its lasting look: render/abilityFx), and each
+            // of its pulses (once a second: sim/combat) runs a band of mint light up a hero (2026-11-18, lab v84).
             this.floating.spawn(sprite.x, sprite.y - 20, `+${formatDmg(amt)}`, FX.heal, 0.9);
+            heroSprite?.bodyFx.burst('hot_pulse', 'over', 0, 0);
           } else {
             // (A world boss's mechanic that takes its toll in ticks — Culpa — has its own colour and its pang.)
             const kitColor = heroSprite === undefined ? null : this.bossKit.tick(ev, heroSprite);

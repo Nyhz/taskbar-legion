@@ -1,60 +1,7 @@
 {
   "updated": "18 nov 2026",
-  "intro": "Pendiente de tu visto bueno: el nuevo efecto de las curas en el tiempo y la señal de lanzamiento de la Priest (borradores, todavía no están en el juego). Debajo sigue el catálogo de sonido.",
+  "intro": "El catálogo de sonido completo (R7), sintetizado en el estilo que aprobaste. Ya suena dentro del juego.",
   "sections": [
-    {
-      "id": "curas-tiempo",
-      "eyebrow": "Combate · Priest",
-      "title": "Curas en el tiempo: cómo se ven en el aliado",
-      "text": "Las cuatro ideas que elegiste, juntas. La barra de vida enseña en menta lo que la cura aún va a dar y se va acortando con cada pulso (así se ve cuánto le queda). Cada segundo, un pulso: una banda de luz menta sube por el cuerpo y saltan dos crucecitas. Y cada cura tiene su propio efecto: Mend es una cinta que envuelve al aliado, Mending Light unas chispas doradas alrededor de la cabeza, y Sanctuary un círculo doble en el suelo con rayos más altos.",
-      "questions": [
-        "¿Se entiende de un vistazo que el aliado se está curando y cuánto le queda?",
-        "¿La cinta de Mend te gusta o la prefieres más discreta?",
-        "¿El tramo menta de la barra se distingue bien del verde de la vida?"
-      ],
-      "items": [
-        {
-          "title": "Mend: cinta, pulsos y vida que viene",
-          "img": "img/next/hot_mend.gif"
-        },
-        {
-          "title": "Mending Light: chispas",
-          "img": "img/next/hot_light.gif"
-        },
-        {
-          "title": "Sanctuary: círculo doble y rayos",
-          "img": "img/next/hot_sanctuary.gif"
-        }
-      ]
-    },
-    {
-      "id": "priest-cast",
-      "eyebrow": "Combate · Priest",
-      "title": "La Priest al lanzar una habilidad",
-      "text": "Sus autoataques ya parecen hechizos, así que cada habilidad suya (nunca un ataque) trae una señal propia: un círculo de runas se enciende a sus pies durante el gesto y, al soltarla, un pilar de luz la envuelve. El color dice qué ha lanzado: menta una cura, azul un escudo, oro un ataque. La postura no cambia todavía; si con esto no basta, el siguiente paso es una pose más alta y mantenida.",
-      "questions": [
-        "¿Ahora se distingue un ataque de una habilidad?",
-        "¿Hace falta además cambiar la pose?"
-      ],
-      "items": [
-        {
-          "title": "Autoataque (sin señal)",
-          "img": "img/next/cast_attack.gif"
-        },
-        {
-          "title": "Mend · cura (menta)",
-          "img": "img/next/cast_mend.gif"
-        },
-        {
-          "title": "Holy Shield · escudo (azul)",
-          "img": "img/next/cast_ward.gif"
-        },
-        {
-          "title": "Smite · ataque (oro)",
-          "img": "img/next/cast_smite.gif"
-        }
-      ]
-    },
     {
       "id": "sonido-muestra",
       "eyebrow": "R7 · Sonido",

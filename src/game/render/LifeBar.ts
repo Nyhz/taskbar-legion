@@ -11,6 +11,7 @@ export class LifeBar extends Container {
   private readonly life = new Sprite();
   private readonly ghost = new Sprite();
   private readonly shield = new Sprite();
+  private readonly coming = new Sprite(); // what a heal over time still has to give (mint, after the life)
   private readonly overlay = new Sprite(); // notches, drawn over the fills
   private casingStem = '';
   private lifeStem = '';
@@ -21,14 +22,16 @@ export class LifeBar extends Container {
     this.setFill(fill);
     this.ghost.texture = stripHudTexture('hud_s_fill_ghost');
     this.shield.texture = stripHudTexture('hud_s_fill_shield');
-    for (const part of [this.life, this.ghost, this.shield]) {
+    this.coming.texture = stripHudTexture('hud_s_fill_coming');
+    for (const part of [this.life, this.ghost, this.shield, this.coming]) {
       part.position.set(spec.ix, spec.iy);
       part.height = spec.ih;
       part.width = 0;
     }
     this.ghost.visible = false;
     this.shield.visible = false;
-    this.addChild(this.casing, this.ghost, this.life, this.shield);
+    this.coming.visible = false;
+    this.addChild(this.casing, this.ghost, this.coming, this.life, this.shield);
     if (overlayStem !== undefined) {
       this.overlay.texture = stripHudTexture(overlayStem);
       this.addChild(this.overlay);
@@ -50,10 +53,17 @@ export class LifeBar extends Container {
     this.life.height = this.spec.ih;
   }
 
-  /** Show `frac` of life, the lagging `ghost` share and a shield worth `shield` of the full life. */
-  set(frac: number, ghost = 0, shield = 0): void {
+  /** Show `frac` of life, the lagging `ghost` share, a shield worth `shield` of the full life and what a heal over
+   *  time still has to give (`coming`, a share of the full life). */
+  set(frac: number, ghost = 0, shield = 0, coming = 0): void {
     const { ix, iw, ih } = this.spec;
-    const seg = barSegments(iw, frac, ghost, shield);
+    const seg = barSegments(iw, frac, ghost, shield, coming);
+    this.coming.visible = seg.comingW > 0;
+    if (seg.comingW > 0) {
+      this.coming.x = ix + seg.life;
+      this.coming.width = seg.comingW;
+      this.coming.height = ih;
+    }
     this.life.width = seg.life;
     this.life.height = ih;
     this.life.visible = seg.life > 0;

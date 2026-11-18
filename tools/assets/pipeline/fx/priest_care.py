@@ -1,4 +1,4 @@
-"""DRAFTS for the lab (2026-11-18), not in `ALL` and not exported until the user approves them:
+"""The Priest's care, second pass (2026-11-18; approved on lab v84 — «me gusta todo»):
 
   the heals over time   hot_pulse (each 1 s pulse of a heal over time, on whoever it heals) · mend_wrap (Mend's lasting
                         look: one mint ribbon wound round the body, turning) · light_motes (Mending Light's: glints of
@@ -158,7 +158,7 @@ def sigil_wrath(cel: Cel, i: int, t: float) -> None:
 
 SIGIL_MS = [80, 80, 90, 90, 100, 110, 60, 70, 80, 90, 100, 110]
 
-DRAFTS = [
+FX = [
     Fx("hot_pulse", 40, 56, 20, 52, [60, 60, 70, 70, 80, 90], False, hot_pulse),
     Fx("mend_wrap", 40, 56, 20, 52, [110] * 12, True, mend_wrap),
     Fx("light_motes", 40, 56, 20, 52, [110] * 10, True, light_motes),
@@ -167,3 +167,5 @@ DRAFTS = [
     Fx("sigil_ward", 40, 56, 20, 52, SIGIL_MS, False, sigil_ward),
     Fx("sigil_wrath", 40, 56, 20, 52, SIGIL_MS, False, sigil_wrath),
 ]
+
+DRAFTS = FX  # the lab preview's name for them (pipeline/fx_next_preview.py)

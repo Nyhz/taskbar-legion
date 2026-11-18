@@ -21,7 +21,7 @@ const heroAbilities = Object.keys(ABILITIES).filter((k) => CLASS_KEYS.some((c) =
 
 describe('a bar of the strip HUD', () => {
   it('fills whole pixels and never shows a living fighter empty', () => {
-    expect(barSegments(24, 1)).toEqual({ life: 24, ghost: 0, shieldX: 0, shieldW: 0 });
+    expect(barSegments(24, 1)).toEqual({ life: 24, ghost: 0, shieldX: 0, shieldW: 0, comingW: 0 });
     expect(barSegments(24, 0.5).life).toBe(12);
     expect(barSegments(24, 0.004).life).toBe(1);
     expect(barSegments(24, 0).life).toBe(0);
@@ -36,6 +36,10 @@ describe('a bar of the strip HUD', () => {
     expect(barSegments(24, 0.5, 0, 0.25)).toMatchObject({ shieldX: 12, shieldW: 6 });
     expect(barSegments(24, 1, 0, 0.25)).toMatchObject({ shieldX: 18, shieldW: 6 });
     expect(barSegments(24, 0.9, 0, 5)).toMatchObject({ shieldX: 0, shieldW: 24 });
+    // What a heal over time still has to give: right after the life, never past the end (2026-11-18).
+    expect(barSegments(24, 0.5, 0, 0, 0.25)).toMatchObject({ life: 12, comingW: 6 });
+    expect(barSegments(24, 0.9, 0, 0, 0.5)).toMatchObject({ comingW: 2 });
+    expect(barSegments(24, 1, 0, 0, 0.5).comingW).toBe(0);
   });
 
   it('holds the lost slice, then drains it; a heal snaps it up', () => {

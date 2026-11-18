@@ -93,6 +93,7 @@ def bars() -> list[tuple[str, str, Image.Image]]:
         ("hud_s_fill_low", "Poca vida", column([("crimson", 6), ("crimson", 5), ("crimson", 3)])),
         ("hud_s_fill_ghost", "Lo que acaba de perder", column([("light", 0), ("bone", 6), ("bone", 4)])),
         ("hud_s_fill_shield", "Escudo que absorbe", column([("azure", 8), ("azure", 6), ("azure", 4)])),
+        ("hud_s_fill_coming", "Lo que una cura en el tiempo aún va a dar", column([("sea", 8), ("sea", 6), ("sea", 5)])),
         ("hud_s_fill_respawn", "Cuenta para reaparecer", column([("azure", 5), ("azure", 4), ("azure", 3)])),
         ("hud_s_fill_foe", "Vida de un enemigo", column([("crimson", 5), ("crimson", 4), ("crimson", 3)])),
         ("hud_s_fill_cast", "Lanzamiento", column([("brass", 6), ("brass", 5), ("brass", 3)])),

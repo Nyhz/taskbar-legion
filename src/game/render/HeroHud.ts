@@ -2,6 +2,7 @@ import { Container, Sprite } from 'pixi.js';
 import type { Combatant } from '@/sim/world';
 import { RESPAWN_MS } from '@/data/field';
 import { totalShield } from './effectAuras';
+import { healReceivedMult, hotStillToCome } from '@/sim/effects';
 import { ChipRow } from './ChipRow';
 import { LifeBar } from './LifeBar';
 import {
@@ -106,7 +107,10 @@ export class HeroHud {
       const low = c.alive && frac <= LOW_LIFE;
       this.bar.setFill(low ? 'hud_s_fill_low' : 'hud_s_fill_life');
       this.bar.setCasing(low && Math.floor(this.elapsed / LOW_BEAT_MS) % 2 === 0 ? 'hud_s_bar_hero_low' : BARS.hero.casing);
-      this.bar.set(frac, this.ghost.ghost, c.maxHp > 0 ? totalShield(c.effects) / c.maxHp : 0);
+      // …and, in mint after the life, what the heals over time on him still have to give: it shortens with each pulse,
+      // so it also says how much of the heal is left.
+      const coming = c.maxHp > 0 ? (hotStillToCome(c.effects) * healReceivedMult(c.effects) + (c.hotPending ?? 0)) / c.maxHp : 0;
+      this.bar.set(frac, this.ghost.ghost, c.maxHp > 0 ? totalShield(c.effects) / c.maxHp : 0, coming);
     }
     this.respawn.visible = reviving;
 

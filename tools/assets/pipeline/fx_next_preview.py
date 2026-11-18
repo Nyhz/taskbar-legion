@@ -6,7 +6,7 @@ from pathlib import Path
 
 from PIL import Image
 
-from .fx.priest_next import DRAFTS
+from .fx.priest_care import DRAFTS
 from .palette import color
 from .rig import GROUND, bake
 from .roster import load

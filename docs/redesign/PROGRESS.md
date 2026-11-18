@@ -2266,3 +2266,8 @@ Decisiones del usuario (18 nov), tras discutirlas una a una:
   lanzamiento de la Priest (`tools/assets/pipeline/fx/priest_next.py`, sin exportar).
 - **Pendiente:** la escalera de muros está ROTA con estos cambios (9 muros no suben; `ladder.test` falla) y el probe
   dirá las horas; el usuario decide con los números (más largo, o rebajar muros a ~3 meses).
+- **Aprobado en el lab v84 («me gusta todo») y metido en el juego:** Mend deja una cinta menta que gira alrededor del
+  aliado (`mend_wrap`), Mending Light chispas (`light_motes`), Sanctuary un círculo doble con rayos (`sanctuary_glow2`);
+  cada pulso de 1 s pasa una banda de luz por el héroe (`hot_pulse`); la barra de vida enseña en menta lo que la cura
+  aún va a dar (`hud_s_fill_coming`, `stripHud.barSegments` `comingW`). Cada habilidad de la Priest abre con su sello de
+  runas y el pilar de luz (`sigil_heal/ward/wrath`, `render/abilityFx` `SIGIL`). Arte en `pipeline/fx/priest_care.py`.

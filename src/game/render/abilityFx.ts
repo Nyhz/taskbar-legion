@@ -158,6 +158,16 @@ export function lookUp(slot: FxSlot | undefined, look: LastingLook): number {
   return look.up ?? (slot === 'mark' ? MARK_UP : 0);
 }
 
+// The Priest's abilities — never her basic attacks, which look like spells too — each open with a sign of their own
+// (2026-11-18, lab v84; user: «apenas se distingue cuando está autoatacando de cuando está casteando»): a ring of runes
+// kindles under her feet through the gesture and a pillar of light goes up her at the release, mint for a heal, azure
+// for a shield, white-gold for wrath. From the clip's start (not `atBlow`): it times its own flare to her release.
+const SIGIL = {
+  heal: { fx: 'sigil_heal', spot: 'caster-under' },
+  ward: { fx: 'sigil_ward', spot: 'caster-under' },
+  wrath: { fx: 'sigil_wrath', spot: 'caster-under' },
+} as const satisfies Record<string, CastBurst>;
+
 export const ABILITY_LOOKS: Readonly<Record<string, AbilityLook>> = {
   // ── Knight ──
   knight_guard: {}, // Stone Skin: the stone rising is the opening of its lasting look (also on the ally Shared Skin covers)
@@ -196,28 +206,28 @@ export const ABILITY_LOOKS: Readonly<Record<string, AbilityLook>> = {
   ranger_mark: { cast: [{ fx: 'mark_call', spot: 'caster-over', atBlow: true, dx: 10, dy: -22 }] },
   // ── Priest ── A heal is mint and soft, a shield azure and faceted, power bright yellow, wrath white-gold.
   // Mend: petals of mint light leave her lantern; the heal winding up the hurt one is the opening of its lasting look.
-  priest_mend: { cast: [{ fx: 'mend_gift', spot: 'caster-over', atBlow: true, dx: 21, dy: -19 }] },
+  priest_mend: { cast: [SIGIL.heal, { fx: 'mend_gift', spot: 'caster-over', atBlow: true, dx: 21, dy: -19 }] },
   // Healing Light: the book flares and a cross jumps off it; a shaft of light DROPS on the one it heals at once
   // (`healOn`) — an instant heal strikes, where Mend's ribbon winds up slowly.
-  priest_healing_light: { cast: [{ fx: 'swift_gift', spot: 'caster-over', atBlow: true, dx: 15, dy: -24 }], healOn: 'swift_light' },
+  priest_healing_light: { cast: [SIGIL.heal, { fx: 'swift_gift', spot: 'caster-over', atBlow: true, dx: 15, dy: -24 }], healOn: 'swift_light' },
   // Holy Shield: the book flashes; the glass closing round the tank is the opening of its lasting look.
-  priest_holyshield: { cast: [{ fx: 'ward_spark', spot: 'caster-over', atBlow: true, dx: 15, dy: -24 }] },
+  priest_holyshield: { cast: [SIGIL.ward, { fx: 'ward_spark', spot: 'caster-over', atBlow: true, dx: 15, dy: -24 }] },
   // Holy Nova: the staff's foot strikes, a ring of light opens under the wave and shafts burst up through it, near to far.
   priest_nova: {
-    cast: [{ fx: 'nova_flash', spot: 'caster-over', atBlow: true, dx: 8 }, { fx: 'nova_ring', spot: 'wave', atBlow: true, dy: 2 }],
+    cast: [SIGIL.wrath, { fx: 'nova_flash', spot: 'caster-over', atBlow: true, dx: 8 }, { fx: 'nova_ring', spot: 'wave', atBlow: true, dy: 2 }],
     band: [{ fx: 'nova_shaft', layer: 'air', every: 15, sweepMs: 220, atBlow: true, delayMs: 40 }],
     hit: 'nova_hit', hitDelayMs: 150,
   },
   // Circle of Healing: one bright ring flashes out under the whole party and throws crosses of light up — nothing
   // stays (Sanctuary's ring is slower and leaves each of them standing in a glow); each of them blooms like any heal.
   // (Retribution Aura is a passive talent now: its seal and tread are lasting looks under its stand-in key.)
-  priest_circle: { cast: [{ fx: 'circle_pulse', spot: 'party', atBlow: true, dy: 2 }] },
+  priest_circle: { cast: [SIGIL.heal, { fx: 'circle_pulse', spot: 'party', atBlow: true, dy: 2 }] },
   // Sanctuary: a ring of mint light opens under the whole party; the glow each of them stands in is its lasting look.
-  priest_sanctuary: { cast: [{ fx: 'sanctuary_ring', spot: 'party', atBlow: true, dy: 2 }] },
+  priest_sanctuary: { cast: [SIGIL.heal, { fx: 'sanctuary_ring', spot: 'party', atBlow: true, dy: 2 }] },
   // Smite: light falls on the enemy from the sky (the heal it carries blooms on the ally like any heal).
-  priest_smite: { hit: 'smite_strike', hitSpot: 'ground' },
+  priest_smite: { cast: [SIGIL.wrath], hit: 'smite_strike', hitSpot: 'ground' },
   // Battle Enrage: a wave of crimson fire runs under the party; the wings each of them wears are its lasting look.
-  priest_enrage: { cast: [{ fx: 'zeal_wave', spot: 'party', atBlow: true, dy: 2 }] },
+  priest_enrage: { cast: [SIGIL.wrath, { fx: 'zeal_wave', spot: 'party', atBlow: true, dy: 2 }] },
 };
 
 /** The arrow a class's basic attack shoots (render/fxData); a class without one keeps the old projectile. */
@@ -283,7 +293,8 @@ export const PENDING_ABILITIES: readonly string[] = [];
 const SHIELD_ARRIVES_MS = 400;
 const INFUSION_ARRIVES_MS = 450;
 // (`around`, not `body`: a mended Knight is often stone, and Stone Skin's glint lives in `body`.)
-const MENDING: readonly LastingLook[] = [{ slot: 'around', fx: 'mend_petals', start: 'mend_wind', priority: 1, delayMs: 420 }];
+// 2026-11-18 (lab v84, approved): Mend's heal winds up the body, then stays as one mint ribbon wound round it, turning.
+const MENDING: readonly LastingLook[] = [{ slot: 'around', fx: 'mend_wrap', start: 'mend_wind', priority: 1, delayMs: 420 }];
 
 const WEAKENED: readonly LastingLook[] = [{ slot: 'body', fx: 'sapped', tile: true }, { slot: 'overhead', fx: 'weak_mark' }];
 const HOBBLED: readonly LastingLook[] = [{ slot: 'feet', fx: 'hobble', tile: true }];
@@ -334,12 +345,12 @@ export const EFFECT_LOOKS: Readonly<Record<string, readonly LastingLook[]>> = {
   // Killing Field: a thorned snare round the feet of the whole wave.
   debuff_field_slow: [{ slot: 'ground', fx: 'snare', tile: true }],
   // ── Priest ──
-  // Mend (and Mending Light, the same thing left by Smite): the heal winds up the body once, then petals of mint
-  // light keep leaving it for as long as it mends.
+  // Mend: the heal winds up the body once, then a ribbon of mint light stays wound round it while it mends. Mending
+  // Light (left by Smite): glints of gold-mint light hang round the head and shoulders. (2026-11-18, lab v84.)
   fx_hot: MENDING,
-  fx_light: MENDING,
-  // Sanctuary: each of them stands in a ring of mint light on the ground.
-  fx_sanctuary: [{ slot: 'ground', fx: 'sanctuary_glow', priority: 1, delayMs: 420 }],
+  fx_light: [{ slot: 'around', fx: 'light_motes' }],
+  // Sanctuary: each of them stands in a double ring of mint light with rays standing up through them (lab v84).
+  fx_sanctuary: [{ slot: 'ground', fx: 'sanctuary_glow2', priority: 1, delayMs: 420 }],
   // The lesser wards (Deep Sanctuary, Second Wind): a small canopy of the shield's glass over the head.
   fx_ward: [{ slot: 'front', fx: 'ward_veil' }],
   // Power Infusion: a bright yellow AURA that is only a rim — a thin line of light hugging the figure, brightest

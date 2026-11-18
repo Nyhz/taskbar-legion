@@ -57,19 +57,22 @@ export interface BarSegments {
   /** The absorb shield: where it starts and how wide it is (0 = none). */
   shieldX: number;
   shieldW: number;
+  /** What a heal over time still has to give (2026-11-18): a mint stretch right after the life, up to the end. */
+  comingW: number;
 }
 
 /** What fills a well `width` px wide: `frac` of life, the lagging `ghost` share (≥ frac while a hit is fresh),
  *  and a shield worth `shield` of the full life. A living fighter never shows an empty bar; a shield stands
  *  right after the life and, when the two do not fit, lies over the bar's right end. */
-export function barSegments(width: number, frac: number, ghost = 0, shield = 0): BarSegments {
+export function barSegments(width: number, frac: number, ghost = 0, shield = 0, coming = 0): BarSegments {
   const clamp = (v: number): number => Math.max(0, Math.min(1, v));
   const f = clamp(frac);
   const life = f <= 0 ? 0 : Math.max(1, Math.round(width * f));
   const ghostEnd = Math.max(life, Math.round(width * clamp(ghost)));
   const shieldW = shield <= 0 ? 0 : Math.max(1, Math.min(width, Math.round(width * clamp(shield))));
   const shieldX = Math.min(life, width - shieldW);
-  return { life, ghost: ghostEnd - life, shieldX: shieldW === 0 ? 0 : shieldX, shieldW };
+  const comingW = coming <= 0 || life >= width ? 0 : Math.max(1, Math.min(width - life, Math.round(width * clamp(coming))));
+  return { life, ghost: ghostEnd - life, shieldX: shieldW === 0 ? 0 : shieldX, shieldW, comingW };
 }
 
 // ── the lagging slice ("what he just lost") ─────────────────────────────────────────────────────────────────
