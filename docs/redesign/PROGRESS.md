@@ -2204,3 +2204,9 @@ muros y horas en la siguiente ronda.
 - **Decidido (usuario, 18 nov):** la escalera sigue midiéndose con tiradas medias (Pulir es la ventaja que se compra,
   los muros no la exigen); el oro que sobra en Tormento (13–23 h de ingreso) se acepta y la sonda no lo gasta en Pulir.
 
+
+### Pendiente tras el sonido — cofres comunes (18 nov)
+
+- **Decisión del usuario:** cofre común de 0,2 % a **0,4 %** por muerte (1 cada 250 en lugar de 1 cada 500), y reajustar la
+  curva (horas y escalera) con ello. Motivo: en 1-8 le habían caído 2 cofres (lo esperado eran 4–5 con los de jefe).
+  «Lo hacemos tras los sonidos.»
