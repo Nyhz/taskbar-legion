@@ -2241,3 +2241,28 @@ muros y horas en la siguiente ronda.
   Tormento 6–7. Reclutas y textura de Normal sin cambios.
 - **Herramientas:** kills, cofres y comunes abiertos por muro en la salida de `ceiling-pass`.
 
+
+### Ronda 19 — ritmo de habilidades, curas en el tiempo, el Golpe cargado y la barra (18 nov; 3dd3bd5, 968cd4b)
+
+Decisiones del usuario (18 nov), tras discutirlas una a una:
+- **Cooldown global de 2 s por héroe** (`data/casting.ts`): fijo, ni la reducción de recarga ni la velocidad de ataque
+  lo acortan; mientras dura sigue autoatacando. Las de cargas (Aimed Shot, Riposte) lo respetan y guardan la carga; las
+  definitivas van aparte. Con varias listas sale primero la más urgente: la que responde a la carga de un jefe, luego
+  una cura con alguien bajo el 35 %, luego el orden de ranura (`sim/abilities.byUrgency`).
+- **Recargas unos 3 s más largas** («un punto medio», todas pares o acabadas en 5), **sin compensar**.
+- **Curas en el tiempo** curan lo mismo durante más: Mend 12 s, Sanctuary 10 s, Mending Light 8 s; **en pulsos de 1 s**;
+  relanzarla suma lo que quedaba (`sim/effects.applyEffect`); Mend prefiere al que no la lleva.
+- **Golpe cargado cada 15 s** (era 24) y más débil: sin defensa quita el 50/60/65 % (Averno/Eterno/Tormento) de la vida
+  del Knight medio — uno se aguanta, dos sin cura o defensa entre medias no; la sacudida de atrás baja en proporción.
+  La carga sigue en 2 s: una defensa por héroe en cada golpe, el Knight con dos las turna.
+- **Defensas contra jefes** saltan también en emergencia, bajo el 30 % de vida (`EMERGENCY_LIFE_FRAC`).
+- **Disparos de Ranger y Priest:** uno de cada cuatro a la retaguardia por prioridad, el resto al frente de la oleada
+  (`BACK_LINE_SHOT_PCT`, contador constante): los apoyos aguantan para bufar.
+- **Knight regen 5 → 4**: con 3 el Knight solo y desnudo tardaba 27 min en la 1-1 (moría una y otra vez); con 4, ~6 min.
+- **Barra:** placa MENU/MENÚ en el lanzador; las auras del apoyo vivo en el centro con su tooltip; iconos nuevos de
+  Mejoras (flecha verde), Eterno (serpiente que se muerde la cola) y preajuste de diario (flecha en bucle con moneda).
+  Los tiradores que no son arqueros lanzan el proyectil del mago, no flechas (`render/enemyFx.rangedStyle`).
+- **Lab v84:** borradores de las curas en el tiempo (cinta, pulso, vida que viene, chispas, Sanctuary) y del sello de
+  lanzamiento de la Priest (`tools/assets/pipeline/fx/priest_next.py`, sin exportar).
+- **Pendiente:** la escalera de muros está ROTA con estos cambios (9 muros no suben; `ladder.test` falla) y el probe
+  dirá las horas; el usuario decide con los números (más largo, o rebajar muros a ~3 meses).

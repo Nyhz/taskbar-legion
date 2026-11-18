@@ -150,10 +150,11 @@ def main() -> None:
             missing.append(rel)
             return rel
         if rel not in cache:
-            cache[rel] = "data:image/png;base64," + base64.b64encode(path.read_bytes()).decode()
+            mime = "image/gif" if rel.endswith(".gif") else "image/png"
+            cache[rel] = f"data:{mime};base64," + base64.b64encode(path.read_bytes()).decode()
         return cache[rel]
 
-    out = re.sub(r"img/[a-z0-9_]+/[A-Za-z0-9_]+\.png", inline, out)
+    out = re.sub(r"img/[a-z0-9_]+/[A-Za-z0-9_]+\.(?:png|gif)", inline, out)
 
     def inline_audio(match: re.Match[str]) -> str:  # the sound section's players: audio/<channel>/<file>.mp3
         rel = match.group(1)
