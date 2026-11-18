@@ -3,6 +3,7 @@ import { isTauri } from './tauri';
 import { isItemDragging } from './dragState';
 import { saveGame } from '@/persistence/saveManager';
 import { setCursorOverGame } from '@/audio/attention';
+import { cursorInViewport, isMacWebview } from './cursorMapping';
 
 // Turns the Tauri webview into the ambient overlay: a transparent, borderless,
 // always-on-top, NON-MAXIMIZED window that the user can drag freely across monitors.
@@ -162,19 +163,26 @@ async function dockBottomPosition(win: Window, currentMonitor: CurrentMonitor): 
 }
 
 async function startClickThrough(win: Window): Promise<void> {
-  const { cursorPosition } = await import('@tauri-apps/api/window');
+  const { cursorPosition, primaryMonitor } = await import('@tauri-apps/api/window');
+  const mac = isMacWebview(navigator.userAgent);
 
   // The window moves whenever the user drags it; keep its origin + scale fresh so the
   // cursor→viewport hit-test below stays accurate. (Position is NOT persisted — the overlay
-  // always docks bottom-centre under the title on entry.)
+  // always docks bottom-centre under the title on entry.) On macOS the cursor comes in the
+  // PRIMARY monitor's scale, not the window's (see cursorMapping): track that one too, or a
+  // window dragged onto a second screen of another scale can never be clicked again.
   let origin = await win.outerPosition();
   let scale = await win.scaleFactor();
+  const primaryScale = async (): Promise<number> => (mac ? ((await primaryMonitor().catch(() => null))?.scaleFactor ?? scale) : scale);
+  let cursorScale = await primaryScale();
   const refresh = async (): Promise<void> => {
     origin = await win.outerPosition();
     scale = await win.scaleFactor();
+    cursorScale = await primaryScale();
   };
   await win.onMoved(() => void refresh());
   await win.onResized(() => void refresh());
+  await win.onScaleChanged(() => void refresh());
 
   // The cursor is over "nothing" (→ click straight through to whatever app is behind us)
   // when elementFromPoint lands on a background/structural node rather than a real UI
@@ -198,8 +206,7 @@ async function startClickThrough(win: Window): Promise<void> {
     void (async () => {
       try {
         const cursor = await cursorPosition();
-        const x = (cursor.x - origin.x) / scale;
-        const y = (cursor.y - origin.y) / scale;
+        const { x, y } = cursorInViewport(cursor, origin, { cursor: cursorScale, window: scale });
         // While an item is being dragged, PIN the window interactive — the drag path crosses
         // pointer-events:none gaps between panels, and toggling click-through mid-gesture makes
         // the webview drop the drag. Otherwise fall back to the hit-test under the cursor.
