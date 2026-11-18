@@ -476,7 +476,7 @@ function enemyAttack(e: Combatant, target: Combatant, S: number, ctx: TriggerCtx
   // Its support's Saña; a shooter's Tiro cargado (one basic shot in four) or a beast's Embestida (its first blow).
   const heavy = heavyHit(e);
   const charged = heavy > 1;
-  // A boss hits the front hero for its anchored hit (data/stageScaling zoneBossHit / stageBossHit), the rest for its own.
+  // A boss — and a wave enemy — hits the front hero for its anchored hit (data/stageScaling), the rest for its own.
   const hit = onFront && e.frontHit !== undefined ? e.frontHit : (e.enemyDamage ?? 1);
   const base = hit * foeDamageMult(e) * heavy;
   let dmg = base * enrage * weakenMult(e.effects) * (1 - mit);

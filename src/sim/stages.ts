@@ -18,6 +18,7 @@ import {
   TRASH_HP_FRACTION,
   TRASH_DMG_FRACTION,
   trashDmgTune,
+  trashBackDmgTune,
   waveSizeForStage,
   ELITE_CHANCE,
   ELITE_MIN_STAGE,
@@ -42,6 +43,9 @@ interface EnemySpec {
   hpMult: number; // multiplies the reference enemyHp(S) — IGNORED when hpAbsolute is set (bosses)
   hpAbsolute?: number; // decoupled boss HP (stageBossHp/zoneBossHp); overrides hpMult when present
   dmgMult: number;
+  /** × enemyDamage(S) for what it deals to the FRONT hero (a wave enemy: the trash-threat anchor), when that is
+   *  not `dmgMult` (what it deals to anyone behind him). */
+  frontDmgMult?: number;
   magic: boolean;
   range: number;
   moveSpeed: number;
@@ -76,6 +80,7 @@ function makeEnemy(world: WorldState, S: number, index: number, x: number, spec:
     alive: true,
     fightMs: 0,
     enemyDamage: enemyDamage(S) * spec.dmgMult,
+    frontHit: spec.frontDmgMult === undefined ? undefined : enemyDamage(S) * spec.frontDmgMult,
     enemyAttackSpeed: Math.max(0.4, aspd),
     enemyMagic: spec.magic,
     isBoss: spec.isBoss,
@@ -99,7 +104,9 @@ function kindAbilities(kind: EnemyKind, S: number): ResolvedAbility[] {
 function trashSpec(kind: EnemyKind, S: number): EnemySpec {
   return {
     hpMult: kind.hpMult * TRASH_HP_FRACTION,
-    dmgMult: kind.dmgMult * TRASH_DMG_FRACTION * trashDmgTune(S), // trash damage has its own tuning table (the anchors)
+    // Trash damage has its own tuning tables (the anchors): one for its hits on the front hero, one for those behind.
+    dmgMult: kind.dmgMult * TRASH_DMG_FRACTION * trashBackDmgTune(S),
+    frontDmgMult: kind.dmgMult * TRASH_DMG_FRACTION * trashDmgTune(S),
     magic: kind.magic,
     range: kind.range,
     moveSpeed: kind.moveSpeed,
@@ -118,7 +125,7 @@ function trashSpec(kind: EnemyKind, S: number): EnemySpec {
 // chance is applied on kill (Simulation.awardKill). Render reads `isElite` to draw it bigger.
 function eliteSpec(kind: EnemyKind, S: number): EnemySpec {
   const base = trashSpec(kind, S);
-  return { ...base, hpMult: base.hpMult * ELITE_HP_MULT, dmgMult: base.dmgMult * ELITE_DMG_MULT, isElite: true };
+  return { ...base, hpMult: base.hpMult * ELITE_HP_MULT, dmgMult: base.dmgMult * ELITE_DMG_MULT, frontDmgMult: (base.frontDmgMult ?? base.dmgMult) * ELITE_DMG_MULT, isElite: true };
 }
 
 /** Split a wave of `total` mobs into WAVE_BATCHES batches, each ≥1, with random sizes

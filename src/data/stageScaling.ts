@@ -183,16 +183,47 @@ export const STAGE_BOSS_HP_TUNE: number[] = [
   590000, 705000, 878000, 1.01e+06, 1.15e+06, 1.34e+06, 1.76e+06, 1.99e+06, 2.25e+06, 3.02e+06,
   3.22e+06, 3.24e+06, 3.61e+06, 4.78e+06, 5.63e+06, 5.66e+06, 5.69e+06, 5.71e+06, 5.74e+06,
 ];
-/** Trash DAMAGE at each tuning point, as a share of the formula's (`enemyDamage`): 1 where the arriving party
- *  clears the point's hardest stage cleanly, less where it would wipe. */
+// ── THE TRASH-THREAT ANCHOR (round 20, 2026-11-18; user: at 4-6 «mi knight… literalmente no recibe daño, recibe 0 o 1
+// de cada ataque») ── Cut to keep the hardest stage of each world from wiping the back line, the waves' hit had sunk to
+// 1.3–1.9 across the whole of Normal while the Knight's life rose to 430–650: 81–90 % of their hits did 0 or 1, a wave
+// took ~1.5 % of his life a second, and his regeneration covered half of it (the Priest had nothing to do). Like the
+// bosses' hit (BOSS_THREAT_PCT), the waves' hit is now anchored to the average Knight: in the middle of each world, a
+// wave takes TRASH_THREAT_PCT % of his life a second while it fights him (after his armour, his blocks and his
+// defences; before heals). The hits that go BEHIND him have their own table, anchored to the back line's life
+// (TRASH_BACK_DMG_TUNE). World 1 keeps its own values (the bootstrap). Both written by `scripts/trash-threat-tune.ts`,
+// measured in a real fight against the probe's party.
+/** % of the average Knight's life a second a wave takes off him while it fights him, Normal … Torment (user: ~3 % in
+ *  Normal, «subir un poco cada una»). */
+export const TRASH_THREAT_PCT: readonly number[] = [3, 3.5, 4, 4.5, 5];
+/** Trash DAMAGE at each tuning point, as a share of the formula's (`enemyDamage`). World 1 (points 0–9): 1 where the
+ *  arriving party clears the point's hardest stage cleanly, less where it would wipe. Worlds 2–50: the trash-threat
+ *  anchor above. */
 export const TRASH_DMG_TUNE: number[] = [
   1, 1, 1, 1, 0.5, 0.45, 0.42, 0.36, 0.5, 1,
-  0.562, 0.461, 0.346, 0.269, 0.245, 0.245, 0.269, 0.294, 0.245, 0.17,
-  0.2, 0.291, 0.35, 0.39, 0.449, 0.47, 0.51, 0.56, 0.576, 0.51,
-  0.5, 0.47, 0.607, 0.715, 0.75, 0.82, 0.952, 1, 0.908, 0.68,
-  0.68, 0.748, 0.82, 0.952, 1, 1, 1, 1, 1, 1,
-  1, 1, 1, 1, 1, 1, 1, 1, 1,
+  1.36, 1.32, 1.32, 1.74, 1.84, 1.54, 1.83, 1.89, 1.74, 1.51,
+  1.35, 1.78, 2.73, 2.42, 2.28, 2.57, 3.28, 3.01, 2.54, 1.86,
+  3.39, 3.85, 4.41, 4.81, 7.96, 7.95, 7.75, 7.63, 7.37, 6.06,
+  5.25, 10.6, 14, 15.7, 12.5, 13.6, 15.8, 14.4, 16.3, 10.3,
+  10.4, 14.7, 26.1, 27.8, 34.1, 38.3, 39.6, 31.8, 34.3,
 ];
+/** The share of the formula's damage a wave enemy deals to a hero BEHIND the front one (its shots over the front line,
+ *  the brute's area blow on the back line), per tuning point. The trash-threat anchor raises the waves' hit on the
+ *  Knight; this one keeps what reaches the Priest and the Ranger at TRASH_BACK_THREAT_PCT of their life a second
+ *  (user, 2026-11-18: «separar la retaguardia»). World 1: the values the waves had before. */
+export const TRASH_BACK_DMG_TUNE: number[] = [
+  1, 1, 1, 1, 0.5, 0.45, 0.42, 0.36, 0.5, 1,
+  0.601, 0.986, 2.38, 1.99, 2.02, 1.87, 2.14, 2.17, 2.08, 1.25,
+  1.66, 1.64, 2.16, 2.5, 1.77, 2.42, 2.13, 2.77, 2.51, 0.987,
+  2.44, 3.09, 3.88, 4.83, 3.76, 4.74, 4.09, 4.05, 4.71, 3.4,
+  3.1, 5.6, 5.19, 5.25, 5.79, 5.98, 5.75, 5.46, 6.03, 5.11,
+  4.87, 5.71, 6.67, 5.69, 6.93, 6.44, 6.55, 7.45, 8.25,
+];
+/** % of the back line's life a second the waves take off it while they fight, Normal … Torment (the user's ~0.5 % in
+ *  Normal up to ~1 % in Torment). */
+export const TRASH_BACK_THREAT_PCT: readonly number[] = [0.5, 0.625, 0.75, 0.875, 1];
+export function trashBackDmgTune(S: number): number {
+  return TRASH_BACK_DMG_TUNE[tunePoint(S)] ?? 1;
+}
 // ── THE BOSS-HIT ANCHOR (round 6, 2026-11-16; docs/redesign/PACING_REPORT.md «Ronda 5 · C», «Ronda 6») ──
 // A boss's life is anchored to the party's damage; since round 6 its DAMAGE is anchored to the tank's life. Round 5 · C
 // measured why nothing threatened a geared party: the formula's damage (DMG0·Φ^1.2·1.3^d) went flat against the

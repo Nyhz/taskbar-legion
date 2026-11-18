@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { enemyHp, stageBossHp, zoneBossHp, tunePoint, ELITE_HP_MULT, NORMAL_TRASH_HP_MULT, TRASH_HP_FRACTION, TUNE_POINTS, GRUNT_HP_TUNE, STAGE_BOSS_HP_TUNE, TRASH_DMG_TUNE, MAX_LEVEL } from '@/data/stageScaling';
+import { enemyHp, stageBossHp, zoneBossHp, tunePoint, ELITE_HP_MULT, NORMAL_TRASH_HP_MULT, TRASH_HP_FRACTION, TUNE_POINTS, GRUNT_HP_TUNE, STAGE_BOSS_HP_TUNE, TRASH_DMG_TUNE, TRASH_BACK_DMG_TUNE, MAX_LEVEL } from '@/data/stageScaling';
 import { ENEMY_KINDS } from '@/data/enemies';
 import { getBonuses } from '@/sim/bonuses';
 import { GRUNT_HITS, STAGE_BOSS_SEC, gruntHp, gruntHits, measureStageBoss } from './probe/anchors';
@@ -62,10 +62,14 @@ describe('toughness anchors — the tables against the on-gear party', () => {
     }
     // a grunt is TRASH_HP_FRACTION of the reference, whatever the stage
     expect(gruntHp(137)).toBeCloseTo(enemyHp(137) * TRASH_HP_FRACTION, 9);
-    // trash damage is never raised above the formula, only lowered where a longer fight would wipe the party
-    for (const d of TRASH_DMG_TUNE) {
-      expect(d).toBeGreaterThan(0);
-      expect(d).toBeLessThanOrEqual(1);
+    // world 1 (the bootstrap) only ever lowers trash damage below the formula; worlds 2–50 are anchored to the
+    // share of the Knight's life (front) and of the back line's (behind) a wave takes a second, so they may rise
+    for (const table of [TRASH_DMG_TUNE, TRASH_BACK_DMG_TUNE]) {
+      expect(table).toHaveLength(TUNE_POINTS);
+      table.forEach((d, i) => {
+        expect(d, `point ${i}`).toBeGreaterThan(0);
+        if (i < 10) expect(d, `point ${i}`).toBeLessThanOrEqual(1);
+      });
     }
   });
 });
