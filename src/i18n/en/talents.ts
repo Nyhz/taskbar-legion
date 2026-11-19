@@ -91,6 +91,7 @@ export const talents = {
   firesBossOrElite: 'On engaging an elite, a stage boss or a world boss.',
   // ── Talents tab: what an ability does, one line per effect (sim/abilityFacts) ──
   fxDamage: 'Damage ~{n}',
+  fxTimes: '{n} ×{times} waves',
   fxDamageCrit: 'Damage ~{n} (can crit)',
   fxDamageAlwaysCrit: 'Damage ~{n} (always crits)',
   fxDot: '~{n} damage over {s} s',

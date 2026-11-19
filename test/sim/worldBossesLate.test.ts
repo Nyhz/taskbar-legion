@@ -246,8 +246,9 @@ describe('Espejos (the Unmaker): what it reflects', () => {
         const shards = src.applies.some((a) => turnsToShard(effectDef(a.effectKey))) ? 1 : 0; // a defence or weakening comes back as one shard
         expect(out?.def.applies.length ?? 0, src.key).toBe(kept.length + shards);
         kept.forEach((a, i) => {
+          // An ability that lands in waves comes back as one blow worth all of them (Raining Arrows: ×3).
           const coeff = effectCoeff(src, a, rank - 1);
-          if (coeff !== undefined) expect(out?.def.applies[i]?.power?.coeff, `${src.key} r${rank}`).toBeCloseTo(coeff, 9);
+          if (coeff !== undefined) expect(out?.def.applies[i]?.power?.coeff, `${src.key} r${rank}`).toBeCloseTo(coeff * (src.volleys?.count ?? 1), 9);
         });
       }
     }

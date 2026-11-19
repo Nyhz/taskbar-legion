@@ -73,7 +73,9 @@ export function reflection(boss: Combatant, scale: { harm: number; boon: number;
     const kind = def.kind.type;
     if (kind === 'invulnerable') continue; // nothing of this is the boss's to take
     const power = a.power ?? src.power;
-    const coeff = power === undefined ? undefined : (power.coeff + (power.coeffPerRank ?? 0) * steps) * (a.powerScale ?? 1);
+    // An ability that lands in waves (Raining Arrows' three volleys) comes back as ONE blow worth all its waves.
+    const waves = src.volleys?.count ?? 1;
+    const coeff = power === undefined ? undefined : (power.coeff + (power.coeffPerRank ?? 0) * steps) * (a.powerScale ?? 1) * waves;
     const durationMsOverride = (a.durationMsOverride ?? def.durationMs) + (src.rankScaling?.perRank.durationMs ?? 0) * steps;
     const base: AppliedEffect = { effectKey: a.effectKey, durationMsOverride, ...(a.chance === undefined ? {} : { chance: a.chance }) };
     const scaledPower = (k: number): AppliedEffect => (coeff === undefined ? base : { ...base, power: { coeff: coeff * k } });

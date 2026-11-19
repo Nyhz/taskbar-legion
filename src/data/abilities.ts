@@ -194,6 +194,10 @@ export interface AbilityDef {
   // When set, `cooldownMs` is ignored. The sim tracks charges on Combatant.charges.
   // `perAttack` may be 0: the charges then come from a trigger (Riposte: one per blocked hit).
   charge?: { perAttack: number; toCast: number };
+  // It lands in WAVES: its effects resolve `count` times — on the cast, then every `everyMs` — each wave on the
+  // targets standing then (a whole-wave volley hits whoever has come up since). Its `power` is per wave
+  // (sim/abilities.tickVolleys; user 2026-11-19: Raining Arrows in three waves of a third each).
+  volleys?: { count: number; everyMs: number };
   // Triggers the hero carries while this ability is learned (data/triggers.ts).
   triggers?: readonly TriggerDef[];
   // Passive party AURA (no cast, no cooldown): while this ability is SLOTTED (occupies a
@@ -332,10 +336,12 @@ export const ABILITIES: Record<string, AbilityDef> = {
   },
   ranger_multishot: {
     key: 'ranger_multishot', name: 'Raining Arrows', icon: 'arrows',
-    desc: 'A volley spread across the whole wave.',
+    desc: 'Three volleys of arrows rain on the whole wave, one after another.',
     cooldownMs: 24000, target: 'allEnemies', applies: [{ effectKey: 'fx_damage' }],
-    // Per-target wave damage: 1.2× → 2.8× AD (+0.4/rank).
-    castCondition: 'enemyPresent', fires: { when: 'worthIt', foes: 3 }, power: { coeff: 1.2, coeffPerRank: 0.4, canCrit: true },
+    // Three waves (2026-11-19, user: «3 oleadas de flechas que hagan 1/3 de lo que hace ahora»), each 0.4× → 0.93× AD
+    // (+0.4/3 per rank) on whoever stands in the wave then: 1.2× → 2.8× in all, as the single volley it was.
+    volleys: { count: 3, everyMs: 450 },
+    castCondition: 'enemyPresent', fires: { when: 'worthIt', foes: 3 }, power: { coeff: 0.4, coeffPerRank: 0.4 / 3, canCrit: true },
   },
   ranger_focus: {
     key: 'ranger_focus', name: 'Explosive Arrow', icon: 'explosion',

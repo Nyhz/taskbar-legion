@@ -820,6 +820,9 @@ export function castReadyAbilities(
     const firstEvent = events.length;
     const healed = applyAbilityEffectsTo(caster, ability, rank, cs, targets, allies, enemies, S, rng, events);
     commitCooldown(caster, ability, rank);
+    if (ability.volleys !== undefined && ability.volleys.count > 1) {
+      (caster.volleys ??= []).push({ key: ability.key, rank, left: ability.volleys.count - 1, inMs: ability.volleys.everyMs });
+    }
     if (single) caster.gcdMs = HERO_GLOBAL_COOLDOWN_MS;
     cast.push(ability.key);
     if (single && healed.length > 0) healInfusion(caster, allies, healed); // Power Infusion: each of her heals quickens the party
@@ -829,6 +832,35 @@ export function castReadyAbilities(
     if (single) break;
   }
   return cast;
+}
+
+/** The waves still to land of the abilities that land in waves (data/abilities `volleys`): each lands when its time
+ *  comes, on the targets standing THEN (a whole-wave volley hits whoever has come up since the cast), with a 'volley'
+ *  cue on the caster so the strip shows the wave. A volley in the air lands even if its caster is bound or silenced
+ *  meanwhile; a fallen caster's do not. */
+export function tickVolleys(caster: Combatant, allies: Combatant[], enemies: Combatant[], S: number, rng: Rng, events: CombatEvent[], deltaMs: number): void {
+  if (caster.volleys === undefined || caster.volleys.length === 0) return;
+  if (!caster.alive) {
+    caster.volleys = [];
+    return;
+  }
+  for (const v of caster.volleys) {
+    v.inMs -= deltaMs;
+    const resolved = caster.abilities.find((a) => a.def.key === v.key);
+    const every = resolved?.def.volleys?.everyMs ?? 0;
+    while (v.left > 0 && v.inMs <= 0 && resolved !== undefined) {
+      const ability = resolved.def;
+      events.push({ type: 'cue', targetId: caster.id, cue: 'volley', abilityKey: ability.key });
+      const targets = selectTargets(caster, ability.target, allies, enemies, rng, ability.power?.splashRadius);
+      const firstEvent = events.length;
+      if (targets.length > 0) applyAbilityEffectsTo(caster, ability, v.rank, casterStats(caster), targets, allies, enemies, S, rng, events);
+      if (caster.triggers !== undefined) critTriggers(caster, allies, enemies, events, firstEvent);
+      v.left -= 1;
+      v.inMs += every;
+    }
+    if (resolved === undefined) v.left = 0;
+  }
+  caster.volleys = caster.volleys.filter((v) => v.left > 0);
 }
 
 /** Apply an ability's declarative effects to its (pre-selected) targets, plus any AoE

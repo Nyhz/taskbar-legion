@@ -24,6 +24,7 @@ export interface Combatant {
   cooldownTotals?: Record<string, number>; // abilityKey -> full cooldown of the last cast (for UI fill); display-only
   charges?: Record<string, number>; // abilityKey -> charges banked (charge-gated abilities, e.g. Aimed Shot)
   gcdMs?: number; // heroes: ms left of the global cooldown after a cast (data/abilities HERO_GLOBAL_COOLDOWN_MS)
+  volleys?: PendingVolley[]; // the waves still to land of an ability that lands in waves (data/abilities `volleys`)
   hotPending?: number; // heroes and foes: healing over time gathered since the last pulse (sim/combat, once a second)
   attackTimerMs: number;
   x: number; // world position (heroes derived from partyX; enemies advance left)
@@ -152,6 +153,15 @@ export interface DealtBonus {
 
 // Render/accrual event emitted by a combat tick (lives here so both combat.ts and
 // abilities.ts can produce them without an import cycle).
+/** A wave still to land of an ability that lands in waves (sim/abilities.tickVolleys). */
+export interface PendingVolley {
+  key: string;
+  rank: number;
+  /** Waves still to come, and the ms until the next. */
+  left: number;
+  inMs: number;
+}
+
 export interface CombatEvent {
   type: 'damage' | 'heal' | 'death' | 'cast' | 'cue';
   targetId: string;
@@ -166,7 +176,8 @@ export interface CombatEvent {
   tick?: boolean; // a DoT/HoT periodic tick (render as a number; no attack animation)
   charged?: boolean; // an enemy's heavy basic attack: a shooter's Tiro cargado (the shot flies lit), a beast's Embestida (a burst on the hero)
   /** type 'cue': something brief to SHOW on `targetId`, with no number (sim/enemyTraits): a soldier's parry
-   *  (`guard`), its Último aliento (`lastBreath`), a support falling with its auras (`supportDown`); a world boss
+   *  (`guard`), its Último aliento (`lastBreath`), a support falling with its auras (`supportDown`); on a HERO, a later wave of an
+   *  ability that lands in waves (`volley`, with `abilityKey` — sim/abilities.tickVolleys); a world boss
    *  reflecting a hero's ability (`mirror`, with `abilityKey` the ability it reflects — sim/mirror).
    *  On a 'heal' of a boss it says where the heal came from: `leech` is the Vampiric affix feeding on a hit. */
   cue?: string;

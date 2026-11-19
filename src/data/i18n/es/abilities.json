@@ -76,8 +76,8 @@
     "es": "Lluvia de flechas"
   },
   "ranger_multishot.desc": {
-    "en": "A volley spread across the whole wave.",
-    "es": "Una andanada repartida por toda la oleada."
+    "en": "Three volleys of arrows rain on the whole wave, one after another.",
+    "es": "Tres andanadas de flechas llueven sobre toda la oleada, una tras otra."
   },
   "ranger_focus.name": {
     "en": "Explosive Arrow",

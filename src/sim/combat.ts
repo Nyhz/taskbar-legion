@@ -14,7 +14,7 @@ import {
   healReceivedMult,
   isDisarmed,
 } from './effects';
-import { tickCooldowns, castReadyAbilities, foesBehind, resolveChanneledCast } from './abilities';
+import { tickCooldowns, tickVolleys, castReadyAbilities, foesBehind, resolveChanneledCast } from './abilities';
 import { dealtMult, liveStats } from './liveStats';
 import { checkLowHp, onBlock, onCrit, onEffectsEnded, onEnemyDeath, onEnemyEngage, tryRescue, type TriggerCtx } from './triggers';
 import { mitigation, enrageMultiplier, MAX_DAMAGE_REDUCTION } from '@/data/stageScaling';
@@ -194,6 +194,8 @@ export function resolveCombatTick(world: WorldState, deltaMs: number, rng: Rng):
   //    ability for a hero, so two ready abilities can't share a swing — the second waits for
   //    the next one (each ability's OWN cooldown still governs how often it's ready). The
   //    cast pushes its own damage/heal events; we add a 'cast' marker.
+  // 4a. The waves still in the air of an ability that lands in waves (Raining Arrows): they land on their own clock.
+  for (const h of heroes) tickVolleys(h, heroes, enemies, S, rng, events, deltaMs);
   for (const h of heroes) {
     if (!h.alive) continue;
     if (isDisarmed(h.effects)) continue; // bound (a world boss's Roots): no attack, no cast, while it lasts

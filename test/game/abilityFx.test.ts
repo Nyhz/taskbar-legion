@@ -131,7 +131,7 @@ describe('wornLooks', () => {
     const got = wornLooks([worn('buff_guard_block'), worn('buff_battlecry_ad'), worn('buff_battlecry_crit')], { id: 'h1', classKey: 'knight' });
     expect(got.skin).toBe('stone');
     expect(got.slots.get('body')?.look.fx).toBe('stone_glint');
-    expect(got.slots.get('ground')?.look.fx).toBe('battlecry_flames');
+    expect(got.slots.get('ground')?.look.fx).toBe('battlecry_aura');
     expect(got.slots.size).toBe(2);
   });
 

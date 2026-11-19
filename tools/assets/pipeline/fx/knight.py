@@ -4,7 +4,7 @@ Stone Skin      stone_rise (cast) · the `stone` skin + stone_glint (while on) �
 Cleave          cleave_wave (cast, at the blow) · gash (each enemy hit) · sapped + weak_mark (the enemy deals less)
                 hobble (Crippling Cleave / Vengeance: the enemy is slowed)
 Bulwark         bulwark_raise (cast) · bulwark_wall (while the shield holds) · bulwark_break (when it ends)
-Battle Cry      warcry_ring (cast) · battlecry_flames (on every ally while on)
+Battle Cry      warcry_ring (cast) · battlecry_aura (on every ally while on: a sigil and rising chevrons)
 Bloodlust       bloodlust_burst (cast) · bloodlust_aura (while on)
 Hold the Line   holdline_ring (cast) · banner (beside the Knight) + holdline_guard (in front of every ally)
 Riposte         riposte_flash (cast) · pierce (the enemy hit)
@@ -406,21 +406,31 @@ def holdline_ring(cel: Cel, i: int, t: float) -> None:
 
 
 # ----------------------------------------------------------------------------------------- Battle Cry
-def battlecry_flames(cel: Cel, i: int, t: float) -> None:
-    """A war fire at the feet of everyone the cry reached: amber tongues either side of the body, embers rising."""
-    ax, base = 21, 34
-    tones = [("crimson", 5), ("brass", 5), ("brass", 7)]
-    for k, dx in enumerate((-16, -10, -3, 4, 11, 16)):
-        ph = math.tau * (t + k * 0.21)
-        h = (13, 22, 11, 12, 23, 14)[k] + 3.0 * math.sin(ph)
-        flame(cel, ax + dx, base, h, 8.0 if k in (1, 4) else 6.0, tones, sway=2.0 * math.sin(ph + 1.0), seed=k * 3 + i)
+def battlecry_aura(cel: Cel, i: int, t: float) -> None:
+    """Battle Cry on everyone it reached: a brass war-sigil breathing at the feet and golden chevrons climbing
+    either side of the body — strength rising through them. Not a fire: nothing licks at them, nothing burns
+    (2026-11-19, user: «parece que se están quemando»)."""
+    ax, base = 22, 44
+    glow = 0.5 + 0.5 * math.sin(math.tau * t)
+    # the sigil: a flat ring on the ground, notched at four points, brighter on the breath in
+    ring(cel, ax, base - 2, 16, 3.4, ("brass", 6 if glow > 0.5 else 5), thick=1.3)
+    ring(cel, ax, base - 2, 12, 2.4, ("brass", 3), thick=1.0)
+    for nx in (-16, -6, 6, 16):
+        cel.put(ax + nx, base - 2 - (1 if abs(nx) < 10 else 0), ("light", 0) if glow > 0.6 else ("brass", 7))
+    # the chevrons: two climbing on each side, out of step, fading as they reach the shoulders
+    for side, off in ((-1, 0.0), (1, 0.5)):
+        for k in range(2):
+            f = (t + off + k * 0.5) % 1.0
+            cx = ax + side * 15
+            cy = base - 6 - f * 30
+            half = 4
+            tone_hi, tone_lo = (("light", 0), ("brass", 6)) if f < 0.35 else (("brass", 7), ("brass", 5))
+            for s in range(-half, half + 1):
+                y = cy + abs(s) * 0.75
+                cel.put(cx + s, y, tone_hi)
+                cel.put(cx + s, y + 1, tone_lo)
+                cel.put(cx + s, y + 2, ("crimson", 4))
     rim(cel, ("crimson", 1))
-    for k in range(4):
-        f = (t + k / 4) % 1.0
-        x = ax + (-14, 13, -6, 7)[k] + math.sin(f * 6 + k) * 2
-        y = base - 20 - f * 12
-        cel.put(x, y, LIGHT if f < 0.4 else ("brass", 7))
-        cel.put(x, y + 1, ("brass", 6))
 
 
 # ----------------------------------------------------------------------------------------- Bloodlust
@@ -653,7 +663,7 @@ FX = [
     Fx("bulwark_break", 40, 56, 20, 52, [60, 60, 60, 70, 80, 90], False, bulwark_break),
     Fx("warcry_ring", 128, 44, 64, 26, [50, 50, 60, 60, 70, 80, 90], False, warcry_ring),
     Fx("holdline_ring", 128, 44, 64, 26, [50, 50, 60, 60, 70, 80, 90], False, holdline_ring),
-    Fx("battlecry_flames", 42, 36, 21, 34, [90] * 6, True, battlecry_flames),
+    Fx("battlecry_aura", 44, 48, 22, 44, [90] * 8, True, battlecry_aura),
     Fx("bloodlust_burst", 68, 60, 34, 48, [40, 50, 50, 60, 70, 80], False, bloodlust_burst),
     Fx("bloodlust_aura", 46, 58, 23, 56, [100] * 6, True, bloodlust_aura),
     Fx("banner", 24, 56, 17, 54, [130] * 6, True, banner),

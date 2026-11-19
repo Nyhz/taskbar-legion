@@ -4,7 +4,7 @@ own centre, arrows on the middle of their shaft.
 His arrows        arrow (every basic shot) — the variants below replace it while an ability says so
 Rapid Fire        tempo_burst (cast) · tempo_up + tempo_up_front (while on: a calm stream of green arrows climbing)
 Aimed Shot        aim_gather (cast: light gathers on the arrowhead) · arrow_heavy · aim_impact (the enemy hit)
-Raining Arrows    volley_launch (cast, at the release) · arrow_fall (over the wave) · arrow_hit (each enemy hit)
+Raining Arrows    volley_launch (cast, at the release) · arrow_fall (over the wave, three waves) · arrow_hit (each enemy hit)
 Explosive Arrow   arrow_fire · fire_blast (where it lands) · burning (Scorched Earth: its targets burn)
 Caltrops          caltrops_toss (cast, at the throw) · caltrop_patch (on the ground under the wave) · bleeding
 Weak Spot         weak_crack (the enemy hit) · weak_spot (while it takes more damage)
@@ -258,33 +258,59 @@ def volley_launch(cel: Cel, i: int, t: float) -> None:
     rim(cel, ("ink", 1))
 
 
-def arrow_fall(cel: Cel, i: int, t: float) -> None:
-    """One arrow of the rain: it streaks down out of the sky, bites into the ground, quivers and is gone."""
-    gx, gy = 22, 70  # where it lands
-    ang = 66.0
+def _war_arrow(cel: Cel, hx: float, hy: float, ang: float, ln: int = 22) -> None:
+    """A big arrow of the rain, HEAD at (hx, hy): a two-pixel shaft lit along its upper edge, a broad iron head and
+    long crimson fletching — big enough to read from across the strip."""
     a = math.radians(ang)
     dx, dy = math.cos(a), math.sin(a)
-    if i < 3:
-        back = (58, 34, 12)[i]
+    nx, ny = -dy, dx  # across the shaft
+    for s in range(ln):
+        x, y = hx - dx * s, hy - dy * s
+        if s < 4:
+            continue
+        cel.put(x, y, ("leather", 6) if s < ln - 6 else ("crimson", 5))
+        cel.put(x + nx, y + ny, ("leather", 4) if s < ln - 6 else ("crimson", 3))
+    for s in range(5):  # the head: a broad leaf of iron, bright at its point
+        half = (0, 1, 2, 2, 1)[s]
+        for k in range(-half, half + 2):
+            cel.put(hx - dx * s + nx * k * 0.9, hy - dy * s + ny * k * 0.9, ("ink", 9) if s < 2 else ("ink", 7))
+    for s in range(ln - 6, ln):  # the fletching, spread either side
+        spread = 1 + (s - (ln - 6)) // 2
+        for side in (-1, 2):
+            k = side * spread if side < 0 else 1 + spread
+            cel.put(hx - dx * s + nx * k, hy - dy * s + ny * k, ("crimson", 6 if side < 0 else 4))
+
+
+def arrow_fall(cel: Cel, i: int, t: float) -> None:
+    """One arrow of the rain: a big war arrow streaking down from high up, biting into the ground with a burst of
+    dirt, quivering, then gone. Three waves of them come down over the wave (render/abilityFx ranger_multishot)."""
+    gx, gy = 26, 112  # where it lands
+    ang = 70.0
+    a = math.radians(ang)
+    dx, dy = math.cos(a), math.sin(a)
+    if i < 4:
+        back = (104, 74, 44, 16)[i]
         hx, hy = gx - dx * back, gy - dy * back
-        streak(cel, (hx - dx * 13, hy - dy * 13), (hx - dx * 36, hy - dy * 36), [("bone", 7), ("bone", 5), ("bone", 4)])
-        _arrow(cel, hx, hy, ang, ln=13)
+        streak(cel, (hx - dx * 22, hy - dy * 22), (hx - dx * 50, hy - dy * 50), [("bone", 7), ("bone", 6), ("bone", 4)])
+        streak(cel, (hx - dx * 22 + 1, hy - dy * 22), (hx - dx * 40 + 1, hy - dy * 40), [("bone", 5), ("bone", 4)])
+        _war_arrow(cel, hx, hy, ang)
         rim(cel, ("ink", 1))
         return
-    wob = (0.0, 3.0, -2.0, 1.0, 0.0, 0.0, 0.0)[min(i - 3, 6)]
-    _arrow(cel, gx + dx * 2, gy + dy * 2, ang + wob, ln=14)
+    wob = (0.0, 4.0, -3.0, 2.0, -1.0, 0.0, 0.0, 0.0)[min(i - 4, 7)]
+    _war_arrow(cel, gx + dx * 3, gy + dy * 3, ang + wob)
     for xy in [p for p in cel.px if p[1] >= gy]:
         del cel.px[xy]  # the point is in the ground
     rim(cel, ("ink", 1))
-    if i == 3:
+    if i == 4:  # the bite: dirt thrown up either side, a flash at the shaft
+        for k in range(7):
+            blob(cel, gx - 9 + k * 3, gy - 1 - (k % 2) * 2, 1.8, 1.2, ("leather", 5 if k % 2 else 4))
+        spark(cel, gx, gy - 2, 3, LIGHT, ("bone", 7))
+    elif i == 5:
         for k in range(5):
-            blob(cel, gx - 6 + k * 3, gy - 1 - (k % 2), 1.6, 1.1, ("bone", 5 if k % 2 else 4))
-        spark(cel, gx, gy - 1, 2, LIGHT, ("bone", 7))
-    elif i == 4:
-        for k in range(4):
-            cel.put(gx - 7 + k * 5, gy - 3 - (k % 2) * 2, ("bone", 5))
-    if i >= 7:
-        thin(cel, (0.6, 0.3)[min(i - 7, 1)], 12)
+            cel.put(gx - 10 + k * 5, gy - 4 - (k % 2) * 3, ("leather", 5))
+            cel.put(gx - 10 + k * 5, gy - 3 - (k % 2) * 3, ("leather", 3))
+    if i >= 8:
+        thin(cel, (0.6, 0.3)[min(i - 8, 1)], 12)
 
 
 def arrow_hit(cel: Cel, i: int, t: float) -> None:
@@ -628,7 +654,7 @@ FX = [
     Fx("aim_gather", 40, 40, 20, 20, [70, 70, 70, 70, 70, 80], False, aim_gather),
     Fx("aim_impact", 56, 36, 26, 18, [35, 45, 55, 65, 80], False, aim_impact),
     Fx("volley_launch", 64, 66, 14, 62, [35, 45, 55, 65, 75, 85], False, volley_launch),
-    Fx("arrow_fall", 30, 72, 22, 70, [40, 40, 40, 60, 70, 70, 260, 80, 80], False, arrow_fall),
+    Fx("arrow_fall", 44, 116, 26, 112, [35, 35, 35, 35, 60, 70, 70, 200, 80, 80], False, arrow_fall),
     Fx("arrow_hit", 22, 24, 11, 13, [40, 50, 120, 70], False, arrow_hit),
     Fx("fire_blast", 80, 62, 40, 58, [35, 45, 55, 65, 75, 85, 95], False, fire_blast),
     Fx("burning", 22, 32, 11, 30, [90] * 6, True, burning),

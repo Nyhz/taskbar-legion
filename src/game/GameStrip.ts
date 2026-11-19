@@ -671,6 +671,11 @@ export class GameStrip {
         this.delayed.add(healer !== undefined && spell !== undefined ? healer.castBlowMs(spell) : 0, () => {
           if (heroSprite.parent !== null) heroSprite.burstFx(CLEANSE_FLASH);
         });
+      } else if (ev.type === 'cue' && ev.cue === 'volley' && heroSprite !== undefined && ev.abilityKey !== undefined) {
+        // A later wave of an ability that lands in waves (sim/abilities.tickVolleys — Raining Arrows): its rain comes
+        // down again over the wave, timed like the first so it lands with this wave's hits (abilityHitWaitMs).
+        const look = abilityLook(ev.abilityKey);
+        if (look !== undefined) this.playWaveLook(heroSprite, look, ev.abilityKey, groundY);
       } else if (ev.type === 'cue') {
         // A wave enemy's trait or a support falling (sim/enemyTraits): a brief flash, nothing that stays.
         const cue = ev.cue === undefined ? undefined : FOE_CUES[ev.cue];
@@ -833,10 +838,11 @@ export class GameStrip {
   // over `spreadMs` once `wait` (and the look's own delay) has passed.
   private playBand(scatter: BandLook, band: { cx: number; halfW: number }, groundY: number, wait: number): void {
     const layer = scatter.layer === 'ground' ? this.fxGround : this.fxAir;
-    const n = scatter.count ?? bandCount(band.halfW * 2, scatter.every);
-    const step = (band.halfW * 2) / n;
+    const halfW = band.halfW + (scatter.reach ?? 0);
+    const n = scatter.count ?? bandCount(halfW * 2, scatter.every);
+    const step = (halfW * 2) / n;
     for (let i = 0; i < n; i++) {
-      const x = band.cx - band.halfW + step * (i + 0.5) + (scatter.count === undefined ? (Math.random() - 0.5) * step * 0.6 : 0);
+      const x = band.cx - halfW + step * (i + 0.5) + (scatter.count === undefined ? (Math.random() - 0.5) * step * 0.6 : 0);
       // In order from the near end (a sweep) or at random over `spreadMs`.
       const at = wait + (scatter.delayMs ?? 0) + (scatter.sweepMs !== undefined ? (scatter.sweepMs * i) / Math.max(1, n - 1) : Math.random() * (scatter.spreadMs ?? 0));
       this.delayed.add(at, () => layer.play(scatter.fx, x, groundY));

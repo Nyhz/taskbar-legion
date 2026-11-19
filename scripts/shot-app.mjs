@@ -1,7 +1,8 @@
 // shot-app.mjs — drive the running game (vite dev server) in headless Chromium and screenshot it.
 //   node scripts/shot-app.mjs <out.png> [--url http://localhost:5173/] [--size 1280x720] [--wait 2500]
-//                    [--step "<js expression>"]... [--pause 800] [--clip x,y,w,h]
+//                    [--step "<js expression>"]... [--pause 800] [--clip x,y,w,h] [--burst N --every ms]
 // Each --step is evaluated in the page in order (e.g. a click), with --pause ms after each. Console errors are printed.
+// --burst N takes N captures --every ms apart after the steps, written as <out>-0.png … <out>-(N-1).png.
 // A step of the form mouse:move:x,y | mouse:click:x,y | mouse:right:x,y drives a real pointer (CSS px) instead.
 import { spawn } from 'node:child_process';
 import { writeFileSync, mkdtempSync } from 'node:fs';
@@ -18,6 +19,8 @@ const wait = Number(opt('wait', '2500'));
 const pause = Number(opt('pause', '800'));
 const clip = opt('clip', null);
 const scale = Number(opt('scale', '1'));
+const burst = Math.max(1, Number(opt('burst', '1')));
+const every = Number(opt('every', '250'));
 
 const bin = `${process.env.HOME}/Library/Caches/ms-playwright/chromium_headless_shell-1234/chrome-headless-shell-mac-arm64/chrome-headless-shell`;
 const port = 9300 + Math.floor(Math.random() * 500);
@@ -76,9 +79,13 @@ try {
   }
   const params = { format: 'png' };
   if (clip) { const [x, y, cw, ch] = clip.split(',').map(Number); params.clip = { x, y, width: cw, height: ch, scale: 1 }; }
-  const shot = await send('Page.captureScreenshot', params);
-  writeFileSync(out, Buffer.from(shot.result.data, 'base64'));
-  console.log('wrote', out);
+  for (let k = 0; k < burst; k++) {
+    if (k > 0) await sleep(every);
+    const shot = await send('Page.captureScreenshot', params);
+    const file = burst === 1 ? out : out.replace(/\.png$/, '') + `-${k}.png`;
+    writeFileSync(file, Buffer.from(shot.result.data, 'base64'));
+    console.log('wrote', file);
+  }
   ws.close();
 } finally {
   chrome.kill();

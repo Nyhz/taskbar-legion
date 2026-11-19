@@ -2352,3 +2352,13 @@ Decisiones del usuario (18 nov), tras discutirlas una a una:
   la etapa que carga el HUD); con el guardado nuevo ambas renombraban el mismo `save.json.tmp` y la segunda fallaba
   hasta el siguiente autoguardado. Ahora toda escritura y borrado del guardado va en cola (`saveFile.oneAtATime`); el
   test reproduce el choque sin cola.
+- **Lluvia de flechas en tres oleadas (usuario, 19 nov):** «3 oleadas de flechas que hagan 1/3… flechas más grandes, que
+  ocupe más espacio». Mecánica nueva en datos: `volleys: { count, everyMs }` en `AbilityDef` — los efectos se resuelven
+  en el lanzamiento y luego cada `everyMs`, cada oleada sobre los enemigos que estén entonces (`sim/abilities.
+  tickVolleys`, cola en `Combatant.volleys`, aviso `volley` para el render). Raining Arrows: 3 × 450 ms, 0,4× (+0,4/3
+  por rango) cada una = el 1,2× (+0,4) de antes. Flecha nueva grande (`arrow_fall` 44×116, asta de 2 px, punta ancha,
+  plumas largas, tierra al clavarse); la franja llega 18 px más allá de la oleada, una cada 6 px. El tooltip dice
+  «×3 oleadas». Test: `test/sim/volleys.test.ts`.
+- **Grito de guerra (usuario):** «parece que se están quemando». Fuera `battlecry_flames`; ahora `battlecry_aura`: un
+  sigilo de latón a los pies que respira y chevrones dorados subiendo a ambos lados. Capturado en el juego (ráfaga de
+  `shot-app.mjs`, opción nueva `--burst N --every ms`).

@@ -13,6 +13,12 @@ While the project is pre-1.0, minor versions may include breaking save changes.
 
 ### Changed
 
+- **Raining Arrows comes down in three waves**: three clear volleys of big war arrows, each a third of the old single
+  volley (the same damage in all), falling over a wider stretch than the enemy wave. A later volley also hits enemies
+  that came up after the cast.
+- **Battle Cry looks like a buff**: a brass war-sigil at the feet and golden chevrons climbing either side of each
+  hero, instead of flames that made the party look like it was burning.
+
 ### Fixed
 
 ## [0.5.9] - 2026-11-19

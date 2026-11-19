@@ -20,7 +20,7 @@ export type EffectFact = {
   /** Who it lands on, when that is not the ability's own target. */
   on?: AbilityTarget;
 } & (
-  | { type: 'damage'; amount: number; crit: 'always' | 'can' | 'no' }
+  | { type: 'damage'; amount: number; crit: 'always' | 'can' | 'no'; times?: number } // `times`: it lands in that many waves, `amount` each
   | { type: 'dot'; amount: number; ms: number } // total over its duration
   | { type: 'heal'; pct: number; of: LifeBasis }
   | { type: 'hot'; pct: number; of: LifeBasis; ms: number } // total over its duration
@@ -64,7 +64,13 @@ export function abilityEffectFacts(ability: AbilityDef, rank: number, cs: Effect
     };
     switch (k.type) {
       case 'damage':
-        facts.push({ ...base, type: 'damage', amount: v, crit: power?.alwaysCrit === true ? 'always' : power?.canCrit === true ? 'can' : 'no' });
+        facts.push({
+          ...base,
+          type: 'damage',
+          amount: v,
+          crit: power?.alwaysCrit === true ? 'always' : power?.canCrit === true ? 'can' : 'no',
+          ...(ability.volleys !== undefined && ability.volleys.count > 1 ? { times: ability.volleys.count } : {}),
+        });
         break;
       case 'dot':
         facts.push({ ...base, type: 'dot', amount: v, ms });

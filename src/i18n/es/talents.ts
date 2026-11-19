@@ -86,6 +86,7 @@ export const talents: Record<keyof typeof en, string> = {
   firesBoss: 'Al entrar en combate con un jefe de etapa o de mundo.',
   firesBossOrElite: 'Al entrar en combate con un élite, un jefe de etapa o un jefe de mundo.',
   fxDamage: 'Daño ~{n}',
+  fxTimes: '{n} ×{times} oleadas',
   fxDamageCrit: 'Daño ~{n} (puede ser crítico)',
   fxDamageAlwaysCrit: 'Daño ~{n} (siempre crítico)',
   fxDot: '~{n} de daño en {s} s',

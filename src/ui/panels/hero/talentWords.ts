@@ -134,7 +134,7 @@ function seconds(ms: number): string {
 function factLine(fact: EffectFact): string {
   switch (fact.type) {
     case 'damage': {
-      const n = amount(fact.amount);
+      const n = fact.times !== undefined ? t('talents.fxTimes', { n: amount(fact.amount), times: fact.times }) : amount(fact.amount);
       return fact.crit === 'always' ? t('talents.fxDamageAlwaysCrit', { n }) : fact.crit === 'can' ? t('talents.fxDamageCrit', { n }) : t('talents.fxDamage', { n });
     }
     case 'dot':

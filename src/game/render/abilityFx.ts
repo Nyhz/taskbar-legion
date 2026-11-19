@@ -85,6 +85,8 @@ export interface BandLook {
   sweepMs?: number;
   /** Exactly this many, evenly placed (1 = the middle of the band), instead of one per `every` pixels. */
   count?: number;
+  /** The band reaches this many pixels past each end of the wave (a rain wider than what it falls on). */
+  reach?: number;
 }
 
 export interface AbilityLook {
@@ -182,11 +184,13 @@ export const ABILITY_LOOKS: Readonly<Record<string, AbilityLook>> = {
   ranger_fast_fire: {}, // the arrows shooting up from his feet are the opening of its lasting look
   // Aimed Shot: light gathers on the arrowhead through the long draw; a heavy white arrow; it goes through.
   ranger_aimedshot: { cast: [{ fx: 'aim_gather', spot: 'caster-over', dx: 17, dy: -21 }], shot: { fx: 'arrow_heavy' }, hit: 'aim_impact' },
-  // Raining Arrows: the volley leaves the bow, then comes down over the whole wave.
+  // Raining Arrows: the volley leaves the bow, then comes down over the whole wave in THREE waves (the simulation's
+  // `volleys`: the second and third come with a 'volley' cue, GameStrip plays this band again for each) — big war
+  // arrows, close together, a rain wider than the wave (2026-11-19, user: «más aparente… 3 oleadas claras»).
   ranger_multishot: {
     cast: [{ fx: 'volley_launch', spot: 'caster-over', atBlow: true }],
-    band: [{ fx: 'arrow_fall', layer: 'air', every: 9, spreadMs: 260, atBlow: true, delayMs: 60 }],
-    hit: 'arrow_hit', hitDelayMs: 180,
+    band: [{ fx: 'arrow_fall', layer: 'air', every: 6, spreadMs: 110, atBlow: true, delayMs: 40, reach: 18 }],
+    hit: 'arrow_hit', hitDelayMs: 190,
   },
   // Explosive Arrow: one burning arrow to the front of the wave, and the blast where it lands.
   ranger_focus: { shot: { fx: 'arrow_fire', land: 'fire_blast' }, shotTo: 'front' },
@@ -313,7 +317,7 @@ export const EFFECT_LOOKS: Readonly<Record<string, readonly LastingLook[]>> = {
     { slot: 'front', fx: 'ward_front', start: 'ward_raise', end: 'ward_break', ownOnly: true, bearerClass: 'priest', priority: 1 },
   ],
   // Battle Cry: a war fire at the feet of everyone it reached.
-  buff_battlecry_ad: [{ slot: 'ground', fx: 'battlecry_flames' }],
+  buff_battlecry_ad: [{ slot: 'ground', fx: 'battlecry_aura' }],
   // Bloodlust: a blood-red blaze standing behind him.
   buff_bloodlust_as: [{ slot: 'behind', fx: 'bloodlust_aura' }],
   // Hold the Line: a low rampart of light ahead of every ally, and his standard planted behind the Knight.
