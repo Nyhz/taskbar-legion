@@ -2336,3 +2336,8 @@ Decisiones del usuario (18 nov), tras discutirlas una a una:
   ni daño; dos transiciones (A: cambia el jefe y el grupo sigue luchando; B: el grupo se teletransporta). Prototipo en
   canvas: `run.sh reel` (`pipeline/title_reel.py` + `title_reel.html`). Las hojas de los jefes grandes saltan de fila
   tras `cols` fotogramas: leerlas sin eso dejaba fotogramas vacíos (el jefe parpadeaba).
+- **Guardado a prueba de cortes (19 nov):** `save.json` se reescribía encima; un cierre a mitad de escritura dejaba el
+  archivo cortado → «Empezar» y el siguiente autoguardado pisaba la partida. Ahora `src/platform/saveFile.ts`: se
+  escribe `save.json.tmp`, el anterior pasa a `save.json.bak` y el nuevo se renombra a su sitio; al cargar, si
+  `save.json` no se lee, el `.bak`. Permiso `fs:allow-rename` en las capacidades. Test con un disco falso que se
+  «cuelga» en cada paso (`test/platform/saveFile.test.ts`). Idea sacada de la skill `save-systems` (gamedev-skills).

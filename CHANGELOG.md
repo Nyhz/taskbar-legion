@@ -25,6 +25,12 @@ While the project is pre-1.0, minor versions may include breaking save changes.
 - **New app icon**: the name in the game's gothic pixel lettering, in old gold with the title's brass rule, over the
   blood-red sky of the first world in Torment.
 
+### Fixed
+
+- **A save can no longer be lost to a crash**: the game is now written to a temporary file and moved into place, with
+  the previous save kept as a backup. Quitting, crashing or losing power in the middle of an autosave used to be able
+  to leave a cut-short file, and the game started over; now it loads the last whole save (at most 30 s older).
+
 ## [0.5.6] - 2026-11-18
 
 ### Added

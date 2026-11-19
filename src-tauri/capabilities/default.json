@@ -25,6 +25,7 @@
     { "identifier": "fs:allow-mkdir", "allow": [{ "path": "$APPDATA" }, { "path": "$APPDATA/*" }] },
     { "identifier": "fs:allow-exists", "allow": [{ "path": "$APPDATA/*" }] },
     { "identifier": "fs:allow-remove", "allow": [{ "path": "$APPDATA/*" }] },
+    { "identifier": "fs:allow-rename", "allow": [{ "path": "$APPDATA/*" }] },
     "dialog:allow-save",
     "dialog:allow-open"
   ]
