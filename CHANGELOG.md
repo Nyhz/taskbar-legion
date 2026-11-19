@@ -15,6 +15,14 @@ While the project is pre-1.0, minor versions may include breaking save changes.
 
 ### Fixed
 
+## [0.5.8] - 2026-11-19
+
+### Added
+
+- **A start screen that comes alive**: the party fights each world's boss in turn, a few seconds each, from the
+  meadows to the Rift and round again. The boss leaves in a column of light, the land changes to the next world and
+  its boss comes down in another, while the heroes keep fighting.
+
 ## [0.5.7] - 2026-11-19
 
 ### Changed
@@ -266,7 +274,8 @@ While the project is pre-1.0, minor versions may include breaking save changes.
 - Initial desktop builds: Tauri v2 transparent, always-on-top, bottom-docked overlay.
 - Multi-platform release pipeline (macOS universal, Windows, Linux) via GitHub Actions.
 
-[Unreleased]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.7...HEAD
+[Unreleased]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.8...HEAD
+[0.5.8]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.7...v0.5.8
 [0.5.7]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.6...v0.5.7
 [0.5.6]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.5...v0.5.6
 [0.5.5]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.4...v0.5.5
