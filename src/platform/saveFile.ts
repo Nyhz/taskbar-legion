@@ -32,6 +32,19 @@ export async function writeSaveFile(fs: SaveFs, text: string): Promise<void> {
   await fs.rename(SAVE_TMP, SAVE_FILE);
 }
 
+/** Wraps a save writer so that writes run ONE AT A TIME, each after the one before has finished. The game saves
+ *  from several places that can fire together (the engine going live and the stage it loads into, an autosave
+ *  and a quit): two writes interleaved would both rename the same temporary file, and the second fails (v0.5.7:
+ *  «Not saving» for a few seconds on every launch). Each call still resolves or rejects with its own write. */
+export function oneAtATime<T>(write: (value: T) => Promise<void>): (value: T) => Promise<void> {
+  let tail: Promise<void> = Promise.resolve();
+  return (value) => {
+    const run = tail.then(() => write(value));
+    tail = run.catch(() => {}); // a failed write does not stop the ones queued behind it
+    return run;
+  };
+}
+
 /** The saved value (parsed JSON, before migration) from the save or its backup, or null when there is neither.
  *  Throws only when files exist and none of them reads as a save. */
 export async function readSaveFile(fs: SaveFs, warn: (message: string) => void = () => {}): Promise<unknown> {

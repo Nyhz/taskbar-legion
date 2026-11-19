@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { clearSaveFiles, readSaveFile, writeSaveFile, SAVE_BAK, SAVE_FILE, SAVE_TMP, type SaveFs } from '@/platform/saveFile';
+import { clearSaveFiles, oneAtATime, readSaveFile, writeSaveFile, SAVE_BAK, SAVE_FILE, SAVE_TMP, type SaveFs } from '@/platform/saveFile';
 
 // The save file must survive a crash at ANY point of a save (src/platform/saveFile.ts): an in-memory disk whose
 // n-th operation "crashes" (throws, and a write leaves only half its text behind, as a killed process would).
@@ -104,5 +104,32 @@ describe('the save file', () => {
     disk.files.set(SAVE_TMP, 'left over');
     await clearSaveFiles(disk);
     expect([...disk.files.keys()]).toEqual([]);
+  });
+
+  it('two saves fired together clash on the temporary file — so the game queues them (v0.5.7: «Not saving» at launch)', async () => {
+    // The engine going live and the stage it loads into both save at once. Unqueued, the second save finds the
+    // file the first one already moved, and fails.
+    const raw = new FakeDisk();
+    await writeSaveFile(raw, save(5));
+    const both = await Promise.allSettled([writeSaveFile(raw, save(6)), writeSaveFile(raw, save(7))]);
+    expect(both.some((r) => r.status === 'rejected')).toBe(true);
+
+    // Queued, both go through, in the order they were asked for: the newest is the save, the one before the backup.
+    const disk = new FakeDisk();
+    await writeSaveFile(disk, save(5));
+    const write = oneAtATime((text: string) => writeSaveFile(disk, text));
+    const queued = await Promise.allSettled([write(save(6)), write(save(7))]);
+    expect(queued.every((r) => r.status === 'fulfilled')).toBe(true);
+    expect(stageOf(await readSaveFile(disk))).toBe(7);
+    expect(stageOf(JSON.parse(disk.files.get(SAVE_BAK) ?? ''))).toBe(6);
+  });
+
+  it('a failed write does not stop the saves queued behind it', async () => {
+    const disk = new FakeDisk();
+    const write = oneAtATime((text: string) => writeSaveFile(disk, text));
+    disk.crashAt = 1;
+    const results = await Promise.allSettled([write(save(1)), write(save(2))]);
+    expect(results.map((r) => r.status)).toEqual(['rejected', 'fulfilled']);
+    expect(stageOf(await readSaveFile(disk))).toBe(2);
   });
 });

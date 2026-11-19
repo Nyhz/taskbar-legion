@@ -2348,3 +2348,7 @@ Decisiones del usuario (18 nov), tras discutirlas una a una:
   `test/ui/reelScript.test.ts`), `reelArt.ts` (hojas del juego como imágenes: héroes, efectos, y por mundo su fondo y
   su jefe, que se piden antes de hacer falta), `drawReel.ts`, `TitleReel.tsx`. El logotipo pasa a la izquierda.
   `render/backdropSheets.ts` dice dónde están los fondos sin Pixi. Fuera `title_backdrop.png` y `title_fore.png`.
+- **«Not saving» al abrir (v0.5.7–0.5.8, usuario 19 nov):** al arrancar se guarda dos veces a la vez (motor listo +
+  la etapa que carga el HUD); con el guardado nuevo ambas renombraban el mismo `save.json.tmp` y la segunda fallaba
+  hasta el siguiente autoguardado. Ahora toda escritura y borrado del guardado va en cola (`saveFile.oneAtATime`); el
+  test reproduce el choque sin cola.

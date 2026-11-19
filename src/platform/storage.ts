@@ -1,7 +1,7 @@
 import type * as TauriFs from '@tauri-apps/plugin-fs';
 import type { SaveV1 } from '@/persistence/saveSchema';
 import { isTauri } from './tauri';
-import { clearSaveFiles, readSaveFile, writeSaveFile, type SaveFs } from './saveFile';
+import { clearSaveFiles, oneAtATime, readSaveFile, writeSaveFile, type SaveFs } from './saveFile';
 
 // The save backend. The game ships ONLY as the Tauri desktop app, so the real backend
 // is a `save.json` file in the OS app-data dir, written crash-safe with a backup beside it
@@ -37,27 +37,30 @@ async function appDataFs(): Promise<SaveFs> {
   };
 }
 
+/** One save to disk. Run only through `queued`: never two at once, nor during a clear. */
+async function writeNow(save: SaveV1): Promise<void> {
+  const { mkdir } = await fs();
+  // The app-data dir is NOT auto-created by Tauri, and writeTextFile won't create parent
+  // dirs — so on a fresh install the dir is missing and the write fails (ENOENT). On macOS
+  // `mkdir('.')` did NOT create it (saves silently lost → "Start Game" every launch);
+  // mkdir'ing the RESOLVED absolute path does. See tauri discussion #11279.
+  try {
+    const { appDataDir } = await import('@tauri-apps/api/path');
+    await mkdir(await appDataDir(), { recursive: true });
+  } catch {
+    // already exists — non-fatal
+  }
+  await writeSaveFile(await appDataFs(), JSON.stringify(save));
+}
+/** Every write and clear of the save, one after another (platform/saveFile oneAtATime). */
+const queued = oneAtATime((job: () => Promise<void>) => job());
+
 const tauriStore: SaveStore = {
   async read() {
     return readSaveFile(await appDataFs(), (message) => console.warn(message));
   },
-  async write(save) {
-    const { mkdir } = await fs();
-    // The app-data dir is NOT auto-created by Tauri, and writeTextFile won't create parent
-    // dirs — so on a fresh install the dir is missing and the write fails (ENOENT). On macOS
-    // `mkdir('.')` did NOT create it (saves silently lost → "Start Game" every launch);
-    // mkdir'ing the RESOLVED absolute path does. See tauri discussion #11279.
-    try {
-      const { appDataDir } = await import('@tauri-apps/api/path');
-      await mkdir(await appDataDir(), { recursive: true });
-    } catch {
-      // already exists — non-fatal
-    }
-    await writeSaveFile(await appDataFs(), JSON.stringify(save));
-  },
-  async clear() {
-    await clearSaveFiles(await appDataFs());
-  },
+  write: (save) => queued(() => writeNow(save)),
+  clear: () => queued(async () => clearSaveFiles(await appDataFs())),
 };
 
 // ── Non-Tauri fallback (dev server / vitest) ──────────────────────────────────
