@@ -2318,3 +2318,12 @@ Decisiones del usuario (18 nov), tras discutirlas una a una:
   despacio. Revertido; en su lugar **12 oleadas por etapa en Normal** (16 → 12, `WAVES_BY_DIFFICULTY`), llenas.
 - **Medido (probe, 5 semillas, 12 oleadas en Normal, 18 nov):** horas por dificultad (mediana) **7 / 45 / 146 / 272 /
   644**, unas **1 087 h** en total (1 033–1 201 por semilla). Suite, lint y escalera en verde. El usuario deja Normal así.
+- **Los tiradores antes que el apoyo (usuario, 19 nov):** «los enemigos support mueren prácticamente al instante… que
+  tengan prio en pegar a los ranged o magic primero». Orden de Ranger y Priest **tirador → apoyo → bestia → soldado →
+  bruto** (`TARGET_PRIORITY`; afecta al disparo de retaguardia, a Aimed Shot, Weak Spot y al golpe de Smite). Medido con
+  `scripts/measure-support.ts` (grupos del probe, semillas 11–13, etapas 25…195): el apoyo moría a los **~3 s** de
+  empezar su oleada (1,5–5 s de mediana; disparos ~60 %, Aimed Shot ~40 %); ahora **10–27 s** (mediana por etapa),
+  cuando caen los tiradores a su alcance. El área y la salpicadura de la Priest le siguen llegando.
+- **Medido (probe, 5 semillas, tiradores antes que el apoyo, 19 nov):** horas por dificultad (mediana) **7 / 46 / 151 /
+  259 / 706**, unas **1 169 h** en total (1 087–1 283 por semilla; ronda 20: 7 / 45 / 146 / 272 / 644, 1 087 h): +7 %,
+  casi todo en Tormento (+62 h). Las 5 semillas completan; suite y escalera en verde.

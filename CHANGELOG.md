@@ -13,6 +13,10 @@ While the project is pre-1.0, minor versions may include breaking save changes.
 
 ### Changed
 
+- **The support lives long enough to matter**: the Ranger and the Priest now aim at the wave's shooters before its
+  support (shooter → support → beast → soldier → brute). The support used to fall about 3 s into its wave, before its
+  auras showed; now it outlasts the shooters, about 10–18 s. Area blows and the Priest's splash still reach it.
+
 ### Fixed
 
 ## [0.5.6] - 2026-11-18

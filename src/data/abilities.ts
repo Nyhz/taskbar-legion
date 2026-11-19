@@ -73,7 +73,7 @@ export type AbilityTarget =
   // The enemy in the caster's shot reach whose BLAST catches the most enemies (the ability's splashRadius) — an
   // elite or a boss among equals, then the nearest. Explosive Arrow: it goes where it does the most, not by priority.
   | 'biggestCluster'
-  // The enemy that comes first in the shooting heroes' order (data/enemies TARGET_PRIORITY: support, shooter,
+  // The enemy that comes first in the shooting heroes' order (data/enemies TARGET_PRIORITY: shooter, support,
   // beast, soldier, brute; an elite before its kind; a boss when there is one), across the caster's SHOT reach.
   | 'priorityEnemy'
   | 'mostHitAlly' // the living ally that has taken the most damage in the last moments
@@ -325,7 +325,7 @@ export const ABILITIES: Record<string, AbilityDef> = {
   ranger_aimedshot: {
     key: 'ranger_aimedshot', name: 'Aimed Shot', icon: 'aim',
     desc: 'A heavy charged shot — banks 1 charge per auto-attack, fires at 10.',
-    // The heavy shot goes to whoever comes first in her order (the support, then the shooters…).
+    // The heavy shot goes to whoever comes first in her order (the shooters, then the support…).
     cooldownMs: 0, target: 'priorityEnemy', applies: [{ effectKey: 'fx_damage' }],
     castCondition: 'enemyPresent', fires: { when: 'inReach', foes: 1 }, power: { coeff: 1.8, coeffPerRank: 0.4, canCrit: true },
     charge: { perAttack: 1, toCast: 10 },

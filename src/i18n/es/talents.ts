@@ -53,7 +53,7 @@ export const talents: Record<keyof typeof en, string> = {
   targetTank: 'El tanque',
   targetLowestOtherAlly: 'El otro aliado con menos vida',
   targetTwoHeroes: 'Dos héroes',
-  targetPriority: 'Por prioridad: apoyo, tirador, bestia, soldado, bruto; antes un élite, y el jefe si lo hay',
+  targetPriority: 'Por prioridad: tirador, apoyo, bestia, soldado, bruto; antes un élite, y el jefe si lo hay',
   targetCluster: 'Donde su explosión alcance a más enemigos',
   targetMostHit: 'El aliado que más daño recibe',
   targetHurt: 'El aliado más castigado o, si no, el más herido',

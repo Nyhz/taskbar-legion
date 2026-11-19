@@ -10,7 +10,7 @@ import { MOVE_EPS } from '@/data/field';
 //   - `shotReach` is how far her shot can pick a target once she stands there: long enough for the support at the
 //     far end of a wave.
 // Within that reach she picks by PRIORITY (data/enemies TARGET_PRIORITY): what a boss summoned over the party
-// first (it was the nearest thing, and still is what pecks her), then the boss, then the support, the shooters,
+// first (it was the nearest thing, and still is what pecks her), then the boss, then the shooters, the support,
 // the beasts, the soldiers and the brutes; an elite before the rest of its kind; the nearest of equals. No rng.
 
 /** How far a hero's shot can pick a target: its shot reach, or — a hero without one — where it stands. */
@@ -51,7 +51,7 @@ export function pickTarget(hero: Combatant, enemies: readonly Combatant[]): Comb
 }
 
 /** Where a shooting hero's BASIC shot goes (data/enemies BACK_LINE_SHOT_PCT): a summon a boss sent over the party
- *  first, always; otherwise one shot in four by the order (the back of the wave: the support, the shooters…) and the
+ *  first, always; otherwise one shot in four by the order (the back of the wave: the shooters, the support…) and the
  *  rest at `front`, the enemy nearest her — the front of the wave. */
 export function shotTarget(hero: Combatant, enemies: readonly Combatant[], front: Combatant): Combatant {
   const best = pickTarget(hero, enemies);

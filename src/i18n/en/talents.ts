@@ -57,7 +57,7 @@ export const talents = {
   targetTank: 'The tank',
   targetLowestOtherAlly: 'The other ally with the least life',
   targetTwoHeroes: 'Two heroes',
-  targetPriority: 'By priority: support, shooter, beast, soldier, brute — an elite first, the boss if there is one',
+  targetPriority: 'By priority: shooter, support, beast, soldier, brute — an elite first, the boss if there is one',
   targetCluster: 'Where its blast catches the most enemies',
   targetMostHit: 'The ally taking the most damage',
   targetHurt: 'The ally hit hardest, else the most hurt',

@@ -13,7 +13,7 @@ import type { Combatant, CombatEvent, WorldState } from '@/sim/world';
 import { anyMoment, base, quietRng, unit } from './_kit';
 
 // Who the Ranger and the Priest shoot, and from where (docs/redesign/PROGRESS.md «Enemigos», agreed 2026-11-15):
-// priority Support → Shooter → Beast → Soldier → Brute (an elite before its kind; the boss in a boss fight), across
+// priority Shooter → Support (2026-11-19: the shooters first, so the support lives) → Beast → Soldier → Brute (an elite before its kind; the boss in a boss fight), across
 // a SHOT reach that is apart from where they stand — which does not move.
 
 const TICK = 100;
@@ -32,8 +32,8 @@ function fight(heroes: Combatant[], enemies: Combatant[]): WorldState {
 }
 
 describe('the order', () => {
-  it('is support, shooter, beast, soldier, brute — an elite before the rest of its kind', () => {
-    expect(TARGET_PRIORITY).toEqual(['support', 'shooter', 'beast', 'soldier', 'brute']);
+  it('is shooter, support, beast, soldier, brute — an elite before the rest of its kind', () => {
+    expect(TARGET_PRIORITY).toEqual(['shooter', 'support', 'beast', 'soldier', 'brute']);
     const ranks = TARGET_PRIORITY.flatMap((role) => [targetRank(foe('e', { enemyRole: role, isElite: true })), targetRank(foe('n', { enemyRole: role }))]);
     expect(ranks).toEqual([...ranks].sort((a, b) => a - b));
     expect(new Set(ranks).size).toBe(ranks.length);
@@ -82,7 +82,7 @@ describe('reach apart from where she stands', () => {
   });
 
   /** A full wave met by the full party: where everyone stands once the fight is joined, and who was hit. */
-  function joined(withReach: boolean): { xs: Record<string, number>; hitIds: Set<string>; world: WorldState } {
+  function joined(withReach: boolean, frailShooter = false): { xs: Record<string, number>; hitIds: Set<string>; world: WorldState } {
     const heroes = [buildHeroCombatant(config('knight', 'k'), []), buildHeroCombatant(config('ranger', 'r'), []), buildHeroCombatant(config('priest', 'p'), [])];
     for (const h of heroes) {
       h.hp = h.maxHp = 1e9;
@@ -91,7 +91,7 @@ describe('reach apart from where she stands', () => {
     const wave = [
       foe('soldier', { enemyRole: 'soldier', x: 400, moveSpeed: 50 }),
       foe('brute', { enemyRole: 'brute', x: 410, moveSpeed: 40 }),
-      foe('shooter', { enemyRole: 'shooter', x: 420, moveSpeed: 40, range: RANGE.ranged + 10 }),
+      foe('shooter', { enemyRole: 'shooter', x: 420, moveSpeed: 40, range: RANGE.ranged + 10, ...(frailShooter ? { hp: 1, maxHp: 1 } : {}) }),
       foe('support', { enemyRole: 'support', x: 440, moveSpeed: 40, range: SUPPORT_KIND.range }),
     ];
     const world = fight(heroes, wave);
@@ -120,8 +120,12 @@ describe('reach apart from where she stands', () => {
     expect(toSupport).toBeLessThanOrEqual(reachOf(now.world.heroes[1]!));
   });
 
-  it('with the reach they shoot the support at the back; without it, only what they stand next to', () => {
-    const now = joined(true);
+  it('with the reach they shoot the back of the wave — the shooter first, the support once it is gone; without it, only what they stand next to', () => {
+    const shooterStands = joined(true);
+    expect(shooterStands.hitIds.has('r>shooter')).toBe(true);
+    expect(shooterStands.hitIds.has('r>support')).toBe(false); // the shooters first (2026-11-19): the support lives
+    // (The Priest's strike on the shooter still splashes the support beside it: not ignored, just not picked.)
+    const now = joined(true, true);
     expect(now.hitIds.has('r>support')).toBe(true);
     expect(now.hitIds.has('p>support')).toBe(true);
     // One shot in four goes to the back (data/enemies BACK_LINE_SHOT_PCT); the rest to the front of the wave.
@@ -157,18 +161,18 @@ describe('the abilities that pick by priority', () => {
   ];
   const hurt = (enemies: Combatant[]): string[] => enemies.filter((e) => e.hp < e.maxHp).map((e) => e.id);
 
-  it.each(['ranger_aimedshot', 'ranger_weakspot'])('%s goes to the support at the back, then down the order', (key) => {
+  it.each(['ranger_aimedshot', 'ranger_weakspot'])('%s goes to the shooter at the back, then down the order', (key) => {
     const ranger = shooterHero(key);
     ranger.charges = { [key]: 99 };
     const enemies = wave();
     castReadyAbilities(ranger, [ranger], enemies, 30, quietRng(), []);
-    expect(hurt(enemies)).toEqual(['support']);
-    // With the support gone, the shooter; then the soldier before the brute.
-    for (const [gone, next] of [['support', 'shooter'], ['shooter', 'soldier']] as const) {
+    expect(hurt(enemies)).toEqual(['shooter']);
+    // With the shooter gone, the support; then the soldier before the brute.
+    for (const [gone, next] of [['shooter', 'support'], ['support', 'soldier']] as const) {
       const again = shooterHero(key);
       again.charges = { [key]: 99 };
       const left = wave();
-      for (const e of left) if (e.id === gone || (gone === 'shooter' && e.id === 'support')) e.alive = false;
+      for (const e of left) if (e.id === gone || (gone === 'support' && e.id === 'shooter')) e.alive = false;
       castReadyAbilities(again, [again], left, 30, quietRng(), []);
       expect(hurt(left)).toEqual([next]);
     }
@@ -204,7 +208,7 @@ describe('the abilities that pick by priority', () => {
     const ally = unit({ id: 'k', side: 'hero', hp: 500 });
     const enemies = wave();
     castReadyAbilities(priest, [priest, ally], enemies, 30, quietRng(), []);
-    expect(hurt(enemies)).toEqual(['support']);
+    expect(hurt(enemies)).toEqual(['shooter']);
   });
 
   it('no enemy where she stands yet: the priority abilities wait, like a basic shot', () => {

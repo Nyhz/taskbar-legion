@@ -183,9 +183,12 @@ export function auraValue(key: SupportAura, difficultyIndex: number): number {
 // ── Who the heroes shoot first ──────────────────────────────────────────────────────────────────────────────
 
 /** The order in which the Ranger and the Priest pick a target among the wave in their reach (sim/targeting):
- *  first the support, then the shooters, the beasts, the soldiers and the brutes last. Within a kind, an elite
- *  before the rest. */
-export const TARGET_PRIORITY: readonly EnemyRole[] = ['support', 'shooter', 'beast', 'soldier', 'brute'];
+ *  first the shooters, then the support, the beasts, the soldiers and the brutes last. Within a kind, an elite
+ *  before the rest. The shooters come before the support since 2026-11-19 (user: «que tengan prio en pegar a los
+ *  ranged o magic primero, el support debe quedar vivo mas tiempo, no necesariamente ignorado al 100%»): with the
+ *  support first it died ~3 s after its wave engaged, before its auras showed; now it falls once the shooters in
+ *  reach have, ~10–18 s by median (scripts/measure-support.ts, probe parties, Normal and Hell). */
+export const TARGET_PRIORITY: readonly EnemyRole[] = ['shooter', 'support', 'beast', 'soldier', 'brute'];
 
 /** The share of the Ranger's and the Priest's BASIC shots that go by that order, at the back of the wave; the rest go
  *  to its front, the enemy nearest the party (2026-11-18; user: «que el 25 % de los disparos del ranger y 25 % de
