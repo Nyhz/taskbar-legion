@@ -13,16 +13,19 @@ While the project is pre-1.0, minor versions may include breaking save changes.
 
 ### Changed
 
-- **Common chests drop a little more often**: on 0.7 % of kills instead of 0.5 % — about one every two minutes of play
-  instead of three. Boss chests are unchanged.
+### Fixed
 
-- **Raining Arrows comes down in three waves**: three clear volleys of big war arrows, each a third of the old single
-  volley (the same damage in all), falling over a wider stretch than the enemy wave. A later volley also hits enemies
-  that came up after the cast.
+## [0.5.10] - 2026-11-19
+
+### Changed
+
+- **Raining Arrows comes down in three waves**: three volleys of big war arrows, each a third of the old single volley
+  (the same damage in all), falling loose and uneven over a wider stretch than the enemy wave. A later volley also hits
+  enemies that came up after the cast.
 - **Battle Cry looks like a buff**: a brass war-sigil at the feet and golden chevrons climbing either side of each
   hero, instead of flames that made the party look like it was burning.
-
-### Fixed
+- **Common chests drop a little more often**: on 0.7 % of kills instead of 0.5 % — about one every two minutes of play
+  instead of three. Boss chests are unchanged.
 
 ## [0.5.9] - 2026-11-19
 
@@ -291,7 +294,8 @@ While the project is pre-1.0, minor versions may include breaking save changes.
 - Initial desktop builds: Tauri v2 transparent, always-on-top, bottom-docked overlay.
 - Multi-platform release pipeline (macOS universal, Windows, Linux) via GitHub Actions.
 
-[Unreleased]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.9...HEAD
+[Unreleased]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.10...HEAD
+[0.5.10]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.9...v0.5.10
 [0.5.9]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.8...v0.5.9
 [0.5.8]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.7...v0.5.8
 [0.5.7]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.6...v0.5.7
