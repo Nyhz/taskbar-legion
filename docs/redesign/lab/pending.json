@@ -1,14 +1,14 @@
 {
   "updated": "19 nov 2026",
-  "intro": "Nuevo: el Ranger rehecho según tus referencias, animado. Sigue pendiente el catálogo de sonido.",
+  "intro": "Nuevo: el Ranger más oscuro y amenazante. Sigue pendiente el catálogo de sonido.",
   "sections": [
     {
       "id": "heroes-ranger",
       "eyebrow": "Héroes reimaginados · 1/3",
       "title": "Ranger reimaginado (según tus referencias)",
-      "text": "Rehecho desde cero, dibujado píxel a píxel como tus referencias: cada pieza con su contorno negro, capucha verde con el borde interior oscuro, flequillo castaño, ojos altos rectangulares, mangas claras con brazales de cuero, túnica con correa cruzada y cinturón de hebilla dorada, pantalón gris, botas gruesas, capa oscura, carcaj a la espalda y un arco grande con bandas. Mide 47 px (el actual 36). De momento quieto y disparando; cuando lo apruebes hago el resto de sus animaciones (correr, sus habilidades, golpe, caída) y paso al Knight y a la Priest con este estilo.",
+      "text": "Tu Ranger, con la misma estructura pero más oscuro y amenazante: la cara en la sombra de la capucha, ojos estrechos con brillo ámbar bajo cejas en V, máscara carmesí sobre boca y nariz, verdes de bosque profundo, mangas oscuras y guantes de cuero, remaches en la correa y las botas, daga y bolsa en el cinturón, hebilla de latón viejo, plumas carmesí en el carcaj, arco de madera oscura con empuñadura carmesí y la capa con el borde roto. De momento quieto y disparando.",
       "questions": [
-        "¿Ahora sí es la dirección? ¿Qué cambiarías (cara, capucha, arco, colores)?"
+        "¿Así de amenazante, o más/menos? ¿Algo más que cambiar?"
       ],
       "html": "hero_concepts.html"
     },

@@ -21,24 +21,26 @@ INK: Tone = ("ink", 0)
 
 L: dict[str, Tone] = {
     "o": INK,
-    # hood, mantle, tunic
-    "A": ("moss", 2), "a": ("moss", 3), "b": ("moss", 4), "c": ("moss", 5), "d": ("moss", 6),
-    # hair
-    "h": ("leather", 3), "i": ("leather", 4), "j": ("leather", 5),
-    # skin, cheek, mouth
-    "s": ("skin", 5), "t": ("skin", 6), "u": ("skin", 7), "p": ("dusk", 7), "m": ("skin", 3),
-    # eyes
-    "E": ("ink", 1), "e": ("ink", 5),
-    # sleeves
-    "n": ("bone", 4), "N": ("bone", 6),
+    # hood, mantle, tunic: deep forest greens
+    "D": ("moss", 0), "A": ("moss", 1), "a": ("moss", 2), "b": ("moss", 3), "c": ("moss", 4), "d": ("moss", 5),
+    # hair, in the hood's shadow
+    "h": ("leather", 2), "i": ("leather", 3), "j": ("leather", 4),
+    # skin in shade
+    "s": ("skin", 3), "t": ("skin", 4), "u": ("skin", 5), "m": ("skin", 2),
+    # eyes: dark, with an amber glint
+    "E": ("ink", 0), "e": ("brass", 6),
+    # the mask over mouth and nose
+    "R": ("crimson", 1), "S": ("crimson", 2), "T": ("crimson", 3),
+    # dark cloth sleeves
+    "n": ("ink", 2), "N": ("ink", 3),
     # leather
-    "k": ("leather", 2), "l": ("leather", 3), "r": ("leather", 4), "q": ("leather", 5),
-    # gold
-    "x": ("brass", 3), "y": ("brass", 5), "z": ("brass", 6),
+    "k": ("leather", 1), "l": ("leather", 2), "r": ("leather", 3), "q": ("leather", 4),
+    # tarnished brass
+    "x": ("brass", 2), "y": ("brass", 3), "z": ("brass", 4),
     # trousers
-    "f": ("ink", 4), "g": ("ink", 6), "G": ("ink", 7),
-    # fletching
-    "w": ("bone", 7), "W": ("ink", 7),
+    "f": ("ink", 2), "g": ("ink", 3), "G": ("ink", 4),
+    # steel (the dagger), fletching
+    "V": ("ink", 6), "W": ("ink", 8), "F": ("crimson", 4), "v": ("crimson", 2),
 }
 
 # 21 × 20. The hood: lit from the upper right, its inner rim black; the fringe in three locks; the eyes two tall
@@ -50,22 +52,22 @@ HEAD = [
     "..Aabbbbcccccccdddc..",
     ".Aaabbbbccccccccddcc.",
     "Aaabbboooooooooooocdc",
-    "Aaabbohhiiiijjjiihocd",
-    "Aaabbohiiiijjjjiihocd",
-    "Aaabbohiiijjjjjiihocc",
-    "Aaabbohiittiitttihocc",
-    "Aaabbohittttittttiocc",
-    "AaabbohttEEtttEEttocc",
-    "AaabbohttEEtttEEttocc",
-    "Aaabbostteettteettocc",
-    "Aaabbospttttttttptocc",
-    "Aaabboosttttmmtttoobc",
-    "AAabbboossttttssoobbc",
+    "AaabboDDhhhhhhhhDDocd",
+    "AaabboDhhiiiiiihhhocd",
+    "Aaabbohhiijjjjiihhocc",
+    "Aaabbohhissssssiihocc",
+    "Aaabbohoosssssoossocc",
+    "AaabbohssoEesoEessocc",
+    "Aaabbohsttsssstttsocc",
+    "AaabbohRRRRRRRRRRhocc",
+    "AaabboRRSSTTSSSSRRocc",
+    "AaabbooRSSSSSSSSRoobc",
+    "AAabbbooRRSSSSRRoobbc",
     ".AAabbbboooooooobbbc.",
     "..AAabbbbbbbbbbbbbc..",
     "....AAabbbbbbbbbc....",
 ]
-HEAD_BLINK = {11: "Aaabbohtttttttttttocc", 12: "AaabbohttEEtttEEttocc", 13: "Aaabbostttttttttttocc"}
+HEAD_BLINK = {11: "Aaabbohssooossoossocc"}
 
 # 15 × 15: the mantle over the shoulders, the tunic with its strap, the belt and buckle, the split skirt.
 TORSO = [
@@ -73,16 +75,16 @@ TORSO = [
     "aabbbbbcccccccd",
     ".aabbbbccccccc.",
     "..alrbbbccccc..",
-    "..ablrbbccccc..",
+    "..abyrbbccccc..",
     "..abblrbccccc..",
-    "..abbblrccccc..",
+    "..abbbyrccccc..",
     "..abbbblrcccc..",
-    "..abbbbblrccc..",
-    "..abbbbbblrcc..",
-    "..kllllyzyllk..",
-    "..kkkkkyxykkk..",
-    ".aabbbbAcccccc.",
-    ".aabbbA.Accccc.",
+    "..abbbbbyrcVc..",
+    "..abbbbbblrWc..",
+    "..kllllyzylVk..",
+    "..kqqkkyxykVk..",
+    ".aqrqbbAcccWcc.",
+    ".aabbbA.AccVcc.",
 ]
 
 # 7 × 14: grey trousers into a chunky boot with a turned cuff, the toe to the right.
@@ -90,13 +92,13 @@ LEG = [
     "fgGG...",
     "fgGG...",
     "fgGG...",
-    "fgGG...",
-    "fgGG...",
+    "fggG...",
     "fggG...",
     "lqqqq..",
-    "lrrrq..",
+    "kyrry..",
     "klrrq..",
     "klrrq..",
+    "kyrry..",
     "klrrq..",
     "klrrrq.",
     "klrrrrq",
@@ -105,23 +107,23 @@ LEG = [
 
 # The rear arm at rest: a pale sleeve, the bracer, the hand.
 ARM_HANG = [
-    "nNN.",
-    "nNN.",
+    "lrrq",
+    "lyrq",
     "nNN.",
     "lrrq",
     "lrrq",
-    "lrrq",
+    "lyrq",
     "lrrq",
     "kllk",
-    "stt.",
-    "stt.",
+    "lrr.",
+    "klr.",
 ]
 
 # 8 × 12: the quiver on the back, tilted, its arrows fanned above the shoulder.
 QUIVER = [
-    ".w..w...",
-    "wWw.Ww..",
-    ".Ww.wW..",
+    ".F..F...",
+    "FvF.vF..",
+    ".vF.Fv..",
     "..i..i..",
     "..ii.i..",
     "..lrri..",
@@ -133,7 +135,7 @@ QUIVER = [
     ".....kl.",
 ]
 
-HAND = ["tt", "tt", "st"]
+HAND = ["rq", "lr", "kl"]  # dark leather gloves
 
 ROOT_X, GROUND = 40, 64
 #: Where the pieces sit (top-left of each sprite), the body standing on the ground line.
@@ -201,11 +203,11 @@ def arm(part: Part, joints: list[tuple[int, int]], sleeve: int = 4) -> None:
         prv = pts[max(k - 1, 0)]
         flat = abs(nxt[0] - prv[0]) >= abs(nxt[1] - prv[1])
         if k < sleeve:
-            hi, mid, lo = ("bone", 6), ("bone", 6), ("bone", 4)
+            hi, mid, lo = ("ink", 3), ("ink", 3), ("ink", 2)
         elif k >= n - 2:
             hi, mid, lo = ("leather", 2), ("leather", 2), ("leather", 2)
         else:
-            hi, mid, lo = ("leather", 5), ("leather", 4), ("leather", 3)
+            hi, mid, lo = ("leather", 4), ("leather", 3), ("leather", 2)
         if flat:
             part.put(x, y - 1, hi), part.put(x, y, mid), part.put(x, y + 1, lo)
         else:
@@ -232,8 +234,8 @@ def draw_bow(cel: Cel, grip: tuple[int, int], draw: float, nock: tuple[int, int]
     for x, y in curve:
         band = (abs(y - grip[1]) // 3) % 2 == 0
         wrap = abs(y - grip[1]) <= 2
-        bow.put(x, y, ("leather", 2) if wrap else ("leather", 5 if band else 4))
-        bow.put(x - 1, y, ("leather", 2) if wrap else ("leather", 3))
+        bow.put(x, y, ("crimson", 3) if wrap else ("leather", 4 if band else 3))
+        bow.put(x - 1, y, ("crimson", 2) if wrap else ("leather", 2))
     top, bottom = (curve[0][0] - 1, curve[0][1]), (curve[-1][0] - 1, curve[-1][1])
     string = Part()
     spans = ((top, nock), (nock, bottom)) if nock is not None else ((top, bottom),)
@@ -267,10 +269,10 @@ def cape(cel: Cel, ox: int, phase: float, swing: float) -> None:
         left = 29 - min(r // 4, 3) - sway
         right = 45 + (1 if r > 9 else 0) - (sway // 2)
         for x in range(left, right + 1):
-            if r >= rows - 2 and (x + sway) % 4 == (1 if r == rows - 1 else 3):
-                continue  # the hem's notches
+            if r >= rows - 4 and (x * 7 + sway) % 5 < (r - (rows - 5)):
+                continue  # the hem, torn
             fold = (x - left) % 5 == 3
-            tone = ("moss", 3) if x - left < 2 else ("moss", 1) if fold else ("moss", 2)
+            tone = ("moss", 2) if x - left < 2 else ("moss", 0) if fold else ("moss", 1)
             p.put(ox + x, 38 + r, tone)
     p.lay(cel)
 
