@@ -1,17 +1,17 @@
 {
   "updated": "19 nov 2026",
-  "intro": "Nuevo: repaso de assets con propuestas, empezando por los tres héroes. Sigue pendiente el catálogo de sonido.",
+  "intro": "Nuevo: tres conceptos del Ranger reimaginado (animados). Sigue pendiente el catálogo de sonido.",
   "sections": [
     {
-      "id": "repaso-assets",
-      "eyebrow": "Repaso de assets",
-      "title": "Qué se ha quedado flojo",
-      "text": "Repaso de figuras, efectos e iconos frente a lo último que hemos hecho, ordenado por prioridad. Cada punto con su comparación.",
+      "id": "heroes-ranger",
+      "eyebrow": "Héroes reimaginados · 1/3",
+      "title": "Ranger: tres conceptos",
+      "text": "Primera ronda para elegir dirección (decidiste reimaginar los héroes y seguir luego con iconos → anillos → marcas). Cada concepto usa el esqueleto y las 14 animaciones del Ranger, así que se ve moviéndose: quieto, disparo y la Lluvia de flechas. Cuando elijas, pulo el elegido (cara, materiales, brillos) hasta el nivel de los enemigos y paso al Knight y a la Priest con la misma línea.",
       "questions": [
-        "Héroes: ¿A (pulir los actuales) o B (reimaginarlos con conceptos nuevos)?",
-        "¿Seguimos el orden propuesto (héroes → iconos de habilidades → anillos → marcas) o cambiarías algo?"
+        "¿A (montaraz), B (cazadora de la estepa) o C (guardabosques de la Legión)? Puedes mezclar: «el cuerpo de C con la capucha de A».",
+        "¿El tamaño está bien o los quieres aún más altos, como el templario?"
       ],
-      "html": "audit_r1.html"
+      "html": "hero_concepts.html"
     },
     {
       "id": "sonido-muestra",

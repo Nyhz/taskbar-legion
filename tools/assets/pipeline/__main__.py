@@ -32,6 +32,11 @@ def main(argv: list[str]) -> int:
 
         ability_preview(argv[1:])
         return 0
+    if cmd == "hero-concepts":
+        from .hero_concepts import main as hero_concepts
+
+        hero_concepts()
+        return 0
     if cmd == "reel":
         from .title_reel import main as reel
 
