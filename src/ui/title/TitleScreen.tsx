@@ -6,30 +6,20 @@ import { armGestureUnlock, initTitleMusic, playClick, toggleMute } from '@/platf
 import { difficultyOf, stageInWorldOf, worldInDifficulty } from '@/data/difficulties';
 import { difficultyName, useT } from '@/i18n';
 import { Key, KitRoot, Sign, Tip, TipLine, TipTag, TipTitle } from '@/ui/kit';
-import { HeroIdleSprite } from '@/ui/components/HeroIdleSprite';
 import { OptionsAnchor } from '@/ui/options/OptionsAnchor';
 import { OptionsWindow } from '@/ui/options/OptionsWindow';
 import { useMusic } from '@/ui/options/useMusic';
 import { classCrestStem } from '@/ui/itemArt';
 import { useSaveSummary } from './useSaveSummary';
+import { TitleReel } from './TitleReel';
 import './title.css';
 
-// The start screen (mock-up: docs/redesign/mockups/70_title.html). The title lives in the strip's own format,
-// docked bottom-centre exactly where the game's strip will stand: world 1 at dusk, the three heroes on the path,
-// the name as a drawn logo and ONE gold key to enter — Start, or Continue when there is a save. Options, the
-// music and the way out are three signs beside it. Everything above the strip stays transparent (the desktop
-// shows through under Tauri). On mount it sets up the desktop overlay (Tauri) and kicks off the looping music;
-// when the game takes over, App keeps it mounted on top and `exiting` fades it away over the live strip.
-
-// Where the party stands, in the strip's art pixels: the root x of each hero on the path, the path's line, and
-// the box the (still old) idle sprite is drawn in — its feet land 31 px below the box's top.
-const PATH_Y = 123;
-const HERO_BOX = { width: 48, height: 34, feet: 31 };
-const PARTY: readonly { classKey: string; x: number }[] = [
-  { classKey: 'priest', x: 176 },
-  { classKey: 'ranger', x: 232 },
-  { classKey: 'knight', x: 292 },
-];
+// The start screen. The title lives in the strip's own format, docked bottom-centre exactly where the game's
+// strip will stand: the party fighting each world's boss in turn (TitleReel, user 2026-11-19), the name as a drawn
+// logo and ONE gold key to enter — Start, or Continue when there is a save. Options, the music and the way out are
+// three signs beside it. Everything above the strip stays transparent (the desktop shows through under Tauri). On
+// mount it sets up the desktop overlay (Tauri) and kicks off the looping music; when the game takes over, App keeps
+// it mounted on top and `exiting` fades it away over the live strip.
 
 export function TitleScreen({
   hasSave,
@@ -79,16 +69,7 @@ export function TitleScreen({
       >
         <KitRoot zoom={zoom} data-interactive="true">
           <div className="tk-ts">
-            {PARTY.map(({ classKey, x }) => (
-              <div
-                key={classKey}
-                className="hero"
-                style={{ left: x - HERO_BOX.width / 2, top: PATH_Y - HERO_BOX.feet }}
-              >
-                <HeroIdleSprite classKey={classKey} width={HERO_BOX.width} height={HERO_BOX.height} />
-              </div>
-            ))}
-            <Sign name="title_fore" className="fore" />
+            <TitleReel />
             <Sign name="title_logo" alt="Taskbar Legion" className="logo" />
 
             <div className="tk-ts-menu">

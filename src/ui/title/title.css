@@ -1,10 +1,9 @@
-/* The title screen (mock-up: docs/redesign/mockups/70_title.html): the strip itself, 600×160 art px, standing
-   exactly where the game's strip will be, with the party where the game picks them up. Art pixels, like the kit. */
-.tk-ts { position: relative; width: 600px; height: 160px; overflow: hidden; background: url('../../assets/ui/title_backdrop.png');
-  box-shadow: 0 0 0 1px var(--k0); }
-.tk-ts > .hero { position: absolute; }
-.tk-ts > .fore { position: absolute; left: 0; top: 0; pointer-events: none; }
-.tk-ts > .logo { position: absolute; left: 321px; top: 9px; pointer-events: none; }
+/* The title screen: the strip itself, 600×160 art px, standing exactly where the game's strip will be — its scene
+   is the reel's canvas (TitleReel: the party against each world's boss), drawn 1 art px a pixel and brought to
+   screen size by the kit's zoom, nearest-neighbour. The name sits at the left, clear of the boss. */
+.tk-ts { position: relative; width: 600px; height: 160px; overflow: hidden; background: var(--k0); box-shadow: 0 0 0 1px var(--k0); }
+.tk-ts > .reel { position: absolute; left: 0; top: 0; width: 600px; height: 160px; image-rendering: pixelated; pointer-events: none; }
+.tk-ts > .logo { position: absolute; left: 14px; top: 9px; pointer-events: none; }
 
 /* Everything that can be pressed sits in one row on the calm grass: three signs, then the one gold key. */
 .tk-ts-menu { position: absolute; right: 8px; bottom: 5px; display: flex; align-items: center; gap: 2px; }

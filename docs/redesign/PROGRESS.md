@@ -2341,3 +2341,10 @@ Decisiones del usuario (18 nov), tras discutirlas una a una:
   escribe `save.json.tmp`, el anterior pasa a `save.json.bak` y el nuevo se renombra a su sitio; al cargar, si
   `save.json` no se lee, el `.bak`. Permiso `fs:allow-rename` en las capacidades. Test con un disco falso que se
   «cuelga» en cada paso (`test/platform/saveFile.test.ts`). Idea sacada de la skill `save-systems` (gamedev-skills).
+- **Pantalla de inicio animada, en el juego (usuario, 19 nov: «combate continuo»):** la escena fija (mundo 1 al
+  atardecer, sprites viejos) pasa a ser un canvas con el grupo luchando contra el jefe de cada mundo, 3 s cada uno, del
+  1 al 10 y vuelta a empezar; el jefe se va en la columna de luz, el fondo barre al mundo siguiente y su jefe baja en
+  otra; sin vida ni daño. `src/ui/title/`: `reelScript.ts` (guion puro y determinista, test en
+  `test/ui/reelScript.test.ts`), `reelArt.ts` (hojas del juego como imágenes: héroes, efectos, y por mundo su fondo y
+  su jefe, que se piden antes de hacer falta), `drawReel.ts`, `TitleReel.tsx`. El logotipo pasa a la izquierda.
+  `render/backdropSheets.ts` dice dónde están los fondos sin Pixi. Fuera `title_backdrop.png` y `title_fore.png`.

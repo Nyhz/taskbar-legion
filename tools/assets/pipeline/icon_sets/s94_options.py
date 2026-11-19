@@ -1,6 +1,6 @@
 """Options and title screen: the signs of the settings (language, the four volumes, the two scales, the save
 keys), the parts of their controls (slider knob, switch, a danger key) and the title's own pieces — the name
-lettered as a pixel logo, the play sign and the dusk scene the title sits on.
+lettered as a pixel logo and the play sign.
 
 Glyphs follow the stat-glyph recipe (`s80_stats.sprite`: 14×14, outlined, one hue family each).
 """
@@ -388,21 +388,7 @@ def logo() -> Image.Image:
     return c.image()
 
 
-def scene() -> tuple[Image.Image, Image.Image]:
-    """The title's scene: world 1 at dusk, as the strip shows it (600×160). Two pictures — everything behind the
-    heroes, and the foreground that passes in front of their feet."""
-    from ..families import backdrop_w01 as bd
-
-    layers = bd.build("normal")
-    back_im = Image.new("RGBA", (bd.W, bd.H), (0, 0, 0, 0))
-    fore_im = Image.new("RGBA", (bd.W, bd.H), (0, 0, 0, 0))
-    for name, *_rest in bd.LAYERS:
-        (fore_im if name == "fore" else back_im).alpha_composite(layers[name])
-    return back_im, fore_im
-
-
 def build() -> list[dict]:
-    back_im, fore_im = scene()
     glyphs = [
         ("opt_lang", "Idioma", lang()), ("opt_sound", "Sonido", sound(True)), ("opt_mute", "Silencio", sound(False)),
         ("opt_music", "Música", music()), ("opt_ambience", "Ambiente", ambience()), ("opt_effects", "Efectos", effects()), ("opt_click", "Interfaz", click()), ("opt_watch", "Sonidos de combate", watch()),
@@ -423,7 +409,7 @@ def build() -> list[dict]:
         {
             "key": "title",
             "title": "Pantalla de título",
-            "note": "El nombre del juego como logotipo de píxel (latón batido, sobre la gótica de los nombres) y la escena del título: el mundo 1 al atardecer, en el formato de la tira.",
-            "items": [("title_logo", "Logotipo", logo()), ("title_backdrop", "Escena del título", back_im), ("title_fore", "Primer plano de la escena", fore_im)],
+            "note": "El nombre del juego como logotipo de píxel (latón batido, sobre la gótica de los nombres). La escena es la del juego: el grupo contra el jefe de cada mundo (src/ui/title/TitleReel).",
+            "items": [("title_logo", "Logotipo", logo())],
         },
     ]

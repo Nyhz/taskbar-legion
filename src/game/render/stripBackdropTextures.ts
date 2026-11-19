@@ -1,18 +1,9 @@
 import { Assets, Rectangle, Texture } from 'pixi.js';
 import { STRIP_ART_HEIGHT, STRIP_ART_WIDTH, type BackdropGrade } from './stripBackdropData';
+import { backdropSheetLoader as sheetLoader } from './backdropSheets';
 
 // The backdrop sheets (src/assets/strip/wNN_<grade>.png: a world's parallax layers stacked top to bottom), loaded
-// LAZILY — only the world the party is in, when it gets there. Each sheet is its own small chunk; like every PNG
-// of the game it is inlined as a data: URI by the build (vite.config.ts), which is what keeps images decodable in
-// the packaged desktop app, where the webview cannot decode images served over tauri://.
-
-const SHEETS = import.meta.glob<string>('../../assets/strip/w*_*.png', { query: '?url', import: 'default' });
-
-function sheetLoader(key: string, grade: BackdropGrade): (() => Promise<string>) | undefined {
-  const suffix = `/${key}_${grade}.png`;
-  const path = Object.keys(SHEETS).find((p) => p.endsWith(suffix));
-  return path === undefined ? undefined : SHEETS[path];
-}
+// LAZILY — only the world the party is in, when it gets there (render/backdropSheets says where they are).
 
 // At most two sheets stay in memory (the one on screen and the one before it): 600×1120 px each.
 const KEEP = 2;

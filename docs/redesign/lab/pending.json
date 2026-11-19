@@ -1,18 +1,7 @@
 {
   "updated": "19 nov 2026",
-  "intro": "La pantalla de inicio animada (un jefe cada 3 s): falta elegir la transición, A o B. Sigue pendiente el catálogo de sonido. El icono 4B ya está en la app.",
+  "intro": "Queda pendiente el catálogo de sonido. (El icono y la pantalla de inicio animada ya están en el juego.)",
   "sections": [
-    {
-      "id": "pantalla-inicio",
-      "eyebrow": "Marca · Pantalla de inicio",
-      "title": "Pantalla de inicio animada: el grupo contra los jefes",
-      "text": "Juego simulado, sin barras de vida ni daño: tres segundos contra el jefe de cada mundo, del 1 al 10, y vuelta a empezar. El Knight golpea y bloquea, la Ranger dispara, la Priest lanza luz y cura; el jefe ataca de vez en cuando. Hay dos formas de pasar de un mundo a otro; cámbialas con los botones.",
-      "questions": [
-        "¿A (el jefe cambia y el grupo sigue luchando) o B (el grupo se teletransporta)?",
-        "¿Algo que quitar o añadir (por ejemplo, números de daño, otro ritmo)?"
-      ],
-      "html": "title_reel.html"
-    },
     {
       "id": "sonido-muestra",
       "eyebrow": "R7 · Sonido",
