@@ -132,7 +132,7 @@ src/                     ← the game (structure mirrors SPEC §2; see ARCHITECT
   ui/kit/                ← the interface kit every panel is built from (`tk-` prefix; gallery at /#kit)
   i18n/                  ← texts in English and Spanish; names from data via data/i18n/es/*.json
   assets/ui, assets/strip← art exported by the pipeline (never hand-edited)
-tools/assets/            ← the asset pipeline (Python/Pillow): `sh tools/assets/run.sh chars|scene|lab|icons|export-ui|export-strip|export-figs|export-fx|export-pets|readme`
+tools/assets/            ← the asset pipeline (Python/Pillow): `sh tools/assets/run.sh chars|scene|lab|icons|export-ui|export-strip|export-figs|export-fx|export-pets|readme|app-icon|reel`
 scripts/shot-app.mjs     ← headless capture of the running game (see docs/TESTING.md); scripts/dev-seed.js seeds a party
 test/                    ← vitest specs (sim/ first; never import Pixi/React)
 ```

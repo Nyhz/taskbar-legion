@@ -30,7 +30,7 @@ feel) is verified by launching the `.app`; the Windows `.exe` is verified from C
 - Quit: power button (top-right of the Party header) → "Yes / Back" modal → save + close (`platform/quit.ts`).
 - Saves → filesystem: `src/platform/storage.ts` (`save.json` in the OS app-data dir under Tauri, IndexedDB
   on web/tests). `saveManager.ts` refactored onto it; frontier guard stays on localStorage; close-hook flush.
-- App icon: Knight idle frame over the strip backdrop — `scripts/gen-icon.mjs` (`npm run gen:icon`).
+- App icon: the name as a pixel wordmark over world 1 in Torment (chosen 2026-11-19) — `tools/assets/pipeline/brand_icon.py` (`npm run gen:icon`: draws `src-tauri/app-icon.png`, then `tauri icon` expands it).
 - CI: `.github/workflows/desktop-build.yml` — **Linux + Windows + macOS** on native runners via
   `tauri-action`; a `v*` tag publishes all three to one GitHub Release.
 

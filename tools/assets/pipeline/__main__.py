@@ -22,6 +22,16 @@ def main(argv: list[str]) -> int:
         # `lab items` only refreshes the item icons on the page; plain `lab` rebuilds everything (minutes).
         refresh_items() if argv[1:] == ["items"] else lab()
         return 0
+    if cmd == "app-icon":
+        from .brand_icon import main as app_icon
+
+        app_icon()
+        return 0
+    if cmd == "reel":
+        from .title_reel import main as reel
+
+        reel()
+        return 0
     if cmd == "icons":
         from .icons import main as icons
 
@@ -67,7 +77,7 @@ def main(argv: list[str]) -> int:
 
         audio_lab()
         return 0
-    print("commands: chars [names…], scene, lab, icons, export-ui, export-strip, export-figs, export-fx, export-pets, readme, audio [--sample] [--dry] [ids…]")
+    print("commands: chars [names…], scene, lab, icons, export-ui, export-strip, export-figs, export-fx, export-pets, readme, app-icon, reel, audio [--sample] [--dry] [ids…]")
     return 1
 
 
