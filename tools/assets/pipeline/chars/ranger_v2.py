@@ -75,11 +75,11 @@ TORSO = [
     "aabbbbbcccccccd",
     ".aabbbbccccccc.",
     "..alrbbbccccc..",
-    "..abyrbbccccc..",
+    "..abVrbbccccc..",
     "..abblrbccccc..",
-    "..abbbyrccccc..",
+    "..abbbVrccccc..",
     "..abbbblrcccc..",
-    "..abbbbbyrcVc..",
+    "..abbbbbVrcVc..",
     "..abbbbbblrWc..",
     "..kllllyzylVk..",
     "..kqqkkyxykVk..",
@@ -95,10 +95,10 @@ LEG = [
     "fggG...",
     "fggG...",
     "lqqqq..",
-    "kyrry..",
+    "kVrrV..",
     "klrrq..",
     "klrrq..",
-    "kyrry..",
+    "kVrrV..",
     "klrrq..",
     "klrrrq.",
     "klrrrrq",
@@ -108,11 +108,11 @@ LEG = [
 # The rear arm at rest: a pale sleeve, the bracer, the hand.
 ARM_HANG = [
     "lrrq",
-    "lyrq",
+    "lVrq",
     "nNN.",
     "lrrq",
     "lrrq",
-    "lyrq",
+    "lVrq",
     "lrrq",
     "kllk",
     "lrr.",
@@ -142,6 +142,32 @@ ROOT_X, GROUND = 40, 64
 AT = {"leg_far": (34, 50), "leg_near": (41, 50), "torso": (33, 37), "head": (30, 19), "arm_hang": (31, 40), "quiver": (22, 27)}
 SHOULDER_BOW = (47, 41)
 SHOULDER_DRAW = (36, 41)
+
+
+# Kneeling: the front leg's thigh comes forward, the boot planted; the back knee on the ground, the shin behind.
+KNEEL_FRONT = [
+    "fgGGGG...",
+    "fggGGG...",
+    "...lqqqq.",
+    "...kyrry.",
+    "...klrrq.",
+    "...klrrq.",
+    "...klrrrq",
+    "...klrrrq",
+    "...kkkkkk",
+]
+KNEEL_BACK = [
+    ".....fgGG",
+    ".....fgGG",
+    ".....fgGG",
+    "qrrrlkfgG",
+    "krrrlkfgg",
+    "kkkkkkkkk",
+]
+# Hurt: the brows go up and the eyes squeeze shut.
+HEAD_PAIN = {10: "Aaabbo" + "hsoosssssoos" + "occ", 11: "Aaabbo" + "hsssoossoosh" + "occ"}
+FLASK = [".z.", "rqr", "qrq", "lql"]
+CALTROPS = ["W.V", ".V.", "V.W"]
 
 
 class Part:
@@ -214,29 +240,56 @@ def arm(part: Part, joints: list[tuple[int, int]], sleeve: int = 4) -> None:
             part.put(x + 1, y, hi), part.put(x, y, mid), part.put(x - 1, y, lo)
 
 
-def bow_curve(grip: tuple[int, int], draw: float, half: int = 17) -> list[tuple[int, int]]:
-    """The bow's back, top tip to bottom tip: the grip furthest forward, the limbs sweeping back to tips that curl
-    forward again; drawing it pulls the tips in and back."""
-    gx, gy = grip
-    reach = half - round(1.5 * draw)
-    out = []
-    for j in range(-reach, reach + 1):
+Vec = tuple[float, float]
+
+
+def _dir(aim: float) -> Vec:
+    """The aiming direction: 0° straight ahead (right), positive up."""
+    a = math.radians(aim)
+    return (math.cos(a), -math.sin(a))
+
+
+def _r(v: Vec) -> tuple[int, int]:
+    return (int(round(v[0])), int(round(v[1])))
+
+
+def _lerp(a: Vec, b: Vec, t: float) -> Vec:
+    return (a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t)
+
+
+def bow_points(grip: Vec, aim: float, draw: float, half: int = 17) -> list[tuple[int, int]]:
+    """The bow's back from the top tip to the bottom tip: the grip furthest forward, the limbs sweeping back to tips
+    that curl forward again. Drawing it bends the limbs hard: the tips come in and back (a full draw takes 2 px
+    off each limb and pulls the tips 7 px further back)."""
+    d = _dir(aim)
+    u = (-d[1], -d[0]) if False else (math.sin(math.radians(aim)) * -1, -math.cos(math.radians(aim)))
+    reach = half - 2.0 * draw
+    out: list[tuple[int, int]] = []
+    steps = int(reach * 2)
+    for k in range(steps, -steps - 1, -1):
+        j = k / 2
         s = abs(j) / reach
-        back = 7.0 * s ** 1.6 + 3.0 * draw * s * s
+        back = 7.0 * s ** 1.6 + 7.0 * draw * s * s
         curl = 3.4 * max(0.0, (s - 0.74) / 0.26) ** 1.4
-        out.append((gx - round(back - curl), gy + j))
+        off = back - curl
+        pt = _r((grip[0] + u[0] * j - d[0] * off, grip[1] + u[1] * j - d[1] * off))
+        if not out or out[-1] != pt:
+            out.append(pt)
     return out
 
 
-def draw_bow(cel: Cel, grip: tuple[int, int], draw: float, nock: tuple[int, int] | None) -> None:
-    curve = bow_curve(grip, draw)
+def draw_bow(cel: Cel, grip: Vec, aim: float, draw: float, nock: tuple[int, int] | None) -> None:
+    d = _dir(aim)
+    pts = bow_points(grip, aim, draw)
+    g = _r(grip)
     bow = Part()
-    for x, y in curve:
-        band = (abs(y - grip[1]) // 3) % 2 == 0
-        wrap = abs(y - grip[1]) <= 2
+    for x, y in pts:
+        dist = math.hypot(x - g[0], y - g[1])
+        band = int(dist // 3) % 2 == 0
+        wrap = dist <= 2.4
         bow.put(x, y, ("crimson", 3) if wrap else ("leather", 4 if band else 3))
-        bow.put(x - 1, y, ("crimson", 2) if wrap else ("leather", 2))
-    top, bottom = (curve[0][0] - 1, curve[0][1]), (curve[-1][0] - 1, curve[-1][1])
+        bow.put(x - d[0], y - d[1], ("crimson", 2) if wrap else ("leather", 2))
+    top, bottom = pts[0], pts[-1]
     string = Part()
     spans = ((top, nock), (nock, bottom)) if nock is not None else ((top, bottom),)
     for a, b in spans:
@@ -246,26 +299,31 @@ def draw_bow(cel: Cel, grip: tuple[int, int], draw: float, nock: tuple[int, int]
     bow.lay(cel)
 
 
-def draw_arrow(cel: Cel, nock: tuple[int, int], tip_x: int) -> None:
+def draw_arrow(cel: Cel, nock: tuple[int, int], grip: Vec, aim: float) -> None:
+    """The nocked arrow, from the string past the bow: a long shaft, an iron head, crimson fletching."""
+    d = _dir(aim)
+    n = (-d[1], d[0])
+    tip = (grip[0] + d[0] * 6, grip[1] + d[1] * 6)
     a = Part()
-    x0, y = nock
-    for x in range(x0, tip_x + 1):
+    for x, y in _line(nock, _r(tip)):
         a.put(x, y, ("leather", 4))
-    for dx, dy in ((2, 0), (1, 0), (0, -1), (0, 1), (0, 0)):
-        a.put(tip_x + dx, y + dy, ("ink", 8))
-    for dx in (0, 1, 2):
-        a.put(x0 + dx, y - 1, ("bone", 7))
-        a.put(x0 + dx, y + 1, ("ink", 7))
+    for k, tone in ((0, ("ink", 8)), (1, ("ink", 8)), (2, ("ink", 7))):
+        a.put(tip[0] + d[0] * (2 - k), tip[1] + d[1] * (2 - k), tone)
+    a.put(tip[0] + n[0], tip[1] + n[1], ("ink", 6))
+    a.put(tip[0] - n[0], tip[1] - n[1], ("ink", 6))
+    for k in (1, 2, 3):
+        a.put(nock[0] + d[0] * k + n[0], nock[1] + d[1] * k + n[1], ("crimson", 4))
+        a.put(nock[0] + d[0] * k - n[0], nock[1] + d[1] * k - n[1], ("crimson", 2))
     a.lay(cel)
 
 
-def cape(cel: Cel, ox: int, phase: float, swing: float) -> None:
-    """The cape behind the body, down to the calves: dark, a lighter edge at the back, a ragged hem; its lower
-    half sways."""
+def cape(cel: Cel, ox: int, oy: int, phase: float, swing: float, flare: float) -> None:
+    """The cape behind the body, down to the calves: dark, a lighter edge at the back, a torn hem; its lower half
+    sways, and it streams back (`flare`) when she runs or leaps."""
     p = Part()
     rows = 20
     for r in range(rows):
-        sway = round(swing * math.sin(math.tau * (phase - r * 0.045)) * (r / rows) ** 1.5)
+        sway = round(swing * math.sin(math.tau * (phase - r * 0.045)) * (r / rows) ** 1.5 + flare * (r / rows) ** 1.2)
         left = 29 - min(r // 4, 3) - sway
         right = 45 + (1 if r > 9 else 0) - (sway // 2)
         for x in range(left, right + 1):
@@ -273,67 +331,195 @@ def cape(cel: Cel, ox: int, phase: float, swing: float) -> None:
                 continue  # the hem, torn
             fold = (x - left) % 5 == 3
             tone = ("moss", 2) if x - left < 2 else ("moss", 0) if fold else ("moss", 1)
-            p.put(ox + x, 38 + r, tone)
+            p.put(ox + x, oy + 38 + r - round(flare * 0.3 * (r / rows)), tone)
     p.lay(cel)
 
 
-def figure(cel: Cel, p: Pose) -> None:
-    dx = -round(p.get("back", 0.0))  # the body's shift (she settles back as she draws)
-    bob = round(p.get("bob", 0.0))  # the head and shoulders sink on the breath out
-    aim = p.get("aim", 0.0)
-    draw = p.get("draw", 0.0)
-    hand = p.get("hand")  # the string hand, when it is not hanging: (x, y) on the frame
-
-    def at(name: str, ddy: int = 0) -> tuple[int, int]:
-        x, y = AT[name]
-        return x + dx, y + ddy
-
-    cape(cel, dx, p.get("cape", 0.0), p.get("swing", 1.2))
-    part = Part()
-    part.stamp(QUIVER, *at("quiver", bob))
-    part.lay(cel)
+def _legs(cel: Cel, p: Pose, lx: int, ly: int) -> None:
+    mode = p.get("legs", "stand")
+    if mode == "kneel":
+        for rows, at in ((KNEEL_BACK, (31 + lx, 58)), (KNEEL_FRONT, (41 + lx, 55))):
+            part = Part()
+            part.stamp(rows, *at)
+            part.lay(cel)
+        return
+    if mode == "run":
+        t = p.get("run", 0.0)
+        c, s_ = math.cos(math.tau * t), math.sin(math.tau * t)
+        place = {"leg_far": (round(-3 * c), round(3 * max(0.0, s_))), "leg_near": (round(3 * c), round(3 * max(0.0, -s_)))}
+    elif mode == "air":
+        place = {"leg_far": (-1, 3), "leg_near": (1, 2)}
+    else:
+        place = {"leg_far": (0, 0), "leg_near": (0, 0)}
     for name in ("leg_far", "leg_near"):
+        x, y = AT[name]
+        dx, lift = place[name]
         part = Part()
-        part.stamp(LEG, *AT[name])  # the feet stay planted
+        part.stamp(LEG[lift:], x + lx + dx, y + ly + lift - lift)  # a lifted leg keeps its hip and loses its length
         part.lay(cel)
+
+
+def _held(cel: Cel, what: str, at: tuple[int, int]) -> None:
     part = Part()
-    part.stamp(TORSO, *at("torso", bob))
-    part.lay(cel)
-    if hand is None:
-        part = Part()
-        part.stamp(ARM_HANG, *at("arm_hang", bob))
+    x, y = at
+    if what == "flask":
+        part.stamp(FLASK, x - 1, y - 4)
         part.lay(cel)
-    head = [HEAD_BLINK.get(j, row) for j, row in enumerate(HEAD)] if p.get("blink", 0.0) > 0.5 else HEAD
-    part = Part()
-    part.stamp(head, *at("head", bob + round(p.get("nod", 0.0))))
+        cel.put(x, y - 5, ("brass", 7))
+        cel.put(x, y - 6, ("crimson", 6))
+        return
+    if what == "caltrops":
+        part.stamp(CALTROPS, x, y - 1)
+    elif what == "fist":
+        for k, ox in enumerate((-1, 0, 1)):
+            for i in range(1, 12):
+                part.put(x + ox + (k - 1) * i * 0.15, y - i, ("leather", 4) if i < 9 else ("crimson", 4 if k % 2 else 3))
+    elif what == "point":
+        part.put(x + 1, y, ("leather", 3))
+        part.put(x + 2, y, ("leather", 3))
     part.lay(cel)
 
-    # The bow arm: bent at rest with the bow held upright beside her; straight out at the shoulder to shoot.
-    sx, sy = SHOULDER_BOW[0] + dx, SHOULDER_BOW[1] + bob
-    elbow = (round(sx + 5 * aim), round(sy + 4 * (1 - aim)))
-    grip_hand = (round(sx + 7 + 4 * aim), round(sy + 4 * (1 - aim)))
-    part = Part()
-    arm(part, [(sx, sy), elbow, grip_hand])
-    part.lay(cel)
-    grip = (grip_hand[0] + 2, grip_hand[1])
-    nock = (int(hand[0]) + dx + 1, int(hand[1]) + bob) if hand is not None and draw > 0.02 else None
-    draw_bow(cel, grip, draw, nock)
-    if p.get("arrow", 0.0) > 0.5 and nock is not None:
-        draw_arrow(cel, nock, grip[0] + 5)
-    part = Part()
-    part.stamp(HAND, grip_hand[0], grip_hand[1] - 1)
-    part.lay(cel)
 
-    if hand is not None:
-        hx, hy = int(hand[0]) + dx, int(hand[1]) + bob
-        ssx, ssy = SHOULDER_DRAW[0] + dx, SHOULDER_DRAW[1] + bob
-        elbow = (max(ssx - 1, hx - 6), hy + 4)
+def _draw_figure(cel: Cel, p: Pose) -> None:
+    x = round(p.get("x", 0.0))
+    y = round(p.get("y", 0.0))
+    bob = round(p.get("bob", 0.0))
+    crouch = round(p.get("crouch", 0.0))
+    ux, uy = x, -y + bob + crouch  # the upper body
+    free = p.get("free", "hang")
+
+    def at(name: str) -> tuple[int, int]:
+        ax, ay = AT[name]
+        return ax + ux, ay + uy
+
+    cape(cel, ux, uy, p.get("cape", 0.0), p.get("swing", 1.2), p.get("flare", 0.0))
+    part = Part()
+    part.stamp(QUIVER, *at("quiver"))
+    part.lay(cel)
+    _legs(cel, p, x, -y)
+    part = Part()
+    part.stamp(TORSO, *at("torso"))
+    part.lay(cel)
+    if free == "hang":
         part = Part()
-        arm(part, [(ssx, ssy), elbow, (hx - 1, hy)], sleeve=3)
+        part.stamp(ARM_HANG, *at("arm_hang"))
+        part.lay(cel)
+    head = HEAD
+    if p.get("pain", 0.0) > 0.5:
+        head = [HEAD_PAIN.get(j, row) for j, row in enumerate(HEAD)]
+    elif p.get("blink", 0.0) > 0.5:
+        head = [HEAD_BLINK.get(j, row) for j, row in enumerate(HEAD)]
+    hx0, hy0 = at("head")
+
+    def draw_head() -> None:
+        part = Part()
+        part.stamp(head, hx0, hy0 + round(p.get("nod", 0.0)))
+        part.lay(cel)
+
+    # The bow arm: bent at rest with the bow upright beside her; straight out along the aim to shoot.
+    aim = p.get("aim", 0.0)
+    raise_ = p.get("raise", 0.0)
+    draw = p.get("draw", 0.0)
+    S = (SHOULDER_BOW[0] + ux, SHOULDER_BOW[1] + uy)
+    d = _dir(aim)
+    hand = _lerp((S[0] + 7, S[1] + 4), (S[0] + d[0] * 11, S[1] + d[1] * 11), raise_)
+    elbow = _lerp((S[0] + 4, S[1] + 5), (S[0] + d[0] * 5.5, S[1] + d[1] * 5.5), raise_)
+    bow_aim = aim * raise_ + p.get("tilt", 0.0)
+    bd = _dir(bow_aim)
+    grip = (hand[0] + bd[0] * 2, hand[1] + bd[1] * 2)
+
+    # The string hand: from the grip back along the aim — a full draw brings it 17 px back, to the cheek.
+    nock = None
+    string_hand = None
+    if free == "string":
+        pull = 4.0 + 13.0 * draw + p.get("snap", 0.0) * 5.0
+        string_hand = (grip[0] - bd[0] * pull, grip[1] - bd[1] * pull - p.get("snap", 0.0) * 1.0)
+        if draw > 0.02 and p.get("snap", 0.0) < 0.5:
+            nock = _r(string_hand)
+
+    def draw_bow_arm() -> None:
+        part = Part()
+        arm(part, [_r(S), _r(elbow), _r(hand)])
+        part.lay(cel)
+        draw_bow(cel, grip, bow_aim, draw if nock is not None else 0.0, nock)
+        if p.get("arrow", 0.0) > 0.5 and nock is not None:
+            draw_arrow(cel, nock, grip, bow_aim)
+        part = Part()
+        part.stamp(HAND, _r(hand)[0], _r(hand)[1] - 1)
+        part.lay(cel)
+
+    sh = (SHOULDER_DRAW[0] + ux, SHOULDER_DRAW[1] + uy)
+    if string_hand is not None:
+        h = string_hand
+        mid = ((sh[0] + h[0]) / 2, (sh[1] + h[1]) / 2 + 2)
+        el = _lerp(mid, (h[0] - bd[0] * 6, h[1] - bd[1] * 6 - 1), min(1.0, draw + p.get("snap", 0.0)))
+    else:
+        hx, hy = p.get("hand", (38.0, 50.0))
+        h = (hx + ux, hy + uy)
+        ex, ey = p.get("elb", (0.0, 2.0))
+        el = ((sh[0] + h[0]) / 2 + ex, (sh[1] + h[1]) / 2 + ey)
+
+    def draw_free_arm() -> None:
+        part = Part()
+        arm(part, [_r(sh), _r(el), _r(h)], sleeve=3)
         part.lay(cel)
         part = Part()
-        part.stamp(HAND, hx - 1, hy - 1)
+        part.stamp(HAND, _r(h)[0] - 1, _r(h)[1] - 1)
         part.lay(cel)
+        held = p.get("held")
+        if held:
+            _held(cel, held, _r(h))
+
+    # The head is a third of her: what rises above the shoulders (a bow aimed at the sky, an arm thrown back or
+    # reaching for the quiver) passes BEHIND it, as if on her far side, so it never covers her face.
+    bow_behind = bow_aim > 20.0
+    free_behind = free != "hang" and (bow_behind if string_hand is not None else h[1] < sh[1] - 5)
+    if bow_behind:
+        draw_bow_arm()
+    if free_behind:
+        draw_free_arm()
+    draw_head()
+    if not bow_behind:
+        draw_bow_arm()
+    if free != "hang" and not free_behind:
+        draw_free_arm()
+
+
+def _rotate(src: Cel, deg: float, pivot: Vec) -> dict[tuple[int, int], Tone]:
+    """The figure turned `deg` counter-clockwise about `pivot` (she falls backwards), nearest pixel, then dropped
+    so it rests on the ground."""
+    a = math.radians(deg)
+    ca, sa = math.cos(a), math.sin(a)
+    cx, cy = pivot
+    fwd = [(cx + (x + 0.5 - cx) * ca + (y + 0.5 - cy) * sa, cy - (x + 0.5 - cx) * sa + (y + 0.5 - cy) * ca) for (x, y) in src.px]
+    x0, x1 = int(min(f[0] for f in fwd)) - 1, int(max(f[0] for f in fwd)) + 2
+    y0, y1 = int(min(f[1] for f in fwd)) - 1, int(max(f[1] for f in fwd)) + 2
+    out: dict[tuple[int, int], Tone] = {}
+    for Y in range(y0, y1):
+        for X in range(x0, x1):
+            dx, dy = X + 0.5 - cx, Y + 0.5 - cy
+            sx = cx + dx * ca - dy * sa
+            sy = cy + dx * sa + dy * ca
+            t = src.px.get((int(math.floor(sx)), int(math.floor(sy))))
+            if t is not None:
+                out[(X, Y)] = t
+    low = max(yy for _, yy in out) if out else 0
+    drop = (GROUND - 1) - low
+    # …and slid back over her own place as she goes down, so she lies where she stood (not off the frame's edge).
+    xs = [xx for xx, _ in out] or [cx]
+    slide = round((cx - (min(xs) + max(xs)) / 2) * min(1.0, abs(deg) / 90.0))
+    return {(xx + slide, yy + drop): t for (xx, yy), t in out.items()}
+
+
+def figure(cel: Cel, p: Pose) -> None:
+    rot = p.get("rot", 0.0)
+    if abs(rot) < 0.5:
+        _draw_figure(cel, p)
+        return
+    tmp = Cel(cel.w, cel.h, cel.top)
+    _draw_figure(tmp, p)
+    for (x, y), t in _rotate(tmp, rot, (ROOT_X, GROUND)).items():
+        cel.put(x, y, t)
 
 
 class RangerV2:
@@ -352,43 +538,163 @@ class RangerV2:
         figure(cel, pose)
 
 
-# ── animations ───────────────────────────────────────────────────────────────────────────────────────────────
+# ── animations: every one keyed frame by frame (nothing tweened), with the game's names, frame counts and timings ──
 
 
-def idle_pose(t: float) -> Pose:
-    """She breathes (the head and shoulders sink a pixel on the way out), the cape stirs, she blinks once."""
-    return {"bob": 1.0 if 0.5 <= t < 0.94 else 0.0, "cape": t, "swing": 1.3, "blink": 1.0 if 0.72 <= t < 0.80 else 0.0}
+def frames(name: str, poses: list[Pose], ms: list[int], loop: bool) -> Anim:
+    assert len(poses) == len(ms), name
+    n = len(poses)
+
+    def at(t: float) -> Pose:
+        i = int(t * n) % n if loop else min(n - 1, max(0, round(t * (n - 1))))
+        return dict(poses[i])
+
+    times = [i / n for i in range(n)] if loop else [i / (n - 1) for i in range(n)]
+    return Anim(name, at, times, ms, loop)
 
 
-SHOT_KEYS: list[Pose] = [
-    dict(aim=0.0),
-    dict(aim=0.5),
-    dict(aim=1.0, hand=(54, 39)),
-    dict(aim=1.0, hand=(56, 39), draw=0.05, arrow=1.0),
-    dict(aim=1.0, hand=(53, 39), draw=0.25, arrow=1.0),
-    dict(aim=1.0, hand=(50, 39), draw=0.5, arrow=1.0, back=1.0),
-    dict(aim=1.0, hand=(47, 39), draw=0.8, arrow=1.0, back=1.0),
-    dict(aim=1.0, hand=(45, 39), draw=1.0, arrow=1.0, back=2.0),
-    dict(aim=1.0, hand=(45, 39), draw=1.0, arrow=1.0, back=2.0, nod=1.0),
-    dict(aim=1.0, hand=(45, 39), draw=1.0, arrow=1.0, back=2.0, nod=1.0),
-    dict(aim=1.0, hand=(41, 38), draw=0.0, back=1.0, swing=3.0),
-    dict(aim=1.0, hand=(39, 38), draw=0.0, back=0.0, swing=3.0),
-    dict(aim=0.8, hand=(41, 43), draw=0.0, swing=2.0),
-    dict(aim=0.4, swing=1.6),
-    dict(aim=0.0),
-]
-SHOT_MS = [90, 70, 70, 80, 70, 70, 80, 100, 140, 160, 45, 60, 80, 90, 110]
-N_SHOT = len(SHOT_KEYS)
+def _cape(poses: list[Pose], swing: float = 1.3) -> list[Pose]:
+    n = len(poses)
+    return [{"cape": i / n, "swing": swing, **p} for i, p in enumerate(poses)]
 
 
-def shot_pose(t: float) -> Pose:
-    """The shot: raise the bow, reach for the string, the long draw to the cheek, the hold, the loose (the hand
-    flicks back, the cape whips), and back to rest. Keyed frame by frame — nothing is tweened."""
-    i = min(N_SHOT - 1, max(0, round(t * (N_SHOT - 1))))
-    return {"cape": i / N_SHOT, **SHOT_KEYS[i]}
+IDLE = _cape([{"bob": 1.0 if 6 <= i < 11 else 0.0, "blink": 1.0 if i == 9 else 0.0} for i in range(12)])
+
+RUN = []
+for i in range(12):
+    t = i / 12
+    s2 = math.sin(math.tau * t)
+    RUN.append({
+        "legs": "run", "run": t, "x": 1.0, "bob": 1.0 if math.cos(2 * math.tau * t) > 0.5 else 0.0,
+        "cape": 2 * t, "swing": 2.4, "flare": 4.0, "raise": 0.0, "tilt": -10.0,
+        "free": "pump", "hand": (35.0 - 4.0 * s2, 48.0 - abs(2.0 * s2)), "elb": (-1.0 - 2.0 * s2, 1.0),
+    })
 
 
+def shot(aim: float = 0.0, full: float = 1.0, extra: dict | None = None, hold: int = 2, kneel: bool = False) -> list[Pose]:
+    """A shot in fifteen frames, the loose on the eleventh (the game's release): raise, take the string, nock, a
+    long hard draw to the ear as she leans back into it, the hold, the snap of the loose — the string hand flung
+    back, the cape whipping — the follow-through, and the bow coming down."""
+    E = extra or {}
+    k = {"crouch": 6.0, "legs": "kneel"} if kneel else {}
+    half = {"crouch": 3.0} if kneel else {}
+    draw = [0.0, 0.0, 0.0, 0.05, 0.3, 0.55, 0.8, full, full, full]
+    keys: list[Pose] = [
+        {},
+        {"raise": 0.5, "aim": aim, **half},
+        {"raise": 1.0, "aim": aim, "free": "string", "draw": 0.0, **k},
+        {"raise": 1.0, "aim": aim, "free": "string", "draw": 0.05, "arrow": 1.0, **k},
+        {"raise": 1.0, "aim": aim, "free": "string", "draw": 0.3, "arrow": 1.0, **k},
+        {"raise": 1.0, "aim": aim, "free": "string", "draw": 0.55, "arrow": 1.0, "x": -1.0, **k},
+        {"raise": 1.0, "aim": aim, "free": "string", "draw": 0.8, "arrow": 1.0, "x": -1.0, **k},
+        {"raise": 1.0, "aim": aim, "free": "string", "draw": full, "arrow": 1.0, "x": -2.0, **k},
+        {"raise": 1.0, "aim": aim, "free": "string", "draw": full, "arrow": 1.0, "x": -2.0, "nod": 1.0, **k},
+        {"raise": 1.0, "aim": aim, "free": "string", "draw": full, "arrow": 1.0, "x": -2.0, "nod": 1.0, **k},
+        {"raise": 1.0, "aim": aim + 3.0, "free": "string", "draw": 0.0, "snap": 1.0, "x": -1.0, "swing": 3.4, **k},
+        {"raise": 1.0, "aim": aim + 1.0, "free": "string", "draw": 0.0, "snap": 1.4, "x": 0.0, "swing": 3.0, **k},
+        {"raise": 0.75, "aim": aim, "free": "pump", "hand": (40.0, 44.0), "swing": 2.2, **k},
+        {"raise": 0.35, "aim": aim, **half},
+        {},
+    ]
+    del draw, hold
+    return _cape([{**key, **E} for key in keys])
+
+
+def quick() -> list[Pose]:
+    """Two snap shots off a two-thirds draw, the second hard on the first."""
+    s = {"raise": 1.0, "free": "string", "arrow": 1.0}
+    keys = [
+        {}, {"raise": 0.7}, {**s, "draw": 0.05}, {**s, "draw": 0.65, "x": -1.0}, {**s, "draw": 0.65, "x": -1.0},
+        {"raise": 1.0, "free": "string", "draw": 0.0, "snap": 1.0, "swing": 3.0}, {**s, "draw": 0.05},
+        {**s, "draw": 0.4}, {**s, "draw": 0.65, "x": -1.0}, {**s, "draw": 0.65, "x": -1.0},
+        {"raise": 1.0, "free": "string", "draw": 0.0, "snap": 1.0, "swing": 3.0},
+        {"raise": 1.0, "free": "string", "draw": 0.0, "snap": 1.3, "swing": 2.6}, {"raise": 0.7}, {"raise": 0.3}, {},
+    ]
+    return _cape(keys)
+
+
+def skip() -> list[Pose]:
+    """She springs back off the front foot, draws in the air, lands and looses, then steps back to her place."""
+    s = {"raise": 1.0, "free": "string", "arrow": 1.0}
+    keys = [
+        {}, {"crouch": 2.0, "raise": 0.3}, {"y": 4.0, "x": -2.0, "legs": "air", "raise": 0.7, "flare": 3.0},
+        {"y": 6.0, "x": -4.0, "legs": "air", **s, "draw": 0.1, "flare": 4.0}, {"y": 5.0, "x": -6.0, "legs": "air", **s, "draw": 0.45, "flare": 3.0},
+        {"y": 2.0, "x": -7.0, "legs": "air", **s, "draw": 0.75, "flare": 2.0}, {"x": -7.0, "crouch": 2.0, **s, "draw": 1.0},
+        {"x": -7.0, "crouch": 1.0, **s, "draw": 1.0}, {"x": -7.0, **s, "draw": 1.0, "nod": 1.0}, {"x": -7.0, **s, "draw": 1.0, "nod": 1.0},
+        {"x": -6.0, "raise": 1.0, "free": "string", "draw": 0.0, "snap": 1.0, "swing": 3.4},
+        {"x": -6.0, "raise": 1.0, "free": "string", "draw": 0.0, "snap": 1.4, "swing": 3.0},
+        {"x": -4.0, "raise": 0.6, "legs": "run", "run": 0.25}, {"x": -2.0, "raise": 0.3, "legs": "run", "run": 0.75}, {},
+    ]
+    return _cape(keys)
+
+
+def lob() -> list[Pose]:
+    """Tar Flask: the flask from the belt, back behind her head, and lobbed high and long."""
+    f = {"free": "pump", "held": "flask"}
+    keys = [
+        {}, {**f, "hand": (38.0, 50.0)}, {**f, "hand": (31.0, 46.0), "elb": (-1.0, 2.0)}, {**f, "hand": (28.0, 32.0), "elb": (-3.0, 1.0), "x": -1.0},
+        {**f, "hand": (27.0, 29.0), "elb": (-3.0, 1.0), "x": -2.0}, {**f, "hand": (27.0, 29.0), "elb": (-3.0, 1.0), "x": -2.0},
+        {"free": "pump", "hand": (54.0, 27.0), "elb": (0.0, -2.0), "x": 2.0, "swing": 3.0},
+        {"free": "pump", "hand": (57.0, 38.0), "x": 2.0, "swing": 2.6}, {"free": "pump", "hand": (50.0, 48.0), "x": 1.0}, {"free": "pump", "hand": (40.0, 50.0)}, {},
+    ]
+    return _cape(keys)
+
+
+def sow() -> list[Pose]:
+    """Caltrops: she crouches and sows them underhand in one low sweep across the ground ahead."""
+    c = {"free": "pump", "held": "caltrops", "crouch": 3.0}
+    keys = [
+        {}, {**c, "hand": (37.0, 50.0), "crouch": 1.0}, {**c, "hand": (31.0, 52.0)}, {**c, "hand": (29.0, 53.0), "x": -1.0}, {**c, "hand": (29.0, 53.0), "x": -1.0},
+        {"free": "pump", "crouch": 4.0, "hand": (50.0, 56.0), "x": 2.0, "swing": 2.6}, {"free": "pump", "crouch": 4.0, "hand": (56.0, 52.0), "x": 2.0},
+        {"free": "pump", "crouch": 3.0, "hand": (54.0, 50.0), "x": 1.0}, {"free": "pump", "crouch": 2.0, "hand": (46.0, 50.0)}, {"free": "pump", "crouch": 1.0, "hand": (40.0, 50.0)}, {},
+    ]
+    return _cape(keys)
+
+
+def point() -> list[Pose]:
+    """Mark of the Hunter: she levels her arm at the quarry and holds it there."""
+    pt = {"free": "pump", "held": "point", "hand": (59.0, 36.0), "elb": (0.0, 0.0), "x": 1.0}
+    keys = [{}, {"free": "pump", "hand": (44.0, 44.0)}, {"free": "pump", "hand": (53.0, 38.0)}, pt, {**pt, "nod": 1.0}, {**pt, "nod": 1.0}, pt, pt,
+            {"free": "pump", "hand": (50.0, 44.0)}, {"free": "pump", "hand": (40.0, 50.0)}, {}]
+    return _cape(keys)
+
+
+def haste() -> list[Pose]:
+    """Rapid Fire: over the shoulder to the quiver, a fistful of arrows pulled out, snapped down to the string."""
+    keys = [
+        {}, {"free": "pump", "hand": (36.0, 40.0)}, {"free": "pump", "hand": (31.0, 31.0), "elb": (-2.0, 0.0)},
+        {"free": "pump", "hand": (28.0, 27.0), "elb": (-3.0, 0.0), "nod": 1.0},
+        {"free": "pump", "hand": (30.0, 22.0), "elb": (-3.0, 0.0), "held": "fist"},
+        {"free": "pump", "hand": (33.0, 20.0), "elb": (-2.0, -1.0), "held": "fist"},
+        {"free": "pump", "hand": (44.0, 36.0), "held": "fist", "raise": 0.6},
+        {"raise": 1.0, "free": "string", "draw": 0.1, "arrow": 1.0}, {"raise": 1.0, "free": "string", "draw": 0.1, "arrow": 1.0},
+        {"raise": 0.5}, {},
+    ]
+    return _cape(keys)
+
+
+HURT = _cape([{}, {"x": -2.0, "pain": 1.0, "flash": 1.0, "swing": 3.0}, {"x": -3.0, "pain": 1.0, "bob": 1.0, "flash": 0.4, "swing": 3.0},
+              {"x": -3.0, "pain": 1.0, "bob": 1.0}, {"x": -2.0, "pain": 1.0}, {"x": -1.0}, {"x": -1.0}, {}, {}])
+
+DEATH = _cape([{}, {"x": -2.0, "pain": 1.0, "flash": 1.0}, {"x": -3.0, "pain": 1.0, "rot": 8.0}, {"x": -4.0, "pain": 1.0, "rot": 20.0},
+               {"x": -4.0, "pain": 1.0, "rot": 36.0}, {"x": -4.0, "pain": 1.0, "rot": 56.0}, {"x": -4.0, "pain": 1.0, "rot": 76.0},
+               {"x": -4.0, "pain": 1.0, "rot": 90.0}, {"x": -4.0, "pain": 1.0, "rot": 86.0}, {"x": -4.0, "pain": 1.0, "rot": 90.0}]
+              + [{"x": -4.0, "pain": 1.0, "rot": 90.0, "swing": 0.0}] * 5)
+
+SHOT_MS = [90, 70, 70, 70, 80, 80, 90, 110, 140, 160, 50, 60, 80, 90, 120]
 ANIMS = {
-    "idle": Anim("idle", idle_pose, [i / 16 for i in range(16)], [125] * 16, True),
-    "attack": Anim("attack", shot_pose, [i / (N_SHOT - 1) for i in range(N_SHOT)], SHOT_MS, False),
+    "idle": frames("idle", IDLE, [170] * 12, True),
+    "run": frames("run", RUN, [59] * 12, True),
+    "attack": frames("attack", shot(), SHOT_MS, False),
+    "volley": frames("volley", shot(aim=38.0), SHOT_MS, False),
+    "quick": frames("quick", quick(), [60, 50, 50, 50, 60, 45, 50, 50, 50, 60, 45, 60, 70, 80, 100], False),
+    "attack2": frames("attack2", shot(kneel=True), [80, 60, 70, 60, 70, 70, 80, 100, 120, 150, 50, 60, 90, 90, 110], False),
+    "attack3": frames("attack3", skip(), [80, 60, 70, 60, 60, 70, 80, 90, 120, 150, 50, 60, 90, 90, 110], False),
+    "aimed": frames("aimed", shot(aim=2.0, full=1.15, extra={"crouch": 1.0}), [80, 70, 80, 70, 80, 90, 100, 120, 150, 180, 50, 70, 90, 90, 120], False),
+    "lob": frames("lob", lob(), [60, 50, 60, 70, 90, 110, 40, 60, 100, 100, 110], False),
+    "sow": frames("sow", sow(), [60, 50, 60, 70, 90, 110, 40, 60, 100, 100, 110], False),
+    "point": frames("point", point(), [70, 60, 80, 110, 40, 90, 100, 100, 110, 90, 100], False),
+    "haste": frames("haste", haste(), [70, 70, 90, 120, 40, 80, 100, 50, 70, 90, 100], False),
+    "hurt": frames("hurt", HURT, [50, 40, 100, 60, 90, 60, 80, 60, 70], False),
+    "death": frames("death", DEATH, [50, 40, 70, 70, 80, 80, 90, 70, 60, 70, 90, 120, 160, 1200, 300], False),
 }

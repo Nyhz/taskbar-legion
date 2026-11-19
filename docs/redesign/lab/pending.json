@@ -1,14 +1,15 @@
 {
   "updated": "19 nov 2026",
-  "intro": "Nuevo: el Ranger más oscuro y amenazante. Sigue pendiente el catálogo de sonido.",
+  "intro": "Nuevo: el Ranger oscuro con sus catorce animaciones. Sigue pendiente el catálogo de sonido.",
   "sections": [
     {
       "id": "heroes-ranger",
       "eyebrow": "Héroes reimaginados · 1/3",
       "title": "Ranger reimaginado (según tus referencias)",
-      "text": "Tu Ranger, con la misma estructura pero más oscuro y amenazante: la cara en la sombra de la capucha, ojos estrechos con brillo ámbar bajo cejas en V, máscara carmesí sobre boca y nariz, verdes de bosque profundo, mangas oscuras y guantes de cuero, remaches en la correa y las botas, daga y bolsa en el cinturón, hebilla de latón viejo, plumas carmesí en el carcaj, arco de madera oscura con empuñadura carmesí y la capa con el borde roto. De momento quieto y disparando.",
+      "text": "El Ranger oscuro con sus catorce animaciones del juego: quieto, correr, disparo, disparo de rodilla, disparo saltando atrás, disparo rápido doble, lluvia de flechas (al cielo), disparo apuntado, frasco de brea, abrojos, marca del cazador, tiro veloz (saca un puñado de flechas del carcaj), golpe y caída. El tensado ahora es a tope: la mano llega a la mejilla 17 px por detrás del arco, las palas se doblan en una D profunda, el cuerpo se echa atrás, y al soltar la cuerda chasquea y la mano sale despedida. Lo que sube por encima de los hombros (el arco al cielo, el brazo que lanza o coge flechas) pasa por detrás de la cabeza para no taparle la cara.",
       "questions": [
-        "¿Así de amenazante, o más/menos? ¿Algo más que cambiar?"
+        "¿Alguna animación que no te convenza? Dime cuál y qué cambiar.",
+        "Si te vale: lo meto en el juego y paso al Knight con este nivel."
       ],
       "html": "hero_concepts.html"
     },
