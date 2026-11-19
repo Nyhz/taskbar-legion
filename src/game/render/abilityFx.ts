@@ -189,8 +189,8 @@ export const ABILITY_LOOKS: Readonly<Record<string, AbilityLook>> = {
   // arrows, close together, a rain wider than the wave (2026-11-19, user: «más aparente… 3 oleadas claras»).
   ranger_multishot: {
     cast: [{ fx: 'volley_launch', spot: 'caster-over', atBlow: true }],
-    band: [{ fx: 'arrow_fall', layer: 'air', every: 6, spreadMs: 110, atBlow: true, delayMs: 40, reach: 18 }],
-    hit: 'arrow_hit', hitDelayMs: 190,
+    band: [{ fx: 'arrow_fall', layer: 'air', every: 8, spreadMs: 100, atBlow: true, delayMs: 40, reach: 18 }],
+    hit: 'arrow_hit', hitDelayMs: 240,
   },
   // Explosive Arrow: one burning arrow to the front of the wave, and the blast where it lands.
   ranger_focus: { shot: { fx: 'arrow_fire', land: 'fire_blast' }, shotTo: 'front' },

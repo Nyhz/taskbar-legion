@@ -654,7 +654,7 @@ FX = [
     Fx("aim_gather", 40, 40, 20, 20, [70, 70, 70, 70, 70, 80], False, aim_gather),
     Fx("aim_impact", 56, 36, 26, 18, [35, 45, 55, 65, 80], False, aim_impact),
     Fx("volley_launch", 64, 66, 14, 62, [35, 45, 55, 65, 75, 85], False, volley_launch),
-    Fx("arrow_fall", 44, 116, 26, 112, [35, 35, 35, 35, 60, 70, 70, 200, 80, 80], False, arrow_fall),
+    Fx("arrow_fall", 44, 116, 26, 112, [50, 50, 50, 50, 50, 60, 60, 60, 50, 50], False, arrow_fall),
     Fx("arrow_hit", 22, 24, 11, 13, [40, 50, 120, 70], False, arrow_hit),
     Fx("fire_blast", 80, 62, 40, 58, [35, 45, 55, 65, 75, 85, 95], False, fire_blast),
     Fx("burning", 22, 32, 11, 30, [90] * 6, True, burning),

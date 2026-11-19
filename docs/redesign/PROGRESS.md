@@ -2362,3 +2362,6 @@ Decisiones del usuario (18 nov), tras discutirlas una a una:
 - **Grito de guerra (usuario):** «parece que se están quemando». Fuera `battlecry_flames`; ahora `battlecry_aura`: un
   sigilo de latón a los pies que respira y chevrones dorados subiendo a ambos lados. Capturado en el juego (ráfaga de
   `shot-app.mjs`, opción nueva `--burst N --every ms`).
+- **Lluvia de flechas, ajuste tras verla animada:** con las flechas 0,5 s clavadas las tres oleadas se fundían en una
+  alfombra. Caída más lenta (4 × 50 ms), clavada ~0,3 s, una cada 8 px: cada oleada cae, se clava y se va antes de la
+  siguiente. Animaciones antes/ahora en el lab (`run.sh ability-preview <rev de antes>` → GIFs reales del juego).

@@ -27,6 +27,11 @@ def main(argv: list[str]) -> int:
 
         app_icon()
         return 0
+    if cmd == "ability-preview":
+        from .ability_preview import main as ability_preview
+
+        ability_preview(argv[1:])
+        return 0
     if cmd == "reel":
         from .title_reel import main as reel
 
@@ -77,7 +82,7 @@ def main(argv: list[str]) -> int:
 
         audio_lab()
         return 0
-    print("commands: chars [names…], scene, lab, icons, export-ui, export-strip, export-figs, export-fx, export-pets, readme, app-icon, reel, audio [--sample] [--dry] [ids…]")
+    print("commands: chars [names…], scene, lab, icons, export-ui, export-strip, export-figs, export-fx, export-pets, readme, app-icon, reel, ability-preview [rev], audio [--sample] [--dry] [ids…]")
     return 1
 
 
