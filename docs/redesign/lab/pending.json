@@ -1,15 +1,15 @@
 {
   "updated": "19 nov 2026",
-  "intro": "Nuevo: tres conceptos del Ranger reimaginado (animados). Sigue pendiente el catálogo de sonido.",
+  "intro": "Nuevo: el Ranger reimaginado en estilo chibi, animado. Sigue pendiente el catálogo de sonido.",
   "sections": [
     {
       "id": "heroes-ranger",
       "eyebrow": "Héroes reimaginados · 1/3",
-      "title": "Ranger: tres conceptos",
-      "text": "Primera ronda para elegir dirección (decidiste reimaginar los héroes y seguir luego con iconos → anillos → marcas). Cada concepto usa el esqueleto y las 14 animaciones del Ranger, así que se ve moviéndose: quieto, disparo y la Lluvia de flechas. Cuando elijas, pulo el elegido (cara, materiales, brillos) hasta el nivel de los enemigos y paso al Knight y a la Priest con la misma línea.",
+      "title": "Ranger reimaginado (estilo chibi, 48 px)",
+      "text": "Rehecho desde cero según tus referencias: estilo chibi, cabeza grande con cara expresiva (ojos grandes con brillo, flequillo, mejillas, boca), capucha verde, túnica con correa cruzada y cinturón de hebilla dorada, brazales, botas, capa corta, carcaj con flechas asomando por encima de la capucha y arco grande. Esqueleto, proporciones y animaciones nuevas, sombreado de cinco tonos. Mide 48 px (el actual 36). De momento quieto y disparando; cuando lo apruebes hago el resto de sus animaciones (correr, sus habilidades, golpe, caída) y paso al Knight y a la Priest con este nivel.",
       "questions": [
-        "¿A (montaraz), B (cazadora de la estepa) o C (guardabosques de la Legión)? Puedes mezclar: «el cuerpo de C con la capucha de A».",
-        "¿El tamaño está bien o los quieres aún más altos, como el templario?"
+        "¿Es esta la dirección? ¿Qué cambiarías de la cara, la ropa o el arco?",
+        "¿Tamaño bien así (48 px)?"
       ],
       "html": "hero_concepts.html"
     },
