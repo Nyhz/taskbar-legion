@@ -15,6 +15,14 @@ While the project is pre-1.0, minor versions may include breaking save changes.
 
 ### Fixed
 
+## [0.5.9] - 2026-11-19
+
+### Fixed
+
+- **"Not saving" no longer flashes when the game opens**: two saves fired at the same moment (the game starting and
+  the stage it loads into) clashed over the new crash-safe save file, and the second one failed until the next
+  autosave. Saves now queue one behind the other. No progress was lost: the first save always went through.
+
 ## [0.5.8] - 2026-11-19
 
 ### Added
@@ -274,7 +282,8 @@ While the project is pre-1.0, minor versions may include breaking save changes.
 - Initial desktop builds: Tauri v2 transparent, always-on-top, bottom-docked overlay.
 - Multi-platform release pipeline (macOS universal, Windows, Linux) via GitHub Actions.
 
-[Unreleased]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.8...HEAD
+[Unreleased]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.9...HEAD
+[0.5.9]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.8...v0.5.9
 [0.5.8]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.7...v0.5.8
 [0.5.7]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.6...v0.5.7
 [0.5.6]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.5...v0.5.6
