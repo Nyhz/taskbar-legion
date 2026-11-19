@@ -13,6 +13,9 @@ While the project is pre-1.0, minor versions may include breaking save changes.
 
 ### Changed
 
+- **Common chests drop a little more often**: on 0.7 % of kills instead of 0.5 % — about one every two minutes of play
+  instead of three. Boss chests are unchanged.
+
 - **Raining Arrows comes down in three waves**: three clear volleys of big war arrows, each a third of the old single
   volley (the same damage in all), falling over a wider stretch than the enemy wave. A later volley also hits enemies
   that came up after the cast.

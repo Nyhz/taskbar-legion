@@ -28,8 +28,8 @@ they win. The standing overrides are:
   (retuned 2026-11-15: `scripts/tune-pacing.ts`, targets in `test/sim/probe/targets.ts`). **Enemy toughness is
   ANCHORED** (DIFFICULTY.md §6b): a normal enemy takes 2–3 hits of the on-gear party's hardest hitter, a stage
   boss 5–10 s — measured tables (`GRUNT_HP_TUNE`, `STAGE_BOSS_HP_TUNE`, `TRASH_DMG_TUNE`), re-tuned whenever
-  hero power changes. Drops follow the **per-world rarity ladder** (§4); common chests **0.5%**/kill (about one
-  every three minutes; round 18); gem is EXTRA; a world-boss **key** is in one stage-boss chest in four (every one
+  hero power changes. Drops follow the **per-world rarity ladder** (§4); common chests **0.7%**/kill (about one
+  every two minutes; 2026-11-19, was 0.5 %); gem is EXTRA; a world-boss **key** is in one stage-boss chest in four (every one
   in Normal) and every attempt costs one. **Waves per stage grow with the difficulty** (`WAVES_BY_DIFFICULTY`:
   12 in Normal (2026-11-18, was 16), 17 in Hell → 20 in Torment; full-size waves in every difficulty since 2026-11-17, `WAVE_SIZE_BY_STAGE` 9 → 22): Normal is a 3–4 hour stroll, each difficulty after it clearly longer and
   more demanding of gear (measured 2026-11-19, round 21 — the 2 s global cooldown, longer cooldowns, the Crushing Blow every 15 s, the waves anchored to the Knight's life, 12 waves a stage in Normal, the shooters shot before the support: ≈ 7 / 46 / 151 / 259 / 706 h by median, ≈ 1 169 h in all). Validated by `npm run probe`. **The wall ladder** is measured against a FIXED reference party and every wall must ask strictly more than the one before (`docs/DIFFICULTY.md` §5, `test/sim/ladder.test.ts`, `scripts/reference-ladder.ts`).

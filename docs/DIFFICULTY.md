@@ -95,7 +95,7 @@ between the row's lowest tier with weight and its second-highest — in proporti
 the two top rarities** of that table — **×1.5** for a stage boss, **×3** for a world boss — and scales the rest
 down so it still sums to 100 (`chestTierWeightsAt`; user, 2026-11-16). Gem chance differs too (common 10 %,
 stage-boss 50 %, world-boss 100 %). Cadence (user decisions,
-2026-11-15): a **common chest** drops on **0.5 %** of kills (round 18, 2026-11-18; it was 0.2 %, and 1.5 % before that) — about one every three minutes
+2026-11-15): a **common chest** drops on **0.7 %** of kills (2026-11-19; 0.5 % from round 18, 0.2 % and 1.5 % before that) — about one every two minutes
 of play; a stage boss drops its chest **25 %** of the time,
 a world boss always. Gems roll on the same table (boss lift included), as an **extra** roll on top of the item.
 

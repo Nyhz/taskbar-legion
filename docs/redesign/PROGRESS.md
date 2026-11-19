@@ -2368,3 +2368,7 @@ Decisiones del usuario (18 nov), tras discutirlas una a una:
 - **Lluvia de flechas, segunda vuelta (usuario):** «demasiadas flechas y muy alineadas… ráfagas menos uniformes». Una
   cada 14 px, en sitios al azar (`BandLook.loose`), a tres ángulos (`arrow_fall` 70°, `_steep` 79°, `_low` 62°:
   `variants`) y ±4 px de profundidad (`depth`), repartidas en 260 ms por oleada. Grito de guerra aprobado («fantástico»).
+- **Héroes reimaginados: descartado (usuario, 19 nov).** Tres intentos (reropa del rig, chibi con trazos, chibi píxel a
+  píxel con 14 animaciones) — «descártalo, muy mal». Borrados del lab y del pipeline; los héroes siguen como están.
+- **Cofres comunes 0,5 % → 0,7 % por muerte (usuario: «aumentar ligeramente»).** Uno cada ~2 min de juego en vez de ~3;
+  los de jefe (25 % / 100 %) sin tocar, que llevan las llaves. Sin pasar el probe (cambio de ajuste).
