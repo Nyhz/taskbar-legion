@@ -1,7 +1,18 @@
 {
   "updated": "19 nov 2026",
-  "intro": "Queda pendiente el catálogo de sonido. (Lluvia de flechas y Grito de guerra, aprobados y en el juego.)",
+  "intro": "Nuevo: repaso de assets con propuestas, empezando por los tres héroes. Sigue pendiente el catálogo de sonido.",
   "sections": [
+    {
+      "id": "repaso-assets",
+      "eyebrow": "Repaso de assets",
+      "title": "Qué se ha quedado flojo",
+      "text": "Repaso de figuras, efectos e iconos frente a lo último que hemos hecho, ordenado por prioridad. Cada punto con su comparación.",
+      "questions": [
+        "Héroes: ¿A (pulir los actuales) o B (reimaginarlos con conceptos nuevos)?",
+        "¿Seguimos el orden propuesto (héroes → iconos de habilidades → anillos → marcas) o cambiarías algo?"
+      ],
+      "html": "audit_r1.html"
+    },
     {
       "id": "sonido-muestra",
       "eyebrow": "R7 · Sonido",
