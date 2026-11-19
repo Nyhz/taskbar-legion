@@ -2372,3 +2372,9 @@ Decisiones del usuario (18 nov), tras discutirlas una a una:
   píxel con 14 animaciones) — «descártalo, muy mal». Borrados del lab y del pipeline; los héroes siguen como están.
 - **Cofres comunes 0,5 % → 0,7 % por muerte (usuario: «aumentar ligeramente»).** Uno cada ~2 min de juego en vez de ~3;
   los de jefe (25 % / 100 %) sin tocar, que llevan las llaves. Sin pasar el probe (cambio de ajuste).
+- **Auras del apoyo comprobadas (usuario, 19 nov):** `scripts/check-auras.ts` juega oleadas reales en una etapa de cada
+  dificultad (10 min cada una, grupo que no muere) y mira cada tick a cada enemigo vivo de la oleada: ~286 000
+  comprobaciones, todas bien — con apoyo vivo llevan exactamente sus auras con el valor de su dificultad (también los que
+  entran en el 2.º y 3.º grupo), al morir el apoyo ninguna se queda, y la Égida da su escudo a todos. Cada aura actúa:
+  Furia +20/25 % de velocidad, Saña ×1,15/1,20, Aguante 80/75 de cada 100, Égida 15–25 % de vida, Vigor 2–3 %/s, Armas
+  encantadas 40 % mágico. Sin cambios en el código.
