@@ -1,15 +1,14 @@
 {
   "updated": "19 nov 2026",
-  "intro": "Nuevo: la Lluvia de flechas en tres oleadas y el Grito de guerra sin fuego, animados y con su versión de antes al lado. Sigue pendiente el catálogo de sonido.",
+  "intro": "Lluvia de flechas: menos flechas y más sueltas. El Grito de guerra, aprobado. Sigue pendiente el catálogo de sonido.",
   "sections": [
     {
       "id": "habilidades-r1",
       "eyebrow": "Habilidades",
       "title": "Lluvia de flechas y Grito de guerra",
-      "text": "Animaciones con los sprites y efectos reales del juego (en el juego ya están así). Cada una con su versión de antes debajo.",
+      "text": "Animaciones con los sprites y efectos reales del juego (en el juego ya están así). El Grito de guerra ya está aprobado; queda la lluvia.",
       "questions": [
-        "Lluvia de flechas: ¿se ven claras las tres oleadas? ¿Tamaño y cantidad de flechas bien?",
-        "Grito de guerra: ¿se lee como un refuerzo?"
+        "Lluvia de flechas: ¿así, más sueltas y menos uniformes?"
       ],
       "html": "abilities_r1.html"
     },

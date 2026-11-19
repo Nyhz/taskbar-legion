@@ -87,6 +87,12 @@ export interface BandLook {
   count?: number;
   /** The band reaches this many pixels past each end of the wave (a rain wider than what it falls on). */
   reach?: number;
+  /** Placed anywhere along the band at random, not one per `every` pixels in a row (a rain, not a fence). */
+  loose?: boolean;
+  /** Each one drawn from these instead of `fx` alone, at random (the rain's arrows at three angles). */
+  variants?: readonly string[];
+  /** Each one set this many pixels nearer or further at random (above or below the ground line). */
+  depth?: number;
 }
 
 export interface AbilityLook {
@@ -189,8 +195,10 @@ export const ABILITY_LOOKS: Readonly<Record<string, AbilityLook>> = {
   // arrows, close together, a rain wider than the wave (2026-11-19, user: «más aparente… 3 oleadas claras»).
   ranger_multishot: {
     cast: [{ fx: 'volley_launch', spot: 'caster-over', atBlow: true }],
-    band: [{ fx: 'arrow_fall', layer: 'air', every: 8, spreadMs: 100, atBlow: true, delayMs: 40, reach: 18 }],
-    hit: 'arrow_hit', hitDelayMs: 240,
+    // A loose rain (user: «demasiadas flechas y muy alineadas… ráfagas menos uniformes»): one arrow every 14 px,
+    // anywhere along the band, at one of three angles and depths, coming down over a quarter of a second.
+    band: [{ fx: 'arrow_fall', variants: ['arrow_fall', 'arrow_fall_steep', 'arrow_fall_low'], layer: 'air', every: 14, spreadMs: 260, atBlow: true, delayMs: 20, reach: 18, loose: true, depth: 4 }],
+    hit: 'arrow_hit', hitDelayMs: 300,
   },
   // Explosive Arrow: one burning arrow to the front of the wave, and the blast where it lands.
   ranger_focus: { shot: { fx: 'arrow_fire', land: 'fire_blast' }, shotTo: 'front' },

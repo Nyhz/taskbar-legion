@@ -2365,3 +2365,6 @@ Decisiones del usuario (18 nov), tras discutirlas una a una:
 - **Lluvia de flechas, ajuste tras verla animada:** con las flechas 0,5 s clavadas las tres oleadas se fundían en una
   alfombra. Caída más lenta (4 × 50 ms), clavada ~0,3 s, una cada 8 px: cada oleada cae, se clava y se va antes de la
   siguiente. Animaciones antes/ahora en el lab (`run.sh ability-preview <rev de antes>` → GIFs reales del juego).
+- **Lluvia de flechas, segunda vuelta (usuario):** «demasiadas flechas y muy alineadas… ráfagas menos uniformes». Una
+  cada 14 px, en sitios al azar (`BandLook.loose`), a tres ángulos (`arrow_fall` 70°, `_steep` 79°, `_low` 62°:
+  `variants`) y ±4 px de profundidad (`depth`), repartidas en 260 ms por oleada. Grito de guerra aprobado («fantástico»).

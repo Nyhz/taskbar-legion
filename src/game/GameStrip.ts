@@ -842,10 +842,15 @@ export class GameStrip {
     const n = scatter.count ?? bandCount(halfW * 2, scatter.every);
     const step = (halfW * 2) / n;
     for (let i = 0; i < n; i++) {
-      const x = band.cx - halfW + step * (i + 0.5) + (scatter.count === undefined ? (Math.random() - 0.5) * step * 0.6 : 0);
+      const x =
+        scatter.loose === true
+          ? band.cx - halfW + Math.random() * halfW * 2
+          : band.cx - halfW + step * (i + 0.5) + (scatter.count === undefined ? (Math.random() - 0.5) * step * 0.6 : 0);
+      const y = groundY + (scatter.depth !== undefined ? Math.round((Math.random() * 2 - 1) * scatter.depth) : 0);
+      const fx = scatter.variants !== undefined && scatter.variants.length > 0 ? (scatter.variants[Math.floor(Math.random() * scatter.variants.length)] ?? scatter.fx) : scatter.fx;
       // In order from the near end (a sweep) or at random over `spreadMs`.
       const at = wait + (scatter.delayMs ?? 0) + (scatter.sweepMs !== undefined ? (scatter.sweepMs * i) / Math.max(1, n - 1) : Math.random() * (scatter.spreadMs ?? 0));
-      this.delayed.add(at, () => layer.play(scatter.fx, x, groundY));
+      this.delayed.add(at, () => layer.play(fx, x, y));
     }
   }
 

@@ -112,20 +112,25 @@ PARTY = (("priest", 150), ("ranger", 200), ("knight", 252))
 FOES = (("boar", 300), ("scarecrow", 334), ("poacher", 366), ("boar", 398), ("scarecrow", 430))
 
 
-def rain_scene(atlas: Atlas, waves: int, every: int, spacing: int, reach: int, spread: int, delay: int, hit_after: int) -> list[Image.Image]:
+def rain_scene(atlas: Atlas, waves: int, every: int, spacing: int, reach: int, spread: int, delay: int, hit_after: int,
+               loose: bool = False, variants: tuple[str, ...] = (), depth: int = 0) -> list[Image.Image]:
     """Raining Arrows: the Ranger looses the volley, then `waves` waves of arrows come down over the enemy wave."""
     back, fore = backdrop(1)
     release = 640  # the volley clip's release (about where the game puts it)
     left, right = FOES[0][1] - 10 - reach, FOES[-1][1] + 10 + reach
     rnd = random.Random(4)
-    drops: list[tuple[int, float]] = []
+    drops: list[tuple[int, float, str, int]] = []
     hits: list[int] = []
     for w in range(waves):
         start = release + w * every + delay
         n = max(3, round((right - left) / spacing))
         for k in range(n):
-            x = left + (right - left) * (k + 0.5) / n + (rnd.random() - 0.5) * (right - left) / n * 0.6
-            drops.append((start + int(rnd.random() * spread), x))
+            if loose:
+                x = left + rnd.random() * (right - left)
+            else:
+                x = left + (right - left) * (k + 0.5) / n + (rnd.random() - 0.5) * (right - left) / n * 0.6
+            fx = variants[rnd.randrange(len(variants))] if variants else "arrow_fall"
+            drops.append((start + int(rnd.random() * spread), x, fx, round((rnd.random() * 2 - 1) * depth)))
         hits.append(release + w * every + hit_after)
     end = release + (waves - 1) * every + 1300
     frames = []
@@ -140,8 +145,8 @@ def rain_scene(atlas: Atlas, waves: int, every: int, spacing: int, reach: int, s
             flash = any(0 <= t - h < 90 for h in hits)
             draw_fig(img, name, x, "idle", t + x * 5, flip=True, loop=True, flash=flash)
         draw_fx(img, atlas, "volley_launch", t - release, 200, PATH_Y)
-        for start, x in drops:
-            draw_fx(img, atlas, "arrow_fall", t - start, x, PATH_Y)
+        for start, x, fx, dy in drops:
+            draw_fx(img, atlas, fx, t - start, x, PATH_Y + dy)
         for h in hits:
             for _name, x in FOES:
                 draw_fx(img, atlas, "arrow_hit", t - h, x, PATH_Y - 16)
@@ -187,7 +192,8 @@ def main(argv: list[str]) -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     now, before = Atlas(), Atlas(before_rev)
     save_gif(rain_scene(before, waves=1, every=0, spacing=9, reach=0, spread=260, delay=60, hit_after=180), OUT / "rain_before.gif")
-    save_gif(rain_scene(now, waves=3, every=450, spacing=8, reach=18, spread=100, delay=40, hit_after=240), OUT / "rain_now.gif")
+    save_gif(rain_scene(now, waves=3, every=450, spacing=14, reach=18, spread=260, delay=20, hit_after=300, loose=True,
+                         variants=("arrow_fall", "arrow_fall_steep", "arrow_fall_low"), depth=4), OUT / "rain_now.gif")
     save_gif(cry_scene(before, "battlecry_flames"), OUT / "cry_before.gif")
     save_gif(cry_scene(now, "battlecry_aura"), OUT / "cry_now.gif")
     for p in sorted(OUT.glob("*.gif")):

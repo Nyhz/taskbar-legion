@@ -281,11 +281,11 @@ def _war_arrow(cel: Cel, hx: float, hy: float, ang: float, ln: int = 22) -> None
             cel.put(hx - dx * s + nx * k, hy - dy * s + ny * k, ("crimson", 6 if side < 0 else 4))
 
 
-def arrow_fall(cel: Cel, i: int, t: float) -> None:
-    """One arrow of the rain: a big war arrow streaking down from high up, biting into the ground with a burst of
-    dirt, quivering, then gone. Three waves of them come down over the wave (render/abilityFx ranger_multishot)."""
-    gx, gy = 26, 112  # where it lands
-    ang = 70.0
+def _arrow_fall(cel: Cel, i: int, ang: float, gx: int = 26) -> None:
+    """One arrow of the rain: a big war arrow streaking down from high up at `ang` degrees, biting into the ground
+    with a burst of dirt, quivering, then gone. Three waves of them come down over the wave (render/abilityFx
+    ranger_multishot), each arrow one of three angles so the rain does not stand in rows."""
+    gy = 112  # where it lands (at x = gx, the cell's anchor)
     a = math.radians(ang)
     dx, dy = math.cos(a), math.sin(a)
     if i < 4:
@@ -311,6 +311,18 @@ def arrow_fall(cel: Cel, i: int, t: float) -> None:
             cel.put(gx - 10 + k * 5, gy - 3 - (k % 2) * 3, ("leather", 3))
     if i >= 8:
         thin(cel, (0.6, 0.3)[min(i - 8, 1)], 12)
+
+
+def arrow_fall(cel: Cel, i: int, t: float) -> None:
+    _arrow_fall(cel, i, 70.0)
+
+
+def arrow_fall_steep(cel: Cel, i: int, t: float) -> None:
+    _arrow_fall(cel, i, 79.0)
+
+
+def arrow_fall_low(cel: Cel, i: int, t: float) -> None:
+    _arrow_fall(cel, i, 62.0, gx=40)
 
 
 def arrow_hit(cel: Cel, i: int, t: float) -> None:
@@ -655,6 +667,8 @@ FX = [
     Fx("aim_impact", 56, 36, 26, 18, [35, 45, 55, 65, 80], False, aim_impact),
     Fx("volley_launch", 64, 66, 14, 62, [35, 45, 55, 65, 75, 85], False, volley_launch),
     Fx("arrow_fall", 44, 116, 26, 112, [50, 50, 50, 50, 50, 60, 60, 60, 50, 50], False, arrow_fall),
+    Fx("arrow_fall_steep", 44, 116, 26, 112, [50, 50, 50, 50, 50, 60, 60, 60, 50, 50], False, arrow_fall_steep),
+    Fx("arrow_fall_low", 58, 116, 40, 112, [50, 50, 50, 50, 50, 60, 60, 60, 50, 50], False, arrow_fall_low),
     Fx("arrow_hit", 22, 24, 11, 13, [40, 50, 120, 70], False, arrow_hit),
     Fx("fire_blast", 80, 62, 40, 58, [35, 45, 55, 65, 75, 85, 95], False, fire_blast),
     Fx("burning", 22, 32, 11, 30, [90] * 6, True, burning),
