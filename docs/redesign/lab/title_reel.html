@@ -1,0 +1,270 @@
+<div class="item-group">
+  <div class="toolbar">
+    <div class="seg" role="group" aria-label="Transición entre mundos">
+      <button type="button" data-mode="A" aria-pressed="true">A · Combate continuo</button>
+      <button type="button" data-mode="B" aria-pressed="false">B · Teletransporte</button>
+    </div>
+    <div class="seg" role="group" aria-label="Tamaño">
+      <button type="button" data-zoom="2" aria-pressed="true">×2</button>
+      <button type="button" data-zoom="3" aria-pressed="false">×3</button>
+    </div>
+    <span class="world-name" id="reel-world">Mundo 1</span>
+  </div>
+  <div class="viewport" id="reel-view" style="background:#0b0d17;padding:24px 0">
+    <canvas id="reel" width="600" height="160" class="px" style="width:1200px;height:320px;margin:0 auto"></canvas>
+  </div>
+  <p class="muted">A: el grupo no para de luchar; el jefe se va en la columna de luz, el fondo cambia y el siguiente jefe llega en otra. B: el grupo entero se teletransporta (la columna de cuando vuelven tras una derrota) y aparece en el siguiente mundo, ya frente a su jefe. Tres segundos por mundo, del 1 al 10, y vuelta a empezar.</p>
+</div>
+<script>
+(() => {
+  const META = {"figs":{"knight":{"w":96,"h":70,"root":40,"ground":64,"anims":{"idle":{"row":0,"n":12,"ms":[170,170,170,170,170,170,170,170,170,170,170,170]},"attack":{"row":1,"n":11,"ms":[80,70,80,130,35,50,90,110,100,90,130]},"attack2":{"row":2,"n":10,"ms":[80,70,80,130,35,50,90,110,110,120]},"attack3":{"row":3,"n":10,"ms":[80,70,80,130,35,50,90,110,110,120]},"cleave":{"row":4,"n":11,"ms":[80,70,80,120,35,50,80,110,100,90,120]},"block":{"row":5,"n":9,"ms":[50,50,90,60,50,80,90,90,100]}},"left":31},"ranger":{"w":96,"h":70,"root":40,"ground":64,"anims":{"idle":{"row":0,"n":12,"ms":[170,170,170,170,170,170,170,170,170,170,170,170]},"attack":{"row":1,"n":15,"ms":[90,70,70,70,80,80,90,110,140,160,50,60,80,90,120]},"quick":{"row":2,"n":15,"ms":[60,50,50,50,60,45,50,50,50,60,45,60,70,80,100]},"volley":{"row":3,"n":15,"ms":[90,70,70,70,80,80,90,110,140,160,50,60,80,90,120]},"aimed":{"row":4,"n":15,"ms":[80,70,80,70,80,90,100,120,150,180,50,70,90,90,120]}},"left":31},"priest":{"w":96,"h":70,"root":40,"ground":64,"anims":{"idle":{"row":0,"n":12,"ms":[180,180,180,180,180,180,180,180,180,180,180,180]},"attack":{"row":1,"n":12,"ms":[80,70,90,110,40,50,80,90,70,80,90,110]},"cast":{"row":2,"n":14,"ms":[100,90,110,80,80,90,110,130,70,90,90,100,100,140]},"attack2":{"row":3,"n":13,"ms":[80,70,80,90,120,40,50,80,90,80,80,90,110]},"mend":{"row":4,"n":14,"ms":[90,90,100,110,140,50,70,120,130,110,90,90,100,120]}},"left":32},"crowmother":{"w":248,"h":129,"root":143,"ground":123,"anims":{"idle":{"row":0,"n":16,"ms":[150,150,150,150,150,150,150,150,150,150,150,150,150,150,150,150]},"attack":{"row":1,"n":18,"ms":[60,60,70,60,60,70,70,80,130,40,50,60,60,80,80,70,70,70]},"hurt":{"row":2,"n":9,"ms":[50,40,100,60,90,60,80,60,70]}},"left":101},"mistletoe":{"w":248,"h":129,"root":143,"ground":123,"anims":{"idle":{"row":0,"n":16,"ms":[150,150,150,150,150,150,150,150,150,150,150,150,150,150,150,150]},"attack":{"row":1,"n":18,"ms":[60,60,70,60,60,70,70,80,130,40,50,60,60,80,80,70,70,70]},"hurt":{"row":2,"n":9,"ms":[50,40,100,60,90,60,80,60,70]}},"left":105},"drownedmoon":{"w":248,"h":129,"root":143,"ground":123,"anims":{"idle":{"row":0,"n":16,"ms":[150,150,150,150,150,150,150,150,150,150,150,150,150,150,150,150]},"attack":{"row":1,"n":18,"ms":[60,60,70,60,60,70,70,80,130,40,50,60,60,80,80,70,70,70]},"hurt":{"row":2,"n":9,"ms":[50,40,100,60,90,60,80,60,70]}},"left":73},"scapegoat":{"w":248,"h":129,"root":143,"ground":123,"anims":{"idle":{"row":0,"n":16,"ms":[150,150,150,150,150,150,150,150,150,150,150,150,150,150,150,150]},"attack":{"row":1,"n":18,"ms":[60,60,70,60,60,70,70,80,130,40,50,60,60,80,80,70,70,70]},"hurt":{"row":2,"n":9,"ms":[50,40,100,60,90,60,80,60,70]}},"left":95},"abbot":{"w":248,"h":129,"root":143,"ground":123,"anims":{"idle":{"row":0,"n":16,"ms":[150,150,150,150,150,150,150,150,150,150,150,150,150,150,150,150]},"attack":{"row":1,"n":18,"ms":[60,60,70,60,60,70,70,80,130,40,50,60,60,80,80,70,70,70]},"hurt":{"row":2,"n":9,"ms":[50,40,100,60,90,60,80,60,70]}},"left":102},"ninthwave":{"w":248,"h":129,"root":143,"ground":123,"anims":{"idle":{"row":0,"n":16,"ms":[150,150,150,150,150,150,150,150,150,150,150,150,150,150,150,150]},"attack":{"row":1,"n":18,"ms":[60,60,70,60,60,70,70,80,130,40,50,60,60,80,80,70,70,70]},"hurt":{"row":2,"n":9,"ms":[50,40,100,60,90,60,80,60,70]}},"left":107},"amanita":{"w":248,"h":129,"root":143,"ground":123,"anims":{"idle":{"row":0,"n":16,"ms":[150,150,150,150,150,150,150,150,150,150,150,150,150,150,150,150]},"attack":{"row":1,"n":18,"ms":[60,60,70,60,60,70,70,80,130,40,50,60,60,80,80,70,70,70]},"hurt":{"row":2,"n":9,"ms":[50,40,100,60,90,60,80,60,70]}},"left":108},"quench":{"w":248,"h":129,"root":143,"ground":123,"anims":{"idle":{"row":0,"n":16,"ms":[150,150,150,150,150,150,150,150,150,150,150,150,150,150,150,150]},"attack":{"row":1,"n":18,"ms":[60,60,70,60,60,70,70,80,130,40,50,60,60,80,80,70,70,70]},"hurt":{"row":2,"n":9,"ms":[50,40,100,60,90,60,80,60,70]}},"left":109},"verdict":{"w":248,"h":129,"root":143,"ground":123,"anims":{"idle":{"row":0,"n":16,"ms":[150,150,150,150,150,150,150,150,150,150,150,150,150,150,150,150]},"attack":{"row":1,"n":18,"ms":[60,60,70,60,60,70,70,80,130,40,50,60,60,80,80,70,70,70]},"hurt":{"row":2,"n":9,"ms":[50,40,100,60,90,60,80,60,70]}},"left":125},"unmaker":{"w":200,"h":129,"root":135,"ground":123,"anims":{"idle":{"row":0,"n":16,"ms":[150,150,150,150,150,150,150,150,150,150,150,150,150,150,150,150]},"attack":{"row":1,"n":21,"ms":[100,100,130,40,60,110,110,110,150,80,110,50,60,70,70,80,90,100,100,110,140]},"hurt":{"row":2,"n":9,"ms":[50,40,100,60,90,60,80,60,70]}},"left":107}},"fx":{"arrive_a_back":{"w":44,"h":140,"ax":22,"ay":132,"n":11,"ms":[40,40,60,70,80,80,90,90,100,100,110]},"arrive_a_front":{"w":64,"h":44,"ax":32,"ay":36,"n":11,"ms":[40,40,60,70,80,80,90,90,100,100,110]},"arrow":{"w":21,"h":7,"ax":11,"ay":3,"n":1,"ms":[100]},"arrow_heavy":{"w":64,"h":11,"ax":51,"ay":5,"n":2,"ms":[60,60]},"arrow_hit":{"w":22,"h":24,"ax":11,"ay":13,"n":4,"ms":[40,50,120,70]},"light_bolt":{"w":28,"h":11,"ax":23,"ay":5,"n":3,"ms":[50,50,50]},"light_hit":{"w":27,"h":27,"ax":13,"ay":13,"n":4,"ms":[35,45,55,70]},"foe_hit":{"w":23,"h":23,"ax":11,"ay":11,"n":4,"ms":[35,45,55,70]},"block_spark":{"w":27,"h":27,"ax":13,"ay":13,"n":4,"ms":[35,50,60,70]},"cleave_wave":{"w":80,"h":60,"ax":12,"ay":50,"n":6,"ms":[40,50,60,60,70,80]},"nova_hit":{"w":33,"h":33,"ax":16,"ay":16,"n":4,"ms":[35,50,60,70]},"heal_bloom":{"w":44,"h":58,"ax":22,"ay":54,"n":8,"ms":[45,50,60,70,80,90,90,100]}},"bosses":["crowmother","mistletoe","drownedmoon","scapegoat","abbot","ninthwave","amanita","quench","verdict","unmaker"]};
+  const IMG = {"bg_w01": "img/reel/bg_w01.png", "bg_w02": "img/reel/bg_w02.png", "bg_w03": "img/reel/bg_w03.png", "bg_w04": "img/reel/bg_w04.png", "bg_w05": "img/reel/bg_w05.png", "bg_w06": "img/reel/bg_w06.png", "bg_w07": "img/reel/bg_w07.png", "bg_w08": "img/reel/bg_w08.png", "bg_w09": "img/reel/bg_w09.png", "bg_w10": "img/reel/bg_w10.png", "fg_w01": "img/reel/fg_w01.png", "fg_w02": "img/reel/fg_w02.png", "fg_w03": "img/reel/fg_w03.png", "fg_w04": "img/reel/fg_w04.png", "fg_w05": "img/reel/fg_w05.png", "fg_w06": "img/reel/fg_w06.png", "fg_w07": "img/reel/fg_w07.png", "fg_w08": "img/reel/fg_w08.png", "fg_w09": "img/reel/fg_w09.png", "fg_w10": "img/reel/fg_w10.png", "fig_abbot": "img/reel/fig_abbot.png", "fig_amanita": "img/reel/fig_amanita.png", "fig_crowmother": "img/reel/fig_crowmother.png", "fig_drownedmoon": "img/reel/fig_drownedmoon.png", "fig_knight": "img/reel/fig_knight.png", "fig_mistletoe": "img/reel/fig_mistletoe.png", "fig_ninthwave": "img/reel/fig_ninthwave.png", "fig_priest": "img/reel/fig_priest.png", "fig_quench": "img/reel/fig_quench.png", "fig_ranger": "img/reel/fig_ranger.png", "fig_scapegoat": "img/reel/fig_scapegoat.png", "fig_unmaker": "img/reel/fig_unmaker.png", "fig_verdict": "img/reel/fig_verdict.png", "fx_arrive_a_back": "img/reel/fx_arrive_a_back.png", "fx_arrive_a_front": "img/reel/fx_arrive_a_front.png", "fx_arrow": "img/reel/fx_arrow.png", "fx_arrow_heavy": "img/reel/fx_arrow_heavy.png", "fx_arrow_hit": "img/reel/fx_arrow_hit.png", "fx_block_spark": "img/reel/fx_block_spark.png", "fx_cleave_wave": "img/reel/fx_cleave_wave.png", "fx_foe_hit": "img/reel/fx_foe_hit.png", "fx_heal_bloom": "img/reel/fx_heal_bloom.png", "fx_light_bolt": "img/reel/fx_light_bolt.png", "fx_light_hit": "img/reel/fx_light_hit.png", "fx_nova_hit": "img/reel/fx_nova_hit.png", "logo": "img/reel/logo.png", "menu": "img/reel/menu.png"};
+  const W = 600, H = 160, PATH_Y = 123, FIGHT_MS = 3000;
+  const cv = document.getElementById('reel');
+  const ctx = cv.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+
+  // ── deterministic dice ──
+  let seed = 7;
+  const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
+  const between = (a, b) => a + (b - a) * rnd();
+
+  // ── images ──
+  const img = {};
+  const white = {};
+  const load = (k) => new Promise((ok) => { const i = new Image(); i.onload = () => { img[k] = i; ok(); }; i.src = IMG[k]; });
+  function silhouette(k) { // a white copy of a sheet: the hit flash and the white-hot arrival
+    const s = img[k], c = document.createElement('canvas');
+    c.width = s.width; c.height = s.height;
+    const g = c.getContext('2d');
+    g.drawImage(s, 0, 0);
+    g.globalCompositeOperation = 'source-in';
+    g.fillStyle = '#fffaf0';
+    g.fillRect(0, 0, c.width, c.height);
+    white[k] = c;
+  }
+
+  // ── animation clock of one figure or effect ──
+  function frameAt(ms, list, loop) {
+    const total = list.reduce((a, b) => a + b, 0);
+    let t = loop ? ms % total : Math.min(ms, total - 1);
+    for (let i = 0; i < list.length; i++) { if (t < list[i]) return i; t -= list[i]; }
+    return list.length - 1;
+  }
+  const lengthOf = (list) => list.reduce((a, b) => a + b, 0);
+
+  class Figure {
+    constructor(name, x) { this.name = name; this.m = META.figs[name]; this.x = x; this.play('idle', true); this.flash = 0; this.alpha = 1; this.white = 0; this.onHit = null; }
+    play(anim, loop = false, onHit = null, hitAt = 0.55) { this.anim = anim; this.t = 0; this.loop = loop; this.onHit = onHit; this.hitAt = hitAt; this.hitDone = false; }
+    get busy() { return !this.loop && this.t < lengthOf(this.m.anims[this.anim].ms); }
+    update(dt) {
+      this.t += dt;
+      this.flash = Math.max(0, this.flash - dt);
+      const a = this.m.anims[this.anim];
+      if (this.onHit && !this.hitDone && frameAt(this.t, a.ms, false) >= Math.floor(a.n * this.hitAt)) { this.hitDone = true; this.onHit(); }
+      if (!this.loop && this.t >= lengthOf(a.ms)) this.play('idle', true);
+    }
+    draw() {
+      if (this.alpha <= 0) return;
+      const a = this.m.anims[this.anim], f = frameAt(this.t, a.ms, this.loop);
+      const sx = f * this.m.w, sy = a.row * this.m.h, dx = Math.round(this.x - this.m.root), dy = PATH_Y - this.m.ground;
+      ctx.globalAlpha = this.alpha;
+      ctx.drawImage(img['fig_' + this.name], sx, sy, this.m.w, this.m.h, dx, dy, this.m.w, this.m.h);
+      const wash = Math.max(this.white, this.flash > 0 ? 0.75 : 0);
+      if (wash > 0) { ctx.globalAlpha = this.alpha * wash; ctx.drawImage(white['fig_' + this.name], sx, sy, this.m.w, this.m.h, dx, dy, this.m.w, this.m.h); }
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  // ── effects and shots ──
+  let effects = [], shots = [];
+  function fx(key, x, y, opts = {}) { effects.push({ key, x, y, t: -(opts.delay || 0), loop: false, layer: opts.layer || 'over', alpha: opts.alpha ?? 1 }); }
+  function drawFx(e) {
+    if (e.t < 0) return;
+    const m = META.fx[e.key], f = frameAt(e.t, m.ms, e.loop);
+    ctx.globalAlpha = e.alpha;
+    ctx.drawImage(img['fx_' + e.key], f * m.w, 0, m.w, m.h, Math.round(e.x - m.ax), Math.round(e.y - m.ay), m.w, m.h);
+    ctx.globalAlpha = 1;
+  }
+  function shoot(key, from, to, speed, land) { shots.push({ key, x: from[0], y: from[1], tx: to[0], ty: to[1], speed, land, t: 0 }); }
+
+  // ── the cast ──
+  const party = { priest: new Figure('priest', 196), ranger: new Figure('ranger', 248), knight: new Figure('knight', 300) };
+  const KNIGHT_FRONT = 300 + 19;
+  let boss = null, world = 0, mode = 'A';
+  function bossFor(w) {
+    const name = META.bosses[w], m = META.figs[name];
+    const b = new Figure(name, 0);
+    b.x = KNIGHT_FRONT + 7 - m.left + m.root; // its body stands against the Knight's shield
+    b.nextAttack = between(1400, 2200);
+    return b;
+  }
+  const bossFront = () => boss.x - boss.m.root + boss.m.left;
+  const aim = () => [bossFront() + 18 + between(-4, 10), PATH_Y - between(28, 52)];
+  const hitBoss = (key, at) => { if (!boss || boss.alpha <= 0) return; fx(key, at[0], at[1]); boss.flash = 90; };
+
+  // ── what each hero does while a boss stands before them ──
+  const PLAN = {
+    knight: { list: ['attack', 'attack2', 'cleave', 'attack3'], gap: [220, 520] },
+    ranger: { list: ['attack', 'quick', 'attack', 'volley', 'attack', 'aimed'], gap: [160, 420] },
+    priest: { list: ['attack', 'cast', 'attack2', 'mend', 'attack'], gap: [260, 620] },
+  };
+  for (const k in party) { party[k].step = 0; party[k].wait = between(0, 600); }
+  function act(k, h) {
+    const plan = PLAN[k], anim = plan.list[h.step++ % plan.list.length];
+    if (k === 'knight') {
+      h.play(anim, false, () => {
+        const at = [bossFront() + 6, PATH_Y - between(22, 40)];
+        if (anim === 'cleave') fx('cleave_wave', h.x + 4, PATH_Y - 6);
+        hitBoss('foe_hit', at);
+      });
+    } else if (k === 'ranger') {
+      const heavy = anim === 'aimed';
+      const n = anim === 'volley' ? 3 : 1;
+      h.play(anim, false, () => {
+        for (let i = 0; i < n; i++) {
+          const to = aim();
+          setTimeoutSim(i * 90, () => shoot(heavy ? 'arrow_heavy' : 'arrow', [h.x + 14, PATH_Y - 24], to, heavy ? 0.7 : 0.5, () => hitBoss('arrow_hit', to)));
+        }
+      });
+    } else {
+      if (anim === 'mend') { h.play(anim, false, () => { if (party.knight.alpha > 0) fx('heal_bloom', party.knight.x, PATH_Y - 2); }); return; }
+      h.play(anim, false, () => {
+        const to = aim();
+        shoot('light_bolt', [h.x + 16, PATH_Y - 26], to, 0.42, () => hitBoss(anim === 'cast' ? 'nova_hit' : 'light_hit', to));
+      });
+    }
+  }
+  let timers = [];
+  function setTimeoutSim(ms, f) { timers.push({ t: ms, f }); }
+
+  // ── backgrounds and the wipe between them ──
+  const tmp = document.createElement('canvas'); tmp.width = W; tmp.height = H; const tg = tmp.getContext('2d');
+  const mask = document.createElement('canvas'); mask.width = W; mask.height = H; const mg = mask.getContext('2d');
+  const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+  let wipe = null; // {from, to, t, ms}
+  function maskFor(p) { // a dithered sweep from left to right
+    const d = mg.createImageData(W, H), a = d.data;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const th = (BAYER[(y & 3) * 4 + (x & 3)] + 0.5) / 16;
+      const v = p * 1.35 - (x / W) * 1.0 - th * 0.35;
+      if (v > 0) a[(y * W + x) * 4 + 3] = 255;
+    }
+    mg.putImageData(d, 0, 0);
+  }
+  function layer(kind, w) { return img[(kind === 'back' ? 'bg_w' : 'fg_w') + String(w + 1).padStart(2, '0')]; }
+  function drawLayer(kind) {
+    if (!wipe) { ctx.drawImage(layer(kind, world), 0, 0); return; }
+    ctx.drawImage(layer(kind, wipe.from), 0, 0);
+    tg.globalCompositeOperation = 'source-over'; tg.clearRect(0, 0, W, H);
+    tg.drawImage(layer(kind, wipe.to), 0, 0);
+    tg.globalCompositeOperation = 'destination-in'; tg.drawImage(mask, 0, 0);
+    ctx.drawImage(tmp, 0, 0);
+  }
+
+  // ── the world cycle ──
+  const ARRIVE = { show: 80, whiteUntil: 250, cool: 600, total: 860 };
+  function arrivalLook(f, ms) { // the column's script (src/game/render/arrival.ts, idea A)
+    if (ms < ARRIVE.show) { f.alpha = 0; f.white = 0; return false; }
+    if (ms >= ARRIVE.total) { f.alpha = 1; f.white = 0; return true; }
+    f.alpha = 1; f.white = 1 - Math.max(0, Math.min(1, (ms - ARRIVE.whiteUntil) / (ARRIVE.cool - ARRIVE.whiteUntil)));
+    return false;
+  }
+  function departLook(f, ms) { if (ms >= 110) { f.alpha = 0; f.white = 0; } else { f.alpha = 1; f.white = Math.min(1, ms / 80); } }
+  function column(x, delay = 0) { fx('arrive_a_back', x, PATH_Y, { delay, layer: 'under' }); fx('arrive_a_front', x, PATH_Y, { delay, layer: 'over' }); }
+
+  let phase = 'fight', pt = 0, fightT = 0, comers = [], leavers = [];
+  const fighting = () => phase === 'fight' && boss && boss.alpha > 0 && boss.white < 0.5;
+  function startTransition() {
+    const next = (world + 1) % 10;
+    phase = 'move'; leavers = []; comers = [];
+    leavers.push({ f: boss, at: pt });
+    column(boss.x, 0);
+    if (mode === 'B') ['knight', 'ranger', 'priest'].forEach((k, i) => { leavers.push({ f: party[k], at: pt + i * 220 }); column(party[k].x, i * 220); });
+    const swapAt = mode === 'A' ? 260 : 760;
+    setTimeoutSim(swapAt, () => { wipe = { from: world, to: next, t: 0, ms: 520 }; });
+    setTimeoutSim(swapAt + 520, () => {
+      world = next; wipe = null; document.getElementById('reel-world').textContent = 'Mundo ' + (world + 1);
+      const b = bossFor(world); boss = b; comers.push({ f: b, at: pt + 60 }); column(b.x, 60);
+      if (mode === 'B') ['knight', 'ranger', 'priest'].forEach((k, i) => { comers.push({ f: party[k], at: pt + 160 + i * 220 }); column(party[k].x, 160 + i * 220); });
+      leavers = [];
+    });
+    setTimeoutSim(swapAt + 520 + (mode === 'A' ? 700 : 1300), () => { phase = 'fight'; fightT = 0; boss.nextAttack = between(900, 1600); });
+  }
+
+  // ── one step ──
+  function update(dt) {
+    pt += dt;
+    if (phase === 'fight') fightT += dt;
+    timers.forEach((t) => (t.t -= dt));
+    const due = timers.filter((t) => t.t <= 0); timers = timers.filter((t) => t.t > 0); due.forEach((t) => t.f());
+    for (const l of leavers) departLook(l.f, pt - l.at);
+    for (const c of comers) if (arrivalLook(c.f, pt - c.at)) c.done = true;
+    comers = comers.filter((c) => !c.done);
+    for (const k in party) {
+      const h = party[k];
+      h.update(dt);
+      if (fighting() && !h.busy && h.alpha > 0) { h.wait -= dt; if (h.wait <= 0) { act(k, h); h.wait = between(...PLAN[k].gap); } }
+    }
+    if (boss) {
+      boss.update(dt);
+      if (fighting()) {
+        boss.nextAttack -= dt;
+        if (boss.nextAttack <= 0 && !boss.busy) {
+          boss.play('attack', false, () => { const k = party.knight; k.play('block'); fx('block_spark', KNIGHT_FRONT + 2, PATH_Y - 26); });
+          boss.nextAttack = between(1800, 2600);
+        }
+      }
+    }
+    for (const s of shots) {
+      const dx = s.tx - s.x, dy = s.ty - s.y, d = Math.hypot(dx, dy), step = s.speed * dt;
+      if (d <= step) { s.done = true; s.land(); } else { s.x += (dx / d) * step; s.y += (dy / d) * step; }
+    }
+    shots = shots.filter((s) => !s.done);
+    for (const e of effects) e.t += dt;
+    effects = effects.filter((e) => e.t < lengthOf(META.fx[e.key].ms));
+    if (wipe) { wipe.t += dt; maskFor(Math.min(1, wipe.t / wipe.ms)); }
+    if (phase === 'fight' && fightT >= FIGHT_MS) startTransition();
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    drawLayer('back');
+    effects.filter((e) => e.layer === 'under').forEach(drawFx);
+    if (boss) boss.draw();
+    party.priest.draw(); party.ranger.draw(); party.knight.draw();
+    for (const s of shots) { const m = META.fx[s.key]; ctx.drawImage(img['fx_' + s.key], 0, 0, m.w, m.h, Math.round(s.x - m.ax), Math.round(s.y - m.ay), m.w, m.h); }
+    effects.filter((e) => e.layer === 'over').forEach(drawFx);
+    drawLayer('fore');
+    ctx.drawImage(img.logo, 14, 9);
+    ctx.drawImage(img.menu, W - 8 - img.menu.width, H - 5 - img.menu.height);
+  }
+
+  function reset() {
+    effects = []; shots = []; timers = []; leavers = []; comers = []; wipe = null;
+    world = 0; phase = 'fight'; pt = 0; fightT = 0; seed = 7;
+    for (const k in party) { const h = party[k]; h.alpha = 1; h.white = 0; h.play('idle', true); h.step = 0; h.wait = between(0, 600); }
+    boss = bossFor(0);
+    document.getElementById('reel-world').textContent = 'Mundo 1';
+  }
+
+  document.querySelectorAll('[data-mode]').forEach((b) => b.addEventListener('click', () => {
+    mode = b.dataset.mode;
+    document.querySelectorAll('[data-mode]').forEach((o) => o.setAttribute('aria-pressed', String(o === b)));
+    reset();
+  }));
+  document.querySelectorAll('[data-zoom]').forEach((b) => b.addEventListener('click', () => {
+    const z = Number(b.dataset.zoom);
+    cv.style.width = 600 * z + 'px'; cv.style.height = 160 * z + 'px';
+    document.querySelectorAll('[data-zoom]').forEach((o) => o.setAttribute('aria-pressed', String(o === b)));
+  }));
+
+  Promise.all(Object.keys(IMG).map(load)).then(() => {
+    Object.keys(IMG).filter((k) => k.startsWith('fig_')).forEach(silhouette);
+    reset();
+    let last = performance.now();
+    const loop = (now) => { const dt = Math.min(50, now - last); last = now; update(dt); draw(); requestAnimationFrame(loop); };
+    requestAnimationFrame(loop);
+  });
+})();
+</script>

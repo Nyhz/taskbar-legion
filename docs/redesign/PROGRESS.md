@@ -2327,3 +2327,12 @@ Decisiones del usuario (18 nov), tras discutirlas una a una:
 - **Medido (probe, 5 semillas, tiradores antes que el apoyo, 19 nov):** horas por dificultad (mediana) **7 / 46 / 151 /
   259 / 706**, unas **1 169 h** en total (1 087–1 283 por semilla; ronda 20: 7 / 45 / 146 / 272 / 644, 1 087 h): +7 %,
   casi todo en Tormento (+62 h). Las 5 semillas completan; suite y escalera en verde.
+- **Icono de la app nuevo (usuario, 19 nov):** la primera ronda (seis símbolos: yelmos, escudo, cofre…) «muy cutres»;
+  quiere el estilo del actual —el nombre como logotipo— con el arte nuevo. Elegido el **4B**: «Taskbar / Legion» en la
+  gótica del logotipo, en latón, con su regla de rombo, sobre el mundo 1 en Tormento. Lo dibuja
+  `tools/assets/pipeline/brand_icon.py` (`run.sh app-icon` → `src-tauri/app-icon.png`; `npm run gen:icon` lo expande
+  con `tauri icon`). Fuera `scripts/gen-icon.mjs` (su logotipo de origen ya no existía).
+- **Pantalla de inicio animada (lab):** juego simulado, el grupo contra el jefe de cada mundo, 3 s cada uno, sin vida
+  ni daño; dos transiciones (A: cambia el jefe y el grupo sigue luchando; B: el grupo se teletransporta). Prototipo en
+  canvas: `run.sh reel` (`pipeline/title_reel.py` + `title_reel.html`). Las hojas de los jefes grandes saltan de fila
+  tras `cols` fotogramas: leerlas sin eso dejaba fotogramas vacíos (el jefe parpadeaba).
