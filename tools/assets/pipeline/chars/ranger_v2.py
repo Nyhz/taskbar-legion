@@ -1,252 +1,392 @@
-"""Ranger, re-imagined (2026-11-19; user: «los 3 pjs principales deben tener una calidad radicalmente superior a los
-otros modelos», references: chibi pixel rangers). A CHIBI hero, ~48 px: a big head a third of the figure with an
-expressive face — large eyes with a catch-light, brows, a fringe of chestnut hair under a deep green hood —, a short
-sturdy body in a green tunic with a crossed leather strap and a gold-buckled belt, bracers, chunky boots, a short
-cape, a quiver of grey-fletched arrows on the back and a big recurve bow. Bold dark outline; five tones per material.
+"""Ranger, re-imagined (2026-11-19) after the user's references: a hand-pixelled chibi archer — a deep green hood
+with a dark inner rim, a chestnut fringe, tall rectangular eyes, a shoulder mantle, pale sleeves under leather
+bracers, a tunic with a crossed strap and a gold-buckled belt, grey trousers, chunky boots, a dark cape, a quiver
+on the back and a big banded bow held out to the side.
+
+Unlike the other figures this one is NOT painted with the rig's tapered strokes (the first try was, and came out
+shapeless): every piece is a sprite drawn pixel by pixel, each with its own black outline, laid over the others
+like cut paper; only the arms, the bow and the cape are plotted — on whole pixels, flat tones. ~46 px tall.
 
 Drawn facing right like every figure. Lab only until approved (chars/ranger.py is the one the game uses).
 """
 from __future__ import annotations
 
 import math
+from types import SimpleNamespace
 
-from ..rig import GROUND, Anim, Build, Cel, Chain, ChainSpec, Character, Pose, Pt, keyed
+from ..rig import Anim, Cel, Pose
 
-BUILD = Build(root_x=40, thigh=7.4, shin=7.0, foot=3.8, hip_dx=1.6, spine=13.0, sh_near=3.6, sh_far=3.4, upper=4.6, fore=4.4, neck=0.0,
-              head_dx=0.6, leg_scale=0.72, min_pelvis=5.0)
+Tone = tuple[str, int]
+INK: Tone = ("ink", 0)
 
-L = {
-    # the hood and tunic: moss, dark to light
-    "a": ("moss", 1), "b": ("moss", 2), "c": ("moss", 3), "d": ("moss", 4), "e": ("moss", 5), "f": ("moss", 6), "g": ("moss", 7),
-    # hair: chestnut
-    "h": ("leather", 2), "i": ("leather", 4), "j": ("leather", 5), "k": ("leather", 6),
-    # skin
-    "s": ("skin", 3), "t": ("skin", 5), "u": ("skin", 6), "v": ("skin", 7), "p": ("crimson", 7), "m": ("skin", 2),
+L: dict[str, Tone] = {
+    "o": INK,
+    # hood, mantle, tunic
+    "A": ("moss", 2), "a": ("moss", 3), "b": ("moss", 4), "c": ("moss", 5), "d": ("moss", 6),
+    # hair
+    "h": ("leather", 3), "i": ("leather", 4), "j": ("leather", 5),
+    # skin, cheek, mouth
+    "s": ("skin", 5), "t": ("skin", 6), "u": ("skin", 7), "p": ("dusk", 7), "m": ("skin", 3),
     # eyes
-    "E": ("ink", 1), "F": ("ink", 3), "w": ("light", 0),
-    # leather and gold
-    "l": ("leather", 1), "n": ("leather", 3), "o": ("leather", 4), "q": ("leather", 5),
-    "x": ("brass", 3), "y": ("brass", 5), "z": ("brass", 7),
+    "E": ("ink", 1), "e": ("ink", 5),
+    # sleeves
+    "n": ("bone", 4), "N": ("bone", 6),
+    # leather
+    "k": ("leather", 2), "l": ("leather", 3), "r": ("leather", 4), "q": ("leather", 5),
+    # gold
+    "x": ("brass", 3), "y": ("brass", 5), "z": ("brass", 6),
+    # trousers
+    "f": ("ink", 4), "g": ("ink", 6), "G": ("ink", 7),
+    # fletching
+    "w": ("bone", 7), "W": ("ink", 7),
 }
 
-# The head, 19 × 19: the hood comes to a soft point behind, frames the face on the right; the fringe falls over
-# the brow; two big eyes (the near one larger) with a white catch-light; a blush and a small mouth.
+# 21 × 20. The hood: lit from the upper right, its inner rim black; the fringe in three locks; the eyes two tall
+# rectangles, dark above and grey below (the far one nearer the hood's edge: she looks to the right).
 HEAD = [
-    "......aabbbbaa.....",
-    "....aabcccccbba....",
-    "...abcccdddddcba...",
-    "..abccdddeeeedcba..",
-    ".abccddeeeeeeeedcb.",
-    ".abcdddeeffffffedcb",
-    "abccddhiijjjjjjjfdb",
-    "abccdhiijjkkjjkjjfb",
-    "abcdhiijuujjujjujfb",
-    "abcdhijtuuuuuuuuufb",
-    "abcdhjtEEtuuuuEEufb",
-    "abcdhitEwtuuuuEwufb",
-    "abcdhitEEtuuuuEEufb",
-    "abccdsppttuuuuppufb",
-    "abccdsttttuummuuufb",
-    ".abccdssttttttuufb.",
-    "..abccddssssssddcb.",
-    "...aabbccddddddcba.",
-    ".....aabbbbbbbaa...",
+    ".......bbcccdc.......",
+    ".....abbccccdddc.....",
+    "...aabbbccccccdddc...",
+    "..Aabbbbcccccccdddc..",
+    ".Aaabbbbccccccccddcc.",
+    "Aaabbboooooooooooocdc",
+    "Aaabbohhiiiijjjiihocd",
+    "Aaabbohiiiijjjjiihocd",
+    "Aaabbohiiijjjjjiihocc",
+    "Aaabbohiittiitttihocc",
+    "Aaabbohittttittttiocc",
+    "AaabbohttEEtttEEttocc",
+    "AaabbohttEEtttEEttocc",
+    "Aaabbostteettteettocc",
+    "Aaabbospttttttttptocc",
+    "Aaabboosttttmmtttoobc",
+    "AAabbboossttttssoobbc",
+    ".AAabbbboooooooobbbc.",
+    "..AAabbbbbbbbbbbbbc..",
+    "....AAabbbbbbbbbc....",
 ]
-HEAD_PC = 9.0  # the column of the neck
+HEAD_BLINK = {11: "Aaabbohtttttttttttocc", 12: "AaabbohttEEtttEEttocc", 13: "Aaabbostttttttttttocc"}
 
-# The body under the hood's shoulder mantle: a green tunic, the strap across it, the belt and its gold buckle,
-# the tunic's skirt split at the front.
+# 15 × 15: the mantle over the shoulders, the tunic with its strap, the belt and buckle, the split skirt.
 TORSO = [
-    "..abcddddeef..",
-    "..abcddddeef..",
-    ".abccddeeeffg.",
-    ".abccddeeeffg.",
-    ".abcdnoddeeff.",
-    ".abccdnoddeff.",
-    ".abccddnodeff.",
-    ".abccdddnoeff.",
-    ".llnooxyzynol.",
-    ".abccddddeeff.",
-    "..abccdddeef..",
-    "..abcd..deef..",
+    ".abbbbbccccccc.",
+    "aabbbbbcccccccd",
+    ".aabbbbccccccc.",
+    "..alrbbbccccc..",
+    "..ablrbbccccc..",
+    "..abblrbccccc..",
+    "..abbblrccccc..",
+    "..abbbblrcccc..",
+    "..abbbbblrccc..",
+    "..abbbbbblrcc..",
+    "..kllllyzyllk..",
+    "..kkkkkyxykkk..",
+    ".aabbbbAcccccc.",
+    ".aabbbA.Accccc.",
 ]
-TORSO_PC = 6.0
 
+# 7 × 14: grey trousers into a chunky boot with a turned cuff, the toe to the right.
+LEG = [
+    "fgGG...",
+    "fgGG...",
+    "fgGG...",
+    "fgGG...",
+    "fgGG...",
+    "fggG...",
+    "lqqqq..",
+    "lrrrq..",
+    "klrrq..",
+    "klrrq..",
+    "klrrq..",
+    "klrrrq.",
+    "klrrrrq",
+    "kkkkkkk",
+]
+
+# The rear arm at rest: a pale sleeve, the bracer, the hand.
+ARM_HANG = [
+    "nNN.",
+    "nNN.",
+    "nNN.",
+    "lrrq",
+    "lrrq",
+    "lrrq",
+    "lrrq",
+    "kllk",
+    "stt.",
+    "stt.",
+]
+
+# 8 × 12: the quiver on the back, tilted, its arrows fanned above the shoulder.
 QUIVER = [
-    ".w...w.",
-    "wFw.wFw",
-    ".Fw.wF.",
-    "..F.F..",
-    "..n.n..",
-    "..n.nn.",
-    ".lnoqq.",
-    ".lnoqq.",
-    ".lxyzq.",
-    ".lnoqq.",
-    ".lnoqq.",
-    ".lnoqq.",
-    "..lnq..",
+    ".w..w...",
+    "wWw.Ww..",
+    ".Ww.wW..",
+    "..i..i..",
+    "..ii.i..",
+    "..lrri..",
+    "..klrr..",
+    "...lrrq.",
+    "...klrq.",
+    "....lrr.",
+    "....klr.",
+    ".....kl.",
 ]
 
-BOOT = [
-    "lnoq.",
-    "lnoqq",
-    "lnooqq",
-    "llnnoqq",
+HAND = ["tt", "tt", "st"]
+
+ROOT_X, GROUND = 40, 64
+#: Where the pieces sit (top-left of each sprite), the body standing on the ground line.
+AT = {"leg_far": (34, 50), "leg_near": (41, 50), "torso": (33, 37), "head": (30, 19), "arm_hang": (31, 40), "quiver": (22, 27)}
+SHOULDER_BOW = (47, 41)
+SHOULDER_DRAW = (36, 41)
+
+
+class Part:
+    """One piece of the figure: painted, given its black outline, then laid on the frame."""
+
+    def __init__(self) -> None:
+        self.px: dict[tuple[int, int], Tone] = {}
+
+    def put(self, x: float, y: float, t: Tone) -> None:
+        self.px[(int(round(x)), int(round(y)))] = t
+
+    def stamp(self, rows: list[str], x0: int, y0: int) -> None:
+        for j, row in enumerate(rows):
+            for i, ch in enumerate(row):
+                if ch != ".":
+                    self.px[(x0 + i, y0 + j)] = L[ch]
+
+    def lay(self, cel: Cel, outline: bool = True) -> None:
+        if outline:
+            edge = {}
+            for (x, y) in self.px:
+                for n in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
+                    if n not in self.px:
+                        edge[n] = INK
+            for (x, y), t in edge.items():
+                cel.put(x, y, t)
+        for (x, y), t in self.px.items():
+            cel.put(x, y, t)
+
+
+def _line(a: tuple[int, int], b: tuple[int, int]) -> list[tuple[int, int]]:
+    (ax, ay), (bx, by) = a, b
+    dx, dy = abs(bx - ax), -abs(by - ay)
+    sx, sy = (1 if ax < bx else -1), (1 if ay < by else -1)
+    err, out = dx + dy, []
+    while True:
+        out.append((ax, ay))
+        if ax == bx and ay == by:
+            return out
+        e2 = 2 * err
+        if e2 >= dy:
+            err += dy
+            ax += sx
+        if e2 <= dx:
+            err += dx
+            ay += sy
+
+
+def arm(part: Part, joints: list[tuple[int, int]], sleeve: int = 4) -> None:
+    """An arm through its joints, three pixels thick in flat tones: the first `sleeve` pixels pale cloth, the rest
+    the leather bracer with a dark cuff at the wrist."""
+    pts: list[tuple[int, int]] = []
+    for a, b in zip(joints, joints[1:]):
+        seg = _line(a, b)
+        pts += seg if not pts else seg[1:]
+    n = len(pts)
+    for k, (x, y) in enumerate(pts):
+        nxt = pts[min(k + 1, n - 1)]
+        prv = pts[max(k - 1, 0)]
+        flat = abs(nxt[0] - prv[0]) >= abs(nxt[1] - prv[1])
+        if k < sleeve:
+            hi, mid, lo = ("bone", 6), ("bone", 6), ("bone", 4)
+        elif k >= n - 2:
+            hi, mid, lo = ("leather", 2), ("leather", 2), ("leather", 2)
+        else:
+            hi, mid, lo = ("leather", 5), ("leather", 4), ("leather", 3)
+        if flat:
+            part.put(x, y - 1, hi), part.put(x, y, mid), part.put(x, y + 1, lo)
+        else:
+            part.put(x + 1, y, hi), part.put(x, y, mid), part.put(x - 1, y, lo)
+
+
+def bow_curve(grip: tuple[int, int], draw: float, half: int = 17) -> list[tuple[int, int]]:
+    """The bow's back, top tip to bottom tip: the grip furthest forward, the limbs sweeping back to tips that curl
+    forward again; drawing it pulls the tips in and back."""
+    gx, gy = grip
+    reach = half - round(1.5 * draw)
+    out = []
+    for j in range(-reach, reach + 1):
+        s = abs(j) / reach
+        back = 7.0 * s ** 1.6 + 3.0 * draw * s * s
+        curl = 3.4 * max(0.0, (s - 0.74) / 0.26) ** 1.4
+        out.append((gx - round(back - curl), gy + j))
+    return out
+
+
+def draw_bow(cel: Cel, grip: tuple[int, int], draw: float, nock: tuple[int, int] | None) -> None:
+    curve = bow_curve(grip, draw)
+    bow = Part()
+    for x, y in curve:
+        band = (abs(y - grip[1]) // 3) % 2 == 0
+        wrap = abs(y - grip[1]) <= 2
+        bow.put(x, y, ("leather", 2) if wrap else ("leather", 5 if band else 4))
+        bow.put(x - 1, y, ("leather", 2) if wrap else ("leather", 3))
+    top, bottom = (curve[0][0] - 1, curve[0][1]), (curve[-1][0] - 1, curve[-1][1])
+    string = Part()
+    spans = ((top, nock), (nock, bottom)) if nock is not None else ((top, bottom),)
+    for a, b in spans:
+        for x, y in _line(a, b):
+            string.put(x, y, INK)
+    string.lay(cel, outline=False)
+    bow.lay(cel)
+
+
+def draw_arrow(cel: Cel, nock: tuple[int, int], tip_x: int) -> None:
+    a = Part()
+    x0, y = nock
+    for x in range(x0, tip_x + 1):
+        a.put(x, y, ("leather", 4))
+    for dx, dy in ((2, 0), (1, 0), (0, -1), (0, 1), (0, 0)):
+        a.put(tip_x + dx, y + dy, ("ink", 8))
+    for dx in (0, 1, 2):
+        a.put(x0 + dx, y - 1, ("bone", 7))
+        a.put(x0 + dx, y + 1, ("ink", 7))
+    a.lay(cel)
+
+
+def cape(cel: Cel, ox: int, phase: float, swing: float) -> None:
+    """The cape behind the body, down to the calves: dark, a lighter edge at the back, a ragged hem; its lower
+    half sways."""
+    p = Part()
+    rows = 20
+    for r in range(rows):
+        sway = round(swing * math.sin(math.tau * (phase - r * 0.045)) * (r / rows) ** 1.5)
+        left = 29 - min(r // 4, 3) - sway
+        right = 45 + (1 if r > 9 else 0) - (sway // 2)
+        for x in range(left, right + 1):
+            if r >= rows - 2 and (x + sway) % 4 == (1 if r == rows - 1 else 3):
+                continue  # the hem's notches
+            fold = (x - left) % 5 == 3
+            tone = ("moss", 3) if x - left < 2 else ("moss", 1) if fold else ("moss", 2)
+            p.put(ox + x, 38 + r, tone)
+    p.lay(cel)
+
+
+def figure(cel: Cel, p: Pose) -> None:
+    dx = -round(p.get("back", 0.0))  # the body's shift (she settles back as she draws)
+    bob = round(p.get("bob", 0.0))  # the head and shoulders sink on the breath out
+    aim = p.get("aim", 0.0)
+    draw = p.get("draw", 0.0)
+    hand = p.get("hand")  # the string hand, when it is not hanging: (x, y) on the frame
+
+    def at(name: str, ddy: int = 0) -> tuple[int, int]:
+        x, y = AT[name]
+        return x + dx, y + ddy
+
+    cape(cel, dx, p.get("cape", 0.0), p.get("swing", 1.2))
+    part = Part()
+    part.stamp(QUIVER, *at("quiver", bob))
+    part.lay(cel)
+    for name in ("leg_far", "leg_near"):
+        part = Part()
+        part.stamp(LEG, *AT[name])  # the feet stay planted
+        part.lay(cel)
+    part = Part()
+    part.stamp(TORSO, *at("torso", bob))
+    part.lay(cel)
+    if hand is None:
+        part = Part()
+        part.stamp(ARM_HANG, *at("arm_hang", bob))
+        part.lay(cel)
+    head = [HEAD_BLINK.get(j, row) for j, row in enumerate(HEAD)] if p.get("blink", 0.0) > 0.5 else HEAD
+    part = Part()
+    part.stamp(head, *at("head", bob + round(p.get("nod", 0.0))))
+    part.lay(cel)
+
+    # The bow arm: bent at rest with the bow held upright beside her; straight out at the shoulder to shoot.
+    sx, sy = SHOULDER_BOW[0] + dx, SHOULDER_BOW[1] + bob
+    elbow = (round(sx + 5 * aim), round(sy + 4 * (1 - aim)))
+    grip_hand = (round(sx + 7 + 4 * aim), round(sy + 4 * (1 - aim)))
+    part = Part()
+    arm(part, [(sx, sy), elbow, grip_hand])
+    part.lay(cel)
+    grip = (grip_hand[0] + 2, grip_hand[1])
+    nock = (int(hand[0]) + dx + 1, int(hand[1]) + bob) if hand is not None and draw > 0.02 else None
+    draw_bow(cel, grip, draw, nock)
+    if p.get("arrow", 0.0) > 0.5 and nock is not None:
+        draw_arrow(cel, nock, grip[0] + 5)
+    part = Part()
+    part.stamp(HAND, grip_hand[0], grip_hand[1] - 1)
+    part.lay(cel)
+
+    if hand is not None:
+        hx, hy = int(hand[0]) + dx, int(hand[1]) + bob
+        ssx, ssy = SHOULDER_DRAW[0] + dx, SHOULDER_DRAW[1] + bob
+        elbow = (max(ssx - 1, hx - 6), hy + 4)
+        part = Part()
+        arm(part, [(ssx, ssy), elbow, (hx - 1, hy)], sleeve=3)
+        part.lay(cel)
+        part = Part()
+        part.stamp(HAND, hx - 1, hy - 1)
+        part.lay(cel)
+
+
+class RangerV2:
+    """Bakes like every figure (rig.bake), but a pose is this file's own few numbers, not a skeleton's."""
+
+    build = SimpleNamespace(root_x=ROOT_X)
+    W, H, TOP = 96, 70, 0
+
+    def chains(self) -> dict:
+        return {}
+
+    def joints(self, pose: Pose) -> dict:
+        return {}
+
+    def draw(self, cel: Cel, J: dict, pose: Pose, ropes: dict, between: list) -> None:
+        figure(cel, pose)
+
+
+# ── animations ───────────────────────────────────────────────────────────────────────────────────────────────
+
+
+def idle_pose(t: float) -> Pose:
+    """She breathes (the head and shoulders sink a pixel on the way out), the cape stirs, she blinks once."""
+    return {"bob": 1.0 if 0.5 <= t < 0.94 else 0.0, "cape": t, "swing": 1.3, "blink": 1.0 if 0.72 <= t < 0.80 else 0.0}
+
+
+SHOT_KEYS: list[Pose] = [
+    dict(aim=0.0),
+    dict(aim=0.5),
+    dict(aim=1.0, hand=(54, 39)),
+    dict(aim=1.0, hand=(56, 39), draw=0.05, arrow=1.0),
+    dict(aim=1.0, hand=(53, 39), draw=0.25, arrow=1.0),
+    dict(aim=1.0, hand=(50, 39), draw=0.5, arrow=1.0, back=1.0),
+    dict(aim=1.0, hand=(47, 39), draw=0.8, arrow=1.0, back=1.0),
+    dict(aim=1.0, hand=(45, 39), draw=1.0, arrow=1.0, back=2.0),
+    dict(aim=1.0, hand=(45, 39), draw=1.0, arrow=1.0, back=2.0, nod=1.0),
+    dict(aim=1.0, hand=(45, 39), draw=1.0, arrow=1.0, back=2.0, nod=1.0),
+    dict(aim=1.0, hand=(41, 38), draw=0.0, back=1.0, swing=3.0),
+    dict(aim=1.0, hand=(39, 38), draw=0.0, back=0.0, swing=3.0),
+    dict(aim=0.8, hand=(41, 43), draw=0.0, swing=2.0),
+    dict(aim=0.4, swing=1.6),
+    dict(aim=0.0),
 ]
-
-SHADE5 = (-0.62, -0.2, 0.28, 0.68)
-
-
-def limb5(cel: Cel, a: Pt, b: Pt, w0: float, w1: float, ramp: str, tones: tuple[int, int, int, int, int], far: bool = False) -> None:
-    """A tapered stroke shaded in FIVE bands across its width (deep shadow … highlight), lit from the strip's light."""
-    from ..rig import LIGHT
-
-    t5 = tuple(max(0, t - 1) for t in tones) if far else tones
-    ax, ay = a
-    bx, by = b
-    dx, dy = bx - ax, by - ay
-    L2 = dx * dx + dy * dy or 1e-9
-    Ln = math.sqrt(L2)
-    nx, ny = -dy / Ln, dx / Ln
-    lit = 1.0 if (nx * LIGHT[0] + ny * LIGHT[1]) > 0 else -1.0
-    r_max = max(w0, w1) / 2 + 1
-    for j in range(int(math.floor(min(ay, by) - r_max)), int(math.ceil(max(ay, by) + r_max)) + 1):
-        for i in range(int(math.floor(min(ax, bx) - r_max)), int(math.ceil(max(ax, bx) + r_max)) + 1):
-            cx, cy = i + 0.5, j + 0.5
-            t = max(0.0, min(1.0, ((cx - ax) * dx + (cy - ay) * dy) / L2))
-            r = (w0 + (w1 - w0) * t) / 2
-            if math.hypot(cx - (ax + t * dx), cy - (ay + t * dy)) < r:
-                s = ((cx - ax) * nx + (cy - ay) * ny) / r * lit
-                band = sum(1 for th in SHADE5 if s > th)
-                cel.put(i, j, (ramp, t5[band]))
+SHOT_MS = [90, 70, 70, 80, 70, 70, 80, 100, 140, 160, 45, 60, 80, 90, 110]
+N_SHOT = len(SHOT_KEYS)
 
 
-def draw_bow(cel: Cel, grip: Pt, theta: float, draw: float, nock_hand: Pt, arrow: bool) -> None:
-    """A big recurve: thick limbs with a lit face and a dark back, horn tips, a wrapped grip; string and arrow."""
-    a = math.radians(theta)
-    u = (math.cos(a), math.sin(a))
-    f = (math.sin(a), -math.cos(a))
-    tips = []
-    for sgn in (-1, 1):
-        mid = (grip[0] + u[0] * sgn * 7.0 + f[0] * 2.0, grip[1] + u[1] * sgn * 7.0 + f[1] * 2.0)
-        back = 2.6 + 3.0 * max(0.0, draw)
-        tip = (grip[0] + u[0] * sgn * 13.0 - f[0] * back, grip[1] + u[1] * sgn * 13.0 - f[1] * back)
-        hook = (tip[0] + f[0] * 1.6, tip[1] + f[1] * 1.6)
-        limb5(cel, (grip[0] + u[0] * sgn * 1.5, grip[1] + u[1] * sgn * 1.5), mid, 3.0, 2.6, "leather", (1, 2, 4, 5, 6))
-        limb5(cel, mid, tip, 2.6, 1.8, "leather", (1, 2, 4, 5, 6))
-        cel.line(tip, hook, ("bone", 6))
-        tips.append(tip)
-    if draw > 0.1:
-        nock = (nock_hand[0] + 0.5, nock_hand[1])
-    else:
-        nock = (grip[0] - f[0] * (2.6 + draw * 10.0), grip[1] - f[1] * (2.6 + draw * 10.0))
-    for tip in tips:
-        cel.line(tip, nock, ("bone", 5))
-    if arrow:
-        dx, dy = grip[0] - nock[0], grip[1] - nock[1]
-        d = math.hypot(dx, dy) or 1.0
-        dx, dy = dx / d, dy / d
-        end = (nock[0] + dx * 17.0, nock[1] + dy * 17.0)
-        cel.line(nock, end, ("leather", 6))
-        for k, tone in ((0, ("ink", 9)), (1, ("ink", 7)), (2, ("ink", 7))):
-            cel.put(end[0] - dx * k, end[1] - dy * k, tone)
-        cel.put(end[0] - dx * 1 - dy, end[1] - dy * 1 + dx, ("ink", 6))
-        cel.put(end[0] - dx * 1 + dy, end[1] - dy * 1 - dx, ("ink", 6))
-        for s_ in (0.5, 1.5, 2.5):
-            cel.put(nock[0] + dx * s_ - dy, nock[1] + dy * s_ + dx, ("bone", 7))
-            cel.put(nock[0] + dx * s_ + dy, nock[1] + dy * s_ - dx, ("ink", 7))
-    for k in (-2, -1, 0, 1, 2):
-        cel.put(grip[0] + u[0] * k, grip[1] + u[1] * k, ("crimson", 4) if k % 2 == 0 else ("crimson", 3))
+def shot_pose(t: float) -> Pose:
+    """The shot: raise the bow, reach for the string, the long draw to the cheek, the hold, the loose (the hand
+    flicks back, the cape whips), and back to rest. Keyed frame by frame — nothing is tweened."""
+    i = min(N_SHOT - 1, max(0, round(t * (N_SHOT - 1))))
+    return {"cape": i / N_SHOT, **SHOT_KEYS[i]}
 
-
-class RangerV2(Character):
-    build = BUILD
-
-    def joints(self, pose: Pose) -> dict[str, Pt]:
-        return super().joints(pose)
-
-    def chains(self) -> dict[str, ChainSpec]:
-        def behind(pts: list[Pt], J: dict[str, Pt]) -> None:
-            cx, cy = J["chest"]
-            for i in range(1, len(pts)):
-                x, y = pts[i]
-                pts[i] = (min(x, cx - 2.0), min(y, GROUND - 3.0))
-
-        return {"cape": ChainSpec(Chain(4, 3.0, gravity=0.26, drag=0.14, damp=0.1), lambda J: (J["chest"][0] - 3.0, J["chest"][1] + 1.0), behind)}
-
-    def hand(self, cel: Cel, at: Pt, far: bool) -> None:
-        x, y = at
-        k = 1 if far else 0
-        for dx, dy, i in ((-1, -1, 5), (0, -1, 6), (-1, 0, 5), (0, 0, 6), (1, 0, 5), (-1, 1, 4), (0, 1, 5)):
-            cel.put(x + dx, y + dy, ("skin", i - k))
-
-    def leg(self, cel: Cel, J: dict[str, Pt], s: str, far: bool) -> None:
-        hip, knee, ankle = J["hip" + s], J["knee" + s], J["ankle" + s]
-        limb5(cel, hip, knee, 5.2, 4.6, "ink", (2, 3, 4, 5, 6), far=far)
-        limb5(cel, knee, ankle, 4.6, 4.4, "leather", (1, 2, 4, 5, 6), far=far)
-        boot = BOOT if not far else [r.replace("q", "o") for r in BOOT]
-        cel.stamp(boot, L, ankle[0] - 2, ankle[1] - 2)
-
-    def arm(self, cel: Cel, J: dict[str, Pt], s: str, far: bool) -> None:
-        sh, el, hd = J["sh" + s], J["elbow" + s], J["hand" + s]
-        limb5(cel, sh, el, 4.6, 4.0, "moss", (1, 2, 4, 5, 6), far=far)
-        limb5(cel, el, hd, 4.0, 3.6, "leather", (1, 2, 4, 5, 6), far=far)
-        self.hand(cel, hd, far)
-
-    def draw(self, cel, J, pose, ropes, between) -> None:
-        lean = pose.get("lean", 0.0)
-        cape = ropes["cape"]
-        widths = [6.0, 7.4, 8.2, 7.6, 6.4]
-        for i in range(len(cape) - 1):
-            limb5(cel, cape[i], cape[i + 1], widths[i], widths[i + 1], "moss", (0, 1, 1, 2, 4))
-        cx, cy = J["chest"]
-        cel.stamp_frame(QUIVER, L, (cx, cy), (-11, -13), lean)
-        self.arm(cel, J, "F", far=True)
-        self.leg(cel, J, "F", far=True)
-        self.leg(cel, J, "N", far=False)
-        px, py = J["pelvis"]
-        cel.stamp_lean(TORSO, L, (px, py + 2), TORSO_PC, lean)
-        hx, hy = J["head"]
-        cel.stamp_turn(HEAD, L, (hx, hy + 3), HEAD_PC, pose.get("head_rot", 0.0) + (lean if abs(lean) > 24 else 0.0))
-        gx, gy = J["handF"]
-        draw_bow(cel, (gx, gy), pose["bow"], pose.get("draw", 0.0), J["handN"], pose.get("arrow", 0.0) > 0.5)
-        self.arm(cel, J, "N", far=False)
-        cel.outline()
-
-
-READY: Pose = dict(dx=0.0, drop=0.6, lean=2.0, footN=(-4.0, 0.0, 0.0), footF=(4.4, 0.0, 0.0), hip_rot=0.0, sh_rot=0.0,
-                   armN=-10.0, elbN=30.0, armF=52.0, elbF=-14.0, bow=96.0, draw=0.0, arrow=0.0, head_dx=0.0, head_dy=0.0, breath=0.0, head_rot=0.0)
-
-
-def idle_pose(ph: float) -> Pose:
-    s = math.sin(math.tau * ph)
-    late = math.sin(math.tau * (ph - 0.14))
-    return {**READY, "breath": 0.4 + 0.4 * s, "lean": 2.0 - 0.8 * s, "drop": 0.6 + 0.4 * late, "armN": -10.0 + 3.0 * late,
-            "elbF": -14.0 + 4.0 * late, "bow": 96.0 + 2.0 * late, "head_dy": -0.4 * late}
-
-
-def k(**over: object) -> Pose:
-    return {**READY, **over}
-
-
-# The shot: the bow comes up level, the string hand reaches it, a long draw to the cheek with the weight
-# settling back, a hold, the loose (the string snaps past straight, the hand flicks back), and the recovery.
-SHOOT_KEYS = [
-    (0.00, k(), "lin"),
-    (0.14, k(lean=4.0, drop=1.0, armF=78.0, elbF=8.0, bow=90.0, armN=30.0, elbN=96.0, draw=0.04, head_dy=0.3), "out"),
-    (0.28, k(lean=3.0, drop=1.2, armF=86.0, elbF=4.0, bow=90.0, armN=56.0, elbN=70.0, draw=0.14, arrow=1.0), "io"),
-    (0.54, k(dx=-1.2, drop=1.8, lean=-4.0, sh_rot=1.2, armF=90.0, elbF=2.0, bow=90.0, armN=-96.0, elbN=200.0, draw=1.0, arrow=1.0, head_dy=0.4), "out"),
-    (0.70, k(dx=-1.4, drop=1.9, lean=-4.6, sh_rot=1.3, armF=90.0, elbF=2.0, bow=90.0, armN=-98.0, elbN=201.0, draw=1.0, arrow=1.0, head_dy=0.5), "io"),
-    (0.74, k(dx=-0.6, drop=1.2, lean=-1.0, sh_rot=0.8, armF=88.0, elbF=2.0, bow=102.0, armN=-110.0, elbN=262.0, draw=-0.2), "lin"),
-    (0.84, k(dx=-0.2, drop=0.9, lean=2.0, armF=80.0, elbF=6.0, bow=97.0, armN=-80.0, elbN=214.0, draw=0.05), "out"),
-    (1.00, k(), "io"),
-]
-
-STILL = lambda t: (-0.2, 0.0)  # noqa: E731
 
 ANIMS = {
-    "attack": Anim("attack", keyed(SHOOT_KEYS), [0.0, 0.07, 0.14, 0.21, 0.28, 0.35, 0.42, 0.48, 0.54, 0.60, 0.66, 0.70, 0.74, 0.79, 0.84, 0.90, 0.95, 1.0],
-                   [80, 60, 60, 60, 70, 70, 70, 80, 90, 110, 130, 150, 45, 55, 70, 80, 90, 110], False, STILL),
-    "idle": Anim("idle", idle_pose, [i / 16 for i in range(16)], [130] * 16, True, lambda t: (-0.28 + 0.2 * math.sin(math.tau * t), 0.0)),
+    "idle": Anim("idle", idle_pose, [i / 16 for i in range(16)], [125] * 16, True),
+    "attack": Anim("attack", shot_pose, [i / (N_SHOT - 1) for i in range(N_SHOT)], SHOT_MS, False),
 }

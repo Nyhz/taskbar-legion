@@ -1,15 +1,14 @@
 {
   "updated": "19 nov 2026",
-  "intro": "Nuevo: el Ranger reimaginado en estilo chibi, animado. Sigue pendiente el catálogo de sonido.",
+  "intro": "Nuevo: el Ranger rehecho según tus referencias, animado. Sigue pendiente el catálogo de sonido.",
   "sections": [
     {
       "id": "heroes-ranger",
       "eyebrow": "Héroes reimaginados · 1/3",
-      "title": "Ranger reimaginado (estilo chibi, 48 px)",
-      "text": "Rehecho desde cero según tus referencias: estilo chibi, cabeza grande con cara expresiva (ojos grandes con brillo, flequillo, mejillas, boca), capucha verde, túnica con correa cruzada y cinturón de hebilla dorada, brazales, botas, capa corta, carcaj con flechas asomando por encima de la capucha y arco grande. Esqueleto, proporciones y animaciones nuevas, sombreado de cinco tonos. Mide 48 px (el actual 36). De momento quieto y disparando; cuando lo apruebes hago el resto de sus animaciones (correr, sus habilidades, golpe, caída) y paso al Knight y a la Priest con este nivel.",
+      "title": "Ranger reimaginado (según tus referencias)",
+      "text": "Rehecho desde cero, dibujado píxel a píxel como tus referencias: cada pieza con su contorno negro, capucha verde con el borde interior oscuro, flequillo castaño, ojos altos rectangulares, mangas claras con brazales de cuero, túnica con correa cruzada y cinturón de hebilla dorada, pantalón gris, botas gruesas, capa oscura, carcaj a la espalda y un arco grande con bandas. Mide 47 px (el actual 36). De momento quieto y disparando; cuando lo apruebes hago el resto de sus animaciones (correr, sus habilidades, golpe, caída) y paso al Knight y a la Priest con este estilo.",
       "questions": [
-        "¿Es esta la dirección? ¿Qué cambiarías de la cara, la ropa o el arco?",
-        "¿Tamaño bien así (48 px)?"
+        "¿Ahora sí es la dirección? ¿Qué cambiarías (cara, capucha, arco, colores)?"
       ],
       "html": "hero_concepts.html"
     },

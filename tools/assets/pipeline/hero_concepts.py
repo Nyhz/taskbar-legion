@@ -63,14 +63,14 @@ def main() -> None:
     ch = ranger_v2.RangerV2()
     idle = bake(ch, ranger_v2.ANIMS["idle"])
     shot = bake(ch, ranger_v2.ANIMS["attack"])
-    lineup([idle[0], shot[10], fig("ranger", "idle", 0)[0], fig("templar", "idle", 0)[0], fig("poacher", "idle", 0)[0], fig("monk", "idle", 0)[0]], OUT / "ranger_lineup.png")
+    lineup([idle[0], shot[8], fig("ranger", "idle", 0)[0], fig("templar", "idle", 0)[0], fig("poacher", "idle", 0)[0], fig("monk", "idle", 0)[0]], OUT / "ranger_lineup.png")
     scene_gif(ch, ranger_v2.ANIMS, ["idle", "attack", "idle", "attack"], OUT / "ranger_v2.gif", scale=5)
     scene_gif(ch, ranger_v2.ANIMS, ["idle", "attack"], OUT / "ranger_v2_strip.gif", scale=3, on_strip=True)
     (LAB / "hero_concepts.html").write_text(
         '<div class="item-group">\n  <h3>El Ranger nuevo, junto al actual y a los enemigos</h3>\n'
-        '  <p class="muted">De izquierda a derecha: el Ranger nuevo quieto y tensando el arco, el Ranger actual, y tres enemigos (templario, cazador furtivo, monje).</p>\n'
+        '  <p class="muted">De izquierda a derecha: el Ranger nuevo quieto y con el arco tensado, el Ranger actual, y tres enemigos (templario, cazador furtivo, monje).</p>\n'
         '  <img class="px" src="img/heroes/ranger_lineup.png" alt="El Ranger nuevo junto al actual" style="width:100%;max-width:1100px;height:auto;border:1px solid var(--line)">\n</div>\n'
-        '<div class="item-group">\n  <h3>Moviéndose</h3>\n  <p class="muted">Quieto (respira, la capa se mece) y el disparo: sube el arco, tensa hasta la mejilla, aguanta, suelta y se recupera. A la derecha, sobre el fondo del mundo 1 a tamaño de juego ×3.</p>\n'
+        '<div class="item-group">\n  <h3>Moviéndose</h3>\n  <p class="muted">Quieto (respira, parpadea, la capa se mece) y el disparo: sube el arco, coge la cuerda, tensa hasta la mejilla, aguanta, suelta y vuelve. A la derecha, sobre el fondo del mundo 1 a tamaño de juego ×3.</p>\n'
         '  <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end">'
         '<img class="px" src="img/heroes/ranger_v2.gif" alt="El Ranger nuevo animado" style="width:300px;height:auto;border:1px solid var(--line)">'
         '<img class="px" src="img/heroes/ranger_v2_strip.gif" alt="El Ranger nuevo en la tira" style="width:180px;height:auto;border:1px solid var(--line)"></div>\n</div>\n'
