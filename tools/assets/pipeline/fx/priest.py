@@ -3,7 +3,7 @@ own centre, what she throws on its head.
 
 Four families, told apart by colour AND by shape, so a glance says what was done to whom:
   a HEAL  is mint light, soft and round: ribbons that wind up the body, petals that drift off it;
-  a SHIELD is azure glass, hard and faceted: panes with white edges that lock, hold and shatter;
+  a SHIELD is a dome of white-gold light: an arch round the body, rays on its crown, a sun seal; it goes back up;
   POWER   is bright yellow: a thin rim of light hugging the whole figure (Power Infusion — export_fx.RIMS);
   WRATH   is white-gold from above (Smite, Holy Nova) and crimson-gold wings (Battle Enrage).
 
@@ -13,8 +13,8 @@ Mend                mend_gift (cast, at the lantern) · mend_wind (the heal taki
 Healing Light       swift_gift (cast, at the book) · swift_light (on the one it heals: a shaft of light dropped at once)
 Circle of Healing   circle_pulse (cast, under the party: one bright ring flashing out, crosses of light thrown up)
 Any cleanse         cleanse_flash (on whoever a heal lifted a harmful effect from: dark flecks driven off by light)
-Holy Shield         ward_spark (cast, at the book) · ward_raise · ward_front (while it holds) · ward_break
-Lesser wards        ward_veil (Deep Sanctuary, Second Wind: a small canopy of the same glass)
+Holy Shield         ward_spark (cast, at the book: a small halo) · ward_raise · ward_front (while it holds) · ward_break
+Lesser wards        ward_veil (Deep Sanctuary, Second Wind: only a halo over the head)
 Power Infusion      infusion_ignite · the rim `infused` (a passive now: each of her heals lights it on the party)
                     (infuse_send and infusion_motes stay drawn for the record; nothing plays them now)
 Holy Nova           nova_flash (cast, at the staff's foot) · nova_ring + nova_shaft (through the wave) · nova_hit
@@ -34,7 +34,6 @@ from pipeline.rig import Cel
 
 LIGHT = ("light", 0)
 MINT = [("sea", 5), ("sea", 7), ("sea", 8)]  # a heal: rim, body, core
-GLASS = [("azure", 4), ("azure", 6), ("azure", 8)]  # a shield
 SUN = [("brass", 4), ("brass", 6), ("brass", 7)]  # power
 WRATH = [("crimson", 4), ("crimson", 5), ("brass", 6)]  # zeal
 
@@ -204,162 +203,139 @@ def mend_petals(cel: Cel, i: int, t: float) -> None:
 
 
 # ----------------------------------------------------------------------------------------- shields
-def _gem(ax: float, base: float, k: float = 1.0) -> dict[str, tuple[float, float]]:
-    """The corners of the shield: a tall cut gem standing round the body (k scales it about its foot)."""
-    def at(dx: float, up: float) -> tuple[float, float]:
-        return ax + dx * k, base - 1 - up * k
-    return {"bl": at(-13, 0), "l": at(-19, 16), "tl": at(-12, 43), "t": at(0, 48), "tr": at(12, 43), "r": at(19, 16), "br": at(13, 0),
-            "ml": at(-7, 22), "mr": at(7, 22)}
+# Holy Shield is a dome of light (2026-11-20, lab v106 — the user: «Cúpula de luz sin duda»; the azure glass gem it
+# replaces «parece un cristal»): white-gold, rays crowning it, a sun seal on its near face; it goes back up as light.
+SHIELD_HALO_UP = 44  # how high over the ground the lesser ward's halo floats (the Knight's head tops out about 40 up)
 
 
-def _pane_edges(cel: Cel, ax: float, base: float, tones, front: bool, glint: float = -1.0, k: float = 1.0) -> None:
-    """The shield as it stands: a faceted gem of glass round the body — straight edges, never a curve. The BACK
-    layer is the whole outline and the facets of its far side, in the darker tones; the FRONT layer is only what
-    catches the light: the edges of the side towards the enemy, one seam down the near face, the foot, a glint.
-    Lines only, so whoever stands inside stays readable."""
-    g = _gem(ax, base, k)
-    if not front:
-        for a, b in (("bl", "l"), ("l", "tl"), ("tl", "t"), ("t", "tr"), ("tr", "r"), ("r", "br")):
-            cel.line(g[a], g[b], tones[1])
-        for a, b in (("tl", "ml"), ("l", "ml"), ("ml", "bl"), ("t", "ml")):
-            cel.line(g[a], g[b], tones[0])
-        for x in range(int(g["bl"][0]), int(g["br"][0]) + 1):
-            if (x + int(ax)) % 3 == 0:
-                cel.put(x, base - 1, tones[0])
-        return
-    for a, b in (("t", "tr"), ("tr", "r"), ("r", "br")):
-        cel.line(g[a], g[b], tones[2])
-        cel.line((g[a][0] - 1, g[a][1]), (g[b][0] - 1, g[b][1]), tones[1])
-    cel.line(g["tl"], g["t"], tones[1])
-    for x in range(int(g["bl"][0]), int(g["br"][0]) + 1):
-        if (x + int(ax)) % 3 != 0:
-            cel.put(x, base - 1, tones[1])
-    if glint >= 0:
-        a, b = (("t", "tr"), ("tr", "r"), ("r", "br"))[min(2, int(glint * 3))]
-        f = (glint * 3) % 1.0
-        spark(cel, g[a][0] + (g[b][0] - g[a][0]) * f, g[a][1] + (g[b][1] - g[a][1]) * f, 2, LIGHT, tones[2])
+def _halo(cel: Cel, cx: float, y: float, k: float = 1.0, lit: bool = True) -> None:
+    """A ring of gold seen a little from below: a thin ellipse, its near half bright, its far half deeper."""
+    rx, ry = 6.5 * k, 1.9 * k
+    ring(cel, cx, y, rx, ry, ("brass", 6), 180, 360, 1.0)
+    ring(cel, cx, y, rx, ry, LIGHT if lit else ("brass", 7), 0, 180, 1.0)
+    if lit:
+        cel.put(cx + rx * 0.55, y + ry * 0.8, LIGHT)
 
 
-def _pane_seams(cel: Cel, ax: float, base: float, tone, k: float = 1.0) -> None:
-    """The seams of the near face, DOTTED and drawn after the outline (so they get no dark edge): the cut of the
-    glass shows without a cage of bars across whoever stands inside."""
-    g = _gem(ax, base, k)
-    for a, b in (("t", "mr"), ("tr", "mr"), ("mr", "r"), ("mr", "br")):
-        (x0, y0), (x1, y1) = g[a], g[b]
-        n = int(max(abs(x1 - x0), abs(y1 - y0)))
-        for j in range(1, n):
-            if j % 3 == 0:
-                cel.put(int(round(x0 + (x1 - x0) * j / n)), int(round(y0 + (y1 - y0) * j / n)), tone)
+def _dome(cel: Cel, ax: float, base: float, k: float, near_tone, far_tone, mid_tone) -> None:
+    """A rounded arch of light round the body: its near side (towards the enemy) bright, the far side faint, a
+    dotted inner arch on the near face."""
+    rx, ry = 20 * k, 45 * k
+    ring(cel, ax, base - 1, rx, ry, far_tone, 180, 270, 1.0)
+    ring(cel, ax, base - 1, rx, ry, near_tone, 270, 360, 1.5)
+    steps = 22
+    for s in range(steps):
+        a = math.radians(285 + 70 * s / steps)
+        if s % 2 == 0:
+            cel.put(ax + math.cos(a) * (rx - 4), base - 1 + math.sin(a) * (ry - 4), mid_tone)
+
+
+def _crown(cel: Cel, ax: float, base: float, k: float = 1.0, lit: bool = True) -> None:
+    """Short rays fanning up off the arch's crown: the light it is made of, shining out."""
+    top = base - 1 - 45 * k
+    for j in range(7):
+        a = math.radians(-90 + (j - 3) * 24)
+        ln = (5 if j % 2 == 0 else 3) * k + (1 if lit and j == 3 else 0)
+        streak(cel, (ax + math.cos(a) * (2 + ln), top + math.sin(a) * (2 + ln)), (ax + math.cos(a) * 2, top + math.sin(a) * 2), [LIGHT if lit else ("brass", 7), ("brass", 7), ("brass", 6)])
+
+
+def _seal(cel: Cel, cx: float, cy: float, r: float, tone) -> None:
+    """A small sun seal: a ring with eight short rays (never a plus — that is a heal's sign)."""
+    ring(cel, cx, cy, r, r, tone, 0, 360, 1.0)
+    for k in range(8):
+        a = math.tau * k / 8 + math.pi / 8
+        cel.put(cx + math.cos(a) * (r + 2), cy + math.sin(a) * (r + 2), tone)
 
 
 def ward_spark(cel: Cel, i: int, t: float) -> None:
-    """Holy Shield cast: the open book flashes azure and a pane of glass springs off it."""
+    """Holy Shield cast, at her book: it flashes white-gold and a small halo springs off it, turning."""
     cx, cy = 10, 14
-    spark(cel, cx, cy, (3, 6, 5, 3, 2)[i], LIGHT, ("azure", 7))
-    s = 3 + 9 * ease_out(t)
-    if i < 4:
-        poly(cel, [(cx + 4, cy - s), (cx + 4 + s * 0.7, cy - s * 0.5), (cx + 4 + s * 0.7, cy + s * 0.5), (cx + 4, cy + s)], ("azure", 6))
-        cel.line((cx + 4, cy - s), (cx + 4 + s * 0.7, cy - s * 0.5), LIGHT)
-        cel.line((cx + 4, cy - s), (cx + 4, cy + s), ("azure", 8))
+    spark(cel, cx, cy, (3, 6, 5, 3, 2)[i], LIGHT, ("brass", 7))
+    if 1 <= i <= 4:
+        k = 0.6 + 0.5 * ease_out(t)
+        _halo(cel, cx + 6 + 8 * t, cy - 4 - 6 * t, k)
     if i >= 3:
-        thin(cel, 0.5 if i == 3 else 0.25, 5)
-    rim(cel, ("azure", 1))
+        thin(cel, 0.55 if i == 3 else 0.3, 5)
+    rim(cel, ("brass", 3))
 
 
 def ward_raise(cel: Cel, i: int, t: float) -> None:
-    """The shield closing: panes of azure glass fly in from all round and lock into the gem with a flash."""
-    ax, base = 28, 60
-    close = ease_in(min(1.0, t * 1.5), 1.4)
-    g = _gem(ax, base)
-    rnd = random.Random(13)
-    if i < 4:
-        for k, name in enumerate(("l", "tl", "t", "tr", "r", "ml", "mr")):
-            gx, gy = g[name]
-            far = 1.0 - close
-            x = gx + (gx - ax) * far * 1.3 + (rnd.random() - 0.5) * 6 * far
-            y = gy + (gy - (base - 24)) * far * 1.1 - far * 6
-            sz = 4 + rnd.random() * 2
-            poly(cel, [(x, y - sz), (x + sz * 0.8, y), (x, y + sz), (x - sz * 0.8, y)], ("azure", 6))
-            cel.line((x, y - sz), (x + sz * 0.8, y), LIGHT)
-            cel.line((x - sz * 0.8, y), (x, y - sz), ("azure", 8))
-    if i >= 3:
-        _pane_edges(cel, ax, base, GLASS, False)
-        _pane_edges(cel, ax, base, GLASS, True)
+    """Rays fall from above onto the one she shields and close into the arch; its crown of rays flares as it
+    closes."""
+    ax, base = 30, 64
+    rnd = random.Random(5)
+    if i < 3:
+        for k in range(7):
+            x = ax + (k - 3) * 5.5 + (rnd.random() - 0.5) * 2
+            top = 2 + rnd.random() * 6
+            low = top + (20 + 30 * ease_in((i + 1) / 3, 1.5)) * (1 - abs(k - 3) / 6)
+            streak(cel, (x, low), (x, top), [LIGHT, ("brass", 7), ("brass", 6), ("brass", 5)])
+    if i >= 2:
+        k = 0.7 + 0.3 * ease_out(min(1.0, (t - 0.25) * 2.0), 2)
+        _dome(cel, ax, base, k, LIGHT, ("brass", 5), ("brass", 6))
+        rim(cel, ("brass", 3), only=lambda tone: tone == LIGHT)
+        _crown(cel, ax, base)
+        _seal(cel, ax + 11, base - 22, 2.5, ("brass", 7))
     if i == 3:
-        for name in ("tl", "t", "tr", "r", "l"):
-            spark(cel, g[name][0], g[name][1], 3, LIGHT, ("azure", 8))
-    if i >= 5:
-        thin(cel, 0.6, 6)
-    rim(cel, ("azure", 1))
+        spark(cel, ax, base - 47, 4, LIGHT, ("brass", 7))
+        blob(cel, ax, base - 1, 12, 1.5, ("brass", 7))
+    if i >= 6:
+        thin(cel, 0.75, 3)
 
 
 def ward_front(cel: Cel, i: int, t: float) -> None:
-    """The shield while it holds: the gem drawn in thin lines of glass and nothing else — its lit edges on the side
-    towards the enemy (the only ones with a dark edge), the far side one faint line, the seams of the near face
-    dotted, a glint running down the lit edge. Whoever stands inside, and whatever else they wear, shows through."""
-    ax, base = 22, 52
-    g = _gem(ax, base)
-    for a, b in (("t", "tr"), ("tr", "r"), ("r", "br")):
-        cel.line(g[a], g[b], GLASS[2])
-    rim(cel, ("azure", 2))
-    for a, b in (("bl", "l"), ("l", "tl"), ("tl", "t")):
-        cel.line(g[a], g[b], GLASS[0])
-    _pane_seams(cel, ax, base, GLASS[1])
-    for x in range(int(g["bl"][0]) + 1, int(g["br"][0])):
-        if (x + int(ax)) % 3 == 0:
-            cel.put(x, base - 1, GLASS[1])
-    a, b = (("t", "tr"), ("tr", "r"), ("r", "br"))[min(2, int(t * 3))]
-    f = (t * 3) % 1.0
-    spark(cel, g[a][0] + (g[b][0] - g[a][0]) * f, g[a][1] + (g[b][1] - g[a][1]) * f, 1, LIGHT, GLASS[2])
+    """The arch while it holds: lines of light only, a glint running up its near side, the seal breathing, motes
+    of light rising inside, rays on its crown, a lit disc at the feet."""
+    ax, base = 24, 56
+    _dome(cel, ax, base, 1.0, ("brass", 7), ("brass", 5), ("brass", 6))
+    a = math.radians(360 - 90 * ((t * 1.0) % 1.0))
+    gx, gy = ax + math.cos(a) * 20, base - 1 + math.sin(a) * 45
+    rim(cel, ("brass", 3), only=lambda tone: tone == ("brass", 7))
+    spark(cel, gx, gy, 1, LIGHT, ("brass", 7))
+    _crown(cel, ax, base, lit=i % 4 != 3)
+    for x in range(-14, 15):
+        if x % 2 == 0:
+            cel.put(ax + x, base - 1 + (1 if abs(x) < 9 else 0), ("brass", 6))
+    _seal(cel, ax + 11, base - 22, 2.5, ("brass", 7) if i % 4 < 2 else ("brass", 6))
+    for k in range(3):
+        f = (t + k / 3) % 1.0
+        cel.put(ax - 8 + k * 7, base - 4 - f * 34, LIGHT if f < 0.6 else ("brass", 6))
 
 
 def ward_break(cel: Cel, i: int, t: float) -> None:
-    """The shield gives: the gem cracks white and its panes fly apart and fall."""
-    ax, base = 30, 60
-    out = ease_out(t, 1.6)
-    g = _gem(ax, base)
+    """The absorb spent: the arch flashes white and comes apart into motes and short rays that rise and fade — the
+    light goes back up, it does not shatter."""
+    ax, base = 30, 64
     if i == 0:
-        _pane_edges(cel, ax, base, [LIGHT, LIGHT, LIGHT], False)
-        _pane_edges(cel, ax, base, [LIGHT, LIGHT, LIGHT], True)
-    rnd = random.Random(31)
-    names = ("l", "tl", "t", "tr", "r", "ml", "mr", "bl", "br")
-    for k in range(13):
-        gx, gy = g[names[k % len(names)]]
-        gx += (rnd.random() - 0.5) * 8
-        gy += (rnd.random() - 0.5) * 10
-        x = gx + (gx - ax) * out * (0.6 + rnd.random() * 0.6)
-        y = gy - out * 6 + out * out * (10 + 12 * rnd.random())
-        sz = (3.6 - 2.2 * t) * (0.7 + 0.6 * rnd.random())
-        if i == 0:
-            continue
-        if sz < 0.9:
-            cel.put(x, y, ("azure", 7))
-            continue
-        poly(cel, [(x, y - sz), (x + sz * 0.8, y + sz * 0.2), (x - sz * 0.3, y + sz)], ("azure", 6 if k % 2 else 7))
-        cel.put(x, y - sz, LIGHT)
-    if i >= 4:
-        thin(cel, 0.55, 8)
-    rim(cel, ("azure", 1))
+        _dome(cel, ax, base, 1.0, LIGHT, LIGHT, LIGHT)
+        _crown(cel, ax, base, 1.2)
+        rim(cel, ("brass", 3))
+        return
+    rnd = random.Random(23)
+    up = ease_out(t, 1.4)
+    for k in range(18):
+        a = math.radians(180 + 180 * rnd.random())
+        x = ax + math.cos(a) * 20 * (1 + 0.15 * up)
+        y = base - 1 + math.sin(a) * 45 - up * (8 + rnd.random() * 14)
+        if k % 3 == 0 and t < 0.6:
+            streak(cel, (x, y), (x, y + 4), [LIGHT, ("brass", 7), ("brass", 6)])
+        else:
+            cel.put(x, y, LIGHT if k % 2 else ("brass", 7))
+    if i == 1:
+        spark(cel, ax, base - 47, 5, LIGHT, ("brass", 7))
+    if i >= 3:
+        thin(cel, 0.7 if i == 3 else 0.45, 11)
+    rim(cel, ("brass", 3))
 
 
 def ward_veil(cel: Cel, i: int, t: float) -> None:
-    """A lesser ward: only the crown of the same gem, a small canopy of glass over the head and shoulders."""
-    ax, base = 18, 44
-    g = _gem(ax, base, 0.86)
-    for a, b, tone in (("l", "tl", ("azure", 5)), ("tl", "t", ("azure", 6)), ("t", "tr", ("azure", 8)), ("tr", "r", ("azure", 8))):
-        x0, y0 = g[a]
-        x1, y1 = g[b]
-        if a == "l":
-            x0, y0 = x0 + (x1 - x0) * 0.45, y0 + (y1 - y0) * 0.45
-        if b == "r":
-            x1, y1 = x0 + (x1 - x0) * 0.55, y0 + (y1 - y0) * 0.55
-        cel.line((x0, y0), (x1, y1), tone)
-    cel.line(g["t"], (g["mr"][0], g["t"][1] + 9), ("azure", 6))
-    cel.line(g["t"], (g["ml"][0], g["t"][1] + 9), ("azure", 5))
-    pick = (g["t"], g["tr"], g["tl"])[(i // 2) % 3]
-    if i % 6 < 4:
-        spark(cel, pick[0], pick[1], 1, LIGHT, ("azure", 8))
-    rim(cel, ("azure", 1))
+    """A lesser ward (Deep Sanctuary, Second Wind): only the halo, and a faint glow of gold on the shoulders."""
+    ax, base = 18, 50
+    _halo(cel, ax, base - SHIELD_HALO_UP + (1 if i % 6 in (2, 3, 4) else 0), 0.9, lit=i % 6 != 5)
+    rim(cel, ("brass", 3))
+    for dx in (-6, 7):
+        if (i + dx) % 3:
+            cel.put(ax + dx, base - 32, ("brass", 6))
 
 
 # ----------------------------------------------------------------------------------------- Power Infusion
@@ -741,10 +717,10 @@ FX = [
     Fx("mend_wind", 40, 56, 20, 52, [60, 60, 70, 70, 80, 90, 90, 100], False, mend_wind),
     Fx("mend_petals", 36, 48, 18, 46, [130] * 8, True, mend_petals),
     Fx("ward_spark", 30, 28, 10, 14, [35, 45, 55, 70, 80], False, ward_spark),
-    Fx("ward_raise", 56, 64, 28, 60, [45, 50, 55, 70, 70, 80, 90], False, ward_raise),
-    Fx("ward_front", 44, 54, 22, 52, [140] * 8, True, ward_front),
-    Fx("ward_break", 62, 70, 30, 60, [45, 55, 65, 75, 85, 95], False, ward_break),
-    Fx("ward_veil", 36, 46, 18, 44, [150] * 6, True, ward_veil),
+    Fx("ward_raise", 60, 70, 30, 64, [45, 50, 55, 70, 70, 80, 90], False, ward_raise),
+    Fx("ward_front", 48, 60, 24, 56, [140] * 8, True, ward_front),
+    Fx("ward_break", 60, 70, 30, 64, [45, 55, 65, 75, 85, 95], False, ward_break),
+    Fx("ward_veil", 36, 50, 18, 50, [150] * 6, True, ward_veil),
     Fx("infusion_motes", 36, 48, 18, 46, [170] * 12, True, infusion_motes),
     Fx("infusion_ignite", 44, 56, 22, 54, [45, 50, 55, 60, 65, 70], False, infusion_ignite),
     Fx("infuse_send", 46, 24, 9, 12, [35, 45, 55, 70, 80], False, infuse_send),

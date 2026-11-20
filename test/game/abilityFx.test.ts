@@ -151,7 +151,7 @@ describe('wornLooks', () => {
     expect(wornLooks([worn('fx_shield')], knight).slots.get('front')?.look.fx).toBe('bulwark_wall');
     // A Priest's shield on him is the same effect from someone else: her glass, never his wall (test/game/priestFx).
     expect(wornLooks([worn('fx_shield', { sourceId: 'h3', remainingMs: 3000, totalMs: 4000 })], knight).slots.get('front')?.look.fx).toBe('ward_front');
-    expect(wornLooks([worn('fx_shield', { sourceId: 'h3' })], { id: 'h3', classKey: 'priest' }).slots.get('front')?.look.fx).toBe('ward_front'); // her own, on herself: her glass too
+    expect(wornLooks([worn('fx_shield', { sourceId: 'h3' })], { id: 'h3', classKey: 'priest' }).slots.get('front')?.look.fx).toBe('ward_front'); // her own, on herself: her dome of light too
     const line = [worn('buff_holdline_dr')];
     expect([...wornLooks(line, knight).slots.keys()].sort()).toEqual(['beside', 'low']);
     expect([...wornLooks(line, { id: 'h2', classKey: 'ranger' }).slots.keys()]).toEqual(['low']);

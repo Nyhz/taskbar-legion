@@ -222,7 +222,8 @@ export const ABILITY_LOOKS: Readonly<Record<string, AbilityLook>> = {
   // Healing Light: the book flares and a cross jumps off it; a shaft of light DROPS on the one it heals at once
   // (`healOn`) — an instant heal strikes, where Mend's ribbon winds up slowly.
   priest_healing_light: { cast: [SIGIL.heal, { fx: 'swift_gift', spot: 'caster-over', atBlow: true, dx: 15, dy: -24 }], healOn: 'swift_light' },
-  // Holy Shield: the book flashes; the glass closing round the tank is the opening of its lasting look.
+  // Holy Shield: the book flashes and a small halo springs off it; the dome of light closing round the tank is the
+  // opening of its lasting look.
   priest_holyshield: { cast: [SIGIL.ward, { fx: 'ward_spark', spot: 'caster-over', atBlow: true, dx: 15, dy: -24 }] },
   // Holy Nova: the staff's foot strikes, a ring of light opens under the wave and shafts burst up through it, near to far.
   priest_nova: {
@@ -301,7 +302,7 @@ export function bandCount(width: number, every: number): number {
 export const PENDING_ABILITIES: readonly string[] = [];
 
 // How long after a Priest's cast its gift shows on the ally: her clips reach their release about this long in
-// (the blow of `ward` and of `infuse` — render/heroClips), so the glass and the light arrive with her gesture.
+// (the blow of `ward` and of `infuse` — render/heroClips), so the dome and the light arrive with her gesture.
 const SHIELD_ARRIVES_MS = 400;
 const INFUSION_ARRIVES_MS = 450;
 // (`around`, not `body`: a mended Knight is often stone, and Stone Skin's glint lives in `body`.)
@@ -315,9 +316,9 @@ export const EFFECT_LOOKS: Readonly<Record<string, readonly LastingLook[]>> = {
   // Stone Skin: he is stone — the figure itself, with a glint passing over it.
   buff_guard_block: [{ skin: 'stone', priority: 1 }, { slot: 'body', fx: 'stone_glint', start: 'stone_rise', end: 'stone_crumble' }],
   // Bulwark: a tower shield of light standing ahead of him for as long as the absorb holds. The SAME effect given
-  // by someone else is the Priest's Holy Shield: a gem of azure glass round the body, drawn in thin lines only (one
-  // look, in `front` — it leaves `beside` to the Knight's standard and hides nothing he wears) — that shatters
-  // when the absorb is spent.
+  // by someone else is the Priest's Holy Shield: a dome of white-gold light round the body, rays on its crown and a
+  // sun seal on its near face, drawn in thin lines only (one look, in `front` — it leaves `beside` to the Knight's
+  // standard and hides nothing he wears) — that goes back up as light when the absorb is spent (lab v106).
   fx_shield: [
     { slot: 'front', fx: 'bulwark_wall', start: 'bulwark_raise', end: 'bulwark_break', ownOnly: true, bearerClass: 'knight', dx: 17, alpha: 0.88 },
     { slot: 'front', fx: 'ward_front', start: 'ward_raise', end: 'ward_break', otherOnly: true, priority: 1, delayMs: SHIELD_ARRIVES_MS },
@@ -363,7 +364,7 @@ export const EFFECT_LOOKS: Readonly<Record<string, readonly LastingLook[]>> = {
   fx_light: [{ slot: 'around', fx: 'light_motes' }],
   // Sanctuary: each of them stands in a double ring of mint light with rays standing up through them (lab v84).
   fx_sanctuary: [{ slot: 'ground', fx: 'sanctuary_glow2', priority: 1, delayMs: 420 }],
-  // The lesser wards (Deep Sanctuary, Second Wind): a small canopy of the shield's glass over the head.
+  // The lesser wards (Deep Sanctuary, Second Wind): only a halo of gold over the head.
   fx_ward: [{ slot: 'front', fx: 'ward_veil' }],
   // Power Infusion: a bright yellow AURA that is only a rim — a thin line of light hugging the figure, brightest
   // at the head. Nothing behind the body and nothing over it: the rim takes no slot, so Rapid Fire's arrows,
