@@ -15,6 +15,19 @@ While the project is pre-1.0, minor versions may include breaking save changes.
 
 ### Fixed
 
+## [0.5.11] - 2026-11-20
+
+### Added
+
+### Changed
+
+- **Holy Shield looks holy**: a dome of white-gold light closes round the shielded hero — rays falling from the sky,
+  a crown of rays on top and a small sun seal on the side facing the enemy — and goes back up as light when the
+  shield is spent, instead of an azure glass gem that shattered. The lesser wards (Deep Sanctuary, Second Wind)
+  show a gold halo over the head.
+
+### Fixed
+
 ## [0.5.10] - 2026-11-19
 
 ### Changed
@@ -294,7 +307,8 @@ While the project is pre-1.0, minor versions may include breaking save changes.
 - Initial desktop builds: Tauri v2 transparent, always-on-top, bottom-docked overlay.
 - Multi-platform release pipeline (macOS universal, Windows, Linux) via GitHub Actions.
 
-[Unreleased]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.10...HEAD
+[Unreleased]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.11...HEAD
+[0.5.11]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.10...v0.5.11
 [0.5.10]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.9...v0.5.10
 [0.5.9]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.8...v0.5.9
 [0.5.8]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.7...v0.5.8
