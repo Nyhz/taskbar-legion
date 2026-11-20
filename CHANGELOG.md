@@ -15,6 +15,19 @@ While the project is pre-1.0, minor versions may include breaking save changes.
 
 ### Fixed
 
+## [0.5.12] - 2026-11-20
+
+### Added
+
+- **Game size ×1.5**: on a standard display (one screen pixel per point, such as 1920×1080 or 2560×1440), where ×1
+  was too small and ×2 too large, the options now offer the size in between. It is a little softer than the
+  whole-number sizes, and the windows match it when they fit. Nothing changes unless you pick it; retina displays
+  already had sizes this close together.
+
+### Changed
+
+### Fixed
+
 ## [0.5.11] - 2026-11-20
 
 ### Added
@@ -307,7 +320,8 @@ While the project is pre-1.0, minor versions may include breaking save changes.
 - Initial desktop builds: Tauri v2 transparent, always-on-top, bottom-docked overlay.
 - Multi-platform release pipeline (macOS universal, Windows, Linux) via GitHub Actions.
 
-[Unreleased]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.11...HEAD
+[Unreleased]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.12...HEAD
+[0.5.12]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.11...v0.5.12
 [0.5.11]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.10...v0.5.11
 [0.5.10]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.9...v0.5.10
 [0.5.9]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.8...v0.5.9
