@@ -10,6 +10,7 @@ import {
   STRIP_MAX_CSS_WIDTH,
   STRIP_MIN_CSS_WIDTH,
   gameScaleStops,
+  isWholePixelStop,
   screenPixelsPerArtPixel,
   snapGameScale,
   type TargetScreen,
@@ -31,14 +32,35 @@ import { KIT_WINGS_ART, PANELS_NEED_ART } from '@/ui/panels/panelFit';
 const RATIOS = [1, 1.25, 1.5, 1.75, 2, 2.5, 3];
 
 describe('whole-pixel game scale', () => {
-  it('every stop puts one art pixel on a whole number of screen pixels', () => {
+  it('every stop puts one art pixel on a whole number of screen pixels, or on the half stop between two', () => {
     for (const dpr of RATIOS) {
-      for (const stop of gameScaleStops(dpr)) {
+      const stops = gameScaleStops(dpr);
+      for (const stop of stops) {
         const px = screenPixelsPerArtPixel(stop, dpr);
-        expect(Math.abs(px - Math.round(px))).toBeLessThan(1e-9);
-        expect(Math.round(px)).toBeGreaterThanOrEqual(1);
+        expect(Math.abs(px * 2 - Math.round(px * 2))).toBeLessThan(1e-9);
+        expect(px).toBeGreaterThanOrEqual(1);
+        expect(isWholePixelStop(stop, dpr)).toBe(Math.abs(px - Math.round(px)) < 1e-9);
       }
+      // The smallest is whole, and so is whatever a default or an old save snaps to.
+      expect(isWholePixelStop(stops[0] ?? 0, dpr)).toBe(true);
+      for (const stored of [0.5, 0.75, 1, 1.25, 2]) expect(isWholePixelStop(snapGameScale(stored, dpr), dpr)).toBe(true);
     }
+  });
+
+  it('offers a half stop only where two whole stops are far apart: ×1.5 at 1:1, none on a retina display', () => {
+    const labels = (dpr: number): number[] => gameScaleStops(dpr).map((s) => screenPixelsPerArtPixel(s, dpr));
+    expect(labels(1)).toEqual([1, 1.5, 2]);
+    for (const dpr of [1.25, 1.5, 1.75, 2, 2.5, 3]) {
+      for (const stop of gameScaleStops(dpr)) expect(isWholePixelStop(stop, dpr)).toBe(true);
+    }
+  });
+
+  it('the half stop is the player\'s pick: it holds once chosen, and becomes the same size in whole pixels on a retina display', () => {
+    const half = gameScaleStops(1)[1] ?? 0;
+    expect(screenPixelsPerArtPixel(half, 1)).toBeCloseTo(1.5);
+    expect(snapGameScale(half, 1)).not.toBe(half); // not picked: whole pixels only
+    expect(snapGameScale(half, 1, undefined, true)).toBe(half);
+    expect(screenPixelsPerArtPixel(snapGameScale(half, 2, undefined, true), 2)).toBeCloseTo(3); // 900 CSS px both
   });
 
   it('keeps the strip inside its width bounds, and always offers at least one stop', () => {
@@ -67,7 +89,7 @@ describe('whole-pixel game scale', () => {
 
   it('a standard display offers ×1 and ×2, and a stored default snaps to ×2', () => {
     const stops = gameScaleStops(1);
-    expect(stops.map((s) => Math.round(screenPixelsPerArtPixel(s, 1)))).toEqual([1, 2]);
+    expect(stops.filter((s) => isWholePixelStop(s, 1)).map((s) => Math.round(screenPixelsPerArtPixel(s, 1)))).toEqual([1, 2]);
     expect(Math.round(screenPixelsPerArtPixel(snapGameScale(1, 1), 1))).toBe(2);
   });
 
@@ -193,6 +215,13 @@ describe('the screens the game must fit', () => {
     );
   });
 
+  it('at the half stop the panels match the strip when they fit, else drop to whole pixels', () => {
+    const fit = (viewport: { width: number; height: number }): number =>
+      fitPanelPixels({ dpr: 1, viewport, stripCssHeight: 273, stripPixels: 1.5, needArtAt: () => PANELS_NEED_ART });
+    expect(fit({ width: 2560, height: 1376 })).toBe(1.5);
+    expect(fit({ width: 700, height: 500 })).toBe(1);
+  });
+
   it('never goes below one screen pixel', () => {
     const tiny = { width: 300, height: 200 };
     expect(
@@ -206,13 +235,13 @@ describe('the screens the game must fit', () => {
     ).toBe(1);
   });
 
-  it('offers ×2 on a 900-tall screen at 1:1 but keeps 720p and 768p screens at ×1', () => {
+  it('offers ×2 on a 900-tall screen at 1:1 but stops 720p and 768p screens at ×1.5', () => {
     const labels = (dpr: number, viewportH: number): number[] =>
-      gameScaleStops(dpr, viewportH).map((stop) => Math.round(screenPixelsPerArtPixel(stop, dpr)));
-    expect(labels(1, 900 - 80)).toEqual([1, 2]);
-    expect(labels(1, 1080 - 80)).toEqual([1, 2]);
-    expect(labels(1, 768 - 80)).toEqual([1]);
-    expect(labels(1, 720 - 80)).toEqual([1]);
+      gameScaleStops(dpr, viewportH).map((stop) => screenPixelsPerArtPixel(stop, dpr));
+    expect(labels(1, 900 - 80)).toEqual([1, 1.5, 2]);
+    expect(labels(1, 1080 - 80)).toEqual([1, 1.5, 2]);
+    expect(labels(1, 768 - 80)).toEqual([1, 1.5]);
+    expect(labels(1, 720 - 80)).toEqual([1, 1.5]);
     expect(labels(2, 982 - 80)).toEqual([2, 3, 4]); // MacBook Pro 14"
   });
 });

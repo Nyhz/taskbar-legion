@@ -3,6 +3,12 @@
 // with `dpr` screen pixels per CSS px the allowed gameScale values are k / (UI_SCALE · dpr) for whole k.
 // Nothing moves when the scale changes — the strip stays docked bottom-centre with the panels above it — only
 // its size steps. Pure: no window access here; callers pass the display's pixel ratio.
+//
+// The one exception is the HALF stop (2026-11-20, user: on a 2560×1440 screen at 1:1, ×1 is too small and ×2 too
+// large). Where two neighbouring whole stops are HALF_STOP_MIN_GAP apart or more (×1 → ×2 on a standard display;
+// never on a retina one, whose ×2 → ×3 → ×4 are already close), the stop between them is offered too. It is not
+// whole-pixel: the strip is smoothed down from its ×3 backing store (every art pixel exactly 1.5 screen pixels,
+// soft edges instead of uneven blocks). It is only ever the player's CHOICE — a default never lands on it.
 
 /** Baseline UI sizing baked into the layout (strip canvas, HUD). The user's game scale multiplies on top. */
 export const UI_SCALE = 1.5;
@@ -24,31 +30,49 @@ export function screenPixelsPerArtPixel(gameScale: number, dpr: number): number 
 export const STRIP_MAX_HEIGHT_SHARE = 0.5;
 const STRIP_AND_HUD_ART_HEIGHT = 182; // STRIP_ART_HEIGHT + HUD_ART_HEIGHT (declared below)
 
-/** The game scales that land on whole screen pixels for this display, smallest first. Never empty. With
+/** Two neighbouring whole stops this many times apart (or more) get the half stop between them: ×1 → ×2 does
+ *  (×1.5), ×2 → ×3 does not. */
+export const HALF_STOP_MIN_GAP = 2;
+
+/** True when `gameScale` puts one art pixel on a whole number of screen pixels of a display of ratio `dpr`. */
+export function isWholePixelStop(gameScale: number, dpr: number): boolean {
+  const pixels = screenPixelsPerArtPixel(gameScale, dpr > 0 && Number.isFinite(dpr) ? dpr : 1);
+  return Math.abs(pixels - Math.round(pixels)) < 1e-6;
+}
+
+/** The game scales this display offers, smallest first: every whole-pixel one, plus the half stop where two of
+ *  them are too far apart (HALF_STOP_MIN_GAP). Never empty, and the smallest is always whole. With
  *  `viewportCssHeight`, stops whose strip would take more than STRIP_MAX_HEIGHT_SHARE of it are left out. */
 export function gameScaleStops(dpr: number, viewportCssHeight?: number): number[] {
   const ratio = dpr > 0 && Number.isFinite(dpr) ? dpr : 1;
-  const stops: number[] = [];
+  const whole: number[] = []; // screen pixels per art pixel
   for (let k = 1; k <= 16; k++) {
     const cssWidth = (STRIP_ART_WIDTH * k) / ratio;
     if (cssWidth < STRIP_MIN_CSS_WIDTH) continue;
     if (cssWidth > STRIP_MAX_CSS_WIDTH) break;
-    stops.push(k / (UI_SCALE * ratio));
+    whole.push(k);
   }
   // An odd ratio can leave no whole-pixel width inside the bounds: take the largest that still fits the window.
-  if (stops.length === 0) {
-    const k = Math.max(1, Math.floor((STRIP_MAX_CSS_WIDTH * ratio) / STRIP_ART_WIDTH));
-    stops.push(k / (UI_SCALE * ratio));
-  }
+  if (whole.length === 0) whole.push(Math.max(1, Math.floor((STRIP_MAX_CSS_WIDTH * ratio) / STRIP_ART_WIDTH)));
+  const pixels: number[] = [];
+  whole.forEach((k, i) => {
+    const before = whole[i - 1];
+    if (before !== undefined && k / before >= HALF_STOP_MIN_GAP) pixels.push((before + k) / 2);
+    pixels.push(k);
+  });
+  const stops = pixels.map((k) => k / (UI_SCALE * ratio));
   if (viewportCssHeight === undefined || !(viewportCssHeight > 0)) return stops;
   const cssHeight = (stop: number): number => STRIP_AND_HUD_ART_HEIGHT * UI_SCALE * stop;
   const short = stops.filter((stop) => cssHeight(stop) <= viewportCssHeight * STRIP_MAX_HEIGHT_SHARE);
   return short.length > 0 ? short : stops.slice(0, 1);
 }
 
-/** The allowed stop closest to `value` (compared as a ratio, so ×1.33 beats ×0.67 for a stored 1). */
-export function snapGameScale(value: number, dpr: number, viewportCssHeight?: number): number {
-  const stops = gameScaleStops(dpr, viewportCssHeight);
+/** The allowed stop closest to `value` (compared as a ratio, so ×1.33 beats ×0.67 for a stored 1). Only the
+ *  whole-pixel stops count unless `half` says the player picked a half stop: a default, an old save or a
+ *  window that changed display never lands on one by itself. */
+export function snapGameScale(value: number, dpr: number, viewportCssHeight?: number, half = false): number {
+  const offered = gameScaleStops(dpr, viewportCssHeight);
+  const stops = half ? offered : offered.filter((stop) => isWholePixelStop(stop, dpr));
   const wanted = value > 0 && Number.isFinite(value) ? value : 1;
   let best = stops[0] ?? 1;
   for (const stop of stops) {
@@ -106,8 +130,9 @@ export function panelPixelsPerArtPixel(args: {
   return Math.max(1, Math.min(Math.round(stripPixels), fit));
 }
 
-/** The same, asking for the art box at each candidate scale: the largest whole number of screen pixels per art
- *  pixel, from the strip's down to 1, at which `needArtAt(pixels)` fits above the strip (1 if none does). */
+/** The same, asking for the art box at each candidate scale: the largest number of screen pixels per art pixel —
+ *  the strip's own (which may be a half stop: the panels then match it), then every whole number below it down
+ *  to 1 — at which `needArtAt(pixels)` fits above the strip (1 if none does). */
 export function fitPanelPixels(args: {
   dpr: number;
   viewport: { width: number; height: number };
@@ -119,7 +144,8 @@ export function fitPanelPixels(args: {
   const { dpr, viewport, stripCssHeight, needArtAt } = args;
   const margin = args.marginCss ?? 8;
   const ratio = dpr > 0 && Number.isFinite(dpr) ? dpr : 1;
-  for (let pixels = Math.max(1, Math.round(args.stripPixels)); pixels > 1; pixels--) {
+  const strip = Math.max(1, Math.round(args.stripPixels * 2) / 2);
+  for (let pixels = strip; pixels > 1; pixels = Number.isInteger(pixels) ? pixels - 1 : Math.floor(pixels)) {
     const need = needArtAt(pixels);
     const fitsWide = (need.width * pixels) / ratio <= viewport.width - margin * 2;
     const fitsTall = (need.height * pixels) / ratio <= viewport.height - stripCssHeight - margin;

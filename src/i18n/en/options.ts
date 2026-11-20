@@ -6,7 +6,7 @@ export const options = {
   language: 'Language',
   languageHelp: 'The whole game, in English or in Spanish.',
   gameScale: 'Game size',
-  gameScaleHelp: 'Screen pixels for each pixel of the art. Whole numbers only, so everything stays sharp.',
+  gameScaleHelp: 'Screen pixels for each pixel of the art. Whole numbers stay sharp; ×1.5 is a little softer.',
   music: 'Title music',
   musicHelp: 'The tune of the title screen, on or off.',
   sound: 'Sound',

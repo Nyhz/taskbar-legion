@@ -91,7 +91,7 @@ export function PanelLayer(): React.JSX.Element {
 
   // One scale for every kit panel, whatever is open: the strip's if the whole constellation fits, else lower.
   const dpr = displayPixelRatio();
-  const stripPixels = Math.round(screenPixelsPerArtPixel(gameScale, dpr));
+  const stripPixels = Math.round(screenPixelsPerArtPixel(gameScale, dpr) * 2) / 2; // whole, or the half stop
   const stripCssHeight = ((STRIP_ART_HEIGHT + HUD_ART_HEIGHT) * stripPixels) / dpr;
   const panelPixels = fitPanelPixels({
     dpr,

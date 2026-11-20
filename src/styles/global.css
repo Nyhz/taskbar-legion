@@ -8,6 +8,11 @@ canvas {
   image-rendering: pixelated;
 }
 
+/* The strip at the half stop (×1.5, GameView): smoothed down from its ×3 backing store instead. */
+.tl-strip-smooth > canvas {
+  image-rendering: auto;
+}
+
 /* The game UI is not a text document — never let clicks / drags / right-clicks sweep-select
    text or item glyphs (a constant annoyance with the pointer-based item drag). */
 #tl-app-root {

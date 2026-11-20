@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { GameStrip } from '@/game/GameStrip';
 import { getEngine } from '@/game/engineRef';
 import { useStore } from '@/state/store';
+import { displayPixelRatio } from '@/state/slices/uiSlice';
+import { isWholePixelStop } from '@/state/pixelScale';
 import { saveGame } from '@/persistence/saveManager';
 import type { SaveV1 } from '@/persistence/saveSchema';
 import type { OfflineSummary } from '@/sim/offline';
@@ -50,6 +52,10 @@ export function GameView({ bootSave, onReady }: { bootSave: SaveV1 | null; onRea
   // the canvas; gameScale drives the DOM HUD/overlay zoom (authored at the baseline size).
   const gameScale = useStore((s) => s.gameScale);
   const stripScale = uiScale * gameScale;
+  // At the half stop (×1.5) the canvas is SMOOTHED down from its ×3 backing store — exactly 2 : 1, so every art
+  // pixel is 1.5 screen pixels with soft edges; nearest-neighbour would alternate 1- and 2-pixel blocks and
+  // make everything that moves crawl. Whole stops keep nearest-neighbour (global.css).
+  const smoothStrip = !isWholePixelStop(gameScale, displayPixelRatio());
   const autoOpenPending = useStore((s) => s.autoOpenPending);
   const [offline, setOffline] = useState<OfflineSummary | null>(null);
   const [renderError, setRenderError] = useState<unknown>(null);
@@ -212,7 +218,7 @@ export function GameView({ bootSave, onReady }: { bootSave: SaveV1 | null; onRea
         <div style={{ width: STRIP_LOGICAL_WIDTH * uiScale, zoom: gameScale, pointerEvents: tauri ? 'auto' : undefined }} onPointerDown={onStripPointerDown}>
           <StripHud />
           <div style={{ position: 'relative', width: STRIP_LOGICAL_WIDTH * uiScale, height: STRIP_LOGICAL_HEIGHT * uiScale }}>
-            <div ref={stripRef} style={{ height: '100%', width: '100%' }} />
+            <div ref={stripRef} className={smoothStrip ? 'tl-strip-smooth' : undefined} style={{ height: '100%', width: '100%' }} />
             <StripOverlay />
           </div>
         </div>

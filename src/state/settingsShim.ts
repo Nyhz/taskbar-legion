@@ -16,6 +16,9 @@ export interface UiSettings {
   /** True when `gameScale` was saved by the whole-pixel system. Saves from before it hold 0.75 / 1 / 1.25 of
    *  another unit: honouring one of those shrinks the game (0.75 lands on ×1), so they are not read. */
   wholePixelScale?: boolean;
+  /** True when the player PICKED a half stop (×1.5 on a standard display — state/pixelScale). Without it the
+   *  stored scale only ever snaps to a whole-pixel stop. */
+  halfPixelScale?: boolean;
   dockOrientation: DockOrientation;
   retryStage: boolean; // keep the party on its stage after a wipe instead of retreating
   hideSocketWarning: boolean; // skip the "gem can't be recovered" confirm when socketing

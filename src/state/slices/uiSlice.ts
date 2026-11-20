@@ -2,7 +2,7 @@ import type { StateCreator } from 'zustand';
 import { getLanguage, isLang, setLanguage, subscribeLanguage } from '@/i18n/core';
 import type { Lang } from '@/i18n/core';
 import { loadSettings, saveSettings, storedGameScale } from '../settingsShim';
-import { UI_SCALE, snapGameScale } from '../pixelScale';
+import { UI_SCALE, isWholePixelStop, snapGameScale } from '../pixelScale';
 
 export type PanelKey =
   | 'party' // the hero window: the main panel, fixed and centred above the strip
@@ -107,6 +107,9 @@ export const createUiSlice: StateCreator<UiSlice, [], [], UiSlice> = (set, get) 
   // The scale the player picked, before snapping it to this display's stops — kept apart so that a window moved to a
   // screen where it is not allowed falls back for now and gets it again on a screen where it is.
   let wantedGameScale = storedGameScale(persisted) ?? 1;
+  // A half stop (×1.5) is only ever the player's pick: a default or an old save snaps to whole pixels.
+  let wantsHalfStop = storedGameScale(persisted) !== undefined && persisted.halfPixelScale === true;
+  const snapped = (): number => snapGameScale(wantedGameScale, displayPixelRatio(), displayViewportHeight(), wantsHalfStop);
   // The language lives in @/i18n (so `t()` works outside React and the store); this slice only persists it.
   // It is written to the shim ONLY once chosen — until then the game follows the system language.
   let chosenLanguage: Lang | undefined = isLang(persisted.language) ? persisted.language : undefined;
@@ -118,6 +121,7 @@ export const createUiSlice: StateCreator<UiSlice, [], [], UiSlice> = (set, get) 
       menuScale: get().menuScale,
       gameScale: wantedGameScale,
       wholePixelScale: true,
+      halfPixelScale: wantsHalfStop,
       dockOrientation: get().dockOrientation,
       retryStage: get().retryStage,
       hideSocketWarning: get().hideSocketWarning,
@@ -134,7 +138,7 @@ export const createUiSlice: StateCreator<UiSlice, [], [], UiSlice> = (set, get) 
     windowPos: {},
     uiScale: UI_SCALE, // fixed baseline — the user knobs are menuScale / gameScale
     menuScale: Math.min(MENU_SCALE_MAX, persisted.menuScale ?? 1), // clamp a stale 1.25 down
-    gameScale: snapGameScale(wantedGameScale, displayPixelRatio(), displayViewportHeight()), // whole screen pixels per art pixel
+    gameScale: snapped(), // whole screen pixels per art pixel (or the half stop the player picked)
     dockOrientation: persisted.dockOrientation ?? 'bottom',
     retryStage: persisted.retryStage ?? false,
     hideSocketWarning: persisted.hideSocketWarning ?? false,
@@ -188,14 +192,16 @@ export const createUiSlice: StateCreator<UiSlice, [], [], UiSlice> = (set, get) 
       persist();
     },
 
-    // Always lands on a whole-pixel stop for the display the window is on (also called when that display changes).
+    // Always lands on a stop of the display the window is on (also called when that display changes). `scale` is
+    // one of that display's stops (the options offer nothing else): picking its half stop is what allows it.
     setGameScale: (scale) => {
       wantedGameScale = scale;
-      set({ gameScale: snapGameScale(scale, displayPixelRatio(), displayViewportHeight()) });
+      wantsHalfStop = !isWholePixelStop(scale, displayPixelRatio());
+      set({ gameScale: snapped() });
       persist();
     },
     resnapGameScale: () => {
-      const gameScale = snapGameScale(wantedGameScale, displayPixelRatio(), displayViewportHeight());
+      const gameScale = snapped();
       if (gameScale !== get().gameScale) set({ gameScale });
     },
   };

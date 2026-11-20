@@ -2397,3 +2397,12 @@ Decisiones del usuario (18 nov), tras discutirlas una a una:
   contestar: se deja como se propuso); la runa del lanzamiento `sigil_ward` sigue azul, es la señal de categoría.
   Borradores A/B y su vista previa borrados; captura real en `docs/redesign/lab/shots/holy_shield_dome_ingame.png`.
   `npm test`: verde salvo `test/sim/anchors.test.ts` 1-9 (3,39 > 3,3), que ya fallaba igual antes de este cambio.
+- 2026-11-20 · **Tamaño ×1,5 (usuario: en 2560×1440 «×1 es muy pequeño y ×2 demasiado grande»).** Única excepción a
+  los píxeles enteros: donde dos paradas enteras vecinas distan el doble o más (`HALF_STOP_MIN_GAP`: solo ×1 → ×2, es
+  decir pantallas 1:1; en retina nunca) se ofrece también la intermedia (`gameScaleStops`). No es píxel entero: la
+  franja se SUAVIZA desde su lienzo ×3 (2 : 1 exacto, `.tl-strip-smooth`) y la interfaz la suaviza el navegador —
+  cada píxel del dibujo mide 1,5 de pantalla, con bordes algo más blandos pero uniformes (igual en Chromium y en
+  WebKit, capturado en los dos). Los paneles igualan a la franja si caben y si no bajan a enteros (`fitPanelPixels`;
+  en 1280×720 la franja va a ×1,5 y los paneles a ×1). Solo se llega a ella ELIGIÉNDOLA (`halfPixelScale` en los
+  ajustes guardados): el valor por defecto, una partida antigua o un cambio de pantalla siguen cayendo en entero
+  (×2 en 1:1). 720p y 768p pasan de ofrecer solo ×1 a ×1 y ×1,5. `npm test`: verde salvo el `anchors` 1-9 de antes.

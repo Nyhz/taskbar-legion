@@ -9,7 +9,12 @@ import { useMusic } from './useMusic';
 import { SoundRows } from './SoundRows';
 
 // The settings themselves, one row each: its sign, then its control. Language; the game's size (the whole-pixel
-// stops this display allows — state/pixelScale); the game's sound (SoundRows); and the title music.
+// stops this display allows, plus its half stop where they are far apart — state/pixelScale); the game's sound (SoundRows); and the title music.
+
+/** Screen pixels per art pixel as the option shows it: a whole number, or the half stop (1.5 / 1,5). */
+function scaleLabel(pixels: number, language: string): string {
+  return (Math.round(pixels * 2) / 2).toLocaleString(language === 'es' ? 'es-ES' : 'en-US', { maximumFractionDigits: 1 });
+}
 
 function useRedrawOnResize(): void {
   const [, force] = useState(0);
@@ -49,7 +54,7 @@ export function OptionsRows(): React.JSX.Element {
         <Segment
           items={stops.map((stop) => ({
             key: stop,
-            label: <>×{Math.round(screenPixelsPerArtPixel(stop, dpr))}</>,
+            label: <>×{scaleLabel(screenPixelsPerArtPixel(stop, dpr), language)}</>,
             on: Math.abs(stop - gameScale) < 0.001,
             onPick: () => setGameScale(stop),
           }))}

@@ -8,7 +8,7 @@ export const options: Record<keyof typeof en, string> = {
   languageHelp: 'Todo el juego, en inglés o en español.',
   gameScale: 'Tamaño del juego',
   gameScaleHelp:
-    'Píxeles de pantalla por cada píxel del dibujo. Solo números enteros, para que todo se vea nítido.',
+    'Píxeles de pantalla por cada píxel del dibujo. Los enteros se ven nítidos; ×1,5 queda algo más suave.',
   music: 'Música del título',
   musicHelp: 'La melodía de la pantalla de título, encendida o apagada.',
   sound: 'Sonido',
