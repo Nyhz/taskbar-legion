@@ -1,7 +1,20 @@
 {
-  "updated": "19 nov 2026",
-  "intro": "Queda pendiente el catálogo de sonido.",
+  "updated": "20 nov 2026",
+  "intro": "Nuevo: la Holy Nova rediseñada. Holy Shield ya está en el juego (cúpula de luz). Sigue pendiente el catálogo de sonido.",
   "sections": [
+    {
+      "id": "holy-nova",
+      "eyebrow": "Efectos · Sacerdotisa",
+      "title": "Holy Nova: cae del cielo y se extiende",
+      "text": "Una estrella se enciende sobre la oleada, cae cuando la sacerdotisa clava el bastón, estalla contra el suelo y la nova corre por el suelo hasta los extremos de la oleada. Es una sola cosa por lanzamiento, haya 3 enemigos o 20. Por ahora solo está en el lab; cuando me des el visto bueno la paso al juego.",
+      "questions": [
+        "¿Te gusta la idea general (estrella que cae → cúpula de luz → anillo que corre por el suelo)?",
+        "¿La estrella del cielo se ve bien, o la quieres más grande o con otra forma (un sol, una lanza de luz, un orbe)?",
+        "¿El borde que corre por el suelo se ve lo suficiente? Ahora pasa por detrás de los enemigos; puedo hacerlo más alto o pasarlo por delante.",
+        "En cada enemigo, ¿basta con el destello pequeño a sus pies, o lo quitas y dejas solo el parpadeo de golpe?"
+      ],
+      "html": "nova.html"
+    },
     {
       "id": "sonido-muestra",
       "eyebrow": "R7 · Sonido",

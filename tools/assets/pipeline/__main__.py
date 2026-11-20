@@ -27,6 +27,11 @@ def main(argv: list[str]) -> int:
 
         app_icon()
         return 0
+    if cmd == "nova-preview":
+        from .nova_preview import main as nova_preview
+
+        nova_preview(argv[1:])
+        return 0
     if cmd == "ability-preview":
         from .ability_preview import main as ability_preview
 
@@ -82,7 +87,7 @@ def main(argv: list[str]) -> int:
 
         audio_lab()
         return 0
-    print("commands: chars [names…], scene, lab, icons, export-ui, export-strip, export-figs, export-fx, export-pets, readme, app-icon, reel, ability-preview [rev], audio [--sample] [--dry] [ids…]")
+    print("commands: chars [names…], scene, lab, icons, export-ui, export-strip, export-figs, export-fx, export-pets, readme, app-icon, reel, ability-preview [rev], nova-preview, audio [--sample] [--dry] [ids…]")
     return 1
 
 

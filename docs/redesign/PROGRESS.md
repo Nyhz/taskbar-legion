@@ -2378,3 +2378,22 @@ Decisiones del usuario (18 nov), tras discutirlas una a una:
   entran en el 2.º y 3.º grupo), al morir el apoyo ninguna se queda, y la Égida da su escudo a todos. Cada aura actúa:
   Furia +20/25 % de velocidad, Saña ×1,15/1,20, Aguante 80/75 de cada 100, Égida 15–25 % de vida, Vigor 2–3 %/s, Armas
   encantadas 40 % mágico. Sin cambios en el código.
+- 2026-11-20 · **Holy Nova rediseñada (borrador en el lab v105, sin pasar al juego).** La de ahora pone una columna de
+  luz cada 15 px de oleada y una estrella en cada enemigo (12 columnas + 15 estrellas con una oleada llena). La nueva es
+  una sola cosa: una estrella se enciende sobre el centro de la oleada mientras ella alza el bastón, cae y aterriza en su
+  golpe, estalla en una cúpula de luz, un anillo plano se abre en el suelo y sus bordes corren hasta los extremos de la
+  oleada; cada enemigo recibe un destello pequeño a sus pies cuando pasa el borde. Dibujo en
+  `tools/assets/pipeline/fx/nova_next.py` (`DRAFTS`, no se exporta), vista previa `run.sh nova-preview`
+  (`docs/redesign/lab/img/nova/`). Para pasarlo al juego hace falta un efecto que se desplace (el borde que corre).
+- 2026-11-20 · **Holy Shield: dos propuestas de luz sagrada (lab v106, sin pasar al juego).** El usuario: «no parece
+  muy holy, parece un cristal». A · alas guardianas (dos alas de luz rellenas a la espalda del protegido, dibujadas
+  detrás de la figura para no taparle, con un halo sobre la cabeza; estallan en plumas). B · cúpula de luz (arco
+  dorado con rayos en la cima y un sello solar de ocho rayos; se deshace hacia arriba). Las dos sin azul. Dibujo en
+  `tools/assets/pipeline/fx/ward_next.py` (`DRAFTS`), vista previa `run.sh ward-preview` (`docs/redesign/lab/img/ward/`).
+  Si gana A, su aspecto duradero pasa del hueco `front` al `behind`.
+- 2026-11-20 · **Holy Shield = cúpula de luz, en el juego (usuario: «Cúpula de luz sin duda, ok a 4»).** La propuesta B
+  sustituye a la gema de cristal con las mismas claves (`ward_spark` · `ward_raise` · `ward_front` · `ward_break`), y el
+  escudo menor `ward_veil` es solo un halo de oro sobre la cabeza. Sin azul (la pregunta del toque azul quedó sin
+  contestar: se deja como se propuso); la runa del lanzamiento `sigil_ward` sigue azul, es la señal de categoría.
+  Borradores A/B y su vista previa borrados; captura real en `docs/redesign/lab/shots/holy_shield_dome_ingame.png`.
+  `npm test`: verde salvo `test/sim/anchors.test.ts` 1-9 (3,39 > 3,3), que ya fallaba igual antes de este cambio.
