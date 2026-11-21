@@ -98,6 +98,14 @@ export const PETS: Record<string, PetDef> = {
 
 export const PET_KEYS: string[] = Object.keys(PETS);
 
+/** MILESTONE PETS (user, 2026-11-21): a pet handed over the first time a whole difficulty is beaten (its 10-10), so
+ *  every player owns at least two by the end of Hell however the drops went. A player who already found it gets
+ *  nothing extra. `difficulty` is the index (0 = Normal). */
+export const MILESTONE_PETS: readonly { pet: string; difficulty: number }[] = [
+  { pet: 'coin_sprite', difficulty: 0 }, // the gold pet, at the end of Normal
+  { pet: 'scholar_owl', difficulty: 1 }, // the experience pet, at the end of Hell
+];
+
 export function petDef(key: string): PetDef {
   const def = PETS[key];
   if (def === undefined) throw new Error(`Unknown pet ${key}`);

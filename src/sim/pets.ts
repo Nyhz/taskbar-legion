@@ -1,5 +1,6 @@
 import type { Rng } from './rng';
-import { PETS, PET_KEYS, petDef, type PetBonus, type PetObjectiveKind } from '@/data/pets';
+import { MILESTONE_PETS, PETS, PET_KEYS, petDef, type PetBonus, type PetObjectiveKind } from '@/data/pets';
+import { STAGES_PER_DIFFICULTY } from '@/data/difficulties';
 
 // Pets: the rare drop roll on kills (NOT from chests) and the RANKS. A pet is found at rank 1 and grows through
 // its own objective — a count on its theme (data/pets.ts) kept per owned pet since it was found. Owning grants
@@ -119,4 +120,10 @@ export function rollPetDrop(
     if (rng.chance(chance)) return key;
   }
   return null;
+}
+
+/** The milestone pets (data/pets MILESTONE_PETS) a player with this frontier should own and does not: those whose
+ *  difficulty's last stage is cleared, minus `ownedKeys`. In table order. */
+export function milestonePetsDue(maxClearedStage: number, ownedKeys: readonly string[]): string[] {
+  return MILESTONE_PETS.filter((m) => maxClearedStage >= (m.difficulty + 1) * STAGES_PER_DIFFICULTY && !ownedKeys.includes(m.pet)).map((m) => m.pet);
 }
