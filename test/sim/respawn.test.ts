@@ -88,6 +88,37 @@ describe('wipe retreat ↔ RETRY toggle', () => {
   it('keeps the party on its stage on a wipe when RETRY is on', () => {
     expect(stageAfterWipe(3, true)).toBe(3);
   });
+
+  // The first stage of a world has only the previous world's boss stage below it (boss-only: nothing spawns
+  // there). The party stays on X-1 — leaving a world is the player's choice (user, 2026-11-21).
+  it('stays on the first stage of a world on a wipe, even with RETRY off', () => {
+    for (const stage of [1, 11, 41, 101, 141, 491]) {
+      expect(stageAfterWipe(stage, false)).toBe(stage);
+      expect(stageAfterWipe(stage, true)).toBe(stage);
+    }
+  });
+
+  it('a wipe on a world boss steps back to its X-9, RETRY on or off', () => {
+    expect(stageAfterWipe(140, true)).toBe(139);
+    expect(stageAfterWipe(140, false)).toBe(139);
+  });
+
+  it('never leaves the party on a boss-only stage, whatever stage it falls on', () => {
+    for (let stage = 1; stage <= 500; stage++) {
+      for (const retry of [false, true]) expect(stageAfterWipe(stage, retry) % 10, `stage ${stage}`).not.toBe(0);
+    }
+  });
+
+  it('a party standing on a boss-only stage does not walk on without its heroes', () => {
+    const a = godHero('h0');
+    const world = createWorld(1, [a]);
+    world.globalStageIndex = 500; // the game is complete: the party idles on Torment 10-10
+    world.phase = 'advancing';
+    const sim = new Simulation(world);
+    for (let i = 0; i < 600; i++) sim.tick(ctx);
+    expect(world.enemies).toHaveLength(0);
+    expect(world.partyX - a.x).toBeLessThan(50);
+  });
 });
 
 describe('active abilities (≤2)', () => {

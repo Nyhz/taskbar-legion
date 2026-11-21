@@ -29,7 +29,7 @@ export const hud = {
   retryOn: 'Retry · on',
   retryOnHelp: 'If you fall, you stay on this stage and try it again.',
   retryOff: 'Retry · off',
-  retryOffHelp: 'If you fall, you go back one stage. Turn it on to stay and try again.',
+  retryOffHelp: 'If you fall, you go back one stage, but never out of this world. Turn it on to stay and try again.',
   nextStage: 'Go on to {place}',
   nextStageHelp: 'The next stage is already open. Go there now.',
   healDebuff: 'Weakened healing',

@@ -30,7 +30,7 @@ export const hud: Record<keyof typeof en, string> = {
   retryOn: 'Reintentar · encendido',
   retryOnHelp: 'Si caéis, os quedáis en esta etapa y la repetís.',
   retryOff: 'Reintentar · apagado',
-  retryOffHelp: 'Si caéis, retrocedéis una etapa. Enciéndelo para quedaros y repetir.',
+  retryOffHelp: 'Si caéis, retrocedéis una etapa, pero nunca salís de este mundo. Enciéndelo para quedaros y repetir.',
   nextStage: 'Avanzar a {place}',
   nextStageHelp: 'La etapa siguiente ya está abierta: seguid adelante.',
   healDebuff: 'Curación mermada',

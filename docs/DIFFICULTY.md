@@ -41,7 +41,9 @@ migrated** — the migrate path resets to Normal 1-1.
 - Beat a stage **for the first time** → **auto-advance** to the next stage.
 - Beat a stage you've **already cleared** (you dropped back to farm) → **stay and loop** it.
 - **Retry toggle** (bottom-right of the GameStrip): **ON** → a wipe keeps you in the current stage; **OFF** → a
-  wipe **drops you down one stage**.
+  wipe **drops you down one stage** — but never out of the world: on an **X-1** the party stays on X-1 either way
+  (user, 2026-11-21: leaving a world is the player's own choice; the stage below is the previous world's boss-only
+  X-10, where nothing spawns). A wipe on a world boss (X-10) always steps back to its X-9.
 
 ## 3. Difficulty ↔ tier ladder
 

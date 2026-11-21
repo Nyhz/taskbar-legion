@@ -19,7 +19,7 @@ tuned. Put each number in its matching `data/` file; reference it, never re-type
 - **Tick:** 100 ms logical timestep. Render interpolates.
 - **Offline cap:** 8 hours of catch-up (was 12 until 2026-11-15); the Time Imp pet adds +2/+4/+6/+8/+10 h by rank, up to 18. Sampled deterministically from the seed.
 - **Autosave:** every 30 s + on meaningful events (chest open, equip, tech/talent purchase, stage advance).
-- **Party wipe penalty:** retreat 1 stage; resume. No permadeath.
+- **Party wipe penalty:** retreat 1 stage (never out of the world: a wipe on X-1 stays on X-1 — DIFFICULTY.md §2); resume. No permadeath.
 
 ## Tiers — `data/tiers.ts`  (rarity & unlock scale with stage — see DIFFICULTY.md §13)
 

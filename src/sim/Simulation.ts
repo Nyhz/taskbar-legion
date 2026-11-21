@@ -108,15 +108,15 @@ export class Simulation {
         this.handleClear(false, firstClear);
       }
     } else if (w.phase === 'advancing') {
-      w.partyX += (WALK_SPEED * TICK_MS) / 1000; // walk forward (camera scrolls)
+      // An X-10 is a world-boss-only stage, entered solely via enterZoneBoss (which spawns the boss in 'zoneBoss'
+      // phase): a party left 'advancing' on one (the game is complete: Torment 10-10) STANDS — no trash, no stage
+      // boss (§14), and no walk either. The heroes only move in a fight, so an anchor that walked on alone would
+      // leave them behind for good and every later fight would happen off the strip (seen 2026-11-21).
+      const holds = isZoneBossStage(w.globalStageIndex);
+      if (!holds) w.partyX += (WALK_SPEED * TICK_MS) / 1000; // walk forward (camera scrolls)
       w.advanceTimerMs -= TICK_MS;
-      if (w.advanceTimerMs <= 0) {
-        // Never spawn trash/stage-boss on an X-10 — it's a world-boss-only stage entered
-        // solely via enterZoneBoss (which spawns the boss in 'zoneBoss' phase). Guard
-        // defensively so a stray advancing state can't run normal waves there (§14).
-        if (isZoneBossStage(w.globalStageIndex)) {
-          // hold (no spawn) — should be unreachable; entry sets phase='zoneBoss' directly
-        } else if (w.wavesThisStage >= wavesPerStage(w.globalStageIndex)) spawnStageBoss(w, this.rng);
+      if (w.advanceTimerMs <= 0 && !holds) {
+        if (w.wavesThisStage >= wavesPerStage(w.globalStageIndex)) spawnStageBoss(w, this.rng);
         else spawnWave(w, this.rng);
       }
     } else {
@@ -334,16 +334,22 @@ export class Simulation {
   }
 
   // Mid-cinematic (fired once it's fully black so the swap is hidden): bump the wipe count,
-  // retreat one stage (unless RETRY holds the party here), and clear the field. Heroes STAY
-  // dead — resumeAfterWipe revives them at the end.
+  // retreat one stage (unless RETRY holds the party here, or there is no stage below in this world), and clear
+  // the field. Heroes STAY dead — resumeAfterWipe revives them at the end.
   private retreatAfterWipe(retryStage: boolean): void {
     const w = this.world;
     w.wipes += 1; // diagnostic (balance probes)
+    const S = w.globalStageIndex;
     // A zone-boss stage (X-10) has NO trash waves — only the boss. Staying there on a retry
     // would soft-lock the party (nothing to fight, no boss to re-trigger), so a wipe ALWAYS
     // steps back to X-9 (re-enter the boss via the portal), even with retry on.
-    const stay = retryStage && !isZoneBossStage(w.globalStageIndex);
-    if (!stay) w.globalStageIndex = Math.max(1, w.globalStageIndex - 1);
+    const onWorldBoss = isZoneBossStage(S);
+    // The first stage of a world (X-1) has nothing below it but the previous world's boss stage: the party STAYS
+    // on X-1 even with retry off. Leaving a world is the player's own choice (user, 2026-11-21) — and falling
+    // onto that X-10 left the party on a stage where nothing ever spawns.
+    const firstOfWorld = S <= 1 || isZoneBossStage(S - 1);
+    const stay = !onWorldBoss && (retryStage || firstOfWorld);
+    if (!stay) w.globalStageIndex = S - 1;
     w.wavesThisStage = 0;
     w.enemies = [];
     w.waveQueue = [];
