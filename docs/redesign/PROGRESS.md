@@ -2406,3 +2406,86 @@ Decisiones del usuario (18 nov), tras discutirlas una a una:
   en 1280×720 la franja va a ×1,5 y los paneles a ×1). Solo se llega a ella ELIGIÉNDOLA (`halfPixelScale` en los
   ajustes guardados): el valor por defecto, una partida antigua o un cambio de pantalla siguen cayendo en entero
   (×2 en 1:1). 720p y 768p pasan de ofrecer solo ×1 a ×1 y ×1,5. `npm test`: verde salvo el `anchors` 1-9 de antes.
+- 2026-11-21 · **La franja vacía: el grupo peleaba fuera de pantalla (usuario: «mis personajes no están centrados…
+  la barra verde sube, pero no los veo»).** Causa: con Reintentar apagado, una derrota en X-1 retrocedía a la X-10
+  del mundo anterior, etapa solo-jefe donde nunca aparece nada; allí el ancla `partyX` seguía andando 110 px/s y los
+  héroes (que solo se mueven en combate) se quedaban atrás para siempre — al volver a una etapa normal las oleadas
+  nacen delante de los héroes y la cámara sigue al ancla, decenas de miles de píxeles más allá (medido: 63 839 frente
+  a 182 a los 10 min; reproducido en el juego). Estaba así desde el primer commit. Arreglo en `sim/Simulation.ts`:
+  **una derrota en X-1 se queda en X-1 aunque Reintentar esté apagado** (usuario: «retroceder de mundo debe ser una
+  decisión consciente del jugador»), y un grupo en `advancing` sobre una X-10 (solo queda el final del juego,
+  Torment 10-10) ya no anda. Texto de la ayuda de Reintentar y `docs/DIFFICULTY.md` §2 / `BALANCE.md` al día; tests
+  en `test/sim/respawn.test.ts` (ninguna derrota, en ninguna de las 500 etapas, deja al grupo en una solo-jefe).
+- 2026-11-21 · **Mascotas por hito (usuario: «la mascota de Oro al acabar Normal y la de XP al acabar Hell; si ya la tiene,
+  se salta»).** `MILESTONE_PETS` en `data/pets.ts` (Coin Sprite al vencer por primera vez Normal 10-10, Scholar Owl al
+  vencer Hell 10-10); `sim/pets.milestonePetsDue` dice cuáles tocan y la simulación las entrega en el tic en que sube
+  la frontera (sin rng: el flujo no se mueve). Un guardado que ya pasó el hito las recibe al cargar (`GameEngine`), con
+  su aviso de mascota nueva. El probe las da a su jugador medio desde el hito, también con `pets: 'none'` (sube un
+  poco el oro de Hell en adelante y la experiencia de Inferno en adelante: rango 1 = +3 %; sin volver a medir).
+  Tests: `test/sim/milestonePets.test.ts`. Del mismo repaso, rechazado por el usuario: apertura automática al
+  llenarse el almacén («perder cofres es la penalización por estar menos atento»), mover el 120, sumidero cosmético,
+  barra de poder frente al muro, legendarios, aviso en Menú, «equipar lo mejor».
+- 2026-11-21 · **Códice — base en el juego (usuario: «añadámoslo»; recompensas: «pequeñas bonificaciones, que haya
+  muchos logros con muchos incrementos pequeños»).** Récords de por vida en el guardado (`sim/records.ts`, `codex.records`
+  en `SaveV1`; un guardado viejo empieza en cero): bajas, jefes, jefes de mundo, derrotas, oro y experiencia (también
+  los de ausencia), horas, cofres hallados y abiertos por tipo, mejor tier de objeto y de gema (cofres, Cubo,
+  mercader), golpe más alto, síntesis, pulidos, fugitivos, compras y el bestiario por criatura × dificultad
+  (`game/bestiaryKey.ts`: la misma criatura que la tira dibuja). 130 logros en series (`data/achievements.ts`: cada
+  serie un hecho, una escalera de objetivos y una recompensa por paso de +0,15–0,4 %), solo de economía (oro,
+  experiencia, cofres, gemas — nunca combate). Los logros no se guardan: se LEEN de los hechos (`sim/achievements.ts`),
+  así que un guardado viejo gana al cargar lo que su frontera, mascotas y héroes ya muestran (sin aviso), y los nuevos
+  salen como línea de botín («Logro · Derrota a 100 enemigos · +0,3 % de oro», comprobado en el juego). Entran en
+  `getBonuses` (tercer parámetro) y en la hoja. Totales PROVISIONALES con todo: +13,6 % experiencia, +11,1 % oro,
+  +7,8 % cofres, +4,2 % gemas. El probe da a su jugador medio lo que sus cuentas alcanzan (sin cofres de jefe, gemas,
+  síntesis ni eventos; el bestiario por mundos vencidos) — sin volver a medir el ritmo. Pendiente: el panel del Códice
+  (maqueta en el laboratorio) y un signo propio para la línea del logro (hoy usa la llave).
+- 2026-11-21 · **Eventos de la tira — simulación (usuario: cofre fugitivo y mercader errante, «cada ~12 min», sin
+  llaves).** `data/stripEvents.ts` + `sim/stripEvents.ts`: el evento n de un guardado sale de (semilla, n) en su propio
+  flujo — el combate no se mueve (test: mismo rng con y sin eventos); espera de 8–16 min de juego activo, nunca en
+  ausencia ni en el probe, ni en una derrota, el respiro de un jefe caído o un jefe de mundo (que además espantan al
+  que esté); nunca dos seguidos del mismo tipo. Cofre fugitivo: cruza en 12 s, común (85 %) o de jefe de etapa (15 %);
+  tocado va al almacén o se pierde si está lleno (`Simulation.catchRunaway`, `GameEngine.catchRunaway`). Mercader:
+  45 s, dos piezas tiradas como un cofre de jefe de etapa de la etapa y una gema, a 4× su valor de fundición
+  (`GameEngine.buyFromMerchant` → `buyFromMerchant` del inventario, nunca fundido por el auto-reciclado). La cuenta de
+  eventos se guarda (`stripEvents.count`). **Apagados en el juego (`STRIP_EVENTS_LIVE = false`) hasta que la tira los
+  dibuje y exista la ventana del mercader** — su arte va antes al laboratorio.
+- 2026-11-21 · **Códice — lo visual (usuario: «Adelante con lo visual»; pidió ambientación y assets que no desentonen).**
+  Panel real en el juego como quinta ala derecha (`codex`, signo `codex_book`; `src/ui/panels/codex/`): LOGROS por seis
+  categorías, cada serie con su nombre y su frase (`codex.s_*` / `codex.l_*`, EN/ES) y una medalla por escalón
+  (bronce → plata → oro dentro de la serie, `medalOf`; tooltip con meta, recompensa y barra; los objetivos de etapa y
+  tier solo con barra); BESTIARIO por mundo (seis cabezas recortadas de la figura de la tira, en sombra hasta la
+  primera baja; la elegida de pie en el nicho, `CreatureFigure`; nombre con frase en el tooltip y las cinco
+  dificultades encendidas donde se ha vencido); RÉCORDS en dos columnas. Una frase por criatura (60,
+  `data/bestiaryLore.ts`, español en `worlds.json` `lore.*`, comprobadas por el test de textos de datos). Signos nuevos
+  en `icon_sets/s9j_codex.py` (libro, secciones, cuatro medallas, nivel, horas, bajas, cofre fugitivo, mercader; el
+  resto reutiliza los de otros paneles; copiados a mano a `src/assets/ui` — **`run.sh export-ui` completo borra los
+  signos del HUD en esta copia** porque `icons` no puede regenerar `s96_hud` sin los fotogramas de `run.sh chars`;
+  se restauraron desde git). La línea de logro lleva ya la medalla de oro. Son 153 logros (no 130). Laboratorio:
+  sección «El Códice» en `pending.json` con capturas en español.
+- 2026-11-21 · **Eventos de la tira — visual y encendidos (usuario: «Adelante con lo visual»).** Dos figuras nuevas en
+  `tools/assets/pipeline/events/` con la maquinaria de las mascotas (`Cel`/`bake`, paleta propia, contorno selectivo),
+  un solo diseño para todos los mundos: el **cofre fugitivo** (`runaway.py`: cofre con flejes sobre cuatro patitas,
+  ~18 px; `run` con la tapa que se abre a cada zancada y dos ojos que miran atrás, `caught` con salto y estallido de
+  destellos de oro) y el **mercader errante** (`merchant.py`: viejo encorvado con capucha ciruela, barba blanca,
+  mochila con petate rojo, olla y farol, bastón; `walk`, `idle`, `wave`, `thanks`). `sh tools/assets/run.sh
+  export-events` → `src/assets/strip/events/` + GIF de cada clip en `docs/redesign/lab/img/events/`. En la tira
+  (`render/StripEventSprite.ts`, posición pura en `render/stripEventLook.ts`): el cofre cruza de derecha a izquierda y
+  se atrapa tocándolo; el mercader entra por la izquierda, se para detrás del último héroe, saluda, agradece cada
+  venta y se va al acabar. Tocarlo abre su ventana (`ui/overlay/MerchantWindow.tsx`): barra de lo que le queda, cada
+  oferta en su casilla con la ficha de siempre, precio, tecla de compra (gris sin oro), «Vendido», aviso sin sitio; se
+  cierra sola. Textos en `i18n/{en,es}/events.ts`. `STRIP_EVENTS_LIVE = true`. Comprobado en el juego (toque real,
+  compra, EN/ES): `docs/redesign/lab/shots/strip_event_*.png`. Pendiente: sonido sutil de aparición; la huida del
+  cofre es salir por la izquierda, sin clip propio. Los logros de objetivo 1 se redactan en singular (`codex.one_*`).
+- 2026-11-21 · **Eventos: remates.** Huida del cofre fugitivo (clip `escape` en `events/runaway.py`: se para cerca del
+  borde izquierdo — `RUNAWAY_ESCAPE` en `render/stripEventTiming.ts` —, da dos golpes de tapa con el oro asomando, se
+  agacha y salta levantando polvo; la tira lo desvanece en el salto; aún se puede atrapar mientras hace burla).
+  Sonidos de aparición sintetizados y suaves (`runaway_appear`: tamborileo de patitas y clac de tapa;
+  `merchant_appear`: campanilla de tienda; −5 dB, `recipes/loot.py`), uno por evento (`game/stripSounds`). La tecla de
+  compra del mercader es ahora la tecla de precio del kit (moneda y cantidad, como las páginas del alijo) con
+  «Comprar» en el tooltip; vendido = tecla apagada con la marca.
+- 2026-11-21 · **Medición: logros + mascotas por hito.** `npm run probe` (5 semillas) con y sin ellos
+  (`PROBE_NO_CODEX=1`). Horas activas por dificultad, mediana — con / sin: Normal 7 / 6 · Hell 34 / 40 · Inferno
+  125 / 118 · Eternal 195 / 235 · Torment 503 / 561; total ≈ 864 / 960 h (−10 %), calendario 3,6 / 4,0 meses.
+  Solo medido, sin retocar (el ritmo se deja como está hasta que el usuario diga).
+- 2026-11-21 · **Confirmados el Códice y los eventos de la tira** («Ok a todo»), y el ritmo medido se deja como
+  está. Fuera del laboratorio (v112); quedan la Holy Nova y el catálogo de sonido.

@@ -92,6 +92,19 @@ def from_page(page: str, spec: dict) -> tuple[str, str]:
     return name, body
 
 
+def _width(path: Path) -> int:
+    """An image's width in pixels, read from its header (PNG or GIF); 0 if unknown."""
+    try:
+        head = path.read_bytes()[:32]
+    except OSError:
+        return 0
+    if head[:8] == b"\x89PNG\r\n\x1a\n":
+        return int.from_bytes(head[16:20], "big")
+    if head[:4] == b"GIF8":
+        return int.from_bytes(head[6:8], "little")
+    return 0
+
+
 def own_section(spec: dict) -> tuple[str, str]:
     out = [f'<section id="{spec["id"]}">', '<div class="sec-head">']
     if "eyebrow" in spec:
@@ -106,8 +119,12 @@ def own_section(spec: dict) -> tuple[str, str]:
         out.append(f'<h3>{esc(item["title"])}</h3>')
         if "text" in item:
             out.append(f'<p class="muted">{esc(item["text"])}</p>')
+        # Pixel art is shown at a WHOLE multiple of its size (never stretched to the column): small sheets and GIFs
+        # are enlarged ×2–×4, wide captures stay at ×1 and only shrink when the column is narrower.
+        w = _width(LAB / item["img"])
+        k = max(1, min(4, 900 // w)) if w > 0 else 1
         out.append(f'<img class="px" src="{esc(item["img"])}" alt="{esc(item["title"])}" '
-                   'style="width:100%;height:auto;border:1px solid var(--line)">')
+                   f'style="width:{w * k}px;max-width:100%;height:auto;border:1px solid var(--line)">')
         out.append("</div>")
     if "html" in spec:
         out.append((LAB / spec["html"]).read_text())
@@ -154,7 +171,7 @@ def main() -> None:
             cache[rel] = f"data:{mime};base64," + base64.b64encode(path.read_bytes()).decode()
         return cache[rel]
 
-    out = re.sub(r"img/[a-z0-9_]+/[A-Za-z0-9_]+\.(?:png|gif)", inline, out)
+    out = re.sub(r"(?:img/[a-z0-9_]+|shots)/[A-Za-z0-9_]+\.(?:png|gif)", inline, out)
 
     def inline_audio(match: re.Match[str]) -> str:  # the sound section's players: audio/<channel>/<file>.mp3
         rel = match.group(1)
