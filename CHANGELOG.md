@@ -15,6 +15,34 @@ While the project is pre-1.0, minor versions may include breaking save changes.
 
 ### Fixed
 
+## [0.6.0] - 2026-11-21
+
+### Added
+
+- **The Codex**: a new tab in the right-hand wings (the red book), with three sections.
+  - **Bestiary**: one world at a time. Its creatures stay in shadow until the first one falls; then you can see it
+    standing, its name, a line about it, and the difficulties you have beaten it in.
+  - **Achievements**: 153 of them in 18 series (stages, levels, kills, chests, gems, pets, the cube, strip
+    events…). Each step earns a bronze, silver or gold medal and a small lasting bonus to gold, experience,
+    chests or gems. Small steps add up, and a toast on the strip tells you when you earn one.
+  - **Records**: everything your journey has counted, from hours played to the hardest hit.
+- **Strip events**: about every twelve minutes of play, something crosses the strip.
+  - **The runaway chest** scurries off with its loot. Tap it before it escapes; if your chest storage is full, it
+    is lost.
+  - **The wandering merchant** stops for a while with two pieces of gear and a gem for sale, at a price.
+  Each has its own quiet sound when it appears.
+- **Milestone pets**: beating Normal for the first time brings the gold pet, and beating Hell the experience pet,
+  unless you already have them. Saves that are already past those points get them on load.
+
+### Changed
+
+### Fixed
+
+- **Fights out of sight**: with Retry off, a defeat on a world's first stage (X-1) dropped the party onto the
+  previous world's boss stage, where nothing spawns. The camera then walked on without the heroes, so every later
+  fight happened off the strip. Now a defeat on X-1 keeps you on X-1 (leaving a world is always your choice), and
+  a party standing on a boss stage no longer drifts away.
+
 ## [0.5.12] - 2026-11-20
 
 ### Added
@@ -320,7 +348,8 @@ While the project is pre-1.0, minor versions may include breaking save changes.
 - Initial desktop builds: Tauri v2 transparent, always-on-top, bottom-docked overlay.
 - Multi-platform release pipeline (macOS universal, Windows, Linux) via GitHub Actions.
 
-[Unreleased]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.12...HEAD
+[Unreleased]: https://github.com/Nyhz/taskbar-legion/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.12...v0.6.0
 [0.5.12]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.11...v0.5.12
 [0.5.11]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.10...v0.5.11
 [0.5.10]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.9...v0.5.10
