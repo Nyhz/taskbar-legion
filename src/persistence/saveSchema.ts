@@ -57,6 +57,8 @@ export interface SaveV1 {
   zoneKeys?: Record<number, number>; // world-boss challenge keys: X-10 global stage → count (old saves lack it)
   autoOpen: { unlocked: boolean; lastRunAt: number | null };
   pets: SavedPets; // owned keys, the companion, and each pet's objective progress (optional: old saves lack it)
+  codex?: { records: unknown };
+  stripEvents?: { count: number }; // strip events so far (old saves: 0) // the lifetime records (sim/records; read with sanitizeRecords). Old saves lack it: they start at zero
   settings: {
     uiScale: 1 | 1.5 | 2;
     dockOrientation: 'bottom' | 'left' | 'right';

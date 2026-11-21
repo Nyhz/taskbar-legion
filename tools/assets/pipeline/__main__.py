@@ -72,6 +72,11 @@ def main(argv: list[str]) -> int:
 
         export_pets()
         return 0
+    if cmd == "export-events":
+        from .export_events import main as export_events
+
+        export_events()
+        return 0
     if cmd == "readme":
         from .readme_banners import main as readme
 

@@ -7,6 +7,7 @@ import { CubeWindow } from '@/ui/panels/cube/CubeWindow';
 import { MapWindow } from '@/ui/panels/map/MapWindow';
 import { PetsWindow } from '@/ui/panels/pets/PetsWindow';
 import { TechWindow } from '@/ui/panels/tech/TechWindow';
+import { CodexWindow } from '@/ui/panels/codex/CodexWindow';
 
 // Panels already rebuilt on the interface kit (src/ui/kit). PanelLayer wraps each in a KitRoot at a whole number
 // of screen pixels per art pixel; a panel NOT listed here still renders through the old PixelWindow path. A kit
@@ -22,5 +23,6 @@ export const KIT_PANELS: Partial<Record<PanelKey, () => React.JSX.Element>> = {
   cube: () => <CubeWindow />,
   map: () => <MapWindow />,
   pets: () => <PetsWindow />,
+  codex: () => <CodexWindow />,
   tech: () => <TechWindow />,
 };

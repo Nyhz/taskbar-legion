@@ -42,6 +42,8 @@ export function buildSave(): SaveV1 {
     zoneKeys: { ...s.zoneKeys },
     autoOpen: s.autoOpen,
     pets: { ownedKeys: s.ownedPets, selectedKey: s.selectedPet, progress: { ...s.petProgress } },
+    codex: { records: s.records },
+    stripEvents: { count: getEngine()?.world.stripEvents?.count ?? s.stripEventCount },
     settings: { uiScale: s.uiScale, dockOrientation: s.dockOrientation, autoSalvage: s.autoSalvage },
     cube: { unlocked: false },
     online: { accountId: null, premiumCurrency: 0, premiumUntil: null },

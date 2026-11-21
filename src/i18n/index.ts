@@ -23,7 +23,7 @@ export {
   armorFamilyName, chestName, className, dataText, difficultyName, gemName, petName, slotLabel, statLabel, techCategoryName,
   techDescription, techName, tierName, weaponTypeName,
 } from './names';
-export { creatureName, worldName } from './names';
+export { creatureLore, creatureName, worldName } from './names';
 export {
   abilityDescription, abilityName, effectName, talentBranchName, talentNodeDescription, talentNodeName, ultimateDescription,
   ultimateName,

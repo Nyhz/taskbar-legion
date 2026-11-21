@@ -1,3 +1,4 @@
+import type { StripEventClock } from './stripEvents';
 import type { StatKey } from '@/data/stats';
 import type { ChestStack } from '@/data/chests';
 import type { ActiveEffect } from '@/data/effects';
@@ -229,6 +230,8 @@ export interface WorldState {
   /** A boss lies fallen and the stage waits for its death to be seen (data/field BOSS_DOWN_MS; live game only).
    *  `firstClear` is what the clear will do once the beat ends — the cleared stage itself is banked at the kill. */
   bossDown?: { ms: number; totalMs: number; firstClear: boolean };
+  /** The strip events' clock (sim/stripEvents; live game only — the engine sets it up, headless runs have none). */
+  stripEvents?: StripEventClock;
 }
 
 export function emptyPending(): PendingAccrual {

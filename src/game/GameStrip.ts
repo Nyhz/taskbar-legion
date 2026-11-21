@@ -49,6 +49,8 @@ import { MOVE_EPS, RANGE, SPAWN_AHEAD, WALK_SPEED, TELEPORT_HOLD_MS, TELEPORT_LI
 import { hexToNum } from '@/styles/palette';
 import { useStore } from '@/state/store';
 import { isStripDragging } from '@/platform/dragState';
+import { StripEventSprite } from './render/StripEventSprite';
+import { useMerchantWindow } from '@/ui/overlay/merchantWindowState';
 
 // Owns the Pixi Application + the render driver. Each animation frame it advances
 // the GameEngine (fixed 100ms sim steps internally), then reconciles sprites from
@@ -132,6 +134,11 @@ export class GameStrip {
   // The world-boss portal, pinned screen-right while farming a beaten W-9 (see frame()).
   private readonly portal = new PortalSprite();
   private readonly pet = new PetCompanion(); // the chosen companion: cosmetic, behind the party (render/petMotion)
+  // The strip events (data/stripEvents): the runaway chest and the wandering merchant — tappable, like the portal.
+  private readonly stripEvent = new StripEventSprite();
+  private lastCameraX = Number.NaN; // the camera's x last frame: the merchant keeps pace while it moves
+  private merchantSold = 0; // offers the merchant on the strip has sold, as of last frame (a new sale → his thanks)
+  private merchantN = -1;
   // Full-strip blackout for the teleport sequence + the wipe cinematic; teleportMs counts
   // down the zone-teleport sequence. The wipe cinematic is driven instead by the sim's wipeMs.
   private readonly blackout = new Graphics();
@@ -188,8 +195,8 @@ export class GameStrip {
     this.combatants.sortableChildren = true; // honour zIndex (party above enemies)
     this.pet.zIndex = 2.5; // over the heroes it flies past
     this.combatants.addChild(this.pet);
-    this.world.addChild(this.backdrop.back, this.fxGround, this.combatants, this.backdrop.front, this.fxAir, this.projectiles, this.signs, this.floating, this.portal, this.blackout, this.wipePhrase);
-    // The portal is the ONLY interactive object — prune every other layer (and its whole
+    this.world.addChild(this.backdrop.back, this.fxGround, this.combatants, this.backdrop.front, this.fxAir, this.projectiles, this.signs, this.floating, this.portal, this.stripEvent, this.blackout, this.wipePhrase);
+    // The portal (and the strip events) are the ONLY interactive objects — prune every other layer (and its whole
     // subtree of sprites/graphics) from pointer hit-testing so a tap walks just the portal.
     for (const layer of [this.backdrop.back, this.fxGround, this.combatants, this.backdrop.front, this.fxAir, this.projectiles, this.signs, this.floating, this.blackout, this.wipePhrase]) {
       layer.eventMode = 'none';
@@ -200,6 +207,11 @@ export class GameStrip {
     this.portal.visible = false;
     this.blackout.visible = false;
     this.portal.on('pointertap', () => this.onPortalTap());
+    this.stripEvent.onRunawayTap = () => !isStripDragging() && this.engine?.catchRunaway() === 'stored';
+    this.stripEvent.onMerchantTap = () => {
+      const n = this.engine?.world.stripEvents?.active?.n;
+      if (!isStripDragging() && n !== undefined) useMerchantWindow.getState().show(n);
+    };
     app.stage.addChild(this.world);
     this.relayout();
     app.stage.scale.set(this.uiScale);
@@ -322,6 +334,7 @@ export class GameStrip {
     this.floating.update(dtMs);
     this.signs.update(dtMs);
     this.updatePortal(w, groundY, dtMs);
+    this.updateStripEvent(w, groundY, dtMs, toScreen, cameraX);
     this.driveBossDown(w, dtMs);
     this.detectAndDriveTeleport(w, dtMs);
     this.driveWipe(w);
@@ -459,6 +472,24 @@ export class GameStrip {
     this.portal.visible = true;
     this.portal.position.set(this.logicalWidth - PORTAL_FROM_RIGHT, groundY);
     this.portal.update(dtMs, useStore.getState().zoneKeysFor(w.globalStageIndex));
+  }
+
+  // The strip event on (render/StripEventSprite): placed in screen space, the merchant behind the rearmost hero.
+  private updateStripEvent(w: WorldState, groundY: number, dtMs: number, toScreen: (wx: number) => number, cameraX: number): void {
+    let rear: number | undefined;
+    for (const x of this.heroDisplayX.values()) rear = rear === undefined ? x : Math.min(rear, x);
+    const moving = Number.isFinite(this.lastCameraX) && Math.abs(cameraX - this.lastCameraX) > 0.01;
+    this.lastCameraX = cameraX;
+    const active = w.stripEvents?.active;
+    this.stripEvent.update({ active, width: this.logicalWidth, groundY, rearScreenX: rear === undefined ? undefined : toScreen(rear), cameraMoving: moving }, dtMs);
+    // He sold something (ui/overlay/MerchantWindow): he dips his head.
+    const sold = active?.kind === 'merchant' ? (active.offers ?? []).filter((o) => o.sold).length : 0;
+    if (sold > this.merchantSold && active?.n === this.merchantN) this.stripEvent.thank();
+    this.merchantSold = sold;
+    this.merchantN = active?.n ?? -1;
+    // His window closes by itself when he leaves.
+    const win = useMerchantWindow.getState();
+    if (win.open && (active?.kind !== 'merchant' || active.n !== win.eventN)) win.hide();
   }
 
   private onPortalTap(): void {

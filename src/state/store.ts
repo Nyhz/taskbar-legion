@@ -7,6 +7,7 @@ import { createChestSlice, type ChestSlice } from './slices/chestSlice';
 import { createLootToastSlice, type LootToastSlice } from './slices/lootToastSlice';
 import { createPetSlice, type PetSlice } from './slices/petSlice';
 import { createPartySlice, type PartySlice } from './slices/partySlice';
+import { createCodexSlice, type CodexSlice } from './slices/codexSlice';
 
 // The global store is composed from slices (one per domain). Each slice creator
 // receives (set, get, api) and returns its part. Cross-slice actions (e.g. equip
@@ -18,7 +19,8 @@ export type GameStore = UiSlice &
   ChestSlice &
   LootToastSlice &
   PetSlice &
-  PartySlice;
+  PartySlice &
+  CodexSlice;
 
 export const useStore = create<GameStore>()((...a) => ({
   ...createUiSlice(...a),
@@ -29,4 +31,5 @@ export const useStore = create<GameStore>()((...a) => ({
   ...createLootToastSlice(...a),
   ...createPetSlice(...a),
   ...createPartySlice(...a),
+  ...createCodexSlice(...a),
 }));

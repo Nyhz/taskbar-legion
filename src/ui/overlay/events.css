@@ -1,0 +1,6 @@
+/* The wandering merchant's window (MerchantWindow): over the strip's left end, where he stands. */
+.tk-merchant-zone { position: absolute; left: 10px; bottom: 6px; z-index: 108; pointer-events: none; }
+.tk-merchant-zone .tk-book { pointer-events: auto; }
+.tk-merchant-stay { position: relative; display: grid; grid-template-columns: 16px 1fr; gap: 4px; align-items: center; height: 16px; margin: 1px 0 4px; }
+.tk-merchant-row { display: grid; grid-template-columns: 24px auto; justify-content: space-between; gap: 6px; align-items: center; height: 28px; }
+.tk-merchant-note { margin: 3px 0 0; color: var(--bad, #dc5f48); font: 10px/10px var(--f-num); }

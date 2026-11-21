@@ -132,6 +132,8 @@ SOUNDS: list[Sound] = [
     _s("gem_get", "sfx", "loot", "a clear crystal ting", 0.75, 1, -2),
     _s("key_get", "sfx", "loot", "a small key jingle", 0.36, 1, -2),
     _s("pet_found", "sfx", "loot", "a cute hopping chirp and three tines", 1.25, 1, -1),
+    _s("runaway_appear", "sfx", "loot", "the runaway chest: a quick patter of tiny wooden feet and a lid clack", 0.42, 2, -5),
+    _s("merchant_appear", "sfx", "loot", "the wandering merchant: a small shop bell, two soft rings", 0.8, 1, -5),
     # ── Progress ──
     _s("level_up", "sfx", "progress", "three warm tine notes going up", 1.4, 1, -1),
     _s("stage_clear", "sfx", "progress", "two steps and a chord landing home", 1.05, 1, -2),

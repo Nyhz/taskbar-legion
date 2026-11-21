@@ -12,13 +12,14 @@ export type PanelKey =
   | 'cube' // right wing
   | 'map' // right wing
   | 'pets' // right wing
+  | 'codex' // right wing: bestiary, achievements, records
   | 'tech'; // right wing (upgrades)
 
 // The hero window (`party`) is the anchor. Every other panel is a WING that opens glued to one of its edges, at
 // most one per side: opening a second one on the same side closes the first. A wing can only be open while the
 // hero window is — opening one opens it, and closing the hero window closes its wings.
 export const LEFT_PANELS: readonly PanelKey[] = ['stash', 'talents', 'sheet'];
-export const RIGHT_PANELS: readonly PanelKey[] = ['cube', 'map', 'pets', 'tech'];
+export const RIGHT_PANELS: readonly PanelKey[] = ['cube', 'map', 'pets', 'codex', 'tech'];
 
 function sideOf(key: PanelKey): readonly PanelKey[] | null {
   if (LEFT_PANELS.includes(key)) return LEFT_PANELS;

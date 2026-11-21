@@ -1143,6 +1143,17 @@
   "loudness": -26.0,
   "peak": -14.5
  },
+ "merchant_appear": {
+  "channel": "sfx",
+  "group": "loot",
+  "files": [
+   "sfx/merchant_appear_0.mp3"
+  ],
+  "loop": false,
+  "seconds": 0.95,
+  "loudness": -30.0,
+  "peak": -19.5
+ },
  "multi": {
   "channel": "sfx",
   "group": "combat",
@@ -1190,6 +1201,18 @@
   "seconds": 0.26,
   "loudness": -29.0,
   "peak": -13.7
+ },
+ "runaway_appear": {
+  "channel": "sfx",
+  "group": "loot",
+  "files": [
+   "sfx/runaway_appear_0.mp3",
+   "sfx/runaway_appear_1.mp3"
+  ],
+  "loop": false,
+  "seconds": 0.42,
+  "loudness": -30.0,
+  "peak": -12.2
  },
  "stage_clear": {
   "channel": "sfx",

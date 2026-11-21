@@ -32,10 +32,11 @@ export function SheetTab({ heroId }: { heroId: string }): React.JSX.Element | nu
   const hero = roster.find((h) => h.id === heroId);
   const techRanks = useStore((s) => s.techRanks);
   const petRanks = useStore((s) => s.petRanks);
+  const achievements = useStore((s) => s.achievements);
   if (hero === undefined) return null;
 
   const combatant = getEngine()?.world.heroes.find((h) => h.id === hero.id);
-  const bonuses = getBonuses(techRanks, petRanks);
+  const bonuses = getBonuses(techRanks, petRanks, achievements); // the account's gold, experience and chest figures include the Codex
   const stats = heroStats(hero, roster, bonuses, combatant);
   const auras = partyAuras(roster);
   const crest = classCrestStem(hero.classKey);

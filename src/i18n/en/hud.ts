@@ -9,6 +9,7 @@ export const hud = {
   panelTech: 'Upgrades',
   panelCube: 'Cube',
   panelMap: 'Map',
+  panelCodex: 'Codex',
   panelPets: 'Pets',
   stageOf: 'stage {n} of {total}',
   bossComing: 'When the bar fills, the stage boss arrives.',

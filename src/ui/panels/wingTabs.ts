@@ -15,6 +15,7 @@ const SIGN: Record<PanelKey, string> = {
   cube: 'hud_cube',
   map: 'hud_map',
   pets: 'hud_pets',
+  codex: 'codex_book',
   tech: 'hud_tech',
 };
 
@@ -26,6 +27,7 @@ const LABEL: Record<PanelKey, TextKey> = {
   cube: 'hud.panelCube',
   map: 'hud.panelMap',
   pets: 'hud.panelPets',
+  codex: 'hud.panelCodex',
   tech: 'hud.panelTech',
 };
 

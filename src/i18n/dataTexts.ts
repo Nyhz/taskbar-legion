@@ -18,6 +18,7 @@ import { TECH_CATEGORIES, TECH_NODES } from '@/data/techTree';
 import { TIERS } from '@/data/tiers';
 import { ULTIMATES } from '@/data/ultimates';
 import { WORLDS, allCreatures } from '@/data/worlds';
+import { CREATURE_LORE } from '@/data/bestiaryLore';
 
 export type DataGroup =
   | 'stats' | 'tiers' | 'slots' | 'gems' | 'classes' | 'difficulties' | 'tech' | 'pets' | 'worlds'
@@ -37,6 +38,7 @@ export const dataKey = {
   techCategory: (category: string): string => `category.${category}`,
   world: (index: number): string => `world.${index}`,
   creature: (key: string): string => `creature.${key}`,
+  creatureLore: (key: string): string => `lore.${key}`,
   /** An ability or a class ultimate, by its key. */
   abilityName: (key: string): string => `${key}.name`,
   abilityDescription: (key: string): string => `${key}.desc`,
@@ -78,6 +80,7 @@ export function visibleDataTexts(): Record<DataGroup, Record<string, string>> {
     worlds: fromEntries([
       ...WORLDS.map((w) => [dataKey.world(w.index), w.name] as const),
       ...allCreatures().map((c) => [dataKey.creature(c.key), c.name] as const),
+      ...Object.entries(CREATURE_LORE).map(([key, line]) => [dataKey.creatureLore(key), line] as const),
     ]),
     abilities: fromEntries([
       ...heroAbilityKeys().flatMap((key) => {

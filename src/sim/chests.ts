@@ -61,6 +61,14 @@ function addChest(world: WorldState, type: ChestType, dropStage: number, n: numb
   else world.chests.push({ type, dropStage, count: n });
 }
 
+/** Put one chest of `type` in storage at the current stage, if its storage has room (the runaway chest of the strip
+ *  events). Returns false when it is full: the chest is lost, as every chest is when storage is full. */
+export function storeChest(world: WorldState, type: ChestType, bonuses: Bonuses): boolean {
+  if (chestCountOf(world.chests, type) >= chestCapacity(type, bonuses)) return false;
+  addChest(world, type, world.globalStageIndex, 1);
+  return true;
+}
+
 /** Roll a chest drop on a relevant kill. When the type's storage is full, it
  *  stops accumulating (SPEC §4.8). The chest is stamped with the current stage so its
  *  loot tier + key zone are fixed at drop time. Returns true if a chest was stored. */

@@ -25,6 +25,8 @@ PREFIXES = (
     "map_", "pet_",
     # the title screen (logo, play sign, its backdrop)
     "title_",
+    # the Codex wing (its tab, sections, medals and the signs of the achievement series)
+    "codex_",
 )
 SKIP = ("hud_scene_", "raw_tier_")
 

@@ -87,6 +87,9 @@ export interface InventorySlice {
   stashCap: () => number;
   addLoot: (items: ItemInstance[], gems: GemInstance[]) => void;
   addItem: (item: InvEntry) => void;
+  /** Buy `entry` from the wandering merchant for `price` gold: into the bag (else the stash) — never melted by
+   *  auto-salvage. False (nothing changes) without the gold or the room. */
+  buyFromMerchant: (entry: InvEntry, price: number) => boolean;
   removeItem: (id: string) => InvEntry | undefined;
   moveToStash: (id: string) => boolean;
   moveToInventory: (id: string) => boolean;
@@ -171,6 +174,18 @@ export const createInventorySlice: StateCreator<GameStore, [], [], InventorySlic
       const ns = place(s.stash, it, stashCapacity(s.stashPages, s.stashSlotUpgrades));
       return ns !== null ? { stash: ns, nextEntryId: s.nextEntryId + 1 } : s;
     }),
+
+  buyFromMerchant: (entry, price) => {
+    const s = get();
+    if (s.gold < price) return false;
+    const it = { ...entry, id: mintedIdString(s.nextEntryId) };
+    const inv = place(s.inventory, it, inventoryCapacity(s.inventorySlotUpgrades));
+    const stash = inv === null ? place(s.stash, it, stashCapacity(s.stashPages, s.stashSlotUpgrades)) : null;
+    if (inv === null && stash === null) return false;
+    set({ gold: s.gold - price, nextEntryId: s.nextEntryId + 1, ...(inv !== null ? { inventory: inv } : { stash: stash ?? s.stash }) });
+    get().noteRecords({ merchantBuys: 1, ...(isItem(entry) ? { itemTier: entry.tier } : { gemTier: entry.tier }) }); // the Codex
+    return true;
+  },
 
   removeItem: (id) => {
     const item = findEntry(get().inventory, id);
@@ -323,6 +338,7 @@ export const createInventorySlice: StateCreator<GameStore, [], [], InventorySlic
       if (placedStash !== null) { made = minted; return { inventory: inv, stash: placedStash, nextEntryId: st.nextEntryId + 1 }; }
       return { inventory: inv, stash }; // both full (shouldn't happen: freed 9)
     });
+    if (made !== null) get().noteRecords(isItem(out) ? { synths: 1, itemTier: out.tier } : { synths: 1, gemTier: out.tier }); // the Codex
     return made;
   },
 
@@ -389,6 +405,7 @@ export const createInventorySlice: StateCreator<GameStore, [], [], InventorySlic
       gold: st.gold - cost,
       inventory: st.inventory.map((e) => (e !== null && isItem(e) && e.id === itemId ? { ...e, polishes: polishCount(e) + 1 } : e)),
     }));
+    get().noteRecords({ polishes: 1 }); // the Codex
     return rolled;
   },
 

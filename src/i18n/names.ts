@@ -30,6 +30,7 @@ import statsEs from '@/data/i18n/es/stats.json';
 import talentsEs from '@/data/i18n/es/talents.json';
 import techEs from '@/data/i18n/es/tech.json';
 import { allCreatures, tryWorldDef } from '@/data/worlds';
+import { CREATURE_LORE } from '@/data/bestiaryLore';
 import tiersEs from '@/data/i18n/es/tiers.json';
 import worldsEs from '@/data/i18n/es/worlds.json';
 import { getLanguage, t } from './core';
@@ -135,6 +136,12 @@ export function worldName(index: number): string {
 export function creatureName(key: string): string {
   const found = allCreatures().find((c) => c.key === key);
   return found === undefined ? key : dataText('worlds', dataKey.creature(key), found.name);
+}
+
+/** The bestiary's line for a creature (data/bestiaryLore), or '' when it has none. */
+export function creatureLore(key: string): string {
+  const line = CREATURE_LORE[key];
+  return line === undefined ? '' : dataText('worlds', dataKey.creatureLore(key), line);
 }
 
 // ── The class kits (docs/redesign/CLASSES.md). Names are provisional in both languages. ──

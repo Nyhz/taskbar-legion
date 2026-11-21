@@ -45,6 +45,7 @@ export class StripSounds {
   private stage = -1;
   private wiping = false;
   private first = true;
+  private eventN = -1; // the strip event last announced (data/stripEvents): each one sounds once, as it turns up
 
   /** Once a frame, before the events: the ambience, what stepped in, what started casting, chests, wipes. */
   update(w: WorldState): void {
@@ -72,6 +73,12 @@ export class StripSounds {
     this.stage = w.globalStageIndex;
     const wiping = w.wipeMs !== undefined;
     if (wiping && !this.wiping) playSound('wipe');
+    // A strip event turns up: the runaway chest's patter, the merchant's shop bell — soft, once each.
+    const ev = w.stripEvents?.active;
+    if (ev !== undefined && ev.n !== this.eventN) {
+      this.eventN = ev.n;
+      if (!this.first) playSound(ev.kind === 'runaway' ? 'runaway_appear' : 'merchant_appear');
+    }
     this.wiping = wiping;
     this.first = false;
   }

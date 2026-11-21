@@ -12,6 +12,7 @@ import type { ItemInstance, InvEntry } from '@/sim/items';
 import { sanitizeHeroTalents } from '@/persistence/sanitizeHero';
 import { sanitizePets } from '@/persistence/sanitizePets';
 import { petRanks } from '@/sim/pets';
+import { sanitizeRecords } from '@/sim/records';
 import type { SaveV1 } from '@/persistence/saveSchema';
 
 // Account-wide progression: gold (the main currency), zone keys (world-boss challenge
@@ -51,6 +52,9 @@ export interface ProgressSlice {
   // from stage-boss chests; one is consumed to enter that world boss (even on a wipe). Persisted;
   // never occupies inventory.
   zoneKeys: Record<number, number>;
+  /** How many strip events this save has had (sim/stripEvents: event n is drawn from the seed and n). Persisted so
+   *  a new session does not replay the same ones. */
+  stripEventCount: number;
 
   addGold: (n: number) => void;
   bumpConfig: () => void;
@@ -88,6 +92,7 @@ export const createProgressSlice: StateCreator<GameStore, [], [], ProgressSlice>
   unlockedClasses: ['knight'],
   seed: randomSeed(),
   configEpoch: 0,
+  stripEventCount: 0,
   resumeStage: 1,
   maxClearedStage: 0,
   lootRngState: 0,
@@ -156,6 +161,7 @@ export const createProgressSlice: StateCreator<GameStore, [], [], ProgressSlice>
       lootRngState: save.lootRngState ?? 0, // DEPRECATED, retained for back-compat
       lootDrawCount: save.lootDrawCount ?? 0, // resume the chest-open counter (old saves: 0)
       zoneKeys: save.zoneKeys ?? {}, // world-boss keys (old saves: none — earned by farming)
+      stripEventCount: typeof save.stripEvents?.count === 'number' && save.stripEvents.count >= 0 ? Math.floor(save.stripEvents.count) : 0,
       // Resume the id minter ABOVE any id already in the save (guards a missing/stale counter;
       // legacy `i*`/`g*` ids are ignored — they never collide with the minted `e*` namespace).
       nextEntryId: Math.max(
@@ -210,6 +216,11 @@ export const createProgressSlice: StateCreator<GameStore, [], [], ProgressSlice>
           petFound: [],
         };
       })(),
+      // The Codex: the lifetime records (zero for a save from before them); the achievements are read again by the
+      // engine as it starts (GameEngine), quietly.
+      records: sanitizeRecords(save.codex?.records),
+      achievements: [],
+      achievementsNew: [],
       uiScale: UI_SCALE, // fixed baseline — ignore any zoom stored in an old save
       dockOrientation: save.settings.dockOrientation,
       autoSalvage: save.settings.autoSalvage ?? DEFAULT_AUTO_SALVAGE, // old saves: off

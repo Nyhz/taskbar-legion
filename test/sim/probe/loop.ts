@@ -33,7 +33,9 @@ import { wallDamage, zoneSetDamage } from './zoneGear';
 import { freshHero, syncGrowth, buyTech, applyBuild } from './economy';
 import { polishGear, POLISH_INCOME_SHARE } from './polishPolicy';
 import { partyWithBuild, PROBE_GOOD_BUILD, type PartyBuild } from './builds';
-import { petMissChance, petRanks } from '@/sim/pets';
+import { milestonePetsDue, petMissChance, petRanks } from '@/sim/pets';
+import { earnedAchievements } from '@/sim/achievements';
+import { emptyRecords } from '@/sim/records';
 import { PET_KEYS, petDef } from '@/data/pets';
 import { getBonuses } from '@/sim/bonuses';
 import { chestDropChance } from '@/sim/chests';
@@ -97,7 +99,7 @@ export interface ProbeConfig {
   /** The build by the stage the player is taking on (a free respec when it changes); overrides `build` where it
    *  returns one. DEFAULT_CONFIG: the default build in Normal and Hell, PROBE_GOOD_BUILD from Inferno. */
   buildAt?: (target: number) => PartyBuild | undefined;
-  /** Pets: 'none' (the player never finds one) or 'median' (each pet is owned from the moment half the players
+  /** Pets: 'none' (the player finds none by drop — the milestone pets still join) or 'median' (each pet is owned from the moment half the players
    *  would have found it — the chance of having missed it falls to 50 % with the kills so far — and climbs its
    *  ranks through its own objective, counted from then, as in the game). */
   pets?: 'none' | 'median';
@@ -518,17 +520,24 @@ export function runBonuses(run: ProbeRun, cfg: ProbeConfig = DEFAULT_CONFIG): Re
   return bonusesOf(run.state, cfg);
 }
 
+/** Measuring tool: `PROBE_NO_CODEX=1` runs the player without milestone pets and achievements. */
+const NO_CODEX = typeof process !== 'undefined' && process.env.PROBE_NO_CODEX === '1';
+
 /** The pets the player owns now and their ranks (cfg.pets 'median'; none otherwise). Finds the pets whose chance
  *  of having been missed has fallen to a half with the kills so far, noting the counters their objectives start from. */
 export function ownedPetRanks(state: State, cfg: ProbeConfig): Record<string, number> {
-  if (cfg.pets !== 'median') return {};
   const t = state.tally;
   const counters = (): PetCounters => ({
     gold: t.gold + state.away.gold, xp: t.xp + state.away.xp, opened: t.normalChestsOpened, found: t.chestsFound,
     playedMs: state.activeSec * 1000, bosses: t.bossKills,
   });
-  for (const key of PET_KEYS) {
-    if (state.pets[key] === undefined && petMissChance(key, t.kills, t.bossKills) <= 0.5) state.pets[key] = counters();
+  // The milestone pets (data/pets MILESTONE_PETS) are every player's, whatever the drops: owned from the clear on.
+  // (`PROBE_NO_CODEX=1`: the player of before them and the achievements — to measure what they change.)
+  if (!NO_CODEX) for (const key of milestonePetsDue(state.frontier, Object.keys(state.pets))) state.pets[key] = counters();
+  if (cfg.pets === 'median') {
+    for (const key of PET_KEYS) {
+      if (state.pets[key] === undefined && petMissChance(key, t.kills, t.bossKills) <= 0.5) state.pets[key] = counters();
+    }
   }
   const now = counters();
   const progress: Record<string, number> = {};
@@ -544,9 +553,40 @@ export function ownedPetRanks(state: State, cfg: ProbeConfig): Record<string, nu
   return petRanks(Object.keys(state.pets), progress);
 }
 
-/** The bonuses of the player's tech and pets. */
+/** The achievements (the Codex, data/achievements) the average player has reached, read from what the probe keeps.
+ *  Conservative where it keeps nothing: no stage-/world-boss chests opened, no gem tier, no syntheses, no strip
+ *  events (the average player does not catch them). The bestiary is read from the frontier: every world beaten
+ *  in a difficulty is its six creatures there. The best item is the best one worn. */
+export function probeAchievements(state: State): string[] {
+  if (NO_CODEX) return [];
+  const t = state.tally;
+  const records = {
+    ...emptyRecords(),
+    kills: t.kills + t.bossKills,
+    bossKills: t.bossKills,
+    goldEarned: t.gold + state.away.gold,
+    xpEarned: t.xp + state.away.xp,
+    playMs: state.activeSec * 1000,
+    chestsFound: t.chestsFound,
+    chestsOpened: { normal: t.normalChestsOpened, stageBoss: 0, zoneBoss: 0 },
+    bestItemTier: topTier(state.party),
+    polishes: state.polishCount,
+  };
+  const worldsBeaten = Math.floor(state.frontier / 10);
+  const bestiary: Record<string, number[]> = {};
+  for (let i = 0; i < worldsBeaten * 6; i++) bestiary[`probe_${i}`] = [1];
+  return earnedAchievements({
+    records: { ...records, bestiary },
+    frontier: state.frontier,
+    petsOwned: Object.keys(state.pets).length,
+    heroLevel: state.party.reduce((max, h) => Math.max(max, h.level), 0),
+  });
+}
+
+/** The bonuses of the player's tech, pets and achievements. */
 function bonusesOf(state: State, cfg: ProbeConfig): ReturnType<typeof getBonuses> {
-  return getBonuses(state.techRanks, ownedPetRanks(state, cfg));
+  const pets = ownedPetRanks(state, cfg); // first: it notes the pets found (they count for the achievements)
+  return getBonuses(state.techRanks, pets, probeAchievements(state));
 }
 
 /** Play `run` on until the game (or `cfg.stopAtStage`) is cleared, `cfg.stopAtActiveSec` is reached, or it gives up. */

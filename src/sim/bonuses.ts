@@ -1,9 +1,10 @@
 import type { ChestType } from '@/data/chests';
 import { TECH_NODES, OFFLINE_BASE_SHARE } from '@/data/techTree';
 import { isPet, petBonusAt, type PetRanks } from './pets';
+import { achievementTotals } from './achievements';
 import type { StatMod } from './stats';
 
-// Merges tech ranks + owned pets (each at its rank) into ONE bonus object the sim & state read. They
+// Merges tech ranks + owned pets (each at its rank) + reached achievements (the Codex) into ONE bonus object the sim & state read. They
 // NEVER read the tech/pet lists directly (DATA_MODEL). Multipliers are returned as
 // final factors (1 + Σ); storage/reduce are additive.
 
@@ -24,10 +25,12 @@ export interface Bonuses {
   synthDoubleChance: number; // EXTRA chance (0..0.05) added to the Cube's base 5% +2-tier roll
 }
 
-/** `petRanks`: the rank of every OWNED pet (sim/pets.petRanks) — a pet gives the bonus of its rank. */
+/** `petRanks`: the rank of every OWNED pet (sim/pets.petRanks) — a pet gives the bonus of its rank. `achievements`:
+ *  the keys of the achievements reached (sim/achievements.earnedAchievements) — each adds its small economy bonus. */
 export function getBonuses(
   techRanks: Record<string, number>,
   petRanks: PetRanks,
+  achievements: readonly string[] = [],
 ): Bonuses {
   const b: Bonuses = {
     goldMult: 1,
@@ -80,6 +83,12 @@ export function getBonuses(
       default: { const _exhaustive: never = bonus; void _exhaustive; }
     }
   }
+
+  const a = achievementTotals(achievements);
+  b.goldMult += a.goldMult;
+  b.xpMult += a.xpMult;
+  b.chestDropMult += a.chestDropMult;
+  b.gemDropMult += a.gemDropMult;
 
   return b;
 }

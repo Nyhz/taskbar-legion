@@ -107,6 +107,19 @@ def wipe(rng: Rng) -> np.ndarray:  # the party falls: three soft low notes going
     return mix(1.3, RATE, *layers)
 
 
+def runaway_appear(rng: Rng) -> np.ndarray:  # the runaway chest: a quick patter of tiny wooden feet and a lid clack
+    j = jit(rng, 0.05)
+    feet = [(0.045 * i, knock(float(rng.uniform(820, 980)) * j, 0.04, 0.6), -10.0 - 1.5 * (i % 2)) for i in range(6)]
+    lid = knock(330 * j, 0.08)
+    return mix(0.42, RATE, *feet, (0.29, lid, -6.0))
+
+
+def merchant_appear(rng: Rng) -> np.ndarray:  # the wandering merchant: a small shop bell, two soft rings
+    j = jit(rng, 0.02)
+    bell = arp([(0.0, note(79) * j), (0.12, note(84) * j)], 0.7, TINE, 0.5, step_db=-2.0)
+    return verb(mix(0.8, RATE, *bell), rng, seconds=0.5, wet=0.16, tail=0.15)
+
+
 RECIPES: dict[str, Recipe] = {
     "chest_drop": chest_drop,
     "chest_drop_boss": chest_drop_boss,
@@ -121,4 +134,6 @@ RECIPES: dict[str, Recipe] = {
     "level_up": level_up,
     "stage_clear": stage_clear,
     "wipe": wipe,
+    "runaway_appear": runaway_appear,
+    "merchant_appear": merchant_appear,
 }

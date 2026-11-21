@@ -3,7 +3,9 @@ import { buildHeroCombatant, refreshHeroLoadout } from '@/sim/loadout';
 import { heroConfig, partyCombatMods } from '@/sim/partyStats';
 import { getBonuses, type Bonuses } from '@/sim/bonuses';
 import { openType, autoOpenIntervalMs } from '@/sim/chests';
-import { petMaxRank, type PetFacts } from '@/sim/pets';
+import { milestonePetsDue, petMaxRank, type PetFacts } from '@/sim/pets';
+import { newClock } from '@/sim/stripEvents';
+import { STRIP_EVENTS_LIVE } from '@/data/stripEvents';
 import { countFilled } from '@/sim/slots';
 import { simulateOffline, type OfflineSummary } from '@/sim/offline';
 import type { CombatEvent } from '@/sim/combat';
@@ -15,6 +17,11 @@ import type { PetObjectiveKind } from '@/data/pets';
 import { worldOf, stageInWorld } from '@/data/stageScaling';
 import { HERO_SPACING } from '@/data/field';
 import { stageSignHeld } from './stageSign';
+import { bestiaryKey } from './bestiaryKey';
+import { difficultyIndexOf } from '@/data/difficulties';
+import { isZoneBossStage } from '@/data/stageScaling';
+import type { RecordsDelta } from '@/sim/records';
+import { achievementLine } from '@/ui/codex/achievementWords';
 import { useStore } from '@/state/store';
 import { petName, t } from '@/i18n';
 import { KIT_TOKENS } from '@/ui/kit/tokens';
@@ -43,7 +50,7 @@ export class GameEngine {
     // Resume the chest-open counter where the last save left off (so loot keeps rolling
     // forward instead of replaying); each open derives its rng from (seed, drawIndex).
     this.lootDraws = st.lootDrawCount;
-    this.bonuses = getBonuses(st.techRanks, st.petRanks);
+    this.bonuses = getBonuses(st.techRanks, st.petRanks, st.achievements);
     const combatMods = partyCombatMods(st.roster, this.bonuses.combatMods); // the same mods the interface shows (sim/partyStats)
     const heroes = st.roster.map((h) => buildHeroCombatant(heroConfig(h), combatMods));
     const world = createWorld(st.seed, heroes);
@@ -51,8 +58,13 @@ export class GameEngine {
     world.globalStageIndex = Math.max(1, st.resumeStage);
     world.maxClearedStage = st.maxClearedStage;
     world.chests = st.chests.map((c) => ({ ...c }));
+    world.stripEvents = newClock(st.seed, st.stripEventCount); // the strip events go on from where the save left them
     this.sim = new Simulation(world);
-    this.appliedEpoch = st.configEpoch;
+    // A save already past a milestone (from before milestone pets existed) gets its pets now (data/pets MILESTONE_PETS).
+    for (const pet of milestonePetsDue(world.maxClearedStage, st.ownedPets)) st.addPet(pet);
+    // The Codex: what the save's records, frontier, pets and heroes already reach — quietly (it is not news).
+    useStore.getState().refreshAchievements(world.maxClearedStage, true);
+    this.appliedEpoch = st.configEpoch; // the snapshot's: a pet just added bumped it, so the first update re-reads the bonuses
     this.mirror();
   }
 
@@ -77,9 +89,15 @@ export class GameEngine {
     let chestsFound = 0;
     const pets: string[] = [];
     let steps = 0;
+    const wipesBefore = this.sim.world.wipes;
+    const rec: RecordsDelta = { kills: 0, worldBossKills: 0, chestsFound: 0, hit: 0 }; // the Codex's records of this frame
+    const creatures: Record<string, number> = {};
     while (this.accMs >= TICK_MS && steps < MAX_CATCHUP_TICKS) {
-      events.push(...this.sim.tick(this.ctx()));
+      const tickEvents = this.sim.tick(this.ctx());
+      events.push(...tickEvents);
+      this.countRecords(tickEvents, rec, creatures);
       const p = this.sim.world.pending;
+      rec.kills = (rec.kills ?? 0) + p.kills + p.bossKills;
       gold += p.gold;
       xp += p.xp;
       bossKills += p.bossKills;
@@ -101,6 +119,7 @@ export class GameEngine {
     if (this.accMs > TICK_MS * MAX_CATCHUP_TICKS) this.accMs = 0;
 
     const store = useStore.getState();
+    this.noteFrameRecords(rec, creatures, { gold, xp, bossKills, chestsFound, playMs: steps * TICK_MS, wipes: this.sim.world.wipes - wipesBefore });
     if (gold > 0) store.addGold(gold);
     // Only heroes alive at the end of this batch earn XP — the dead sit it out until
     // they respawn (a fallen hero must NOT level while the rest fight on).
@@ -126,6 +145,7 @@ export class GameEngine {
     const store = useStore.getState();
     if (summary.gold > 0) store.addGold(summary.gold);
     if (summary.xp > 0) store.gainExp(summary.xp);
+    store.noteRecords({ goldEarned: summary.gold, xpEarned: summary.xp }); // the Codex counts away-time gold and experience
     // Away-time banks gold and experience only, so of the pets' objectives only those two advance.
     this.notePets({ goldEarned: summary.gold, xpEarned: summary.xp });
     const p = this.sim.world.pending;
@@ -141,6 +161,28 @@ export class GameEngine {
     return summary;
   }
 
+  /** The player tapped the runaway chest on the strip (data/stripEvents): it joins the storage, or is lost because
+   *  that storage is full. Says which in a loot line; counts it for the Codex when it is caught. */
+  catchRunaway(): 'stored' | 'full' | null {
+    const result = this.sim.catchRunaway(this.bonuses);
+    if (result === null) return null;
+    const store = useStore.getState();
+    if (result === 'stored') store.noteRecords({ runaways: 1 });
+    store.pushLootToast({ text: encodeLootLine({ text: t(result === 'stored' ? 'overlay.runawayCaught' : 'overlay.runawayLost') }), color: KIT_TOKENS.gold });
+    this.mirror();
+    return result;
+  }
+
+  /** Buy the wandering merchant's offer `index` (data/stripEvents): the store takes the gold and the piece; false
+   *  without the gold, the room, or the merchant. */
+  buyFromMerchant(index: number): boolean {
+    const offer = this.sim.merchantOffer(index);
+    if (offer === undefined) return false;
+    if (!useStore.getState().buyFromMerchant(offer.entry, offer.price)) return false;
+    this.sim.markSold(index);
+    return true;
+  }
+
   /** Open only the chests of `type` (the per-popup open). The rolled ITEMS and GEMS are
    *  returned so the UI can reveal each into the bag one-by-one with floating loot text;
    *  any KEYS are credited here (silent to the reveal) and also returned for a toast. */
@@ -149,6 +191,9 @@ export class GameEngine {
     const opened = chestCountOf(this.sim.world.chests, type);
     const loot = openType(this.sim.world, type, draw, this.bonuses);
     this.lootDraws = draw.n;
+    // The Codex: chests opened and the best tiers that came out of them.
+    const best = (tiers: number[]): number | undefined => (tiers.length === 0 ? undefined : Math.max(...tiers));
+    useStore.getState().noteRecords({ chestsOpened: { [type]: opened }, itemTier: best(loot.items.map((i) => i.tier)), gemTier: best(loot.gems.map((g) => g.tier)) });
     if (type === 'normal') this.notePets({ commonChestsOpened: opened });
     // Manually cracking chests RESETS the auto-open countdown (it only runs when chests have
     // sat unopened for the full interval) — so a player who tends their loot pushes it back.
@@ -189,12 +234,47 @@ export class GameEngine {
     store.setAutoOpen({ unlocked: true, lastRunAt: nowMs });
   }
 
+  // The Codex's records of one tick: each enemy that fell, by its creature (a summon is none), the world bosses
+  // among them, and the hardest hit a hero landed.
+  private countRecords(events: readonly CombatEvent[], rec: RecordsDelta, creatures: Record<string, number>): void {
+    const w = this.sim.world;
+    for (const ev of events) {
+      if (ev.type === 'damage' && ev.sourceId !== undefined && (ev.amount ?? 0) > (rec.hit ?? 0) && w.heroes.some((h) => h.id === ev.sourceId)) rec.hit = ev.amount ?? 0;
+      if (ev.type !== 'death') continue;
+      const enemy = w.enemies.find((e) => e.id === ev.targetId);
+      if (enemy === undefined) continue;
+      const key = bestiaryKey(enemy, w.globalStageIndex);
+      if (key !== undefined) creatures[key] = (creatures[key] ?? 0) + 1;
+      if (enemy.isBoss === true && isZoneBossStage(w.globalStageIndex)) rec.worldBossKills = (rec.worldBossKills ?? 0) + 1;
+    }
+  }
+
+  // Bank this frame's records in the store, read the achievements again and announce the new ones.
+  private noteFrameRecords(rec: RecordsDelta, creatures: Record<string, number>, frame: { gold: number; xp: number; bossKills: number; chestsFound: number; playMs: number; wipes: number }): void {
+    const store = useStore.getState();
+    if (frame.playMs <= 0 && frame.gold <= 0 && frame.xp <= 0) return;
+    store.noteRecords({
+      ...rec,
+      bossKills: frame.bossKills,
+      goldEarned: frame.gold,
+      xpEarned: frame.xp,
+      chestsFound: frame.chestsFound,
+      playMs: frame.playMs,
+      wipes: frame.wipes,
+      creatures: { difficulty: difficultyIndexOf(this.sim.world.globalStageIndex), counts: creatures },
+    });
+    store.refreshAchievements(this.sim.world.maxClearedStage);
+    for (const key of useStore.getState().takeNewAchievements()) {
+      store.pushLootToast({ text: encodeLootLine({ text: t('overlay.achievement', { line: achievementLine(key) }), sign: 'codex_medal_gold' }), color: KIT_TOKENS.gold });
+    }
+  }
+
   private ctx(): TickContext {
     const st = useStore.getState();
     // The live game plays the full death cinematic on a wipe (fade to black, phrase, respawn).
     // Headless balance probes omit it (instant retreat) so the beat doesn't distort throughput.
     // The same goes for the beat a fallen boss gets before the stage moves on (animateBossDown).
-    return { bonuses: this.bonuses, ownedPetKeys: st.ownedPets, retryStage: st.retryStage, animateWipe: true, animateBossDown: true };
+    return { bonuses: this.bonuses, ownedPetKeys: st.ownedPets, retryStage: st.retryStage, animateWipe: true, animateBossDown: true, stripEvents: STRIP_EVENTS_LIVE };
   }
 
   // Consume a pending Map "travel" intent: jump the sim to the chosen stage once,
@@ -235,7 +315,7 @@ export class GameEngine {
     const st = useStore.getState();
     if (st.configEpoch === this.appliedEpoch) return;
     this.appliedEpoch = st.configEpoch;
-    this.bonuses = getBonuses(st.techRanks, st.petRanks);
+    this.bonuses = getBonuses(st.techRanks, st.petRanks, st.achievements);
     const combatMods = partyCombatMods(st.roster, this.bonuses.combatMods); // the same mods the interface shows (sim/partyStats)
     const world = this.sim.world;
     const byId = new Map(world.heroes.map((h) => [h.id, h]));
