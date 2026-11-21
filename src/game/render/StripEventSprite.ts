@@ -156,21 +156,23 @@ export class StripEventSprite extends Container {
     let facing: 1 | -1;
     let base: EventClip;
     let tappable: boolean;
+    let lift = 0;
     if (kind === 'runaway') {
-      const at = runawayPlace(this.displayMs, ev?.totalMs ?? 1, f.width);
+      const at = runawayPlace(this.displayMs, ev?.totalMs ?? 1, f.width, ev?.leaveAtMs);
       x = this.caughtX ?? at.x;
       facing = at.facing;
       base = at.clip;
       tappable = this.caughtX === null && (at.alpha ?? 1) > 0.5; // it can still be caught while it taunts
+      lift = this.caughtX === null ? (at.lift ?? 0) : 0; // its hops
       this.alpha = this.caughtX === null ? (at.alpha ?? 1) : 1;
     } else {
       const total = ev?.totalMs ?? 1;
       if (f.rearScreenX !== undefined) this.standX = Math.max(MERCHANT_MIN_X, Math.round(f.rearScreenX - MERCHANT_BEHIND_PARTY));
       else if (this.standX === 0) this.standX = MERCHANT_MIN_X;
-      const at = merchantPlace(this.displayMs, total, this.standX);
+      const at = merchantPlace(this.displayMs, total, this.standX, ev?.leaveAtMs);
       x = at.x;
       facing = at.facing;
-      const standing = merchantStanding(this.displayMs, total);
+      const standing = merchantStanding(this.displayMs, total, ev?.leaveAtMs);
       base = standing && f.cameraMoving ? 'walk' : at.clip;
       tappable = standing;
       this.alpha = 1;
@@ -185,10 +187,10 @@ export class StripEventSprite extends Container {
     }
     this.cursor = tappable ? 'pointer' : 'default';
     this.eventMode = tappable ? 'static' : 'none';
-    this.draw(sheet, x, f.groundY, facing);
+    this.draw(sheet, x, f.groundY, facing, lift);
   }
 
-  private draw(sheet: EventSheet, x: number, groundY: number, facing: 1 | -1): void {
+  private draw(sheet: EventSheet, x: number, groundY: number, facing: 1 | -1, lift = 0): void {
     const anim = sheet.meta.anims[this.clip];
     const frames = sheet.clips[this.clip];
     if (anim === undefined || frames === undefined) {
@@ -210,9 +212,10 @@ export class StripEventSprite extends Container {
     this.sprite.scale.x = facing;
     this.x = Math.round(x);
     this.y = Math.round(groundY);
-    // Its shadow: one row of ink on the path under its feet.
+    this.sprite.y = -Math.round(lift); // a hop: the figure leaves the ground, its shadow stays
+    // Its shadow: one row of ink on the path under its feet — narrower the higher it hops.
     const [bx0, , bx1] = meta.box;
-    const width = Math.max(4, bx1 - bx0 - 4);
+    const width = Math.max(4, bx1 - bx0 - 4 - Math.round(lift));
     this.shadow.width = width;
     this.shadow.x = -Math.floor(width / 2) + (facing === 1 ? Math.round((bx0 + bx1) / 2) : -Math.round((bx0 + bx1) / 2));
     this.shadow.y = 0;
@@ -220,7 +223,7 @@ export class StripEventSprite extends Container {
     const pad = this.shownKind === 'runaway' ? EVENT_HIT_PAD.runaway : EVENT_HIT_PAD.merchant;
     const left = facing === 1 ? meta.box[0] : -meta.box[2];
     const right = facing === 1 ? meta.box[2] : -meta.box[0];
-    this.hitArea = new Rectangle(left - pad, meta.box[1] - pad, right - left + 2 * pad, meta.box[3] - meta.box[1] + 2 * pad);
+    this.hitArea = new Rectangle(left - pad, meta.box[1] - pad - Math.round(lift), right - left + 2 * pad, meta.box[3] - meta.box[1] + 2 * pad + Math.round(lift));
     this.visible = true;
   }
 }

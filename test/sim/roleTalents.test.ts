@@ -51,10 +51,10 @@ describe('Vigil (party life regeneration)', () => {
     return { knight, world: createWorld(1, [knight, priest]) };
   };
 
-  it('every hero regenerates 0.05% of its own max life per second per rank while the priest lives', () => {
+  it('every hero regenerates 0.1% of its own max life per second per rank while the priest lives', () => {
     const { knight, world } = party(true);
     for (let i = 0; i < 10; i++) resolveCombatTick(world, 100, quietRng()); // one second
-    expect(knight.hp).toBeCloseTo(4000 + 10000 * 0.0025, 6); // 5 ranks × 0.05% = 0.25%/s
+    expect(knight.hp).toBeCloseTo(4000 + 10000 * 0.005, 6); // 5 ranks × 0.1% = 0.5%/s
   });
 
   it('stops while she is down', () => {

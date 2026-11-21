@@ -6,9 +6,9 @@ import { worldBossStageOf } from '@/data/difficulties';
 import { dedupeIds, maxMintedId, DEFAULT_AUTO_SALVAGE } from './inventorySlice';
 import { classDef, CLASSES } from '@/data/classes';
 import { SLOTS, type SlotKey } from '@/data/itemSlots';
-import { GENERATOR_VERSION } from '@/data/lootTables';
 import { UI_SCALE } from './uiSlice';
 import type { ItemInstance, InvEntry } from '@/sim/items';
+import { migrateEntry } from '@/sim/itemMigration';
 import { sanitizeHeroTalents } from '@/persistence/sanitizeHero';
 import { sanitizePets } from '@/persistence/sanitizePets';
 import { petRanks } from '@/sim/pets';
@@ -20,19 +20,19 @@ import type { SaveV1 } from '@/persistence/saveSchema';
 // unlocked classes. `configEpoch` bumps whenever something that affects combat changes, so
 // the engine knows to rebuild heroes.
 
-// Keep only post-overhaul gear/gems on load — an older generatorVersion is a clean WIPE
-// (the gear overhaul changed item shape: array base affix, class weapons, new slots).
-function keepEntry(e: InvEntry): boolean {
-  return e.origin.generatorVersion === GENERATOR_VERSION;
+// Keep only post-overhaul gear/gems on load, brought up to the current generator (sim/itemMigration: v7 → v8 re-scales
+// heal power); anything older is a clean WIPE (the gear overhaul changed item shape: array base affix, class weapons,
+// new slots).
+function keepEntry<T extends InvEntry>(e: T): T | null {
+  return migrateEntry(e);
 }
 
-// Drop equipped items that are pre-overhaul or sit in a now-removed slot (e.g. ring1/ring2).
+// Drop equipped items that are pre-overhaul or sit in a now-removed slot (e.g. ring1/ring2); migrate the rest.
 function sanitizeEquipment(eq: Partial<Record<SlotKey, ItemInstance>>): Partial<Record<SlotKey, ItemInstance>> {
   const out: Partial<Record<SlotKey, ItemInstance>> = {};
   for (const [slot, item] of Object.entries(eq)) {
-    if (item !== undefined && SLOTS[slot as SlotKey] !== undefined && item.origin.generatorVersion === GENERATOR_VERSION) {
-      out[slot as SlotKey] = item;
-    }
+    const kept = item !== undefined && SLOTS[slot as SlotKey] !== undefined ? keepEntry(item) : null;
+    if (kept !== null) out[slot as SlotKey] = kept;
   }
   return out;
 }
@@ -195,7 +195,7 @@ export const createProgressSlice: StateCreator<GameStore, [], [], ProgressSlice>
       // affix, class weapons, new slots), so old items are a clean WIPE on load.
       ...((): { inventory: typeof save.inventory; stash: typeof save.stash } => {
         const taken = new Set<string>();
-        const wipe = (e: InvEntry | null): InvEntry | null => (e !== null && keepEntry(e) ? e : null);
+        const wipe = (e: InvEntry | null): InvEntry | null => (e !== null ? keepEntry(e) : null);
         const inventory = dedupeIds([...save.inventory, ...(save.inventoryGems ?? [])], taken).map(wipe);
         const stash = dedupeIds([...(save.stash ?? [])], taken).map(wipe);
         return { inventory, stash };

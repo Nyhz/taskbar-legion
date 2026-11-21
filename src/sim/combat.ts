@@ -20,7 +20,7 @@ import { checkLowHp, onBlock, onCrit, onEffectsEnded, onEnemyDeath, onEnemyEngag
 import { mitigation, enrageMultiplier, MAX_DAMAGE_REDUCTION } from '@/data/stageScaling';
 import { foeMagicShare, mixedMitigation } from './damageMix';
 import { WALK_SPEED, HERO_SPACING, MOVE_EPS, RANGE, RESPAWN_MS } from '@/data/field';
-import { tryAbilityDef } from '@/data/abilities';
+import { chargeBankCap, tryAbilityDef } from '@/data/abilities';
 import { behindBack, dismissSummons, isSummon, onBossHit, shellDamage, tickBossKit } from './bossMechanics';
 import { summonPrey } from './mirror';
 import { noteDamageTaken, tickRecent } from './recent';
@@ -174,9 +174,10 @@ export function resolveCombatTick(world: WorldState, deltaMs: number, rng: Rng):
         // its ability openers, so the kit's cadence is measured from ENGAGEMENT (not from spawn,
         // which the walk-up would otherwise eat into and bunch the openers).
         if (e.engaged !== true) {
-          // The wave's first: nobody of it (dead or alive — the dead stay listed until the next
-          // wave spawns) had reached the fight yet.
-          const firstOfWave = !enemies.some((o) => o.engaged === true);
+          // The first of its batch: nobody released with it (dead or alive — the dead stay listed until the next
+          // wave spawns) had reached the fight yet. A wave arrives in WAVE_BATCHES, so its engage triggers (Killing
+          // Field) answer each batch (2026-11-21: fired on the first batch only, they missed two thirds of the wave).
+          const firstOfWave = !enemies.some((o) => o.engaged === true && o.spawnBatch === e.spawnBatch);
           e.engaged = true;
           if (e.isBoss === true) e.bossUltTriggered = true;
           onEnemyEngage(e, firstOfWave, ctx);
@@ -202,7 +203,7 @@ export function resolveCombatTick(world: WorldState, deltaMs: number, rng: Rng):
     const stats = heroStats(h);
     // The cadence curve (data/cadence, round 12): he swings what the curve gives; each hit carries the rest.
     advanceAttack(h, heroSwingsPerSec(h.classKey, stats.attackSpeed), deltaMs, () => {
-      const cast = castReadyAbilities(h, heroes, enemies, S, rng, events);
+      const cast = castReadyAbilities(h, heroes, enemies, S, rng, events, world.waveQueue.length);
       if (cast.length > 0) {
         for (const key of cast) events.push({ type: 'cast', targetId: h.id, abilityKey: key });
         // Pierce Through: an enemy its shot has just killed falls NOW, and the damage left over goes on behind.
@@ -307,7 +308,12 @@ function tickCombatantUpkeep(c: Combatant, worldTick: number, deltaMs: number, d
     if (dps > 0) events.push({ type: 'damage', targetId: c.id, amount: dps, tick: true });
   }
   if (c.side === 'hero') {
-    const regen = ((heroStats(c).hpRegen ?? 0) + (c.maxHp * partyRegenPct) / 100) * dtSec * healMult;
+    const own = (heroStats(c).hpRegen ?? 0) * dtSec * healMult;
+    // Vigil (the Priest's party regeneration) is her healing too: what of it does not fit feeds Overflow
+    // (2026-11-21; user: «todas las habilidades que curan del priest, Vigil incluida, deben alimentar Overflow»).
+    const vigil = ((c.maxHp * partyRegenPct) / 100) * dtSec * healMult;
+    if (vigil > 0) overflowShield(c, Math.min(vigil, c.hp + own + vigil - c.maxHp));
+    const regen = own + vigil;
     if (regen > 0) c.hp = Math.min(c.maxHp, c.hp + regen);
   }
   if (c.hp <= 0) kill(c, ctx);
@@ -456,7 +462,7 @@ export function heroAttack(h: Combatant, stats: EffectiveStats, target: Combatan
   for (const { def } of h.abilities) {
     if (def.charge === undefined) continue;
     const cur = (h.charges ??= {})[def.key] ?? 0;
-    h.charges[def.key] = Math.min(def.charge.toCast, cur + def.charge.perAttack);
+    h.charges[def.key] = Math.min(chargeBankCap(def.charge.toCast), cur + def.charge.perAttack);
   }
   // (kills are resolved inside `strike` as each hit lands — no trailing kill needed)
 }

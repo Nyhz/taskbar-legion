@@ -18,7 +18,8 @@
  * wait for a key. Normal's ten walls are left AT that floor. Nothing is written — copy the tables it prints (smooth them: one point on a few seeds is noisy).
  *
  * Env: TUNE_SEEDS (default 3), TUNE_WORLDS (last world, default 50), TUNE_ITER (bisection steps, default 7),
- * TUNE_KEEP=1 keeps today's anchor tables and tunes only the walls.
+ * TUNE_KEEP=1 keeps today's anchor tables and tunes only the walls. TUNE_FROM=w plays the worlds before w on today's
+ * walls (nothing measured or proposed for them) and tunes from w on.
  */
 import { DEFAULT_CONFIG, newProbeRun, advanceProbe, probeResult, runParty, runBonuses, runActiveHours, type ProbeRun, type ProbeConfig } from '../test/sim/probe/loop';
 import { measureBoss, measureFarm } from '../test/sim/probe/combat';
@@ -33,6 +34,7 @@ const SEEDS = Array.from({ length: Math.max(1, Number(process.env.TUNE_SEEDS ?? 
 const WORLDS = Math.min(50, Number(process.env.TUNE_WORLDS ?? 50));
 const ITER = Number(process.env.TUNE_ITER ?? 7);
 const KEEP_ANCHORS = process.env.TUNE_KEEP === '1';
+const FROM = Math.max(1, Number(process.env.TUNE_FROM ?? 1));
 const NO_WALL_WORLDS = 10; // Normal is strolled through: each of its walls is whatever every seed beats with its first key
 const SEASON_MAX_HOURS = 6; // "full gear of the previous world" = this much more farming of its last stage, at most
 const CFG: ProbeConfig = DEFAULT_CONFIG;
@@ -151,6 +153,17 @@ for (let w = 1; w <= WORLDS; w++) {
   const S = w * 10;
   const first = S - 9;
   const worldStart = runs.map((r) => runActiveHours(r));
+  if (w < FROM) {
+    // Before TUNE_FROM: played through on today's wall, nothing measured or proposed.
+    for (const r of runs) advanceProbe(r, { ...CFG, stopAtStage: S });
+    if (runs.some((r) => r.gaveUp || r.state.frontier < S)) {
+      console.log(`world ${w}: a seed could not get past it on today's wall — stopping`);
+      break;
+    }
+    walls.push(WORLD_WALL_MULT[w - 1] ?? 1);
+    console.log(`${w}	kept	×${f2(WORLD_WALL_MULT[w - 1] ?? 1)}	hours ${runs.map((r, i) => (runActiveHours(r) - (worldStart[i] ?? 0)).toFixed(1)).join(' ')}`);
+    continue;
+  }
   let a = { hit: 0, hits: 0, bossSec: 0, dmg: 1 };
   if (w >= 2) {
     for (const r of runs) advanceProbe(r, { ...CFG, stopAtStage: first - 1 });

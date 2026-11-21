@@ -74,6 +74,7 @@ export interface Combatant {
   recentDamage?: number; // running tally of damage taken, fading (who is taking the most right now)
   // ── bookkeeping for triggers ──
   engaged?: boolean; // enemy-only: it has reached the fight (its engage triggers have fired)
+  spawnBatch?: number; // enemy-only: the tick its batch of the wave was released (a wave arrives in WAVE_BATCHES)
   lastHitBy?: string; // enemy-only: id of the hero whose hit or bleed last landed (who gets the kill)
   // enemy-only precomputed combat values (stage-scaled at spawn):
   enemyDamage?: number;

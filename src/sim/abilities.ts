@@ -1,7 +1,7 @@
 import { cadenceHitMult } from '@/data/cadence';
 import type { AbilityDef, AbilityPower, AbilityTarget, AppliedEffect, FireRule } from '@/data/abilities';
-import { worldBossAbilityKeys } from '@/data/abilities';
-import { HERO_GLOBAL_COOLDOWN_MS } from '@/data/casting';
+import { RECENT_DAMAGE_HALF_LIFE_MS, worldBossAbilityKeys } from '@/data/abilities';
+import { EMERGENCY_LIFE_FRAC, HERO_GLOBAL_COOLDOWN_MS } from '@/data/casting';
 import type { EffectDef } from '@/data/effects';
 import { effectDef } from '@/data/effects';
 import type { Combatant, CombatEvent } from './world';
@@ -16,12 +16,11 @@ import { condemn, critBleed, guardedDamage, healInfusion, overflowShield } from 
 import { behindBack, onWorldBlow, resolveSpecial, shellDamage } from './bossMechanics';
 import { afterMirror, reflection, specialReady } from './mirror';
 import { foeDamageMult, foeWard } from './enemyTraits';
-import { biggestCluster, pickTarget } from './targeting';
+import { biggestCluster, inShotReach, pickTarget } from './targeting';
 import { classDef } from '@/data/classes';
 import { enrageMultiplier, MAX_DAMAGE_REDUCTION } from '@/data/stageScaling';
 import { foeMagicShare, mixedMitigation } from './damageMix';
-import { healPowerEffectiveness } from '@/data/difficulties';
-import { HEAL_CLEANSE_COUNT, HEAL_URGENT_FRAC } from '@/data/healing';
+import { CLEANSE_URGENT_PRIORITY, HEAL_CLEANSE_COUNT, HEAL_DANGER_WINDOW_MS, HEAL_URGENT_FRAC, HEAL_WOUND_FIRST_FRAC, HEAVY_HIT_HEAL_BELOW } from '@/data/healing';
 import { steadyRoll } from './steady';
 
 // Cooldown tracking + AI cast logic. Abilities apply declarative effects; power
@@ -91,7 +90,7 @@ export function effectCoeff(ability: AbilityDef, applied: AppliedEffect, steps: 
  *  duration, divided into per-second in applyToTarget). Heal/HoT/Shield are a
  *  fraction of the target's max HP (HoT = TOTAL over its duration). Each effect resolves
  *  against its OWN power when it has one, else the ability's (docs/redesign/CLASSES.md, F3). */
-export function effectMagnitude(ability: AbilityDef, applied: AppliedEffect, def: EffectDef, rank: number, cs: EffectiveStats, target: Combatant, caster: Combatant, coeffOverride?: number, healEff = 1): number {
+export function effectMagnitude(ability: AbilityDef, applied: AppliedEffect, def: EffectDef, rank: number, cs: EffectiveStats, target: Combatant, caster: Combatant, coeffOverride?: number): number {
   const steps = Math.max(0, rank - 1);
   const t = def.kind.type;
   if (t === 'damage' || t === 'dot') {
@@ -110,9 +109,8 @@ export function effectMagnitude(ability: AbilityDef, applied: AppliedEffect, def
   if (t === 'heal' || t === 'hot' || t === 'shield') {
     const coeff = effectCoeff(ability, applied, steps);
     if (coeff === undefined) return 0;
-    // healPower's benefit is scaled by the difficulty's heal-power effectiveness (the zone
-    // debuff) — the base coeff floor is untouched, only the healPower amplification diminishes.
-    return coeff * target.maxHp * (1 + (cs.healPower * healEff) / 100);
+    // A share of the target's max life, amplified by heal power (not tier-scaled since 2026-11-21: data/stats).
+    return coeff * target.maxHp * (1 + cs.healPower / 100);
   }
   // statMod / weaken / vulnerable / healReduction / silence / root / tag: base value + per-rank.
   // The base is the applied effect's own `value` when it states one (a vulnerability has no value
@@ -202,6 +200,40 @@ export function bossWindingUp(enemies: readonly Combatant[], heavy: boolean): bo
 }
 
 const lifeFrac = (c: Combatant): number => (c.maxHp > 0 ? c.hp / c.maxHp : 1);
+/** The time constant of a hero's fading damage tally (sim/recent): the tally over it is the damage a second he is
+ *  taking right now. */
+const RECENT_TALLY_SEC = RECENT_DAMAGE_HALF_LIFE_MS / 1000 / Math.LN2;
+/** An ally's life `withinMs` from now if things go on as they are: what the heals over time on it give in that time
+ *  (cut by any healing reduction), less the damage it is taking a second over the same time. Its life as it is when no
+ *  heal over time is on it. */
+function lifeAhead(c: Combatant, withinMs: number): number {
+  let horizonMs = 0;
+  for (const e of c.effects) {
+    if (e.remainingMs > 0 && effectDef(e.defKey).kind.type === 'hot') horizonMs = Math.max(horizonMs, Math.min(e.remainingMs, withinMs));
+  }
+  if (horizonMs === 0) return c.hp;
+  const incoming = (c.recentDamage ?? 0) / RECENT_TALLY_SEC;
+  return c.hp + hotStillToCome(c.effects, withinMs) * healReceivedMult(c.effects) - (incoming * horizonMs) / 1000;
+}
+/** How hurt an ally is for a HEAL deciding whether and where to go (user, 2026-11-21: Healing Light landed on a Ranger
+ *  Mend was already bringing back to full, wasting the rest of the Mend): its life once the heals over time on it have
+ *  run, net of the damage it keeps taking (`lifeAhead`), up to full — never lower than its life now (a heal over time
+ *  outpaced by the blows still helps). An ally under HEAL_URGENT_FRAC even after the next HEAL_DANGER_WINDOW_MS counts
+ *  as hurt as it is: a slow heal does not stop the next blow. Without a heal over time on it: its life, as before. */
+const healNeedFrac = (c: Combatant): number => {
+  if (c.maxHp <= 0) return 1;
+  const life = c.hp / c.maxHp;
+  if (lifeAhead(c, HEAL_DANGER_WINDOW_MS) / c.maxHp < HEAL_URGENT_FRAC) return life;
+  return Math.max(life, Math.min(1, lifeAhead(c, Number.POSITIVE_INFINITY) / c.maxHp));
+};
+/** An ally a heal must reach now: under HEAL_URGENT_FRAC, counting the heals over time on it (`healNeedFrac`). */
+const inDanger = (c: Combatant): boolean => c.alive && healNeedFrac(c) < HEAL_URGENT_FRAC;
+/** Whether an ability is a heal (its first effect heals, at once or over time) — and so weighs `healNeedFrac`. */
+function isHealAbility(ability: AbilityDef): boolean {
+  const first = ability.applies[0];
+  const type = first !== undefined ? effectDef(first.effectKey).kind.type : undefined;
+  return type === 'heal' || type === 'hot';
+}
 const tough = (c: Combatant): boolean => c.isElite === true || c.isBoss === true;
 
 /** A harmful effect a heal lifts: not one too slight to cleanse (data/effects `cleanseIgnores`: Temblor). */
@@ -216,6 +248,13 @@ export function isHarmed(c: Combatant): boolean {
 }
 
 /** How many harmful effects a heal would lift from `c`. */
+/** The `cleansePriority` of the most pressing harmful effect a heal would lift from `c` (0 with none). */
+function worstHarm(c: Combatant): number {
+  let worst = 0;
+  for (const e of c.effects) if (e.remainingMs > 0 && cleansable(e.defKey)) worst = Math.max(worst, effectDef(e.defKey).cleansePriority ?? 0);
+  return worst;
+}
+
 function harmCount(c: Combatant): number {
   let n = 0;
   for (const e of c.effects) if (e.remainingMs > 0 && cleansable(e.defKey)) n += 1;
@@ -254,7 +293,7 @@ function healCleanse(caster: Combatant, target: Combatant, events: CombatEvent[]
 }
 
 /** A hero ability's FireRule (data/abilities): is this the moment? Pure read of both sides. */
-function fireRuleMet(rule: FireRule, ability: AbilityDef, caster: Combatant, allies: Combatant[], enemies: Combatant[]): boolean {
+function fireRuleMet(rule: FireRule, ability: AbilityDef, caster: Combatant, allies: Combatant[], enemies: Combatant[], queued = 0): boolean {
   switch (rule.when) {
     case 'inReach': {
       let inReach = 0;
@@ -267,7 +306,9 @@ function fireRuleMet(rule: FireRule, ability: AbilityDef, caster: Combatant, all
         inReach += 1;
         if (tough(e)) big = true;
       }
-      return inReach >= rule.foes || (inReach > 0 && (big || inReach === alive));
+      // "Nothing else is coming" counts the batches of the wave still to arrive (2026-11-21: a 15 s Debilitating
+      // Cleave went on the lone first grunt of a wave whose other two batches were seconds away).
+      return inReach >= rule.foes || (inReach > 0 && (big || (inReach === alive && queued === 0)));
     }
     case 'worthIt': {
       let alive = 0;
@@ -304,8 +345,11 @@ function fireRuleMet(rule: FireRule, ability: AbilityDef, caster: Combatant, all
     }
     case 'allyHit':
       return allies.some((a) => a.alive && recentlyHit(a));
-    case 'allyBelow':
-      return allies.some((a) => a.alive && (lifeFrac(a) < rule.frac || (rule.orHeavyHit === true && recentlyHitHard(a) && a.hp < a.maxHp)));
+    case 'allyBelow': {
+      // A heal weighs what the heals over time already on an ally will give; a ward (a shield) its life as it is.
+      const frac = isHealAbility(ability) ? healNeedFrac : lifeFrac;
+      return allies.some((a) => a.alive && (frac(a) < rule.frac || (rule.orHeavyHit === true && recentlyHitHard(a) && frac(a) < (frac === healNeedFrac ? HEAVY_HIT_HEAL_BELOW : 1))));
+    }
     case 'partyHurt': {
       let living = 0;
       let hurt = 0;
@@ -313,7 +357,7 @@ function fireRuleMet(rule: FireRule, ability: AbilityDef, caster: Combatant, all
       for (const a of allies) {
         if (!a.alive) continue;
         living += 1;
-        const f = lifeFrac(a);
+        const f = healNeedFrac(a); // a party heal: what the heals over time on them will give counts
         if (f < rule.orOneBelow) return true;
         if (f < rule.frac) hurt += 1;
         if (rule.orHarmed !== undefined && isHarmed(a)) harmed += 1;
@@ -322,7 +366,7 @@ function fireRuleMet(rule: FireRule, ability: AbilityDef, caster: Combatant, all
       return hurt >= Math.min(rule.allies, living) || (rule.orHarmed !== undefined && harmed >= Math.min(rule.orHarmed, living));
     }
     case 'harmedOrBelow':
-      return allies.some((a) => a.alive && (isHarmed(a) || lifeFrac(a) < rule.frac || (rule.orHeavyHit === true && recentlyHitHard(a) && a.hp < a.maxHp)));
+      return allies.some((a) => a.alive && (isHarmed(a) || healNeedFrac(a) < rule.frac || (rule.orHeavyHit === true && recentlyHitHard(a) && healNeedFrac(a) < HEAVY_HIT_HEAL_BELOW)));
     case 'bossWindup':
       return bossWindingUp(enemies, rule.heavy === true);
   }
@@ -350,10 +394,10 @@ function isReactive(ability: AbilityDef, enemies: readonly Combatant[]): boolean
   return (rules !== undefined && rules.some((r) => reactive(r.when))) || ability.castCondition === 'allyBelowHpPct';
 }
 
-function conditionMet(ability: AbilityDef, caster: Combatant, allies: Combatant[], enemies: Combatant[]): boolean {
+function conditionMet(ability: AbilityDef, caster: Combatant, allies: Combatant[], enemies: Combatant[], queued = 0): boolean {
   const rules = caster.side === 'hero' ? fireRules(ability, enemies) : undefined;
   if (rules !== undefined) {
-    return enemies.some((e) => e.alive) && rules.some((r) => fireRuleMet(r, ability, caster, allies, enemies));
+    return enemies.some((e) => e.alive) && rules.some((r) => fireRuleMet(r, ability, caster, allies, enemies, queued));
   }
   const cond = ability.castCondition ?? 'always';
   if (cond === 'enemyPresent') return enemies.some((e) => e.alive);
@@ -401,9 +445,11 @@ function primaryShieldKey(ability: AbilityDef): string | undefined {
   return first !== undefined && effectDef(first.effectKey).kind.type === 'shield' ? first.effectKey : undefined;
 }
 
-/** True if the combatant already carries an active (un-depleted) shield of this kind, from any source. */
-function hasActiveShield(c: Combatant, shieldKey: string): boolean {
-  return c.effects.some((e) => e.defKey === shieldKey && e.remainingMs > 0 && e.value > 0);
+/** True if the combatant already carries an active shield of this kind, from any source, holding at least `atLeast`
+ *  (2026-11-21: a small Holy Shield no longer keeps the Knight's far bigger Bulwark from going up for the same blow —
+ *  a bigger shield replaces a smaller one). */
+function hasActiveShield(c: Combatant, shieldKey: string, atLeast = 0): boolean {
+  return c.effects.some((e) => e.defKey === shieldKey && e.remainingMs > 0 && e.value > 0 && e.value >= atLeast);
 }
 
 /** The living foes other than `front` — who a shot aimed behind the front line can land on (the back line
@@ -450,7 +496,7 @@ function selectTargets(caster: Combatant, target: AbilityTarget, allies: Combata
     case 'lowestAllyHp': {
       const living = allies.filter((a) => a.alive);
       if (living.length === 0) return [];
-      const lowest = living.reduce((lo, a) => (a.hp / a.maxHp < lo.hp / lo.maxHp ? a : lo));
+      const lowest = living.reduce((lo, a) => (healNeedFrac(a) < healNeedFrac(lo) ? a : lo));
       return [lowest];
     }
     case 'lowestOtherAlly': {
@@ -497,22 +543,44 @@ function selectTargets(caster: Combatant, target: AbilityTarget, allies: Combata
       const best = biggestCluster(caster, enemies, blastRadius);
       return best !== undefined ? [best] : [];
     }
+    case 'toughestEnemy': {
+      // Once the fight has reached her, the enemy in her shot reach that will live longest: a boss, then an elite,
+      // then the most life left (ties: the nearest). Deterministic, no RNG.
+      if (!enemies.some((e) => e.alive && inRange(caster, e))) return [];
+      let best: Combatant | undefined;
+      const toughness = (e: Combatant): number => (e.isBoss === true ? 2 : e.isElite === true ? 1 : 0);
+      for (const e of enemies) {
+        if (!e.alive || !inShotReach(caster, e)) continue;
+        if (best === undefined || toughness(e) > toughness(best) || (toughness(e) === toughness(best) && (e.hp > best.hp || (e.hp === best.hp && e.x < best.x)))) best = e;
+      }
+      return best !== undefined ? [best] : [];
+    }
     case 'priorityEnemy': {
       // Once an enemy has come as near as the caster stands (the fight has reached her), the one that comes
       // first in the heroes' order across her whole shot reach (sim/targeting): the support at the back before
-      // the brute in front. Deterministic, no RNG.
+      // the brute in front. Deterministic, no RNG. An enemy one of her basic hits would finish is passed over while
+      // another is in reach (2026-11-21: Aimed Shot's 1.8–3.4× hit spent on a shooter one arrow from death).
       if (!enemies.some((e) => e.alive && inRange(caster, e))) return [];
-      const best = pickTarget(caster, enemies);
+      const oneHit = normalAttackDamage(caster, casterStats(caster));
+      const best = pickTarget(caster, enemies.filter((e) => e.hp > oneHit)) ?? pickTarget(caster, enemies);
       return best !== undefined ? [best] : [];
     }
     case 'mostHitAlly': {
-      // Whoever is taking the most damage right now (the fading tally of sim/recent.ts); nobody when no one is.
+      // Whoever is taking the most damage right now for his life (the fading tally of sim/recent.ts over his max
+      // life); nobody when no one is. An ally under EMERGENCY_LIFE_FRAC comes first, the lowest of them (2026-11-21:
+      // the emergency rule fired for a Ranger at 25 % and the shield went to the Knight at 80 %, who takes more in
+      // absolute terms with three times the life).
       let best: Combatant | undefined;
+      let emergency: Combatant | undefined;
+      const share = (c: Combatant): number => (c.recentDamage ?? 0) / Math.max(1, c.maxHp);
       for (const a of allies) {
-        if (!a.alive || !recentlyHit(a)) continue;
-        if (best === undefined || (a.recentDamage ?? 0) > (best.recentDamage ?? 0)) best = a;
+        if (!a.alive) continue;
+        if (lifeFrac(a) < EMERGENCY_LIFE_FRAC && (emergency === undefined || lifeFrac(a) < lifeFrac(emergency))) emergency = a;
+        if (!recentlyHit(a)) continue;
+        if (best === undefined || share(a) > share(best)) best = a;
       }
-      return best !== undefined ? [best] : [];
+      const pick = emergency ?? best;
+      return pick !== undefined ? [pick] : [];
     }
     case 'hurtAlly': {
       // An ally that has just taken a heavy hit (the one that lost the largest share), else the most hurt — counting
@@ -522,34 +590,47 @@ function selectTargets(caster: Combatant, target: AbilityTarget, allies: Combata
       let lowFrac = Number.POSITIVE_INFINITY;
       for (const a of allies) {
         if (!a.alive) continue;
-        if (recentlyHitHard(a) && a.hp < a.maxHp && (hard === undefined || (a.recentDamage ?? 0) / a.maxHp > (hard.recentDamage ?? 0) / hard.maxHp)) hard = a;
-        const f = (a.hp + hotStillToCome(a.effects)) / Math.max(1, a.maxHp);
+        if (recentlyHitHard(a) && healNeedFrac(a) < HEAVY_HIT_HEAL_BELOW && (hard === undefined || (a.recentDamage ?? 0) / a.maxHp > (hard.recentDamage ?? 0) / hard.maxHp)) hard = a;
+        const f = healNeedFrac(a);
         if (low === undefined || f < lowFrac) {
           low = a;
           lowFrac = f;
         }
       }
-      const pick = hard ?? low;
+      // An ally in danger before one just struck (who is hurt, but less).
+      const pick = low !== undefined && inDanger(low) ? low : (hard ?? low);
       return pick !== undefined ? [pick] : [];
     }
     case 'triageAlly': {
-      // Healing Light: an ally in danger first (the most hurt, under HEAL_URGENT_FRAC); over that line, the one
-      // carrying the most harmful effects (a heal lifts one); then one just struck hard; then the most hurt.
+      // Healing Light: an ally in danger first (the most hurt, under HEAL_URGENT_FRAC); then one carrying a harmful
+      // effect that matters (CLEANSE_URGENT_PRIORITY: Roots, Guilt…); then the most hurt while under
+      // HEAL_WOUND_FIRST_FRAC; then the one carrying the most harmful effects (a poison, a bleed); then one just struck
+      // hard; then the most hurt. "Hurt" counts what a heal over time on the ally still has to give (`healNeedFrac`):
+      // a mended ally is not healed twice.
       let low: Combatant | undefined;
       let harmed: Combatant | undefined;
       let most = 0;
+      let serious: Combatant | undefined;
+      let worst = 0;
       let hard: Combatant | undefined;
       for (const a of allies) {
         if (!a.alive) continue;
-        if (low === undefined || lifeFrac(a) < lifeFrac(low)) low = a;
+        if (low === undefined || healNeedFrac(a) < healNeedFrac(low)) low = a;
         const n = harmCount(a);
         if (n > most || (n > 0 && n === most && harmed !== undefined && lifeFrac(a) < lifeFrac(harmed))) {
           most = n;
           harmed = a;
         }
-        if (recentlyHitHard(a) && a.hp < a.maxHp && (hard === undefined || (a.recentDamage ?? 0) / a.maxHp > (hard.recentDamage ?? 0) / hard.maxHp)) hard = a;
+        const p = worstHarm(a);
+        if (p >= CLEANSE_URGENT_PRIORITY && (p > worst || (p === worst && serious !== undefined && healNeedFrac(a) < healNeedFrac(serious)))) {
+          worst = p;
+          serious = a;
+        }
+        if (recentlyHitHard(a) && healNeedFrac(a) < HEAVY_HIT_HEAL_BELOW && (hard === undefined || (a.recentDamage ?? 0) / a.maxHp > (hard.recentDamage ?? 0) / hard.maxHp)) hard = a;
       }
-      if (low !== undefined && lifeFrac(low) < HEAL_URGENT_FRAC) return [low];
+      if (low !== undefined && healNeedFrac(low) < HEAL_URGENT_FRAC) return [low];
+      if (serious !== undefined) return [serious];
+      if (low !== undefined && healNeedFrac(low) < HEAL_WOUND_FIRST_FRAC) return [low];
       const pick = harmed ?? hard ?? low;
       return pick !== undefined ? [pick] : [];
     }
@@ -558,7 +639,7 @@ function selectTargets(caster: Combatant, target: AbilityTarget, allies: Combata
       let best: Combatant | undefined;
       for (const a of allies) {
         if (!a.alive || exclude.includes(a)) continue;
-        if (best === undefined || lifeFrac(a) < lifeFrac(best)) best = a;
+        if (best === undefined || healNeedFrac(a) < healNeedFrac(best)) best = a;
       }
       return best !== undefined ? [best] : [];
     }
@@ -633,9 +714,7 @@ function applyToTarget(
 ): void {
   const kind = def.kind.type;
   const duration = effectDuration(ability, def, rank, applied.durationMsOverride);
-  // The zone heal-power debuff applies to healPower-scaled effects (heal/hot/shield).
-  const healEff = healPowerEffectiveness(S);
-  let value = effectMagnitude(ability, applied, def, rank, cs, target, caster, coeffOverride, healEff);
+  let value = effectMagnitude(ability, applied, def, rank, cs, target, caster, coeffOverride);
   // DoT/HoT coeffs are TOTALS over the effect's duration; store as per-second
   // (what dotDps/hotHps sum each tick).
   if (kind === 'dot' || kind === 'hot') value /= Math.max(0.001, duration / 1000);
@@ -739,15 +818,22 @@ function applyToTarget(
 function byUrgency(caster: Combatant, allies: Combatant[], enemies: Combatant[]): readonly ResolvedAbility[] {
   const list = caster.abilities;
   if (list.length < 2) return list;
-  const danger = allies.some((a) => a.alive && lifeFrac(a) < HEAL_URGENT_FRAC);
+  const danger = allies.some(inDanger);
   const urgency = (ability: AbilityDef): number => {
-    if (bracing(ability, caster, allies, enemies)) return 0;
-    if (danger && healsAllies(ability)) return 1;
+    // A heal saves the ally in danger before it braces the front one for a blow (2026-11-21: Mend went on a full
+    // Knight for the boss's wind-up while the Ranger at 20 % died behind the global cooldown).
+    if (danger && healsAllies(ability)) return 0;
+    if (bracing(ability, caster, allies, enemies)) return 1;
     return 2;
   };
   const ranked = list.map((a, i) => ({ a, i, u: urgency(a.def) }));
   if (ranked.every((r) => r.u === 2)) return list;
-  return ranked.sort((x, y) => x.u - y.u || x.i - y.i).map((r) => r.a);
+  // Among the defences braced for the same blow, the one with the longest cooldown first (2026-11-21: a Debilitating
+  // Cleave in the first slot, ready at every 15 s Crushing Blow, took every wind-up and left Stone Skin and Bulwark for
+  // the emergencies): the scarce one answers when it is up, the others when it is not — they take turns.
+  const braceOrder = (x: (typeof ranked)[number], y: (typeof ranked)[number]): number =>
+    x.u === 1 && y.u === 1 ? (y.a.def.cooldownMs ?? 0) - (x.a.def.cooldownMs ?? 0) : 0;
+  return ranked.sort((x, y) => x.u - y.u || braceOrder(x, y) || x.i - y.i).map((r) => r.a);
 }
 
 /** Whether an ability heals (an instant heal or one over time), on whomever it lands. */
@@ -771,6 +857,8 @@ export function castReadyAbilities(
   S: number,
   rng: Rng,
   events: CombatEvent[],
+  /** Enemies of the wave still to arrive (its later batches): a fire rule waiting for "nobody else is coming". */
+  queued = 0,
 ): string[] {
   if (!caster.alive || isSilenced(caster.effects)) return [];
   // A combatant mid-channel (winding up a cast bar) takes no new action — its in-progress
@@ -790,7 +878,7 @@ export function castReadyAbilities(
     } else if ((caster.cooldowns[ability.key] ?? 0) > 0) {
       continue;
     }
-    if (!conditionMet(ability, caster, allies, enemies)) continue;
+    if (!conditionMet(ability, caster, allies, enemies, queued)) continue;
     if (ability.special !== undefined && (caster.engaged !== true || !specialReady(caster, ability))) continue; // a boss's mechanic waits for the fight (and the breaking of the mirrors, for all six)
     // Don't blow a self/party buff — OR a whole-wave AoE — during the walk-up: hold it
     // until the caster is actually engaged (a foe in range). The AoE then lands on the
@@ -798,16 +886,22 @@ export function castReadyAbilities(
     if ((isSelfOrPartyBuff(ability, enemies) || ability.target === 'allEnemies') && !engaged(caster, enemies)) continue;
     // Braced against a boss's blow (its boss rule fired on the wind-up): an ability for one ally lands on the hero
     // the blow will strike — the front one.
-    const braced = bracing(ability, caster, allies, enemies) && ONE_ALLY_TARGETS.has(ability.target);
-    const front = braced ? frontmostAlly(allies) : undefined;
+    let front = bracing(ability, caster, allies, enemies) && ONE_ALLY_TARGETS.has(ability.target) ? frontmostAlly(allies) : undefined;
+    // A heal braced for the blow still goes to an ally in danger elsewhere (its own target picks the most hurt).
+    if (front !== undefined && healsAllies(ability) && allies.some((a) => a !== front && inDanger(a))) front = undefined;
     const targets = front !== undefined ? [front] : selectTargets(caster, ability.target, allies, enemies, rng, ability.power?.splashRadius);
     if (targets.length === 0) continue;
     // Don't stack shields: if this ability IS a shield and every target already has an active
-    // shield of that kind (from ANY source), skip the cast WITHOUT consuming its cooldown — it
-    // fires the moment the existing shield drops. Keeps the Knight's Bulwark and the
-    // Priest's Holy Shield from overwriting / wasting each other on the same tank.
+    // shield of that kind (from ANY source) at least as big as this one would be, skip the cast WITHOUT consuming
+    // its cooldown — it fires the moment the existing shield drops. A bigger shield replaces a smaller one (the
+    // Knight's Bulwark over the Priest's Holy Shield), never the other way round.
     const shieldKey = primaryShieldKey(ability);
-    if (shieldKey !== undefined && targets.every((t) => hasActiveShield(t, shieldKey))) continue;
+    if (shieldKey !== undefined) {
+      const applied = ability.applies[0];
+      const def = effectDef(shieldKey);
+      const would = (t: Combatant): number => (applied !== undefined ? effectMagnitude(ability, applied, def, rank, cs, t, caster) : 0);
+      if (targets.every((t) => hasActiveShield(t, shieldKey, would(t)))) continue;
+    }
     // A channeled enemy cast (world-boss Frenzy / Mortal Wound) winds up FIRST: begin the
     // channel + start its cooldown now, but resolve the effect only when the cast bar fills
     // (combat.resolveChanneledCast). A channeling enemy starts nothing else this call.
@@ -944,7 +1038,10 @@ function critTriggers(caster: Combatant, allies: Combatant[], enemies: Combatant
 /** Commit an ability's cost after it fires: spend a charge, or start its base cooldown. */
 function commitCooldown(caster: Combatant, ability: AbilityDef, rank: number): void {
   if (ability.charge !== undefined) {
-    (caster.charges ??= {})[ability.key] = 0; // spent — rebuild via auto-attacks
+    // Spent — rebuild via auto-attacks. What was banked past a full charge (while the global cooldown held the cast)
+    // stays banked (2026-11-21: those charges were lost).
+    const banked = (caster.charges ??= {})[ability.key] ?? 0;
+    caster.charges[ability.key] = Math.max(0, banked - ability.charge.toCast);
     return;
   }
   // Store the BASE cooldown (no CDR baked in); tickCooldowns drains it at a rate scaled by

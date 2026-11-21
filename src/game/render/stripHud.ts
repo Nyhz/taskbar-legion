@@ -280,7 +280,7 @@ export function abilityChips(c: CooldownFacts): ChipView[] {
   return c.abilities.slice(0, 2).map(({ def }): ChipView => {
     const sign = miniSign(def.key);
     if (def.charge !== undefined) {
-      const banked = c.charges?.[def.key] ?? 0;
+      const banked = Math.min(def.charge.toCast, c.charges?.[def.key] ?? 0); // what is banked past a full charge is not shown
       const ready = banked >= def.charge.toCast;
       return { sign, frame: ready ? 'ready' : 'charge', shade: ready ? 0 : shadeRows(1 - banked / def.charge.toCast), ending: false };
     }

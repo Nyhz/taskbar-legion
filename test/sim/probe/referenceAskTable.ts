@@ -1,11 +1,10 @@
-// What each wall asks against the fixed reference party (test/sim/probe/referenceAsk), recorded by
-// `RL_WRITE=1 npx vite-node scripts/reference-ladder.ts` (round 13). test/sim/ladder.test.ts holds it strictly rising and
-// spot-checks it against a fresh measure, so a change to the walls or to hero power that leaves it stale fails a test.
+// REPORT ONLY since round 22 (2026-11-21: the ladder is now the walls' LIFE, test/sim/ladder.test.ts). What each wall asks against the fixed reference party (test/sim/probe/referenceAsk), recorded by
+// `RL_WRITE=1 npx vite-node scripts/reference-ladder.ts` (round 13). No test holds it any more; it is a report.
 /** % of the reference party's 60 s of damage each wall asks, world 1 … 50. */
 export const REFERENCE_ASK: readonly number[] = [
-  4.381, 4.468, 4.492, 4.508, 6.642, 6.682, 6.751, 6.887, 7.321, 7.399,
-  11.89, 12.15, 12.4, 13.47, 16.19, 17.73, 17.86, 17.97, 18.26, 19.2,
-  35.44, 36.74, 39.07, 43.24, 47.05, 49.45, 52.54, 55.69, 55.88, 58.31,
-  96.35, 108.1, 108.4, 110, 113, 121, 122.1, 122.7, 125, 125.8,
-  149.4, 150.6, 152.3, 153.8, 154.5, 155.2, 158, 162.8, 164.3, 165,
+  4.381, 4.468, 4.489, 4.489, 6.623, 6.822, 6.784, 6.851, 7.3, 7.35,
+  11.77, 12.15, 12.41, 13.41, 16.21, 17.51, 17.75, 17.96, 18.13, 19.02,
+  23.27, 22.6, 19.57, 22.86, 23.02, 28.71, 34.68, 40.88, 47.68, 56.39,
+  74.8, 93.89, 84.73, 100.3, 108.4, 124.8, 133.7, 144.3, 155.8, 173.3,
+  194.2, 158.2, 117.6, 102.6, 100.1, 108.8, 115.1, 123, 125.5, 138.5,
 ];

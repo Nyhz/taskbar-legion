@@ -124,14 +124,22 @@ wall with the boss's clock at 65–75 s (5–15 s of enrage held); a Normal wall
 mid-Hell wall ~85 %, late Hell and Inferno ~105 %. **Open (the user's call):** there is no "full zone set" in this
 itemisation — the set's damage keeps growing ~×1.4 per doubling of chests, with no plateau at 2,000 — so what
 counts as 100 % is a convention still to be chosen, and the walls are still tuned by hours, not by that share.
-**The wall ladder — what a wall asks (user, 2026-11-17, round 13: «grupo de referencia fijo»; supersedes the
-arrive-based measure of rounds 8–12).** A wall's *ask* is its life as a % of the 60 s of damage of a **fixed
+**The wall ladder (round 22, 2026-11-21; user: «debería ser tan sencillo como que el primer boss tenga 100 de vida,
+el segundo 120… asegurando que el equipamiento que se tira en esa zona cumple los requisitos para matar al boss sin unas
+horas exageradas»; SUPERSEDES the round-13 rule below).** Every world boss has strictly more life than the one before,
+seams included, on a smooth curve (from Inferno on no world rises more than ×1.4; `test/sim/ladder.test.ts`), and
+`npm run probe` checks that the gear a zone drops kills its boss in reasonable hours. The round-13 reference ask is
+kept as a report only (`scripts/reference-ladder.ts`): its ceiling blends T7 → T8 straight across Torment, so its
+damage grows ×2.6 over Torment 1–5 and held strictly rising it made the walls leap where the players do not.
+
+*Superseded — the wall ladder, what a wall asks (user, 2026-11-17, round 13: «grupo de referencia fijo»; supersedes the
+arrive-based measure of rounds 8–12).* A wall's *ask* is its life as a % of the 60 s of damage of a **fixed
 reference party**: Knight · Ranger · Priest at the zone's level (`expectedLevel`), in the probe's build for there,
 no account bonuses, wearing the zone's realistic ceiling (`zoneGear` `gradualCeilingDamage`: the zone's top rarity at
 its top item level, average rolls, gems of that rarity, interpolated inside the difficulty), the median of five
 fights (`test/sim/probe/referenceAsk.ts`). It is deterministic and independent of any probe run (the arrive-based ask
-moved 1–2 points from pass to pass with the party the probe happened to bring). **The hard rule: every one of the
-50 walls asks strictly more than the one before, across the difficulty seams too** — recorded in
+moved 1–2 points from pass to pass with the party the probe happened to bring). The (former) hard rule: every one of the
+50 walls asks strictly more than the one before, across the difficulty seams too — recorded in
 `test/sim/probe/referenceAskTable.ts`, held by `test/sim/ladder.test.ts`, re-measured with
 `scripts/reference-ladder.ts` (fails on a dip; `RL_WRITE=1` re-records). The lines, in this measure (round 18): Normal 4→8,
 Hell 11→19, Inferno 32→68, Eternal 96→124, Torment 148→164 (a wall within ±5 of its line is a secondary report, not a

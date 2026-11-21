@@ -1,7 +1,7 @@
 import type { GemInstance, GemKey, GemTier } from '@/data/gems';
 import { GEMS, GEM_KEYS } from '@/data/gems';
 import type { StatKey } from '@/data/stats';
-import { STATS } from '@/data/stats';
+import { STATS, statTierMult } from '@/data/stats';
 import { phi, expectedLevel, EG_FLAT, GEAR_POWER, GEM_AFFIX_FRACTION, pctAffixIlvlMult } from '@/data/stageScaling';
 import { tierDef } from '@/data/tiers';
 import { makeRng } from './rng';
@@ -46,9 +46,10 @@ export function gemGrants(gem: GemInstance): { key: StatKey; value: number }[] {
     const band = STATS[key].rollPerIlvl;
     const midRoll = (band.min + band.max) / 2; // the deterministic "average affix roll"
     const isPercent = STATS[key].kind === 'percent';
+    const m = statTierMult(key, tierMult); // heal power is not tier-scaled (data/stats)
     const value = isPercent
-      ? round2(fractionPer * midRoll * tierMult * pctAffixIlvlMult(gemLevel(gem)))
-      : round2(fractionPer * midRoll * tierMult * GEAR_POWER * phiFlat);
+      ? round2(fractionPer * midRoll * m * pctAffixIlvlMult(gemLevel(gem)))
+      : round2(fractionPer * midRoll * m * GEAR_POWER * phiFlat);
     return { key, value };
   });
 }

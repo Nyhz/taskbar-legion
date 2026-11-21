@@ -23,9 +23,9 @@ export const PRIEST_TREE: ClassTreeSpec = {
     ],
     [
       ability('priest_nova'),
-      // PROVISIONAL value (the document leaves it "to probe"): 0.05% of max life per second per rank.
-      role('priest_vigil', 'Vigil', 'While she lives, the whole party regenerates 0.05% of its max life per second per rank.',
-        { type: 'partyRegen', pctMaxHpPerSecPerRank: 0.05 }),
+      // 0.1% of max life per second per rank (2026-11-21, was 0.05%; user's call). What does not fit feeds Overflow.
+      role('priest_vigil', 'Vigil', 'While she lives, the whole party regenerates 0.1% of its max life per second per rank.',
+        { type: 'partyRegen', pctMaxHpPerSecPerRank: 0.1 }),
       stat('priest_t3_healPower', 'healPower', 3), stat('priest_t3_health', 'health', 2),
     ],
     [

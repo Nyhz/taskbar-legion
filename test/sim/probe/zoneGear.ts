@@ -35,7 +35,7 @@ import { GENERATOR_VERSION } from '@/data/lootTables';
 import { generateGem } from '@/sim/gems';
 import { GEM_KEYS, type GemTier } from '@/data/gems';
 import type { SlotKey } from '@/data/itemSlots';
-import { STATS, type StatKey } from '@/data/stats';
+import { STATS, statTierMult, type StatKey } from '@/data/stats';
 import { tierDef } from '@/data/tiers';
 import { round2 } from '@/sim/num';
 import { phi, EG_FLAT, GEAR_POWER, pctAffixIlvlMult } from '@/data/stageScaling';
@@ -212,8 +212,9 @@ export function topTierAt(S: number): ItemTier {
 export function midStatValue(key: StatKey, tierMult: number, itemLevel: number): number {
   const band = STATS[key].rollPerIlvl;
   const r = (band.min + band.max) / 2;
-  if (STATS[key].kind === 'percent') return round2(r * tierMult * pctAffixIlvlMult(itemLevel));
-  return round2(r * tierMult * GEAR_POWER * phi(itemLevel) ** EG_FLAT);
+  const m = statTierMult(key, tierMult);
+  if (STATS[key].kind === 'percent') return round2(r * m * pctAffixIlvlMult(itemLevel));
+  return round2(r * m * GEAR_POWER * phi(itemLevel) ** EG_FLAT);
 }
 
 /** `item` with every affix (base and substats) at its mid roll; an armour/MR split base keeps its halves. */

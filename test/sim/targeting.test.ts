@@ -161,7 +161,8 @@ describe('the abilities that pick by priority', () => {
   ];
   const hurt = (enemies: Combatant[]): string[] => enemies.filter((e) => e.hp < e.maxHp).map((e) => e.id);
 
-  it.each(['ranger_aimedshot', 'ranger_weakspot'])('%s goes to the shooter at the back, then down the order', (key) => {
+  // Weak Spot left this order on 2026-11-21: its lasting mark goes on the toughest enemy (test/sim/fireRules.test.ts).
+  it.each(['ranger_aimedshot'])('%s goes to the shooter at the back, then down the order', (key) => {
     const ranger = shooterHero(key);
     ranger.charges = { [key]: 99 };
     const enemies = wave();

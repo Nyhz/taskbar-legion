@@ -58,7 +58,7 @@ export function AbilityRow({ heroId }: { heroId: string }): React.JSX.Element | 
             def={def}
             remainingMs={combatant?.cooldowns[key] ?? 0}
             charge={
-              chargeMax === undefined ? undefined : { cur: combatant?.charges?.[key] ?? 0, max: chargeMax }
+              chargeMax === undefined ? undefined : { cur: Math.min(chargeMax, combatant?.charges?.[key] ?? 0), max: chargeMax }
             }
           />
         );

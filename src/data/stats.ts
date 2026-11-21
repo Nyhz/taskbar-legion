@@ -36,6 +36,14 @@ export interface StatDef {
   kind: 'flat' | 'percent';
   /** rand(min,max) roll band before tier multiplier / Φ (BALANCE.md). */
   rollPerIlvl: { min: number; max: number };
+  /** false: its rolls do not take the tier's statMultiplier (heal power — 2026-11-21: riding T8's ×9 with no cap it
+   *  ran from ~50 % to ~500 %, and a per-difficulty devaluation was holding it back). Default true. */
+  tierScaled?: boolean;
+}
+
+/** The tier multiplier a roll of `key` takes: the tier's statMultiplier, or 1 for a stat that is not tier-scaled. */
+export function statTierMult(key: StatKey, tierMult: number): number {
+  return STATS[key].tierScaled === false ? 1 : tierMult;
 }
 
 export const STATS: Record<StatKey, StatDef> = {
@@ -65,10 +73,12 @@ export const STATS: Record<StatKey, StatDef> = {
   hpRegen: { key: 'hpRegen', label: 'HP Regen', group: 'defensive', kind: 'flat', rollPerIlvl: { min: 0, max: 0 } },
   block: { key: 'block', label: 'Block', group: 'defensive', kind: 'percent', rollPerIlvl: { min: 1.5, max: 3.0 } },
   // CDR + healPower NOW ROLL on gear (gear overhaul): CDR is the universal ability-uptime
-  // stat (clamped ≤75% in combat) so it rolls small; healPower amplifies priest heals.
+  // stat (clamped ≤75% in combat) so it rolls small; healPower amplifies priest heals. healPower is NOT tier-scaled
+  // (2026-11-21, user's option 2): it grows with the item level, the number of affixes and gems, not ×9 at T8 —
+  // so the heals (a share of the target's max life) need no per-difficulty devaluation.
   // damageReduction stays buff-ONLY ({0,0}) — flat %DR on gear stacks toward immunity.
   cooldownReduction: { key: 'cooldownReduction', label: 'Cooldown Reduction', group: 'utility', kind: 'percent', rollPerIlvl: { min: 1.0, max: 2.0 } },
-  healPower: { key: 'healPower', label: 'Heal Power', group: 'utility', kind: 'percent', rollPerIlvl: { min: 2.5, max: 5.0 } },
+  healPower: { key: 'healPower', label: 'Heal Power', group: 'utility', kind: 'percent', rollPerIlvl: { min: 2.5, max: 5.0 }, tierScaled: false },
   damageReduction: { key: 'damageReduction', label: 'Damage Reduction', group: 'defensive', kind: 'percent', rollPerIlvl: { min: 0, max: 0 } },
 };
 

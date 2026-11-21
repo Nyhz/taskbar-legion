@@ -189,7 +189,9 @@ export function overflowShield(target: Combatant, excess: number, heroes?: reado
   const cap = (target.maxHp * pct) / 100;
   const have = target.effects.find((e) => e.defKey === key && e.remainingMs > 0)?.value ?? 0;
   const value = Math.min(cap, have + excess);
-  if (value <= have) return;
+  // At the cap the spare healing keeps the shield up (its time starts again) instead of being lost — a hero on a
+  // full bar under a steady trickle (Vigil, a heal over time) keeps a full shield rather than one that lapses.
+  if (value < have) return;
   applyEffect(target.effects, effectDef(key), owner?.owner.id ?? target.id, value);
 }
 const OVERFLOW_EFFECT = 'fx_overflow';

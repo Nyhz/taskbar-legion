@@ -285,6 +285,25 @@ describe('Priest', () => {
     expect(effect(other, 'fx_overflow')).toBeUndefined();
   });
 
+  it('Overflow: Vigil on a full bar builds the shield and keeps it up for as long as the trickle lasts', () => {
+    // 5 ranks of Vigil: 0.5 % of 1000 a second = 5 a second, all spare; 5 of Overflow: capped at 50.
+    const priest = holder('p', 'priest', { priest_overflow: 5, priest_vigil: 5 });
+    const tank = plainHero('k', { x: 10 });
+    const world = fight([tank, priest], []);
+    for (let i = 0; i < 20; i++) resolveCombatTick(world, TICK, quietRng()); // two seconds
+    expect(effect(tank, 'fx_overflow')?.value).toBeCloseTo(10, 6);
+    // Well past the shield's own 8 s: it sits at the cap and has not lapsed.
+    for (let i = 0; i < 250; i++) resolveCombatTick(world, TICK, quietRng());
+    expect(effect(tank, 'fx_overflow')?.value).toBeCloseTo(50, 6);
+    expect(effect(tank, 'fx_overflow')?.remainingMs).toBeGreaterThan(7000);
+    // Only what does not fit: a hero missing life heals first.
+    const hurt = plainHero('k2', { x: 10, hp: 500 });
+    const second = fight([hurt, holder('p', 'priest', { priest_overflow: 5, priest_vigil: 5 })], []);
+    for (let i = 0; i < 10; i++) resolveCombatTick(second, TICK, quietRng());
+    expect(hurt.hp).toBeCloseTo(505, 6);
+    expect(effect(hurt, 'fx_overflow')).toBeUndefined();
+  });
+
   it('Mantle: the hero with the least life takes 2% less per rank', () => {
     const priest = holder('p', 'priest', { priest_mantle: 5 });
     const tank = plainHero('k', { x: 10, hp: 400 });

@@ -100,8 +100,8 @@
     "es": "Punto débil"
   },
   "ranger_weakspot.desc": {
-    "en": "A shot at her priority target that leaves it marked: it takes more damage from everyone.",
-    "es": "Un disparo a su objetivo prioritario que lo deja señalado: recibe más daño de todos."
+    "en": "A shot at the toughest enemy in reach that leaves it marked: it takes more damage from everyone.",
+    "es": "Un disparo al enemigo más duro a su alcance que lo deja señalado: recibe más daño de todos."
   },
   "ranger_tarflask.name": {
     "en": "Tar Flask",

@@ -212,8 +212,8 @@
     "es": "Vigilia"
   },
   "priest_vigil.desc": {
-    "en": "While she lives, the whole party regenerates 0.05% of its max life per second per rank.",
-    "es": "Mientras siga con vida, todo el grupo regenera un 0,05 % de su vida máxima por segundo y por rango."
+    "en": "While she lives, the whole party regenerates 0.1% of its max life per second per rank.",
+    "es": "Mientras siga con vida, todo el grupo regenera un 0,1 % de su vida máxima por segundo y por rango."
   },
   "priest_sacred_ward.name": {
     "en": "Sacred Ward",

@@ -1,4 +1,4 @@
-import { MERCHANT, RUNAWAY, STRIP_EVENT_GAP_MS, STRIP_EVENT_KINDS, type StripEventKind } from '@/data/stripEvents';
+import { MERCHANT, MERCHANTS_PER_BLOCK, RUNAWAY, STRIP_EVENT_BLOCK, STRIP_EVENT_GAP_MS, type StripEventKind } from '@/data/stripEvents';
 import { CHEST_TYPES, type ChestType } from '@/data/chests';
 import { GENERATOR_VERSION } from '@/data/lootTables';
 import { ALCHEMY_BASE, ALCHEMY_TIER_MULT } from '@/data/cube';
@@ -26,18 +26,55 @@ export interface StripEvent {
   totalMs: number; // how long it stays
   chest?: ChestType; // runaway: the chest it is
   offers?: MerchantOffer[]; // merchant: what it sells
+  /** When it was sent away before its time (the stage's bar filled, an X-10): from here it leaves — the chest springs
+   *  away where it stands, the merchant walks out — and its stay ends early (`stripEventEndMs`). `totalMs` stays the
+   *  stay it was given, which its path on the strip is drawn from. */
+  leaveAtMs?: number;
 }
 
 /** The strip-event clock a world carries: the count so far (persisted), the wait for the next and the one on. */
 export interface StripEventClock {
   count: number;
   nextInMs: number;
-  lastKind?: StripEventKind;
+  lastKind?: StripEventKind; // the last one's kind (kept for old saves; the kind of event n is `stripEventKind`)
   active?: StripEvent;
 }
 
 const SALT_GAP = 0x5e7;
 const SALT_EVENT = 0xe7e;
+const SALT_KIND = 0x4b1;
+
+/** The kind of event `n` of a save: in every block of STRIP_EVENT_BLOCK, MERCHANTS_PER_BLOCK merchants at places drawn
+ *  from (seed, block), the rest runaway chests — three in four (user, 2026-11-21). */
+export function stripEventKind(seed: number, n: number): StripEventKind {
+  const block = Math.floor(n / STRIP_EVENT_BLOCK);
+  const rng = makeRng(deriveSeed(deriveSeed(seed, SALT_KIND), block));
+  const slots = Array.from({ length: STRIP_EVENT_BLOCK }, (_, i) => i);
+  for (let i = 0; i < MERCHANTS_PER_BLOCK; i++) {
+    const at = rng.int(slots.length - i);
+    const pick = slots[i + at] as number;
+    slots[i + at] = slots[i] as number;
+    slots[i] = pick;
+  }
+  return slots.slice(0, MERCHANTS_PER_BLOCK).includes(n % STRIP_EVENT_BLOCK) ? 'merchant' : 'runaway';
+}
+
+/** Send an event away before its time: from now it leaves from where it is (the chest's escape, the merchant's walk
+ *  out). Once only; nothing once its own leaving has begun. */
+export function sendAway(ev: StripEvent): void {
+  if (ev.leaveAtMs !== undefined) return;
+  const ownLeaving = ev.totalMs - (ev.kind === 'runaway' ? RUNAWAY.escapeMs : MERCHANT.walkMs);
+  if (ev.ms >= ownLeaving) return;
+  ev.leaveAtMs = ev.ms;
+}
+
+/** When an event's stay ends: its whole stay, or — sent away — once it has left: the chest's escape, the merchant's
+ *  walk out (as long as he had walked in, if he had not arrived yet). */
+export function stripEventEndMs(ev: StripEvent): number {
+  if (ev.leaveAtMs === undefined) return ev.totalMs;
+  const leave = ev.kind === 'runaway' ? RUNAWAY.escapeMs : Math.min(MERCHANT.walkMs, ev.leaveAtMs);
+  return Math.min(ev.totalMs, ev.leaveAtMs + leave);
+}
 
 /** The wait before event `n` (ms of live play). */
 export function gapBefore(seed: number, n: number): number {
@@ -69,12 +106,11 @@ export function itemPrice(item: ItemInstance): number {
   return Math.max(1, itemGoldValue(item) * MERCHANT.priceMult);
 }
 
-/** Event `n` of a save at stage `S` (`lastKind`: the one before it — two in a row are never the same kind while
- *  there is another). `partyClasses`: the classes a class-locked piece may be for, as chest loot. */
-export function makeStripEvent(seed: number, n: number, S: number, lastKind: StripEventKind | undefined, partyClasses: string[]): StripEvent {
+/** Event `n` of a save at stage `S` (its kind: `stripEventKind`). `partyClasses`: the classes a class-locked piece may
+ *  be for, as chest loot. */
+export function makeStripEvent(seed: number, n: number, S: number, partyClasses: string[]): StripEvent {
   const rng = makeRng(deriveSeed(deriveSeed(seed, SALT_EVENT), n));
-  const kinds = STRIP_EVENT_KINDS.filter((k) => k !== lastKind);
-  const kind = rng.pick(kinds.length > 0 ? kinds : STRIP_EVENT_KINDS);
+  const kind = stripEventKind(seed, n);
   if (kind === 'runaway') {
     return { n, kind, ms: 0, totalMs: RUNAWAY.ms, chest: pickWeighted(RUNAWAY.chestWeights, CHEST_TYPES, rng) };
   }

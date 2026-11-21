@@ -106,7 +106,7 @@ describe('ability mechanics', () => {
     expect(hot?.value).toBeCloseTo(40 / 12, 1);
   });
 
-  it('the zone heal-power debuff shrinks the SAME heal as difficulty rises (Mend)', () => {
+  it('the SAME heal is the same in every difficulty — heal power is no longer devalued (Mend)', () => {
     const mk = (): Combatant => unit({
       id: 'p', side: 'hero', hp: 100, maxHp: 100, baseStats: base({ healPower: 200 }),
       abilities: [{ def: plain('priest_mend'), rank: 1 }],
@@ -117,16 +117,9 @@ describe('ability mechanics', () => {
       castReadyAbilities(priest, [priest, ally], [], stage, makeRng(1), []);
       return ally.effects.find((e) => e.defKey === 'fx_hot')?.value ?? 0;
     };
-    // Same priest (healPower 200), same target — only the zone changes. Normal (1.0) heals more
-    // than Hell (0.33) than Torment (0.11): the treadmill devalues stale gear each difficulty.
-    const normal = hotPerSec(1); // 0.20×100×(1+200×1.0/100)/12 = (0.20×300)/12 = 5
-    const hell = hotPerSec(105); // (1+200×0.33/100) → 0.20×166/12 = 2.77
-    const torment = hotPerSec(450); // (1+200×0.11/100) → 0.20×122/12 = 2.03
-    expect(normal).toBeCloseTo(5, 1);
-    expect(hell).toBeCloseTo(0.2 * 166 / 12, 1);
-    expect(torment).toBeCloseTo(0.2 * 122 / 12, 1);
-    expect(normal).toBeGreaterThan(hell);
-    expect(hell).toBeGreaterThan(torment);
+    // Same priest (healPower 200), same target: 0.20×100×(1+200/100)/12 = 5 a second, from Normal to Torment
+    // (the per-difficulty devaluation was removed on 2026-11-21 with heal power's tier scaling).
+    for (const stage of [1, 105, 250, 450]) expect(hotPerSec(stage)).toBeCloseTo(5, 1);
   });
 
   it('shield absorbs incoming damage before HP, then expires when drained', () => {
@@ -138,14 +131,22 @@ describe('ability mechanics', () => {
     expect(c.effects[0]?.remainingMs).toBe(0); // depleted → expired
   });
 
-  it('a shield ability holds (no cast, no cooldown) when the target is already shielded', () => {
+  it('a shield ability holds (no cast, no cooldown) when the target already has a shield as big', () => {
     const enemy = unit({ id: 'e', side: 'enemy', x: 10 }); // in range → engaged + enemyPresent
     const knight = unit({ id: 'k', side: 'hero', classKey: 'knight', abilities: [{ def: plain('knight_bulwark'), rank: 1 }] });
-    // Already shielded (e.g. by the Priest's Holy Shield) → Bulwark must not double it up.
-    applyEffect(knight.effects, effectDef('fx_shield'), 'priest', 50, 4000);
+    // Already shielded with more than Bulwark gives → Bulwark must not double it up.
+    applyEffect(knight.effects, effectDef('fx_shield'), 'priest', 5000, 4000);
     const held = castReadyAbilities(knight, [knight], [enemy], 1, makeRng(1), []);
     expect(held).not.toContain('knight_bulwark');
     expect(knight.cooldowns.knight_bulwark ?? 0).toBe(0); // cooldown NOT spent → fires when the shield drops
+
+    // A smaller shield (the Priest's Holy Shield) does not keep the bigger Bulwark down: it replaces it.
+    knight.effects = [];
+    applyEffect(knight.effects, effectDef('fx_shield'), 'priest', 50, 4000);
+    expect(castReadyAbilities(knight, [knight], [enemy], 1, makeRng(1), [])).toContain('knight_bulwark');
+    expect(knight.effects.find((e) => e.defKey === 'fx_shield')?.value ?? 0).toBeGreaterThan(50);
+    knight.cooldowns = {};
+    knight.gcdMs = 0; // the global cooldown that cast started
 
     // With no pre-existing shield it casts as normal.
     knight.effects = [];

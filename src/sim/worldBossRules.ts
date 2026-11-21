@@ -182,7 +182,10 @@ function crushHitOn(h: Combatant, raw: number, magic: number, area: boolean, S: 
  *  cleave does not soften (it saps the boss's strength, not its magic): magic resist, a shield, Stone Skin shared
  *  with the ally, Hold the Line and Close Ranks are what take it. */
 export function crushParty(boss: Combatant, heroes: readonly Combatant[], S: number, events: CombatEvent[]): void {
-  const front = heroes.find((h) => h.alive);
+  // The front hero is the one furthest forward (as for bracing, Guardian and the enemies' swings), not the first of the
+  // party's list.
+  let front: Combatant | undefined;
+  for (const h of heroes) if (h.alive && (front === undefined || h.x > front.x)) front = h;
   if (front === undefined) return;
   const weak = weakenMult(boss.effects);
   const enrage = enrageMultiplier(boss.fightMs ?? 0, boss.enrageMs ?? Number.POSITIVE_INFINITY, boss.enrageRampMs);

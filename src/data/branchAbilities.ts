@@ -1,5 +1,6 @@
 import type { AbilityDef } from './abilities';
 import { EMERGENCY_LIFE_FRAC } from './casting';
+import { HEAL_URGENT_FRAC } from './healing';
 
 // The six branch abilities of the class redesign's first wave (docs/redesign/CLASSES.md §3–§5): one per
 // specialisation branch, learned at tier 5. Starting numbers are the document's; names are provisional.
@@ -37,8 +38,8 @@ export const BRANCH_ABILITIES: Record<string, AbilityDef> = {
   // ── Ranger · Marksman ──
   ranger_weakspot: {
     key: 'ranger_weakspot', name: 'Weak Spot', icon: 'aim',
-    desc: 'A shot at her priority target that leaves it marked: it takes more damage from everyone.',
-    cooldownMs: 20000, target: 'priorityEnemy',
+    desc: 'A shot at the toughest enemy in reach that leaves it marked: it takes more damage from everyone.',
+    cooldownMs: 20000, target: 'toughestEnemy', // a boss, an elite, else the one with the most life (the mark lasts)
     // 1.2×→2.0× AD (+0.2/rank) + debuff_weakspot: +6%→+12% damage taken (+1.5/rank) for 6s.
     applies: [{ effectKey: 'fx_damage' }, { effectKey: 'debuff_weakspot', value: 6, valuePerRank: 1.5 }],
     castCondition: 'enemyPresent', fires: { when: 'inReach', foes: 1 }, power: { coeff: 1.2, coeffPerRank: 0.2, canCrit: true },
@@ -62,9 +63,9 @@ export const BRANCH_ABILITIES: Record<string, AbilityDef> = {
     // (2026-11-16): the party heal over time is worth more than the instant one (Circle of Healing). As it is
     // applied it lifts every harmful effect from each of them (data/healing).
     applies: [{ effectKey: 'fx_sanctuary' }],
-    // A party heal is for a hurt PARTY: two heroes under 80 %, or one under half — or two of them carrying a
-    // harmful effect.
-    castCondition: 'allyBelowHpPct', fires: { when: 'partyHurt', allies: 2, frac: 0.8, orOneBelow: 0.5, orHarmed: 2 }, power: { coeff: 0.12, coeffPerRank: 0.02 },
+    // A party heal is for a hurt PARTY: two heroes under 80 %, or one in danger (under data/healing HEAL_URGENT_FRAC;
+    // half until 2026-11-21) — or two of them carrying a harmful effect.
+    castCondition: 'allyBelowHpPct', fires: { when: 'partyHurt', allies: 2, frac: 0.8, orOneBelow: HEAL_URGENT_FRAC, orHarmed: 2 }, power: { coeff: 0.12, coeffPerRank: 0.02 },
   },
   // ── Priest · Zeal ──
   priest_smite: {

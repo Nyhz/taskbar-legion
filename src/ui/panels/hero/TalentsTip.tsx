@@ -1,11 +1,9 @@
 import type { TalentNode } from '@/data/talents';
 import { tryAbilityDef, type AbilityDef } from '@/data/abilities';
 import { roleValue } from '@/sim/talentFacts';
-import { healPowerEffectiveness } from '@/data/difficulties';
 import { abilityCooldownMs } from '@/sim/abilities';
 import { heroAbilities } from '@/sim/loadout';
 import type { EffectiveStats } from '@/sim/stats';
-import { useStore } from '@/state/store';
 import { abilityDescription, abilityName, talentNodeDescription, talentNodeName, ultimateName, useT } from '@/i18n';
 import { Tip, TipLine, TipName, TipSub, TipText, TipTitle, TipWarn, type TipSide } from '@/ui/kit';
 import {
@@ -59,11 +57,10 @@ function AbilityTip({
 }: TalentsTipProps & { ability: AbilityDef }): React.JSX.Element {
   const t = useT();
   // Heals are shown as they would land HERE: each difficulty devalues heal power (combat resolves it the same).
-  const healEff = healPowerEffectiveness(useStore((s) => s.hud.globalStage));
   const shown = Math.max(1, rank);
   // A node without points already previews rank 1, so a separate "next" block only makes sense from rank 1 on.
   const next = rank >= 1 && rank < node.maxRank ? rank + 1 : null;
-  const linesAt = (r: number): string[] => abilityLines(ability, r, stats, healEff);
+  const linesAt = (r: number): string[] => abilityLines(ability, r, stats);
   const cdMs = abilityCooldownMs(ability, shown, stats);
   const reduced = cdMs < ability.cooldownMs - 1;
 

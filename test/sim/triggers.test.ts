@@ -43,7 +43,7 @@ describe('what a hero carries', () => {
 });
 
 describe('on block', () => {
-  it('Riposte banks one charge per blocked hit, up to what it needs to fire, and none on an unblocked one', () => {
+  it('Riposte banks one charge per blocked hit, up to one full charge past what it fires at, and none on an unblocked one', () => {
     const k = hero('k', 'knight', { knight_riposte: 1 }, 10);
     const enemy = foe({ id: 'e', x: 0 });
     const blocked = createWorld(1, [k]);
@@ -53,7 +53,7 @@ describe('on block', () => {
     expect(events.some((e) => e.blocked === true)).toBe(true);
     expect(k.charges?.knight_riposte).toBe(1);
     for (let i = 0; i < 9; i++) onBlock(k, enemy, ctxOf([k], [enemy]));
-    expect(k.charges?.knight_riposte).toBe(4); // capped at the charges it fires at
+    expect(k.charges?.knight_riposte).toBe(8); // capped at a full charge past what it fires at (chargeBankCap)
 
     const k2 = hero('k', 'knight', { knight_riposte: 1 }, 10);
     const open = createWorld(1, [k2]);

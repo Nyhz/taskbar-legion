@@ -6,7 +6,7 @@ import { emptyPending } from './world';
 import { resolveCombatTick, frontlineX, type CombatEvent } from './combat';
 import { spawnWave, spawnStageBoss, spawnZoneBoss } from './stages';
 import { storeChest, tryAccrueChest } from './chests';
-import { gapBefore, makeStripEvent, type MerchantOffer } from './stripEvents';
+import { gapBefore, makeStripEvent, sendAway, stripEventEndMs, type MerchantOffer } from './stripEvents';
 import { milestonePetsDue, rollPetDrop } from './pets';
 import type { Bonuses } from './bonuses';
 import {
@@ -148,23 +148,28 @@ export class Simulation {
   }
 
   // The strip events (data/stripEvents): the one on the strip runs its time out; with none, the wait for the next
-  // runs while the party is out on its stages — not in a defeat, a fallen boss's beat or a world-boss fight, which
-  // also send away the one on. Its own stream (sim/stripEvents): the combat rng does not move.
+  // runs while the party is out among a stage's waves. A defeat, a fallen boss's beat or a world-boss fight send the
+  // one on away at once; a stage whose bar has filled (its boss is coming or being fought) or an X-10 send it away
+  // with its leaving (the chest springs off, the merchant walks out), and none comes then (user, 2026-11-21: «que no
+  // aparezcan en X-10 ni en mitad de un boss de fase, que se bloqueen cuando la barra se ha llenado»). Its own stream
+  // (sim/stripEvents): the combat rng does not move.
   private tickStripEvent(): void {
     const w = this.world;
     const clock = w.stripEvents;
     if (clock === undefined) return;
-    const busy = w.wipeMs !== undefined || w.bossDown !== undefined || w.phase === 'zoneBoss';
+    const gone = w.wipeMs !== undefined || w.bossDown !== undefined || w.phase === 'zoneBoss';
+    const held = isZoneBossStage(w.globalStageIndex) || w.wavesThisStage >= wavesPerStage(w.globalStageIndex);
     if (clock.active !== undefined) {
       clock.active.ms += TICK_MS;
-      if (busy || clock.active.ms >= clock.active.totalMs) clock.active = undefined;
+      if (held) sendAway(clock.active);
+      if (gone || clock.active.ms >= stripEventEndMs(clock.active)) clock.active = undefined;
       return;
     }
-    if (busy) return;
+    if (gone || held) return;
     clock.nextInMs -= TICK_MS;
     if (clock.nextInMs > 0) return;
     const classes = [...new Set(w.heroes.map((h) => h.classKey).filter((k): k is string => k !== undefined))];
-    clock.active = makeStripEvent(w.seed, clock.count, w.globalStageIndex, clock.lastKind, classes);
+    clock.active = makeStripEvent(w.seed, clock.count, w.globalStageIndex, classes);
     clock.lastKind = clock.active.kind;
     clock.count += 1;
     clock.nextInMs = gapBefore(w.seed, clock.count);
@@ -230,6 +235,7 @@ export class Simulation {
     for (const q of w.waveQueue) {
       if (q.releaseTick <= w.tick) {
         q.combatant.x = front + SPAWN_AHEAD + q.spawnOffset; // spread across the batch's band
+        q.combatant.spawnBatch = q.releaseTick;
         w.enemies.push(q.combatant);
       } else {
         stillQueued.push(q);

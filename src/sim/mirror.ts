@@ -18,13 +18,13 @@ export const MIRROR_ABILITY = 'boss_mirror';
 
 /** Targets that mean "the other side". Everything else is one's own side. */
 const FOE_TARGETS: ReadonlySet<AbilityTarget> = new Set<AbilityTarget>([
-  'frontEnemy', 'backEnemy', 'meleeEnemies', 'allEnemies', 'biggestCluster', 'priorityEnemy', 'randomEnemy', 'softestEnemy', 'topDamageEnemy',
+  'frontEnemy', 'backEnemy', 'meleeEnemies', 'allEnemies', 'biggestCluster', 'priorityEnemy', 'toughestEnemy', 'randomEnemy', 'softestEnemy', 'topDamageEnemy',
 ]);
 
 /** Whom a hero's pick among the enemies becomes when the boss makes it among the heroes: the shots a hero aims
  *  by her own order of priority (or at the thickest of a pack) fall on a hero picked at random. */
 function reflectedTarget(target: AbilityTarget): AbilityTarget {
-  return target === 'priorityEnemy' || target === 'biggestCluster' ? 'randomEnemy' : target;
+  return target === 'priorityEnemy' || target === 'biggestCluster' || target === 'toughestEnemy' ? 'randomEnemy' : target;
 }
 
 /** Remember the abilities the heroes cast this tick: the last one is what the boss will reflect. Only abilities

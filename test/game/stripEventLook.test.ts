@@ -1,26 +1,58 @@
 import { describe, expect, it } from 'vitest';
 import { merchantPlace, merchantStanding, runawayPlace } from '@/game/render/stripEventLook';
-import { MERCHANT_WALK_MS } from '@/game/render/stripEventTiming';
+import { MERCHANT_WALK_MS, RUNAWAY_PATH } from '@/game/render/stripEventTiming';
 import { eventMeta, EVENT_FIGURES } from '@/game/render/eventData';
 import { STRIP_EVENT_KINDS, MERCHANT, RUNAWAY } from '@/data/stripEvents';
 
 // Where the strip events stand and what they play (render/stripEventLook), and that every event has its figure.
 
 describe('strip event look', () => {
-  it('the runaway chest crosses from past the right edge, facing left, and springs away near the left one', () => {
-    const start = runawayPlace(0, RUNAWAY.ms, 600);
-    const mid = runawayPlace(RUNAWAY.ms / 2, RUNAWAY.ms, 600);
-    const end = runawayPlace(RUNAWAY.ms, RUNAWAY.ms, 600);
-    expect(start.x).toBeGreaterThan(600);
-    expect(mid.x).toBeLessThan(start.x);
-    expect(mid.facing).toBe(-1);
-    expect(mid.clip).toBe('run');
+  it('the runaway chest comes in past the right edge and runs to and fro, hopping, then springs away near the left', () => {
+    const W = 600;
+    const start = runawayPlace(0, RUNAWAY.ms, W);
+    expect(start.x).toBeGreaterThan(W);
+    expect(start.facing).toBe(-1);
+    // Its crossings: sampled finely, it changes way RUNAWAY_PATH.passes − 1 times, and stays on the strip.
+    let turns = 0;
+    let way = 0;
+    let hops = 0;
+    for (let ms = 0; ms < RUNAWAY.ms - RUNAWAY.escapeMs; ms += 50) {
+      const at = runawayPlace(ms, RUNAWAY.ms, W);
+      const next = runawayPlace(ms + 50, RUNAWAY.ms, W);
+      const d = Math.sign(next.x - at.x);
+      if (d !== 0 && way !== 0 && d !== way) turns += 1;
+      if (d !== 0) way = d;
+      if ((at.lift ?? 0) > 0 && (runawayPlace(ms - 50, RUNAWAY.ms, W).lift ?? 0) === 0) hops += 1;
+      if (ms > 15_000) expect(at.x).toBeLessThanOrEqual(W); // in sight once it has come in
+      expect(at.clip).toBe('run');
+    }
+    expect(turns).toBe(RUNAWAY_PATH.passes - 1);
+    expect(hops).toBeGreaterThan(20); // it hops all the way
     // Nobody caught it: near the left edge it stops, taunts and springs away, fading out.
+    const end = runawayPlace(RUNAWAY.ms, RUNAWAY.ms, W);
     expect(end.clip).toBe('escape');
     expect(end.alpha ?? 1).toBeCloseTo(0);
-    const taunt = runawayPlace(RUNAWAY.ms * 0.92, RUNAWAY.ms, 600);
+    const taunt = runawayPlace(RUNAWAY.ms - RUNAWAY.escapeMs + 100, RUNAWAY.ms, W);
     expect(taunt).toMatchObject({ clip: 'escape', alpha: 1 });
     expect(taunt.x).toBe(end.x);
+  });
+
+  it('a chest sent away springs off from where it was', () => {
+    const W = 600;
+    const there = runawayPlace(30_000, RUNAWAY.ms, W);
+    const leaving = runawayPlace(30_500, RUNAWAY.ms, W, 30_000);
+    expect(leaving.clip).toBe('escape');
+    expect(leaving.x).toBe(there.x);
+    expect(runawayPlace(30_000 + RUNAWAY.escapeMs, RUNAWAY.ms, W, 30_000).alpha ?? 1).toBeCloseTo(0);
+  });
+
+  it('a merchant sent away walks out from his place at once', () => {
+    const stand = 120;
+    expect(merchantStanding(20_000, MERCHANT.ms, 20_000)).toBe(false);
+    const out = merchantPlace(20_000 + MERCHANT_WALK_MS / 2, MERCHANT.ms, stand, 20_000);
+    expect(out).toMatchObject({ clip: 'walk', facing: -1 });
+    expect(out.x).toBeLessThan(stand);
+    expect(merchantPlace(20_000 + MERCHANT_WALK_MS, MERCHANT.ms, stand, 20_000).x).toBeLessThan(0);
   });
 
   it('the merchant walks in from the left, stands, and walks back out at the end of his stay', () => {

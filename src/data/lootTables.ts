@@ -8,7 +8,9 @@
 // no depth-gate, no chest tilt. Clean-wipes pre-v6 gear/gems.
 // v7: armour is CLASS-LOCKED by family (Knight plate, Ranger leather, Priest cloth): composeItem draws a class
 // for armour too, which shifts the roll stream of every armour piece. Clean-wipes pre-v7 gear/gems.
-export const GENERATOR_VERSION = 7;
+// v8 (2026-11-21): heal power is no longer tier-scaled (data/stats). The roll stream is unchanged, so v7 gear is
+// MIGRATED on load, not wiped (sim/itemMigration: its heal power divided by its tier's multiplier).
+export const GENERATOR_VERSION = 8;
 
 // ── Perfect stats ──
 // Every generated item rolls for "perfect" inherent substats: PERFECT_STAT_CHANCE to

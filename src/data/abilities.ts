@@ -1,6 +1,7 @@
 import type { StatKey } from './stats';
 import type { TriggerDef } from './triggers';
 import { EMERGENCY_LIFE_FRAC } from './casting';
+import { HEAL_URGENT_FRAC } from './healing';
 import { BRANCH_ABILITIES } from './branchAbilities';
 import { BOSS_ABILITIES } from './bossAbilities';
 
@@ -76,6 +77,9 @@ export type AbilityTarget =
   // The enemy that comes first in the shooting heroes' order (data/enemies TARGET_PRIORITY: shooter, support,
   // beast, soldier, brute; an elite before its kind; a boss when there is one), across the caster's SHOT reach.
   | 'priorityEnemy'
+  // The enemy in the caster's shot reach that will live longest: a boss, then an elite, then the one with the most
+  // life left (2026-11-21: Weak Spot's 6 s mark went on a shooter that died two hits later).
+  | 'toughestEnemy'
   | 'mostHitAlly' // the living ally that has taken the most damage in the last moments
   | 'hurtAlly' // an ally that has just taken a heavy hit, else the one with the least life
   | 'harmedAlly' // the ally carrying the most harmful effects, else the one with the least life
@@ -190,7 +194,7 @@ export interface AbilityDef {
   power?: AbilityPower;
   rankScaling?: { perRank: Partial<{ value: number; durationMs: number; cooldownMs: number }> };
   // Charge-gated cast (no cooldown): the ability banks `perAttack` charge(s) per AUTO-
-  // attack and fires once it reaches `toCast`, then resets to 0. Rewards attack speed.
+  // attack and fires once it reaches `toCast`, spending that many (it banks up to `chargeBankCap`). Rewards attack speed.
   // When set, `cooldownMs` is ignored. The sim tracks charges on Combatant.charges.
   // `perAttack` may be 0: the charges then come from a trigger (Riposte: one per blocked hit).
   charge?: { perAttack: number; toCast: number };
@@ -287,7 +291,9 @@ export const ABILITIES: Record<string, AbilityDef> = {
     desc: 'An instant heal on the ally who needs it most — and every harmful effect lifted from them.',
     cooldownMs: 14000, target: 'triageAlly', applies: [{ effectKey: 'fx_heal' }], // every 14 s (12 until 2026-11-18)
     // An ally under 60 %, one just struck hard, or one carrying a harmful effect: the one in danger first
-    // (data/healing HEAL_URGENT_FRAC), then the one carrying something, then the most hurt.
+    // (data/healing HEAL_URGENT_FRAC), then the one carrying something, then the most hurt. An ally's life counts what
+    // Mend (any heal over time) still has to give it, so it does not land on one Mend is already bringing to full —
+    // unless that ally is in danger (data/healing HEAL_DANGER_WINDOW_MS).
     castCondition: 'allyBelowHpPct', fires: { when: 'harmedOrBelow', frac: 0.6, orHeavyHit: true }, power: { coeff: 0.15, coeffPerRank: 0.0175 },
   },
   priest_holyshield: {
@@ -297,7 +303,9 @@ export const ABILITIES: Record<string, AbilityDef> = {
     // Shield = 10%→20% of that ally's max HP (+2.5/rank). On whoever is taking the most damage right now —
     // the tank most of the time, an archer's target behind him when that is where the blows land.
     // Against a boss (round 7): raised on the hero its heavy blow will strike, as it winds up.
-    castCondition: 'tankEngaged', fires: { when: 'allyHit' }, firesBoss: [{ when: 'bossWindup', heavy: true }, { when: 'allyBelow', frac: EMERGENCY_LIFE_FRAC }], power: { coeff: 0.1, coeffPerRank: 0.025 },
+    // In the waves it is kept for a real spike (2026-11-21: on any chip of the wave, it went on a full tank every 26 s):
+    // an ally under 60 % of his life, or one a heavy blow has just struck.
+    castCondition: 'tankEngaged', fires: { when: 'allyBelow', frac: 0.6, orHeavyHit: true }, firesBoss: [{ when: 'bossWindup', heavy: true }, { when: 'allyBelow', frac: EMERGENCY_LIFE_FRAC }], power: { coeff: 0.1, coeffPerRank: 0.025 },
   },
   priest_nova: {
     key: 'priest_nova', name: 'Holy Nova', icon: 'holy',
@@ -313,9 +321,10 @@ export const ABILITIES: Record<string, AbilityDef> = {
     key: 'priest_circle', name: 'Circle of Healing', icon: 'holy',
     desc: 'An instant heal on the whole party — and every harmful effect lifted from each of them.',
     cooldownMs: 22000, target: 'allAllies', applies: [{ effectKey: 'fx_heal' }], // every 22 s (20 until 2026-11-18)
-    // A party heal is for a hurt party (two heroes under 80 %, or one under half) — or two of them carrying a
+    // A party heal is for a hurt party (two heroes under 80 %, or one in danger — under data/healing HEAL_URGENT_FRAC;
+    // half until 2026-11-21, when one hero at 49 % spent it and overhealed the other two) — or two of them carrying a
     // harmful effect.
-    castCondition: 'allyBelowHpPct', fires: { when: 'partyHurt', allies: 2, frac: 0.8, orOneBelow: 0.5, orHarmed: 2 }, power: { coeff: 0.09, coeffPerRank: 0.015 },
+    castCondition: 'allyBelowHpPct', fires: { when: 'partyHurt', allies: 2, frac: 0.8, orOneBelow: HEAL_URGENT_FRAC, orHarmed: 2 }, power: { coeff: 0.09, coeffPerRank: 0.015 },
   },
 
   // ───────────────────────── Ranger ─────────────────────────
@@ -466,4 +475,10 @@ export function abilityDef(key: string): AbilityDef {
  *  when the key originates from saved data so a renamed ability can't crash a render. */
 export function tryAbilityDef(key: string): AbilityDef | undefined {
   return ABILITIES[key];
+}
+
+/** How many charges a charge-gated ability can bank (2026-11-21): one full charge more than it fires at, so what the
+ *  attacks bring while the global cooldown holds the cast is kept for the next one (sim/abilities.commitCooldown). */
+export function chargeBankCap(toCast: number): number {
+  return toCast * 2;
 }

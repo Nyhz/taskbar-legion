@@ -44,8 +44,8 @@ export function abilityAuraFact(ability: AbilityDef, rank: number): { stat: Stat
 
 /** One fact per applied effect, magnitudes resolved at the given rank and stats. Damage scales with the
  *  caster's attack, so the hero's stats give the real number; a heal or a shield scales with its TARGET's max
- *  life, so it is told as the share of that life it grants (heal power and the difficulty's `healEff` in). */
-export function abilityEffectFacts(ability: AbilityDef, rank: number, cs: EffectiveStats, healEff = 1): EffectFact[] {
+ *  life, so it is told as the share of that life it grants (heal power in). */
+export function abilityEffectFacts(ability: AbilityDef, rank: number, cs: EffectiveStats): EffectFact[] {
   const r = Math.max(1, rank);
   const ref = { maxHp: 1, side: 'hero' } as Combatant; // damage and stat magnitudes do not read the target
   const facts: EffectFact[] = [];
@@ -55,7 +55,7 @@ export function abilityEffectFacts(ability: AbilityDef, rank: number, cs: Effect
     const who = applied.target ?? ability.target;
     const ms = effectDuration(ability, def, r, applied.durationMsOverride);
     const v = effectMagnitude(ability, applied, def, r, cs, ref, ref);
-    const pct = (effectCoeff(ability, applied, r - 1) ?? 0) * (1 + (cs.healPower * healEff) / 100) * 100;
+    const pct = (effectCoeff(ability, applied, r - 1) ?? 0) * (1 + cs.healPower / 100) * 100;
     const of: LifeBasis = who === 'self' ? 'self' : who === 'tank' ? 'tank' : 'target';
     const power = powerOf(ability, applied);
     const base = {

@@ -180,11 +180,12 @@ export function dotDps(effects: readonly ActiveEffect[]): number {
   return total;
 }
 
-/** What the heals over time on a body still have to give before they run out (value is per second). */
-export function hotStillToCome(effects: readonly ActiveEffect[]): number {
+/** What the heals over time on a body still have to give before they run out (value is per second) — or, given
+ *  `withinMs`, what they give in that much time from now. */
+export function hotStillToCome(effects: readonly ActiveEffect[], withinMs: number = Number.POSITIVE_INFINITY): number {
   let total = 0;
   for (const e of effects) {
-    if (effectDef(e.defKey).kind.type === 'hot' && e.remainingMs > 0) total += (e.value * e.stacks * e.remainingMs) / 1000;
+    if (effectDef(e.defKey).kind.type === 'hot' && e.remainingMs > 0) total += (e.value * e.stacks * Math.min(e.remainingMs, withinMs)) / 1000;
   }
   return total;
 }

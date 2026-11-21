@@ -2489,3 +2489,44 @@ Decisiones del usuario (18 nov), tras discutirlas una a una:
   Solo medido, sin retocar (el ritmo se deja como está hasta que el usuario diga).
 - 2026-11-21 · **Confirmados el Códice y los eventos de la tira** («Ok a todo»), y el ritmo medido se deja como
   está. Fuera del laboratorio (v112); quedan la Holy Nova y el catálogo de sonido.
+- 2026-11-21 · **IA de curas y escudos.** (Usuario: «tira Mend al Ranger y luego Healing Light, cuando Mend ya le
+  hubiera curado toda la vida».) Las curas deciden con `healNeedFrac` (`sim/abilities`): la vida más lo que le queda
+  a la cura en el tiempo, menos el daño que sigue entrando y por el corte de curación; un aliado por debajo del 35 % aun
+  contando 2 s de esa cura está en peligro y cuenta como está (`HEAL_DANGER_WINDOW_MS`, `data/healing`). Una cura
+  salva al aliado en peligro antes de prepararse para el golpe del jefe; Holy Shield de emergencia va al aliado en
+  peligro y, si no, al que más daño recibe en proporción a su vida; el Golpe Aplastante pega al héroe más adelantado
+  (no al primero de la lista). Sin reajuste de tablas. Pendiente de decisión: el escalón de Hell 5 en
+  `TRASH_BACK_DMG_TUNE`/`TRASH_DMG_TUNE` (golpe atrás ×6,8, delante ×1,75 respecto a Hell 4; la sonda no despeja
+  Hell 5-9) y el resto de la auditoría de IA. Fallo previo, no causado aquí: `anchors.test` 1-9 (3,39 > 3,3 golpes).
+- 2026-11-21 · **Auditoría de IA (Knight, Ranger, Priest) — arreglos.** (Usuario: fallos claros + cambios de
+  comportamiento + suavizar Hell 5 + medir.) Un escudo más grande sustituye al pequeño (Bulwark ya no queda bloqueado
+  por Holy Shield); ante el mismo golpe, la defensa de enfriamiento más largo responde primero (se turnan); la regla
+  «no viene nadie más» cuenta las tandas en cola (Cleave); Killing Field salta con cada tanda (`spawnBatch`); un golpe
+  fuerte solo atrae la cura bajo el 80 % (`HEAVY_HIT_HEAL_BELOW`) y un aliado en peligro va antes; Weak Spot apunta al
+  más duro (objetivo `toughestEnemy`); Aimed Shot salta a quien cae de un golpe básico y guarda las cargas de más
+  (`chargeBankCap`). Comportamiento: Healing Light limpia antes solo los efectos graves (`CLEANSE_URGENT_PRIORITY`) y
+  cura antes las heridas bajo el 60 %; las curas de grupo con un solo herido, bajo el 35 %; Holy Shield en oleadas,
+  bajo el 60 % o tras un golpe fuerte. Curar entre oleadas queda aparte: entre oleadas la simulación no avanza
+  (enfriamientos ni efectos), sería un cambio de ritmo con su animación.
+- 2026-11-21 · **Eventos de la tira: ajustes del usuario.** El cofre fugitivo es 3 de cada 4 eventos (un mercader en
+  cada bloque de 4, sitio sacado de la semilla: `stripEventKind`; ya no se alternan). El cofre dura 64 s: entra por la
+  derecha, cruza la tira 5 veces dando saltitos y un doble brinco en cada giro (`RUNAWAY_PATH`, dibujado con
+  `lift`; sombra más estrecha en el aire) y escapa por la izquierda como antes. El mercader está 60 s parado (66,4 s
+  con la entrada y la salida). No aparecen en una X-10 ni con la barra de la fase llena (jefe de fase en camino o en
+  combate); si la barra se llena con uno en pantalla se marcha con su salida (`sendAway`, `stripEventEndMs`: el cofre
+  escapa donde está, el mercader se va andando). Captura: cofre girando en el borde izquierdo y saltando.
+- 2026-11-21 · **Poder de curación sin escalar por tier (opción 2 del usuario).** `healPower` ya no toma el
+  `statMultiplier` del tier (`data/stats` `tierScaled: false`, `statTierMult`; tiradas, perfectas, cubo, gemas y sonda)
+  y se quita la merma por dificultad (`HEAL_POWER_EFFECTIVENESS`, su insignia «Curación mermada» y sus textos). El
+  equipo v7 se MIGRA al cargar (no se borra): `GENERATOR_VERSION` 8, `sim/itemMigration` divide su poder de curación
+  por el multiplicador de su tier. Calibración (`scripts/calibrate-heal.ts`, factor 1 + PC, aceptable/bien equipada):
+  antes ×1,46–1,57 en todas; ahora Normal ×1,33/1,26 · Hell ×1,49/1,51 · Inferno ×2,03 · Eternal ×2,18/2,29 · Torment
+  ×2,28/2,46. Coeficientes de cura sin tocar.
+- 2026-11-21 · **Sonda con todo (IA + tablas suavizadas + curación), 5 semillas.** Horas por dificultad (mediana):
+  6 / 36 / 110 / 202 / 574 h. Torment peor (485 → 574): en cada dificultad el mundo 1 se pasa en < 2 h y el mundo 2
+  es un muro (Inferno 2 32 h, Eternal 2 84 h, Torment 2 96 h); en Torment 20–50 h por mundo son espera de llaves.
+  Objetivos de Torment más empinados (`targets.ts` LAST_OVER_FIRST 1,25 → 2,0: 21,7 → 43,3 h, 325 h en total; usuario:
+  «las etapas 1-4 no pueden tardar más que las 6-9, el jefe final un buen muro»). `tune-pacing` con `TUNE_FROM` (nuevo:
+  juega los mundos anteriores con los muros de hoy) para afinar los muros de Inferno 1 a Torment 10.
+
+- 2026-11-21 · **Vigil y Overflow.** Vigil funcionaba (regeneración en combate) pero su sobrante se perdía: a vida llena no daba escudo. Ahora toda cura de la Priest alimenta Overflow: lo que no cabe de Vigil (no la regeneración del equipo) y la cura de Segundo aliento (acción `heal` de un disparador). Overflow, ya en el tope, renueva su duración con cada cura sobrante en vez de caducar a los 8 s. Vigil sube a 0,1 % por rango (era 0,05 %). Tests en `passives.test.ts` y `roleTalents.test.ts`.

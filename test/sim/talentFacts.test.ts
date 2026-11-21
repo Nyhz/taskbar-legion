@@ -15,7 +15,7 @@ describe('talent facts', () => {
       }
     }
     const vigil = tryTalentNode('priest', 'priest_vigil')?.role;
-    expect(vigil === undefined ? undefined : roleValue(vigil)).toEqual({ perRank: 0.05, unit: 'percentPerSecond' });
+    expect(vigil === undefined ? undefined : roleValue(vigil)).toEqual({ perRank: 0.1, unit: 'percentPerSecond' });
   });
 
   it('a capstone asks for points in its branch, a paired modifier is a choice, the rest ask for nothing', () => {

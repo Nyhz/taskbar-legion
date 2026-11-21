@@ -8,8 +8,10 @@
 /** Active hours per difficulty (Normal → Torment). */
 export const DIFFICULTY_HOURS_TARGET: readonly number[] = [4, 40, 120, 230, 325];
 
-/** How much longer a difficulty's last world is than its first (a straight line between them). */
-const LAST_OVER_FIRST = [1.6, 2.2, 1.7, 1.4, 1.25];
+/** How much longer a difficulty's last world is than its first (a straight line between them). Torment 1.25 → 2.0
+ *  (user, 2026-11-21: «que tormento escale en horas, las etapas 1-4 no pueden tardar más que las 6-9… y el jefe final
+ *  debe ser un buen muro»): ~22 h for Torment 1 up to ~43 h for its final wall, the same 325 h in all. */
+const LAST_OVER_FIRST = [1.6, 2.2, 1.7, 1.4, 2.0];
 
 /** Active hours for each of the 50 worlds. */
 export const WORLD_HOURS_TARGET: readonly number[] = Array.from({ length: 50 }, (_, i) => {

@@ -15,8 +15,6 @@
 .tk-corner.next > img { opacity: 1; animation: tk-next-nudge 1.2s steps(1, end) infinite; }
 .tk-corner.next:hover > img { filter: brightness(1.2); animation: none; }
 @keyframes tk-next-nudge { 0%, 60% { transform: translateX(0); } 70%, 90% { transform: translateX(1px); } }
-.tk-badge { right: 5px; top: 5px; width: 16px; height: 16px; pointer-events: auto; }
-.tk-badge > .tt { left: auto; right: 0; top: calc(100% + 3px); }
 
 /* Banners: a band of pixel rows across the middle of the strip, lettered in blackletter. Danger pulses a few
    times (peaking at 0.9) and fades; the stage band fades in, holds and fades out. Each runs once. */

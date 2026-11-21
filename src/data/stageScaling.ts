@@ -196,16 +196,23 @@ export const STAGE_BOSS_HP_TUNE: number[] = [
  *  Normal, «subir un poco cada una»; lowered one point each the same day, when 3–5 % stretched Normal from 6–10 h to
  *  ~14 h in the probe; then 1.5 / 2 / 2.5 / 3 / 3.5 — «so a little over is not serious» — and the table re-measured). */
 export const TRASH_THREAT_PCT: readonly number[] = [1.5, 2, 2.5, 3, 3.5];
+// ROUND 22 (2026-11-21; user: «prefiero que los saltos sean suaves o inexistentes»): both wave tables re-measured
+// over worlds 2–50 with the new heal/ward AI (scripts/trash-threat-tune.ts: seeds 1–3 at stage 5, seeds 1–2 at stage 9;
+// the back line's entry capped at twice its target at stage 9) and FITTED: the hit (formula × entry) smoothed in log
+// over the whole game (a Whittaker smoother, λ 20) and never lower than the world before. The measured tables zigzagged
+// (Hell 5: the back line's hit ×6.8 and the Knight's ×1.75 over Hell 4; Eternal 3 ×2.77; the back line's Eternal 6 –
+// Torment 10, never measured, flat at 3); now no world asks more than ×1.28 (Knight) / ×1.2 (back line, past Normal's
+// tiny early hits) over the one before.
 /** Trash DAMAGE at each tuning point, as a share of the formula's (`enemyDamage`). World 1 (points 0–9): 1 where the
  *  arriving party clears the point's hardest stage cleanly, less where it would wipe. Worlds 2–50: the trash-threat
  *  anchor above. */
 export const TRASH_DMG_TUNE: number[] = [
   1, 1, 1, 1, 0.5, 0.45, 0.42, 0.36, 0.5, 1,
-  0.674, 0.584, 0.518, 0.59, 0.634, 0.772, 0.769, 0.926, 0.849, 0.732,
-  0.824, 0.944, 1.04, 1.73, 1.45, 1.46, 1.27, 1.33, 1.68, 1.42,
-  1.58, 1.52, 2.92, 5.16, 5.11, 5.54, 5.11, 4.1, 5.2, 4.47,
-  4.01, 10.7, 9.42, 11, 9.23, 10.1, 11.7, 10.6, 12.1, 7.99,
-  8.06, 11.4, 20.3, 21.5, 26.5, 29.7, 30.7, 24.6, 26.6,
+  0.689, 0.599, 0.549, 0.525, 0.522, 0.561, 0.637, 0.712, 0.783, 0.656,
+  0.706, 0.753, 0.801, 0.856, 0.924, 1.01, 1.13, 1.3, 1.52, 1.41,
+  1.72, 2.11, 2.57, 3.05, 3.53, 3.96, 4.39, 4.85, 5.36, 4.61,
+  5.2, 5.91, 6.69, 7.48, 8.27, 9.04, 9.78, 10.6, 11.5, 9.72,
+  11, 12.6, 14.8, 17.2, 19.7, 21.8, 23.7, 25.3, 26.8,
 ];
 /** The share of the formula's damage a wave enemy deals to a hero BEHIND the front one (its shots over the front line,
  *  the brute's area blow on the back line), per tuning point. The trash-threat anchor raises the waves' hit on the
@@ -218,11 +225,11 @@ export const TRASH_DMG_TUNE: number[] = [
  *  at 3× their old values (the measure asked ~6×, on two worlds only). The Knight's table likewise, to TRASH_THREAT_PCT. */
 export const TRASH_BACK_DMG_TUNE: number[] = [
   1, 1, 1, 1, 0.5, 0.45, 0.42, 0.36, 0.5, 1,
-  0.54, 0.744, 0.911, 0.289, 0.942, 1.53, 0.445, 1.34, 1.53, 0.179,
-  0.342, 0.297, 0.246, 1.59, 1.45, 1.62, 0.445, 1.78, 1.95, 1.4,
-  1.14, 2.35, 3.04, 3.97, 3, 4.1, 3.07, 3, 3.03, 2.8,
-  2.27, 2.24, 2.46, 2.86, 3, 3, 3, 3, 3, 3,
-  3, 3, 3, 3, 3, 3, 3, 3, 3,
+  0.768, 0.807, 0.879, 0.962, 1.04, 1.16, 1.33, 1.46, 1.55, 1.24,
+  1.27, 1.3, 1.32, 1.35, 1.41, 1.5, 1.62, 1.78, 1.98, 1.72,
+  1.98, 2.29, 2.6, 2.86, 3.08, 3.24, 3.36, 3.49, 3.66, 3,
+  3.26, 3.57, 3.92, 4.27, 4.6, 4.89, 5.12, 5.3, 5.45, 4.3,
+  4.45, 4.6, 4.74, 4.88, 5.02, 5.16, 5.33, 5.51, 5.73,
 ];
 /** % of the back line's life a second the waves take off it while they fight, Normal … Torment (the user's ~0.5 % in
  *  Normal up to ~1 % in Torment). */
@@ -563,12 +570,18 @@ export function wallCurveMult(S: number): number {
 // ROUND 19 (2026-11-18; the 2 s global cooldown, longer cooldowns, the Crushing Blow every 15 s): nine walls stopped
 // rising against the reference party; only those moved, by what they asked — Normal 3 / 10 and Hell 3 +0.6 / +1.8 /
 // +3.4 %, Eternal 4–5 +2.9 / +7.6 % and 6 −1.8 %, Torment 2 −7.6 % and 5 +3.2 % (user: keep the ~1 157 h it came to).
+// ROUND 22 (2026-11-21; user: «relajamos la curva de tormento, para que tormento escale en horas … el jefe final debe
+// ser un buen muro»): after the smoothed wave tables, heal power off the tier multiplier and the AI fixes, Inferno 1 →
+// Torment 10 re-tuned per world (scripts/tune-pacing.ts, TUNE_FROM=21, 3 seeds, Torment targets 21.7 → 43.3 h) and
+// the result fitted to a smooth, always-rising curve (Whittaker on log, then monotone; a difficulty's first world,
+// where the tuner spikes, weighted low): steps ×1.04–1.33, no dips, Torment 1 now between Eternal 10 and Torment 2
+// (it was the tuner's ×1.84 spike), the final boss 477 (its ~54 h at 3 seeds). Normal and Hell are unchanged.
 export const WORLD_WALL_MULT: readonly number[] = [
   0.1713, 0.1706, 0.2019, 0.2147, 0.2846, 0.275, 0.2916, 0.3113, 0.4217, 0.3787,
   0.564, 0.5926, 0.6988, 0.7632, 1.032, 1.094, 1.359, 1.497, 1.6, 1.728,
-  2.562, 3.741, 5.884, 7.156, 9.244, 10.81, 13.01, 15.51, 17.49, 17.01,
-  23.88, 37.24, 51.78, 61.64, 72.2, 83.37, 94.52, 103.1, 111.3, 110.7,
-  127.1, 162.3, 235.8, 298.1, 342.3, 367.7, 411.6, 466.2, 536.8, 564.5,
+  1.984, 2.394, 2.966, 3.789, 4.932, 6.475, 8.618, 11.46, 15.04, 19.46,
+  25.36, 33.04, 43.68, 56.61, 71.05, 87.19, 105.2, 123.5, 140.3, 154.3,
+  164.4, 171.4, 182.1, 199.8, 224.9, 258.5, 301.8, 353.5, 411.8, 476.7,
 ];
 export function wallWorldMult(S: number): number {
   return WORLD_WALL_MULT[worldOf(S) - 1] ?? wallCurveMult(S);

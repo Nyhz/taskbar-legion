@@ -44,6 +44,7 @@ const TARGET_TEXT: Partial<Record<AbilityTarget, PlainTextKey>> = {
   tank: 'talents.targetTank',
   priorityEnemy: 'talents.targetPriority',
   biggestCluster: 'talents.targetCluster',
+  toughestEnemy: 'talents.targetToughest',
   mostHitAlly: 'talents.targetMostHit',
   hurtAlly: 'talents.targetHurt',
   harmedAlly: 'talents.targetHarmed',
@@ -167,13 +168,13 @@ function factLine(fact: EffectFact): string {
 
 /** One line per effect of an ability at a rank and the hero's stats, the party aura (if it is one) first. An
  *  effect with a target of its own says who it lands on; a probabilistic one, its chance. */
-export function abilityLines(ability: AbilityDef, rank: number, stats: EffectiveStats, healEff: number): string[] {
+export function abilityLines(ability: AbilityDef, rank: number, stats: EffectiveStats): string[] {
   const lines: string[] = [];
   const aura = abilityAuraFact(ability, rank);
   if (aura !== null) {
     lines.push(t('talents.fxAura', { value: signed(aura.value, aura.percent ? ' %' : '', 1), stat: inSentence(statLabel(aura.stat)) }));
   }
-  for (const fact of abilityEffectFacts(ability, rank, stats, healEff)) {
+  for (const fact of abilityEffectFacts(ability, rank, stats)) {
     let line = factLine(fact);
     if (fact.on !== undefined) line = `${line} (${lowerFirst(targetName(fact.on))})`;
     if (fact.chance !== undefined) line = t('talents.fxChance', { pct: figure(fact.chance * 100, 0), line });

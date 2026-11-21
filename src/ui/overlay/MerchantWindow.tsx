@@ -3,7 +3,7 @@ import { getEngine } from '@/game/engineRef';
 import { useStore } from '@/state/store';
 import { format } from '@/sim/num';
 import { isItem } from '@/sim/items';
-import type { MerchantOffer } from '@/sim/stripEvents';
+import { stripEventEndMs, type MerchantOffer } from '@/sim/stripEvents';
 import type { GemInstance } from '@/data/gems';
 import type { ItemInstance } from '@/sim/items';
 import { useT } from '@/i18n';
@@ -29,7 +29,7 @@ export function MerchantWindow(): React.JSX.Element | null {
   if (!open) return null;
   const ev = getEngine()?.world.stripEvents?.active;
   if (ev?.kind !== 'merchant' || ev.n !== eventN || ev.offers === undefined) return null;
-  const left = Math.max(0, Math.ceil((ev.totalMs - ev.ms) / 1000));
+  const left = Math.max(0, Math.ceil((stripEventEndMs(ev) - ev.ms) / 1000)); // to when he is gone (sent away early, sooner)
 
   const buy = (i: number): void => {
     const ok = getEngine()?.buyFromMerchant(i) ?? false;
@@ -45,7 +45,7 @@ export function MerchantWindow(): React.JSX.Element | null {
           </Head>
           <div className="tk-merchant-stay has">
             <Sign name="pet_sign_timer" />
-            <Bar value={ev.totalMs > 0 ? 1 - ev.ms / ev.totalMs : 0} tone="xp" />
+            <Bar value={stripEventEndMs(ev) > 0 ? Math.max(0, 1 - ev.ms / stripEventEndMs(ev)) : 0} tone="xp" />
             <Tip side="below">
               <TipTitle>{t('events.merchantName')}</TipTitle>
               <TipText>{t('events.merchantLeaves', { s: left })}</TipText>

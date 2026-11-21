@@ -7,7 +7,7 @@ import { tierDef } from '@/data/tiers';
 import type { SlotCategory, SlotKey } from '@/data/itemSlots';
 import { SLOTS, SLOT_KEYS, weaponTypeFor } from '@/data/itemSlots';
 import type { StatKey } from '@/data/stats';
-import { STATS, FLEX_STATS, JEWELRY_STATS } from '@/data/stats';
+import { STATS, FLEX_STATS, JEWELRY_STATS, statTierMult } from '@/data/stats';
 import { CLASS_KEYS } from '@/data/classes';
 import type { ChestType } from '@/data/chests';
 import { phi, EG_FLAT, GEAR_POWER, expectedLevel, pctAffixIlvlMult } from '@/data/stageScaling';
@@ -187,8 +187,9 @@ export function itemSubstatPool(item: { category: SlotCategory; slot: SlotKey; c
 export function rollStatValue(key: StatKey, tierMult: number, itemLevel: number, rng: Rng): number {
   const band = STATS[key].rollPerIlvl;
   const r = rng.range(band.min, band.max);
-  if (STATS[key].kind === 'percent') return round2(r * tierMult * pctAffixIlvlMult(itemLevel));
-  return round2(r * tierMult * GEAR_POWER * phi(itemLevel) ** EG_FLAT);
+  const m = statTierMult(key, tierMult);
+  if (STATS[key].kind === 'percent') return round2(r * m * pctAffixIlvlMult(itemLevel));
+  return round2(r * m * GEAR_POWER * phi(itemLevel) ** EG_FLAT);
 }
 
 /** The value a "perfect" roll of `key` produces: the HIGHEST normal roll (band.max) lifted
@@ -197,8 +198,9 @@ export function rollStatValue(key: StatKey, tierMult: number, itemLevel: number,
  *  branches (percent vs flat scaling) with r fixed to the boosted max. */
 export function perfectStatValue(key: StatKey, tierMult: number, itemLevel: number): number {
   const r = STATS[key].rollPerIlvl.max * (1 + PERFECT_STAT_BONUS);
-  if (STATS[key].kind === 'percent') return round2(r * tierMult * pctAffixIlvlMult(itemLevel));
-  return round2(r * tierMult * GEAR_POWER * phi(itemLevel) ** EG_FLAT);
+  const m = statTierMult(key, tierMult);
+  if (STATS[key].kind === 'percent') return round2(r * m * pctAffixIlvlMult(itemLevel));
+  return round2(r * m * GEAR_POWER * phi(itemLevel) ** EG_FLAT);
 }
 
 /** Roll each item's "perfect" substats IN PLACE: while there is still a non-perfect substat

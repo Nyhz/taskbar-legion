@@ -1,8 +1,10 @@
 import type { Combatant, CombatEvent } from './world';
 import type { ActiveEffect } from '@/data/effects';
 import { effectDef, INVULN_EFFECT_KEY } from '@/data/effects';
+import { chargeBankCap } from '@/data/abilities';
 import type { TriggerAction, TriggerDef, TriggerEvent, TriggerTarget } from '@/data/triggers';
 import { applyEffect, extendEffects, healReceivedMult, isInvulnerable } from './effects';
+import { overflowShield } from './passives';
 
 // The generic TRIGGER engine (docs/redesign/CLASSES.md §6, F5). A hero carries TriggerDefs (data); the combat
 // loop calls one of the `on…` hooks below when something happens and the matching triggers run their actions.
@@ -86,6 +88,7 @@ function run(action: TriggerAction, owner: Combatant, subject: Combatant | undef
       for (const t of targetsOf(action.to, owner, subject, ctx)) {
         const heal = action.hpFrac * t.maxHp * healReceivedMult(t.effects);
         if (heal <= 0) continue;
+        overflowShield(t, t.hp + heal - t.maxHp); // Overflow: a talent's heal (Second Wind) overflows like any other
         t.hp = Math.min(t.maxHp, t.hp + heal);
         ctx.events.push({ type: 'heal', targetId: t.id, sourceId: owner.id, amount: heal });
       }
@@ -98,7 +101,7 @@ function run(action: TriggerAction, owner: Combatant, subject: Combatant | undef
       const ability = owner.abilities.find((a) => a.def.key === action.abilityKey)?.def;
       if (ability?.charge === undefined) return;
       const cur = (owner.charges ??= {})[ability.key] ?? 0;
-      owner.charges[ability.key] = Math.min(ability.charge.toCast, cur + action.amount);
+      owner.charges[ability.key] = Math.min(chargeBankCap(ability.charge.toCast), cur + action.amount);
       return;
     }
     case 'move': {
@@ -146,7 +149,7 @@ export function tryRescue(falling: Combatant, ctx: TriggerCtx): boolean {
   return false;
 }
 
-/** An enemy reached the fight for the first time. `firstOfWave`: no other enemy of this wave had. */
+/** An enemy reached the fight for the first time. `firstOfWave`: no other enemy of its batch of the wave had. */
 export function onEnemyEngage(enemy: Combatant, firstOfWave: boolean, ctx: TriggerCtx): void {
   const elite = enemy.isElite === true;
   const boss = enemy.isBoss === true;

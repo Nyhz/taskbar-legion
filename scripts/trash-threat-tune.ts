@@ -6,7 +6,7 @@
  * (TRASH_THREAT_PCT of its difficulty); the back line's table (TRASH_BACK_DMG_TUNE) likewise, by what the heroes behind
  * him take a second as a share of their life (TRASH_BACK_THREAT_PCT). Prints both tables as JSON {front, back} (59
  * entries each, world 1's untouched) and the measures.
- * Env: SEED (default 1), FIGHT_SEC (default 150), AT (stage of the world, default 5). Run under `taskpolicy -b`; run it again on the new table to check.
+ * Env: SEED (default 1), FIGHT_SEC (default 150), AT (stage of the world, default 5), WMAX (last world, default 50). Run under `taskpolicy -b`; run it again on the new table to check.
  * Dev tooling only.
  */
 import { getBonuses } from '@/sim/bonuses';
@@ -20,13 +20,14 @@ const SEED = Number(process.env.SEED ?? 1);
 const FIGHT_SEC = Number(process.env.FIGHT_SEC ?? 150);
 /** The stage of each world measured (5: the middle; 9: the hardest, the biggest waves). */
 const AT = Number(process.env.AT ?? 5);
+const WMAX = Math.min(50, Number(process.env.WMAX ?? 50));
 const bonuses = getBonuses({}, {});
 const run = newProbeRun(SEED);
 const table = [...TRASH_DMG_TUNE];
 const back = [...TRASH_BACK_DMG_TUNE];
 const rows: string[] = [];
 
-for (let w = 2; w <= 50; w++) {
+for (let w = 2; w <= WMAX; w++) {
   const S = (w - 1) * 10 + AT;
   advanceProbe(run, { ...DEFAULT_CONFIG, stopAtStage: S - 1 });
   const party = runParty(run);

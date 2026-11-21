@@ -59,6 +59,7 @@ export const talents = {
   targetTwoHeroes: 'Two heroes',
   targetPriority: 'By priority: shooter, support, beast, soldier, brute — an elite first, the boss if there is one',
   targetCluster: 'Where its blast catches the most enemies',
+  targetToughest: 'The enemy that will last longest: the boss, an elite, or the one with the most life',
   targetMostHit: 'The ally taking the most damage',
   targetHurt: 'The ally hit hardest, else the most hurt',
   targetHarmed: 'The ally with the most harmful effects',
