@@ -77,7 +77,9 @@ en menos golpes, recibe menos en proporción, farmea más rápido y pasa antes l
 ## 5. Los muros
 
 `wallAsk(w)` (`data/power.ts`) es una curva suave por mundo: cuánto daño, en minutos del grupo típico, tiene el jefe de
-mundo. `0,42 + 1,88 · t^3,5` con t de 0 (Normal 1) a 1 (Tormento 10): suave al principio y empinada al final.
+mundo. `(0,42 + 1,88 · t^3,5) × inclinación` con t de 0 (Normal 1) a 1 (Tormento 10): suave al principio y empinada al final;
+la inclinación (`WALL_ASK_TILT`) baja Eternal a ×0,905 y la devuelve a ×1 entre Eternal 10 y Tormento 3 (usuario:
+«Eternal debería ser 230-250 y Tormento 300-350»).
 Ajustada con la sonda rápida a las horas por dificultad: un jugador llega a cada muro unos 0,6 por debajo del típico
 (avanza en cuanto puede limpiar las etapas) y las horas que cuesta un muro crecen con lo que pide por encima de eso.
 Un test comprueba que cada jefe tiene más vida que el anterior y que el mejor equipo de su zona siempre lo supera.
@@ -93,8 +95,8 @@ Un test comprueba que cada jefe tiene más vida que el anterior y que el mejor e
   de la correlación: en todas las zonas el umbral cae a la misma distancia del típico.
 - `npm run probe` (horas): la sonda con todos los combates, para confirmar de vez en cuando.
 
-Medido el 2026-11-22 (5 semillas, sonda rápida): Normal ≈ 10 h · Hell ≈ 70 · Inferno ≈ 180 · Eternal ≈ 285 ·
-Tormento ≈ 260 h por mediana, ≈ 850 h en total (objetivo 4 / 40 / 120 / 230 / 325, 720).
+Medido el 2026-11-22 (5 semillas, sonda rápida): Normal ≈ 10 h · Hell ≈ 70 · Inferno ≈ 175 · Eternal ≈ 232 ·
+Tormento ≈ 302 h por mediana, ≈ 790 h en total (objetivo 4 / 40 / 120 / 230–250 / 300–350).
 
 ## 7. Partidas guardadas
 

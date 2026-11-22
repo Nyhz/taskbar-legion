@@ -149,7 +149,22 @@ export const WALL_ASK_LAST = 2.3;
  *  reaches every wall ~0.6 below the typical standing — it moves on as soon as it can clear the stages — and the
  *  hours a wall costs grow with how far above that it asks). */
 export const WALL_ASK_EXP = 3.5;
+/** × the wall curve by world (user, 2026-11-22: «Eternal debería ser 230-250 y Tormento 300-350»): Eternal a little
+ *  under the curve, back on it over Eternal 10 → Torment 3 so no wall leaps. Linear between the points. Measured
+ *  (fast probe, 5 seeds): Eternal 232 h, Torment 302 h by median. Torment is very sensitive here (×1.04 → ×1.06 moved it
+ *  from ~280 to ~420 h: its last walls sit near what farming reaches). */
+export const WALL_ASK_TILT: readonly (readonly [number, number])[] = [[30, 1], [33, 0.905], [40, 0.905], [43, 1.0], [50, 1.0]];
+function wallTilt(world: number): number {
+  const pts = WALL_ASK_TILT;
+  if (world <= pts[0]![0]) return pts[0]![1];
+  for (let i = 1; i < pts.length; i++) {
+    const [w1, f1] = pts[i]!;
+    const [w0, f0] = pts[i - 1]!;
+    if (world <= w1) return f0 + ((f1 - f0) * (world - w0)) / (w1 - w0);
+  }
+  return pts[pts.length - 1]![1];
+}
 export function wallAsk(world: number): number {
   const t = Math.max(0, Math.min(1, (world - 1) / 49));
-  return WALL_ASK_FIRST + (WALL_ASK_LAST - WALL_ASK_FIRST) * t ** WALL_ASK_EXP;
+  return (WALL_ASK_FIRST + (WALL_ASK_LAST - WALL_ASK_FIRST) * t ** WALL_ASK_EXP) * wallTilt(world);
 }
