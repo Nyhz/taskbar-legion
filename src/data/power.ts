@@ -149,11 +149,11 @@ export const WALL_ASK_LAST = 2.3;
  *  reaches every wall ~0.6 below the typical standing — it moves on as soon as it can clear the stages — and the
  *  hours a wall costs grow with how far above that it asks). */
 export const WALL_ASK_EXP = 3.5;
-/** × the wall curve by world (user, 2026-11-22: «Eternal debería ser 230-250 y Tormento 300-350»): Eternal a little
- *  under the curve, back on it over Eternal 10 → Torment 3 so no wall leaps. Linear between the points. Measured
- *  (fast probe, 5 seeds): Eternal 232 h, Torment 302 h by median. Torment is very sensitive here (×1.04 → ×1.06 moved it
- *  from ~280 to ~420 h: its last walls sit near what farming reaches). */
-export const WALL_ASK_TILT: readonly (readonly [number, number])[] = [[30, 1], [33, 0.905], [40, 0.905], [43, 1.0], [50, 1.0]];
+/** × the wall curve by world (user, 2026-11-22: «Eternal debería ser 230-250 y Tormento 300-350», then «más Eternal, y
+ *  bastante más Tormento»): rising from Inferno 4 to ×2.1 by Eternal 3, ×2.3 from Torment 3, linear between the points
+ *  so no wall leaps. Fitted with the FULL probe (every fight simulated; 3 seeds): Eternal 211–265 h (median 243),
+ *  Torment 287–343 h (median 315). The two interact — a harder Eternal sends a better-geared party into Torment. */
+export const WALL_ASK_TILT: readonly (readonly [number, number])[] = [[24, 1], [33, 2.1], [40, 2.1], [43, 2.3], [50, 2.3]];
 function wallTilt(world: number): number {
   const pts = WALL_ASK_TILT;
   if (world <= pts[0]![0]) return pts[0]![1];

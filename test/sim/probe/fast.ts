@@ -1,4 +1,5 @@
 // THE FAST PROBE (2026-11-22; user: «aligerar las pruebas de Normal a Tormento, las rondas de chequeo de balance»).
+// Farms come from the calibration; wall attempts are fought for real (fastBoss).
 // Since the power curve (docs/redesign/POWER_CURVE.md) every enemy is sized against the TYPICAL party of its zone, so
 // how a fight goes depends on how a party compares with that typical one — not on the zone itself. The fast probe
 // measures that ONCE, in real fights, on a few zones and gear levels (the calibration), and then answers every farm
@@ -13,7 +14,6 @@ import type { Bonuses } from '@/sim/bonuses';
 import { getBonuses } from '@/sim/bonuses';
 import type { ItemTier } from '@/data/tiers';
 import { goldPerKill, waveSizeForStage, wavesPerStage, xpPerKill } from '@/data/stageScaling';
-import { makeRng } from '@/sim/rng';
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -197,20 +197,14 @@ export function fastFarm(configs: readonly HeroConfig[], S: number, seed: number
   };
 }
 
-/** A wall attempt from the calibration: won with the calibrated chance at this standing, drawn from the attempt's
- *  own seed (or a real fight for the bootstrap). */
+/** A wall attempt: FOUGHT for real (a wall fight is cheap — ~0.05 s — and the calibration's win chance, measured on the
+ *  typical party's gear shape, misread a real party's: the first full-probe check, 2026-11-22, found Eternal and
+ *  Torment twice as long in the fast model). The model answers only the farms, which are the expensive part. The
+ *  calibration's wall columns stay as a report. */
 export function fastBoss(configs: readonly HeroConfig[], S: number, seed: number, bonuses: Bonuses, capSec = 300, runSeed = seed): BossResult {
-  if (realFight(configs, S)) return measureBoss(configs, S, seed, bonuses, capSec, runSeed);
-  const x = standing(configs, S);
-  const pWin = lookup(S, x, (p) => p.win);
-  const win = makeRng(seed ^ 0x5bd1e995).next() < pWin;
-  if (process.env.FAST_TRACE === '1') console.warn(`fast wall S${S} x ${x.toFixed(3)} pWin ${pWin.toFixed(2)} ${win ? 'WIN' : 'lost'} lvl ${configs.map((c) => c.level).join('/')}`);
-  const killSec = Math.max(5, lookup(S, x, (p) => p.killSec) || 60);
-  return {
-    win,
-    killSec: win ? killSec : 0,
-    fightSec: win ? killSec : 60,
-    minHpFrac: lookup(S, x, (p) => p.bossMinHp),
-    bossHpFrac: win ? 0 : Math.max(0.01, lookup(S, x, (p) => p.bossHp)),
-  };
+  const res = measureBoss(configs, S, seed, bonuses, capSec, runSeed);
+  if (process.env.FAST_TRACE === '1' && !realFight(configs, S)) {
+    console.warn(`fast wall S${S} x ${standing(configs, S).toFixed(3)} pWin ${lookup(S, standing(configs, S), (p) => p.win).toFixed(2)} ${res.win ? 'WIN' : 'lost'} lvl ${configs.map((c) => c.level).join('/')}`);
+  }
+  return res;
 }

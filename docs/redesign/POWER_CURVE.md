@@ -78,8 +78,8 @@ en menos golpes, recibe menos en proporción, farmea más rápido y pasa antes l
 
 `wallAsk(w)` (`data/power.ts`) es una curva suave por mundo: cuánto daño, en minutos del grupo típico, tiene el jefe de
 mundo. `(0,42 + 1,88 · t^3,5) × inclinación` con t de 0 (Normal 1) a 1 (Tormento 10): suave al principio y empinada al final;
-la inclinación (`WALL_ASK_TILT`) baja Eternal a ×0,905 y la devuelve a ×1 entre Eternal 10 y Tormento 3 (usuario:
-«Eternal debería ser 230-250 y Tormento 300-350»).
+la inclinación (`WALL_ASK_TILT`) sube de ×1 en Inferno 4 a ×2,1 en Eternal 3 y a ×2,3 desde Tormento 3 (usuario:
+«Eternal debería ser 230-250 y Tormento 300-350», «más Eternal, y bastante más Tormento»).
 Ajustada con la sonda rápida a las horas por dificultad: un jugador llega a cada muro unos 0,6 por debajo del típico
 (avanza en cuanto puede limpiar las etapas) y las horas que cuesta un muro crecen con lo que pide por encima de eso.
 Un test comprueba que cada jefe tiene más vida que el anterior y que el mejor equipo de su zona siempre lo supera.
@@ -88,15 +88,17 @@ Un test comprueba que cada jefe tiene más vida que el anterior y que el mejor e
 
 - `npm test` (~6 s): todo menos las simulaciones largas, incluidos los invariantes de la curva
   (`test/sim/powerCurve.test.ts`, sin combate). `npm run test:slow` las simulaciones largas (`*.slow.test.ts`).
-- `npm run probe:fast` (≈1 min por semilla): la partida entera de Normal a Tormento sin simular cada pelea. Una
+- `npm run probe:fast` (≈1 min por semilla): la partida entera de Normal a Tormento sin simular cada farmeo. Una
   calibración en combates reales (16 zonas × 8 niveles de equipo; `test/sim/probe/fast.ts`, cacheada en disco por la
-  huella del código) da el tiempo de limpiar una etapa y la probabilidad de ganar un muro según cómo está el grupo
-  frente al típico; el botín, el Cubo, las llaves y la experiencia son los reales. La calibración es en sí la prueba
-  de la correlación: en todas las zonas el umbral cae a la misma distancia del típico.
+  huella del código) da el tiempo de limpiar una etapa según cómo está el grupo frente al típico; los muros se pelean
+  de verdad; el botín, el Cubo, las llaves y la experiencia son los reales. **Sesgo conocido:** desde Inferno da
+  ≈ 1,5× las horas de la sonda completa (el farmeo modelado sobre equipo «de manual» lee mal el de un jugador real);
+  sirve para comparar cambios, no para fijar las horas finales.
 - `npm run probe` (horas): la sonda con todos los combates, para confirmar de vez en cuando.
 
-Medido el 2026-11-22 (5 semillas, sonda rápida): Normal ≈ 10 h · Hell ≈ 70 · Inferno ≈ 175 · Eternal ≈ 232 ·
-Tormento ≈ 302 h por mediana, ≈ 790 h en total (objetivo 4 / 40 / 120 / 230–250 / 300–350).
+Medido el 2026-11-22 con la **sonda completa** (3 semillas): Normal 11–14 h · Hell 45–57 · Inferno 132–148 ·
+Eternal 211–265 (mediana 243) · Tormento 287–343 (mediana 315), ≈ 750 h en total; ningún mundo atascado (objetivo
+del usuario: Eternal 230–250, Tormento 300–350; Normal, Hell e Inferno aceptados así).
 
 ## 7. Partidas guardadas
 
