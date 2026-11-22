@@ -15,6 +15,43 @@ While the project is pre-1.0, minor versions may include breaking save changes.
 
 ### Fixed
 
+## [0.7.0] - 2026-11-22
+
+### Added
+
+- **The runaway chest** now shows up in three events out of four, stays on the strip for a full minute or more,
+  running back and forth with little hops. The wandering merchant also stays at least a minute.
+
+### Changed
+
+- **A new progression, from Normal to Torment.** Gear and enemies now grow along one shared curve, so a better
+  equipped party always clears faster and breaks walls sooner, and a world never becomes a surprise wall.
+  - Item level now follows the stage an item dropped on, and rarity is the item's overall power: each rarity step is
+    worth about a world of item levels, so a lucky drop keeps you going for longer.
+  - Percent stats (critical hit, attack speed, heal power…) are worth the same at every stage; flat stats grow with
+    item level.
+  - Hero levels give a steadier, gentler growth; gear does most of the work.
+  - World bosses grow world after world inside each difficulty. The first wall of a difficulty no longer gives a
+    longer clock.
+  - The whole journey takes about 760 hours of play: Normal about 12, Hell about 60, Inferno about 130, Eternal
+    about 240 and Torment about 320.
+- **Smarter Priest**: heals account for heals already ticking, so Healing Light no longer wastes a Mend that was going
+  to top an ally up; heals and wards go first to whoever is really in danger.
+- **Vigil** now heals 0.1 % of max life per second per rank, and what it heals on a full bar feeds **Overflow**'s
+  shield (as do Second Wind's heals). Overflow's shield stays up while the healing keeps coming.
+- **Weak Spot** marks the toughest enemy in reach (a boss, then an elite), not the nearest one.
+- Heal power no longer multiplies with an item's rarity, so heals stay balanced at every difficulty (the heal penalty
+  badge of the harder difficulties is gone).
+- Strip events no longer appear on a world boss stage, during a stage boss, or once the stage bar is full.
+- Our Lady of Mistletoe's roots bind a little less often in the harder difficulties.
+
+### Fixed
+
+- Cleave and other area abilities no longer fire early while more enemies are still on their way.
+- Abilities that bank charges (Aimed Shot, Riposte) no longer lose a charge on a wasted cast, and their counter
+  matches what they can fire.
+- The Crushing Blow always lands on the hero actually at the front.
+
 ## [0.6.0] - 2026-11-21
 
 ### Added
@@ -348,7 +385,8 @@ While the project is pre-1.0, minor versions may include breaking save changes.
 - Initial desktop builds: Tauri v2 transparent, always-on-top, bottom-docked overlay.
 - Multi-platform release pipeline (macOS universal, Windows, Linux) via GitHub Actions.
 
-[Unreleased]: https://github.com/Nyhz/taskbar-legion/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/Nyhz/taskbar-legion/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/Nyhz/taskbar-legion/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.12...v0.6.0
 [0.5.12]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.11...v0.5.12
 [0.5.11]: https://github.com/Nyhz/taskbar-legion/compare/v0.5.10...v0.5.11
