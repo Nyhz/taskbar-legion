@@ -15,21 +15,21 @@ export interface TierDef {
   statMultiplier: number;
 }
 
-// statMultiplier: WIDENED so better items feel impactful and the difficulty walls become
-// tier-gated. Low/mid tiers (T0-T3) near their old values (baseline/opening unchanged); the
-// TOP tiers blow out (T8 1.0→9.0× vs the old 4.2×, per-tier jump growing with tier: ~+20%
-// T0→T1 up to ~+50% T7→T8). Farming a difficulty's new top tier is the power spike that
-// breaks its world-boss walls (DIFFICULTY.md §9).
+// statMultiplier = the item's BUDGET (docs/redesign/POWER_CURVE.md §2, 2026-11-22): the whole item's power next to a
+// T0 of the same level, split over its affixes (data/power affixShare). ×1.2 a step (user, 2026-11-22: «ajustar el
+// escalado de la rareza para que el equipo no caduque tan rápido»): a step is worth ~9 stages of the power curve
+// (+2 % a stage), so a piece two rarities above the usual lasts about two worlds. T0–T4 are the old values; the top
+// is far gentler than the old ×9 (a T8 is 4.3× a T0).
 export const TIERS: readonly TierDef[] = [
   { tier: 0, name: 'Normal', color: '#9b9b9b', extraStats: 0, sockets: 0, statMultiplier: 1.0 },
   { tier: 1, name: 'Uncommon', color: '#4caf50', extraStats: 1, sockets: 0, statMultiplier: 1.2 },
-  { tier: 2, name: 'Rare', color: '#3d7fe0', extraStats: 1, sockets: 1, statMultiplier: 1.45 },
-  { tier: 3, name: 'Epic', color: '#9b4dca', extraStats: 2, sockets: 1, statMultiplier: 1.8 },
-  { tier: 4, name: 'Legendary', color: '#e08a2e', extraStats: 2, sockets: 2, statMultiplier: 2.3 },
-  { tier: 5, name: 'Mythic', color: '#d33d3d', extraStats: 3, sockets: 2, statMultiplier: 3.0 },
-  { tier: 6, name: 'Ancestral', color: '#2bb6a8', extraStats: 3, sockets: 3, statMultiplier: 4.2 },
-  { tier: 7, name: 'Divine', color: '#e8c34c', extraStats: 4, sockets: 3, statMultiplier: 6.0 },
-  { tier: 8, name: 'Primordial', color: 'iridescent', extraStats: 4, sockets: 4, statMultiplier: 9.0 },
+  { tier: 2, name: 'Rare', color: '#3d7fe0', extraStats: 1, sockets: 1, statMultiplier: 1.44 },
+  { tier: 3, name: 'Epic', color: '#9b4dca', extraStats: 2, sockets: 1, statMultiplier: 1.73 },
+  { tier: 4, name: 'Legendary', color: '#e08a2e', extraStats: 2, sockets: 2, statMultiplier: 2.07 },
+  { tier: 5, name: 'Mythic', color: '#d33d3d', extraStats: 3, sockets: 2, statMultiplier: 2.49 },
+  { tier: 6, name: 'Ancestral', color: '#2bb6a8', extraStats: 3, sockets: 3, statMultiplier: 2.99 },
+  { tier: 7, name: 'Divine', color: '#e8c34c', extraStats: 4, sockets: 3, statMultiplier: 3.58 },
+  { tier: 8, name: 'Primordial', color: 'iridescent', extraStats: 4, sockets: 4, statMultiplier: 4.3 },
 ] as const;
 
 export const MAX_SUBSTATS = 4; // hard cap (AFFIXES.md / DIFFICULTY.md §13)

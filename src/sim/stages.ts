@@ -7,18 +7,13 @@ import { armBoss, bossKit } from './bossMechanics';
 import { pickEnemyKind, supportAuras, traitsOf, SUPPORT_KIND, TRAIT_TUNING, type EnemyKind, type EnemyRole } from '@/data/enemies';
 import { difficultyIndexOf } from '@/data/difficulties';
 import { RANGE, MOVE_SPEED, SPAWN_AHEAD, WAVE_BATCHES, WAVE_BATCH_TICKS, WAVE_SPAWN_BAND } from '@/data/field';
+import { areaBlowSplash, crushHit, crushShock, enemyDamage, enemyHp, stageBossHit, stageBossHp, trashBackHit, trashFrontHit, zoneBossHit, zoneBossHp } from './enemyScale';
 import {
-  enemyHp,
-  enemyDamage,
   ENEMY_BASE_ATTACK_SPEED,
-  stageBossHp,
   BOSS_DMG_MULT,
-  zoneBossHp,
   ZONE_BOSS_DMG_MULT,
   TRASH_HP_FRACTION,
   TRASH_DMG_FRACTION,
-  trashDmgTune,
-  trashBackDmgTune,
   waveSizeForStage,
   ELITE_CHANCE,
   ELITE_MIN_STAGE,
@@ -27,13 +22,8 @@ import {
   ZONE_ENRAGE_MS,
   STAGE_ENRAGE_MS,
   enrageRampMs,
-  zoneBossHit,
-  stageBossHit,
-  areaBlowSplash,
   zoneEnrageMs,
   BOSS_FURY_GRACE_MS,
-  crushHit,
-  crushShock,
 } from '@/data/stageScaling';
 
 // Enemy spawning. Waves of 2–8 mixed kinds spawn ahead of the party and advance.
@@ -41,11 +31,11 @@ import {
 
 interface EnemySpec {
   hpMult: number; // multiplies the reference enemyHp(S) — IGNORED when hpAbsolute is set (bosses)
-  hpAbsolute?: number; // decoupled boss HP (stageBossHp/zoneBossHp); overrides hpMult when present
+  hpAbsolute?: number; // boss life (sim/enemyScale stageBossHp/zoneBossHp); overrides hpMult when present
+  /** × enemyDamage(S): its hit (a wave enemy: on the heroes behind the front one). */
   dmgMult: number;
-  /** × enemyDamage(S) for what it deals to the FRONT hero (a wave enemy: the trash-threat anchor), when that is
-   *  not `dmgMult` (what it deals to anyone behind him). */
-  frontDmgMult?: number;
+  /** A wave enemy's hit on the FRONT hero (sim/enemyScale trashFrontHit × its kind's share), when it has one. */
+  frontHit?: number;
   magic: boolean;
   range: number;
   moveSpeed: number;
@@ -80,7 +70,7 @@ function makeEnemy(world: WorldState, S: number, index: number, x: number, spec:
     alive: true,
     fightMs: 0,
     enemyDamage: enemyDamage(S) * spec.dmgMult,
-    frontHit: spec.frontDmgMult === undefined ? undefined : enemyDamage(S) * spec.frontDmgMult,
+    frontHit: spec.frontHit,
     enemyAttackSpeed: Math.max(0.4, aspd),
     enemyMagic: spec.magic,
     isBoss: spec.isBoss,
@@ -104,9 +94,9 @@ function kindAbilities(kind: EnemyKind, S: number): ResolvedAbility[] {
 function trashSpec(kind: EnemyKind, S: number): EnemySpec {
   return {
     hpMult: kind.hpMult * TRASH_HP_FRACTION,
-    // Trash damage has its own tuning tables (the anchors): one for its hits on the front hero, one for those behind.
-    dmgMult: kind.dmgMult * TRASH_DMG_FRACTION * trashBackDmgTune(S),
-    frontDmgMult: kind.dmgMult * TRASH_DMG_FRACTION * trashDmgTune(S),
+    // A wave's hits are sized to the typical party (sim/enemyScale): one share for the front hero, one for those behind.
+    dmgMult: (kind.dmgMult * TRASH_DMG_FRACTION * trashBackHit(S)) / Math.max(1e-9, enemyDamage(S)),
+    frontHit: kind.dmgMult * TRASH_DMG_FRACTION * trashFrontHit(S),
     magic: kind.magic,
     range: kind.range,
     moveSpeed: kind.moveSpeed,
@@ -125,7 +115,7 @@ function trashSpec(kind: EnemyKind, S: number): EnemySpec {
 // chance is applied on kill (Simulation.awardKill). Render reads `isElite` to draw it bigger.
 function eliteSpec(kind: EnemyKind, S: number): EnemySpec {
   const base = trashSpec(kind, S);
-  return { ...base, hpMult: base.hpMult * ELITE_HP_MULT, dmgMult: base.dmgMult * ELITE_DMG_MULT, frontDmgMult: (base.frontDmgMult ?? base.dmgMult) * ELITE_DMG_MULT, isElite: true };
+  return { ...base, hpMult: base.hpMult * ELITE_HP_MULT, dmgMult: base.dmgMult * ELITE_DMG_MULT, frontHit: (base.frontHit ?? enemyDamage(S) * base.dmgMult) * ELITE_DMG_MULT, isElite: true };
 }
 
 /** Split a wave of `total` mobs into WAVE_BATCHES batches, each ≥1, with random sizes

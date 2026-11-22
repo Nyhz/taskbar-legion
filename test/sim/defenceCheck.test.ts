@@ -6,7 +6,9 @@ import { steadyRoll, STEADY_START } from '@/sim/steady';
 import { abilityDef } from '@/data/abilities';
 import { CRUSH, WORLD_BOSS_PRESSURE, crushAt } from '@/data/bossKit';
 import { globalStageOf } from '@/data/difficulties';
-import { BACK_LIFE_TUNE, KNIGHT_EHP_TUNE, crushHit, crushShock, expectedDefense, mitigation } from '@/data/stageScaling';
+import { expectedDefense, mitigation } from '@/data/stageScaling';
+import { crushHit, crushShock } from '@/sim/enemyScale';
+import { referenceParty } from '@/sim/reference';
 import { mixedMitigation } from '@/sim/damageMix';
 import { liveStats } from '@/sim/liveStats';
 import type { Combatant, CombatEvent } from '@/sim/world';
@@ -63,25 +65,17 @@ describe('the Crushing Blow', () => {
     expect(events.filter((e) => e.abilityKey === CRUSH.abilityKey)).toHaveLength(2);
   });
 
-  it('its anchors are data: the average Knight\'s effective life and the back line\'s life, from Inferno on', () => {
-    expect(KNIGHT_EHP_TUNE).toHaveLength(50);
-    expect(BACK_LIFE_TUNE).toHaveLength(50);
-    for (let w = 21; w <= 50; w++) {
-      expect(KNIGHT_EHP_TUNE[w - 1]).toBeGreaterThan(0);
-      expect(BACK_LIFE_TUNE[w - 1]).toBeGreaterThan(0);
-    }
+  it('its anchors are the typical party of the zone: the Knight\'s effective life and the back line\'s life', () => {
     const S = globalStageOf(4, 5, 10);
-    expect(crushHit(S, 1.5)).toBeCloseTo(1.5 * (KNIGHT_EHP_TUNE[44] ?? 0), 6);
-    // An opening wall sizes its blow on a Knight no stronger than the previous gate's (round 14b).
+    expect(crushHit(S, 1.5)).toBeCloseTo(1.5 * referenceParty(S).knightEhp, 6);
+    // An opening wall sizes its blow on the previous world's Knight (round 14b).
     for (const d of [3, 4]) {
       const open = globalStageOf(d, 1, 10);
-      const own = KNIGHT_EHP_TUNE[d * 10] ?? 0;
-      const gate = KNIGHT_EHP_TUNE[d * 10 - 1] ?? 0;
-      expect(crushHit(open, 1.5)).toBeCloseTo(1.5 * Math.min(own, gate), 6);
+      expect(crushHit(open, 1.5)).toBeCloseTo(1.5 * referenceParty(open - 10).knightEhp, 6);
     }
-    expect(crushHit(globalStageOf(3, 2, 10), 1.5)).toBeCloseTo(1.5 * (KNIGHT_EHP_TUNE[31] ?? 0), 6); // world 2: its own
+    expect(crushHit(globalStageOf(3, 2, 10), 1.5)).toBeCloseTo(1.5 * referenceParty(globalStageOf(3, 2, 10)).knightEhp, 6); // world 2: its own
     // Sized against on-level magic resist: through it (half turned away) the shock takes backLife × mix of her life.
-    expect(crushShock(S, 0.5, 1.2) * (1 - mitigation(expectedDefense(S), S))).toBeCloseTo(0.6 * (BACK_LIFE_TUNE[44] ?? 0), 6);
+    expect(crushShock(S, 0.5, 1.2) * (1 - mitigation(expectedDefense(S), S))).toBeCloseTo(0.6 * referenceParty(S).backLife, 6);
   });
 });
 

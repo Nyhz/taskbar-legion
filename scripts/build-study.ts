@@ -20,7 +20,8 @@
 import { readFileSync, appendFileSync, writeFileSync, existsSync } from 'node:fs';
 import { spawn } from 'node:child_process';
 import { Simulation, createWorld, TICK_MS, type TickContext } from '@/sim/Simulation';
-import { ZONE_BOSS_HP_OVERRIDE, zoneBossHp, worldOf } from '@/data/stageScaling';
+import { ZONE_BOSS_HP_OVERRIDE, worldOf } from '@/data/stageScaling';
+import { zoneBossHp } from '@/sim/enemyScale';
 import { DIFFICULTY_KEYS } from '@/data/difficulties';
 import { buildParty, measureFarm } from '../test/sim/probe/combat';
 import { gearPercent, withZoneChests } from '../test/sim/probe/zoneGear';

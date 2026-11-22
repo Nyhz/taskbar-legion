@@ -2,6 +2,7 @@ import { MERCHANT, MERCHANTS_PER_BLOCK, RUNAWAY, STRIP_EVENT_BLOCK, STRIP_EVENT_
 import { CHEST_TYPES, type ChestType } from '@/data/chests';
 import { GENERATOR_VERSION } from '@/data/lootTables';
 import { ALCHEMY_BASE, ALCHEMY_TIER_MULT } from '@/data/cube';
+import { expectedLevel } from '@/data/stageScaling';
 import type { GemInstance, GemTier } from '@/data/gems';
 import { deriveSeed, makeRng, type Rng } from './rng';
 import { generateItem, rollTier } from './loot';
@@ -98,7 +99,7 @@ function pickWeighted<T extends string>(weights: Readonly<Record<T, number>>, ke
 
 /** What a gem of `tier` costs at the merchant on stage `S` with gear around item level `ilvl`. */
 export function gemPrice(tier: number, ilvl: number): number {
-  return Math.max(1, Math.round(ALCHEMY_BASE * ALCHEMY_TIER_MULT ** tier * ilvl * MERCHANT.priceMult * MERCHANT.gemPriceShare));
+  return Math.max(1, Math.round(ALCHEMY_BASE * ALCHEMY_TIER_MULT ** tier * expectedLevel(ilvl) * MERCHANT.priceMult * MERCHANT.gemPriceShare));
 }
 
 /** What the merchant asks for a gear piece. */

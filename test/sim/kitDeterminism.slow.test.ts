@@ -32,7 +32,7 @@ function run(wanted: Record<string, string[]>, seed: number, ticks: number): { t
   for (const c of configs) expect(spentPoints(c.talents)).toBeLessThanOrEqual(120);
   const auras = partyAuraMods(configs);
   const sim = new Simulation(createWorld(seed, configs.map((c) => buildHeroCombatant(c, auras))));
-  sim.travelTo(201); // Inferno, world 1: where naked level-120 heroes get hurt (so the heals fire) without wiping
+  sim.travelTo(351); // Eternal 6: where naked level-120 heroes get hurt (so the heals fire) without wiping (their class stats follow the level's power; 301–431 all fire every ability)
   const casts = new Set<string>();
   const trace: string[] = [];
   for (let i = 0; i < ticks; i++) {

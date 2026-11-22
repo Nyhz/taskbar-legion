@@ -1,7 +1,7 @@
-// The two stat pools (SPEC §4.1 / AFFIXES.md). Each stat has a `kind` that drives
-// scaling: FLAT stats scale with Φ(stageIndex); PERCENT stats are bounded rolls
-// (DIFFICULTY.md §6 — the critical flat/percent split). `rollPerIlvl` is the legacy
-// SPEC field name; it is the rand(min,max) band, NOT multiplied by ilvl anymore.
+// The two stat pools (SPEC §4.1 / AFFIXES.md). Each stat has a `kind` that drives scaling (docs/redesign/
+// POWER_CURVE.md §2): FLAT stats follow the power curve P(item level); PERCENT stats do not — they grow only with
+// rarity and the number of pieces that carry them. `rollPerIlvl` is the legacy SPEC field name: the rand(min,max)
+// band of one affix at a full share of a T0's budget.
 
 export type StatGroup = 'offensive' | 'defensive' | 'utility';
 
@@ -34,16 +34,9 @@ export interface StatDef {
   label: string;
   group: StatGroup;
   kind: 'flat' | 'percent';
-  /** rand(min,max) roll band before tier multiplier / Φ (BALANCE.md). */
+  /** rand(min,max) roll band of one affix at a full share of a T0's budget, before the rarity budget and the scale
+   *  (flat: GEAR_POWER × P(item level); percent: PCT_SCALE — data/power). */
   rollPerIlvl: { min: number; max: number };
-  /** false: its rolls do not take the tier's statMultiplier (heal power — 2026-11-21: riding T8's ×9 with no cap it
-   *  ran from ~50 % to ~500 %, and a per-difficulty devaluation was holding it back). Default true. */
-  tierScaled?: boolean;
-}
-
-/** The tier multiplier a roll of `key` takes: the tier's statMultiplier, or 1 for a stat that is not tier-scaled. */
-export function statTierMult(key: StatKey, tierMult: number): number {
-  return STATS[key].tierScaled === false ? 1 : tierMult;
 }
 
 export const STATS: Record<StatKey, StatDef> = {
@@ -73,12 +66,13 @@ export const STATS: Record<StatKey, StatDef> = {
   hpRegen: { key: 'hpRegen', label: 'HP Regen', group: 'defensive', kind: 'flat', rollPerIlvl: { min: 0, max: 0 } },
   block: { key: 'block', label: 'Block', group: 'defensive', kind: 'percent', rollPerIlvl: { min: 1.5, max: 3.0 } },
   // CDR + healPower NOW ROLL on gear (gear overhaul): CDR is the universal ability-uptime
-  // stat (clamped ≤75% in combat) so it rolls small; healPower amplifies priest heals. healPower is NOT tier-scaled
-  // (2026-11-21, user's option 2): it grows with the item level, the number of affixes and gems, not ×9 at T8 —
-  // so the heals (a share of the target's max life) need no per-difficulty devaluation.
+  // stat (clamped ≤75% in combat) so it rolls small; healPower amplifies priest heals. Like every percent stat it
+  // grows only with rarity (data/power), so the heals (a share of the target's max life) need no devaluation.
   // damageReduction stays buff-ONLY ({0,0}) — flat %DR on gear stacks toward immunity.
   cooldownReduction: { key: 'cooldownReduction', label: 'Cooldown Reduction', group: 'utility', kind: 'percent', rollPerIlvl: { min: 1.0, max: 2.0 } },
-  healPower: { key: 'healPower', label: 'Heal Power', group: 'utility', kind: 'percent', rollPerIlvl: { min: 2.5, max: 5.0 }, tierScaled: false },
+  // Heal power's band is narrow (2026-11-22): the Priest stacks it on both weapons, the jewels and her gems, and every
+  // heal is a share of the target's life × it — at the old 2.5–5 band the typical Priest ended Torment at ~500 %.
+  healPower: { key: 'healPower', label: 'Heal Power', group: 'utility', kind: 'percent', rollPerIlvl: { min: 1.0, max: 2.0 } },
   damageReduction: { key: 'damageReduction', label: 'Damage Reduction', group: 'defensive', kind: 'percent', rollPerIlvl: { min: 0, max: 0 } },
 };
 

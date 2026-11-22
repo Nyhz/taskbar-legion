@@ -18,6 +18,13 @@ actionable rules.
 **Authority order when sources disagree:** SPEC.md is the default authority, **EXCEPT** where a `docs/` file
 explicitly states it overrides/supersedes the SPEC — those are deliberate, post-SPEC design decisions and
 they win. The standing overrides are:
+- **★ THE POWER CURVE (2026-11-22, branch `redesign/power-curve`; `docs/redesign/POWER_CURVE.md` — supersedes every
+  power number below and in DIFFICULTY.md §5–§13).** One curve P(S) = 1.02^(S−1) drives items (item level = the drop
+  STAGE; a rarity is the item's BUDGET 1 → 2.2× split over its affixes; percent affixes don't follow P), class stats
+  (× P of the stage a level is expected at) and enemies, which are sized against the TYPICAL party of their zone
+  (`sim/reference.ts` → `sim/enemyScale.ts`: a grunt = 2.5 typical hits, a stage boss = 7.5 s, a wall = 60 s ×
+  `wallAsk(world)`, hits = a share of the typical Knight's / back line's effective life a second). No per-world
+  measured tables remain; `test/sim/powerCurve.test.ts` holds the invariants, `npm run probe:fast` the hours.
 - **PROGRESSION OVERHAUL (current model — see `docs/DIFFICULTY.md`, the canonical scaling doc).** Combat power
   lives in **ITEMS** (ilvl × tier × affixes × gems) + talents + level + ultimates — *not* tech. **Tech is
   NON-COMBAT only** (Economy/Chests/Utility). **No equip-gate** (ilvl is pure power; any hero equips any item
@@ -160,7 +167,9 @@ mid-build unless a decision is irreversible or contradicts the spec.
 |---|---|
 | `npm install` | Install deps (first thing, once). |
 | `npm run dev` | Vite dev server — the running game. Use for visual checks. |
-| `npm test` | Run the vitest suite (must be green to finish a phase). |
+| `npm test` | Run the fast vitest tier (~6 s; must be green to finish a phase). |
+| `npm run test:slow` / `test:all` | The long real-run simulations (`*.slow.test.ts`) / both tiers. |
+| `npm run probe:fast` | Normal → Torment in ~1 min a seed from a cached fight calibration (`test/sim/probe/fast.ts`). |
 | `npm run typecheck` | `tsc --noEmit` strict check. |
 | `npm run lint` | ESLint incl. the import-boundary rule. |
 | `npm run build` | Production build (typecheck + vite build). |

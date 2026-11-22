@@ -12,6 +12,8 @@
  * All knobs live in DEFAULT_CONFIG (test/sim/probe/loop.ts) — tech-spend order + capture rates
  * are the big pacing levers. Test/dev tooling only (sim/ + data/).
  */
+import { MEASURE_PROFILE } from '../test/sim/probe/combat';
+import { calibrate } from '../test/sim/probe/fast';
 import { runProbe, DEFAULT_CONFIG, type ProbeResult } from '../test/sim/probe/loop';
 import { DIFFICULTY_KEYS, DIFFICULTIES } from '@/data/difficulties';
 import { WORLD_HOURS_TARGET, DIFFICULTY_HOURS_TARGET } from '../test/sim/probe/targets';
@@ -43,8 +45,16 @@ function median(xs: number[]): number {
 const STOP = Number(process.env.PROBE_STOP ?? 0);
 const TRACE = process.env.PROBE_TRACE === '1'; // a line per stage cleared / recruit / wall attempt
 const GEAR = process.env.PROBE_GEAR === '1'; // also measure the gear % of the zone at every wall kill (slower)
-const CONFIG = { ...DEFAULT_CONFIG, ...(GEAR ? { measureGear: true } : {}), ...(STOP > 0 ? { stopAtStage: STOP } : {}), ...(TRACE ? { trace: (line: string) => console.log(line) } : {}) };
+const FAST = process.env.PROBE_FAST === '1' || process.argv.includes('--fast'); // the fast probe: farms and wall attempts from a calibration (test/sim/probe/fast.ts)
+if (FAST) calibrate((line) => console.log(line));
+const CONFIG = { ...DEFAULT_CONFIG, ...(FAST ? { fast: true } : {}), ...(GEAR ? { measureGear: true } : {}), ...(STOP > 0 ? { stopAtStage: STOP } : {}), ...(TRACE ? { trace: (line: string) => console.log(line) } : {}) };
+const t0 = performance.now();
 const results: ProbeResult[] = SEEDS.map((s) => runProbe(s, CONFIG));
+if (process.env.PROBE_PROFILE === '1') {
+  const total = performance.now() - t0;
+  const { farm, boss } = MEASURE_PROFILE;
+  console.log(`PROFILE total ${(total / 1000).toFixed(0)} s · farm ${farm.calls} calls ${(farm.ms / 1000).toFixed(0)} s (${(farm.ticks / 1e6).toFixed(2)} M ticks) · boss ${boss.calls} calls ${(boss.ms / 1000).toFixed(0)} s (${(boss.ticks / 1e6).toFixed(2)} M ticks) · rest ${((total - farm.ms - boss.ms) / 1000).toFixed(0)} s`);
+}
 
 console.log('\n=== PROGRESSION PROBE — average player, KRP, solo-Knight start ===');
 console.log(`config: ${DEFAULT_CONFIG.activeHoursPerDay}h/day active + ${DEFAULT_CONFIG.offlineHoursPerDay}h away (the game counts its cap, 8h) · ` +

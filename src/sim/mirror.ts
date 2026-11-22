@@ -2,7 +2,8 @@ import type { AbilityDef, AbilitySpecial, AbilityTarget, AppliedEffect } from '@
 import { tryAbilityDef } from '@/data/abilities';
 import { MECHANIC, SUMMONS } from '@/data/bossKit';
 import { effectDef } from '@/data/effects';
-import { TRASH_DMG_FRACTION, TRASH_HP_FRACTION, enemyDamage, enemyHp, trashDmgTune } from '@/data/stageScaling';
+import { TRASH_DMG_FRACTION } from '@/data/stageScaling';
+import { gruntHp, trashFrontHit } from './enemyScale';
 import { applyEffect } from './effects';
 import { liveStats } from './liveStats';
 import type { Combatant, CombatEvent } from './world';
@@ -183,7 +184,7 @@ export function releaseReflection(boss: Combatant, allies: Combatant[], heroes: 
   const S = owed.stage;
   const [slowest, fastest] = MECHANIC.mirror.reflection.attackSpeed;
   const pace = Math.max(slowest, Math.min(fastest, liveStats(hero).attackSpeed));
-  const maxHp = Math.max(1, enemyHp(S) * TRASH_HP_FRACTION * def.hpOfGrunt);
+  const maxHp = Math.max(1, gruntHp(S) * def.hpOfGrunt);
   const taken = allies.filter((a) => a.alive && a.summon !== undefined).map((a) => a.summon?.slot ?? 0);
   let slot = 0;
   while (taken.includes(slot)) slot++;
@@ -204,7 +205,7 @@ export function releaseReflection(boss: Combatant, allies: Combatant[], heroes: 
     abilities: [],
     fightMs: 0,
     engaged: true,
-    enemyDamage: enemyDamage(S) * TRASH_DMG_FRACTION * trashDmgTune(S) * owed.hit,
+    enemyDamage: trashFrontHit(S) * TRASH_DMG_FRACTION * owed.hit,
     enemyAttackSpeed: pace,
     enemyMagic: hero.classKey === 'priest',
     isBoss: false,

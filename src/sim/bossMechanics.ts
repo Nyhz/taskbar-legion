@@ -3,7 +3,8 @@ import { abilityDef, stageBossAbilityKeys, worldBossAbilityKeys } from '@/data/a
 import { BOSS_AFFIX, CRUSH, MECHANIC_EXTRAS, SUMMONS, SUMMON_HOVER, bossAffixes, crushAt, mechanicAbility, pressureDifficulty, worldBossMechanic, worldBossPressureAt, MECHANIC, type BossAffixKey, type BossRank } from '@/data/bossKit';
 import { effectDef } from '@/data/effects';
 import { HERO_SPACING } from '@/data/field';
-import { MAX_DAMAGE_REDUCTION, TRASH_DMG_FRACTION, TRASH_HP_FRACTION, enemyDamage, enemyHp, trashDmgTune } from '@/data/stageScaling';
+import { MAX_DAMAGE_REDUCTION, TRASH_DMG_FRACTION } from '@/data/stageScaling';
+import { gruntHp, trashFrontHit } from './enemyScale';
 import { applyEffect, effectStatMods } from './effects';
 import type { ResolvedAbility } from './loadout';
 import { noteHeroCasts, releaseReflection, shatterPanes } from './mirror';
@@ -160,14 +161,14 @@ export function resolveSpecial(caster: Combatant, ability: AbilityDef, allies: C
   const stamp = Math.round(caster.fightMs ?? 0); // the fight's clock at this cast: makes each summon's id its own
   const def = SUMMONS[special.summon];
   if (def === undefined) return;
-  const gruntHp = enemyHp(S) * TRASH_HP_FRACTION;
-  const trashHit = enemyDamage(S) * TRASH_DMG_FRACTION * trashDmgTune(S);
+  const grunt = gruntHp(S);
+  const trashHit = trashFrontHit(S) * TRASH_DMG_FRACTION;
   const taken = allies.filter((a) => a.alive && a.summon !== undefined).map((a) => a.summon?.slot ?? 0);
   let slot = 0;
   for (let i = 0; i < special.count; i++) {
     while (taken.includes(slot)) slot++;
     taken.push(slot);
-    const maxHp = Math.max(1, gruntHp * def.hpOfGrunt);
+    const maxHp = Math.max(1, grunt * def.hpOfGrunt);
     allies.push({
       id: `${caster.id}_${def.key}_${stamp}_${i}`,
       side: 'enemy',

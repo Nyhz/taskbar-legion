@@ -25,6 +25,7 @@
 // months"), per difficulty, with the monotonic check.
 
 import { measureFarm, measureBoss, type FarmSample } from './combat';
+import { fastBoss, fastFarm } from './fast';
 import type { StatKey } from '@/data/stats';
 import { openCaptured, equipItems, socketGems, partyPower, heroEhp, SURVIVAL_NEED, SCORE_CONTEXT } from './gear';
 import { bossMagicShare } from '@/data/bossKit';
@@ -42,7 +43,8 @@ import { chestDropChance } from '@/sim/chests';
 import { offlineCapMs } from '@/sim/offline';
 import { classDef, CLASS_KEYS } from '@/data/classes';
 import { MAX_GLOBAL_STAGE, difficultyIndexOf, DIFFICULTY_KEYS, worldBossStageOf } from '@/data/difficulties';
-import { worldOf, zoneBossHp, ELITE_CHANCE, ELITE_CHEST_MULT, ELITE_MIN_STAGE, ZONE_ENRAGE_MS } from '@/data/stageScaling';
+import { zoneBossHp } from '@/sim/enemyScale';
+import { worldOf, ELITE_CHANCE, ELITE_CHEST_MULT, ELITE_MIN_STAGE, ZONE_ENRAGE_MS } from '@/data/stageScaling';
 import type { HeroConfig } from '@/sim/loadout';
 import type { ItemInstance } from '@/sim/items';
 import type { GemInstance } from '@/data/gems';
@@ -74,6 +76,9 @@ export interface ProbeConfig {
   /** Tooling (the gear gate): the party equips and sockets NOTHING from now on — it keeps levelling, opening
    *  chests and finding keys, but wears what it wears. "Is gearing up a condition to advance?" */
   freezeGear?: boolean;
+  /** The fast probe (test/sim/probe/fast.ts): farms and wall attempts answered from a one-off calibration in real
+   *  fights instead of a fight each. */
+  fast?: boolean;
   /** Tooling: at every wall kill, also measure the party's gear % of the zone and the wall's share of the zone
    *  set (zoneGear.ts) — six more fights a kill, so only the reports ask for it. */
   measureGear?: boolean;
@@ -296,6 +301,7 @@ function grantLoot(state: State, dropStage: number, captured: Record<ChestType, 
     state.carry[type] -= open;
     // The player gears for the wall ahead: its boss's physical/magic mix weighs armour against magic resist.
     SCORE_CONTEXT.magicShare = bossMagicShare(worldBossStageOf(dropStage), 'world');
+    SCORE_CONTEXT.stage = dropStage; // the score's yardstick: the typical hero where the loot dropped
     const loot = openCaptured(type, dropStage, open, state.seed, state.draw, bonusesGemDrop, allowed);
     if (!freezeGear && equipItems(state.party, loot.items)) state.dirty = true;
     if (!freezeGear && socketGems(state.party, loot.gems)) state.dirty = true;
@@ -316,7 +322,7 @@ function farmSample(state: State, S: number, bonuses: ReturnType<typeof getBonus
     if (!stale) state.dirty = false; // moved too little to matter: keep the measurement (the drift keeps adding up)
   }
   if (stale) {
-    const sample = measureFarm(state.party, S, cfg.measureSeed, bonuses, undefined, cfg.fixedRunSeed === false ? cfg.measureSeed : state.seed);
+    const sample = (cfg.fast === true ? fastFarm : measureFarm)(state.party, S, cfg.measureSeed, bonuses, undefined, cfg.fixedRunSeed === false ? cfg.measureSeed : state.seed);
     state.cache = { stage: S, sample, goldMult: bonuses.goldMult, xpMult: bonuses.xpMult, power: partyPower(state.party), heroes: state.party.length };
     state.dirty = false;
   }
@@ -460,6 +466,7 @@ export interface ProbeRun {
 export function newProbeRun(seed: number, cfg: ProbeConfig = DEFAULT_CONFIG): ProbeRun {
   SURVIVAL_NEED.clear();
   SCORE_CONTEXT.magicShare = 0.5;
+  SCORE_CONTEXT.stage = 1;
   SCORE_CONTEXT.ignoreStat = cfg.ignoreStat;
   return {
     state: {
@@ -639,7 +646,7 @@ export function advanceProbe(run: ProbeRun, cfg: ProbeConfig = DEFAULT_CONFIG): 
           if (run.firstAttemptSec < 0) run.firstAttemptSec = state.activeSec;
           const wb = cfg.wallBuild?.(target);
           const fighters = wb === undefined ? state.party : partyWithBuild(state.party, wb);
-          const res = measureBoss(fighters, target, cfg.measureSeed + run.attempts, bonuses, undefined, cfg.fixedRunSeed === false ? cfg.measureSeed + run.attempts : state.seed);
+          const res = (cfg.fast === true ? fastBoss : measureBoss)(fighters, target, cfg.measureSeed + run.attempts, bonuses, undefined, cfg.fixedRunSeed === false ? cfg.measureSeed + run.attempts : state.seed);
           run.attempts += 1;
           cfg.trace?.(`${(state.activeSec / 3600).toFixed(2)}h\tattempt ${target} ${res.win ? 'WIN' : 'lost'} lvl ${state.party.map((h) => h.level).join('/')} top T${topTier(state.party)} fight ${res.fightSec.toFixed(0)}s minHP ${(res.minHpFrac * 100).toFixed(0)}%`);
           // A hero that fell before the enrage asks its gear for more life (gear.SURVIVAL_NEED): enough to have stood

@@ -7,7 +7,8 @@ import { litPanes } from '@/sim/mirror';
 import { makeRng, type Rng } from '@/sim/rng';
 import { abilityDef } from '@/data/abilities';
 import { MECHANIC, MECHANIC_EXTRAS, SUMMONS, mechanicAbility } from '@/data/bossKit';
-import { TRASH_DMG_FRACTION, TRASH_HP_FRACTION, enemyDamage, enemyHp, trashDmgTune } from '@/data/stageScaling';
+import { TRASH_DMG_FRACTION } from '@/data/stageScaling';
+import { gruntHp, trashFrontHit } from '@/sim/enemyScale';
 import type { Combatant, CombatEvent, WorldState } from '@/sim/world';
 import { base, effect, quietRng, unit } from './_kit';
 
@@ -117,8 +118,8 @@ describe('the dark reflection', () => {
     run(world, M.everyMs);
     const [twin] = reflections(world);
     expect(twin?.summon?.of).toEqual({ heroId: 'archer', classKey: 'ranger' });
-    expect(twin?.maxHp).toBeCloseTo(enemyHp(100) * TRASH_HP_FRACTION * (SUMMONS.reflection?.hpOfGrunt ?? 0), 6);
-    expect(twin?.enemyDamage).toBeCloseTo(enemyDamage(100) * TRASH_DMG_FRACTION * trashDmgTune(100) * 0.95, 6); // Hell
+    expect(twin?.maxHp).toBeCloseTo(gruntHp(100) * (SUMMONS.reflection?.hpOfGrunt ?? 0), 6);
+    expect(twin?.enemyDamage).toBeCloseTo(trashFrontHit(100) * TRASH_DMG_FRACTION * 0.95, 6); // Hell
     expect(twin?.enemyAttackSpeed).toBeCloseTo(1.2, 6); // the pace of the hero it reflects
     expect(M.reflection.every).toEqual([2, 2, 2, 2, 2]);
     expect(M.reflection.hitOfTrash).toEqual([0.8, 0.95, 1.1, 1.25, 1.4]);

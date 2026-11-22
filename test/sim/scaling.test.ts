@@ -1,25 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import {
-  g,
-  phi,
-  enemyHp,
-  enemyDamage,
-  goldPerKill,
-  xpPerKill,
-  expectedLevel,
-  totalExpToReach,
-  zoneBossHp,
-  WORLD_WALL_MULT,
-  earlyDmgRamp,
-  EARLY_DMG_RAMP_END,
-} from '@/data/stageScaling';
+import { phi, goldPerKill, xpPerKill, expectedLevel, totalExpToReach } from '@/data/stageScaling';
+import { enemyDamage, enemyHp } from '@/sim/enemyScale';
 import { MAX_GLOBAL_STAGE } from '@/data/difficulties';
 
-// FINITE model (DIFFICULTY.md): Φ is a BOUNDED polynomial over G∈[1..500]. Difficulty
-// "accelerates" in ABSOLUTE per-stage increments (the curve is convex), while the per-stage
-// RATIO g(S) gently DECREASES toward 1 (the bounded-polynomial signature — NOT the old
-// exponential's increasing ratio). The real time-gate is the gear treadmill + the X-10
-// world-boss walls, not a runaway ratio.
+// Φ (the economy's curve: gold and XP a kill) is a BOUNDED polynomial over G∈[1..500]; the POWER curve (items,
+// heroes, enemies) is data/power P(S) — test/sim/powerCurve.test.ts.
 
 describe('finite stage scaling', () => {
   it('Φ(S) is strictly increasing and BOUNDED across the 500-stage game', () => {
@@ -27,22 +12,21 @@ describe('finite stage scaling', () => {
     expect(phi(MAX_GLOBAL_STAGE)).toBeLessThan(20); // polynomial — stays readable, never e42
   });
 
-  it('difficulty accelerates in absolute increments (convex); ratio gently eases', () => {
-    // ABSOLUTE HP jumps grow with depth (a world deep in the game steps up by far more than an early one)…
-    expect(enemyHp(451) - enemyHp(441)).toBeGreaterThan(enemyHp(31) - enemyHp(21));
-    // …while the RATIO decreases toward 1 (the polynomial, not the old exponential).
-    expect(g(400)).toBeLessThan(g(50));
-    expect(g(50)).toBeGreaterThan(1);
-  });
-
   it('enemy stats, income, and expected level are monotonic in S', () => {
     for (let S = 1; S < MAX_GLOBAL_STAGE; S++) {
-      expect(enemyHp(S + 1)).toBeGreaterThanOrEqual(enemyHp(S)); // flat inside a world, a step at each new one (the anchor tables)
-      expect(enemyDamage(S + 1)).toBeGreaterThan(enemyDamage(S));
+      // (From 1-5: in 1-2 … 1-4 the typical party wears only a weapon, and a first uncommon one splits its budget.)
+      if (S >= 5) expect(enemyHp(S + 1)).toBeGreaterThan(enemyHp(S));
+      // An enemy's plain hit is sized to the typical back line's effective life: it may ease a little while world 1
+      // fills the typical gear in (its defence comes before its life), never more.
+      expect(enemyDamage(S + 1)).toBeGreaterThan(enemyDamage(S) * 0.85);
       expect(goldPerKill(S + 1)).toBeGreaterThanOrEqual(goldPerKill(S));
       expect(xpPerKill(S + 1)).toBeGreaterThanOrEqual(xpPerKill(S));
       expect(expectedLevel(S + 1)).toBeGreaterThanOrEqual(expectedLevel(S));
     }
+  });
+
+  it('an enemy\'s plain hit grows world after world', () => {
+    for (let w = 2; w < 50; w++) expect(enemyDamage(w * 10 + 5)).toBeGreaterThan(enemyDamage(w * 10 - 5)); // world 1 fills its gear in
   });
 
   it('expectedLevel maps the 500 stages to ~L1..L115 (the spine bands)', () => {
@@ -69,26 +53,6 @@ describe('finite stage scaling', () => {
 
 // The 2026-11-15 retune (DIFFICULTY.md §8): the 3-month game.
 describe('the retuned curves', () => {
-  it('every world-boss wall is tougher than the one before inside its difficulty, and a difficulty opens near the last', () => {
-    // The ladder (rounds 4c–4e, 2026-11-16): a difficulty's world 1 asks the same share of nearly the same ceiling as
-    // the previous world 10 (it starts where the last one ended), so measured asks may open it a little below it.
-    // Round 5 (user: «presión gradual»): worlds 1–2 of Hell→Torment ask a little less (×0.85, ×0.93 of their line), so
-    // the gear a difficulty ends with can take them — the opening may sit up to a third under the last wall.
-    for (let w = 2; w <= 50; w++) {
-      // Round 6 (the hours first, an ascending ladder): Hell 1 opens at a little over half of Normal 10's life.
-      if (w % 10 === 1) expect(zoneBossHp(w * 10) / zoneBossHp((w - 1) * 10), `world ${w}`).toBeGreaterThan(0.5);
-      else expect(zoneBossHp(w * 10), `world ${w}`).toBeGreaterThan(zoneBossHp((w - 1) * 10));
-    }
-    expect(WORLD_WALL_MULT).toHaveLength(50);
-  });
-
-  it('the opening is gentle: enemy damage starts low and is whole only several worlds in', () => {
-    expect(earlyDmgRamp(1)).toBeLessThan(0.4);
-    expect(earlyDmgRamp(10)).toBeLessThan(0.5);
-    expect(earlyDmgRamp(EARLY_DMG_RAMP_END)).toBe(1);
-    expect(EARLY_DMG_RAMP_END).toBeGreaterThanOrEqual(40);
-  });
-
   it('levels last the whole game: the middle costs several times the old curve, the cap is for the end', () => {
     const old = (L: number): number => 0.7 * Math.pow(L, 3.5);
     expect(totalExpToReach(1)).toBe(0);

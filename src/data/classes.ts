@@ -15,6 +15,8 @@ export interface ClassDef {
   name: string;
   role: 'tank' | 'dps' | 'healer' | 'support';
   baseStats: Partial<Record<StatKey, number>>;
+  /** Per-level growth of PERCENT stats only (points a level). Flat stats grow with the level's power instead
+   *  (data/power levelPower, sim/loadout heroBaseStats). */
   statGrowthPerLevel: Partial<Record<StatKey, number>>;
   unlock: { type: 'free' } | { type: 'gold'; cost: number };
   /** The class's basic active (its talent tree's ability node scales it). */
@@ -53,7 +55,7 @@ export const CLASSES: Record<string, ClassDef> = {
     baseStats: { health: 145, armor: 15, magicResist: 11, attackDamage: 12, attackSpeed: 1.4, critChance: 8, critDamage: 60, hpRegen: 4, block: 5 },
     // hpRegen is intentionally NOT in the growth: it's a FLAT early-game cushion (4),
     // not a stat that scales with level — it tapers to irrelevance as enemy damage grows.
-    statGrowthPerLevel: { health: 5, armor: 0.5, magicResist: 0.3, attackDamage: 2.8 },
+    statGrowthPerLevel: {},
     unlock: { type: 'free' },
     signatureAbility: 'knight_guard',
     style: 'melee', range: RANGE.melee + 5, // a touch longer reach than base melee
@@ -61,7 +63,7 @@ export const CLASSES: Record<string, ClassDef> = {
   ranger: {
     key: 'ranger', name: 'Ranger', role: 'dps',
     baseStats: { health: 94, armor: 8, magicResist: 6, attackDamage: 9, attackSpeed: 1.5, critChance: 18, critDamage: 70 },
-    statGrowthPerLevel: { health: 3, armor: 0.3, attackDamage: 2.6, critChance: 0.15 },
+    statGrowthPerLevel: { critChance: 0.15 },
     unlock: { type: 'gold', cost: 150 },
     signatureAbility: 'ranger_fast_fire',
     style: 'ranged', range: RANGE.ranged, shotReach: RANGE.ranged + 180,
@@ -69,7 +71,7 @@ export const CLASSES: Record<string, ClassDef> = {
   priest: {
     key: 'priest', name: 'Priest', role: 'healer',
     baseStats: { health: 115, armor: 10, magicResist: 13, attackDamage: 5, attackSpeed: 1.0, critChance: 6, critDamage: 50, hpRegen: 2 },
-    statGrowthPerLevel: { health: 4, armor: 0.3, magicResist: 0.4, attackDamage: 1.5 }, // hpRegen stays flat (2) — not a scaling stat
+    statGrowthPerLevel: {}, // hpRegen stays flat (2) — not a scaling stat
     unlock: { type: 'gold', cost: 150 },
     signatureAbility: 'priest_mend',
     style: 'caster', range: RANGE.caster, shotReach: RANGE.caster + 180,

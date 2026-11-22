@@ -1,5 +1,5 @@
 import type { Combatant } from './world';
-import { aggregate, type EffectiveStats } from './stats';
+import { aggregateSums, sumMods, type EffectiveStats, type ModSums, type StatMod } from './stats';
 import { effectStatMods } from './effects';
 import type { TargetCondition } from '@/data/talents';
 import { effectDef } from '@/data/effects';
@@ -10,16 +10,45 @@ import { blockStreakReduction } from './passives';
 // Pure reads of the combatant; combat and ability resolution both go through here so a conditional stat
 // (Unyielding: less damage taken while under 40 % life) counts everywhere the stat is read.
 
+/** The static mods (gear, talents, auras) summed once per array: a combatant's `staticMods` is only ever replaced
+ *  whole (sim/loadout), never edited, so the array itself is the key. A pure cache — the stats are the same. */
+const staticSums = new WeakMap<readonly StatMod[], ModSums>();
+function sumsOfStatic(mods: readonly StatMod[]): ModSums {
+  let sums = staticSums.get(mods);
+  if (sums === undefined) {
+    sums = sumMods(mods);
+    staticSums.set(mods, sums);
+  }
+  return sums;
+}
+
+/** The stats from base + static mods alone, per static-mods array (and its base): what a combatant has whenever no
+ *  effect, low-life stat or Weathered Hide is on it — most reads. Shared: callers only read stats. */
+const staticStats = new WeakMap<readonly StatMod[], { base: Combatant['baseStats']; stats: EffectiveStats }>();
+
 /** Base stats + static mods (gear, talents, auras) + active effects + the stats that hold only while the
  *  combatant's own life is under a share. */
 export function liveStats(c: Combatant): EffectiveStats {
-  const mods = [...c.staticMods, ...effectStatMods(c.effects)];
-  if (c.lowHpMods !== undefined) {
-    for (const m of c.lowHpMods) if (c.hp < c.maxHp * m.hpBelow) mods.push(m.mod);
+  const effectMods = effectStatMods(c.effects);
+  let lowHp = false;
+  if (c.lowHpMods !== undefined) for (const m of c.lowHpMods) if (c.hp < c.maxHp * m.hpBelow) lowHp = true;
+  const hide = c.hideStacks !== undefined && c.hideStacks > 0;
+  if (effectMods.length === 0 && !lowHp && !hide) {
+    const hit = staticStats.get(c.staticMods);
+    if (hit !== undefined && hit.base === c.baseStats) return hit.stats;
+    const stats = aggregateSums(c.baseStats, sumsOfStatic(c.staticMods));
+    staticStats.set(c.staticMods, { base: c.baseStats, stats });
+    return stats;
+  }
+  const base = sumsOfStatic(c.staticMods);
+  const sums: ModSums = { flat: { ...base.flat }, pct: { ...base.pct } };
+  sumMods(effectMods, sums);
+  if (lowHp && c.lowHpMods !== undefined) {
+    for (const m of c.lowHpMods) if (c.hp < c.maxHp * m.hpBelow) sumMods([m.mod], sums);
   }
   // Weathered Hide: blocked hits banked as damage reduction.
-  if (c.hideStacks !== undefined && c.hideStacks > 0) mods.push({ key: 'damageReduction', mode: 'percent', value: blockStreakReduction(c) });
-  return aggregate(c.baseStats, mods);
+  if (hide) sumMods([{ key: 'damageReduction', mode: 'percent', value: blockStreakReduction(c) }], sums);
+  return aggregateSums(c.baseStats, sums);
 }
 
 /** Bleeding, burning or slowed: a damage-over-time effect, or a slow, on it. */

@@ -6,6 +6,7 @@ import type { StatKey } from '@/data/stats';
 import { STATS } from '@/data/stats';
 import type { SlotKey } from '@/data/itemSlots';
 import { classDef } from '@/data/classes';
+import { levelPower } from '@/data/power';
 import { talentNodes } from '@/data/talents';
 import type { AbilityDef } from '@/data/abilities';
 import { abilityDef } from '@/data/abilities';
@@ -32,20 +33,38 @@ function modeFor(key: StatKey): 'flat' | 'percent' {
   return STATS[key].kind;
 }
 
-/** Class base stats grown to the given level. */
+/** Class base stats grown to the given level (docs/redesign/POWER_CURVE.md §1): FLAT stats × the power of the stage
+ *  that level is expected at (data/power levelPower) — so a hero on level for a zone has class stats proportional to
+ *  that zone's power; life regeneration stays the flat early cushion it is; PERCENT stats add their per-level growth. */
 export function heroBaseStats(classKey: string, level: number): Partial<Record<StatKey, number>> {
+  const memoKey = `${classKey}|${level}`;
+  const hit = baseMemo.get(memoKey);
+  if (hit !== undefined) return { ...hit };
   const def = classDef(classKey);
-  const out: Partial<Record<StatKey, number>> = { ...def.baseStats };
+  const out: Partial<Record<StatKey, number>> = {};
+  const lp = levelPower(level);
+  for (const [k, v] of Object.entries(def.baseStats)) {
+    const key = k as StatKey;
+    out[key] = STATS[key].kind === 'flat' && !UNSCALED_BASE.has(key) ? (v ?? 0) * lp : v;
+  }
   const steps = Math.max(0, level - 1);
   for (const [k, growth] of Object.entries(def.statGrowthPerLevel)) {
     const key = k as StatKey;
     out[key] = (out[key] ?? 0) + (growth ?? 0) * steps;
   }
-  return out;
+  baseMemo.set(memoKey, out);
+  return { ...out };
 }
+/** Base stats by class and level (pure: the same inputs, the same stats — the probe asks thousands of times). */
+const baseMemo = new Map<string, Partial<Record<StatKey, number>>>();
+/** Flat class stats that do not follow the level's power: the early life-regeneration cushion. */
+const UNSCALED_BASE: ReadonlySet<StatKey> = new Set<StatKey>(['hpRegen']);
 
-/** StatMods from one equipped item: base affix(es) + substats + socketed gem grants. */
+/** StatMods from one equipped item: base affix(es) + substats + socketed gem grants. Memoised per item while its
+ *  sockets hold the same gems (an item is otherwise immutable). */
 export function itemMods(item: ItemInstance): StatMod[] {
+  const hit = itemMemo.get(item);
+  if (hit !== undefined && hit.gems.length === item.sockets.length && hit.gems.every((g, i) => g === item.sockets[i]?.gem)) return hit.mods;
   const mods: StatMod[] = [];
   for (const b of item.baseAffix) mods.push({ key: b.key, mode: modeFor(b.key), value: b.value });
   for (const s of item.stats) mods.push({ key: s.key, mode: modeFor(s.key), value: s.value });
@@ -55,8 +74,10 @@ export function itemMods(item: ItemInstance): StatMod[] {
       mods.push({ key: grant.key, mode: modeFor(grant.key), value: grant.value });
     }
   }
+  itemMemo.set(item, { gems: item.sockets.map((s) => s.gem), mods });
   return mods;
 }
+const itemMemo = new WeakMap<ItemInstance, { gems: (ItemInstance['sockets'][number]['gem'])[]; mods: StatMod[] }>();
 
 export function equipmentMods(equipment: Partial<Record<SlotKey, ItemInstance>>): StatMod[] {
   const mods: StatMod[] = [];

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { getBonuses } from '@/sim/bonuses';
-import { ZONE_BOSS_HP_OVERRIDE, ZONE_ENRAGE_MS, STAGE_ENRAGE_MS, BOSS_ENRAGE_RAMP_MS, enrageMultiplier, expectedLevel, zoneBossHp } from '@/data/stageScaling';
+import { ZONE_ENRAGE_MS, STAGE_ENRAGE_MS, BOSS_ENRAGE_RAMP_MS, enrageMultiplier } from '@/data/stageScaling';
+import { zoneBossHp } from '@/sim/enemyScale';
 import { freshHero } from './economy';
 import { zoneSet, zoneReferenceSet, usualTier, withZoneChests, wallDamage, zoneSetDamage, gearPercent } from './zoneGear';
 
@@ -41,7 +42,6 @@ describe('gear % of the zone', () => {
     expect(d).toBeGreaterThan(0);
     expect(wallDamage(set, boss, bonuses, 1234)).toBe(d);
     expect(zoneBossHp(boss)).toBe(hp);
-    expect(ZONE_BOSS_HP_OVERRIDE[15]).toBeUndefined();
   });
 
   it('more of the zone worn is a higher gear %: naked < a handful of chests < many, and the reference set is ≈ 100', () => {
@@ -64,13 +64,19 @@ describe('gear % of the zone', () => {
 
   it('the reference set (option C): every slot an item of the world\'s X-9 level at its usual worn rarity, gems in', () => {
     const set = zoneReferenceSet(party, boss);
+    let filled = 0;
+    let sockets = 0;
     for (const h of set) {
       expect(Object.keys(h.equipment).length).toBeGreaterThanOrEqual(10);
       for (const item of Object.values(h.equipment)) {
-        expect(item?.ilvl).toBe(expectedLevel(boss - 1));
+        expect(item?.ilvl).toBe(boss - 1); // item levels are stages (data/power)
         expect(item?.tier).toBe(usualTier(boss - 1, item?.category === 'jewelry'));
-        for (const so of item?.sockets ?? []) expect(so.gem).not.toBeNull();
+        filled += (item?.sockets ?? []).filter((so) => so.gem !== null).length;
+        sockets += item?.sockets.length ?? 0;
       }
     }
+    // A gem goes where it helps the hero (the score is relative to the typical hero since the power curve): a gem of a
+    // stat its hero does not use stays out, so most sockets — not all — hold one.
+    expect(filled).toBeGreaterThanOrEqual(sockets / 2);
   });
 });

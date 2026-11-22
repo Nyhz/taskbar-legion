@@ -1,5 +1,6 @@
 import { STAGES_PER_WORLD } from '@/data/difficulties';
-import { enemyHp, expectedLevel } from '@/data/stageScaling';
+import { expectedLevel } from '@/data/stageScaling';
+import { enemyHp } from '@/sim/enemyScale';
 import { format } from '@/sim/num';
 import { useT } from '@/i18n';
 import { Sign, Tip, TipLine, TipText, TipTitle, TipWarn } from '@/ui/kit';

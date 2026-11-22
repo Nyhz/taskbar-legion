@@ -14,7 +14,8 @@ import { partyWithBuild, PROBE_DEFAULT_BUILD, PROBE_GOOD_BUILD } from '../test/s
 import { heroBaseStats, heroStaticMods, partyAuraMods, type HeroConfig } from '@/sim/loadout';
 import { aggregate } from '@/sim/stats';
 import { gemGrants } from '@/sim/gems';
-import { enemyDamage, expectedDefense, mitigation, MAX_ARMOR_DR, worldOf, trashDmgTune, TRASH_DMG_FRACTION, BOSS_DMG_MULT, ZONE_BOSS_DMG_MULT, phi } from '@/data/stageScaling';
+import { expectedDefense, mitigation, MAX_ARMOR_DR, worldOf, trashDmgTune, TRASH_DMG_FRACTION, BOSS_DMG_MULT, ZONE_BOSS_DMG_MULT, phi } from '@/data/stageScaling';
+import { enemyDamage } from '@/sim/enemyScale';
 import type { Bonuses } from '@/sim/bonuses';
 import type { SnapshotFile } from './probe-snapshots';
 

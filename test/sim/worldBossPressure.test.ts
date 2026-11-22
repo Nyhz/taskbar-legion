@@ -3,7 +3,8 @@ import { createWorld, Simulation, type TickContext } from '@/sim/Simulation';
 import { getBonuses } from '@/sim/bonuses';
 import { bossKit } from '@/sim/bossMechanics';
 import { WORLD_BOSS_PRESSURE, pressureWeight, worldBossPressure, worldBossPressureAt } from '@/data/bossKit';
-import { ZONE_BOSS_DMG_MULT, ZONE_BOSS_HIT_TUNE, enemyDamage, zoneBossHit } from '@/data/stageScaling';
+import { ZONE_BOSS_DMG_MULT } from '@/data/stageScaling';
+import { enemyDamage, zoneBossHit } from '@/sim/enemyScale';
 import { globalStageOf } from '@/data/difficulties';
 import type { Combatant } from '@/sim/world';
 import { base, unit } from './_kit';
@@ -99,11 +100,10 @@ describe('world-boss pressure', () => {
     const sim = new Simulation(w);
     sim.enterZoneBoss(Math.ceil(S / 10));
     sim.tick({ bonuses: getBonuses({}, {}), ownedPetKeys: [], retryStage: true });
-    // Round 6: what it deals the FRONT hero is data (data/stageScaling ZONE_BOSS_HIT_TUNE), anchored to the average
+    // Round 6: what it deals the FRONT hero is anchored to the typical Knight (sim/enemyScale zoneBossHit), the average
     // tank's life; its hits behind keep the formula × the difficulty's hitMult.
     const boss = w.enemies.find((e) => e.isBoss === true);
     expect(boss?.frontHit).toBe(zoneBossHit(S));
-    expect(zoneBossHit(S)).toBe(ZONE_BOSS_HIT_TUNE[Math.ceil(S / 10) - 1]);
     expect(boss?.enemyDamage).toBeCloseTo(enemyDamage(S) * ZONE_BOSS_DMG_MULT * worldBossPressureAt(S).hitMult, 6);
   });
 });

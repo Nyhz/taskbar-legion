@@ -1,5 +1,6 @@
 import type { AffixRoll, ItemInstance } from './items';
-import { composeItem, rollStatValue, perfectStatValue, itemSubstatPool, type ItemOrigin } from './loot';
+import { expectedLevel } from '@/data/stageScaling';
+import { composeItem, rollStatValue, substatShare, perfectStatValue, itemSubstatPool, type ItemOrigin } from './loot';
 import { makeRng } from './rng';
 import { SLOT_KEYS } from '@/data/itemSlots';
 import type { StatKey } from '@/data/stats';
@@ -98,7 +99,8 @@ export function synthesizeGems(gems: readonly GemInstance[], doubleTierChance: n
 
 /** Gold an item melts into: exponential in tier, linear in ilvl. */
 export function itemGoldValue(item: ItemInstance): number {
-  return Math.round(ALCHEMY_BASE * ALCHEMY_TIER_MULT ** item.tier * item.ilvl);
+  // Item levels are stages (data/power); the gold keeps the scale of the hero level they correspond to.
+  return Math.round(ALCHEMY_BASE * ALCHEMY_TIER_MULT ** item.tier * expectedLevel(item.ilvl));
 }
 
 export function alchemyTotal(items: readonly ItemInstance[]): number {
@@ -154,11 +156,12 @@ export function transfigureRoll(item: ItemInstance, affixIndex: number): { key: 
   const rng = makeRng(seed);
   const mult = tierDef(item.tier).statMultiplier;
   const key = rng.pick(pool);
-  const value = rollStatValue(key, mult, item.ilvl, rng);
+  const share = substatShare(item);
+  const value = rollStatValue(key, mult, item.ilvl, share, rng);
   // The replacement has its own chance to come out perfect (rolled AFTER the value, so the
   // key/value stay stable for a given seed regardless of whether the perfect roll hits).
   if (rng.chance(TRANSFIGURE_PERFECT_CHANCE)) {
-    return { key, value: perfectStatValue(key, mult, item.ilvl), perfect: true };
+    return { key, value: perfectStatValue(key, mult, item.ilvl, share), perfect: true };
   }
   return { key, value };
 }
@@ -191,7 +194,8 @@ export function polishRoll(item: ItemInstance, affixIndex: number, n: number = p
   const seed = (item.origin.rollSeed ^ Math.imul(affixIndex + 1, 0x85ebca6b) ^ Math.imul(n + 1, 0xc2b2ae35)) >>> 0;
   const rng = makeRng(seed);
   const mult = tierDef(item.tier).statMultiplier;
-  const value = rollStatValue(stat.key, mult, item.ilvl, rng);
-  if (rng.chance(POLISH_PERFECT_CHANCE)) return { key: stat.key, value: perfectStatValue(stat.key, mult, item.ilvl), perfect: true };
+  const share = substatShare(item);
+  const value = rollStatValue(stat.key, mult, item.ilvl, share, rng);
+  if (rng.chance(POLISH_PERFECT_CHANCE)) return { key: stat.key, value: perfectStatValue(stat.key, mult, item.ilvl, share), perfect: true };
   return { key: stat.key, value };
 }

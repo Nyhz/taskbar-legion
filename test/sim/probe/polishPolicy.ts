@@ -4,7 +4,7 @@
 // fits in that purse, and keeps the better of the old and the new value. A piece is left alone once every substat it has short of ★ is at
 // POLISH_GOOD_ENOUGH of the best normal roll: past that only the ★ (5 %) is left to chase, at ×1.5 a try.
 import { polishCost, polishRoll, canPolishAffix, polishCount, itemGoldValue } from '@/sim/cube';
-import { perfectStatValue } from '@/sim/loot';
+import { perfectStatValue, substatShare } from '@/sim/loot';
 import { tierDef } from '@/data/tiers';
 import { PERFECT_STAT_BONUS } from '@/data/lootTables';
 import type { ItemInstance } from '@/sim/items';
@@ -22,7 +22,7 @@ export const POLISH_GOOD_ENOUGH = 0.9;
 function rollShare(item: ItemInstance, i: number): number {
   const stat = item.stats[i];
   if (stat === undefined) return 1;
-  const best = perfectStatValue(stat.key, tierDef(item.tier).statMultiplier, item.ilvl) / (1 + PERFECT_STAT_BONUS);
+  const best = perfectStatValue(stat.key, tierDef(item.tier).statMultiplier, item.ilvl, substatShare(item)) / (1 + PERFECT_STAT_BONUS);
   return best > 0 ? stat.value / best : 1;
 }
 

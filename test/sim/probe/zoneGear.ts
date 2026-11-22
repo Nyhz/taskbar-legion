@@ -23,11 +23,10 @@ import { ZONE_ENRAGE_MS, worldOf } from '@/data/stageScaling';
 import type { HeroConfig } from '@/sim/loadout';
 import type { Bonuses } from '@/sim/bonuses';
 import { buildParty } from './combat';
-import { openCaptured, equipItems, socketGems, heroScore } from './gear';
+import { openCaptured, equipItems, socketGems, heroScore, SCORE_CONTEXT } from './gear';
 import { composeItem } from '@/sim/loot';
 import { makeRng, deriveSeed } from '@/sim/rng';
 import { tierWeightsAt } from '@/data/difficulties';
-import { expectedLevel } from '@/data/stageScaling';
 import { SLOTS, SLOT_KEYS } from '@/data/itemSlots';
 import type { ItemInstance } from '@/sim/items';
 import type { ItemTier } from '@/data/tiers';
@@ -35,10 +34,10 @@ import { GENERATOR_VERSION } from '@/data/lootTables';
 import { generateGem } from '@/sim/gems';
 import { GEM_KEYS, type GemTier } from '@/data/gems';
 import type { SlotKey } from '@/data/itemSlots';
-import { STATS, statTierMult, type StatKey } from '@/data/stats';
+import { STATS, type StatKey } from '@/data/stats';
 import { tierDef } from '@/data/tiers';
-import { round2 } from '@/sim/num';
-import { phi, EG_FLAT, GEAR_POWER, pctAffixIlvlMult } from '@/data/stageScaling';
+import { affixShare } from '@/data/power';
+import { statValue } from '@/sim/loot';
 
 export const ZONE_SET_CHESTS = 240; // stage-boss chests of the world's X-9 the zone set is picked from
 export const ZONE_SET_SEED = 90_210; // the reference draw (per world: + the boss stage)
@@ -80,6 +79,7 @@ export function usualTier(S: number, jewel = false, quantile: number | undefined
 export function zoneReferenceSet(party: readonly HeroConfig[], bossStage: number, seed = ZONE_SET_SEED): HeroConfig[] {
   const set: HeroConfig[] = party.map((h) => ({ ...h, equipment: {} }));
   const S = bossStage - 1;
+  SCORE_CONTEXT.stage = S;
   const rng = makeRng(deriveSeed(seed, bossStage));
   const items: ItemInstance[] = [];
   for (const hero of set) {
@@ -87,7 +87,7 @@ export function zoneReferenceSet(party: readonly HeroConfig[], bossStage: number
       const jewel = SLOTS[slot].category === 'jewelry';
       for (let c = 0; c < ZONE_REF_CANDIDATES; c++) {
         const origin = { rollSeed: rng.int(2 ** 31), stageIndex: S, chestType: 'stageBoss' as const, generatorVersion: GENERATOR_VERSION };
-        items.push(composeItem(slot, usualTier(S, jewel), origin, rng, expectedLevel(S), jewel ? undefined : hero.classKey));
+        items.push(composeItem(slot, usualTier(S, jewel), origin, rng, S, jewel ? undefined : hero.classKey));
       }
     }
   }
@@ -105,6 +105,7 @@ export function zoneReferenceSet(party: readonly HeroConfig[], bossStage: number
 
 /** The heroes of `party` (same level, talents) dressed from nothing with the best of `chests` chests of the world. */
 export function zoneSet(party: readonly HeroConfig[], bossStage: number, bonuses: Bonuses, chests = ZONE_SET_CHESTS, seed = ZONE_SET_SEED): HeroConfig[] {
+  SCORE_CONTEXT.stage = bossStage - 1; // the player gears for this world (the score's yardstick, gear.ts)
   const set: HeroConfig[] = party.map((h) => ({ ...h, equipment: {} }));
   const loot = openCaptured('stageBoss', bossStage - 1, chests, seed + bossStage, { n: 0 }, bonuses, set.map((h) => h.classKey));
   // two passes: a piece passed over while the party was naked can be the better one once the rest is worn
@@ -118,6 +119,7 @@ export function zoneSet(party: readonly HeroConfig[], bossStage: number, bonuses
 export function withZoneChests(party: readonly HeroConfig[], bossStage: number, bonuses: Bonuses, chests: number, seed = ZONE_SET_SEED): HeroConfig[] {
   const out: HeroConfig[] = party.map((h) => ({ ...h, equipment: { ...h.equipment } }));
   if (chests <= 0) return out;
+  SCORE_CONTEXT.stage = bossStage - 1;
   const loot = openCaptured('stageBoss', bossStage - 1, chests, seed + bossStage, { n: 0 }, bonuses, out.map((h) => h.classKey));
   equipItems(out, loot.items);
   socketGems(out, loot.gems);
@@ -208,13 +210,10 @@ export function topTierAt(S: number): ItemTier {
   return top as ItemTier;
 }
 
-/** An affix value at the middle of its roll band (rollStatValue with r = the band's midpoint). */
-export function midStatValue(key: StatKey, tierMult: number, itemLevel: number): number {
+/** An affix value at the middle of its roll band (sim/loot statValue with r = the band's midpoint). */
+export function midStatValue(key: StatKey, tierMult: number, itemLevel: number, share: number): number {
   const band = STATS[key].rollPerIlvl;
-  const r = (band.min + band.max) / 2;
-  const m = statTierMult(key, tierMult);
-  if (STATS[key].kind === 'percent') return round2(r * m * pctAffixIlvlMult(itemLevel));
-  return round2(r * m * GEAR_POWER * phi(itemLevel) ** EG_FLAT);
+  return statValue(key, tierMult, itemLevel, share, (band.min + band.max) / 2);
 }
 
 /** `item` with every affix (base and substats) at its mid roll; an armour/MR split base keeps its halves. */
@@ -223,8 +222,8 @@ function midRolled(item: ItemInstance): ItemInstance {
   const split = item.baseAffix.length > 1;
   return {
     ...item,
-    baseAffix: item.baseAffix.map((a) => ({ key: a.key, value: split ? round2(midStatValue(a.key, mult, item.ilvl) / 2) : midStatValue(a.key, mult, item.ilvl) })),
-    stats: item.stats.map((a) => ({ key: a.key, value: midStatValue(a.key, mult, item.ilvl) })),
+    baseAffix: item.baseAffix.map((a) => ({ key: a.key, value: midStatValue(a.key, mult, item.ilvl, affixShare(true, item.stats.length) / (split ? 2 : 1)) })),
+    stats: item.stats.map((a) => ({ key: a.key, value: midStatValue(a.key, mult, item.ilvl, affixShare(false, item.stats.length)) })),
   };
 }
 
@@ -233,7 +232,7 @@ export function zoneCeilingSet(party: readonly HeroConfig[], bossStage: number, 
   const set: HeroConfig[] = party.map((h) => ({ ...h, equipment: {} }));
   const S = bossStage - 1;
   const tier = tierOverride ?? topTierAt(S);
-  const ilvl = expectedLevel(S);
+  const ilvl = S; // item levels are stages (data/power)
   const rng = makeRng(deriveSeed(seed, bossStage) ^ 0x5eed);
   const items: ItemInstance[] = [];
   for (const hero of set) {

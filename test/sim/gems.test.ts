@@ -37,12 +37,11 @@ describe('gems', () => {
     expect(gemGrants(gem(8)).length).toBe(gemGrants(gem(1)).length); // tier = magnitude, not count
   });
 
-  it('grants scale with the gem level — flat strongly (Φ), percent boundedly (pctAffixIlvlMult)', () => {
-    // Ruby = attackDamage (flat) → scales with Φ(gemLevel). Sapphire = critDamage (percent) → now
-    // also grows with level (bounded ×0.5→×1.5, so higher-level gems feel like upgrades on % too),
-    // far gentler than the flat curve and soft-capped so it can't run away.
+  it('flat grants follow the power curve of the gem level; percent grants are the same at every level', () => {
+    // Ruby = attackDamage (flat) → × P(gem level), like gear (docs/redesign/POWER_CURVE.md §2). Sapphire = critDamage
+    // (percent) → a percent is worth the same everywhere; only the rarity grows it.
     expect(gemGrants(gem(8, 'ruby', 100))[0]?.value ?? 0).toBeGreaterThan(gemGrants(gem(8, 'ruby', 10))[0]?.value ?? 0);
-    expect(gemGrants(gem(8, 'sapphire', 100))[0]?.value ?? 0).toBeGreaterThan(gemGrants(gem(8, 'sapphire', 10))[0]?.value ?? 0);
+    expect(gemGrants(gem(8, 'sapphire', 100))[0]?.value).toBe(gemGrants(gem(8, 'sapphire', 10))[0]?.value);
   });
 
   it('generateGem is deterministic from (rollSeed, tier)', () => {

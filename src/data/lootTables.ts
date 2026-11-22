@@ -10,7 +10,11 @@
 // for armour too, which shifts the roll stream of every armour piece. Clean-wipes pre-v7 gear/gems.
 // v8 (2026-11-21): heal power is no longer tier-scaled (data/stats). The roll stream is unchanged, so v7 gear is
 // MIGRATED on load, not wiped (sim/itemMigration: its heal power divided by its tier's multiplier).
-export const GENERATOR_VERSION = 8;
+// v9 (2026-11-22, the power curve — docs/redesign/POWER_CURVE.md): item levels are stages, a rarity is the item's
+// budget split over its affixes, percent affixes no longer follow the item level. The keys are drawn before the
+// values now, so the roll stream changed; v7/v8 gear is MIGRATED on load (sim/itemMigration: each affix keeps how
+// good its roll was, re-valued with the new formula; the item level moves from levels to stages).
+export const GENERATOR_VERSION = 9;
 
 // ── Perfect stats ──
 // Every generated item rolls for "perfect" inherent substats: PERFECT_STAT_CHANCE to

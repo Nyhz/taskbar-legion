@@ -12,7 +12,8 @@ import { spawn } from 'node:child_process';
 import { measureBoss } from '../test/sim/probe/combat';
 import { gearPercent, withZoneChests } from '../test/sim/probe/zoneGear';
 import { partyWithBuild, PROBE_DEFAULT_BUILD, PROBE_GOOD_BUILD, type ClassBuild, type PartyBuild } from '../test/sim/probe/builds';
-import { ZONE_BOSS_HP_OVERRIDE, zoneBossHp, worldOf } from '@/data/stageScaling';
+import { ZONE_BOSS_HP_OVERRIDE, worldOf } from '@/data/stageScaling';
+import { zoneBossHp } from '@/sim/enemyScale';
 import type { SnapshotFile, WallSnapshot } from './probe-snapshots';
 import type { HeroConfig } from '@/sim/loadout';
 

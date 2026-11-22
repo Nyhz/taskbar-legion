@@ -81,7 +81,10 @@ function drain(w: WorldState, gross: Record<ChestType, number>): { gold: number;
 
 /** One full stage clear (its difficulty's waves + stage boss) at the party's current power. `S` must be a
  *  NORMAL or stage-boss stage (S % 10 !== 0); world bosses go through measureBoss. */
-export function measureFarm(
+/** Where a probe run spends its time (PROBE_PROFILE=1 prints it): calls and milliseconds of each measure. */
+export const MEASURE_PROFILE = { farm: { calls: 0, ms: 0, ticks: 0 }, boss: { calls: 0, ms: 0, ticks: 0 } };
+
+function measureFarmRaw(
   configs: readonly HeroConfig[],
   S: number,
   seed: number,
@@ -149,7 +152,7 @@ export function measureFarm(
 /** A single world-boss attempt (the hard wall). `S` must be a world-boss stage (S % 10 === 0).
  *  Win = the boss dies before the party wipes; loss = the party wipes (or the enrage cap hits)
  *  first. Returns the worst party-HP fraction reached as the survival margin. */
-export function measureBoss(
+function measureBossRaw(
   configs: readonly HeroConfig[],
   S: number,
   seed: number,
@@ -197,4 +200,24 @@ export function measureBoss(
     }
   }
   return { win: false, killSec: 0, fightSec, minHpFrac, bossHpFrac, deathSec }; // enrage cap reached without a kill → loss
+}
+
+/** The farm measure, timed into MEASURE_PROFILE. */
+export function measureFarm(...args: Parameters<typeof measureFarmRaw>): FarmSample {
+  const t0 = performance.now();
+  const r = measureFarmRaw(...args);
+  MEASURE_PROFILE.farm.calls += 1;
+  MEASURE_PROFILE.farm.ms += performance.now() - t0;
+  MEASURE_PROFILE.farm.ticks += Math.round((r.clearSec * 1000) / TICK_MS);
+  return r;
+}
+
+/** A world-boss attempt, timed into MEASURE_PROFILE. */
+export function measureBoss(...args: Parameters<typeof measureBossRaw>): BossResult {
+  const t0 = performance.now();
+  const r = measureBossRaw(...args);
+  MEASURE_PROFILE.boss.calls += 1;
+  MEASURE_PROFILE.boss.ms += performance.now() - t0;
+  MEASURE_PROFILE.boss.ticks += Math.round(((r.win ? r.killSec : r.fightSec) * 1000) / TICK_MS);
+  return r;
 }

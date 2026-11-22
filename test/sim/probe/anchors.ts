@@ -9,7 +9,8 @@
 import { Simulation, createWorld, TICK_MS, type TickContext } from '@/sim/Simulation';
 import type { HeroConfig } from '@/sim/loadout';
 import type { Bonuses } from '@/sim/bonuses';
-import { enemyHp, TRASH_HP_FRACTION, ELITE_HP_MULT, wavesPerStage } from '@/data/stageScaling';
+import { enemyHp } from '@/sim/enemyScale';
+import { TRASH_HP_FRACTION, ELITE_HP_MULT, wavesPerStage } from '@/data/stageScaling';
 import { buildParty } from './combat';
 
 /** The band a grunt's hits-to-kill must stay in, and the stage boss's seconds (with the tolerance the tests allow:

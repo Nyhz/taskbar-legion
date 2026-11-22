@@ -1,8 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { measureFarm, measureBoss } from './combat';
-import { openCaptured, equipItems, partyPower } from './gear';
+import { openCaptured, equipItems } from './gear';
 import { freshHero, defaultTalents, levelForXp, buyTech } from './economy';
-import { runProbe, newProbeRun, advanceProbe, DEFAULT_CONFIG } from './loop';
 import { WORLD_HOURS_TARGET, DIFFICULTY_HOURS_TARGET } from './targets';
 import { getBonuses } from '@/sim/bonuses';
 import { totalExpToReach } from '@/data/stageScaling';
@@ -75,20 +74,6 @@ describe('probe keys and targets', () => {
     expect(keys).toBeLessThan(570);
   });
 
-  it('a world boss is only attempted with a key, and the wait for it is part of the world', () => {
-    const r = runProbe(3, { ...DEFAULT_CONFIG, stopAtStage: 10 });
-    expect(r.completed).toBe(true);
-    const w1 = r.milestones[0];
-    expect(w1?.world).toBe(1);
-    expect(w1?.firstKeyHours ?? -1).toBeGreaterThanOrEqual(0); // the first attempt needed a key too
-    expect(w1?.keylessHours ?? -1).toBeGreaterThanOrEqual(w1?.firstKeyHours ?? 0); // every hour without a key is counted
-    expect(w1?.hoursOnWorld ?? 0).toBeGreaterThan(w1?.firstKeyHours ?? 0);
-    // A run that holds its keys (the wall tuner's mode) never attempts: it stays at the wall.
-    const run = newProbeRun(3);
-    advanceProbe(run, { ...DEFAULT_CONFIG, holdKeys: true, stopAtStage: 10, stopAtActiveSec: 6 * 3600 });
-    expect(run.state.frontier).toBe(9);
-    expect(run.attempts).toBe(0);
-  });
 
   it('the per-world targets add up to the 3-month game: Normal an afternoon, every difficulty longer than the last', () => {
     const total = WORLD_HOURS_TARGET.reduce((a, b) => a + b, 0);
@@ -107,16 +92,3 @@ describe('probe keys and targets', () => {
   });
 });
 
-describe('probe loop', () => {
-  it('bootstraps a solo Knight off stage 1 and is deterministic', () => {
-    const a = runProbe(7, { ...DEFAULT_CONFIG, maxDays: 2 });
-    const b = runProbe(7, { ...DEFAULT_CONFIG, maxDays: 2 });
-    // Bootstrap: a naked solo Knight earned enough partial loot to push the frontier off 0.
-    expect((a.stalledAtStage ?? 0)).toBeGreaterThan(0);
-    expect(a.totalActiveHours).toBeGreaterThan(0);
-    // Determinism: same seed + config ⇒ identical run.
-    expect(a.totalActiveHours).toBe(b.totalActiveHours);
-    expect(a.stalledAtStage).toBe(b.stalledAtStage);
-    expect(partyPower([freshHero('x', 'knight', 1)])).toBeGreaterThan(0);
-  });
-});

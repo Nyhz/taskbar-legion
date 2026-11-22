@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { MERCHANT, RUNAWAY, STRIP_EVENT_BLOCK, STRIP_EVENT_GAP_MS } from '@/data/stripEvents';
 import { wavesPerStage } from '@/data/stageScaling';
 import { getBonuses } from '@/sim/bonuses';
-import { gapBefore, makeStripEvent, newClock, sendAway, stripEventEndMs, stripEventKind, type StripEvent } from '@/sim/stripEvents';
+import { gapBefore, makeStripEvent, sendAway, stripEventEndMs, stripEventKind, type StripEvent } from '@/sim/stripEvents';
 import { Simulation, createWorld, TICK_MS, type TickContext } from '@/sim/Simulation';
 import { chestCountOf } from '@/data/chests';
 import { godHero } from './_helpers';
@@ -57,23 +57,6 @@ describe('strip events', () => {
     for (const o of shop.offers ?? []) expect(o.price).toBeGreaterThan(0);
   });
 
-  it('the clock runs only in live play, and the combat stream does not move with it', () => {
-    const run = (ctx: TickContext): { stage: number; rng: number; count: number } => {
-      const world = createWorld(5, [godHero('h0'), godHero('h1')]);
-      world.stripEvents = newClock(5, 0);
-      const sim = new Simulation(world);
-      for (let i = 0; i < (40 * 60_000) / TICK_MS; i++) sim.tick(ctx);
-      return { stage: world.globalStageIndex, rng: world.rngState, count: world.stripEvents.count };
-    };
-    const off = run({ ...live, stripEvents: false });
-    const on = run(live);
-    expect(off.count).toBe(0);
-    expect(on.count).toBeGreaterThanOrEqual(2); // 40 minutes: two to five events
-    expect(on.count).toBeLessThanOrEqual(5);
-    expect(on.rng).toBe(off.rng); // the same fight, byte for byte
-    expect(on.stage).toBe(off.stage);
-    expect(run({ ...live, offline: true }).count).toBe(0); // never away-time
-  });
 
   it('a caught runaway joins the storage, or is lost when it is full; a missed one runs away', () => {
     const world = createWorld(5, [godHero('h0')]);

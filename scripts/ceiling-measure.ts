@@ -8,7 +8,7 @@
 import { readFileSync, appendFileSync } from 'node:fs';
 import { ceilingDamage, wallDamage, topTierAt } from '../test/sim/probe/zoneGear';
 import { partyWithBuild, PROBE_DEFAULT_BUILD, PROBE_GOOD_BUILD } from '../test/sim/probe/builds';
-import { zoneBossHp } from '@/data/stageScaling';
+import { zoneBossHp } from '@/sim/enemyScale';
 import type { SnapshotFile, WallSnapshot } from './probe-snapshots';
 
 const file = JSON.parse(readFileSync(process.env.STUDY_SNAP ?? 'snapshots.json', 'utf8')) as SnapshotFile;
