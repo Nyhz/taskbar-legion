@@ -41,17 +41,12 @@ describe('the fury', () => {
   });
 });
 
-// Round 11 (user: «solo el mundo 1»): a difficulty's opening wall gives a longer clock, so the gear a difficulty ends
-// with takes it; its life and its % of the ceiling stay on the ladder.
+// Round 11 gave a difficulty's opening wall a longer clock; retired 2026-11-22 (user: each world a little harder than
+// the one before — the wall curve eases a difficulty in instead). Every wall has the same clock.
 describe('the opening wall', () => {
-  it('has a longer clock in world 1 of every difficulty after Normal, and only there', () => {
-    expect(OPENING_ENRAGE_MS).toBeGreaterThan(ZONE_ENRAGE_MS);
-    expect(zoneEnrageMs(globalStageOf(0, 1, 10))).toBe(ZONE_ENRAGE_MS);
-    for (const d of [1, 2, 3, 4]) {
-      expect(zoneEnrageMs(globalStageOf(d, 1, 10))).toBe(OPENING_ENRAGE_MS);
-      expect(zoneEnrageMs(globalStageOf(d, 2, 10))).toBe(ZONE_ENRAGE_MS);
-    }
-    expect(wallAt(globalStageOf(3, 1, 10))?.enrageMs).toBe(OPENING_ENRAGE_MS);
+  it('has the usual clock, like every other wall', () => {
+    expect(OPENING_ENRAGE_MS).toBe(ZONE_ENRAGE_MS);
+    for (const d of [0, 1, 2, 3, 4]) for (const w of [1, 2]) expect(zoneEnrageMs(globalStageOf(d, w, 10))).toBe(ZONE_ENRAGE_MS);
+    expect(wallAt(globalStageOf(3, 1, 10))?.enrageMs).toBe(ZONE_ENRAGE_MS);
   });
 });
-

@@ -83,11 +83,11 @@ describe('enemies are sized to the typical party', () => {
 });
 
 describe('the walls (the ladder: user, 2026-11-21 — «el primer boss 100 de vida, el segundo 120, luego 140…»)', () => {
-  it('every world boss has more life than the one before, seams included, never leaping (×2 in Normal, while a new game fills its slots and its first rarities; ×1.6 after)', () => {
+  it('every world boss has more life than the one before, seams included, never leaping (×2 in Normal, while a new game fills its slots and its first rarities; ×1.6 after — ×1.8 at the first wall of a difficulty, where the game itself steps up)', () => {
     const dips: string[] = [];
     for (let w = 2; w <= 50; w++) {
       const step = zoneBossHp(w * 10) / zoneBossHp((w - 1) * 10);
-      if (!(step > 1) || step > (w <= 10 ? 2 : 1.6)) dips.push(`${label(w)} ×${step.toFixed(2)}`);
+      if (!(step > 1) || step > (w <= 10 ? 2 : w % 10 === 1 ? 1.8 : 1.6)) dips.push(`${label(w)} ×${step.toFixed(2)}`);
     }
     expect(dips).toEqual([]);
   });

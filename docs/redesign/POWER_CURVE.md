@@ -78,8 +78,10 @@ en menos golpes, recibe menos en proporción, farmea más rápido y pasa antes l
 
 `wallAsk(w)` (`data/power.ts`) es una curva suave por mundo: cuánto daño, en minutos del grupo típico, tiene el jefe de
 mundo. `(0,42 + 1,88 · t^3,5) × inclinación` con t de 0 (Normal 1) a 1 (Tormento 10): suave al principio y empinada al final;
-la inclinación (`WALL_ASK_TILT`) sube de ×1 en Inferno 4 a ×2,1 en Eternal 3 y a ×2,3 desde Tormento 3 (usuario:
-«Eternal debería ser 230-250 y Tormento 300-350», «más Eternal, y bastante más Tormento»).
+la inclinación (`WALL_ASK_TILT`) es un factor por mundo ajustado con `scripts/fit-wall-tilt.py` y rematado con la
+sonda completa (usuario: «Eternal 230-250, Tormento 300-350», «cada mundo dentro de cada dificultad debería ir teniendo
+dificultad creciente»). Todos los muros tienen el mismo reloj de 60 s (el muro de apertura de 120 s se retiró: hacía
+gratis el mundo 1 y un salto el 2); las raíces del mundo 2 se suavizaron en las dificultades altas.
 Ajustada con la sonda rápida a las horas por dificultad: un jugador llega a cada muro unos 0,6 por debajo del típico
 (avanza en cuanto puede limpiar las etapas) y las horas que cuesta un muro crecen con lo que pide por encima de eso.
 Un test comprueba que cada jefe tiene más vida que el anterior y que el mejor equipo de su zona siempre lo supera.
@@ -96,9 +98,9 @@ Un test comprueba que cada jefe tiene más vida que el anterior y que el mejor e
   sirve para comparar cambios, no para fijar las horas finales.
 - `npm run probe` (horas): la sonda con todos los combates, para confirmar de vez en cuando.
 
-Medido el 2026-11-22 con la **sonda completa** (3 semillas): Normal 11–14 h · Hell 45–57 · Inferno 132–148 ·
-Eternal 211–265 (mediana 243) · Tormento 287–343 (mediana 315), ≈ 750 h en total; ningún mundo atascado (objetivo
-del usuario: Eternal 230–250, Tormento 300–350; Normal, Hell e Inferno aceptados así).
+Medido el 2026-11-22 con la **sonda completa** (3 semillas): Normal 11–14 h · Hell 53–66 · Inferno 115–138 ·
+Eternal 235–248 · Tormento 281–333 (mediana 320), ≈ 760 h en total; ningún mundo atascado. Pendiente: el mundo 1 de
+Eternal cuesta más que los siguientes (allí se paga el cambio de dificultad: más oleadas, botín y llaves nuevos).
 
 ## 7. Partidas guardadas
 

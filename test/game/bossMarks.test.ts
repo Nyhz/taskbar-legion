@@ -72,7 +72,7 @@ describe('boss marks', () => {
     expect(help({ mechanic: 'flock' }, 10)).toContain('2 crows'); // Normal
     expect(help({ mechanic: 'flock' }, 410)).toContain('4 crows'); // Torment
     expect(help({ mechanic: 'roots' }, 20)).toContain('Every 18 s');
-    expect(help({ mechanic: 'roots' }, 120)).toContain('Every 15 s');
+    expect(help({ mechanic: 'roots' }, 120)).toContain('Every 17 s');
     expect(help({ mechanic: 'chainBolt' }, 130)).toContain('50 %');
   });
 

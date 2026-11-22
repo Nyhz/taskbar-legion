@@ -149,20 +149,20 @@ export const WALL_ASK_LAST = 2.3;
  *  reaches every wall ~0.6 below the typical standing — it moves on as soon as it can clear the stages — and the
  *  hours a wall costs grow with how far above that it asks). */
 export const WALL_ASK_EXP = 3.5;
-/** × the wall curve by world (user, 2026-11-22: «Eternal debería ser 230-250 y Tormento 300-350», then «más Eternal, y
- *  bastante más Tormento»): rising from Inferno 4 to ×2.1 by Eternal 3, ×2.3 from Torment 3, linear between the points
- *  so no wall leaps. Fitted with the FULL probe (every fight simulated; 3 seeds): Eternal 211–265 h (median 243),
- *  Torment 287–343 h (median 315). The two interact — a harder Eternal sends a better-geared party into Torment. */
-export const WALL_ASK_TILT: readonly (readonly [number, number])[] = [[24, 1], [33, 2.1], [40, 2.1], [43, 2.3], [50, 2.3]];
+/** × the wall curve, one factor a world (user, 2026-11-22: «Eternal 230-250, Tormento 300-350», then «cada mundo
+ *  dentro de cada dificultad debería ir teniendo dificultad creciente — Inferno: 8, luego 9, luego 11, luego 12…»).
+ *  Fitted with `python3 scripts/fit-wall-tilt.py` (fast probe: a level and a slope a difficulty, what a wall asks always
+ *  rising, never more than ×1.1 a world inside a difficulty, ×1.3 at its first wall) and finished by hand against the
+ *  FULL probe (3 seeds): Eternal 235–248 h, Torment 281–333 h (median 320), ≈ 760 h in all. */
+export const WALL_ASK_TILT: readonly number[] = [
+  1.0, 1.01, 1.02, 1.03, 1.04, 1.05, 1.059, 1.067, 1.075, 1.081,
+  1.399, 1.528, 1.569, 1.569, 1.566, 1.559, 1.549, 1.535, 1.517, 1.495,
+  1.499, 1.469, 1.437, 1.401, 1.362, 1.321, 1.38, 1.449, 1.518, 1.587,
+  1.96, 2.045, 2.12, 2.09, 2.078, 2.064, 2.048, 2.032, 2.014, 1.997,
+  1.968, 2.039, 2.09, 1.988, 1.928, 1.998, 2.069, 2.145, 2.224, 2.307,
+];
 function wallTilt(world: number): number {
-  const pts = WALL_ASK_TILT;
-  if (world <= pts[0]![0]) return pts[0]![1];
-  for (let i = 1; i < pts.length; i++) {
-    const [w1, f1] = pts[i]!;
-    const [w0, f0] = pts[i - 1]!;
-    if (world <= w1) return f0 + ((f1 - f0) * (world - w0)) / (w1 - w0);
-  }
-  return pts[pts.length - 1]![1];
+  return WALL_ASK_TILT[Math.max(0, Math.min(WALL_ASK_TILT.length - 1, Math.round(world) - 1))] ?? 1;
 }
 export function wallAsk(world: number): number {
   const t = Math.max(0, Math.min(1, (world - 1) / 49));

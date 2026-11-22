@@ -151,12 +151,12 @@ export function mitigation(armorEff: number, S: number): number {
 // seconds of enrage to finish, and a party far below does not make it. Stage bosses share the window and are
 // meant to die in 5-10 s, so theirs only bites a party that should not be there.
 export const ZONE_ENRAGE_MS = 60_000; // world boss (X-10) — the gate
-/** THE OPENING WALL (round 11, 2026-11-17; user: «solo el mundo 1»): the world boss of a difficulty's WORLD 1 (from
- *  Hell) gives the party this long before it enrages, so the gear a party ends a difficulty with — which stands right at
- *  its last wall's threshold, since it is the attempt that took it — takes the first wall of the next one. Its life
- *  and its % of the ceiling stay on the ladder (the % is measured over the usual 60 s): only the clock is longer. */
-export const OPENING_ENRAGE_MS = 120_000;
-/** The enrage window of the world boss of global stage `S`: the opening wall's longer clock, else the usual one. */
+/** THE OPENING WALL (round 11, 2026-11-17) gave a difficulty's world 1 a 120 s clock. Retired 2026-11-22 (user: «cada
+ *  mundo dentro de cada dificultad debería ir teniendo dificultad creciente»): a longer clock made the opening nearly
+ *  free and world 2 a leap; the wall curve (data/power wallAsk, WALL_ASK_TILT) now eases each difficulty in. Kept equal
+ *  to the usual clock so callers stay unchanged. */
+export const OPENING_ENRAGE_MS = ZONE_ENRAGE_MS;
+/** The enrage window of the world boss of global stage `S`. */
 export function zoneEnrageMs(S: number): number {
   return difficultyIndexOf(S) > 0 && worldInDifficulty(S) === 1 ? OPENING_ENRAGE_MS : ZONE_ENRAGE_MS;
 }

@@ -285,7 +285,9 @@ export const MECHANIC = {
   flock: { abilityKey: 'boss_flock', everyMs: 15_000, openerMs: 7000, castMs: 1500, crows: [2, 3, 3, 3, 4] as ByDifficulty, peckOfTrash: [0.35, 0.5, 0.6, 0.7, 0.8] as ByDifficulty },
   /** RAÍCES (Our Lady of Mistletoe): every `everyMs` she binds the hero who has dealt her the most damage; it
    *  cannot attack or cast for `holdMs`. */
-  roots: { abilityKey: 'boss_roots', everyMs: [18_000, 15_000, 15_000, 15_000, 12_000] as ByDifficulty, openerMs: 8000, castMs: 1500, holdMs: 5000 },
+  // 18 / 17 / 17 / 17 / 15 s (were 18 / 15 / 15 / 15 / 12; 2026-11-22: its wall, world 2, asked ~10 stages more gear
+  // than world 3 in Eternal and stood out in every probe run). Still tightening with the difficulty.
+  roots: { abilityKey: 'boss_roots', everyMs: [18_000, 17_000, 17_000, 17_000, 15_000] as ByDifficulty, openerMs: 8000, castMs: 1500, holdMs: 5000 },
   /** RAYO EN CADENA (the Drowned Moon): every `everyMs` a bolt falls on a hero picked at random for `coeff` of the
    *  boss's hit (magic) and jumps to every other hero for `jump` of it. */
   chainBolt: { abilityKey: 'boss_chain_bolt', everyMs: 12_000, openerMs: 7000, castMs: 1500, coeff: [0.8, 1.0, 1.1, 1.2, 1.3] as ByDifficulty, jump: [0.4, 0.5, 0.55, 0.6, 0.65] as ByDifficulty },
