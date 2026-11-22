@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { GEAR_OVER, GEAR_UNDER, averageItemLevel, gearQuality } from '@/ui/panels/hero/gearQuality';
+import { GEAR_OVER, GEAR_UNDER, averageItemLevel, gearQuality, usualItemLevel } from '@/ui/panels/hero/gearQuality';
 import { dollStats, statText } from '@/ui/panels/hero/heroStats';
 import { SLOT_KEYS } from '@/data/itemSlots';
-import { expectedLevel } from '@/data/stageScaling';
 
 describe('hero window: how the worn gear reads', () => {
   it('averages over ALL ten slots, an empty slot counting as 0', () => {
@@ -12,13 +11,15 @@ describe('hero window: how the worn gear reads', () => {
     expect(averageItemLevel(full)).toBe(40);
   });
 
-  it('judges the gear against the level the stage loot is centred on, with a ±10 % band', () => {
+  it('judges the gear by its power against what is usually worn at the stage (item levels are stages)', () => {
     const stage = 120;
-    const level = Math.max(1, expectedLevel(stage));
+    const usual = usualItemLevel(stage);
     expect(gearQuality(0, stage)).toBe('under'); // naked is always under-geared
-    expect(gearQuality(level, stage)).toBe('even');
-    expect(gearQuality(level * (GEAR_OVER + 0.01), stage)).toBe('over');
-    expect(gearQuality(level * (GEAR_UNDER - 0.01), stage)).toBe('under');
+    expect(gearQuality(usual, stage)).toBe('even');
+    expect(gearQuality(usual + 6, stage)).toBe('over'); // +6 stages ≈ +13 % power
+    expect(gearQuality(usual - 11, stage)).toBe('under'); // −11 stages ≈ −20 % power
+    expect(GEAR_OVER).toBeGreaterThan(1);
+    expect(GEAR_UNDER).toBeLessThan(1);
   });
 
   it('shows ten stats beside the doll: heal power for the healer, multistrike for the others', () => {

@@ -1,11 +1,12 @@
 import { SLOT_KEYS, type SlotKey } from '@/data/itemSlots';
-import { expectedLevel } from '@/data/stageScaling';
+import { REF_ILVL_LAG, powerAt } from '@/data/power';
 
-// How the worn gear reads against the stage, exactly as the old party panel judged it. Pure.
+// How the worn gear reads against the stage. Pure. Item levels are stages (docs/redesign/POWER_CURVE.md): the gear is
+// judged by its POWER against what a player usually wears there (the typical party's item level, the stage − REF_ILVL_LAG).
 
-/** ≥ +10 % over the level the stage's loot is centred on → well geared; < −10 % → under-geared. */
+/** ≥ +10 % of the usual gear's power (≈ 5 stages better) → well geared; < −18 % (≈ 10 stages worse) → under-geared. */
 export const GEAR_OVER = 1.1;
-export const GEAR_UNDER = 0.9;
+export const GEAR_UNDER = 0.82;
 
 export type GearQuality = 'over' | 'even' | 'under';
 
@@ -15,9 +16,14 @@ export function averageItemLevel(equipment: Partial<Record<SlotKey, { ilvl: numb
   return SLOT_KEYS.reduce((sum, slot) => sum + (equipment[slot]?.ilvl ?? 0), 0) / SLOT_KEYS.length;
 }
 
-/** The worn gear against the level loot is centred on at `globalStage` (naked always reads under-geared). */
+/** The usual item level at `globalStage`: what a player wears there. */
+export function usualItemLevel(globalStage: number): number {
+  return Math.max(1, globalStage - REF_ILVL_LAG);
+}
+
+/** The worn gear against what is usually worn at `globalStage` (naked always reads under-geared). */
 export function gearQuality(avgItemLevel: number, globalStage: number): GearQuality {
-  const ratio = avgItemLevel / Math.max(1, expectedLevel(globalStage));
+  const ratio = powerAt(avgItemLevel) / powerAt(usualItemLevel(globalStage));
   if (avgItemLevel === 0 || ratio < GEAR_UNDER) return 'under';
   return ratio > GEAR_OVER ? 'over' : 'even';
 }
